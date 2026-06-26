@@ -1,10 +1,22 @@
 """ABOUTME: Backoffice registration-page editor routes
 ABOUTME: View / save / create / skeleton / QR-download / image upload routes for the assembly registration tab"""
 
+import json
 import uuid
 from typing import Any, cast
 
-from flask import Blueprint, Response, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    Response,
+    abort,
+    current_app,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from werkzeug.exceptions import HTTPException
@@ -55,6 +67,10 @@ from opendlp.translations import gettext as _
 backoffice_registration_bp = Blueprint("backoffice_registration", __name__)
 
 
+def _is_htmx() -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
 def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
     """Serialise an image for the Assets panel.
 
@@ -90,6 +106,19 @@ def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
 @login_required
 def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice registration form configuration page."""
+    return _render_registration_page(assembly_id, open_modal=request.args.get("modal", ""))
+
+
+def _render_registration_page(
+    assembly_id: uuid.UUID, open_modal: str = "", open_image_id: uuid.UUID | None = None
+) -> ResponseReturnValue:
+    """Render the registration configuration page.
+
+    ``open_modal`` names a modal to render already-open server-side ("upload" or
+    "details"), which is the no-JS fallback for the HTMX-loaded modals — the page
+    degrades to a full reload that shows the requested modal. For "details",
+    ``open_image_id`` selects which image's modal to open.
+    """
     try:
         nav = get_assembly_nav_context(
             bootstrap.get_flask_uow,
@@ -132,6 +161,18 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             stored_images = list_registration_images(uow, current_user.id, assembly_id)
             images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
 
+        # When falling back to a full page with the details modal open, pick out the
+        # image whose modal should be shown from the list we just built.
+        open_image = None
+        if open_modal == "details" and open_image_id is not None:
+            open_image = next((img for img in images if img["id"] == str(open_image_id)), None)
+
+        # The skeleton modal's content is generated server-side; build it for the
+        # full-page fallback so the modal renders without JS.
+        skeleton_html = ""
+        if open_modal == "skeleton":
+            skeleton_html = generate_starter_form_html(uow, current_user.id, assembly_id)
+
         # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
         # have no save path so we always keep them read-only regardless of the param.
         edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
@@ -156,6 +197,9 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             max_image_upload_mb=get_max_image_upload_mb(),
             allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
             edit_mode=edit_mode,
+            open_modal=open_modal,
+            open_image=open_image,
+            skeleton_html=skeleton_html,
         ), 200
     except InsufficientPermissions as e:
         current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
@@ -292,21 +336,32 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
         return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/skeleton")
-@login_required
-def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Generate starter HTML form skeleton based on assembly's field definitions."""
+def _render_skeleton_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Render the Form Skeleton modal fragment with server-generated starter HTML."""
     try:
         uow = bootstrap.get_flask_uow()
-        html = generate_starter_form_html(uow, current_user.id, assembly_id)
-        return jsonify({"html": html})
+        skeleton_html = generate_starter_form_html(uow, current_user.id, assembly_id)
     except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to access this assembly")}), 403
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
     except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
-    except Exception as e:
-        current_app.logger.error(f"Generate skeleton error for assembly {assembly_id}: {e}")
-        return jsonify({"error": _("An error occurred while generating the form skeleton")}), 500
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    return render_template(
+        "backoffice/registration/skeleton_modal.html",
+        assembly_id=assembly_id,
+        skeleton_html=skeleton_html,
+    )
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/skeleton-modal")
+@login_required
+def skeleton_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the Form Skeleton modal (HTMX fragment / full-page fallback)."""
+    if _is_htmx():
+        return _render_skeleton_modal(assembly_id)
+    return _render_registration_page(assembly_id, open_modal="skeleton")
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/qr-code.png")
@@ -369,30 +424,211 @@ def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
     return result[0].url_slug
 
 
+def _list_images_as_dicts(assembly_id: uuid.UUID) -> list[dict[str, Any]]:
+    """Serialise all of an assembly's registration images for the Assets panel."""
+    uow = bootstrap.get_flask_uow()
+    images = list_registration_images(uow, current_user.id, assembly_id)
+    url_slug = _resolve_page_url_slug(assembly_id)
+    return [_image_to_dict(image, url_slug) for image in images]
+
+
+def _find_image_dict(assembly_id: uuid.UUID, image_id: uuid.UUID) -> dict[str, Any] | None:
+    """Return the serialised image with ``image_id`` for this assembly, or None."""
+    return next((img for img in _list_images_as_dicts(assembly_id) if img["id"] == str(image_id)), None)
+
+
+def _image_list_response(
+    assembly_id: uuid.UUID, *, toast: str = "", toast_type: str = "success"
+) -> ResponseReturnValue:
+    """Render the Assets list as an out-of-band fragment after a mutation.
+
+    Swapping ``#image-asset-list`` out of band refreshes the panel; because the
+    rest of the response body is empty it also clears ``#image-modal-container``,
+    closing whichever modal triggered the mutation. An optional toast is fired via
+    ``HX-Trigger`` for the page to surface.
+    """
+    html = render_template(
+        "backoffice/registration/image_asset_list.html",
+        assembly_id=assembly_id,
+        images=_list_images_as_dicts(assembly_id),
+        oob=True,
+    )
+    response = make_response(html)
+    if toast:
+        response.headers["HX-Trigger"] = json.dumps({"show-toast": {"message": toast, "type": toast_type}})
+    return response
+
+
+def _render_image_details_modal(
+    assembly_id: uuid.UUID, image: dict[str, Any], *, error: str = "", alt_value: str = "", status: int = 200
+) -> ResponseReturnValue:
+    """Render the per-image details/edit modal fragment."""
+    return render_template(
+        "backoffice/registration/image_details_modal.html",
+        assembly_id=assembly_id,
+        image=image,
+        error=error,
+        alt_value=alt_value,
+    ), status
+
+
+def _image_action_error_message(error: Exception) -> str:
+    """Map a known edit/delete failure to a user-facing message."""
+    if isinstance(error, RegistrationImageNotFoundError):
+        return _("Image not found")
+    if isinstance(error, RegistrationPageNotFoundError):
+        return _("Registration page not found")
+    if isinstance(error, InsufficientPermissions):
+        return _("You don't have permission to modify this assembly")
+    return _("Assembly not found")
+
+
+def _upload_error_message(error: Exception) -> str:
+    """Map a known image-upload failure to a user-facing message."""
+    if isinstance(error, ImageValidationError):
+        return error.message
+    if isinstance(error, ImageQuotaExceeded):
+        return str(error)
+    if isinstance(error, RegistrationPageNotFoundError):
+        return _("Please create a registration page first from the Details tab.")
+    if isinstance(error, InsufficientPermissions):
+        return _("You don't have permission to modify this assembly")
+    return _("Assembly not found")
+
+
+def _render_image_upload_modal(
+    assembly_id: uuid.UUID, *, error: str = "", alt_value: str = "", status: int = 200
+) -> ResponseReturnValue:
+    """Render the upload-modal fragment (swapped into ``#image-modal-container`` by HTMX)."""
+    return render_template(
+        "backoffice/registration/image_upload_modal.html",
+        assembly_id=assembly_id,
+        allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
+        max_image_upload_mb=get_max_image_upload_mb(),
+        error=error,
+        alt_value=alt_value,
+    ), status
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images/upload-modal")
+@login_required
+def image_upload_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the image-upload modal.
+
+    HTMX requests get just the modal fragment to swap into the Assets panel; a
+    plain navigation gets the whole registration page with the modal already open,
+    so opening the modal still works (via a full page load) when JS is unavailable.
+    """
+    if _is_htmx():
+        return _render_image_upload_modal(assembly_id)
+    return _render_registration_page(assembly_id, open_modal="upload")
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images/<uuid:image_id>/details-modal")
+@login_required
+def image_details_modal(assembly_id: uuid.UUID, image_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the per-image details/edit modal.
+
+    HTMX requests get the modal fragment to swap into the Assets panel; a plain
+    navigation gets the whole registration page with the modal already open.
+    """
+    try:
+        image = _find_image_dict(assembly_id, image_id)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    if image is None:
+        flash(_("Image not found"), "error")
+        return redirect(url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id))
+
+    if _is_htmx():
+        return _render_image_details_modal(assembly_id, image)
+    return _render_registration_page(assembly_id, open_modal="details", open_image_id=image_id)
+
+
+def _render_preview_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Render the read-only Preview / Share modal fragment (URLs + QR code)."""
+    try:
+        nav = get_assembly_nav_context(bootstrap.get_flask_uow, current_user.id, assembly_id, "")
+        uow = bootstrap.get_flask_uow()
+        result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    registration_page = result[0] if result else None
+    if registration_page is None:
+        flash(_("Please create a registration page first from the Details tab."), "warning")
+        return redirect(url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id))
+
+    page_url = registration_url(registration_page.url_slug)
+    short = short_url(registration_page.short_url_slug) if registration_page.short_url_slug else None
+    qr_code_data_url = generate_qr_code_base64(short) if short else None
+
+    return render_template(
+        "backoffice/registration/preview_modal.html",
+        assembly=nav.assembly,
+        registration_page=registration_page,
+        registration_status=registration_page.status.value,
+        registration_url=page_url,
+        short_url=short,
+        qr_code_data_url=qr_code_data_url,
+    )
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/preview-modal")
+@login_required
+def preview_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the Preview / Share modal (HTMX fragment / full-page fallback)."""
+    if _is_htmx():
+        return _render_preview_modal(assembly_id)
+    return _render_registration_page(assembly_id, open_modal="preview")
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images", methods=["POST"])
 @login_required
 def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Accept a multipart image upload and return the stored image metadata as JSON.
+    """Accept a multipart image upload from the Assets panel modal.
 
-    The Assets panel calls this from the registration tab so uploads don't disturb
-    the HTML editor's unsaved state — no full-page reload is required.
+    Content-negotiates on HTMX: an HX-Request returns an empty body plus an
+    ``HX-Trigger`` carrying the new image (the page appends it client-side and
+    closes the modal), while a failure re-renders the modal with the error (422,
+    swapped back by the htmx-422 handler). A plain form post redirects back to the
+    registration page with a flash — the no-JS full-reload path.
     """
     upload = request.files.get("image")
+    alt = (request.form.get("alt") or "").strip()
+
+    def _fail(message: str) -> ResponseReturnValue:
+        if _is_htmx():
+            # 422 so the htmx-422-swap handler re-renders the modal with the error inline
+            return _render_image_upload_modal(assembly_id, error=message, alt_value=alt, status=422)
+        flash(message, "error")
+        return redirect(
+            url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id, modal="upload")
+        )
+
     if upload is None or not upload.filename:
-        return jsonify({"error": _("No file was selected")}), 400
+        return _fail(_("No file was selected"))
 
     try:
         raw = upload.read()
     except Exception as e:
         current_app.logger.warning(f"Failed to read uploaded image for assembly {assembly_id}: {e}")
-        return jsonify({"error": _("Failed to read the uploaded file")}), 400
+        return _fail(_("Failed to read the uploaded file"))
 
-    alt = (request.form.get("alt") or "").strip()
     if not alt:
-        return jsonify({"error": _("Alt text is required for accessibility")}), 400
+        return _fail(_("Alt text is required for accessibility"))
 
     try:
-        image = add_registration_image(
+        add_registration_image(
             bootstrap.get_flask_uow(),
             current_user.id,
             assembly_id,
@@ -400,49 +636,56 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
             alt=alt,
             original_filename=upload.filename or "",
         )
-    except ImageValidationError as e:
-        return jsonify({"error": e.message, "reason": e.reason}), 400
-    except ImageQuotaExceeded as e:
-        return jsonify({"error": str(e)}), 400
-    except RegistrationPageNotFoundError:
-        return jsonify({"error": _("Please create a registration page first from the Details tab.")}), 400
-    except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
-    except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+    except (
+        ImageValidationError,
+        ImageQuotaExceeded,
+        RegistrationPageNotFoundError,
+        InsufficientPermissions,
+        NotFoundError,
+    ) as e:
+        return _fail(_upload_error_message(e))
     except Exception as e:
         current_app.logger.error(f"Image upload error for assembly {assembly_id}: {e}")
         current_app.logger.exception("Full traceback:")
-        return jsonify({"error": _("An error occurred while uploading the image")}), 500
+        return _fail(_("An error occurred while uploading the image"))
 
-    return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 201
+    if _is_htmx():
+        # Refresh the Assets list out of band (which also closes the modal); the
+        # toast trigger announces success.
+        return _image_list_response(assembly_id, toast=_("Image uploaded"))
+
+    flash(_("Image uploaded"), "success")
+    return redirect(url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id))
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images/<uuid:image_id>", methods=["PATCH"])
 @login_required
 def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UUID) -> ResponseReturnValue:
-    """Update an image's alt text. Returns the updated image metadata as JSON."""
-    data = request.get_json(silent=True) or {}
-    alt = (data.get("alt") or "").strip()
+    """Update an image's alt text (PATCH from the details modal, HTMX only).
+
+    Success returns the refreshed Assets list (out of band, which also closes the
+    modal); an empty alt re-renders the modal with the error at 422.
+    """
+    alt = (request.form.get("alt") or "").strip()
     if not alt:
-        return jsonify({"error": _("Alt text is required for accessibility")}), 400
+        image = _find_image_dict(assembly_id, image_id)
+        if image is None:
+            return _image_list_response(assembly_id, toast=_("Image not found"), toast_type="error")
+        return _render_image_details_modal(
+            assembly_id, image, error=_("Alt text is required for accessibility"), alt_value=alt, status=422
+        )
 
     try:
-        uow = bootstrap.get_flask_uow()
-        image = set_registration_image_alt(uow, current_user.id, assembly_id, image_id, alt=alt)
-    except RegistrationImageNotFoundError:
-        return jsonify({"error": _("Image not found")}), 404
-    except RegistrationPageNotFoundError:
-        return jsonify({"error": _("Registration page not found")}), 404
-    except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
-    except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+        set_registration_image_alt(bootstrap.get_flask_uow(), current_user.id, assembly_id, image_id, alt=alt)
+    except (RegistrationImageNotFoundError, RegistrationPageNotFoundError, InsufficientPermissions, NotFoundError) as e:
+        return _image_list_response(assembly_id, toast=_image_action_error_message(e), toast_type="error")
     except Exception as e:
         current_app.logger.error(f"Update image alt error for assembly {assembly_id} image {image_id}: {e}")
-        return jsonify({"error": _("An error occurred while updating the image")}), 500
+        return _image_list_response(
+            assembly_id, toast=_("An error occurred while updating the image"), toast_type="error"
+        )
 
-    return jsonify({"image": _image_to_dict(image, _resolve_page_url_slug(assembly_id))}), 200
+    return _image_list_response(assembly_id, toast=_("Image updated"))
 
 
 @backoffice_registration_bp.route(
@@ -450,20 +693,19 @@ def update_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
 )
 @login_required
 def delete_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UUID) -> ResponseReturnValue:
-    """Delete a registration image. Returns 204 on success."""
+    """Delete a registration image (DELETE, HTMX only).
+
+    Returns the refreshed Assets list (out of band, which also closes the modal
+    when the delete came from it).
+    """
     try:
-        uow = bootstrap.get_flask_uow()
-        delete_registration_image(uow, current_user.id, assembly_id, image_id)
-    except RegistrationImageNotFoundError:
-        return jsonify({"error": _("Image not found")}), 404
-    except RegistrationPageNotFoundError:
-        return jsonify({"error": _("Registration page not found")}), 404
-    except InsufficientPermissions:
-        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
-    except NotFoundError:
-        return jsonify({"error": _("Assembly not found")}), 404
+        delete_registration_image(bootstrap.get_flask_uow(), current_user.id, assembly_id, image_id)
+    except (RegistrationImageNotFoundError, RegistrationPageNotFoundError, InsufficientPermissions, NotFoundError) as e:
+        return _image_list_response(assembly_id, toast=_image_action_error_message(e), toast_type="error")
     except Exception as e:
         current_app.logger.error(f"Delete image error for assembly {assembly_id} image {image_id}: {e}")
-        return jsonify({"error": _("An error occurred while deleting the image")}), 500
+        return _image_list_response(
+            assembly_id, toast=_("An error occurred while deleting the image"), toast_type="error"
+        )
 
-    return "", 204
+    return _image_list_response(assembly_id, toast=_("Image deleted"))

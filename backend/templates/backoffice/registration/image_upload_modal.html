@@ -1,0 +1,97 @@
+{#
+ABOUTME: Image upload modal fragment for the assembly registration Assets panel
+ABOUTME: Server-rendered + HTMX-posted so it works as a full page reload when JS is off
+#}
+{% from "backoffice/components/button.html" import button %}
+{% set upload_url = url_for('backoffice_registration.upload_registration_image', assembly_id=assembly_id) %}
+{% set close_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly_id) %}
+{# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
+<a href="{{ close_url }}"
+   class="fixed inset-0 z-40 block"
+   style="background-color: rgba(0, 0, 0, 0.5)"
+   aria-label="{{ _('Close') }}"></a>
+{# Modal panel #}
+<div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="image-upload-modal-title">
+    <div class="pointer-events-auto w-full max-w-lg mx-4 rounded-lg shadow-xl overflow-hidden"
+         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)">
+        <form method="post"
+              action="{{ upload_url }}"
+              enctype="multipart/form-data"
+              hx-post="{{ upload_url }}"
+              hx-target="#image-modal-container"
+              hx-swap="innerHTML"
+              hx-encoding="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            {# Header #}
+            <div class="px-6 py-4 flex items-center justify-between"
+                 style="border-bottom: 1px solid var(--color-borders-dividers)">
+                <h2 id="image-upload-modal-title" class="text-heading-lg" style="color: var(--color-headings)">
+                    {{ _("Upload image") }}
+                </h2>
+                <a href="{{ close_url }}"
+                   class="p-2 rounded-lg transition-colors hover:bg-gray-100"
+                   style="color: var(--color-secondary-text);"
+                   aria-label="{{ _('Close') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </a>
+            </div>
+            {# Content #}
+            <div class="px-6 py-4">
+                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                    {{ _("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image. Files are downscaled and re-encoded to PNG on upload.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb) }}
+                </p>
+
+                {# Inline error (re-rendered on a failed HTMX post) #}
+                {% if error %}
+                    <div class="rounded-md p-3 mb-4"
+                         style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
+                        <p class="text-body-sm" style="color: var(--color-error-600);">{{ error }}</p>
+                    </div>
+                {% endif %}
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="image-upload-file" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                            {{ _("Image file") }}
+                        </label>
+                        <input type="file"
+                               id="image-upload-file"
+                               name="image"
+                               accept="image/png,image/jpeg,image/webp"
+                               required
+                               class="w-full px-3 py-2 rounded-md text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <div>
+                        <label for="image-upload-alt" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                            {{ _("Alt text") }}
+                            <span aria-hidden="true" style="color: var(--color-error-600);">*</span>
+                        </label>
+                        <input type="text"
+                               id="image-upload-alt"
+                               name="alt"
+                               value="{{ alt_value|default('') }}"
+                               required
+                               aria-required="true"
+                               class="w-full px-3 py-2 rounded-md text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                        <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                            {{ _("Describes the image for screen-reader users and is used as the file's display name in the asset list.") }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {# Footer #}
+            <div class="px-6 py-3 flex gap-2 justify-end"
+                 style="border-top: 1px solid var(--color-borders-dividers); background-color: var(--color-tables-cards)">
+                {{ button(_("Cancel"), variant="secondary", href=close_url) }}
+                {{ button(_("Upload"), variant="primary", type="submit") }}
+            </div>
+        </form>
+    </div>
+</div>
