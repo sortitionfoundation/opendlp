@@ -185,12 +185,8 @@ def health_check() -> ResponseReturnValue:
         if service_account == "UNKNOWN":
             service_account_ok = False
 
-    monitor_payload, monitor = _build_monitor_payload()
-    monitor_ok = monitor.status in ("OK", "PENDING", "NOT_CONFIGURED")
-    cleanup_ok = monitor.cleanup_status != "FAILED"
-
     # Determine overall health status
-    is_healthy = all((db_ok, celery_ok, service_account_ok, version_ok, ms_expiry_ok, monitor_ok, cleanup_ok))
+    is_healthy = all((db_ok, celery_ok, service_account_ok, version_ok, ms_expiry_ok))
 
     # Build response
     response_data: dict[str, object] = {
@@ -202,7 +198,6 @@ def health_check() -> ResponseReturnValue:
         "oauth_microsoft_days_to_expiry": ms_days_to_expiry,
         "oauth_microsoft_expiry_status": ms_expiry_status,
     }
-    response_data.update(monitor_payload)
 
     # do some debugging, but only if there is an issue
     if service_account == "UNKNOWN":

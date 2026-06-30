@@ -80,8 +80,6 @@ class TestMonitorSelectionHealth:
         clear_env_vars("MONITOR_ASSEMBLY_ID")
         response = _run_with_mocked_helpers(client, "/health")
         assert response.status_code == 200
-        data = response.get_json()
-        assert data["monitor_selection_status"] == "NOT_CONFIGURED"
 
     def test_not_configured_monitor_endpoint_is_500(self, client: FlaskClient, clear_env_vars):
         clear_env_vars("MONITOR_ASSEMBLY_ID")
@@ -109,15 +107,14 @@ class TestMonitorSelectionHealth:
             age=timedelta(minutes=29),
         )
 
-        for url in ("/health", "/health/monitor_selection"):
-            response = _run_with_mocked_helpers(client, url)
-            assert response.status_code == 200, url
-            data = response.get_json()
-            assert data["monitor_selection_status"] == "OK"
-            assert data["monitor_cleanup_status"] == "OK"
-            assert data["monitor_selection_last_run_url"]
-            assert "/assembly/" in data["monitor_selection_last_run_url"]
-            assert "/selection/" in data["monitor_selection_last_run_url"]
+        response = _run_with_mocked_helpers(client, "/health/monitor_selection")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["monitor_selection_status"] == "OK"
+        assert data["monitor_cleanup_status"] == "OK"
+        assert data["monitor_selection_last_run_url"]
+        assert "/assembly/" in data["monitor_selection_last_run_url"]
+        assert "/selection/" in data["monitor_selection_last_run_url"]
 
     @pytest.mark.db_semantics
     def test_stale_when_completed_select_too_old(
@@ -130,17 +127,15 @@ class TestMonitorSelectionHealth:
             status=SelectionRunStatus.COMPLETED,
             age=timedelta(hours=3),
         )
-        for url in ("/health", "/health/monitor_selection"):
-            response = _run_with_mocked_helpers(client, url)
-            assert response.status_code == 500, url
-            assert response.get_json()["monitor_selection_status"] == "STALE"
+        response = _run_with_mocked_helpers(client, "/health/monitor_selection")
+        assert response.status_code == 500
+        assert response.get_json()["monitor_selection_status"] == "STALE"
 
     @pytest.mark.db_semantics
     def test_stale_when_no_records_exist(self, client: FlaskClient, configured_assembly):
-        for url in ("/health", "/health/monitor_selection"):
-            response = _run_with_mocked_helpers(client, url)
-            assert response.status_code == 500, url
-            assert response.get_json()["monitor_selection_status"] == "STALE"
+        response = _run_with_mocked_helpers(client, "/health/monitor_selection")
+        assert response.status_code == 500
+        assert response.get_json()["monitor_selection_status"] == "STALE"
 
     @pytest.mark.db_semantics
     def test_failed_when_latest_select_failed(self, client: FlaskClient, postgres_session_factory, configured_assembly):
@@ -152,12 +147,11 @@ class TestMonitorSelectionHealth:
             age=timedelta(minutes=5),
             error_message="permission denied on sheet",
         )
-        for url in ("/health", "/health/monitor_selection"):
-            response = _run_with_mocked_helpers(client, url)
-            assert response.status_code == 500, url
-            data = response.get_json()
-            assert data["monitor_selection_status"] == "FAILED"
-            assert "permission denied" in data["monitor_selection_message"]
+        response = _run_with_mocked_helpers(client, "/health/monitor_selection")
+        assert response.status_code == 500
+        data = response.get_json()
+        assert data["monitor_selection_status"] == "FAILED"
+        assert "permission denied" in data["monitor_selection_message"]
 
     @pytest.mark.db_semantics
     def test_failed_when_latest_select_cancelled(
@@ -193,11 +187,10 @@ class TestMonitorSelectionHealth:
             age=timedelta(minutes=15),
             error_message="cleanup blew up",
         )
-        for url in ("/health", "/health/monitor_selection"):
-            response = _run_with_mocked_helpers(client, url)
-            assert response.status_code == 500, url
-            data = response.get_json()
-            assert data["monitor_cleanup_status"] == "FAILED"
+        response = _run_with_mocked_helpers(client, "/health/monitor_selection")
+        assert response.status_code == 500
+        data = response.get_json()
+        assert data["monitor_cleanup_status"] == "FAILED"
 
     @pytest.mark.db_semantics
     def test_pending_within_window(self, client: FlaskClient, postgres_session_factory, configured_assembly):
@@ -208,10 +201,9 @@ class TestMonitorSelectionHealth:
             status=SelectionRunStatus.RUNNING,
             age=timedelta(minutes=10),
         )
-        for url in ("/health", "/health/monitor_selection"):
-            response = _run_with_mocked_helpers(client, url)
-            assert response.status_code == 200, url
-            assert response.get_json()["monitor_selection_status"] == "PENDING"
+        response = _run_with_mocked_helpers(client, "/health/monitor_selection")
+        assert response.status_code == 200
+        assert response.get_json()["monitor_selection_status"] == "PENDING"
 
     @pytest.mark.db_semantics
     def test_stale_when_running_too_long(self, client: FlaskClient, postgres_session_factory, configured_assembly):
