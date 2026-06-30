@@ -67,8 +67,8 @@ class TestAuthenticationFlow:
                 "first_name": "New",
                 "last_name": "User",
                 "email": "newuser@example.com",
-                "password": "securepassword123",
-                "password_confirm": "securepassword123",
+                "password": "securepassword123",  # pragma: allowlist secret
+                "password_confirm": "securepassword123",  # pragma: allowlist secret
                 "accept_data_agreement": "y",
                 "csrf_token": get_csrf_token(client, "/auth/register"),
             },
@@ -145,7 +145,7 @@ class TestAuthenticationEdgeCases:
                 "/auth/login",
                 data={
                     "email": regular_user.email,
-                    "password": "wrongpassword",
+                    "password": "wrongpassword",  # pragma: allowlist secret
                     "csrf_token": get_csrf_token(client, "/auth/login"),
                 },
             )
@@ -156,7 +156,7 @@ class TestAuthenticationEdgeCases:
             "/auth/login",
             data={
                 "email": regular_user.email,
-                "password": "wrongpassword",
+                "password": "wrongpassword",  # pragma: allowlist secret
                 "csrf_token": get_csrf_token(client, "/auth/login"),
             },
         )
@@ -171,7 +171,7 @@ class TestAuthenticationEdgeCases:
                 "/auth/login",
                 data={
                     "email": regular_user.email,
-                    "password": "wrongpassword",
+                    "password": "wrongpassword",  # pragma: allowlist secret
                     "csrf_token": get_csrf_token(client, "/auth/login"),
                 },
             )
@@ -198,7 +198,7 @@ class TestAuthenticationEdgeCases:
                 "/auth/login",
                 data={
                     "email": "ratelimited@example.com",
-                    "password": "wrongpassword",
+                    "password": "wrongpassword",  # pragma: allowlist secret
                     "csrf_token": get_csrf_token(client, "/auth/login"),
                 },
             )
@@ -224,7 +224,7 @@ class TestAuthenticationEdgeCases:
                 "/auth/login",
                 data={
                     "email": regular_user.email,
-                    "password": "wrongpassword",
+                    "password": "wrongpassword",  # pragma: allowlist secret
                     "csrf_token": get_csrf_token(client, "/auth/login"),
                 },
             )
@@ -277,7 +277,7 @@ class TestEmailConfirmation:
             user, token = create_user(
                 uow=uow,
                 email="unconfirmed@example.com",
-                password="securepassword123",
+                password="securepassword123",  # pragma: allowlist secret
                 invite_code=valid_invite.code,
             )
         return user, token

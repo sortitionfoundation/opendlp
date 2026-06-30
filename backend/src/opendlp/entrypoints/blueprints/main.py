@@ -3,6 +3,7 @@ ABOUTME: Handles home page, dashboard, and assembly views with login requirement
 
 import uuid
 
+import structlog
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
@@ -32,6 +33,8 @@ from ..forms import AddUserToAssemblyForm, CreateAssemblyForm, EditAssemblyForm
 
 main_bp = Blueprint("main", __name__)
 
+logger = structlog.get_logger(__name__)
+
 
 @main_bp.route("/")
 def index() -> ResponseReturnValue:
@@ -54,7 +57,7 @@ def dashboard() -> ResponseReturnValue:
 
         return render_template("main/dashboard.html", assemblies=assemblies), 200
     except Exception as e:
-        current_app.logger.error(f"Dashboard error for user {current_user.id}: {e}")
+        logger.error("Dashboard error", user_id=str(current_user.id), error=str(e))
         return render_template("errors/500.html"), 500
 
 
@@ -74,17 +77,23 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             current_page="view_assembly",
         ), 200
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         # TODO: consider change to "Assembly not found" so as not to leak info
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"View assembly error for assembly {assembly_id} user {current_user.id}: {e}")
-        current_app.logger.exception("stacktrace")
+        logger.exception(
+            "View assembly error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -124,16 +133,22 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             total_pages=total_pages,
         ), 200
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"View assembly data error for assembly {assembly_id} user {current_user.id}: {e}")
-        current_app.logger.exception("stacktrace")
+        logger.exception(
+            "View assembly data error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -167,16 +182,22 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             current_tab="members",
         ), 200
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"View assembly members error for assembly {assembly_id} user {current_user.id}: {e}")
-        current_app.logger.exception("stacktrace")
+        logger.exception(
+            "View assembly members error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -203,14 +224,14 @@ def create_assembly_page() -> ResponseReturnValue:
             flash(_("Assembly '%(title)s' created successfully", title=assembly.title), "success")
             return redirect(url_for("main.view_assembly", assembly_id=assembly.id))
         except InsufficientPermissions as e:
-            current_app.logger.warning(f"Insufficient permissions to create assembly for user {current_user.id}: {e}")
+            logger.warning("Insufficient permissions to create assembly", user_id=str(current_user.id), error=str(e))
             flash(_("You don't have permission to create assemblies"), "error")
             return redirect(url_for("main.dashboard"))
         except NotFoundError as e:
-            current_app.logger.error(f"User not found during assembly creation for user {current_user.id}: {e}")
+            logger.error("User not found during assembly creation", user_id=str(current_user.id), error=str(e))
             flash(_("An error occurred while creating the assembly"), "error")
         except Exception as e:
-            current_app.logger.error(f"Create assembly error for user {current_user.id}: {e}")
+            logger.error("Create assembly error", user_id=str(current_user.id), error=str(e))
             flash(_("An error occurred while creating the assembly"), "error")
 
     return render_template("main/create_assembly.html", form=form), 200
@@ -243,18 +264,29 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")
                 return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
             except InsufficientPermissions as e:
-                current_app.logger.warning(
-                    f"Insufficient permissions to edit assembly {assembly_id} for user {current_user.id}: {e}"
+                logger.warning(
+                    "Insufficient permissions to edit assembly",
+                    assembly_id=str(assembly_id),
+                    user_id=str(current_user.id),
+                    error=str(e),
                 )
                 flash(_("You don't have permission to edit this assembly"), "error")
                 return redirect(url_for("main.view_assembly", assembly_id=assembly_id))
             except NotFoundError as e:
-                current_app.logger.error(
-                    f"Assembly or user not found while editing assembly {assembly_id} user {current_user.id}: {e}"
+                logger.error(
+                    "Assembly or user not found while editing assembly",
+                    assembly_id=str(assembly_id),
+                    user_id=str(current_user.id),
+                    error=str(e),
                 )
                 flash(_("An error occurred while updating the assembly"), "error")
             except Exception as e:
-                current_app.logger.error(f"Edit assembly error for assembly {assembly_id} user {current_user.id}: {e}")
+                logger.error(
+                    "Edit assembly error",
+                    assembly_id=str(assembly_id),
+                    user_id=str(current_user.id),
+                    error=str(e),
+                )
                 flash(_("An error occurred while updating the assembly"), "error")
 
         return render_template(
@@ -264,17 +296,24 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             current_tab="details",
         ), 200
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for edit by user {current_user.id}: {e}")
+        logger.warning(
+            "Assembly not found for edit", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
         flash(_("Assembly not found"), "error")
         return redirect(url_for("main.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions to view assembly {assembly_id} for edit by user {current_user.id}: {e}"
+        logger.warning(
+            "Insufficient permissions to view assembly for edit",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("main.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Edit assembly page error for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.error(
+            "Edit assembly page error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
         return render_template("errors/500.html"), 500
 
 
@@ -325,18 +364,24 @@ def add_user_to_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
 
     except NotFoundError as e:
-        current_app.logger.error(f"Invalid user ID for assembly {assembly_id}: {e}")
+        logger.error("Invalid user ID for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Invalid user selection"), "error")
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions to add user to assembly {assembly_id} for user {current_user.id}: {e}"
+        logger.warning(
+            "Insufficient permissions to add user to assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to add users to this assembly"), "error")
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(
-            f"Unexpected error adding user to assembly {assembly_id} for user {current_user.id}: {e}"
+        logger.error(
+            "Unexpected error adding user to assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("An error occurred while adding the user to the assembly"), "error")
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
@@ -365,18 +410,24 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
 
     except NotFoundError as e:
-        current_app.logger.error(f"Error removing user from assembly {assembly_id}: {e}")
+        logger.error("Error removing user from assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Could not remove user from assembly: %(error)s", error=str(e)), "error")
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions to remove user from assembly {assembly_id} for user {current_user.id}: {e}"
+        logger.warning(
+            "Insufficient permissions to remove user from assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to remove users from this assembly"), "error")
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(
-            f"Unexpected error removing user from assembly {assembly_id} for user {current_user.id}: {e}"
+        logger.error(
+            "Unexpected error removing user from assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("An error occurred while removing the user from the assembly"), "error")
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
@@ -415,5 +466,5 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions:
         return render_template("main/search_user_results.html", users=[], search_term=""), 403
     except Exception as e:
-        current_app.logger.error(f"Error searching users for assembly {assembly_id}: {e}")
+        logger.error("Error searching users for assembly", assembly_id=str(assembly_id), error=str(e))
         return render_template("main/search_user_results.html", users=[], search_term=""), 500

@@ -4,6 +4,7 @@ ABOUTME: Provides /backoffice/assembly/*/gsheet/*, selection/*, replacement/*, a
 import contextlib
 import uuid
 
+import structlog
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
@@ -48,6 +49,8 @@ from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
 gsheets_bp = Blueprint("gsheets", __name__)
+
+logger = structlog.get_logger(__name__)
 
 
 def _get_manage_tabs_context(
@@ -96,7 +99,7 @@ def _get_selection_modal_context(
                 translate_run_report_to_html(result.run_report) if result.run_report else "",
             )
     except (ValueError, TypeError):
-        current_app.logger.debug("Invalid selection_param for _get_selection_modal_context: %r", selection_param)
+        logger.debug("Invalid selection_param for _get_selection_modal_context: %r", selection_param)
 
     return None, None, [], ""
 
@@ -157,7 +160,7 @@ def _get_replacement_modal_context(
                 _load_features_pending(result.run_record, result),
             )
     except (ValueError, TypeError):
-        current_app.logger.debug("Invalid replacement_param for _get_replacement_modal_context: %r", replacement_param)
+        logger.debug("Invalid replacement_param for _get_replacement_modal_context: %r", replacement_param)
 
     return None, None, [], "", initial_min_select, initial_max_select, False
 
@@ -223,7 +226,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         try:
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
         except Exception as gsheet_error:
-            current_app.logger.error(f"Error loading gsheet config for selection: {gsheet_error}")
+            logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
 
         # Fetch paginated selection history
         run_history: list = []
@@ -236,7 +239,11 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 )
                 total_pages = (total_count + per_page - 1) // per_page
         except Exception as history_error:
-            current_app.logger.error(f"Error loading selection history for assembly {assembly_id}: {history_error}")
+            logger.error(
+                "Error loading selection history for assembly",
+                assembly_id=str(assembly_id),
+                error=str(history_error),
+            )
 
         replacement_modal_open = request.args.get("replacement_modal") == "open" or current_replacement is not None
         edit_number_modal_open = request.args.get("edit_number") == "1"
@@ -266,7 +273,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 with uow:
                     csv_selected_count = count_non_pool_respondents(uow, assembly_id)
             except Exception as count_error:
-                current_app.logger.error(f"Error counting non-pool respondents: {count_error}")
+                logger.error("Error counting non-pool respondents", error=str(count_error))
         else:
             data_source = ""
             targets_enabled = False
@@ -308,16 +315,15 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             active_initial_selection_run_id=active_initial_selection_run_id,
         ), 200
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for selection page: {e}")
+        logger.warning("Assembly not found for selection page", assembly_id=str(assembly_id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} selection: {e}")
+        logger.warning("Insufficient permissions for assembly selection", assembly_id=str(assembly_id), error=str(e))
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"View assembly selection error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("View assembly selection error", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while loading the selection page"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
@@ -349,8 +355,11 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
             return "", 404
 
         if result.run_record.assembly_id != assembly_id:
-            current_app.logger.warning(
-                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            logger.warning(
+                "Run does not belong to assembly",
+                run_id=str(run_id),
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
             )
             return "", 404
 
@@ -369,7 +378,7 @@ def selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respo
     except InsufficientPermissions:
         return "", 403
     except Exception as e:
-        current_app.logger.error(f"Selection progress modal error: {e}")
+        logger.error("Selection progress modal error", error=str(e))
         return "", 500
 
 
@@ -393,8 +402,11 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
             return "", 404
 
         if result.run_record.assembly_id != assembly_id:
-            current_app.logger.warning(
-                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            logger.warning(
+                "Run does not belong to assembly",
+                run_id=str(run_id),
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
             )
             return "", 404
 
@@ -425,7 +437,7 @@ def replacement_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Res
     except InsufficientPermissions:
         return "", 403
     except Exception as e:
-        current_app.logger.error(f"Replacement progress modal error: {e}")
+        logger.error("Replacement progress modal error", error=str(e))
         return "", 500
 
 
@@ -447,16 +459,15 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
         )
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly or gsheet not found for load task: {e}")
+        logger.warning("Assembly or gsheet not found for load task", error=str(e))
         flash(_("Please configure a Google Spreadsheet first"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for load task: {e}")
+        logger.warning("Insufficient permissions for load task", error=str(e))
         flash(_("You don't have permission to run selection"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Start selection load error: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("Start selection load error", error=str(e))
         flash(_("An error occurred while starting the validation task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -482,16 +493,15 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
         )
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly or gsheet not found for selection task: {e}")
+        logger.warning("Assembly or gsheet not found for selection task", error=str(e))
         flash(_("Please configure a Google Spreadsheet first"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for selection task: {e}")
+        logger.warning("Insufficient permissions for selection task", error=str(e))
         flash(_("You don't have permission to run selection"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Start selection run error: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("Start selection run error", error=str(e))
         flash(_("An error occurred while starting the selection task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -515,20 +525,19 @@ def cancel_selection_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
             )
         )
     except InvalidSelection as e:
-        current_app.logger.warning(f"Cannot cancel task: {e}")
+        logger.warning("Cannot cancel task", error=str(e))
         flash(_("Cannot cancel task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
-        current_app.logger.warning(f"Task not found for cancel: {e}")
+        logger.warning("Task not found for cancel", error=str(e))
         flash(_("Task not found"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions to cancel task: {e}")
+        logger.warning("Insufficient permissions to cancel task", error=str(e))
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Cancel selection run error: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("Cancel selection run error", error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -550,16 +559,15 @@ def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
             url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
         )
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly or gsheet not found for manage tabs list: {e}")
+        logger.warning("Assembly or gsheet not found for manage tabs list", error=str(e))
         flash(_("Please configure a Google Spreadsheet first"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for manage tabs list: {e}")
+        logger.warning("Insufficient permissions for manage tabs list", error=str(e))
         flash(_("You don't have permission to manage tabs"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Start manage tabs list error: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("Start manage tabs list error", error=str(e))
         flash(_("An error occurred while starting the list tabs task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -578,16 +586,15 @@ def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
             url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, current_manage_tabs=task_id)
         )
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly or gsheet not found for manage tabs delete: {e}")
+        logger.warning("Assembly or gsheet not found for manage tabs delete", error=str(e))
         flash(_("Please configure a Google Spreadsheet first"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for manage tabs delete: {e}")
+        logger.warning("Insufficient permissions for manage tabs delete", error=str(e))
         flash(_("You don't have permission to manage tabs"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Start manage tabs delete error: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("Start manage tabs delete error", error=str(e))
         flash(_("An error occurred while starting the delete tabs task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -613,8 +620,11 @@ def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
             return "", 404
 
         if result.run_record.assembly_id != assembly_id:
-            current_app.logger.warning(
-                f"Run {run_id} does not belong to assembly {assembly_id} - user {current_user.id}"
+            logger.warning(
+                "Run does not belong to assembly",
+                run_id=str(run_id),
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
             )
             return "", 404
 
@@ -637,7 +647,7 @@ def manage_tabs_progress(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseR
     except InsufficientPermissions:
         return "", 403
     except Exception as e:
-        current_app.logger.error(f"Manage tabs progress modal error: {e}")
+        logger.error("Manage tabs progress modal error", error=str(e))
         return "", 500
 
 
@@ -660,20 +670,19 @@ def cancel_manage_tabs(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRet
             )
         )
     except InvalidSelection as e:
-        current_app.logger.warning(f"Cannot cancel manage tabs task: {e}")
+        logger.warning("Cannot cancel manage tabs task", error=str(e))
         flash(_("Cannot cancel task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except NotFoundError as e:
-        current_app.logger.warning(f"Manage tabs task not found for cancel: {e}")
+        logger.warning("Manage tabs task not found for cancel", error=str(e))
         flash(_("Task not found"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions to cancel manage tabs task: {e}")
+        logger.warning("Insufficient permissions to cancel manage tabs task", error=str(e))
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except Exception as e:
-        current_app.logger.error(f"Cancel manage tabs error: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("Cancel manage tabs error", error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -714,16 +723,15 @@ def view_run_details(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseRetur
             )
 
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for run details: {e}")
+        logger.warning("Assembly not found for run details", assembly_id=str(assembly_id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} run details: {e}")
+        logger.warning("Insufficient permissions for assembly run details", assembly_id=str(assembly_id), error=str(e))
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"View run details error for assembly {assembly_id} run {run_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("View run details error", assembly_id=str(assembly_id), run_id=str(run_id), error=str(e))
         flash(_("An error occurred while loading the run details"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
@@ -768,24 +776,27 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("gsheets.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=task_id))
 
     except InvalidSelection as e:
-        current_app.logger.warning(f"Invalid selection attempted with replacement load for assembly {assembly_id}: {e}")
+        logger.warning("Invalid selection attempted with replacement load", assembly_id=str(assembly_id), error=str(e))
         flash(_("Could not start task to read gsheet: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
     except NotFoundError as e:
-        current_app.logger.warning(f"Failed to start replacement load for assembly {assembly_id}: {e}")
+        logger.warning("Failed to start replacement load for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Failed to start loading task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions for starting replacement load {assembly_id} user {current_user.id}: {e}"
+        logger.warning(
+            "Insufficient permissions for starting replacement load",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     except Exception as e:
-        current_app.logger.error(f"Error starting replacement load for assembly {assembly_id}: {e}")
+        logger.error("Error starting replacement load for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the loading task"), "error")
         return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
@@ -829,19 +840,22 @@ def start_replacement_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except NotFoundError as e:
-        current_app.logger.warning(f"Failed to start replacement for assembly {assembly_id}: {e}")
+        logger.warning("Failed to start replacement for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Failed to start replacement task: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
     except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions for starting replacement {assembly_id} user {current_user.id}: {e}"
+        logger.warning(
+            "Insufficient permissions for starting replacement",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to manage this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     except Exception as e:
-        current_app.logger.error(f"Error starting replacement for assembly {assembly_id}: {e}")
+        logger.error("Error starting replacement for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the replacement task"), "error")
         return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
@@ -859,22 +873,29 @@ def cancel_replacement_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Respons
         return redirect(url_for("gsheets.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))
 
     except NotFoundError as e:
-        current_app.logger.warning(f"Task {run_id} not found for cancellation by user {current_user.id}: {e}")
+        logger.warning(
+            "Task not found for cancellation", run_id=str(run_id), user_id=str(current_user.id), error=str(e)
+        )
         flash(_("Task not found"), "error")
         return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
     except InvalidSelection as e:
-        current_app.logger.warning(f"Cannot cancel task {run_id}: {e}")
+        logger.warning("Cannot cancel task", run_id=str(run_id), error=str(e))
         flash(str(e), "error")
         return redirect(url_for("gsheets.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))
 
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions to cancel task {run_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions to cancel task",
+            run_id=str(run_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to cancel this task"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
     except Exception as e:
-        current_app.logger.error(f"Error cancelling task {run_id}: {e}")
+        logger.error("Error cancelling task", run_id=str(run_id), error=str(e))
         flash(_("An error occurred while cancelling the task"), "error")
         return redirect(url_for("gsheets.view_assembly_replacement_with_run", assembly_id=assembly_id, run_id=run_id))
 
@@ -949,14 +970,14 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
             try:
                 return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
             except InsufficientPermissions as e:
-                current_app.logger.warning(f"Insufficient permissions for gsheet save: {e}")
+                logger.warning("Insufficient permissions for gsheet save", error=str(e))
                 flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
                 return redirect(url_for("backoffice.dashboard"))
             except NotFoundError as e:
-                current_app.logger.error(f"Gsheet save validation error for assembly {assembly_id}: {e}")
+                logger.error("Gsheet save validation error for assembly", assembly_id=str(assembly_id), error=str(e))
                 flash(_("Please check your input and try again"), "error")
             except Exception as e:
-                current_app.logger.error(f"Gsheet save error for assembly {assembly_id}: {e}")
+                logger.error("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
                 flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
 
         # Form validation failed or service error - re-render the page with errors.
@@ -981,16 +1002,17 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         ), 200
 
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for gsheet save: {e}")
+        logger.warning("Assembly not found for gsheet save", assembly_id=str(assembly_id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions to save gsheet for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Insufficient permissions to save gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
+        )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Gsheet save error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
 
@@ -1007,15 +1029,16 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
 
     except NotFoundError as e:
-        current_app.logger.warning(f"Gsheet config not found for delete: {e}")
+        logger.warning("Gsheet config not found for delete", error=str(e))
         flash(_("Google Spreadsheet configuration not found"), "error")
         return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions to delete gsheet for assembly {assembly_id}: {e}")
+        logger.warning(
+            "Insufficient permissions to delete gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
+        )
         flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Gsheet delete error for assembly {assembly_id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception("Gsheet delete error for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
         return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))

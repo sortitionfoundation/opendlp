@@ -1,9 +1,10 @@
 """ABOUTME: Password reset service layer for managing password recovery
 ABOUTME: Handles reset token creation, validation, rate limiting, and password updates"""
 
-import logging
 import uuid
 from datetime import UTC, datetime, timedelta
+
+import structlog
 
 from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.template_renderer import TemplateRenderer
@@ -15,7 +16,7 @@ from .exceptions import InvalidResetToken, PasswordTooWeak, RateLimitExceeded
 from .security import TempUser, hash_password, validate_password_strength
 from .unit_of_work import AbstractUnitOfWork
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Configuration constants
 DEFAULT_TOKEN_EXPIRY_HOURS = 1
@@ -317,12 +318,12 @@ def send_password_reset_email(
         )
 
         if success:
-            logger.info(f"Password reset email sent to {user.email}")
+            logger.info("Password reset email sent", user_id=str(user.id))
         else:
-            logger.error(f"Failed to send password reset email to {user.email}")
+            logger.error("Failed to send password reset email", user_id=str(user.id))
 
         return success
 
     except Exception as e:
-        logger.error(f"Error sending password reset email to {user.email}: {e}")
+        logger.error("Error sending password reset email", user_id=str(user.id), error=str(e))
         return False

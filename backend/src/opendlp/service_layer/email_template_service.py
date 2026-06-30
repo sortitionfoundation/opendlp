@@ -1,10 +1,11 @@
 """ABOUTME: Service layer for managing assembly-scoped email templates
 ABOUTME: Handles CRUD with permission checks, validation and auto-reply assignment"""
 
-import logging
 import uuid
 from dataclasses import dataclass
 from enum import Enum
+
+import structlog
 
 from opendlp.config import get_email_template_body_max_bytes
 from opendlp.domain.email_template import EmailTemplate
@@ -22,7 +23,7 @@ from .exceptions import (
 from .permissions import can_manage_assembly, can_view_assembly
 from .unit_of_work import AbstractUnitOfWork
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _MANAGE_ROLE = "assembly-manager, global-organiser or admin"
 _VIEW_ROLE = "assembly role or global privileges"

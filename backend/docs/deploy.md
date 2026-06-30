@@ -334,7 +334,7 @@ services:
       - postgres
     command: uv run alembic upgrade head
     environment:
-      - DATABASE_URL=postgresql://user:pass@postgres:5432/opendlp
+      - DATABASE_URL=postgresql://user:pass@postgres:5432/opendlp # pragma: allowlist secret
 
   opendlp:
     build: .

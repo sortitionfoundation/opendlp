@@ -3,11 +3,13 @@ ABOUTME: Tests console logging, SMTP message construction, and address parsing""
 
 import logging
 import smtplib
+from io import StringIO
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from opendlp.adapters.email import ConsoleEmailAdapter, EmailAdapter, SMTPEmailAdapter
+from opendlp.log_redaction import EMAIL_PLACEHOLDER
 
 
 class TestEmailAdapter:
@@ -35,85 +37,121 @@ class TestEmailAdapter:
 
 
 class TestConsoleEmailAdapter:
-    """Tests for ConsoleEmailAdapter."""
+    """Tests for ConsoleEmailAdapter.
 
-    def test_send_email_logs_to_console(self, caplog: pytest.LogCaptureFixture) -> None:
-        """Test that ConsoleEmailAdapter logs email details."""
-        adapter = ConsoleEmailAdapter()
+    The console adapter is dev-only and intentionally shows the real recipient
+    address. It writes to sys.stdout (not the logging system), so it neither
+    triggers the email-in-log audit nor gets scrubbed by the redaction processor.
+    """
 
-        with caplog.at_level(logging.INFO):
-            result = adapter.send_email(
-                to=["recipient@example.com"],
-                subject="Test Subject",
-                text_body="This is the email body",
-            )
+    def test_send_email_writes_to_output_stream(self) -> None:
+        """Test that ConsoleEmailAdapter writes email details to its output stream."""
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
 
+        result = adapter.send_email(
+            to=["recipient@example.com"],
+            subject="Test Subject",
+            text_body="This is the email body",
+        )
+
+        out = stream.getvalue()
         assert result is True
-        assert "EMAIL (Console):" in caplog.text
-        assert "To: recipient@example.com" in caplog.text
-        assert "Subject: Test Subject" in caplog.text
-        assert "This is the email body" in caplog.text
-        assert "Has HTML: No" in caplog.text
+        assert "EMAIL (Console):" in out
+        assert "To: recipient@example.com" in out
+        assert "Subject: Test Subject" in out
+        assert "This is the email body" in out
+        assert "Has HTML: No" in out
 
-    def test_send_email_logs_reply_to(self, caplog: pytest.LogCaptureFixture) -> None:
-        """ConsoleEmailAdapter includes the reply-to address when provided."""
+    def test_send_email_defaults_to_stdout(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Test that ConsoleEmailAdapter writes to stdout when no stream is given."""
         adapter = ConsoleEmailAdapter()
 
-        with caplog.at_level(logging.INFO):
+        result = adapter.send_email(
+            to=["recipient@example.com"],
+            subject="Test Subject",
+            text_body="This is the email body",
+        )
+
+        out = capsys.readouterr().out
+        assert result is True
+        assert "EMAIL (Console):" in out
+        assert "To: recipient@example.com" in out
+
+    def test_send_email_does_not_use_logging(self, caplog: pytest.LogCaptureFixture) -> None:
+        """The recipient address must not be routed through the logging system."""
+        adapter = ConsoleEmailAdapter()
+
+        with caplog.at_level(logging.DEBUG):
             adapter.send_email(
                 to=["recipient@example.com"],
                 subject="Subject",
                 text_body="Body",
-                reply_to="team@example.com",
             )
 
-        assert "Reply-To: team@example.com" in caplog.text
+        assert "recipient@example.com" not in caplog.text
 
-    def test_send_email_with_html(self, caplog: pytest.LogCaptureFixture) -> None:
-        """Test console logging with HTML body."""
-        adapter = ConsoleEmailAdapter()
+    def test_send_email_writes_reply_to(self) -> None:
+        """ConsoleEmailAdapter includes the reply-to address when provided."""
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
 
-        with caplog.at_level(logging.INFO):
-            result = adapter.send_email(
-                to=["recipient@example.com"],
-                subject="Test Subject",
-                text_body="Plain text",
-                html_body="<p>HTML content</p>",
-            )
+        adapter.send_email(
+            to=["recipient@example.com"],
+            subject="Subject",
+            text_body="Body",
+            reply_to="team@example.com",
+        )
+
+        assert "Reply-To: team@example.com" in stream.getvalue()
+
+    def test_send_email_with_html(self) -> None:
+        """Test console output with HTML body."""
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
+
+        result = adapter.send_email(
+            to=["recipient@example.com"],
+            subject="Test Subject",
+            text_body="Plain text",
+            html_body="<p>HTML content</p>",
+        )
 
         assert result is True
-        assert "Has HTML: Yes" in caplog.text
+        assert "Has HTML: Yes" in stream.getvalue()
 
-    def test_send_email_with_multiple_recipients(self, caplog: pytest.LogCaptureFixture) -> None:
-        """Test console logging with multiple recipients."""
-        adapter = ConsoleEmailAdapter()
+    def test_send_email_with_multiple_recipients(self) -> None:
+        """Test console output with multiple recipients."""
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
 
-        with caplog.at_level(logging.INFO):
-            result = adapter.send_email(
-                to=["user1@example.com", ("User Two", "user2@example.com")],
-                subject="Test",
-                text_body="Body",
-            )
+        result = adapter.send_email(
+            to=["user1@example.com", ("User Two", "user2@example.com")],
+            subject="Test",
+            text_body="Body",
+        )
 
+        out = stream.getvalue()
         assert result is True
-        assert "user1@example.com" in caplog.text
-        assert "User Two <user2@example.com>" in caplog.text
+        assert "user1@example.com" in out
+        assert "User Two <user2@example.com>" in out
 
-    def test_send_email_truncates_long_body(self, caplog: pytest.LogCaptureFixture) -> None:
-        """Test that long email bodies are truncated in logs."""
-        adapter = ConsoleEmailAdapter()
+    def test_send_email_truncates_long_body(self) -> None:
+        """Test that long email bodies are truncated in console output."""
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
         long_body = "A" * 500
 
-        with caplog.at_level(logging.INFO):
-            adapter.send_email(
-                to=["recipient@example.com"],
-                subject="Test",
-                text_body=long_body,
-            )
+        adapter.send_email(
+            to=["recipient@example.com"],
+            subject="Test",
+            text_body=long_body,
+        )
 
-        assert "..." in caplog.text
+        out = stream.getvalue()
+        assert "..." in out
         # Should show first 200 chars plus "..."
-        assert long_body[:200] in caplog.text
+        assert long_body[:200] in out
         assert len(long_body) > 200  # Verify we actually had a long body
 
 
@@ -306,7 +344,7 @@ class TestSMTPEmailAdapter:
             assert result is True
             mock_server.starttls.assert_not_called()
 
-    def test_send_email_smtp_exception(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_send_email_smtp_exception(self, capture_json_handler: StringIO) -> None:
         """Test error handling when SMTP raises an exception."""
         adapter = SMTPEmailAdapter(
             host="smtp.example.com",
@@ -321,17 +359,16 @@ class TestSMTPEmailAdapter:
         with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
             mock_smtp.return_value.__enter__.return_value.sendmail.side_effect = smtplib.SMTPException("SMTP error")
 
-            with caplog.at_level(logging.ERROR):
-                result = adapter.send_email(
-                    to=["recipient@example.com"],
-                    subject="Test",
-                    text_body="Body",
-                )
+            result = adapter.send_email(
+                to=["recipient@example.com"],
+                subject="Test",
+                text_body="Body",
+            )
 
             assert result is False
-            assert "SMTP error sending email" in caplog.text
+            assert "SMTP error sending email" in capture_json_handler.getvalue()
 
-    def test_send_email_general_exception(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_send_email_general_exception(self, capture_json_handler: StringIO) -> None:
         """Test error handling for unexpected exceptions."""
         adapter = SMTPEmailAdapter(
             host="smtp.example.com",
@@ -346,15 +383,62 @@ class TestSMTPEmailAdapter:
         with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
             mock_smtp.return_value.__enter__.return_value.sendmail.side_effect = ValueError("Unexpected error")
 
-            with caplog.at_level(logging.ERROR):
-                result = adapter.send_email(
-                    to=["recipient@example.com"],
-                    subject="Test",
-                    text_body="Body",
-                )
+            result = adapter.send_email(
+                to=["recipient@example.com"],
+                subject="Test",
+                text_body="Body",
+            )
 
             assert result is False
-            assert "Unexpected error sending email" in caplog.text
+            assert "Unexpected error sending email" in capture_json_handler.getvalue()
+
+    def test_send_email_smtp_exception_redacts_recipient(self, capture_json_handler: StringIO) -> None:
+        """A recipient address echoed in an SMTP error must be redacted in the log output."""
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="user",
+            password="pass",  # pragma: allowlist secret
+            use_tls=True,
+            default_from_email="sender@example.com",
+            default_from_name="",
+        )
+
+        with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
+            mock_smtp.return_value.__enter__.return_value.sendmail.side_effect = smtplib.SMTPException(
+                "550 5.1.1 <recipient@example.com> unknown user"
+            )
+
+            result = adapter.send_email(to=["recipient@example.com"], subject="Test", text_body="Body")
+
+        assert result is False
+        output = capture_json_handler.getvalue()
+        assert "recipient@example.com" not in output
+        assert EMAIL_PLACEHOLDER in output
+
+    def test_send_email_general_exception_redacts_recipient(self, capture_json_handler: StringIO) -> None:
+        """A recipient address echoed in an unexpected error must be redacted in the log output."""
+        adapter = SMTPEmailAdapter(
+            host="smtp.example.com",
+            port=587,
+            username="user",
+            password="pass",  # pragma: allowlist secret
+            use_tls=True,
+            default_from_email="sender@example.com",
+            default_from_name="",
+        )
+
+        with patch("opendlp.adapters.email.smtplib.SMTP") as mock_smtp:
+            mock_smtp.return_value.__enter__.return_value.sendmail.side_effect = ValueError(
+                "bad address recipient@example.com"
+            )
+
+            result = adapter.send_email(to=["recipient@example.com"], subject="Test", text_body="Body")
+
+        assert result is False
+        output = capture_json_handler.getvalue()
+        assert "recipient@example.com" not in output
+        assert EMAIL_PLACEHOLDER in output
 
     def test_send_email_without_authentication(self) -> None:
         """Test sending email without authentication (empty username/password)."""

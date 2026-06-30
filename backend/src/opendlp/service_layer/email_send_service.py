@@ -1,8 +1,9 @@
 """ABOUTME: Service layer for rendering and sending templated emails to respondents
 ABOUTME: Builds the context, sends via the adapter and writes a respondent send record"""
 
-import logging
 import uuid
+
+import structlog
 
 from opendlp.adapters.email import EmailAdapter
 from opendlp.domain.assembly import Assembly
@@ -13,7 +14,7 @@ from opendlp.domain.respondents import Respondent
 
 from .unit_of_work import AbstractUnitOfWork
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def build_email_context(assembly: Assembly, respondent: Respondent) -> dict:

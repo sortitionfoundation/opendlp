@@ -6,7 +6,8 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, TypeVar
 
-from flask import abort, current_app, flash, redirect, request, url_for
+import structlog
+from flask import abort, flash, redirect, request, url_for
 from flask_login import current_user
 
 from opendlp.bootstrap import get_flask_uow
@@ -22,6 +23,9 @@ from opendlp.service_layer.permissions import (
 from opendlp.translations import _
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+logger = structlog.get_logger(__name__)
 
 
 def require_feature(flag_name: str) -> Callable[[F], F]:
@@ -68,7 +72,7 @@ def require_global_role(required_role: GlobalRole) -> Callable[[F], F]:
             required_role_level = get_role_level(required_role)
 
             if user_role_level < required_role_level:
-                current_app.logger.warning(
+                logger.warning(
                     f"User {current_user.id} attempted to access {request.endpoint} "
                     f"with role {current_user.global_role} (required: {required_role})"
                 )
@@ -115,7 +119,7 @@ def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
                 assembly_id = request.view_args.get("assembly_id") if request.view_args else None
 
             if not assembly_id:
-                current_app.logger.error(f"No assembly_id found for permission check in {request.endpoint}")
+                logger.error(f"No assembly_id found for permission check in {request.endpoint}")
                 abort(400)
 
             try:
@@ -128,7 +132,7 @@ def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
                         abort(404)
 
                     if not permission_func(current_user, assembly):
-                        current_app.logger.warning(
+                        logger.warning(
                             f"User {current_user.id} denied access to assembly {assembly_id} at {request.endpoint}"
                         )
                         abort(403)
@@ -196,7 +200,7 @@ def require_assembly_role(required_role: AssemblyRole) -> Callable[[F], F]:
                 )
 
                 if not user_has_role:
-                    current_app.logger.warning(
+                    logger.warning(
                         f"User {current_user.id} missing role {required_role} "
                         f"for assembly {assembly_id} at {request.endpoint}"
                     )

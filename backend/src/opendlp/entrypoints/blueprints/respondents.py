@@ -6,7 +6,8 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+import structlog
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -61,6 +62,8 @@ from opendlp.service_layer.respondent_service import (
 from opendlp.translations import gettext as _
 
 respondents_bp = Blueprint("respondents", __name__)
+
+logger = structlog.get_logger(__name__)
 
 
 def _run_csv_import(
@@ -136,8 +139,11 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         raw = file.read()
         max_bytes = get_max_csv_upload_bytes()
         if len(raw) > max_bytes:
-            current_app.logger.warning(
-                f"Rejected oversized CSV upload for assembly {assembly_id}: {len(raw)} bytes exceeds limit {max_bytes}"
+            logger.warning(
+                "Rejected oversized CSV upload",
+                assembly_id=str(assembly_id),
+                size_bytes=len(raw),
+                limit_bytes=max_bytes,
             )
             flash(
                 _(
@@ -188,26 +194,33 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except InvalidSelection as e:
-        current_app.logger.warning(f"Invalid CSV format for respondents upload assembly {assembly_id}: {e}")
+        logger.warning("Invalid CSV format for respondents upload", assembly_id=str(assembly_id), error=str(e))
         flash(_("Invalid CSV format: %(error)s", error=str(e)), "error")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )
     except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions to upload respondents for assembly {assembly_id} user {current_user.id}: {e}"
+        logger.warning(
+            "Insufficient permissions to upload respondents for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to upload respondents"), "error")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for respondents upload: {e}")
+        logger.warning("Assembly not found for respondents upload", assembly_id=str(assembly_id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Upload respondents error for assembly {assembly_id} user {current_user.id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception(
+            "Upload respondents error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("An error occurred while uploading respondents"), "error")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
@@ -313,20 +326,27 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
 
     except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions to delete respondents for assembly {assembly_id} user {current_user.id}: {e}"
+        logger.warning(
+            "Insufficient permissions to delete respondents for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to delete respondents"), "error")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for respondents deletion: {e}")
+        logger.warning("Assembly not found for respondents deletion", assembly_id=str(assembly_id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Delete respondents error for assembly {assembly_id} user {current_user.id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception(
+            "Delete respondents error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("An error occurred while deleting respondents"), "error")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
@@ -409,18 +429,25 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             can_edit=can_edit,
         ), 200
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(
-            f"View assembly respondents error for assembly {assembly_id} user {current_user.id}: {e}"
+        logger.exception(
+            "View assembly respondents error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
-        current_app.logger.exception("Full stacktrace:")
         flash(_("An error occurred while loading assembly respondents"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
@@ -449,23 +476,35 @@ def delete_respondent_route(assembly_id: uuid.UUID, respondent_id: uuid.UUID) ->
         flash(_("Respondent personal data deleted"), "success")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
     except InsufficientPermissions as e:
-        current_app.logger.warning(
-            f"Insufficient permissions to delete respondent {respondent_id} "
-            f"in assembly {assembly_id} user {current_user.id}: {e}"
+        logger.warning(
+            "Insufficient permissions to delete respondent",
+            respondent_id=str(respondent_id),
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
         )
         flash(_("You don't have permission to delete respondents"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except RespondentNotFoundError as e:
-        current_app.logger.warning(f"Respondent {respondent_id} not found in assembly {assembly_id}: {e}")
+        logger.warning(
+            "Respondent not found in assembly",
+            respondent_id=str(respondent_id),
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Respondent not found"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for respondent deletion: {e}")
+        logger.warning("Assembly not found for respondent deletion", assembly_id=str(assembly_id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"Delete respondent error for respondent {respondent_id} user {current_user.id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception(
+            "Delete respondent error",
+            respondent_id=str(respondent_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("An error occurred while deleting the respondent"), "error")
         return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
 
@@ -512,20 +551,34 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             allowed_transitions=allowed_transitions,
         ), 200
     except RespondentNotFoundError as e:
-        current_app.logger.warning(f"Respondent {respondent_id} not found in assembly {assembly_id}: {e}")
+        logger.warning(
+            "Respondent not found in assembly",
+            respondent_id=str(respondent_id),
+            assembly_id=str(assembly_id),
+            error=str(e),
+        )
         flash(_("Respondent not found"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError as e:
-        current_app.logger.warning(f"Assembly {assembly_id} not found for user {current_user.id}: {e}")
+        logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except InsufficientPermissions as e:
-        current_app.logger.warning(f"Insufficient permissions for assembly {assembly_id} user {current_user.id}: {e}")
+        logger.warning(
+            "Insufficient permissions for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        current_app.logger.error(f"View respondent error for respondent {respondent_id} user {current_user.id}: {e}")
-        current_app.logger.exception("Full stacktrace:")
+        logger.exception(
+            "View respondent error",
+            respondent_id=str(respondent_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
         flash(_("An error occurred while loading the respondent"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
 

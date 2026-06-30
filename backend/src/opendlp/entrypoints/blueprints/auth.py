@@ -4,6 +4,7 @@ ABOUTME: Handles user authentication flow with invite-based registration"""
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import structlog
 from django.utils.http import url_has_allowed_host_and_scheme
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
@@ -53,6 +54,8 @@ from opendlp.service_layer.user_service import authenticate_user, create_user, f
 from opendlp.translations import gettext as _
 
 auth_bp = Blueprint("auth", __name__)
+
+logger = structlog.get_logger(__name__)
 
 
 def get_safe_next_page(next_page: str | None, default: str = "") -> str:
@@ -137,7 +140,7 @@ def login() -> ResponseReturnValue:
                 "info",
             )
         except Exception as e:
-            current_app.logger.error(f"Login error: {e}")
+            logger.exception("Login error", error=str(e))
             flash(_("An error occurred during login. Please try again."), "error")
 
     return render_template("auth/login.html", form=form)
@@ -301,7 +304,7 @@ def verify_2fa() -> ResponseReturnValue:
             flash(str(e), "error")
             return render_template("auth/verify_2fa.html")
         except Exception as e:
-            current_app.logger.error(f"2FA verification error: {e}")
+            logger.exception("2FA verification error", error=str(e))
             flash(_("An error occurred during verification. Please try again."), "error")
             return render_template("auth/verify_2fa.html")
 
@@ -373,7 +376,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
         except PasswordTooWeak as e:
             flash(_("Password is too weak: %(error)s", error=str(e)), "error")
         except Exception as e:
-            current_app.logger.error(f"Registration error: {e}")
+            logger.exception("Registration error", error=str(e))
             flash(_("An error occurred during registration. Please try again."), "error")
 
     return render_template("auth/register.html", form=form, password_help=password_validators_help_text_html())
@@ -392,7 +395,7 @@ def confirm_email(token: str) -> ResponseReturnValue:
             flash(str(e), "error")
             return redirect(url_for("auth.login"))
         except Exception as e:
-            current_app.logger.error(f"Email confirmation error: {e}")
+            logger.exception("Email confirmation error", error=str(e))
             flash(_("An error occurred. Please try again."), "error")
             return redirect(url_for("auth.login"))
 
@@ -406,7 +409,7 @@ def confirm_email(token: str) -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect(url_for("auth.login"))
     except Exception as e:
-        current_app.logger.error(f"Email confirmation error: {e}")
+        logger.exception("Email confirmation error", error=str(e))
         flash(_("An error occurred. Please try again."), "error")
         return redirect(url_for("auth.login"))
 
@@ -437,7 +440,7 @@ def resend_confirmation() -> ResponseReturnValue:
         except RateLimitExceeded as e:
             flash(str(e), "error")
         except Exception as e:
-            current_app.logger.error(f"Resend confirmation error: {e}")
+            logger.exception("Resend confirmation error", error=str(e))
             flash(_("An error occurred. Please try again."), "error")
 
     return render_template("auth/resend_confirmation.html", form=form)
@@ -490,7 +493,7 @@ def forgot_password() -> ResponseReturnValue:
         except RateLimitExceeded as e:
             flash(str(e), "error")
         except Exception as e:
-            current_app.logger.error(f"Password reset request error: {e}")
+            logger.exception("Password reset request error", error=str(e))
             flash(_("An error occurred. Please try again."), "error")
 
     return render_template("auth/forgot_password.html", form=form)
@@ -530,7 +533,7 @@ def reset_password(token: str) -> ResponseReturnValue:
         except PasswordTooWeak as e:
             flash(_("Password is too weak: %(error)s", error=str(e)), "error")
         except Exception as e:
-            current_app.logger.error(f"Password reset error: {e}")
+            logger.exception("Password reset error", error=str(e))
             flash(_("An error occurred. Please try again."), "error")
 
     return render_template(
@@ -612,7 +615,7 @@ def google_callback() -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect(url_for("auth.register_google"))
     except Exception as e:
-        current_app.logger.error(f"Google OAuth callback error: {e}")
+        logger.exception("Google OAuth callback error", error=str(e))
         flash(_("An error occurred during Google sign in. Please try again."), "error")
         return redirect(url_for("auth.login"))
 
@@ -720,7 +723,7 @@ def microsoft_callback() -> ResponseReturnValue:
         flash(str(e), "error")
         return redirect(url_for("auth.register_microsoft"))
     except Exception as e:
-        current_app.logger.error(f"Microsoft OAuth callback error: {e}")
+        logger.exception("Microsoft OAuth callback error", error=str(e))
         flash(_("An error occurred during Microsoft sign in. Please try again."), "error")
         return redirect(url_for("auth.login"))
 

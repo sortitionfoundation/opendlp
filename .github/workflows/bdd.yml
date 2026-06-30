@@ -18,7 +18,7 @@ jobs:
         env:
           POSTGRES_DB: opendlp
           POSTGRES_USER: opendlp
-          POSTGRES_PASSWORD: abc123
+          POSTGRES_PASSWORD: abc123 # pragma: allowlist secret
         ports:
           - 54322:5432
         options: >-
@@ -61,7 +61,7 @@ jobs:
         env:
           DB_HOST: localhost
           DB_PORT: 54322
-          DB_PASSWORD: abc123
+          DB_PASSWORD: abc123 # pragma: allowlist secret
           REDIS_HOST: localhost
           REDIS_PORT: 63792
 
@@ -70,10 +70,10 @@ jobs:
         env:
           DB_HOST: localhost
           DB_PORT: 54322
-          DB_PASSWORD: abc123
+          DB_PASSWORD: abc123 # pragma: allowlist secret
           REDIS_HOST: localhost
           REDIS_PORT: 63792
-          SECRET_KEY: test-secret-key-for-ci
+          SECRET_KEY: test-secret-key-for-ci # pragma: allowlist secret
           CI: true
 
       - name: Upload test results

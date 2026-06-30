@@ -46,6 +46,11 @@ def should_log_all_requests() -> bool:
     return is_production() and bool_environ_get("LOG_ALL_REQUESTS")
 
 
+def get_secret_key() -> str:
+    """Return the application secret key (env-backed, app-context independent)."""
+    return os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+
+
 @dataclass(slots=True, kw_only=True)
 class PostgresCfg:
     user: str
@@ -397,7 +402,7 @@ class FlaskBaseConfig:
 
     def __init__(self) -> None:
         self.SQLALCHEMY_DATABASE_URI = get_db_uri()
-        self.SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+        self.SECRET_KEY: str = get_secret_key()
         self.FLASK_ENV: str = os.environ.get("FLASK_ENV", "development")
         self.DEBUG: bool = bool_environ_get("DEBUG")
 
@@ -518,7 +523,7 @@ class FlaskTestConfig(FlaskBaseConfig):
             postgres_cfg = PostgresCfg.from_env()
             postgres_cfg.port = 54322
             self.SQLALCHEMY_DATABASE_URI = postgres_cfg.to_url()
-        self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105
+        self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105  # pragma: allowlist secret
         self.FLASK_ENV = "testing"
 
         # Use filesystem for session cache for testing
@@ -563,12 +568,16 @@ class FlaskProductionConfig(FlaskConfig):
         # self.LOG_TO_STDOUT = True
 
         # Ensure production has proper secret key
-        if self.SECRET_KEY == "dev-secret-key-change-in-production":  # noqa: S105
+        if self.SECRET_KEY == "dev-secret-key-change-in-production":  # noqa: S105  # pragma: allowlist secret
             raise InvalidConfig("SECRET_KEY must be set in production")
 
-        # Ensure production has email adapter configured
+        # Ensure production has email adapter configured. The console adapter
+        # prints raw recipient addresses to stdout, bypassing log redaction, so
+        # it must not be used in production.
         if not os.environ.get("EMAIL_ADAPTER"):
             raise InvalidConfig("EMAIL_ADAPTER must be set in production")
+        if self.EMAIL_ADAPTER == "console":
+            raise InvalidConfig("EMAIL_ADAPTER must not be 'console' in production (it logs recipient PII to stdout)")
 
 
 def get_config(config_name: str = "") -> FlaskBaseConfig:

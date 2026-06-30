@@ -1,6 +1,7 @@
 """ABOUTME: Pytest configuration and fixtures for OpenDLP tests
 ABOUTME: Provides test fixtures and configuration for unit, integration, and e2e tests"""
 
+import io
 import logging
 import os
 import re
@@ -12,6 +13,7 @@ from pathlib import Path
 
 import pytest
 import redis
+import structlog
 from click.testing import CliRunner
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -21,6 +23,7 @@ from werkzeug.security import generate_password_hash
 from opendlp.adapters import database, orm
 from opendlp.config import PostgresCfg, RedisCfg, get_api_url
 from opendlp.feature_flags import reload_flags
+from opendlp.logging import pre_chain
 from opendlp.service_layer import security, totp_service
 
 # the plugins have to be defined at the top level, even though they only apply to the BDD tests.
@@ -422,3 +425,31 @@ def test_redis_client(worker_id):
     r.flushdb()
     yield r
     r.flushdb()
+
+
+@pytest.fixture
+def capture_json_handler():
+    """Attach a JSON ProcessorFormatter handler wired exactly like logging.py.
+
+    Yields the StringIO buffer the rendered log lines are written to, then
+    removes the temporary handler again. Uses the real foreign_pre_chain from
+    logging.py so redaction wiring is genuinely exercised. Needed because
+    caplog does not capture structlog-rendered output.
+    """
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    handler.setFormatter(
+        structlog.stdlib.ProcessorFormatter(
+            processor=structlog.processors.JSONRenderer(),
+            foreign_pre_chain=pre_chain,
+        )
+    )
+    root = logging.getLogger()
+    root.addHandler(handler)
+    previous_level = root.level
+    root.setLevel(logging.DEBUG)
+    try:
+        yield stream
+    finally:
+        root.removeHandler(handler)
+        root.setLevel(previous_level)

@@ -41,7 +41,7 @@ class TestGenerateInvite:
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
         )
         uow.users.add(organiser_user)
 
@@ -330,8 +330,10 @@ class TestGetInviteDetails:
         """Test successful retrieval of invite details."""
         uow = FakeUnitOfWork()
         admin_user = User(
-            email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )  # pragma: allowlist secret
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(admin_user)
 
         invite = UserInvite(
@@ -374,11 +376,15 @@ class TestGetInviteDetails:
         """Test invite details retrieval fails for regular user."""
         uow = FakeUnitOfWork()
         admin_user = User(
-            email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )  # pragma: allowlist secret
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         regular_user = User(
-            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )  # pragma: allowlist secret
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(admin_user)
         uow.users.add(regular_user)
 
@@ -397,8 +403,10 @@ class TestGetInviteDetails:
         """Test invite details retrieval fails when invite not found."""
         uow = FakeUnitOfWork()
         admin_user = User(
-            email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )  # pragma: allowlist secret
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(admin_user)
 
         with pytest.raises(InviteNotFoundError) as exc_info:
@@ -425,8 +433,10 @@ class TestGetInviteStatistics:
         """Test successful invite statistics retrieval."""
         uow = FakeUnitOfWork()
         admin_user = User(
-            email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash"
-        )  # pragma: allowlist secret
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(admin_user)
 
         # Add various invites

@@ -34,6 +34,82 @@ except (ValueError, TypeError):
 - Use `warning` for unexpected but recoverable situations
 - Use `error` for failures that affect functionality
 
+## Logging (PII / secrets)
+
+Logs are long-lived and widely accessible, so they must never become a copy of
+personal data we would then have to find and blank for a GDPR erasure request.
+The `log_redaction.censor_pii` processor is a backstop, not a licence to log
+PII — write log calls that are safe before redaction runs.
+
+### Use structlog with structured key/value fields
+
+**Rule:** Use `structlog.get_logger(__name__)`. Pass context as keyword
+arguments (`logger.info("event", user_id=str(user.id))`), not interpolated
+f-strings. Do not use `logging.getLogger` or `current_app.logger` in new code.
+
+**Why:** Structured fields are filterable, and the redaction processor can
+reason about field *names* (it redacts values of sensitive keys). An f-string
+collapses everything into one opaque message.
+
+### Never log raw PII
+
+**Rule:** Do not log emails, names, addresses, phone numbers, or any other
+personal data of users or registrants/respondents.
+
+- Log `user_id` (a UUID), never the email/name. UUIDs survive a GDPR erasure
+  because the row is blanked, not deleted.
+- Where no UUID exists yet (e.g. pre-auth, login rate limiting), hash the value
+  with `log_redaction.hash_email` instead of logging it.
+
+**Bad:**
+```python
+logger.info("Login attempt", email=email)
+logger.info(f"Sending invite to {invite.email}")
+```
+
+**Good:**
+```python
+logger.info("Login attempt", email_hash=hash_email(email))
+logger.info("Sending invite", user_id=str(user.id))
+```
+
+### Beware `error=str(e)` and exception messages
+
+**Rule:** Treat exception text as potentially PII-bearing. A respondent name,
+address, or email can end up inside a validation/parsing error message (e.g.
+CSV import, sortition validation). `censor_pii` scrubs emails and sensitive
+keys, but it cannot redact a name or address embedded in free text.
+
+- Prefer logging a stable, controlled message plus structured IDs over dumping
+  `str(e)` when the exception may quote user-supplied data.
+- The CSV/sheet import and sortition paths are the highest-risk spots — review
+  any new `error=str(e)` there with this in mind.
+
+### Use `logger.exception` in catch-all handlers
+
+**Rule:** Inside a catch-all `except Exception` block, use `logger.exception(...)`
+so the traceback is captured. Do not pair a `logger.error(...)` with a separate
+`logger.exception("stacktrace")` — `logger.exception` already records both the
+message (with structured fields) and the traceback in one call.
+
+**Bad:**
+```python
+except Exception as e:
+    logger.error("Upload failed", assembly_id=str(assembly_id), error=str(e))
+    logger.exception("stacktrace")
+```
+
+**Good:**
+```python
+except Exception as e:
+    logger.exception("Upload failed", assembly_id=str(assembly_id), error=str(e))
+```
+
+Specific, expected exceptions (e.g. `except NotFoundError`) where no traceback
+is wanted may stay on `logger.error`.
+
+See [docs/agent/617-log-redaction/](617-log-redaction/) for the redaction design.
+
 ## Cyclomatic Complexity
 
 ### Keep functions under complexity threshold (C901)

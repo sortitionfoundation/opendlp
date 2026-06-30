@@ -1,8 +1,8 @@
 """ABOUTME: Unit tests for email system including bootstrap factory
 ABOUTME: Tests email adapter configuration and multiple recipient handling"""
 
-import logging
 import os
+from io import StringIO
 from unittest.mock import patch
 
 import pytest
@@ -75,28 +75,29 @@ class TestEmailAdapterBootstrap:
 class TestEmailAdapterSendingIntegration:
     """Integration tests for sending emails with multiple recipients."""
 
-    def test_console_adapter_with_multiple_recipients(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_console_adapter_with_multiple_recipients(self) -> None:
         """Test sending email to multiple recipients via console adapter."""
-        adapter = ConsoleEmailAdapter()
+        stream = StringIO()
+        adapter = ConsoleEmailAdapter(output_stream=stream)
 
-        with caplog.at_level(logging.INFO):
-            result = adapter.send_email(
-                to=[
-                    "user1@example.com",
-                    ("User Two", "user2@example.com"),
-                    ("User Three", "user3@example.com"),
-                ],
-                subject="Multi-recipient test",
-                text_body="This is a test email sent to multiple recipients",
-                html_body="<p>This is a test email sent to multiple recipients</p>",
-            )
+        result = adapter.send_email(
+            to=[
+                "user1@example.com",
+                ("User Two", "user2@example.com"),
+                ("User Three", "user3@example.com"),
+            ],
+            subject="Multi-recipient test",
+            text_body="This is a test email sent to multiple recipients",
+            html_body="<p>This is a test email sent to multiple recipients</p>",
+        )
 
+        out = stream.getvalue()
         assert result is True
-        assert "user1@example.com" in caplog.text
-        assert "User Two <user2@example.com>" in caplog.text
-        assert "User Three <user3@example.com>" in caplog.text
-        assert "Multi-recipient test" in caplog.text
-        assert "Has HTML: Yes" in caplog.text
+        assert "user1@example.com" in out
+        assert "User Two <user2@example.com>" in out
+        assert "User Three <user3@example.com>" in out
+        assert "Multi-recipient test" in out
+        assert "Has HTML: Yes" in out
 
     def test_smtp_adapter_configuration_from_env(self) -> None:
         """Test SMTP adapter configuration is correctly loaded from environment."""

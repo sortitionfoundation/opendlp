@@ -1,9 +1,10 @@
 """ABOUTME: User management service layer with business logic for user operations
 ABOUTME: Handles user creation, authentication, role assignment, and invite validation"""
 
-import logging
 import uuid
 from datetime import UTC, datetime
+
+import structlog
 
 from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.template_renderer import TemplateRenderer
@@ -31,7 +32,7 @@ from .permissions import can_manage_assembly, can_view_assembly, has_global_admi
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def create_user(
@@ -1048,12 +1049,19 @@ def send_assembly_role_assigned_email(
         )
 
         if success:
-            logger.info(f"Assembly role assigned email sent to {user.email} for assembly {assembly.id}")
+            logger.info("Assembly role assigned email sent", user_id=str(user.id), assembly_id=str(assembly.id))
         else:
-            logger.error(f"Failed to send assembly role assigned email to {user.email}")
+            logger.error(
+                "Failed to send assembly role assigned email", user_id=str(user.id), assembly_id=str(assembly.id)
+            )
 
         return success
 
     except Exception as e:
-        logger.error(f"Error sending assembly role assigned email to {user.email}: {e}")
+        logger.error(
+            "Error sending assembly role assigned email",
+            user_id=str(user.id),
+            assembly_id=str(assembly.id),
+            error=str(e),
+        )
         return False

@@ -256,7 +256,7 @@ class TestBackofficeAddUserToAssembly:
         admin_user: User,
         regular_user: User,
         existing_assembly: Assembly,
-        caplog,
+        capture_json_handler,
     ):
         """Test that adding user to assembly sends notification email."""
         login_as_admin(client, admin_user)
@@ -273,8 +273,11 @@ class TestBackofficeAddUserToAssembly:
 
         assert response.status_code == 200
 
-        # Verify email was logged (console adapter logs emails)
-        assert f"Assembly role assigned email sent to {regular_user.email}" in caplog.text
+        # Verify the send was logged with user_id, not the email (PII redaction / audit)
+        log_output = capture_json_handler.getvalue()
+        assert "Assembly role assigned email sent" in log_output
+        assert str(regular_user.id) in log_output
+        assert regular_user.email not in log_output
 
 
 class TestBackofficeRemoveUserFromAssembly:

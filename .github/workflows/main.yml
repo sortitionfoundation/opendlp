@@ -53,7 +53,7 @@ jobs:
         env:
           POSTGRES_DB: opendlp
           POSTGRES_USER: opendlp
-          POSTGRES_PASSWORD: abc123
+          POSTGRES_PASSWORD: abc123 # pragma: allowlist secret
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready

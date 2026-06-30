@@ -1,9 +1,9 @@
 """ABOUTME: Public registration page routes for assembly registration forms
 ABOUTME: Handles form rendering, submission, and URL resolution without login"""
 
-import logging
 from datetime import UTC, datetime
 
+import structlog
 from flask import Blueprint, Response, abort, current_app, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_wtf.csrf import generate_csrf, validate_csrf
@@ -37,7 +37,8 @@ from opendlp.service_layer.registration_submission_service import (
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
+
 
 _TIMING_TOKEN_SALT = "reg-timing"  # noqa: S105 - this is a signer salt, not a password
 _TIMING_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 3600  # 7 days, matches session lifetime
@@ -336,7 +337,7 @@ def _send_registration_auto_reply(respondent) -> None:  # type: ignore[no-untype
             assembly_id=respondent.assembly_id,
         )
     except Exception:
-        current_app.logger.exception("Failed to send registration auto-reply")
+        logger.exception("Failed to send registration auto-reply")
 
 
 @registration_bp.route("/register/<url_slug>/assets/<image_name>", methods=["GET"])

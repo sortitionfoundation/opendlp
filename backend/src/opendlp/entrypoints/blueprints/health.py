@@ -4,6 +4,7 @@ ABOUTME: Reports database, celery, and system configuration status as JSON"""
 import os
 from datetime import UTC, datetime
 
+import structlog
 from flask import Blueprint, current_app, jsonify, request
 from flask.typing import ResponseReturnValue
 
@@ -18,6 +19,8 @@ from opendlp.entrypoints.context_processors import (
 from opendlp.service_layer.monitoring import MonitorSelectionStatus, check_monitor_selection, truncate
 
 health_bp = Blueprint("health", __name__)
+
+logger = structlog.get_logger(__name__)
 
 # Record process start time at module load
 _PROCESS_STARTED_AT = datetime.now(UTC)
@@ -101,7 +104,7 @@ def check_microsoft_oauth_expiry() -> tuple[int | None, str]:
 
     except ValueError:
         # Invalid date format
-        current_app.logger.warning(f"Invalid OAUTH_MICROSOFT_CLIENT_SECRET_EXPIRY format: {expiry_str}")
+        logger.warning("Invalid OAUTH_MICROSOFT_CLIENT_SECRET_EXPIRY format", expiry_str=expiry_str)
         return None, "UNKNOWN"
 
 

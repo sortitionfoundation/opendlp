@@ -58,7 +58,9 @@ def test_create_invite_success(client: FlaskClient, admin_user: User, postgres_s
 
 
 @pytest.mark.time_machine(datetime(2025, 1, 1))
-def test_create_invite_with_email(client: FlaskClient, admin_user: User, postgres_session_factory, caplog):
+def test_create_invite_with_email(
+    client: FlaskClient, admin_user: User, postgres_session_factory, capture_json_handler
+):
     """Creating an invite with email sends an invitation email and saves it."""
     login_as_admin(client, admin_user)
 
@@ -83,8 +85,10 @@ def test_create_invite_with_email(client: FlaskClient, admin_user: User, postgre
         assert invites[0].global_role == GlobalRole.USER
         assert invites[0].email == "newuser@example.com"
 
-    # Verify email was logged (console adapter logs emails)
-    assert "Invite email sent to newuser@example.com" in caplog.text
+    # Verify the send was logged, without the recipient email (PII redaction / audit)
+    log_output = capture_json_handler.getvalue()
+    assert "Invite email sent" in log_output
+    assert "newuser@example.com" not in log_output
 
 
 def test_view_invite_page_accessible_to_admin(client: FlaskClient, admin_user: User, postgres_session_factory):

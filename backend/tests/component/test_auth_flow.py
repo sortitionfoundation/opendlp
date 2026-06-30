@@ -44,8 +44,8 @@ class TestRegistration:
                 "first_name": "New",
                 "last_name": "User",
                 "email": "newuser@example.com",
-                "password": "securepassword123",
-                "password_confirm": "securepassword123",
+                "password": "securepassword123",  # pragma: allowlist secret
+                "password_confirm": "securepassword123",  # pragma: allowlist secret
                 "accept_data_agreement": "y",
             },
         )
@@ -60,8 +60,8 @@ class TestRegistration:
                 "first_name": "New",
                 "last_name": "User",
                 "email": "newuser@example.com",
-                "password": "securepassword123",
-                "password_confirm": "securepassword123",
+                "password": "securepassword123",  # pragma: allowlist secret
+                "password_confirm": "securepassword123",  # pragma: allowlist secret
                 "accept_data_agreement": "y",
             },
         )
@@ -85,8 +85,8 @@ class TestRegistration:
                 "first_name": "New",
                 "last_name": "User",
                 "email": "newuser@example.com",
-                "password": "securepassword123",
-                "password_confirm": "differentpassword",
+                "password": "securepassword123",  # pragma: allowlist secret
+                "password_confirm": "differentpassword",  # pragma: allowlist secret
                 "accept_data_agreement": "y",
             },
         )
@@ -103,8 +103,8 @@ class TestRegistration:
                 "first_name": "Another",
                 "last_name": "User",
                 "email": regular_user.email,
-                "password": "securepassword123",
-                "password_confirm": "securepassword123",
+                "password": "securepassword123",  # pragma: allowlist secret
+                "password_confirm": "securepassword123",  # pragma: allowlist secret
             },
         )
         assert response.status_code == 200
@@ -128,7 +128,7 @@ class TestLogin:
     def test_login_invalid_credentials_fails(self, client: FlaskClient, regular_user: User) -> None:
         response = client.post(
             "/auth/login",
-            data={"email": regular_user.email, "password": "wrongpassword"},
+            data={"email": regular_user.email, "password": "wrongpassword"},  # pragma: allowlist secret
         )
         assert response.status_code == 200
         assert b"Invalid email or password" in response.data or b"error" in response.data
@@ -136,7 +136,7 @@ class TestLogin:
     def test_login_nonexistent_user_fails(self, client: FlaskClient) -> None:
         response = client.post(
             "/auth/login",
-            data={"email": "nonexistent@example.com", "password": "somepassword"},
+            data={"email": "nonexistent@example.com", "password": "somepassword"},  # pragma: allowlist secret
         )
         assert response.status_code == 200
 
@@ -226,7 +226,7 @@ class TestEmailConfirmation:
             user, token = create_user(
                 uow=uow,
                 email="unconfirmed@example.com",
-                password="securepassword123",
+                password="securepassword123",  # pragma: allowlist secret
                 invite_code=valid_invite.code,
             )
         return user.create_detached_copy(), token

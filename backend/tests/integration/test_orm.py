@@ -41,7 +41,7 @@ class TestUserORM:
         user = User(
             email="test@example.com",
             global_role=GlobalRole.USER,
-            password_hash="hashed_password",
+            password_hash="hashed_password",  # pragma: allowlist secret
             first_name="Test",
             last_name="User",
         )
@@ -58,7 +58,7 @@ class TestUserORM:
         assert retrieved_user.first_name == "Test"
         assert retrieved_user.last_name == "User"
         assert retrieved_user.global_role == GlobalRole.USER
-        assert retrieved_user.password_hash == "hashed_password"
+        assert retrieved_user.password_hash == "hashed_password"  # pragma: allowlist secret
         assert retrieved_user.is_active is True
         assert isinstance(retrieved_user.id, uuid.UUID)
         assert isinstance(retrieved_user.created_at, datetime)
@@ -95,7 +95,7 @@ class TestUserORM:
         user2 = User(
             email="test@example.com",  # Same email
             global_role=GlobalRole.USER,
-            password_hash="hash2",
+            password_hash="hash2",  # pragma: allowlist secret
         )
 
         postgres_session.add(user2)

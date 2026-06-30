@@ -363,3 +363,35 @@ class TestCleanupExpiredTokens:
         count = password_reset_service.cleanup_expired_tokens(uow, days_old=7)
 
         assert count == 1
+
+
+class _FakeAdapter:
+    def send_email(self, **kwargs: object) -> bool:
+        return True
+
+
+class _FakeRenderer:
+    def render_template(self, name: str, **ctx: object) -> str:
+        return "body"
+
+
+class _FakeUrlGenerator:
+    def generate_url(self, endpoint: str, **kwargs: object) -> str:
+        return "https://example.com/reset"
+
+
+class TestSendPasswordResetEmailLogging:
+    """The audit: log user.id, never the email address (issue 617)."""
+
+    def test_logs_user_id_not_email(self, active_user, capture_json_handler) -> None:
+        result = password_reset_service.send_password_reset_email(
+            email_adapter=_FakeAdapter(),
+            template_renderer=_FakeRenderer(),
+            url_generator=_FakeUrlGenerator(),
+            user=active_user,
+            reset_token="tok",  # pragma: allowlist secret
+        )
+        assert result is True
+        output = capture_json_handler.getvalue()
+        assert str(active_user.id) in output
+        assert active_user.email not in output

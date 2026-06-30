@@ -1,9 +1,10 @@
 """ABOUTME: Email confirmation service layer for managing email verification
 ABOUTME: Handles confirmation token creation, validation, rate limiting, and email sending"""
 
-import logging
 import uuid
 from datetime import UTC, datetime, timedelta
+
+import structlog
 
 from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.template_renderer import TemplateRenderer
@@ -14,7 +15,7 @@ from opendlp.domain.users import User
 from .exceptions import InvalidConfirmationToken, RateLimitExceeded
 from .unit_of_work import AbstractUnitOfWork
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 # Configuration constants
 DEFAULT_TOKEN_EXPIRY_HOURS = 24
@@ -136,14 +137,14 @@ def send_confirmation_email(
         )
 
         if success:
-            logger.info(f"Email confirmation sent to {user.email}")
+            logger.info("Email confirmation sent", user_id=str(user.id))
         else:
-            logger.error(f"Failed to send email confirmation to {user.email}")
+            logger.error("Failed to send email confirmation", user_id=str(user.id))
 
         return success
 
     except Exception as e:
-        logger.error(f"Error sending email confirmation to {user.email}: {e}")
+        logger.error("Error sending email confirmation", user_id=str(user.id), error=str(e))
         return False
 
 

@@ -42,7 +42,7 @@ class TestCreateUser:
         user, token = user_service.create_user(
             uow=uow,
             email="test@example.com",
-            password="StrongPass123",
+            password="StrongPass123",  # pragma: allowlist secret
             first_name="Test",
             last_name="User",
             invite_code="TESTCODE",
@@ -101,7 +101,10 @@ class TestCreateUser:
 
         with pytest.raises(UserAlreadyExists) as exc_info:
             user_service.create_user(
-                uow=uow, email="test@example.com", password="StrongPass123", global_role=GlobalRole.USER
+                uow=uow,
+                email="test@example.com",
+                password="StrongPass123",  # pragma: allowlist secret
+                global_role=GlobalRole.USER,
             )
 
         assert "test@example.com" in str(exc_info.value)
@@ -130,7 +133,12 @@ class TestCreateUser:
         uow = FakeUnitOfWork()
 
         with pytest.raises(InvalidInvite):
-            user_service.create_user(uow=uow, email="test@example.com", password="StrongPass123", invite_code="INVALID")
+            user_service.create_user(
+                uow=uow,
+                email="test@example.com",
+                password="StrongPass123",  # pragma: allowlist secret
+                invite_code="INVALID",
+            )
 
 
 class TestAuthenticateUser:
@@ -157,7 +165,11 @@ class TestAuthenticateUser:
         uow = FakeUnitOfWork()
 
         with pytest.raises(InvalidCredentials):
-            user_service.authenticate_user(uow=uow, email="nonexistent@example.com", password="testpass")
+            user_service.authenticate_user(
+                uow=uow,
+                email="nonexistent@example.com",
+                password="testpass",  # pragma: allowlist secret
+            )
 
     def test_authenticate_user_wrong_password(self):
         """Test authentication fails with wrong password."""
@@ -167,7 +179,11 @@ class TestAuthenticateUser:
         uow.users.add(user)
 
         with pytest.raises(InvalidCredentials):
-            user_service.authenticate_user(uow=uow, email="test@example.com", password="wrongpass")
+            user_service.authenticate_user(
+                uow=uow,
+                email="test@example.com",
+                password="wrongpass",  # pragma: allowlist secret
+            )
 
     def test_authenticate_user_inactive(self):
         """Test authentication fails for inactive user."""
@@ -177,7 +193,11 @@ class TestAuthenticateUser:
         uow.users.add(user)
 
         with pytest.raises(InvalidCredentials):
-            user_service.authenticate_user(uow=uow, email="test@example.com", password="testpass")
+            user_service.authenticate_user(
+                uow=uow,
+                email="test@example.com",
+                password="testpass",  # pragma: allowlist secret
+            )
 
 
 class TestValidateInvite:
@@ -640,8 +660,10 @@ class TestListUsersPaginated:
 
         # Create non-admin user
         regular_user = User(
-            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )  # pragma: allowlist secret
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(regular_user)
 
         with pytest.raises(InsufficientPermissions):
@@ -699,8 +721,10 @@ class TestGetUserById:
 
         # Create non-admin user
         regular_user = User(
-            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )  # pragma: allowlist secret
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(regular_user)
 
         with pytest.raises(InsufficientPermissions):
@@ -795,8 +819,10 @@ class TestUpdateUser:
 
         # Create non-admin user
         regular_user = User(
-            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )  # pragma: allowlist secret
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         target_user = User(
             email="target@example.com",
             global_role=GlobalRole.USER,
@@ -879,8 +905,10 @@ class TestGetUserStats:
 
         # Create non-admin user
         regular_user = User(
-            email="user@example.com", global_role=GlobalRole.USER, password_hash="hash"
-        )  # pragma: allowlist secret
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
         uow.users.add(regular_user)
 
         with pytest.raises(InsufficientPermissions):
@@ -910,7 +938,7 @@ class TestUpdateOwnProfile:
         user = User(
             email="user@example.com",
             global_role=GlobalRole.USER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
             first_name="Original",
             last_name="Name",
         )

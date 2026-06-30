@@ -1,14 +1,17 @@
 """ABOUTME: Email adapter implementations for sending emails via various backends
 ABOUTME: Supports SMTP, console logging, and future transactional email services"""
 
-import logging
 import smtplib
+import sys
+import typing
 from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
 
-logger = logging.getLogger(__name__)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class EmailAdapter(ABC):
@@ -77,6 +80,15 @@ class ConsoleEmailAdapter(EmailAdapter):
     Useful for development and testing environments.
     """
 
+    def __init__(self, output_stream: typing.TextIO | None = None):
+        """Initialize the console email adapter.
+
+        Args:
+            output_stream: Stream to write email output to. Defaults to
+                sys.stdout. Tests can pass a StringIO to capture output.
+        """
+        self.output_stream: typing.TextIO = output_stream if output_stream is not None else sys.stdout
+
     def send_email(
         self,
         to: list[str | tuple[str, str]],
@@ -103,18 +115,23 @@ class ConsoleEmailAdapter(EmailAdapter):
         to_addrs = [self._format_address(addr) for addr in to]
         reply_to_line = f"\n  Reply-To: {self._format_address(reply_to)}" if reply_to else ""
 
-        # Truncate text body for logging
+        # Truncate text body for display
         text_preview = text_body[:400] + ("..." if len(text_body) > 400 else "")
         has_html = "Yes" if html_body else "No"
 
-        logger.info(
+        # Write directly to stdout rather than via logging: this adapter is
+        # dev-only and intentionally shows the real recipient address, so it must
+        # not be routed through the logging system (where it would either trip the
+        # PII audit or be scrubbed by the redaction processor).
+        print(
             "EMAIL (Console):\n"
             f"  From: {from_addr}\n"
             f"  To: {', '.join(to_addrs)}"
             f"{reply_to_line}\n"
             f"  Subject: {subject}\n"
             f"  Has HTML: {has_html}\n"
-            f"  Text Body Preview: {text_preview}"
+            f"  Text Body Preview: {text_preview}",
+            file=self.output_stream,
         )
 
         return True

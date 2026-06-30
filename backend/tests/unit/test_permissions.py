@@ -44,7 +44,7 @@ class TestCanManageAssembly:
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
         )
 
         future_date = date.today() + timedelta(days=30)
@@ -133,7 +133,7 @@ class TestCanViewAssembly:
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
         )
 
         future_date = date.today() + timedelta(days=30)
@@ -349,7 +349,7 @@ class TestGlobalRoleChecks:
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
         )
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
@@ -363,7 +363,7 @@ class TestGlobalRoleChecks:
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
         )
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
@@ -404,7 +404,7 @@ class TestRequireGlobalRoleDecorator:
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
         )
 
         @require_global_role(GlobalRole.GLOBAL_ORGANISER)

@@ -54,7 +54,7 @@ class TestCreateAssembly:
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",
+            password_hash="hash",  # pragma: allowlist secret
         )
         uow.users.add(organiser_user)
 
