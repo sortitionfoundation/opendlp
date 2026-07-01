@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Workflow: Registration Page for an Assembly</title>
+        <style>
+            :root {
+                --link: #1d70b8;
+                --ink: #0b0c0c;
+                --muted: #505a5f;
+                --paper: #ffffff;
+                --panel: #f3f2f1;
+                --highlight: #fff7d6;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                max-width: 1100px;
+                margin: 2rem auto;
+                padding: 0 1.25rem 4rem;
+                color: var(--ink);
+                line-height: 1.5;
+                background: var(--paper);
+            }
+            h1, h2, h3 { color: var(--ink); line-height: 1.2; }
+            h1 { border-bottom: 3px solid var(--link); padding-bottom: .5rem; margin-top: 0; }
+            h2 { margin-top: 2.5rem; border-bottom: 1px solid #b1b4b6; padding-bottom: .25rem; }
+            a { color: var(--link); }
+            p.lede { font-size: 1.1rem; color: var(--muted); }
+
+            .legend {
+                display: flex;
+                gap: .5rem;
+                flex-wrap: wrap;
+                font-size: .85rem;
+                margin: 1rem 0 .5rem;
+            }
+            .legend span {
+                padding: .2rem .55rem;
+                border-radius: 3px;
+                border: 1px solid rgba(0,0,0,.15);
+            }
+            .leg-prep   { background: #cce2f7; }
+            .leg-invite { background: #fad7a8; }
+            .leg-reg    { background: #c8e6c9; }
+            .leg-live   { background: #f8bbd0; }
+            .leg-end    { background: #d7ccc8; }
+
+            .flowchart {
+                background: var(--panel);
+                padding: 1rem;
+                border-radius: 4px;
+                overflow-x: auto;
+                margin: 1rem 0 .5rem;
+            }
+            .hint {
+                font-size: .9rem;
+                color: var(--muted);
+                margin: 0 0 2rem;
+            }
+
+            details {
+                background: #f8f8f8;
+                border-left: 4px solid var(--link);
+                padding: .75rem 1rem;
+                margin: .5rem 0;
+                border-radius: 2px;
+            }
+            details summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+            details[open] summary { margin-bottom: .5rem; }
+
+            .glossary dt {
+                font-weight: 700;
+                margin-top: 1.25rem;
+                color: var(--link);
+            }
+            .glossary dd {
+                margin-left: 1.25rem;
+                margin-top: .25rem;
+            }
+            code {
+                background: #eef;
+                padding: 1px 5px;
+                border-radius: 2px;
+                font-size: .9em;
+                word-break: break-all;
+            }
+            ul, ol { padding-left: 1.4rem; }
+            li { margin: .15rem 0; }
+
+  /* Highlight a section briefly when jumped to via fragment link */
+            :target {
+                animation: flash 1.5s ease-out;
+            }
+            @keyframes flash {
+                0%   { background: var(--highlight); }
+                100% { background: transparent; }
+            }
+
+            .mermaid .node rect, .mermaid .node polygon { cursor: pointer; }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    </head>
+    <body>
+        <h1>Workflow: Registration Page for an Assembly</h1>
+        <p class="lede">
+            How the registration page for a citizens' assembly fits into the wider invite-and-selection workflow — from agreeing categories, through invites and page build, to going live and closing for selection.
+        </p>
+        <div class="legend" aria-label="Flow chart legend">
+            <span class="leg-prep">Preparation</span>
+            <span class="leg-invite">Invite materials</span>
+            <span class="leg-reg">Registration page</span>
+            <span class="leg-live">Live phase</span>
+            <span class="leg-end">After registration</span>
+        </div>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart TD
+    classDef prep   fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef invite fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef reg    fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef live   fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef ending fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+
+    A["Agree target categories&lt;br/&gt;(gender, age, ...)"]:::prep
+    N["Agree non-target info to collect&lt;br/&gt;(contact info, consent, ...)"]:::prep
+    B["Agree full URL&lt;br/&gt;and short-URL"]:::prep
+    C["Generate QR code&lt;br/&gt;from short-URL"]:::prep
+
+    D["Draft invite materials&lt;br/&gt;(use URL + QR code)"]:::invite
+    E["Team and client&lt;br/&gt;review draft"]:::invite
+    F["Send to printer&lt;br/&gt;1+ week before posting"]:::invite
+    G["Printer prints&lt;br/&gt;and posts invites"]:::invite
+
+    H["Develop registration page &amp; related bits"]:::reg
+    I["Team and client review"]:::reg
+    J["Team testing&lt;br/&gt;(fill form, check everything)"]:::reg
+
+    K(["Registration page goes live&lt;br/&gt;(typically ~3 weeks)"]):::live
+    K1["Scan QR code,&lt;br/&gt;fill in form"]:::live
+    K2["Type short-URL,&lt;br/&gt;fill in form"]:::live
+    K3["Phone the number,&lt;br/&gt;staff fill form for them"]:::live
+
+    L["Registration&lt;br/&gt;closes"]:::ending
+    M["Selection&lt;br/&gt;happens"]:::ending
+
+    B --> C
+                A --> H
+                N --> H
+                B --> H
+                B --> D
+                C --> D
+                D --> E --> F --> G
+
+                H --> I --> J
+
+                G --> K
+                J --> K
+
+                K --> K1
+                K --> K2
+                K --> K3
+
+                K1 --> L
+                K2 --> L
+                K3 --> L
+                L --> M
+
+                click A "#cat-detail" "Target categories"
+                click N "#info-detail" "Non-target info to collect"
+                click B "#url-detail" "Full URL and short-URL"
+                click C "#qr-detail" "QR code"
+                click D "#invite-detail" "Invite materials"
+                click E "#invite-detail" "Review"
+                click F "#invite-detail" "Printer timing"
+                click G "#invite-detail" "Print and post"
+                click H "#reg-detail" "What is on the page"
+                click I "#reg-detail" "Review"
+                click J "#test-detail" "What gets tested"
+                click K "#live-detail" "Going live"
+                click K3 "#open-regs" "All-open-registrations page"
+                click L "#close-detail" "Closing and selection"
+                click M "#close-detail" "Closing and selection"
+        </pre>
+        </div>
+        <p class="hint">
+            Click any box in the flow chart to jump to its details below. Underlined terms in the text link to the <a href="#glossary">glossary</a>.
+        </p>
+        <h2>Step details</h2>
+        <details id="cat-detail">
+            <summary>Agree target categories</summary>
+            <p>
+                Decide which demographic categories will be used to stratify the selection — for example gender, age bracket, ethnicity, region, etc. These categories drive the form fields on the registration page, so they need to be agreed before the page can be built.
+            </p>
+        </details>
+        <details id="info-detail">
+            <summary>Agree non-target info to collect</summary>
+            <p>We need to collect other information. The main kinds are:</p>
+            <ul>
+                <li><strong>Contact info</strong> — name, email, phone, address</li>
+                <li><strong>Eligibility</strong> — ask them to confirm they are eligible</li>
+                <li><strong>Consent</strong> — ask them to consent to us holding their data</li>
+            </ul>
+        </details>
+        <details id="url-detail">
+            <summary>Agree full URL &amp; short-URL</summary>
+            <p>
+                Decide both URLs up front: the <a href="#full-url">full URL</a> the page will live at, and the <a href="#short-url">short-URL</a> that will redirect to it. Both are needed before invite materials can be drafted, because the short-URL is printed on the invite and the QR code is generated from it.
+            </p>
+        </details>
+        <details id="qr-detail">
+            <summary>Generate QR code</summary>
+            <p>
+                The QR code is generated from the <a href="#short-url">short-URL</a> (not the full URL — the short-URL keeps the QR simpler and matches what's printed alongside it on the invite).
+            </p>
+        </details>
+        <details id="invite-detail">
+            <summary>Invite materials — draft, review, print, post</summary>
+            <ol>
+                <li>
+                    <strong>Draft</strong> — using the agreed <a href="#full-url">full URL</a>, <a href="#short-url">short-URL</a> and QR code.
+                </li>
+                <li>
+                    <strong>Review</strong> by team and client.
+                </li>
+                <li>
+                    <strong>Send to printer</strong> once agreed — at least <strong>a week</strong> before printing and going into the post.
+                </li>
+                <li>
+                    <strong>Printer prints and posts</strong> the invites.
+                </li>
+            </ol>
+        </details>
+        <details id="reg-detail">
+            <summary>Develop the registration page &amp; related bits — what's on it</summary>
+            <p>The registration page is built up from these pieces:</p>
+            <ul>
+                <li>
+                    <a href="#full-url">Full URL</a> and <a href="#short-url">short-URL</a> redirect set up
+                </li>
+                <li>Logo</li>
+                <li>Intro text</li>
+                <li>The form itself</li>
+                <li>Auto-reply email template</li>
+                <li>Thank-you page</li>
+                <li>
+                    Link to the page added to the <a href="#open-regs">"all open registrations" page</a>
+                </li>
+            </ul>
+            <p>Then reviewed by team and client.</p>
+        </details>
+        <details id="test-detail">
+            <summary>Team testing — what gets checked</summary>
+            <p>Team members fill out the form (sometimes more than once) and verify:</p>
+            <ul>
+                <li>The page itself looks correct</li>
+                <li>The intro text is accurate</li>
+                <li>The form options are correctly recorded in the system when submitted</li>
+                <li>The "thank you for registering" page looks good</li>
+                <li>The auto-reply email is sent correctly and looks good</li>
+            </ul>
+        </details>
+        <details id="live-detail">
+            <summary>Registration goes live</summary>
+            <p>
+                The page goes live <strong>once invites are posted</strong> and is typically open for around <strong>3 weeks</strong>.
+            </p>
+            <p>People who receive an invite have three ways to register:</p>
+            <ol>
+                <li>
+                    <strong>Scan the QR code</strong> on the paper invite and fill in the form.
+                </li>
+                <li>
+                    <strong>Type the short-URL</strong> from the paper invite and fill in the form.
+                </li>
+                <li>
+                    <strong>Phone the number</strong> on the invite — the person answering uses the <a href="#open-regs">"all open registrations" page</a> to find the right registration link, then fills in the form on the caller's behalf.
+                </li>
+            </ol>
+        </details>
+        <details id="close-detail">
+            <summary>Registration closes &amp; selection happens</summary>
+            <p>
+                At the end of the live window the registration form is taken offline, and the stratified selection can run against the registrants.
+            </p>
+        </details>
+        <h2 id="glossary">Glossary</h2>
+        <dl class="glossary">
+            <dt id="full-url">Full URL</dt>
+            <dd>
+                The URL the registration page actually lives at. Examples:
+                <ul>
+                    <li>
+                        <code>https://opendlp.sortitionlab.org/r/cambridge-climate-assembly</code>
+                    </li>
+                    <li>
+                        <code>https://democraticlottery.org/r/cambridge-climate-assembly</code> &nbsp;(could even be on a separate domain)
+                    </li>
+                </ul>
+            </dd>
+            <dt id="short-url">Short-URL</dt>
+            <dd>
+                A short URL that redirects to the <a href="#full-url">full URL</a>. It's printed on paper invites for people to type in, and the QR code is generated from it. Examples:
+                <ul>
+                    <li>
+                        <code>https://demlot.org/r/cbgclimate</code>
+                    </li>
+                    <li>
+                        <code>https://demlot.org/cca</code>
+                    </li>
+                </ul>
+            </dd>
+            <dt id="open-regs">"All open registrations" page</dt>
+            <dd>
+                A page listing every currently-open registration. Often also lists recently-closed ones, so a viewer can see what was open in the recent past.
+                <ul>
+                    <li>
+                        Current UK version: <code>https://www.sortitionfoundation.org/register_which</code>
+                    </li>
+                    <li>
+                        Used by phone staff: when an invitee phones the number on the invite, the person answering opens this page to find the registration link to use.
+                    </li>
+                    <li>Currently public, but not linked from anywhere.</li>
+                </ul>
+            </dd>
+        </dl>
+        <script>
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'default',
+                securityLevel: 'loose',
+                flowchart: { curve: 'basis', useMaxWidth: true }
+            });
+
+  // When a flow-chart click jumps to a <details>, open it so the content is visible.
+            window.addEventListener('hashchange', () => {
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+  // Also handle the case where the page loads with a hash already set.
+            window.addEventListener('load', () => {
+                if (!window.location.hash) return;
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+        </script>
+    </body>
+</html>
