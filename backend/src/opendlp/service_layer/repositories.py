@@ -249,8 +249,10 @@ class SelectionRunRecordRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def delete_old_for_assembly(self, assembly_id: uuid.UUID, keep: int) -> int:
-        """Delete all but the most recent ``keep`` records for this assembly. Returns count deleted."""
+    def prune_by_status(self, assembly_id: uuid.UUID, keep_successful: int = 500, keep_failed: int = 40) -> int:
+        """Prune records for an assembly, keeping the newest ``keep_successful`` completed and
+        ``keep_failed`` failed/cancelled runs. In-flight (pending/running) records are always
+        kept. Returns count deleted."""
         raise NotImplementedError
 
     @abc.abstractmethod

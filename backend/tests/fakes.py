@@ -445,19 +445,29 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
         matching.sort(key=lambda r: r.created_at or datetime.min, reverse=True)
         return matching[:limit]
 
-    def delete_old_for_assembly(self, assembly_id: uuid.UUID, keep: int) -> int:
-        """Delete all but the most recent ``keep`` records for this assembly. Returns count deleted."""
-        if keep < 0:
-            keep = 0
-        assembly_records = sorted(
-            [r for r in self._items if r.assembly_id == assembly_id],
-            key=lambda r: r.created_at or datetime.min,
-            reverse=True,
+    def prune_by_status(self, assembly_id: uuid.UUID, keep_successful: int = 500, keep_failed: int = 40) -> int:
+        """Prune records for an assembly, keeping the newest ``keep_successful`` completed and
+        ``keep_failed`` failed/cancelled runs. In-flight (pending/running) records are always
+        kept. Returns count deleted."""
+
+        def newest(predicate: Any, limit: int) -> list[SelectionRunRecord]:
+            if limit <= 0:
+                return []
+            matching = sorted(
+                [r for r in self._items if r.assembly_id == assembly_id and predicate(r)],
+                key=lambda r: r.created_at or datetime.min,
+                reverse=True,
+            )
+            return matching[:limit]
+
+        keep_ids = {r.task_id for r in newest(lambda r: r.is_completed, keep_successful)}
+        keep_ids.update(r.task_id for r in newest(lambda r: r.is_failed or r.is_cancelled, keep_failed))
+        keep_ids.update(
+            r.task_id for r in self._items if r.assembly_id == assembly_id and (r.is_pending or r.is_running)
         )
-        to_delete = assembly_records[keep:]
-        delete_ids = {r.task_id for r in to_delete}
+
         before = len(self._items)
-        self._items = [r for r in self._items if r.task_id not in delete_ids]
+        self._items = [r for r in self._items if r.assembly_id != assembly_id or r.task_id in keep_ids]
         return before - len(self._items)
 
     def get_running_tasks(self) -> Iterable[SelectionRunRecord]:

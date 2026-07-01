@@ -282,59 +282,98 @@ class TestGetRecentForAssembly:
         assert recent == []
 
 
-class TestDeleteOldForAssembly:
-    def test_keeps_most_recent_n(self, selection_run_backend: ContractBackend):
+class TestPruneByStatus:
+    def test_keeps_newest_successful_up_to_limit(self, selection_run_backend: ContractBackend):
+        """Only the newest ``keep_successful`` completed records survive."""
         assembly = selection_run_backend.make_assembly()
         now = datetime.now(UTC)
-        # Insert 8 records, oldest first
-        records = [
+        completed = [
             _make_record(
                 selection_run_backend,
                 assembly.id,
-                created_at=now - timedelta(minutes=10 * (8 - i)),
+                status=SelectionRunStatus.COMPLETED,
+                created_at=now - timedelta(minutes=10 * (5 - i)),
             )
-            for i in range(8)
+            for i in range(5)
         ]
 
-        deleted_count = selection_run_backend.repo.delete_old_for_assembly(assembly.id, keep=3)
+        deleted = selection_run_backend.repo.prune_by_status(assembly.id, keep_successful=2, keep_failed=40)
         selection_run_backend.commit()
 
-        assert deleted_count == 5
-        remaining = list(selection_run_backend.repo.get_by_assembly_id(assembly.id))
-        assert len(remaining) == 3
-        # The three remaining should be the newest three (last three in records list)
-        kept_ids = {r.task_id for r in remaining}
-        expected_kept_ids = {r.task_id for r in records[-3:]}
-        assert kept_ids == expected_kept_ids
+        assert deleted == 3
+        remaining = {r.task_id for r in selection_run_backend.repo.get_by_assembly_id(assembly.id)}
+        assert remaining == {completed[3].task_id, completed[4].task_id}
 
-    def test_does_not_touch_other_assemblies(self, selection_run_backend: ContractBackend):
-        a = selection_run_backend.make_assembly()
-        b = selection_run_backend.make_assembly()
+    def test_keeps_successful_and_failed_in_separate_buckets(self, selection_run_backend: ContractBackend):
+        """Failed records are retained independently of the successful limit."""
+        assembly = selection_run_backend.make_assembly()
         now = datetime.now(UTC)
-        for i in range(5):
-            _make_record(selection_run_backend, a.id, created_at=now - timedelta(minutes=10 * (5 - i)))
-        b_records = [
-            _make_record(selection_run_backend, b.id, created_at=now - timedelta(minutes=10 * (3 - i)))
+        # Five completed, but only keep_successful=1
+        completed = [
+            _make_record(
+                selection_run_backend,
+                assembly.id,
+                status=SelectionRunStatus.COMPLETED,
+                created_at=now - timedelta(minutes=100 - i),
+            )
+            for i in range(5)
+        ]
+        # Three failed, keep_failed=2
+        failed = [
+            _make_record(
+                selection_run_backend,
+                assembly.id,
+                status=SelectionRunStatus.FAILED,
+                created_at=now - timedelta(minutes=50 - i),
+            )
             for i in range(3)
         ]
 
-        deleted = selection_run_backend.repo.delete_old_for_assembly(a.id, keep=1)
+        deleted = selection_run_backend.repo.prune_by_status(assembly.id, keep_successful=1, keep_failed=2)
         selection_run_backend.commit()
 
-        assert deleted == 4
-        remaining_b = list(selection_run_backend.repo.get_by_assembly_id(b.id))
-        assert {r.task_id for r in remaining_b} == {r.task_id for r in b_records}
+        remaining = {r.task_id for r in selection_run_backend.repo.get_by_assembly_id(assembly.id)}
+        # newest 1 completed + newest 2 failed
+        assert remaining == {completed[4].task_id, failed[2].task_id, failed[1].task_id}
+        assert deleted == 5
 
-    def test_keep_larger_than_total_is_noop(self, selection_run_backend: ContractBackend):
+    def test_cancelled_counts_as_failed_bucket(self, selection_run_backend: ContractBackend):
+        """Cancelled runs share the non-successful bucket with failed runs."""
         assembly = selection_run_backend.make_assembly()
-        for _ in range(2):
-            _make_record(selection_run_backend, assembly.id)
+        cancelled = _make_record(selection_run_backend, assembly.id, status=SelectionRunStatus.CANCELLED)
 
-        deleted = selection_run_backend.repo.delete_old_for_assembly(assembly.id, keep=10)
+        selection_run_backend.repo.prune_by_status(assembly.id, keep_successful=0, keep_failed=5)
         selection_run_backend.commit()
 
-        assert deleted == 0
-        assert len(list(selection_run_backend.repo.get_by_assembly_id(assembly.id))) == 2
+        remaining = {r.task_id for r in selection_run_backend.repo.get_by_assembly_id(assembly.id)}
+        assert remaining == {cancelled.task_id}
+
+    def test_never_prunes_in_flight(self, selection_run_backend: ContractBackend):
+        """Pending and running records are always kept, even at zero limits."""
+        assembly = selection_run_backend.make_assembly()
+        pending = _make_record(selection_run_backend, assembly.id, status=SelectionRunStatus.PENDING)
+        running = _make_record(selection_run_backend, assembly.id, status=SelectionRunStatus.RUNNING)
+        _make_record(selection_run_backend, assembly.id, status=SelectionRunStatus.COMPLETED)
+
+        selection_run_backend.repo.prune_by_status(assembly.id, keep_successful=0, keep_failed=0)
+        selection_run_backend.commit()
+
+        remaining = {r.task_id for r in selection_run_backend.repo.get_by_assembly_id(assembly.id)}
+        assert remaining == {pending.task_id, running.task_id}
+
+    def test_does_not_touch_other_assemblies(self, selection_run_backend: ContractBackend):
+        """Pruning one assembly leaves another assembly's records intact."""
+        a = selection_run_backend.make_assembly()
+        b = selection_run_backend.make_assembly()
+        for _ in range(5):
+            _make_record(selection_run_backend, a.id, status=SelectionRunStatus.COMPLETED)
+        b_records = [_make_record(selection_run_backend, b.id, status=SelectionRunStatus.COMPLETED) for _ in range(3)]
+
+        selection_run_backend.repo.prune_by_status(a.id, keep_successful=1, keep_failed=0)
+        selection_run_backend.commit()
+
+        remaining_b = {r.task_id for r in selection_run_backend.repo.get_by_assembly_id(b.id)}
+        assert remaining_b == {r.task_id for r in b_records}
 
 
 class TestGetRunningTasks:

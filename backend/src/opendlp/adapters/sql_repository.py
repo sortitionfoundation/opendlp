@@ -618,21 +618,53 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
             .all()
         )
 
-    def delete_old_for_assembly(self, assembly_id: uuid.UUID, keep: int) -> int:
-        """Delete all but the most recent ``keep`` records for this assembly. Returns count deleted."""
-        if keep < 0:
-            keep = 0
-        keep_ids_subq = (
-            select(orm.selection_run_records.c.task_id)
-            .where(orm.selection_run_records.c.assembly_id == assembly_id)
+    def _newest_task_ids_by_status(self, assembly_id: uuid.UUID, statuses: list[str], limit: int) -> list[uuid.UUID]:
+        if limit <= 0:
+            return []
+        rows = (
+            self.session
+            .query(orm.selection_run_records.c.task_id)
+            .filter(orm.selection_run_records.c.assembly_id == assembly_id)
+            .filter(orm.selection_run_records.c.status.in_(statuses))
             .order_by(orm.selection_run_records.c.created_at.desc())
-            .limit(keep)
-            .subquery()
+            .limit(limit)
+            .all()
         )
+        return [row.task_id for row in rows]
+
+    def prune_by_status(self, assembly_id: uuid.UUID, keep_successful: int = 500, keep_failed: int = 40) -> int:
+        """Prune records for an assembly, keeping the newest ``keep_successful`` completed and
+        ``keep_failed`` failed/cancelled runs. In-flight (pending/running) records are always
+        kept. Returns count deleted."""
+        keep_ids: set[uuid.UUID] = set()
+        keep_ids.update(
+            self._newest_task_ids_by_status(assembly_id, [SelectionRunStatus.COMPLETED.value], keep_successful)
+        )
+        keep_ids.update(
+            self._newest_task_ids_by_status(
+                assembly_id,
+                [SelectionRunStatus.FAILED.value, SelectionRunStatus.CANCELLED.value],
+                keep_failed,
+            )
+        )
+        in_flight = (
+            self.session
+            .query(orm.selection_run_records.c.task_id)
+            .filter(orm.selection_run_records.c.assembly_id == assembly_id)
+            .filter(
+                orm.selection_run_records.c.status.in_([
+                    SelectionRunStatus.PENDING.value,
+                    SelectionRunStatus.RUNNING.value,
+                ])
+            )
+            .all()
+        )
+        keep_ids.update(row.task_id for row in in_flight)
+
         stmt = delete(orm.selection_run_records).where(
             and_(
                 orm.selection_run_records.c.assembly_id == assembly_id,
-                orm.selection_run_records.c.task_id.notin_(select(keep_ids_subq.c.task_id)),
+                orm.selection_run_records.c.task_id.notin_(keep_ids),
             )
         )
         result = self.session.execute(stmt)

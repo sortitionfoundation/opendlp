@@ -147,8 +147,12 @@ consecutive-failure threshold is reached — go `FAILED` at
 
 - **Every 15 minutes via Celery beat**: `monitor_selection_periodic`.
 - **Daily via Celery beat**: `prune_monitor_run_records` keeps the
-  most recent 100 monitor `SelectionRunRecord`s and deletes older
-  ones (≈ 1 day at the 15-minute cadence).
+  most recent 500 successful monitor `SelectionRunRecord`s (≈ 2.5 days
+  at the 15-minute cadence) plus the most recent 40 failed/cancelled
+  runs, and deletes the rest. Failures are kept in their own bucket so
+  a rare failure is not flushed out by the volume of routine successes —
+  you can still see what broke on Friday after a weekend away. In-flight
+  (pending/running) runs are never pruned.
 - **On demand via CLI**: `opendlp monitor run-selection`.
 
 ### CLI command

@@ -1003,7 +1003,9 @@ class TestMonitorBeatTasks:
             "task_id": str(fake_task_id),
         }
 
-    def test_prune_monitor_run_records_keeps_newest_only(self, postgres_session_factory, temp_env_vars):
+    def test_prune_monitor_run_records_keeps_successful_and_failed_buckets(
+        self, postgres_session_factory, temp_env_vars
+    ):
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
 
@@ -1012,30 +1014,43 @@ class TestMonitorBeatTasks:
             uow.assemblies.add(assembly)
             uow.commit()
 
-        keep = 2
-        total = keep + 5
         with bootstrap(session_factory=postgres_session_factory) as uow:
-            for i in range(total):
-                record = SelectionRunRecord(
-                    assembly_id=assembly_id,
-                    task_id=uuid.uuid4(),
-                    status=SelectionRunStatus.COMPLETED,
-                    task_type=SelectionTaskType.SELECT_GSHEET,
-                    created_at=datetime.now(UTC) - timedelta(minutes=10 * (total - i)),
+            for i in range(5):
+                uow.selection_run_records.add(
+                    SelectionRunRecord(
+                        assembly_id=assembly_id,
+                        task_id=uuid.uuid4(),
+                        status=SelectionRunStatus.COMPLETED,
+                        task_type=SelectionTaskType.SELECT_GSHEET,
+                        created_at=datetime.now(UTC) - timedelta(minutes=100 - i),
+                    )
                 )
-                uow.selection_run_records.add(record)
+            for i in range(3):
+                uow.selection_run_records.add(
+                    SelectionRunRecord(
+                        assembly_id=assembly_id,
+                        task_id=uuid.uuid4(),
+                        status=SelectionRunStatus.FAILED,
+                        task_type=SelectionTaskType.SELECT_GSHEET,
+                        created_at=datetime.now(UTC) - timedelta(minutes=50 - i),
+                    )
+                )
             uow.commit()
 
-        deleted = prune_monitor_run_records(session_factory=postgres_session_factory, keep=keep)
+        deleted = prune_monitor_run_records(session_factory=postgres_session_factory, keep_successful=2, keep_failed=2)
 
-        assert deleted == total - keep
+        # 3 completed + 1 failed pruned, newest 2 of each kept
+        assert deleted == 4
         with bootstrap(session_factory=postgres_session_factory) as uow:
             remaining = list(uow.selection_run_records.get_by_assembly_id(assembly_id))
-        assert len(remaining) == keep
+            completed = [r for r in remaining if r.status == SelectionRunStatus.COMPLETED]
+            failed = [r for r in remaining if r.status == SelectionRunStatus.FAILED]
+            assert len(completed) == 2
+            assert len(failed) == 2
 
     def test_prune_monitor_run_records_no_op_when_unconfigured(self, postgres_session_factory, clear_env_vars):
         clear_env_vars("MONITOR_ASSEMBLY_ID")
 
-        deleted = prune_monitor_run_records(session_factory=postgres_session_factory, keep=10)
+        deleted = prune_monitor_run_records(session_factory=postgres_session_factory)
 
         assert deleted == 0

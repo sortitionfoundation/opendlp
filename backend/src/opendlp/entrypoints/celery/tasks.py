@@ -1062,15 +1062,19 @@ def monitor_selection_periodic(session_factory: sessionmaker | None = None) -> d
 @app.task
 def prune_monitor_run_records(
     session_factory: sessionmaker | None = None,
-    keep: int = 100,
+    keep_successful: int = 500,
+    keep_failed: int = 40,
 ) -> int:
-    """Prune monitor SelectionRunRecords beyond the most recent ``keep``."""
+    """Prune monitor SelectionRunRecords, keeping the newest ``keep_successful`` completed
+    and ``keep_failed`` failed/cancelled runs (in-flight runs are always kept)."""
     assembly_id = config.get_monitor_assembly_id()
     if assembly_id is None:
         return 0
 
     with bootstrap(session_factory=session_factory) as uow:
-        deleted = uow.selection_run_records.delete_old_for_assembly(assembly_id, keep=keep)
+        deleted = uow.selection_run_records.prune_by_status(
+            assembly_id, keep_successful=keep_successful, keep_failed=keep_failed
+        )
         uow.commit()
     logging.info(f"prune_monitor_run_records: deleted {deleted} record(s)")
     return deleted
