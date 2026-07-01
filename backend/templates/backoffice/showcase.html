@@ -32,71 +32,71 @@
     <p class="text-body-lg mt-2 mb-8" style="color: var(--color-secondary-text);">Backoffice design system using Pines UI + Tailwind CSS</p>
 
     <div x-data="showcaseNav">
-        {# Sticky jump-to-section header #}
+        {# Tab navigation (not sticky) #}
+        <div class="flex gap-1 mb-6 border-b" style="border-color: var(--color-borders-dividers);">
+            <button type="button"
+                    class="text-label-lg px-4 py-3 -mb-px transition-colors"
+                    :class="tab === 'foundations' ? 'font-semibold' : ''"
+                    :style="tab === 'foundations'
+                            ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
+                            : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
+                    @click="setTab('foundations')">Foundations</button>
+            <button type="button"
+                    class="text-label-lg px-4 py-3 -mb-px transition-colors"
+                    :class="tab === 'components' ? 'font-semibold' : ''"
+                    :style="tab === 'components'
+                            ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
+                            : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
+                    @click="setTab('components')">Components</button>
+        </div>
+
+        {# Sticky jump-to-section header (below tab nav). Two selects — only the
+           active tab's is visible — so the dropdown always reflects the active tab. #}
         <div class="sticky top-0 z-30 -mx-6 px-6 py-3 mb-6 flex flex-wrap items-center gap-3"
              style="background-color: var(--color-page-background); border-bottom: 1px solid var(--color-borders-dividers);">
             <label for="showcase-nav-jump" class="text-label-md" style="color: var(--color-secondary-text);">Jump to section</label>
-            <select id="showcase-nav-jump"
+
+            <select id="showcase-nav-jump-foundations"
+                    x-show="tab === 'foundations'"
                     x-model="selected"
                     @change="goTo()"
                     class="text-body-md rounded-md px-3 py-2 min-w-64"
                     style="background-color: var(--color-page-background); color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
                 <option value="">Choose…</option>
-                <optgroup label="Foundations">
-                    <option value="foundations:primitive-tokens">Primitive Tokens</option>
-                    <option value="foundations:semantic-tokens">Semantic Tokens</option>
-                    <option value="foundations:spacing">Spacing Conventions</option>
-                    <option value="foundations:responsive">Responsive Layout</option>
-                    <option value="foundations:typography">Typography</option>
-                </optgroup>
-                <optgroup label="Components">
-                    <option value="components:button">Button</option>
-                    <option value="components:split-button">Split Button</option>
-                    <option value="components:input">Input</option>
-                    <option value="components:checkbox">Checkbox</option>
-                    <option value="components:radio">Radio Button</option>
-                    <option value="components:switch">Switch</option>
-                    <option value="components:search-dropdown">Search Dropdown</option>
-                    <option value="components:select-dropdown">Select Dropdown</option>
-                    <option value="components:card">Card</option>
-                    <option value="components:section">Section</option>
-                    <option value="components:modal">Modal</option>
-                    <option value="components:progress">Progress Bar</option>
-                    <option value="components:table">Table</option>
-                    <option value="components:pagination">Pagination</option>
-                    <option value="components:navigation">Navigation</option>
-                    <option value="components:breadcrumb">Breadcrumb</option>
-                    <option value="components:tabs">Tabs</option>
-                    <option value="components:alert">Alert</option>
-                    <option value="components:interactivity">Alpine.js Interactivity</option>
-                </optgroup>
+                <option value="foundations:primitive-tokens">Primitive Tokens</option>
+                <option value="foundations:semantic-tokens">Semantic Tokens</option>
+                <option value="foundations:spacing">Spacing Conventions</option>
+                <option value="foundations:responsive">Responsive Layout</option>
+                <option value="foundations:typography">Typography</option>
             </select>
-        </div>
 
-        {# Tab navigation #}
-        <div class="flex gap-1 mb-8 border-b" style="border-color: var(--color-borders-dividers);">
-            <button
-                type="button"
-                class="text-label-lg px-4 py-3 -mb-px transition-colors"
-                :class="tab === 'foundations' ? 'font-semibold' : ''"
-                :style="tab === 'foundations'
-                        ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
-                        : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
-                @click="tab = 'foundations'"
-            >
-                Foundations
-            </button>
-            <button
-                type="button"
-                class="text-label-lg px-4 py-3 -mb-px transition-colors"
-                :class="tab === 'components' ? 'font-semibold' : ''"
-                :style="tab === 'components'
-                        ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
-                        : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
-                @click="tab = 'components'"
-            >
-                Components
-            </button>
+            <select id="showcase-nav-jump-components"
+                    x-show="tab === 'components'"
+                    x-model="selected"
+                    @change="goTo()"
+                    class="text-body-md rounded-md px-3 py-2 min-w-64"
+                    style="background-color: var(--color-page-background); color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
+                <option value="">Choose…</option>
+                <option value="components:button">Button</option>
+                <option value="components:split-button">Split Button</option>
+                <option value="components:input">Input</option>
+                <option value="components:checkbox">Checkbox</option>
+                <option value="components:radio">Radio Button</option>
+                <option value="components:switch">Switch</option>
+                <option value="components:search-dropdown">Search Dropdown</option>
+                <option value="components:select-dropdown">Select Dropdown</option>
+                <option value="components:card">Card</option>
+                <option value="components:section">Section</option>
+                <option value="components:modal">Modal</option>
+                <option value="components:progress">Progress Bar</option>
+                <option value="components:table">Table</option>
+                <option value="components:pagination">Pagination</option>
+                <option value="components:navigation">Navigation</option>
+                <option value="components:breadcrumb">Breadcrumb</option>
+                <option value="components:tabs">Tabs</option>
+                <option value="components:alert">Alert</option>
+                <option value="components:interactivity">Alpine.js Interactivity</option>
+            </select>
         </div>
 
         {# Foundations tab content #}

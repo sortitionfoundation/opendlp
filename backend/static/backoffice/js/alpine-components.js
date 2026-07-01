@@ -608,19 +608,33 @@ document.addEventListener("alpine:init", function () {
 
             init: function () {
                 var self = this;
+                // Priority 1: hash points at a known section — its data-tab wins
                 var hash = window.location.hash;
-                if (!hash || hash.length <= 1) {
-                    return;
+                if (hash && hash.length > 1) {
+                    var id = hash.substring(1);
+                    var el = document.getElementById(id);
+                    if (el && el.dataset && el.dataset.tab) {
+                        self.tab = el.dataset.tab;
+                        setTimeout(function () {
+                            self.scrollToSection(id);
+                        }, 50);
+                        self.writeUrl(id);
+                        return;
+                    }
                 }
-                var id = hash.substring(1);
-                var el = document.getElementById(id);
-                if (el && el.dataset && el.dataset.tab) {
-                    self.tab = el.dataset.tab;
+                // Priority 2: ?tab= query param
+                var params = new URLSearchParams(window.location.search);
+                var urlTab = params.get("tab");
+                if (urlTab === "foundations" || urlTab === "components") {
+                    self.tab = urlTab;
                 }
-                // Defer so x-show has rendered the target tab's content
-                setTimeout(function () {
-                    self.scrollToSection(id);
-                }, 50);
+                self.writeUrl("");
+            },
+
+            setTab: function (newTab) {
+                this.tab = newTab;
+                this.selected = "";
+                this.writeUrl("");
             },
 
             goTo: function () {
@@ -637,9 +651,7 @@ document.addEventListener("alpine:init", function () {
                 var self = this;
                 setTimeout(function () {
                     self.scrollToSection(id);
-                    if (window.history.replaceState) {
-                        window.history.replaceState(null, "", "#" + id);
-                    }
+                    self.writeUrl(id);
                 }, 0);
             },
 
@@ -648,6 +660,17 @@ document.addEventListener("alpine:init", function () {
                 if (el) {
                     el.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
+            },
+
+            writeUrl: function (hashId) {
+                if (!window.history.replaceState) {
+                    return;
+                }
+                var url = window.location.pathname + "?tab=" + this.tab;
+                if (hashId) {
+                    url += "#" + hashId;
+                }
+                window.history.replaceState(null, "", url);
             },
         };
     });
