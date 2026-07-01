@@ -1040,7 +1040,7 @@ def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[
 
 @app.task
 def monitor_selection_periodic(session_factory: sessionmaker | None = None) -> dict[str, Any]:
-    """Hourly heartbeat — run one full monitor selection."""
+    """Periodic heartbeat — run one full monitor selection (every 15 minutes)."""
     from opendlp.service_layer.monitoring import run_monitoring_selection  # noqa: PLC0415
 
     with bootstrap(session_factory=session_factory) as uow:

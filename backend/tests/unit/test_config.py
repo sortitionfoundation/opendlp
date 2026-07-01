@@ -282,19 +282,19 @@ class TestMonitorConfig:
 
     def test_max_age_returns_default_when_unset(self, clear_env_vars):
         clear_env_vars("MONITOR_HEALTH_MAX_AGE_MINUTES")
-        assert get_monitor_health_max_age_minutes() == 120
+        assert get_monitor_health_max_age_minutes() == 45
 
     def test_max_age_returns_default_for_non_integer(self, temp_env_vars, caplog):
         temp_env_vars(MONITOR_HEALTH_MAX_AGE_MINUTES="not-an-int")
         with caplog.at_level("WARNING"):
-            assert get_monitor_health_max_age_minutes() == 120
+            assert get_monitor_health_max_age_minutes() == 45
         warnings = [r for r in caplog.records if r.levelname == "WARNING"]
         assert len(warnings) == 1
         assert "MONITOR_HEALTH_MAX_AGE_MINUTES" in warnings[0].message
 
     def test_max_age_returns_value_when_valid(self, temp_env_vars):
-        temp_env_vars(MONITOR_HEALTH_MAX_AGE_MINUTES="45")
-        assert get_monitor_health_max_age_minutes() == 45
+        temp_env_vars(MONITOR_HEALTH_MAX_AGE_MINUTES="90")
+        assert get_monitor_health_max_age_minutes() == 90
 
 
 class TestGetMaxCsvUploadMb:

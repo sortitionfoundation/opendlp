@@ -363,24 +363,24 @@ def get_monitor_user_id() -> "uuid.UUID | None":
 def get_monitor_health_max_age_minutes() -> int:
     """
     Get the maximum age (in minutes) of a successful monitor run before it
-    is considered STALE. Returns 120 by default.
+    is considered STALE. Returns 45 by default (three 15-minute run cycles).
 
     Environment variable: MONITOR_HEALTH_MAX_AGE_MINUTES
     """
     value = os.environ.get("MONITOR_HEALTH_MAX_AGE_MINUTES", "")
     if not value:
-        return 120
+        return 45
     try:
         parsed = int(value)
         if parsed <= 0:
             logging.warning(
-                f"MONITOR_HEALTH_MAX_AGE_MINUTES must be positive, got '{value}'. Using default 120 minutes."
+                f"MONITOR_HEALTH_MAX_AGE_MINUTES must be positive, got '{value}'. Using default 45 minutes."
             )
-            return 120
+            return 45
         return parsed
     except ValueError:
-        logging.warning(f"Invalid MONITOR_HEALTH_MAX_AGE_MINUTES value '{value}'. Using default 120 minutes.")
-        return 120
+        logging.warning(f"Invalid MONITOR_HEALTH_MAX_AGE_MINUTES value '{value}'. Using default 45 minutes.")
+        return 45
 
 
 class FlaskBaseConfig:
