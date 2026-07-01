@@ -580,6 +580,78 @@ document.addEventListener("alpine:init", function () {
      * Interactive demo component that simulates different task states
      * (running, completed, failed) without actual server polling.
      */
+    /**
+     * Showcase page navigation
+     *
+     * Tracks the active tab (Foundations / Components) and powers the
+     * jump-to-section dropdown in the sticky header. On change, switches
+     * tab if needed, scrolls to the target section, and updates the URL
+     * hash so the position is shareable.
+     *
+     * On init, restores the section from window.location.hash and switches
+     * to the matching tab (read from the target's data-tab attribute).
+     *
+     * Usage:
+     *   <div x-data="showcaseNav">
+     *     <select x-model="selected" @change="goTo()">
+     *       <option value="components:button">Button</option>
+     *     </select>
+     *     <div x-show="tab === 'components'">
+     *       <div id="button" data-tab="components">...</div>
+     *     </div>
+     *   </div>
+     */
+    Alpine.data("showcaseNav", function () {
+        return {
+            tab: "components",
+            selected: "",
+
+            init: function () {
+                var self = this;
+                var hash = window.location.hash;
+                if (!hash || hash.length <= 1) {
+                    return;
+                }
+                var id = hash.substring(1);
+                var el = document.getElementById(id);
+                if (el && el.dataset && el.dataset.tab) {
+                    self.tab = el.dataset.tab;
+                }
+                // Defer so x-show has rendered the target tab's content
+                setTimeout(function () {
+                    self.scrollToSection(id);
+                }, 50);
+            },
+
+            goTo: function () {
+                var value = this.selected;
+                if (!value) {
+                    return;
+                }
+                var sepIndex = value.indexOf(":");
+                if (sepIndex === -1) {
+                    return;
+                }
+                this.tab = value.substring(0, sepIndex);
+                var id = value.substring(sepIndex + 1);
+                var self = this;
+                setTimeout(function () {
+                    self.scrollToSection(id);
+                    if (window.history.replaceState) {
+                        window.history.replaceState(null, "", "#" + id);
+                    }
+                }, 0);
+            },
+
+            scrollToSection: function (id) {
+                var el = document.getElementById(id);
+                if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            },
+        };
+    });
+
     Alpine.data("progressModalDemo", function () {
         return {
             modalOpen: false,
