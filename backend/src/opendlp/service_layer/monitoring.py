@@ -6,7 +6,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
 import structlog
@@ -52,6 +52,15 @@ class MonitorResult:
 
 
 @dataclass
+class RecentFailure:
+    """A single failed monitor run, summarised for the health payload."""
+
+    error_class: str
+    status: str
+    at: datetime | None = None
+
+
+@dataclass
 class MonitorSelectionStatus:
     """Snapshot of the monitor assembly's current health.
 
@@ -59,10 +68,21 @@ class MonitorSelectionStatus:
         "NOT_CONFIGURED" - MONITOR_ASSEMBLY_ID is not set
         "OK"             - latest SELECT_GSHEET COMPLETED within max-age window
         "STALE"          - latest SELECT_GSHEET stale, pending too long, or absent
-        "FAILED"         - latest SELECT_GSHEET in a terminal-failed state, or
-                           latest DELETE_OLD_TABS failed
+        "DEGRADED"       - latest SELECT_GSHEET failed, but fewer than
+                           CONSECUTIVE_FAILURE_THRESHOLD runs have failed in a row
+        "FAILED"         - the most recent runs have all failed (at least
+                           CONSECUTIVE_FAILURE_THRESHOLD in a row), or latest
+                           DELETE_OLD_TABS failed
         "PENDING"        - latest SELECT_GSHEET in flight within window
         "UNKNOWN"        - DB query failed
+
+    consecutive_failures:
+        Number of most-recent SELECT_GSHEET runs that failed in an unbroken run
+        (0 if the latest run did not fail).
+
+    recent_failures:
+        One entry per run in the current failure streak, newest first, each
+        carrying the class name of the underlying error.
 
     cleanup_status:
         "OK" or "FAILED" — based on the latest DELETE_OLD_TABS record (if any).
@@ -73,7 +93,14 @@ class MonitorSelectionStatus:
     message: str = ""
     run_url: str = ""
     cleanup_status: str = "OK"
+    consecutive_failures: int = 0
+    recent_failures: list[RecentFailure] = field(default_factory=list)
 
+
+# Number of consecutive failed monitor runs required before the check goes red.
+# A single transient failure should not page anyone; a sustained run of
+# failures should. Not yet configurable per error class — see the feature docs.
+CONSECUTIVE_FAILURE_THRESHOLD = 3
 
 _FAILED_TERMINAL_STATUSES = (SelectionRunStatus.FAILED, SelectionRunStatus.CANCELLED)
 
@@ -84,37 +111,61 @@ def truncate(text: str, limit: int = 200) -> str:
     return text[: limit - 1] + "…"
 
 
-def _classify_select_record(
-    record: SelectionRunRecord | None,
+def _error_class_for(record: SelectionRunRecord) -> str:
+    """Class name of the record's underlying error, falling back to its status."""
+    error = record.run_report.last_error()
+    if error is not None:
+        return type(error).__name__
+    return record.status.value
+
+
+def _failure_streak(recent: list[SelectionRunRecord]) -> list[SelectionRunRecord]:
+    """The unbroken run of failed-terminal records at the head of ``recent`` (newest first)."""
+    streak: list[SelectionRunRecord] = []
+    for record in recent:
+        if record.status in _FAILED_TERMINAL_STATUSES:
+            streak.append(record)
+        else:
+            break
+    return streak
+
+
+def _classify_select_records(
+    recent: list[SelectionRunRecord],
     max_age: timedelta,
     now: datetime,
-) -> tuple[str, datetime | None, str]:
-    """Classify the most recent SELECT_GSHEET record.
+) -> tuple[str, datetime | None, str, int, list[RecentFailure]]:
+    """Classify the recent SELECT_GSHEET window (newest first).
 
-    Returns (status, last_run_at, message).
+    Returns (status, last_run_at, message, consecutive_failures, recent_failures).
+    A single failure yields DEGRADED; only a streak of at least
+    CONSECUTIVE_FAILURE_THRESHOLD failures yields FAILED.
     """
-    if record is None:
-        return "STALE", None, "no monitor selection runs recorded yet"
+    if not recent:
+        return "STALE", None, "no monitor selection runs recorded yet", 0, []
 
-    age = now - (record.created_at or now)
-    last_run_at = record.created_at
+    latest = recent[0]
+    last_run_at = latest.created_at
 
-    if record.status in _FAILED_TERMINAL_STATUSES:
-        return (
-            "FAILED",
-            last_run_at,
-            truncate(record.error_message or f"latest selection {record.status.value}"),
-        )
+    if latest.status in _FAILED_TERMINAL_STATUSES:
+        streak = _failure_streak(recent)
+        recent_failures = [
+            RecentFailure(error_class=_error_class_for(r), status=r.status.value, at=r.created_at) for r in streak
+        ]
+        message = truncate(latest.error_message or f"latest selection {latest.status.value}")
+        status = "FAILED" if len(streak) >= CONSECUTIVE_FAILURE_THRESHOLD else "DEGRADED"
+        return status, last_run_at, message, len(streak), recent_failures
 
-    if record.is_completed:
+    age = now - (latest.created_at or now)
+    if latest.is_completed:
         if age > max_age:
-            return "STALE", last_run_at, "latest successful selection is older than threshold"
-        return "OK", last_run_at, "latest selection completed successfully"
+            return "STALE", last_run_at, "latest successful selection is older than threshold", 0, []
+        return "OK", last_run_at, "latest selection completed successfully", 0, []
 
     # PENDING or RUNNING
     if age > max_age:
-        return "STALE", last_run_at, "selection has been pending/running longer than threshold"
-    return "PENDING", last_run_at, f"selection is currently {record.status.value}"
+        return "STALE", last_run_at, "selection has been pending/running longer than threshold", 0, []
+    return "PENDING", last_run_at, f"selection is currently {latest.status.value}", 0, []
 
 
 def _classify_cleanup_record(record: SelectionRunRecord | None) -> str:
@@ -138,7 +189,11 @@ def check_monitor_selection(uow: AbstractUnitOfWork) -> MonitorSelectionStatus:
         )
 
     try:
-        select_record = get_latest_monitor_run(uow, task_type=SelectionTaskType.SELECT_GSHEET)
+        recent_selects = uow.selection_run_records.get_recent_for_assembly(
+            assembly_id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            limit=CONSECUTIVE_FAILURE_THRESHOLD,
+        )
         cleanup_record = get_latest_monitor_run(uow, task_type=SelectionTaskType.DELETE_OLD_TABS)
     except Exception:
         return MonitorSelectionStatus(
@@ -149,7 +204,9 @@ def check_monitor_selection(uow: AbstractUnitOfWork) -> MonitorSelectionStatus:
     max_age = timedelta(minutes=config.get_monitor_health_max_age_minutes())
     now = datetime.now(UTC)
 
-    status, last_run_at, message = _classify_select_record(select_record, max_age, now)
+    status, last_run_at, message, consecutive_failures, recent_failures = _classify_select_records(
+        recent_selects, max_age, now
+    )
     cleanup_status = _classify_cleanup_record(cleanup_record)
 
     if cleanup_status == "FAILED" and status == "OK":
@@ -161,8 +218,9 @@ def check_monitor_selection(uow: AbstractUnitOfWork) -> MonitorSelectionStatus:
             message = truncate(cleanup_record.error_message)
 
     run_url = ""
-    if select_record is not None:
-        run_url = _safe_run_url(select_record.assembly_id, select_record.task_id)
+    if recent_selects:
+        latest = recent_selects[0]
+        run_url = _safe_run_url(latest.assembly_id, latest.task_id)
 
     return MonitorSelectionStatus(
         status=status,
@@ -170,6 +228,8 @@ def check_monitor_selection(uow: AbstractUnitOfWork) -> MonitorSelectionStatus:
         message=message,
         run_url=run_url,
         cleanup_status=cleanup_status,
+        consecutive_failures=consecutive_failures,
+        recent_failures=recent_failures,
     )
 
 
