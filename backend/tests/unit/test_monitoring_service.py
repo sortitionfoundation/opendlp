@@ -306,7 +306,7 @@ class TestCheckMonitorSelection:
         assert result.cleanup_status == "OK"
         assert result.last_run_at == record.created_at
 
-    def test_failed_select_record(self, temp_env_vars):
+    def test_single_failure_is_degraded_not_failed(self, temp_env_vars):
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
         uow = FakeUnitOfWork()
@@ -321,7 +321,8 @@ class TestCheckMonitorSelection:
             )
         )
         result = check_monitor_selection(uow)
-        assert result.status == "FAILED"
+        assert result.status == "DEGRADED"
+        assert result.consecutive_failures == 1
         assert "permission denied" in result.message
 
     def test_cleanup_failure_overrides_ok(self, temp_env_vars):
@@ -350,6 +351,95 @@ class TestCheckMonitorSelection:
         result = check_monitor_selection(uow)
         assert result.status == "FAILED"
         assert result.cleanup_status == "FAILED"
+
+
+def _failed_select(assembly_id: uuid.UUID, minutes_ago: int, error: Exception | None = None) -> SelectionRunRecord:
+    record = SelectionRunRecord(
+        assembly_id=assembly_id,
+        task_id=uuid.uuid4(),
+        status=SelectionRunStatus.FAILED,
+        task_type=SelectionTaskType.SELECT_GSHEET,
+        created_at=datetime.now(UTC) - timedelta(minutes=minutes_ago),
+    )
+    if error is not None:
+        record.run_report.add_error(error)
+    return record
+
+
+def _completed_select(assembly_id: uuid.UUID, minutes_ago: int) -> SelectionRunRecord:
+    return SelectionRunRecord(
+        assembly_id=assembly_id,
+        task_id=uuid.uuid4(),
+        status=SelectionRunStatus.COMPLETED,
+        task_type=SelectionTaskType.SELECT_GSHEET,
+        created_at=datetime.now(UTC) - timedelta(minutes=minutes_ago),
+    )
+
+
+class TestConsecutiveFailures:
+    def test_two_consecutive_failures_stays_degraded(self, temp_env_vars):
+        """Two failures in a row is below the threshold, so the check is DEGRADED not FAILED."""
+        assembly_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
+        uow = FakeUnitOfWork()
+        uow.selection_run_records.add(_completed_select(assembly_id, minutes_ago=45))
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=30))
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=5))
+
+        result = check_monitor_selection(uow)
+        assert result.status == "DEGRADED"
+        assert result.consecutive_failures == 2
+
+    def test_three_consecutive_failures_go_red(self, temp_env_vars):
+        """Three failures in a row hits the threshold and the check goes FAILED."""
+        assembly_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
+        uow = FakeUnitOfWork()
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=35))
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=20))
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=5))
+
+        result = check_monitor_selection(uow)
+        assert result.status == "FAILED"
+        assert result.consecutive_failures == 3
+
+    def test_recent_success_clears_the_streak(self, temp_env_vars):
+        """A successful latest run resets the failure streak even if older runs failed."""
+        assembly_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
+        uow = FakeUnitOfWork()
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=35))
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=20))
+        uow.selection_run_records.add(_completed_select(assembly_id, minutes_ago=5))
+
+        result = check_monitor_selection(uow)
+        assert result.status == "OK"
+        assert result.consecutive_failures == 0
+        assert result.recent_failures == []
+
+    def test_recent_failures_report_error_class(self, temp_env_vars):
+        """Each failed run in the streak reports the class name of its error."""
+        assembly_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
+        uow = FakeUnitOfWork()
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=20, error=TimeoutError("slow")))
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=5, error=ValueError("bad")))
+
+        result = check_monitor_selection(uow)
+        assert result.status == "DEGRADED"
+        # newest first
+        assert [f.error_class for f in result.recent_failures] == ["ValueError", "TimeoutError"]
+
+    def test_failure_without_report_error_falls_back_to_status(self, temp_env_vars):
+        """A failed run with no recorded exception still reports an error_class."""
+        assembly_id = uuid.uuid4()
+        temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
+        uow = FakeUnitOfWork()
+        uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=5))
+
+        result = check_monitor_selection(uow)
+        assert len(result.recent_failures) == 1
+        assert result.recent_failures[0].error_class == "failed"
 
 
 class TestGetLatestMonitorRun:
