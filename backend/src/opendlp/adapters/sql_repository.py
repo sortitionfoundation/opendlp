@@ -601,6 +601,23 @@ class SqlAlchemySelectionRunRecordRepository(SqlAlchemyRepository, SelectionRunR
             query = query.filter(orm.selection_run_records.c.task_type == task_type.value)
         return query.order_by(orm.selection_run_records.c.created_at.desc()).first()
 
+    def get_recent_for_assembly(
+        self,
+        assembly_id: uuid.UUID,
+        task_type: SelectionTaskType = SelectionTaskType.SELECT_GSHEET,
+        limit: int = 3,
+    ) -> list[SelectionRunRecord]:
+        """Get up to ``limit`` most recent records of a task type for an assembly, newest first."""
+        return (
+            self.session
+            .query(SelectionRunRecord)
+            .filter(orm.selection_run_records.c.assembly_id == assembly_id)
+            .filter(orm.selection_run_records.c.task_type == task_type.value)
+            .order_by(orm.selection_run_records.c.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+
     def delete_old_for_assembly(self, assembly_id: uuid.UUID, keep: int) -> int:
         """Delete all but the most recent ``keep`` records for this assembly. Returns count deleted."""
         if keep < 0:
