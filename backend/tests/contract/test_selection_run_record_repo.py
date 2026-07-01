@@ -220,6 +220,68 @@ class TestGetLatestForAssemblyByTaskType:
         assert latest is None
 
 
+class TestGetRecentForAssembly:
+    def test_returns_newest_first_up_to_limit(self, selection_run_backend: ContractBackend):
+        """Records come back ordered newest-first, capped at the limit."""
+        assembly = selection_run_backend.make_assembly()
+        now = datetime.now(UTC)
+        made = [
+            _make_record(
+                selection_run_backend,
+                assembly.id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                created_at=now - timedelta(minutes=10 * (5 - i)),
+            )
+            for i in range(5)
+        ]
+
+        recent = selection_run_backend.repo.get_recent_for_assembly(
+            assembly.id, task_type=SelectionTaskType.SELECT_GSHEET, limit=3
+        )
+        assert [r.task_id for r in recent] == [made[4].task_id, made[3].task_id, made[2].task_id]
+
+    def test_filters_by_task_type(self, selection_run_backend: ContractBackend):
+        """Only records of the requested task type are returned."""
+        assembly = selection_run_backend.make_assembly()
+        now = datetime.now(UTC)
+        select_record = _make_record(
+            selection_run_backend,
+            assembly.id,
+            task_type=SelectionTaskType.SELECT_GSHEET,
+            created_at=now - timedelta(hours=2),
+        )
+        _make_record(
+            selection_run_backend,
+            assembly.id,
+            task_type=SelectionTaskType.DELETE_OLD_TABS,
+            created_at=now,
+        )
+
+        recent = selection_run_backend.repo.get_recent_for_assembly(
+            assembly.id, task_type=SelectionTaskType.SELECT_GSHEET, limit=3
+        )
+        assert [r.task_id for r in recent] == [select_record.task_id]
+
+    def test_scopes_to_assembly(self, selection_run_backend: ContractBackend):
+        """Records from other assemblies are excluded."""
+        a1 = selection_run_backend.make_assembly()
+        a2 = selection_run_backend.make_assembly()
+        mine = _make_record(selection_run_backend, a1.id, task_type=SelectionTaskType.SELECT_GSHEET)
+        _make_record(selection_run_backend, a2.id, task_type=SelectionTaskType.SELECT_GSHEET)
+
+        recent = selection_run_backend.repo.get_recent_for_assembly(
+            a1.id, task_type=SelectionTaskType.SELECT_GSHEET, limit=3
+        )
+        assert [r.task_id for r in recent] == [mine.task_id]
+
+    def test_returns_empty_when_none(self, selection_run_backend: ContractBackend):
+        """No matching records yields an empty list."""
+        recent = selection_run_backend.repo.get_recent_for_assembly(
+            uuid.uuid4(), task_type=SelectionTaskType.SELECT_GSHEET, limit=3
+        )
+        assert recent == []
+
+
 class TestDeleteOldForAssembly:
     def test_keeps_most_recent_n(self, selection_run_backend: ContractBackend):
         assembly = selection_run_backend.make_assembly()

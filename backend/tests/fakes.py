@@ -434,6 +434,17 @@ class FakeSelectionRunRecordRepository(FakeRepository, SelectionRunRecordReposit
             return None
         return max(assembly_records, key=lambda r: r.created_at or datetime.min)
 
+    def get_recent_for_assembly(
+        self,
+        assembly_id: uuid.UUID,
+        task_type: SelectionTaskType = SelectionTaskType.SELECT_GSHEET,
+        limit: int = 3,
+    ) -> list[SelectionRunRecord]:
+        """Get up to ``limit`` most recent records of a task type for an assembly, newest first."""
+        matching = [r for r in self._items if r.assembly_id == assembly_id and r.task_type == task_type]
+        matching.sort(key=lambda r: r.created_at or datetime.min, reverse=True)
+        return matching[:limit]
+
     def delete_old_for_assembly(self, assembly_id: uuid.UUID, keep: int) -> int:
         """Delete all but the most recent ``keep`` records for this assembly. Returns count deleted."""
         if keep < 0:

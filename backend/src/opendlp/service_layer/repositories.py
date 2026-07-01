@@ -239,6 +239,16 @@ class SelectionRunRecordRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_recent_for_assembly(
+        self,
+        assembly_id: uuid.UUID,
+        task_type: SelectionTaskType = SelectionTaskType.SELECT_GSHEET,
+        limit: int = 3,
+    ) -> list[SelectionRunRecord]:
+        """Get up to ``limit`` most recent records of a task type for an assembly, newest first."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def delete_old_for_assembly(self, assembly_id: uuid.UUID, keep: int) -> int:
         """Delete all but the most recent ``keep`` records for this assembly. Returns count deleted."""
         raise NotImplementedError
