@@ -1,135 +1,104 @@
 {#
 ABOUTME: Showcase section for modal components
-ABOUTME: Displays base modal, progress_modal, and helper macros with interactive demos
+ABOUTME: Displays alert_dialog, base modal, progress_modal, and helper macros with interactive demos
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import progress_modal, modal_footer_start, modal_footer_end, spinner, status_badge, message_log, labeled_value %}
+{% from "backoffice/components/modal.html" import alert_dialog, modal, progress_modal, dialog_header, dialog_body, dialog_footer, dialog_close_icon, spinner, status_badge, message_log, labeled_value %}
 {% macro modal_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Modal Components") }}
-        {{ showcase_description("Modal dialogs for displaying content, progress tracking, and task status. Includes helper macros for common progress modal patterns.") }}
+        {{ showcase_description("Dialog primitives for the backoffice. Three presets — alert_dialog for confirmations (matches Figma), modal for content, and progress_modal for HTMX-polled task views — all share the same .dialog-* visual atoms.") }}
+        {# ============================================================
+           ALERT DIALOG — matches Figma 1601:856
+        ============================================================ #}
+        {{ showcase_subtitle("Alert Dialog") }}
+        <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+            Compact confirmation pattern. Title + supporting text + actions,
+            no header chrome. Matches the Figma alert dialog spec exactly.
+        </p>
+        <div x-data="modal({ initialOpen: false, canClose: true })" class="mb-8">
+            <div class="flex gap-2 mb-4">
+                {{ button("Show Alert Dialog", variant="primary", attrs='@click="open()"') }}
+            </div>
+            {% call alert_dialog(id="showcase-alert-dialog", title=_("Delete Account?"), description=_("Deleting account is irreversible and will erase all your data. This action cannot be undone.")) %}
+                {{ button(_("Cancel"), variant="secondary", attrs='@click="close()"') }}
+                {{ button(_("Delete"), variant="primary", attrs='@click="close()"') }}
+            {% endcall %}
+        </div>
+        {# ============================================================
+           PROGRESS MODAL — HTMX-driven; showcase renders a static
+           preview and uses Alpine only to toggle the display state.
+        ============================================================ #}
         {{ showcase_subtitle("Progress Modal States") }}
         <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
             The progress_modal is used for long-running tasks. It supports HTMX polling for real-time updates.
             Below are interactive demos showing different task states.
         </p>
-        {# Interactive state demo using Alpine.js with CSP-compatible methods #}
         <div x-data="progressModalDemo()" class="mb-8">
             <div class="flex gap-2 mb-4">
                 {{ button("Show Running State", variant="primary", attrs='@click="showRunning()"') }}
                 {{ button("Show Completed State", variant="secondary", attrs='@click="showCompleted()"') }}
                 {{ button("Show Failed State", variant="outline", attrs='@click="showFailed()"') }}
             </div>
-            {# Modal overlay - controlled by Alpine #}
+            {# The showcase uses the same atoms as progress_modal(). We don't call
+               progress_modal() directly because the demo needs Alpine state, not HTMX polling. #}
             <div x-show="modalOpen" x-cloak>
-                {# Backdrop #}
-                <div class="fixed inset-0 z-40"
-                     style="background-color: rgba(0, 0, 0, 0.5);
-                            cursor: pointer"
-                     @click="closeModal()"></div>
-                {# Modal panel #}
-                <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-                     role="dialog"
-                     aria-modal="true">
-                    <div class="pointer-events-auto w-full max-w-2xl mx-4 rounded-lg shadow-xl overflow-hidden"
-                         style="background-color: var(--color-tables-cards);
-                                border: 1px solid var(--color-borders-dividers)"
-                         @click.stop>
-                        {# Header #}
-                        <div class="px-6 py-4 flex items-center justify-between"
-                             style="border-bottom: 1px solid var(--color-borders-dividers)">
-                            <h2 class="text-heading-lg" style="color: var(--color-headings);">Task Progress</h2>
+                <div class="dialog-backdrop dialog-backdrop--clickable" @click="closeModal()"></div>
+                <div class="dialog-positioner" role="dialog" aria-modal="true" aria-labelledby="showcase-progress-title">
+                    <div class="dialog-panel dialog-panel--default" @click.stop>
+                        {% call dialog_header(title="Task Progress", title_id="showcase-progress-title") %}
                             <button type="button"
                                     @click="closeModal()"
                                     :disabled="!canClose()"
-                                    class="p-2 rounded-lg transition-colors"
-                                    :class="canClose() ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'"
-                                    style="color: var(--color-secondary-text)"
+                                    class="dialog-close-btn"
                                     aria-label="Close">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-5 w-5"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                {{ dialog_close_icon() }}
                             </button>
-                        </div>
-                        {# Content #}
-                        <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">
-                            {# Task type #}
+                        {% endcall %}
+                        {% call dialog_body() %}
                             {{ labeled_value('Task:', 'Run Selection Algorithm') }}
-                            {# Status badge - dynamic based on state #}
                             <div class="mb-4">
-                                <span class="text-body-md font-medium"
-                                      style="color: var(--color-headings)">Status:</span>
+                                <span class="text-body-md font-medium" style="color: var(--color-headings)">Status:</span>
                                 <span x-show="taskState === 'running'"
                                       class="text-body-md px-2 py-1 rounded"
-                                      style="background-color: var(--color-info-background);
-                                             color: var(--color-info-text)">Running</span>
+                                      style="background-color: var(--color-info-background); color: var(--color-info-text)">Running</span>
                                 <span x-show="taskState === 'completed'"
                                       class="text-body-md px-2 py-1 rounded"
-                                      style="background-color: var(--color-success-background);
-                                             color: var(--color-success-text)">Completed</span>
+                                      style="background-color: var(--color-success-background); color: var(--color-success-text)">Completed</span>
                                 <span x-show="taskState === 'failed'"
                                       class="text-body-md px-2 py-1 rounded"
-                                      style="background-color: var(--color-error-background);
-                                             color: var(--color-error-text)">Failed</span>
+                                      style="background-color: var(--color-error-background); color: var(--color-error-text)">Failed</span>
                             </div>
-                            {# Spinner - only when running #}
-                            <div x-show="taskState === 'running'" class="flex items-center gap-3 mb-4">
-                                <svg class="animate-spin h-5 w-5"
-                                     style="color: var(--color-primary-action)"
-                                     xmlns="http://www.w3.org/2000/svg"
-                                     fill="none"
-                                     viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                    </path>
-                                </svg>
-                                <span class="text-body-md" style="color: var(--color-secondary-text);">Processing...</span>
-                            </div>
-                            {# Success message #}
+                            <div x-show="taskState === 'running'">{{ spinner("Processing...") }}</div>
                             <div x-show="taskState === 'completed'" class="mb-4">
-                                <span class="text-body-md font-medium"
-                                      style="color: var(--color-success-text)">Result:</span>
+                                <span class="text-body-md font-medium" style="color: var(--color-success-text)">Result:</span>
                                 <span class="text-body-md" style="color: var(--color-success-text);">Task completed successfully.</span>
                             </div>
-                            {# Error message #}
                             <div x-show="taskState === 'failed'" class="mb-4">
-                                <span class="text-body-md font-medium"
-                                      style="color: var(--color-error-text)">Error:</span>
+                                <span class="text-body-md font-medium" style="color: var(--color-error-text)">Error:</span>
                                 <span class="text-body-md" style="color: var(--color-error-text);">
                                     Selection could not be completed. Insufficient candidates in pool.
                                 </span>
                             </div>
-                            {# Messages log #}
                             <div class="mb-4">
-                                <span class="text-body-md font-medium"
-                                      style="color: var(--color-headings)">Messages:</span>
+                                <span class="text-body-md font-medium" style="color: var(--color-headings)">Messages:</span>
                                 <div class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto"
-                                     style="background-color: var(--color-subtle-background-panels);
-                                            border: 1px solid var(--color-borders-dividers)">
+                                     style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers)">
                                     <template x-for="msg in messages" :key="msg">
-                                        <p class="text-body-sm mb-1"
-                                           style="color: var(--color-body-text)"
-                                           x-text="msg"></p>
+                                        <p class="text-body-sm mb-1" style="color: var(--color-body-text)" x-text="msg"></p>
                                     </template>
                                 </div>
                             </div>
-                            {# Footer #}
-                            <div class="px-6 py-3 flex gap-2 justify-end -mx-6 -mb-4 mt-4"
-                                 style="border-top: 1px solid var(--color-borders-dividers);
-                                        background-color: var(--color-tables-cards)">
-                                <template x-if="isRunning()">
-                                    {{ button("Cancel Task", variant="secondary", attrs='@click="cancelTask()"') }}
-                                </template>
-                                <template x-if="canClose()">
-                                    {{ button("Close", variant="primary", attrs='@click="closeModal()"') }}
-                                </template>
-                            </div>
-                        </div>
+                        {% endcall %}
+                        {% call dialog_footer() %}
+                            <template x-if="isRunning()">
+                                {{ button("Cancel Task", variant="secondary", attrs='@click="cancelTask()"') }}
+                            </template>
+                            <template x-if="canClose()">
+                                {{ button("Close", variant="primary", attrs='@click="closeModal()"') }}
+                            </template>
+                        {% endcall %}
                     </div>
                 </div>
             </div>

@@ -32,7 +32,48 @@
     <h1 class="text-display-lg" style="color: var(--color-headings);">Design System</h1>
     <p class="text-body-lg mt-2 mb-8" style="color: var(--color-secondary-text);">Backoffice design system using Pines UI + Tailwind CSS</p>
 
-    <div x-data="{ tab: 'components' }">
+    <div x-data="showcaseNav">
+        {# Sticky jump-to-section header #}
+        <div class="sticky top-0 z-30 -mx-6 px-6 py-3 mb-6 flex flex-wrap items-center gap-3"
+             style="background-color: var(--color-page-background); border-bottom: 1px solid var(--color-borders-dividers);">
+            <label for="showcase-nav-jump" class="text-label-md" style="color: var(--color-secondary-text);">Jump to section</label>
+            <select id="showcase-nav-jump"
+                    x-model="selected"
+                    @change="goTo()"
+                    class="text-body-md rounded-md px-3 py-2 min-w-64"
+                    style="background-color: var(--color-page-background); color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
+                <option value="">Choose…</option>
+                <optgroup label="Foundations">
+                    <option value="foundations:primitive-tokens">Primitive Tokens</option>
+                    <option value="foundations:semantic-tokens">Semantic Tokens</option>
+                    <option value="foundations:spacing">Spacing Conventions</option>
+                    <option value="foundations:responsive">Responsive Layout</option>
+                    <option value="foundations:typography">Typography</option>
+                </optgroup>
+                <optgroup label="Components">
+                    <option value="components:button">Button</option>
+                    <option value="components:split-button">Split Button</option>
+                    <option value="components:input">Input</option>
+                    <option value="components:checkbox">Checkbox</option>
+                    <option value="components:radio">Radio Button</option>
+                    <option value="components:switch">Switch</option>
+                    <option value="components:search-dropdown">Search Dropdown</option>
+                    <option value="components:select-dropdown">Select Dropdown</option>
+                    <option value="components:card">Card</option>
+                    <option value="components:section">Section</option>
+                    <option value="components:modal">Modal</option>
+                    <option value="components:progress">Progress Bar</option>
+                    <option value="components:table">Table</option>
+                    <option value="components:pagination">Pagination</option>
+                    <option value="components:navigation">Navigation</option>
+                    <option value="components:breadcrumb">Breadcrumb</option>
+                    <option value="components:tabs">Tabs</option>
+                    <option value="components:alert">Alert</option>
+                    <option value="components:interactivity">Alpine.js Interactivity</option>
+                </optgroup>
+            </select>
+        </div>
+
         {# Tab navigation #}
         <div class="flex gap-1 mb-8 border-b" style="border-color: var(--color-borders-dividers);">
             <button
@@ -61,11 +102,11 @@
 
         {# Foundations tab content #}
         <div x-show="tab === 'foundations'" x-cloak>
-            {{ primitive_tokens_section() }}
-            {{ semantic_tokens_section() }}
-            {{ spacing_section() }}
-            {{ responsive_section() }}
-            {{ typography_section() }}
+            <div id="primitive-tokens" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ primitive_tokens_section() }}</div>
+            <div id="semantic-tokens" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ semantic_tokens_section() }}</div>
+            <div id="spacing" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ spacing_section() }}</div>
+            <div id="responsive" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ responsive_section() }}</div>
+            <div id="typography" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ typography_section() }}</div>
         </div>
 
         {# Components tab content #}

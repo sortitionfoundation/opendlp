@@ -677,4 +677,150 @@
         background-size: contain;
         background-repeat: no-repeat;
     }
+
+    /* ========================================
+       DIALOG COMPONENT STYLES
+       Shared visual atoms for modal(), progress_modal(), and alert_dialog().
+       Surface and rhythm match Figma node 1601:856 (alert dialog).
+       ======================================== */
+
+    .dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .dialog-backdrop--clickable {
+        cursor: pointer;
+    }
+
+    /* Panel positioning wrapper - centers the panel in the viewport */
+    .dialog-positioner {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    /* Shared panel surface — used by every dialog variant */
+    .dialog-panel {
+        pointer-events: auto;
+        width: 100%;
+        margin: 0 1rem;
+        background-color: var(--color-tables-cards);
+        border: 1px solid var(--color-borders-dividers);
+        border-radius: 0.5rem;
+        box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    /* Default size — for content/progress modals with chrome */
+    .dialog-panel--default {
+        max-width: 42rem; /* matches former max-w-2xl */
+    }
+
+    /* Alert size — compact confirmation dialog matching Figma 1601:856 */
+    .dialog-panel--alert {
+        max-width: 28rem;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 24px;
+    }
+
+    /* Header bar — title + optional close X, with bottom divider */
+    .dialog-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--color-borders-dividers);
+    }
+
+    .dialog-title {
+        font: 500 1.25rem/1.75rem var(--font-heading);
+        letter-spacing: 0;
+        color: var(--color-headings);
+        margin: 0;
+    }
+
+    /* Close button — uses :disabled selector for state, no inline :style needed */
+    .dialog-close-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        color: var(--color-secondary-text);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+
+    .dialog-close-btn:not(:disabled):hover {
+        background-color: var(--color-button-tertiary-bg-hover);
+    }
+
+    .dialog-close-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .dialog-close-btn svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    /* Body — scrolls when content overflows */
+    .dialog-body {
+        padding: 1rem 1.5rem;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    /* Footer — sticky action row inside the panel */
+    .dialog-footer {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        padding: 0.75rem 1.5rem;
+        border-top: 1px solid var(--color-borders-dividers);
+        background-color: var(--color-tables-cards);
+    }
+
+    /* Alert-dialog text block — title + description stack (Figma: gap 8) */
+    .dialog-text-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .dialog-text-stack__title {
+        font: 700 1.125rem/1.75rem var(--font-heading);
+        letter-spacing: 0.1px;
+        color: var(--color-headings);
+        margin: 0;
+    }
+
+    .dialog-text-stack__description {
+        font: 400 0.875rem/1.25rem var(--font-body);
+        color: var(--color-secondary-text);
+        margin: 0;
+    }
+
+    /* Alert-dialog actions row (Figma: justify-end, gap 8, no top divider) */
+    .dialog-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        width: 100%;
+    }
 }
