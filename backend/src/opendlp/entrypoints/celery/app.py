@@ -43,7 +43,7 @@ def get_celery_app(redis_host: str = "", redis_port: int = 0, old_app: Celery | 
             },
             "monitor-selection": {
                 "task": "opendlp.entrypoints.celery.tasks.monitor_selection_periodic",
-                "schedule": 3600.0,  # hourly
+                "schedule": 900.0,  # every 15 minutes
             },
             "prune-monitor-runs": {
                 "task": "opendlp.entrypoints.celery.tasks.prune_monitor_run_records",
