@@ -110,7 +110,7 @@ ABOUTME: Partial template included by patterns.html
                         {# Code Example #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Python (Route Handler)") }}</h4>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">from flask import flash
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">from flask import flash
 
 @bp.route("/save", methods=["POST"])
 def save_item():
@@ -122,7 +122,7 @@ def save_item():
                         {# Template Code #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Template (Automatic in base_page.html)") }}</h4>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# In base_page.html - already included #}
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# In base_page.html - already included #}
 {% from "backoffice/components/floating_alerts.html" import floating_alerts %}
 
 <main>
@@ -135,7 +135,7 @@ def save_item():
                         {# Alert Component Code #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Alert Component Options") }}</h4>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{% from "backoffice/components/alert.html" import alert %}
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{% from "backoffice/components/alert.html" import alert %}
 
 {# Standard alert (with bottom margin) #}
 {{ alert("Message", variant="success") }}

@@ -39,37 +39,37 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">assembly_id</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers)">assembly_id</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">Target assembly ID</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">field_key</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers)">field_key</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">Unique key (e.g., "age_range", "gender")</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">label</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers)">label</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str | None</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">Human-readable label; defaults to humanised field_key</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">group</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers)">group</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">eligibility, name_and_contact, address, about_you, consent, other</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers)">field_type</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers)">field_type</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">str</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">❌</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers)">text, email, integer, bool, bool_or_none, choice_radio, choice_dropdown, longtext</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">options</td>
+                                <td class="px-3 py-2 text-code">options</td>
                                 <td class="px-3 py-2">list[str] | None</td>
                                 <td class="px-3 py-2">❌</td>
                                 <td class="px-3 py-2">For choice fields: list of option values</td>
@@ -161,7 +161,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                                 <span x-text="responses.add_field.status === 'success' ? '✅ Success' : '❌ Error'"></span>
                             </span>
                         </div>
-                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                        <pre class="text-code overflow-x-auto whitespace-pre-wrap"
                              style="color: var(--color-body-text)"
                              x-text="formatResponse('add_field')"></pre>
                     </div>
@@ -193,7 +193,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                     </ul>
                 </div>
@@ -220,7 +220,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                     </ul>
                 </div>
@@ -246,7 +246,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             </p>
             <div class="mb-4">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                <ul class="text-code" style="color: var(--color-body-text);">
                     <li>assembly_id: UUID ✅</li>
                     <li>field_id: UUID ✅</li>
                     <li>label: str | None ❌</li>
@@ -278,7 +278,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                         <li>field_id: UUID ✅</li>
                     </ul>
@@ -306,7 +306,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                         <li>group: RespondentFieldGroup ✅</li>
                         <li>ordered_field_ids: list[UUID] ✅</li>
@@ -335,7 +335,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                         <li>field_id: UUID ✅</li>
                         <li>value: str ✅</li>
@@ -365,7 +365,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                         <li>field_id: UUID ✅</li>
                         <li>old_value: str ✅</li>
@@ -396,7 +396,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                         <li>field_id: UUID ✅</li>
                         <li>value: str ✅</li>
@@ -425,7 +425,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                     </ul>
                 </div>
@@ -453,7 +453,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                     </ul>
                 </div>
@@ -481,7 +481,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>assembly_id: UUID ✅</li>
                         <li>headers: list[str] ✅</li>
                         <li>id_column: str ✅</li>
@@ -503,7 +503,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             <div class="grid grid-cols-2 gap-6">
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">RespondentFieldGroup</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>eligibility</li>
                         <li>name_and_contact</li>
                         <li>address</li>
@@ -514,7 +514,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
                 </div>
                 <div>
                     <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">FieldType</h4>
-                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <ul class="text-code" style="color: var(--color-body-text);">
                         <li>text</li>
                         <li>longtext</li>
                         <li>email</li>
@@ -528,7 +528,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             </div>
             <div class="mt-4">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">RespondentFieldDefinition</h4>
-                <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{
+                <pre class="text-code p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{
   id: UUID,
   assembly_id: UUID,
   field_key: str,
@@ -545,7 +545,7 @@ ABOUTME: Lists all field-related service methods with parameters and return type
             </div>
             <div class="mt-4">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">ChoiceOption</h4>
-                <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{
+                <pre class="text-code p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{
   value: str,
   help_text: str
 }</pre>

@@ -73,11 +73,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                 border: 1px solid var(--color-borders-dividers)">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
-                                <span class="text-body-md font-medium" style="color: var(--color-headings)">{{ _("Number to select:") }}</span>
+                                <span class="text-label-lg" style="color: var(--color-headings)">{{ _("Number to select:") }}</span>
                                 <span class="text-body-md" style="color: var(--color-body-text);">{{ assembly.number_to_select }}</span>
                             </div>
                             <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, edit_number=1) }}"
-                               class="text-body-sm font-medium hover:underline"
+                               class="text-label-md hover:underline"
                                style="color: var(--color-primary-action)">{{ _("Edit") }}</a>
                         </div>
                     </div>
@@ -86,7 +86,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                         <div class="rounded-lg p-4 mb-4"
                              style="background-color: var(--color-warning-background);
                                     border: 1px solid var(--color-warning-text)">
-                            <p class="text-body-md font-medium mb-2"
+                            <p class="text-label-lg mb-2"
                                style="color: var(--color-warning-text)">
                                 {{ _("%(count)s respondents have been selected", count=csv_selected_count) }}
                             </p>
@@ -170,19 +170,19 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                             <table class="w-full">
                                 <thead>
                                     <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Status") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Task Type") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Started By") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Started At") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Completed At") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Comment") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Actions") }}</th>
                                     </tr>
                                 </thead>
@@ -191,7 +191,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                         <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
                                             {# Status #}
                                             <td class="py-3 px-4">
-                                                <span class="inline-block px-2 py-1 rounded text-body-sm font-medium"
+                                                <span class="inline-block px-2 py-1 rounded text-label-md"
                                                       {% if run_record.status.value == 'completed' %} style="background-color: var(--color-success-background); color: var(--color-success-text);" {% elif run_record.status.value == 'failed' %} style="background-color: var(--color-error-background); color: var(--color-error-text);" {% elif run_record.status.value == 'cancelled' %} style="background-color: var(--color-warning-background); color: var(--color-warning-text);" {% elif run_record.status.value == 'running' %} style="background-color: var(--color-info-background); color: var(--color-info-text);" {% else %} style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text);" {% endif %}>
                                                     {{ run_record.status.value.capitalize() }}
                                                 </span>
@@ -218,7 +218,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                             <td class="py-3 px-4">
                                                 <div class="flex items-center gap-2">
                                                     <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=run_record.task_id) }}"
-                                                       class="text-body-sm font-medium hover:underline"
+                                                       class="text-label-md hover:underline"
                                                        style="color: var(--color-primary-action)">{{ _("View") }}</a>
                                                     {# Download button for completed DB selections with results #}
                                                     {% if run_record.task_type.value in ('select_from_db', 'test_select_from_db') and run_record.is_completed and run_record.selected_ids %}
@@ -291,11 +291,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                 border: 1px solid var(--color-borders-dividers)">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
-                                <span class="text-body-md font-medium" style="color: var(--color-headings)">{{ _("Number to select:") }}</span>
+                                <span class="text-label-lg" style="color: var(--color-headings)">{{ _("Number to select:") }}</span>
                                 <span class="text-body-md" style="color: var(--color-body-text);">{{ assembly.number_to_select }}</span>
                             </div>
                             <a href="{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, edit_number=1) }}"
-                               class="text-body-sm font-medium hover:underline"
+                               class="text-label-md hover:underline"
                                style="color: var(--color-primary-action)">{{ _("Edit") }}</a>
                         </div>
                     </div>
@@ -355,19 +355,19 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                             <table class="w-full">
                                 <thead>
                                     <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Status") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Task Type") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Started By") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Started At") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Completed At") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Comment") }}</th>
-                                        <th class="text-left py-3 px-4 text-body-sm font-medium"
+                                        <th class="text-left py-3 px-4 text-label-md"
                                             style="color: var(--color-headings)">{{ _("Actions") }}</th>
                                     </tr>
                                 </thead>
@@ -376,7 +376,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                         <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
                                             {# Status #}
                                             <td class="py-3 px-4">
-                                                <span class="inline-block px-2 py-1 rounded text-body-sm font-medium"
+                                                <span class="inline-block px-2 py-1 rounded text-label-md"
                                                       {% if run_record.status.value == 'completed' %} style="background-color: var(--color-success-background); color: var(--color-success-text);" {% elif run_record.status.value == 'failed' %} style="background-color: var(--color-error-background); color: var(--color-error-text);" {% elif run_record.status.value == 'cancelled' %} style="background-color: var(--color-warning-background); color: var(--color-warning-text);" {% elif run_record.status.value == 'running' %} style="background-color: var(--color-info-background); color: var(--color-info-text);" {% else %} style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text);" {% endif %}>
                                                     {{ run_record.status.value.capitalize() }}
                                                 </span>
@@ -402,7 +402,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                             {# Actions #}
                                             <td class="py-3 px-4">
                                                 <a href="{{ url_for('gsheets.view_run_details', assembly_id=assembly.id, run_id=run_record.task_id) }}"
-                                                   class="text-body-sm font-medium hover:underline"
+                                                   class="text-label-md hover:underline"
                                                    style="color: var(--color-primary-action)">{{ _("View") }}</a>
                                             </td>
                                         </tr>
