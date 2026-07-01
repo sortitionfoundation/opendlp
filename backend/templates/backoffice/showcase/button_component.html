@@ -159,7 +159,7 @@ ABOUTME: Displays button variants and usage examples
 <p id="delete-warning">This action cannot be undone.</p>') %}
 <div class="flex flex-col gap-6">
     <div>
-        <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Toggle Buttons</h4>
+        <h4 class="text-heading-sm mb-3" style="color: var(--color-secondary-text);">Toggle Buttons</h4>
         <div class="flex flex-wrap gap-4 items-center">
             <div class="flex flex-col items-center gap-2">
                 {{ button("Mute", aria_pressed="true") }}
@@ -172,7 +172,7 @@ ABOUTME: Displays button variants and usage examples
         </div>
     </div>
     <div>
-        <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Menu Button</h4>
+        <h4 class="text-heading-sm mb-3" style="color: var(--color-secondary-text);">Menu Button</h4>
         <div class="flex flex-wrap gap-4 items-center">
             <div class="flex flex-col items-center gap-2">
                 {{ button("Actions", variant="secondary", trailing_icon=chevron_down_icon, aria_haspopup="menu", aria_expanded="false") }}
@@ -181,7 +181,7 @@ ABOUTME: Displays button variants and usage examples
         </div>
     </div>
     <div>
-        <h4 class="text-body-sm font-semibold mb-3" style="color: var(--color-secondary-text);">Button with Description</h4>
+        <h4 class="text-heading-sm mb-3" style="color: var(--color-secondary-text);">Button with Description</h4>
         <div class="flex flex-col gap-2">
             {{ button("Delete account", variant="danger", aria_describedby="delete-warning-demo") }}
             <p id="delete-warning-demo" class="text-caption" style="color: var(--color-secondary-text);">This action cannot be undone. Screen readers will announce this description.</p>

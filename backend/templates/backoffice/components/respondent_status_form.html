@@ -20,14 +20,14 @@ Args:
     <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Selection status") }}</h2>
     <dl class="flex flex-col gap-2 mb-4">
         <div class="flex items-baseline gap-3">
-            <dt class="text-body-md font-bold">{{ _("Current status:") }}</dt>
+            <dt class="text-label-lg">{{ _("Current status:") }}</dt>
             <dd>
                 <strong class="govuk-tag govuk-tag--{{ status_colour }}">{{ status_key|title }}</strong>
             </dd>
         </div>
         {% if respondent.selection_run_id %}
             <div class="flex items-baseline gap-3">
-                <dt class="text-body-md font-bold">{{ _("Selection run ID:") }}</dt>
+                <dt class="text-label-lg">{{ _("Selection run ID:") }}</dt>
                 <dd class="text-body-md">
                     {{ respondent.selection_run_id }}
                 </dd>
@@ -75,7 +75,7 @@ Args:
                           class="flex flex-col gap-3">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                         <input type="hidden" name="new_status" value="{{ target }}" />
-                        <label class="text-body-sm font-bold" for="transition-comment-{{ target }}">{{ _("Reason (required)") }}</label>
+                        <label class="text-label-md" for="transition-comment-{{ target }}">{{ _("Reason (required)") }}</label>
                         <textarea id="transition-comment-{{ target }}"
                                   name="comment"
                                   rows="3"

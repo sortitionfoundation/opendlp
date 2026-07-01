@@ -56,13 +56,13 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
 
                         <dl class="flex flex-col gap-2">
                             <div class="flex gap-2">
-                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Initial Selection Categories Tab:") }}</dt>
+                                <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Initial Selection Categories Tab:") }}</dt>
                                 <dd class="text-body-md" style="color: var(--color-body-text);">
                                     <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.select_targets_tab or _("Not configured") }}</code>
                                 </dd>
                             </div>
                             <div class="flex gap-2">
-                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Replacement Categories Tab:") }}</dt>
+                                <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Replacement Categories Tab:") }}</dt>
                                 <dd class="text-body-md" style="color: var(--color-body-text);">
                                     <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.replace_targets_tab or _("Not configured") }}</code>
                                 </dd>

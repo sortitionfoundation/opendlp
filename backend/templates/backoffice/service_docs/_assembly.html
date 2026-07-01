@@ -50,7 +50,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     title
                                 </td>
@@ -66,7 +66,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     question
                                 </td>
@@ -82,7 +82,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     first_assembly_date
                                 </td>
@@ -98,7 +98,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">
+                                <td class="px-3 py-2 text-code">
                                     number_to_select
                                 </td>
                                 <td class="px-3 py-2">
@@ -128,7 +128,7 @@
                 <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Title</label>
+                        <label class="text-label-md block mb-1">Title</label>
                         <input type="text"
                                x-model="createAssemblyTitle"
                                placeholder="My Citizens' Assembly"
@@ -136,7 +136,7 @@
                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Question</label>
+                        <label class="text-label-md block mb-1">Question</label>
                         <input type="text"
                                x-model="createAssemblyQuestion"
                                placeholder="How should we address climate change?"
@@ -144,7 +144,7 @@
                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Number to Select</label>
+                        <label class="text-label-md block mb-1">Number to Select</label>
                         <input type="number"
                                x-model="createAssemblyNumberToSelect"
                                placeholder="10"
@@ -203,7 +203,7 @@
                            style="border: 1px solid var(--color-borders-dividers)">
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     assembly_id
                                 </td>
@@ -235,7 +235,7 @@
                 <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <label class="text-label-md block mb-1">Assembly</label>
                         <select x-model="getAssemblyId"
                                 class="w-full px-3 py-2 rounded text-body-sm"
                                 style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
@@ -297,7 +297,7 @@
                            style="border: 1px solid var(--color-borders-dividers)">
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     assembly_id
                                 </td>
@@ -311,7 +311,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     **updates
                                 </td>
@@ -343,7 +343,7 @@
                 <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <label class="text-label-md block mb-1">Assembly</label>
                         <select x-model="updateAssemblyId"
                                 class="w-full px-3 py-2 rounded text-body-sm"
                                 style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
@@ -354,7 +354,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">New Title (optional)</label>
+                        <label class="text-label-md block mb-1">New Title (optional)</label>
                         <input type="text"
                                x-model="updateAssemblyTitle"
                                placeholder="Leave empty to keep current"
@@ -362,7 +362,7 @@
                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">New Question (optional)</label>
+                        <label class="text-label-md block mb-1">New Question (optional)</label>
                         <input type="text"
                                x-model="updateAssemblyQuestion"
                                placeholder="Leave empty to keep current"

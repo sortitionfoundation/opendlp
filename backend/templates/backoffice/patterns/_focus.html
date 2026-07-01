@@ -69,7 +69,7 @@ ABOUTME: Partial template included by patterns.html
                         {# Code Example #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Code") }}</h4>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;select x-data="{ selected: '' }"
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;select x-data="{ selected: '' }"
         x-model="selected"
         @change="window.location.href = $focusUrl('/page?param=' + selected)"
         data-focus-id="my-select"&gt;
@@ -113,7 +113,7 @@ ABOUTME: Partial template included by patterns.html
                         {# Code Example #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Code") }}</h4>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;a href="/page"
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;a href="/page"
    data-focus-id="my-link"
    x-data
    x-focus-preserve&gt;
@@ -133,7 +133,7 @@ ABOUTME: Partial template included by patterns.html
                         {# Code Example #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Code") }}</h4>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;div x-data="urlSelect({
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;div x-data="urlSelect({
     baseUrl: '{% raw %}{{ url_for(...) }}{% endraw %}',
     paramName: 'source',
     initialValue: '{% raw %}{{ current_value }}{% endraw %}'
@@ -172,11 +172,11 @@ ABOUTME: Partial template included by patterns.html
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">static/backoffice/js/alpine-components.js</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">static/backoffice/js/alpine-components.js</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">$focusUrl magic, x-focus-preserve directive, urlSelect component</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Data source selector with urlSelect</td>
                             </tr>
                         </tbody>

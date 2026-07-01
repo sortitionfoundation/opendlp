@@ -50,7 +50,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     assembly_id
                                 </td>
@@ -66,7 +66,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     csv_content
                                 </td>
@@ -80,7 +80,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">replace_existing</td>
+                                <td class="px-3 py-2 text-code">replace_existing</td>
                                 <td class="px-3 py-2">bool</td>
                                 <td class="px-3 py-2">❌</td>
                                 <td class="px-3 py-2">Always replaces (default: true)</td>
@@ -100,7 +100,7 @@
                         {# CSV Format Example #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("CSV Format") }}</h4>
-                            <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">feature,value,min,max,min_flex,max_flex
+                            <pre class="text-code p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">feature,value,min,max,min_flex,max_flex
 Gender,Male,3,7,0,2
 Gender,Female,3,7,0,2
 Age,18-30,2,5,1,1
@@ -137,7 +137,7 @@ Age,51+,2,5,1,1</pre>
                     </div>
                     <textarea x-model="importTargetsCsvContent"
                               rows="8"
-                              class="w-full px-3 py-2 rounded-lg text-body-sm font-mono"
+                              class="w-full px-3 py-2 rounded-lg text-code"
                               style="background-color: var(--color-page-background);
                                      border: 1px solid var(--color-borders-dividers);
                                      color: var(--color-body-text)"
@@ -184,7 +184,7 @@ Age,51+,2,5,1,1</pre>
                                 📋 {{ _("Copy JSON") }}
                             </button>
                         </div>
-                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                        <pre class="text-code overflow-x-auto whitespace-pre-wrap"
                              style="color: var(--color-body-text)"
                              x-text="formatResponse('import_targets')"></pre>
                     </div>

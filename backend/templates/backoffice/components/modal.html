@@ -250,7 +250,7 @@ Usage:
     {% set style = badge_styles.get(status, badge_styles["pending"]) %}
     <div class="mb-4">
         {% if label %}
-            <span class="text-body-md font-medium" style="color: var(--color-headings)">{{ label }}</span>
+            <span class="text-label-lg" style="color: var(--color-headings)">{{ label }}</span>
         {% endif %}
         <span class="text-body-md px-2 py-1 rounded"
               style="background-color: {{ style.bg }};
@@ -272,7 +272,7 @@ Usage:
     #}
     {% set default_empty = _("Waiting for task to start...") %}
     <div class="mb-4">
-        <span class="text-body-md font-medium" style="color: var(--color-headings)">{{ _("Messages:") }}</span>
+        <span class="text-label-lg" style="color: var(--color-headings)">{{ _("Messages:") }}</span>
         <div id="{{ id }}"
              class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto"
              style="background-color: var(--color-subtle-background-panels);
@@ -358,7 +358,7 @@ Usage:
     {{ labeled_value(_("Error:"), error_msg, "color: var(--color-error-text);") }}
     #}
     <div class="mb-4">
-        <span class="text-body-md font-medium" style="color: var(--color-headings)">{{ label }}</span>
+        <span class="text-label-lg" style="color: var(--color-headings)">{{ label }}</span>
         <span class="text-body-md"
               style="{{ value_style or 'color: var(--color-body-text) ;
                      ' }}">{{ value }}</span>

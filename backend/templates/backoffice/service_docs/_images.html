@@ -38,7 +38,7 @@
                            style="border: 1px solid var(--color-borders-dividers)">
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">assembly_id</td>
                                 <td class="px-3 py-2"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
@@ -48,7 +48,7 @@
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">Target assembly ID</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">raw</td>
                                 <td class="px-3 py-2"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">bytes</td>
@@ -60,7 +60,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">alt</td>
+                                <td class="px-3 py-2 text-code">alt</td>
                                 <td class="px-3 py-2">str</td>
                                 <td class="px-3 py-2">❌</td>
                                 <td class="px-3 py-2">Alt text for accessibility (default: empty)</td>
@@ -106,7 +106,7 @@
                 <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <label class="text-label-md block mb-1">Assembly</label>
                         <select x-model="addImageAssemblyId"
                                 class="w-full px-3 py-2 rounded text-body-sm"
                                 style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
@@ -117,7 +117,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Image file (PNG/JPEG/WebP)</label>
+                        <label class="text-label-md block mb-1">Image file (PNG/JPEG/WebP)</label>
                         <input type="file"
                                accept="image/png,image/jpeg,image/webp"
                                @change="handleImageFileChange($event)"
@@ -129,7 +129,7 @@
                         </p>
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Alt text (optional)</label>
+                        <label class="text-label-md block mb-1">Alt text (optional)</label>
                         <input type="text"
                                x-model="addImageAlt"
                                placeholder="Assembly venue exterior"
@@ -186,7 +186,7 @@
                 <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <label class="text-label-md block mb-1">Assembly</label>
                         <select x-model="listImagesAssemblyId"
                                 class="w-full px-3 py-2 rounded text-body-sm"
                                 style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
@@ -239,7 +239,7 @@
                 <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <label class="text-label-md block mb-1">Assembly</label>
                         <select x-model="deleteImageAssemblyId"
                                 class="w-full px-3 py-2 rounded text-body-sm"
                                 style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
@@ -250,11 +250,11 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Image ID (UUID)</label>
+                        <label class="text-label-md block mb-1">Image ID (UUID)</label>
                         <input type="text"
                                x-model="deleteImageImageId"
                                placeholder="copy from list_registration_images() response"
-                               class="w-full px-3 py-2 rounded text-body-sm font-mono"
+                               class="w-full px-3 py-2 rounded text-code"
                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
                     </div>
                     <button @click="executeDeleteRegistrationImage()"
@@ -300,7 +300,7 @@
                 <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <label class="text-label-md block mb-1">Assembly</label>
                         <select x-model="setAltAssemblyId"
                                 class="w-full px-3 py-2 rounded text-body-sm"
                                 style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
@@ -311,15 +311,15 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Image ID (UUID)</label>
+                        <label class="text-label-md block mb-1">Image ID (UUID)</label>
                         <input type="text"
                                x-model="setAltImageId"
                                placeholder="copy from list_registration_images() response"
-                               class="w-full px-3 py-2 rounded text-body-sm font-mono"
+                               class="w-full px-3 py-2 rounded text-code"
                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">New alt text</label>
+                        <label class="text-label-md block mb-1">New alt text</label>
                         <input type="text"
                                x-model="setAltText"
                                class="w-full px-3 py-2 rounded text-body-sm"
@@ -368,7 +368,7 @@
                 <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Assembly</label>
+                        <label class="text-label-md block mb-1">Assembly</label>
                         <select x-model="listSnippetsAssemblyId"
                                 class="w-full px-3 py-2 rounded text-body-sm"
                                 style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
@@ -421,7 +421,7 @@
                 <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
                 <div class="space-y-3">
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">URL slug</label>
+                        <label class="text-label-md block mb-1">URL slug</label>
                         <input type="text"
                                x-model="serveImageUrlSlug"
                                placeholder="my-assembly-2026"
@@ -429,11 +429,11 @@
                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
                     </div>
                     <div>
-                        <label class="text-body-sm font-medium block mb-1">Image name (sha256.png)</label>
+                        <label class="text-label-md block mb-1">Image name (sha256.png)</label>
                         <input type="text"
                                x-model="serveImageImageName"
                                placeholder="ab12...cd.png"
-                               class="w-full px-3 py-2 rounded text-body-sm font-mono"
+                               class="w-full px-3 py-2 rounded text-code"
                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
                     </div>
                     <button @click="executeGetRegistrationImageForServing()"

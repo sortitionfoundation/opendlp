@@ -102,7 +102,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                 </div>
             {% elif registration_status == "PUBLISHED" %}
                 <div class="mb-6">
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-md"
                           style="background-color: var(--color-success-100); color: var(--color-success-600);">
                         <span class="w-2 h-2 rounded-full" style="background-color: var(--color-success-400);"></span>
                         {{ _("Published") }}
@@ -155,7 +155,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                     {# HTML Textarea with monospace font. `readonly` is the default;
                        ?edit=1 unlocks it via the Edit CTA below. #}
                                         {% set textarea_attrs %}
-                                            {% if not edit_mode %}readonly aria-readonly="true" {% endif %}style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                                            {% if not edit_mode %}readonly aria-readonly="true" {% endif %}style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
                                         {% endset %}
                                         {{ textarea(
                                         name="html_content",
@@ -618,7 +618,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                           x-text="skeletonHtml"
                                           class="w-full rounded-lg p-4"
                                           rows="18"
-                                          style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+                                          style="font-family: var(--font-mono);
                                                  font-size: 0.875rem;
                                                  line-height: 1.5;
                                                  background-color: var(--color-subtle-background-panels);
@@ -677,7 +677,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
                                 <div class="space-y-4">
                                     <div>
-                                        <label for="image-upload-file" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                                        <label for="image-upload-file" class="text-label-md block mb-1" style="color: var(--color-headings);">
                                             {{ _("Image file") }}
                                         </label>
                                         <input type="file"
@@ -693,7 +693,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                         </p>
                                     </div>
                                     <div>
-                                        <label for="image-upload-alt" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                                        <label for="image-upload-alt" class="text-label-md block mb-1" style="color: var(--color-headings);">
                                             {{ _("Alt text") }}
                                             <span aria-hidden="true" style="color: var(--color-error-600);">*</span>
                                         </label>
@@ -780,12 +780,12 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                          style="grid-template-columns: auto 1fr;">
                                         <template x-if="editingImage.original_filename">
                                             <span class="contents">
-                                                <span class="font-medium whitespace-nowrap" style="color: var(--color-headings);">{{ _("Original filename") }}</span>
-                                                <span class="min-w-0 truncate font-mono" style="color: var(--color-body-text);" :title="editingImage.original_filename" x-text="editingImage.original_filename"></span>
+                                                <span class="text-label-lg whitespace-nowrap" style="color: var(--color-headings);">{{ _("Original filename") }}</span>
+                                                <span class="min-w-0 truncate text-code" style="color: var(--color-body-text);" :title="editingImage.original_filename" x-text="editingImage.original_filename"></span>
                                             </span>
                                         </template>
 
-                                        <span class="font-medium whitespace-nowrap" style="color: var(--color-headings);">{{ _("Dimensions") }}</span>
+                                        <span class="text-label-lg whitespace-nowrap" style="color: var(--color-headings);">{{ _("Dimensions") }}</span>
                                         <span class="min-w-0" style="color: var(--color-body-text);">
                                             <span x-text="editingImage.width"></span>
                                             ×
@@ -793,14 +793,14 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             {{ _("px") }}
                                         </span>
 
-                                        <span class="font-medium whitespace-nowrap" style="color: var(--color-headings);">{{ _("File size") }}</span>
+                                        <span class="text-label-lg whitespace-nowrap" style="color: var(--color-headings);">{{ _("File size") }}</span>
                                         <span class="min-w-0" style="color: var(--color-body-text);" x-text="formatBytes(editingImage.byte_size)"></span>
                                     </div>
                                 </div>
 
                             {# File name (read-only + copy) #}
                                 <div class="mb-3">
-                                    <label for="image-details-filename" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                                    <label for="image-details-filename" class="text-label-md block mb-1" style="color: var(--color-headings);">
                                         {{ _("File name") }}
                                     </label>
                                     <div class="flex gap-2">
@@ -809,7 +809,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                                readonly
                                                :value="editingImage.file_name"
                                                @click="$event.target.select()"
-                                               class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
+                                               class="flex-1 min-w-0 px-3 py-2 rounded-md text-code"
                                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
                                         {# :data-copy-text is bound reactively so it tracks editingImage.file_name #}
                                         <button type="button"
@@ -828,7 +828,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
                             {# <img> snippet (read-only + copy) — hidden when there's no public URL yet #}
                                 <div class="mb-3" x-show="editingImage.img_snippet">
-                                    <label for="image-details-snippet" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                                    <label for="image-details-snippet" class="text-label-md block mb-1" style="color: var(--color-headings);">
                                         {{ _("Image snippet") }}
                                     </label>
                                     <div class="flex gap-2">
@@ -837,7 +837,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                                readonly
                                                :value="editingImage.img_snippet"
                                                @click="$event.target.select()"
-                                               class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
+                                               class="flex-1 min-w-0 px-3 py-2 rounded-md text-code"
                                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
                                         <button type="button"
                                                 @click="copyImageSnippet(editingImage)"
@@ -852,7 +852,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 </div>
 
                                 <div>
-                                    <label for="image-edit-alt" class="text-body-sm font-medium block mb-1" style="color: var(--color-headings);">
+                                    <label for="image-edit-alt" class="text-label-md block mb-1" style="color: var(--color-headings);">
                                         {{ _("Alt text") }}
                                         <span aria-hidden="true" style="color: var(--color-error-600);">*</span>
                                     </label>
