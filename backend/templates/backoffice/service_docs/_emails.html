@@ -1,0 +1,644 @@
+{#
+ABOUTME: Service documentation for assembly-scoped email templates and templated email sending
+ABOUTME: Documents CRUD on EmailTemplate, auto-reply assignment, readiness checks, and the send path
+#}
+<div class="space-y-6">
+
+    <div class="rounded-lg p-4 mb-4"
+         style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400); color: var(--color-info-600);">
+        <p class="text-body-md">
+            <span class="font-semibold">📧 {{ _("Templated emails") }}:</span>
+            {{ _("Assembly-scoped email templates with a Jinja subject and HTML body. Used to send the registration auto-reply and (in future) other respondent emails.") }}
+        </p>
+        <p class="text-body-sm mt-2">
+            {{ _("Template variables: ") }}
+            <code>assembly.title</code>, <code>assembly.question</code>, <code>assembly.first_assembly_date</code>,
+            <code>assembly.number_to_select</code>, <code>respondent.email</code>,
+            <code>respondent.first_name</code>, <code>respondent.last_name</code>, <code>respondent.full_name</code>,
+            <code>respondent.first_name_or_friend</code>, <code>respondent.attributes</code>.
+        </p>
+    </div>
+
+    {# ===== INTERACTIVE: create_email_template ===== #}
+    {% call card(title="create_email_template()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_template_service.py:109
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100); color: var(--color-success-600)">🧪 Interactive</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Create an assembly-scoped email template. Validates name/subject/body presence, Jinja syntax and body size (configurable via EMAIL_TEMPLATE_BODY_MAX_BYTES).") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <li>assembly_id: UUID ✅</li>
+                    <li>name: str ✅ ({{ _("manager-facing label") }})</li>
+                    <li>subject: str ✅ ({{ _("Jinja template") }})</li>
+                    <li>body_html: str ✅ ({{ _("HTML body, Jinja template; auto-converted to text") }})</li>
+                </ul>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm">EmailTemplate</code>
+                <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                    {{ _("Raises EmailTemplateInvalid with a list of problems on bad input.") }}
+                </p>
+            </div>
+            {# Try It Section #}
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="createTemplateAssemblyId" class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Name") }}</label>
+                    <input type="text" x-model="createTemplateName" placeholder="e.g., Registration auto-reply"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-label-md" style="color: var(--color-headings)">{{ _("Subject (Jinja)") }}</label>
+                        <button @click="loadEmailSubjectSample()" type="button"
+                                class="text-body-sm px-2 py-1 rounded"
+                                style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">📥 {{ _("Load sample") }}</button>
+                    </div>
+                    <input type="text" x-model="createTemplateSubject"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-label-md" style="color: var(--color-headings)">{{ _("Body HTML (Jinja)") }}</label>
+                        <button @click="loadEmailBodySample()" type="button"
+                                class="text-body-sm px-2 py-1 rounded"
+                                style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600);">📥 {{ _("Load sample") }}</button>
+                    </div>
+                    <textarea x-model="createTemplateBodyHtml" rows="8"
+                              class="w-full px-3 py-2 rounded-lg text-body-md font-mono"
+                              style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)"></textarea>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeCreateEmailTemplate()" :disabled="loading.create_email_template"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.create_email_template">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.create_email_template">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.create_email_template">
+                    <div class="rounded-lg p-4"
+                         :style="responses.create_email_template.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.create_email_template.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.create_email_template.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                        </div>
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('create_email_template')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== INTERACTIVE: list_email_templates ===== #}
+    {% call card(title="list_email_templates()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_template_service.py:161
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-info-100); color: var(--color-info-600)">🔍 can_view_assembly()</span>
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100); color: var(--color-success-600)">🧪 Interactive</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("List all email templates for an assembly the user may view, oldest first.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <li>assembly_id: UUID ✅</li>
+                </ul>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm">list[EmailTemplate]</code>
+            </div>
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="listTemplatesAssemblyId" class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeListEmailTemplates()" :disabled="loading.list_email_templates"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.list_email_templates">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.list_email_templates">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.list_email_templates">
+                    <div class="rounded-lg p-4"
+                         :style="responses.list_email_templates.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('list_email_templates')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== INTERACTIVE: get_email_template ===== #}
+    {% call card(title="get_email_template()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_template_service.py:151
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-info-100); color: var(--color-info-600)">🔍 can_view_assembly()</span>
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100); color: var(--color-success-600)">🧪 Interactive</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Get a single email template by id. The user must have view permissions on its assembly.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <li>template_id: UUID ✅</li>
+                </ul>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm">EmailTemplate</code>
+                <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                    {{ _("Raises EmailTemplateNotFoundError when not found.") }}
+                </p>
+            </div>
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Template ID") }}</label>
+                    <input type="text" x-model="getTemplateId" placeholder="UUID"
+                           class="w-full px-3 py-2 rounded-lg text-body-md font-mono"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeGetEmailTemplate()" :disabled="loading.get_email_template"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.get_email_template">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.get_email_template">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.get_email_template">
+                    <div class="rounded-lg p-4"
+                         :style="responses.get_email_template.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('get_email_template')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== INTERACTIVE: update_email_template ===== #}
+    {% call card(title="update_email_template()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_template_service.py:130
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100); color: var(--color-success-600)">🧪 Interactive</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Update one or more of the name, subject and body. Leave a field blank to leave it unchanged. Re-validates the template after the change.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <li>template_id: UUID ✅</li>
+                    <li>name: str | None ❌</li>
+                    <li>subject: str | None ❌</li>
+                    <li>body_html: str | None ❌</li>
+                </ul>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm">EmailTemplate</code>
+            </div>
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Template ID") }}</label>
+                    <input type="text" x-model="updateTemplateId" placeholder="UUID"
+                           class="w-full px-3 py-2 rounded-lg text-body-md font-mono"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("New name (blank = leave alone)") }}</label>
+                    <input type="text" x-model="updateTemplateName"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("New subject (blank = leave alone)") }}</label>
+                    <input type="text" x-model="updateTemplateSubject"
+                           class="w-full px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("New body HTML (blank = leave alone)") }}</label>
+                    <textarea x-model="updateTemplateBodyHtml" rows="6"
+                              class="w-full px-3 py-2 rounded-lg text-body-md font-mono"
+                              style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)"></textarea>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeUpdateEmailTemplate()" :disabled="loading.update_email_template"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.update_email_template">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.update_email_template">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.update_email_template">
+                    <div class="rounded-lg p-4"
+                         :style="responses.update_email_template.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('update_email_template')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== INTERACTIVE: delete_email_template ===== #}
+    {% call card(title="delete_email_template()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_template_service.py:170
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100); color: var(--color-success-600)">🧪 Interactive</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Delete an email template. The registration page's auto_reply_email_template_id FK is cleared by ON DELETE SET NULL.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <li>template_id: UUID ✅</li>
+                </ul>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm">None</code>
+            </div>
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Template ID") }}</label>
+                    <input type="text" x-model="deleteTemplateId" placeholder="UUID"
+                           class="w-full px-3 py-2 rounded-lg text-body-md font-mono"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeDeleteEmailTemplate()" :disabled="loading.delete_email_template"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-error-600); color: var(--color-page-background)">
+                        <span x-show="!loading.delete_email_template">🗑️ {{ _("Delete") }}</span>
+                        <span x-cloak x-show="loading.delete_email_template">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.delete_email_template">
+                    <div class="rounded-lg p-4"
+                         :style="responses.delete_email_template.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('delete_email_template')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== INTERACTIVE: assign_auto_reply_template ===== #}
+    {% call card(title="assign_auto_reply_template()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_template_service.py:181
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100); color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100); color: var(--color-success-600)">🧪 Interactive</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Set the registration page's auto-reply template, or clear it by passing an empty template id. Readiness problems (no email field, optional email) are logged but never block this call.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <li>assembly_id: UUID ✅</li>
+                    <li>template_id: UUID | None ✅ ({{ _("None or empty clears the assignment") }})</li>
+                </ul>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm">None</code>
+                <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                    {{ _("Raises RegistrationPageNotFoundError if the assembly has no page; EmailTemplateNotFoundError if the template id is not on this assembly.") }}
+                </p>
+            </div>
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="assignAutoReplyAssemblyId" class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Template ID (blank = clear)") }}</label>
+                    <input type="text" x-model="assignAutoReplyTemplateId" placeholder="UUID or blank"
+                           class="w-full px-3 py-2 rounded-lg text-body-md font-mono"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeAssignAutoReplyTemplate()" :disabled="loading.assign_auto_reply_template"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.assign_auto_reply_template">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.assign_auto_reply_template">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.assign_auto_reply_template">
+                    <div class="rounded-lg p-4"
+                         :style="responses.assign_auto_reply_template.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('assign_auto_reply_template')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== INTERACTIVE: auto_reply_readiness_problems ===== #}
+    {% call card(title="auto_reply_readiness_problems()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_template_service.py:73
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-secondary-text); color: var(--color-page-background)">⚙️ No permission check</span>
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-success-100); color: var(--color-success-600)">🧪 Interactive</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Inspect whether the assembly's registration page is configured to actually deliver an auto-reply. Returns an ERROR if no email is collected, a WARNING if email is optional, or an empty list if email is required.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                    <li>assembly_id: UUID ✅</li>
+                </ul>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm">list[AutoReplyReadinessProblem]</code>
+            </div>
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="autoReplyReadinessAssemblyId" class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeAutoReplyReadinessProblems()" :disabled="loading.auto_reply_readiness"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.auto_reply_readiness">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.auto_reply_readiness">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.auto_reply_readiness">
+                    <div class="rounded-lg p-4"
+                         :style="responses.auto_reply_readiness.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('auto_reply_readiness')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== STATIC DOCUMENTATION ===== #}
+    <div class="pt-4">
+        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("Send path (not interactive)") }}</h2>
+        <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
+            {{ _("These functions take live domain aggregates (Assembly, Respondent) and the EmailAdapter, and are wired into the registration submit flow. Listed here for reference.") }}
+        </p>
+    </div>
+
+    {# send_registration_auto_reply #}
+    {% call card(title="send_registration_auto_reply()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_send_service.py:81
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-secondary-text); color: var(--color-page-background)">⚙️ Called from registration submit</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Send the configured auto-reply to a newly registered respondent. Skips silently when no auto-reply is configured. Logs a warning when configured but the respondent has no email. Never raises on send failure - the failure is recorded as a RespondentEmailSendRecord with outcome=FAILED.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>uow: AbstractUnitOfWork ✅</li>
+                        <li>email_adapter: EmailAdapter ✅</li>
+                        <li>respondent: Respondent ✅ (kw-only)</li>
+                        <li>assembly_id: UUID ✅ (kw-only)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">RespondentEmailSendRecord | None</code>
+                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">{{ _("None when the send was skipped (no template, no email).") }}</p>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# send_templated_email #}
+    {% call card(title="send_templated_email()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_send_service.py:66
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-secondary-text); color: var(--color-page-background)">⚙️ Internal building block</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Render a template against an assembly+respondent context and send it via the adapter, writing a RespondentEmailSendRecord either way. Never raises on send failure.") }}
+            </p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                    <ul class="text-body-sm font-mono" style="color: var(--color-body-text);">
+                        <li>uow: AbstractUnitOfWork ✅</li>
+                        <li>email_adapter: EmailAdapter ✅</li>
+                        <li>template: EmailTemplate ✅ (kw-only)</li>
+                        <li>assembly: Assembly ✅ (kw-only)</li>
+                        <li>respondent: Respondent ✅ (kw-only)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                    <code class="text-body-sm">RespondentEmailSendRecord</code>
+                </div>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# build_email_context #}
+    {% call card(title="build_email_context()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels); color: var(--color-info-600)">
+                    email_send_service.py:20
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded" style="background-color: var(--color-secondary-text); color: var(--color-page-background)">⚙️ Helper</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Build the {assembly, respondent} dict that templates render against, using AssemblyContext.from_assembly() and RespondentContext.from_respondent() view-objects. Templates never see raw domain aggregates.") }}
+            </p>
+        {% endcall %}
+    {% endcall %}
+
+    {# Data Types Reference #}
+    {% call card(title="Data Types Reference", composed=true) %}
+        {% call card_body() %}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">EmailTemplate</h4>
+                <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{
+  id: UUID,
+  assembly_id: UUID,
+  name: str,
+  subject: str,           # Jinja
+  body_html: str,         # Jinja, HTML
+  created_at: datetime,
+  updated_at: datetime
+}</pre>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">RespondentEmailSendRecord</h4>
+                <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{
+  id: UUID,
+  respondent_id: UUID,
+  email_template_id: UUID | None,
+  to_email: str,
+  from_email: str,
+  subject: str,
+  outcome: EmailSendOutcome,   # SENT | FAILED
+  missing_variables: list[str],
+  created_at: datetime
+}</pre>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">AutoReplyReadinessProblem</h4>
+                <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{
+  severity: AutoReplyReadinessSeverity,   # ERROR | WARNING
+  message: str
+}</pre>
+            </div>
+            <div>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Available template variables") }}</h4>
+                <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">assembly:
+  title, question, first_assembly_date, number_to_select
+
+respondent:
+  email, attributes (dict),
+  first_name, last_name, full_name, first_name_or_friend</pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+</div>
