@@ -159,7 +159,7 @@ Args:
 Usage:
   {{ table_cell_link("Edit", href="/edit/1", align="right") }}
     #}
-  <td class="px-5 py-4 text-body-sm font-medium text-{{ align }} {{ 'whitespace-nowrap' if nowrap else '' }} {{ classes }}">
+  <td class="px-5 py-4 text-label-md text-{{ align }} {{ 'whitespace-nowrap' if nowrap else '' }} {{ classes }}">
     <a href="{{ href }}"
        class="transition-colors"
        style="color: var(--color-primary-action);"

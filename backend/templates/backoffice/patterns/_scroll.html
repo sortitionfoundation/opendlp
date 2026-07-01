@@ -37,23 +37,23 @@ ABOUTME: Partial template included by patterns.html
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>$preserveScroll(url)</code></td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>$preserveScroll(url)</code></td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Alpine magic for single links/forms") }}</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>x-scroll-preserve-links</code></td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>x-scroll-preserve-links</code></td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Alpine directive for auto-applying to all links in a container") }}</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>data-navigate-preserve-scroll</code></td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>data-navigate-preserve-scroll</code></td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Add to select elements with data-navigate-base-url") }}</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>data-preserve-scroll</code></td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>data-preserve-scroll</code></td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Form attribute for use with $confirm magic") }}</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono"><code>x-preserve-scroll-on-submit</code></td>
+                                <td class="px-3 py-2 text-code"><code>x-preserve-scroll-on-submit</code></td>
                                 <td class="px-3 py-2">{{ _("Alpine directive for forms without confirmation") }}</td>
                             </tr>
                         </tbody>
@@ -101,7 +101,7 @@ ABOUTME: Partial template included by patterns.html
                         📋 {{ _("Copy") }}
                     </button>
                 </div>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Link with scroll preservation #}
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Link with scroll preservation #}
 &lt;a :href="$preserveScroll('/some/url?page=2')"&gt;Page 2&lt;/a&gt;
 
 {# Form action with scroll preservation #}
@@ -143,7 +143,7 @@ ABOUTME: Partial template included by patterns.html
                         📋 {{ _("Copy") }}
                     </button>
                 </div>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Container with auto-scroll preservation #}
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Container with auto-scroll preservation #}
 &lt;nav x-data="{}" x-scroll-preserve-links&gt;
     &lt;a href="?page=1"&gt;1&lt;/a&gt;  {# scroll preserved #}
     &lt;a href="?page=2"&gt;2&lt;/a&gt;  {# scroll preserved #}
@@ -216,7 +216,7 @@ ABOUTME: Partial template included by patterns.html
                         📋 {{ _("Copy") }}
                     </button>
                 </div>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Filter dropdown WITHOUT scroll preservation #}
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Filter dropdown WITHOUT scroll preservation #}
 &lt;select data-navigate-base-url="{% raw %}{{ url_for('...') }}{% endraw %}"
         data-navigate-param="status"&gt;
     &lt;option value=""&gt;All&lt;/option&gt;
@@ -258,22 +258,22 @@ ABOUTME: Partial template included by patterns.html
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">static/js/alpine-scroll-manager.js</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">static/js/alpine-scroll-manager.js</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">—</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">$preserveScroll magic, x-scroll-preserve-links directive</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">static/js/utilities.js</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">static/js/utilities.js</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">5</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">data-navigate-* handler</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/pagination.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/pagination.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">47</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Pagination uses x-scroll-preserve-links</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">templates/backoffice/assembly_selection.html</td>
+                                <td class="px-3 py-2 text-code">templates/backoffice/assembly_selection.html</td>
                                 <td class="px-3 py-2">252, 474</td>
                                 <td class="px-3 py-2">Selection history pagination</td>
                             </tr>
@@ -317,11 +317,11 @@ ABOUTME: Partial template included by patterns.html
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>data-preserve-scroll</code></td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);"><code>data-preserve-scroll</code></td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Form attribute for use with $confirm magic") }}</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono"><code>x-preserve-scroll-on-submit</code></td>
+                                <td class="px-3 py-2 text-code"><code>x-preserve-scroll-on-submit</code></td>
                                 <td class="px-3 py-2">{{ _("Alpine directive for forms without confirmation") }}</td>
                             </tr>
                         </tbody>
@@ -332,7 +332,7 @@ ABOUTME: Partial template included by patterns.html
                         {# Code Example: With Confirmation #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("With Confirmation Dialog") }}</h4>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Form with confirmation - uses data-preserve-scroll attribute #}
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Form with confirmation - uses data-preserve-scroll attribute #}
 &lt;form method="post"
       action="{% raw %}{{ url_for('my.delete_item', id=item.id) }}{% endraw %}"
       x-data
@@ -348,7 +348,7 @@ ABOUTME: Partial template included by patterns.html
                         {# Code Example: Without Confirmation #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Without Confirmation Dialog") }}</h4>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Form without confirmation - uses x-preserve-scroll-on-submit directive #}
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{# Form without confirmation - uses x-preserve-scroll-on-submit directive #}
 &lt;form method="post"
       action="{% raw %}{{ url_for('my.toggle_item', id=item.id) }}{% endraw %}"
       x-data
@@ -423,7 +423,7 @@ ABOUTME: Partial template included by patterns.html
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono">static/backoffice/js/alpine-components.js</td>
+                                <td class="px-3 py-2 text-code">static/backoffice/js/alpine-components.js</td>
                                 <td class="px-3 py-2">$confirm magic with data-preserve-scroll, x-preserve-scroll-on-submit directive</td>
                             </tr>
                         </tbody>

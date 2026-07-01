@@ -50,7 +50,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     assembly_id
                                 </td>
@@ -66,7 +66,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     csv_content
                                 </td>
@@ -80,7 +80,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     replace_existing
                                 </td>
@@ -96,7 +96,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">id_column</td>
+                                <td class="px-3 py-2 text-code">id_column</td>
                                 <td class="px-3 py-2">str | None</td>
                                 <td class="px-3 py-2">❌</td>
                                 <td class="px-3 py-2">Column name for respondent ID (default: first column)</td>
@@ -162,7 +162,7 @@
                     </div>
                     <textarea x-model="importRespondentsCsvContent"
                               rows="8"
-                              class="w-full px-3 py-2 rounded-lg text-body-sm font-mono"
+                              class="w-full px-3 py-2 rounded-lg text-code"
                               style="background-color: var(--color-page-background);
                                      border: 1px solid var(--color-borders-dividers);
                                      color: var(--color-body-text)"
@@ -226,7 +226,7 @@
                                 📋 {{ _("Copy JSON") }}
                             </button>
                         </div>
-                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                        <pre class="text-code overflow-x-auto whitespace-pre-wrap"
                              style="color: var(--color-body-text)"
                              x-text="formatResponse('import_respondents')"></pre>
                     </div>
@@ -282,7 +282,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono">assembly_id</td>
+                                <td class="px-3 py-2 text-code">assembly_id</td>
                                 <td class="px-3 py-2">UUID</td>
                                 <td class="px-3 py-2">✅</td>
                                 <td class="px-3 py-2">Target assembly ID</td>
@@ -380,7 +380,7 @@
                                 📋 {{ _("Copy JSON") }}
                             </button>
                         </div>
-                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                        <pre class="text-code overflow-x-auto whitespace-pre-wrap"
                              style="color: var(--color-body-text)"
                              x-text="formatResponse('reset_status')"></pre>
                     </div>
@@ -436,7 +436,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono"
+                                <td class="px-3 py-2 text-code"
                                     style="border-bottom: 1px solid var(--color-borders-dividers)">
                                     assembly_id
                                 </td>
@@ -452,7 +452,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">status</td>
+                                <td class="px-3 py-2 text-code">status</td>
                                 <td class="px-3 py-2">RespondentStatus | None</td>
                                 <td class="px-3 py-2">❌</td>
                                 <td class="px-3 py-2">Filter by status: POOL, SELECTED, CONFIRMED, WITHDRAWN</td>
@@ -531,7 +531,7 @@
                                 📋 {{ _("Copy JSON") }}
                             </button>
                         </div>
-                        <pre class="text-body-sm font-mono overflow-x-auto whitespace-pre-wrap"
+                        <pre class="text-code overflow-x-auto whitespace-pre-wrap"
                              style="color: var(--color-body-text)"
                              x-text="formatResponse('get_respondents')"></pre>
                     </div>

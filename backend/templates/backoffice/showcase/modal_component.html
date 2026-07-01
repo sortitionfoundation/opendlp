@@ -59,7 +59,7 @@ ABOUTME: Displays alert_dialog, base modal, progress_modal, and helper macros wi
                         {% call dialog_body() %}
                             {{ labeled_value('Task:', 'Run Selection Algorithm') }}
                             <div class="mb-4">
-                                <span class="text-body-md font-medium" style="color: var(--color-headings)">Status:</span>
+                                <span class="text-label-lg" style="color: var(--color-headings)">Status:</span>
                                 <span x-show="taskState === 'running'"
                                       class="text-body-md px-2 py-1 rounded"
                                       style="background-color: var(--color-info-background); color: var(--color-info-text)">Running</span>
@@ -72,17 +72,17 @@ ABOUTME: Displays alert_dialog, base modal, progress_modal, and helper macros wi
                             </div>
                             <div x-show="taskState === 'running'">{{ spinner("Processing...") }}</div>
                             <div x-show="taskState === 'completed'" class="mb-4">
-                                <span class="text-body-md font-medium" style="color: var(--color-success-text)">Result:</span>
+                                <span class="text-label-lg" style="color: var(--color-success-text)">Result:</span>
                                 <span class="text-body-md" style="color: var(--color-success-text);">Task completed successfully.</span>
                             </div>
                             <div x-show="taskState === 'failed'" class="mb-4">
-                                <span class="text-body-md font-medium" style="color: var(--color-error-text)">Error:</span>
+                                <span class="text-label-lg" style="color: var(--color-error-text)">Error:</span>
                                 <span class="text-body-md" style="color: var(--color-error-text);">
                                     Selection could not be completed. Insufficient candidates in pool.
                                 </span>
                             </div>
                             <div class="mb-4">
-                                <span class="text-body-md font-medium" style="color: var(--color-headings)">Messages:</span>
+                                <span class="text-label-lg" style="color: var(--color-headings)">Messages:</span>
                                 <div class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto"
                                      style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers)">
                                     <template x-for="msg in messages" :key="msg">

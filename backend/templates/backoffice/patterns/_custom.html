@@ -31,7 +31,7 @@ ABOUTME: Partial template included by patterns.html
                         {# Location #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Location") }}</h4>
-                <code class="text-body-sm font-mono px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels);">
+                <code class="text-code px-2 py-1 rounded" style="background-color: var(--color-subtle-background-panels);">
                     templates/backoffice/assembly_registration.html
                 </code>
             </div>
@@ -39,7 +39,7 @@ ABOUTME: Partial template included by patterns.html
                         {# Usage Example #}
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Usage") }}</h4>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{{ prefixed_url_input(
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{{ prefixed_url_input(
     name="url_slug",
     label=_("Registration URL"),
     hint=_("The URL path for your registration form"),
@@ -67,44 +67,44 @@ ABOUTME: Partial template included by patterns.html
                 <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers);">
                     <thead>
                         <tr style="background-color: var(--color-subtle-background-panels);">
-                            <th class="px-4 py-2 text-left font-medium">{{ _("Parameter") }}</th>
-                            <th class="px-4 py-2 text-left font-medium">{{ _("Required") }}</th>
-                            <th class="px-4 py-2 text-left font-medium">{{ _("Description") }}</th>
+                            <th class="px-4 py-2 text-left text-table-header" style="color: var(--color-headings);">{{ _("Parameter") }}</th>
+                            <th class="px-4 py-2 text-left text-table-header" style="color: var(--color-headings);">{{ _("Required") }}</th>
+                            <th class="px-4 py-2 text-left text-table-header" style="color: var(--color-headings);">{{ _("Description") }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr style="border-top: 1px solid var(--color-borders-dividers);">
-                            <td class="px-4 py-2 font-mono">name</td>
+                            <td class="px-4 py-2 text-code">name</td>
                             <td class="px-4 py-2">{{ _("Yes") }}</td>
                             <td class="px-4 py-2">{{ _("Input name attribute") }}</td>
                         </tr>
                         <tr style="border-top: 1px solid var(--color-borders-dividers);">
-                            <td class="px-4 py-2 font-mono">label</td>
+                            <td class="px-4 py-2 text-code">label</td>
                             <td class="px-4 py-2">{{ _("Yes") }}</td>
                             <td class="px-4 py-2">{{ _("Label text") }}</td>
                         </tr>
                         <tr style="border-top: 1px solid var(--color-borders-dividers);">
-                            <td class="px-4 py-2 font-mono">hint</td>
+                            <td class="px-4 py-2 text-code">hint</td>
                             <td class="px-4 py-2">{{ _("Yes") }}</td>
                             <td class="px-4 py-2">{{ _("Help text below label") }}</td>
                         </tr>
                         <tr style="border-top: 1px solid var(--color-borders-dividers);">
-                            <td class="px-4 py-2 font-mono">prefix</td>
+                            <td class="px-4 py-2 text-code">prefix</td>
                             <td class="px-4 py-2">{{ _("Yes") }}</td>
                             <td class="px-4 py-2">{{ _("Non-editable URL prefix") }}</td>
                         </tr>
                         <tr style="border-top: 1px solid var(--color-borders-dividers);">
-                            <td class="px-4 py-2 font-mono">placeholder</td>
+                            <td class="px-4 py-2 text-code">placeholder</td>
                             <td class="px-4 py-2">{{ _("No") }}</td>
                             <td class="px-4 py-2">{{ _("Placeholder for editable part") }}</td>
                         </tr>
                         <tr style="border-top: 1px solid var(--color-borders-dividers);">
-                            <td class="px-4 py-2 font-mono">x_model</td>
+                            <td class="px-4 py-2 text-code">x_model</td>
                             <td class="px-4 py-2">{{ _("No") }}</td>
                             <td class="px-4 py-2">{{ _("Alpine.js model binding") }}</td>
                         </tr>
                         <tr style="border-top: 1px solid var(--color-borders-dividers);">
-                            <td class="px-4 py-2 font-mono">id</td>
+                            <td class="px-4 py-2 text-code">id</td>
                             <td class="px-4 py-2">{{ _("No") }}</td>
                             <td class="px-4 py-2">{{ _("Input id (defaults to name)") }}</td>
                         </tr>

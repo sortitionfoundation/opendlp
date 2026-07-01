@@ -55,14 +55,14 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                         </p>
                         <dl class="flex flex-col gap-2">
                             <div class="flex gap-2">
-                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Initial Selection Respondents Tab:") }}</dt>
+                                <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Initial Selection Respondents Tab:") }}</dt>
                                 <dd class="text-body-md" style="color: var(--color-body-text);">
                                     <code class="px-2 py-0.5 rounded"
                                           style="background-color: var(--color-page-background);">{{ gsheet.select_registrants_tab or _("Not configured") }}</code>
                                 </dd>
                             </div>
                             <div class="flex gap-2">
-                                <dt class="text-body-md font-medium" style="color: var(--color-secondary-text);">{{ _("Replacement Respondents Tab:") }}</dt>
+                                <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Replacement Respondents Tab:") }}</dt>
                                 <dd class="text-body-md" style="color: var(--color-body-text);">
                                     <code class="px-2 py-0.5 rounded"
                                           style="background-color: var(--color-page-background);">{{ gsheet.replace_registrants_tab or _("Not configured") }}</code>
@@ -131,13 +131,13 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                         </colgroup>
                         <thead>
                             <tr>
-                                <th class="text-body-md font-bold py-2">{{ _("Label") }}</th>
-                                <th class="text-body-md font-bold py-2">{{ _("Section") }}</th>
-                                <th class="text-body-md font-bold py-2">{{ _("Field Type") }}</th>
-                                <th class="text-body-md font-bold py-2">{{ _("On registration form") }}</th>
-                                <th class="text-body-md font-bold py-2">{{ _("Field key") }}</th>
-                                <th class="text-body-md font-bold py-2">{{ _("Order") }}</th>
-                                <th class="text-body-md font-bold py-2">{{ _("Actions") }}</th>
+                                <th class="text-label-lg py-2">{{ _("Label") }}</th>
+                                <th class="text-label-lg py-2">{{ _("Section") }}</th>
+                                <th class="text-label-lg py-2">{{ _("Field Type") }}</th>
+                                <th class="text-label-lg py-2">{{ _("On registration form") }}</th>
+                                <th class="text-label-lg py-2">{{ _("Field key") }}</th>
+                                <th class="text-label-lg py-2">{{ _("Order") }}</th>
+                                <th class="text-label-lg py-2">{{ _("Actions") }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -245,7 +245,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                 {% if not field.is_fixed and field.field_type.value in choice_type_values %}
                                     <tr>
                                         <td colspan="7" class="py-2 pl-8" style="background: var(--color-table-row-alt, #f5f5f5);">
-                                            <div class="text-body-sm font-bold mb-2">{{ _("Options for %(label)s", label=field.label) }}</div>
+                                            <div class="text-label-md mb-2">{{ _("Options for %(label)s", label=field.label) }}</div>
                                             {% if field.options %}
                                                 <ul class="mb-2">
                                                     {% for option in field.options %}
@@ -332,10 +332,10 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                 </colgroup>
                 <thead>
                     <tr>
-                        <th class="text-body-md font-bold py-2">{{ _("Field key and label") }}</th>
-                        <th class="text-body-md font-bold py-2">{{ _("Section") }}</th>
-                        <th class="text-body-md font-bold py-2">{{ _("Field Type") }}</th>
-                        <th class="text-body-md font-bold py-2">{{ _("On registration form") }}</th>
+                        <th class="text-label-lg py-2">{{ _("Field key and label") }}</th>
+                        <th class="text-label-lg py-2">{{ _("Section") }}</th>
+                        <th class="text-label-lg py-2">{{ _("Field Type") }}</th>
+                        <th class="text-label-lg py-2">{{ _("On registration form") }}</th>
                         <th class="py-2"></th>
                         <th class="py-2"></th>
                         <th class="py-2"></th>
