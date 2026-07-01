@@ -55,8 +55,8 @@ var on a redeployed environment.
 
 Status codes:
 
-- 200 if `monitor_selection_status` is `OK` or `PENDING` AND
-  `monitor_cleanup_status` is not `FAILED`.
+- 200 if `monitor_selection_status` is `OK`, `PENDING`, or `DEGRADED`
+  AND `monitor_cleanup_status` is not `FAILED`.
 - 500 otherwise.
 
 JSON shape (also added to `/health`):
@@ -67,9 +67,33 @@ JSON shape (also added to `/health`):
   "monitor_selection_last_run_at": "2026-05-07T15:00:00+00:00",
   "monitor_selection_message": "latest selection completed successfully",
   "monitor_selection_last_run_url": "https://opendlp.example.org/assembly/<uuid>/selection/<run_uuid>",
-  "monitor_cleanup_status": "OK"
+  "monitor_cleanup_status": "OK",
+  "monitor_selection_consecutive_failures": 0,
+  "monitor_selection_recent_failures": []
 }
 ```
+
+When runs are failing, `monitor_selection_recent_failures` lists the
+current unbroken streak of failed runs (newest first), each carrying
+the class name of the underlying error:
+
+```jsonc
+{
+  "monitor_selection_status": "DEGRADED",
+  "monitor_selection_consecutive_failures": 2,
+  "monitor_selection_recent_failures": [
+    {"error_class": "InfeasibleQuotasError", "status": "failed", "at": "2026-05-07T15:30:00+00:00"},
+    {"error_class": "APIError", "status": "failed", "at": "2026-05-07T15:15:00+00:00"}
+  ]
+}
+```
+
+The `error_class` comes from the failed run's recorded error (falling
+back to the run status when no exception was captured). It is exposed
+so alerting can later apply different thresholds per error class — for
+example tolerating more consecutive `APIError`s than permission errors.
+That per-class logic is not yet implemented: today every error class
+shares the same threshold.
 
 Status enum:
 
@@ -78,9 +102,16 @@ Status enum:
 | `NOT_CONFIGURED`  | `MONITOR_ASSEMBLY_ID` is unset.                                                                                                  |
 | `OK`              | Latest `SELECT_GSHEET` completed successfully within the max-age window AND latest `DELETE_OLD_TABS` (if any) succeeded.         |
 | `STALE`           | Latest successful selection is older than the threshold, OR no selection runs exist yet, OR a pending/running run is too old.   |
-| `FAILED`          | Latest terminal `SELECT_GSHEET` was `FAILED` or `CANCELLED`, OR latest `DELETE_OLD_TABS` was failed.                              |
+| `DEGRADED`        | Latest `SELECT_GSHEET` was `FAILED`/`CANCELLED`, but fewer than the consecutive-failure threshold have failed in a row. Still healthy (200). |
+| `FAILED`          | The most recent runs all failed — at least the consecutive-failure threshold in a row — OR latest `DELETE_OLD_TABS` failed.      |
 | `PENDING`         | Latest run is in flight and within the max-age window.                                                                           |
 | `UNKNOWN`         | Bootstrap or DB query failed (couldn't determine state).                                                                         |
+
+The consecutive-failure threshold is `CONSECUTIVE_FAILURE_THRESHOLD`
+(currently 3) in `service_layer/monitoring.py`. A single failed run
+reports `DEGRADED` and stays healthy; only a sustained run of failures
+escalates to `FAILED`. A successful or in-flight latest run resets the
+streak.
 
 The `monitor_cleanup_status` field is `OK` or `FAILED` based on the
 most recent `DELETE_OLD_TABS` record (if any). A failing cleanup
@@ -91,7 +122,7 @@ surfaces in alerts even if selection itself is healthy.
 
 ### What it does
 
-Every hour, a Celery beat task runs `monitor_selection_periodic`,
+Every 15 minutes, a Celery beat task runs `monitor_selection_periodic`,
 which dispatches a full `start_gsheet_select_task` against a
 dedicated monitor assembly + monitor user. After a successful
 selection, it dispatches a `start_gsheet_manage_tabs_task` cleanup
@@ -107,15 +138,17 @@ This exercises the full chain:
 
 If any of those break (eg. service-account permissions revoked,
 sortition library regression, tab-naming convention drift), the
-selection or cleanup will fail and be visible at
-`/health/monitor_selection` within roughly an hour.
+selection or cleanup will start failing and — once the
+consecutive-failure threshold is reached — go `FAILED` at
+`/health/monitor_selection` within roughly an hour (three
+15-minute cycles). A single failure shows as `DEGRADED` sooner.
 
 ### Cadence
 
-- **Hourly via Celery beat**: `monitor_selection_periodic`.
+- **Every 15 minutes via Celery beat**: `monitor_selection_periodic`.
 - **Daily via Celery beat**: `prune_monitor_run_records` keeps the
   most recent 100 monitor `SelectionRunRecord`s and deletes older
-  ones (≈ 4 days at hourly cadence).
+  ones (≈ 1 day at the 15-minute cadence).
 - **On demand via CLI**: `opendlp monitor run-selection`.
 
 ### CLI command
@@ -210,9 +243,12 @@ selection — abort the rollout / roll back.
 
 ### `/health/monitor_selection` returns 500 with status `FAILED`
 
-The `monitor_selection_message` field tells you which underlying
-error class fired (eg. `GoogleSheetConfigNotFoundError`,
-`InvalidSelection`, `InsufficientPermissions`). Common causes:
+`FAILED` means the most recent runs have all failed (at least the
+consecutive-failure threshold in a row). The
+`monitor_selection_recent_failures` array lists the streak with an
+`error_class` per run, and `monitor_selection_message` shows the
+latest error (eg. `GoogleSheetConfigNotFoundError`, `InvalidSelection`,
+`InsufficientPermissions`). Common causes:
 
 - **Service account permissions.** The most common cause: the
   Google service-account email lost edit access to the monitor
@@ -226,9 +262,16 @@ error class fired (eg. `GoogleSheetConfigNotFoundError`,
   tabs, or found tabs it couldn't delete. Inspect the monitor sheet
   manually and reconcile.
 
+### `/health/monitor_selection` returns 200 with status `DEGRADED`
+
+At least one recent run failed, but not enough in a row to go red.
+Inspect `monitor_selection_recent_failures` for the error classes.
+This is expected for transient blips; if it persists it will escalate
+to `FAILED` once the consecutive-failure threshold is reached.
+
 ### `/health/monitor_selection` returns 200 with status `PENDING` for hours
 
-The hourly beat task didn't return — the worker is wedged. Check
+The beat task didn't return — the worker is wedged. Check
 `opendlp celery list-tasks` and Celery worker logs.
 
 ### `/health/monitor_selection` returns 500 with status `NOT_CONFIGURED`
