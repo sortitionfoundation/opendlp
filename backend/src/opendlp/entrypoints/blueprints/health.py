@@ -132,6 +132,15 @@ def _build_monitor_payload() -> tuple[dict[str, object], MonitorSelectionStatus]
         "monitor_selection_message": monitor.message,
         "monitor_selection_last_run_url": monitor.run_url,
         "monitor_cleanup_status": monitor.cleanup_status,
+        "monitor_selection_consecutive_failures": monitor.consecutive_failures,
+        "monitor_selection_recent_failures": [
+            {
+                "error_class": failure.error_class,
+                "status": failure.status,
+                "at": failure.at.isoformat() if failure.at else None,
+            }
+            for failure in monitor.recent_failures
+        ],
     }
     return payload, monitor
 
@@ -218,11 +227,12 @@ def monitor_selection_health() -> ResponseReturnValue:
     pointing a watcher at this URL is itself a declaration that monitoring
     should be live.
 
-    HTTP status 200 when status is OK or PENDING; 500 otherwise (including
-    NOT_CONFIGURED, STALE, FAILED, UNKNOWN).
+    HTTP status 200 when status is OK, PENDING, or DEGRADED; 500 otherwise
+    (including NOT_CONFIGURED, STALE, FAILED, UNKNOWN). DEGRADED means the
+    latest run failed but not enough times in a row to page anyone yet.
     """
     payload, monitor = _build_monitor_payload()
-    is_healthy = monitor.status in ("OK", "PENDING") and monitor.cleanup_status != "FAILED"
+    is_healthy = monitor.status in ("OK", "PENDING", "DEGRADED") and monitor.cleanup_status != "FAILED"
     status_code = 200 if is_healthy else 500
     return jsonify(payload), status_code
 
