@@ -25,7 +25,7 @@ dependencies = [
   "pyotp>=2.9.0",
   "python-dotenv>=1.1.1",
   "qrcode[pil]>=8.2",
-  "redis>=6.4.0",
+  "redis>=8.0.1",
   "secure>=1.0.1",
   "sortition-algorithms==0.12.9",
   "sqlalchemy[postgresql-psycopg2binary]>=2.0.50",
