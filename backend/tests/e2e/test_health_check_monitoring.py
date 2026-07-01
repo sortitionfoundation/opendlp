@@ -138,7 +138,9 @@ class TestMonitorSelectionHealth:
         assert response.get_json()["monitor_selection_status"] == "STALE"
 
     @pytest.mark.db_semantics
-    def test_failed_when_latest_select_failed(self, client: FlaskClient, postgres_session_factory, configured_assembly):
+    def test_degraded_when_single_select_failed(
+        self, client: FlaskClient, postgres_session_factory, configured_assembly
+    ):
         _seed_record(
             postgres_session_factory,
             configured_assembly.id,
@@ -148,13 +150,35 @@ class TestMonitorSelectionHealth:
             error_message="permission denied on sheet",
         )
         response = _run_with_mocked_helpers(client, "/health/monitor_selection")
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["monitor_selection_status"] == "DEGRADED"
+        assert "permission denied" in data["monitor_selection_message"]
+        assert data["monitor_selection_consecutive_failures"] == 1
+        assert [f["error_class"] for f in data["monitor_selection_recent_failures"]] == ["failed"]
+
+    @pytest.mark.db_semantics
+    def test_failed_when_three_consecutive_failures(
+        self, client: FlaskClient, postgres_session_factory, configured_assembly
+    ):
+        for minutes in (30, 20, 5):
+            _seed_record(
+                postgres_session_factory,
+                configured_assembly.id,
+                task_type=SelectionTaskType.SELECT_GSHEET,
+                status=SelectionRunStatus.FAILED,
+                age=timedelta(minutes=minutes),
+                error_message="permission denied on sheet",
+            )
+        response = _run_with_mocked_helpers(client, "/health/monitor_selection")
         assert response.status_code == 500
         data = response.get_json()
         assert data["monitor_selection_status"] == "FAILED"
-        assert "permission denied" in data["monitor_selection_message"]
+        assert data["monitor_selection_consecutive_failures"] == 3
+        assert len(data["monitor_selection_recent_failures"]) == 3
 
     @pytest.mark.db_semantics
-    def test_failed_when_latest_select_cancelled(
+    def test_degraded_when_latest_select_cancelled(
         self, client: FlaskClient, postgres_session_factory, configured_assembly
     ):
         _seed_record(
@@ -165,8 +189,8 @@ class TestMonitorSelectionHealth:
             age=timedelta(minutes=5),
         )
         response = _run_with_mocked_helpers(client, "/health/monitor_selection")
-        assert response.status_code == 500
-        assert response.get_json()["monitor_selection_status"] == "FAILED"
+        assert response.status_code == 200
+        assert response.get_json()["monitor_selection_status"] == "DEGRADED"
 
     @pytest.mark.db_semantics
     def test_cleanup_failed_overrides_ok_status(
