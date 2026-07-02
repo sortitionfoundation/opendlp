@@ -77,7 +77,8 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
             {"key": "preview", "label": _("Preview and publish"), "href": section_base ~ "?section=preview", "active": active_section == "preview"}
             ],
             aria_label=_("Registration setup steps"),
-            mode="tabs"
+            mode="tabs",
+            preserve_scroll=true
             ) }}
 
             {% if active_section == "form" %}
