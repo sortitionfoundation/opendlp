@@ -1,0 +1,117 @@
+{#
+ABOUTME: Stepper component macro — numbered step navigation with tabs or wizard semantics
+ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="step"
+#}
+{% macro stepper(items=[], aria_label="", id="", mode="tabs", preserve_scroll=false) %}
+    {#
+    Numbered step navigation with two semantic modes.
+
+    items: list of step dicts, each with:
+        - key: unique identifier (REQUIRED — used for tab/panel ids and aria-controls)
+        - label: display text (REQUIRED)
+        - href: link URL (REQUIRED)
+        - state: one of "active" | "inactive" | "done" | "error"
+                 optional — if omitted, derived from `active` bool
+                            (active=true → "active", else "inactive")
+        - active: bool (optional, mirrors tabs macro)
+        - disabled: bool (optional, only meaningful in wizard mode)
+        - Any additional attributes pass through to the anchor element
+
+    aria_label: accessible label for the step navigation (REQUIRED)
+    id: base id for tab/panel ids and focus preservation (REQUIRED)
+    mode: "tabs" (default) or "wizard"
+        - tabs: role="tablist" + role="tab", all steps clickable, arrow-key nav,
+                aria-selected on active step. Use when panels are peer views of
+                related content.
+        - wizard: role="list" + aria-current="step" on active, later steps may
+                  be disabled via `disabled: true`. Use when steps must be
+                  completed in order.
+    preserve_scroll: whether to preserve scroll position on navigation (default false)
+
+    Panel convention (same as tabs macro):
+        <div id="{{ id }}-panel-{{ key }}" role="tabpanel"
+             aria-labelledby="{{ id }}-tab-{{ key }}" tabindex="0">...</div>
+
+    Example (tabs mode):
+        {{ stepper(
+            id="reg-steps",
+            items=[
+                {"key": "form", "label": "Registration page", "href": "?section=form", "state": "done"},
+                {"key": "email", "label": "Auto-reply email", "href": "?section=email", "active": true},
+                {"key": "preview", "label": "Preview and publish", "href": "?section=preview"}
+            ],
+            aria_label=_("Registration setup steps")
+        ) }}
+    #}
+    {% set is_wizard = mode == "wizard" %}
+    {% set list_role = "list" if is_wizard else "tablist" %}
+    <nav class="mb-8" aria-label="{{ aria_label }}" {% if preserve_scroll %}x-data x-scroll-preserve-links{% endif %}>
+        <ol class="stepper"
+            role="{{ list_role }}"
+            aria-label="{{ aria_label }}"
+            {% if not is_wizard %}x-data="tabsKeyboard({ activation: 'manual' })" @keydown="handleKeydown($event)"{% endif %}>
+            {% for item in items %}
+                {% set item_key = item.key %}
+                {% set tab_id = id ~ "-tab-" ~ item_key %}
+                {% set panel_id = id ~ "-panel-" ~ item_key %}
+                {% set is_active = item.active or item.state == "active" %}
+                {% set state = item.state | default("active" if is_active else "inactive") %}
+                {% set is_disabled = item.disabled and is_wizard %}
+                {% set step_role = "step" if is_wizard else "tab" %}
+
+                {# Pass-through attributes for anything not consumed above #}
+                {% set extra_attrs = [] %}
+                {% for key, value in item.items() %}
+                    {% if key not in ["label", "href", "active", "disabled", "key", "state"] %}
+                        {% set _ = extra_attrs.append(key ~ '="' ~ value ~ '"') %}
+                    {% endif %}
+                {% endfor %}
+
+                <li class="stepper-item stepper-item-{{ state }}"
+                    {% if is_wizard %}role="listitem"{% else %}role="presentation"{% endif %}>
+                    {% if is_disabled %}
+                        <span class="stepper-link"
+                              role="{{ step_role }}"
+                              id="{{ tab_id }}"
+                              aria-disabled="true"
+                              {% if not is_wizard %}aria-controls="{{ panel_id }}" tabindex="-1"{% endif %}
+                              {{ extra_attrs | join(" ") | safe }}>
+                            <span class="stepper-number" aria-hidden="true">
+                                {% if state == "done" %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 10 8 14 16 6"></polyline></svg>
+                                {% elif state == "error" %}
+                                    !
+                                {% else %}
+                                    {{ loop.index }}
+                                {% endif %}
+                            </span>
+                            <span class="stepper-label">{{ item.label }}</span>
+                        </span>
+                    {% else %}
+                        <a href="{{ item.href }}"
+                           class="stepper-link"
+                           role="{{ step_role }}"
+                           id="{{ tab_id }}"
+                           {% if not is_wizard %}aria-controls="{{ panel_id }}" aria-selected="{{ 'true' if is_active else 'false' }}" tabindex="{{ '0' if is_active else '-1' }}"{% endif %}
+                           {% if is_wizard and is_active %}aria-current="step"{% endif %}
+                           data-focus-id="{{ tab_id }}"
+                           x-data
+                           x-focus-preserve
+                           {{ extra_attrs | join(" ") | safe }}>
+                            <span class="stepper-number" aria-hidden="true">
+                                {% if state == "done" %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 10 8 14 16 6"></polyline></svg>
+                                {% elif state == "error" %}
+                                    !
+                                {% else %}
+                                    {{ loop.index }}
+                                {% endif %}
+                            </span>
+                            <span class="stepper-label">{{ item.label }}</span>
+                        </a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </nav>
+{% endmacro %}
