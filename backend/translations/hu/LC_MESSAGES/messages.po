@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-25 17:23+0100\n"
+"POT-Creation-Date: 2026-07-02 11:38+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -158,9 +158,9 @@ msgstr ""
 msgid "Read Only - Can view the assembly but cannot make changes"
 msgstr ""
 
-#: src/opendlp/entrypoints/decorators.py:63
-#: src/opendlp/entrypoints/decorators.py:108
-#: src/opendlp/entrypoints/decorators.py:175
+#: src/opendlp/entrypoints/decorators.py:67
+#: src/opendlp/entrypoints/decorators.py:112
+#: src/opendlp/entrypoints/decorators.py:179
 msgid "Please sign in to access this page."
 msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 
@@ -736,26 +736,26 @@ msgstr ""
 msgid "Unrecognised attribute names: %(names)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:99
-#: src/opendlp/entrypoints/blueprints/admin.py:125
-#: src/opendlp/entrypoints/blueprints/admin.py:190
-#: src/opendlp/entrypoints/blueprints/admin.py:262
-#: src/opendlp/entrypoints/blueprints/admin.py:288
-#: src/opendlp/entrypoints/blueprints/admin.py:391
+#: src/opendlp/entrypoints/blueprints/admin.py:102
+#: src/opendlp/entrypoints/blueprints/admin.py:130
+#: src/opendlp/entrypoints/blueprints/admin.py:211
+#: src/opendlp/entrypoints/blueprints/admin.py:299
+#: src/opendlp/entrypoints/blueprints/admin.py:330
+#: src/opendlp/entrypoints/blueprints/admin.py:435
 #, fuzzy
 msgid "You don't have permission to view this page"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:103
+#: src/opendlp/entrypoints/blueprints/admin.py:106
 #, fuzzy
 msgid "An error occurred while loading the user list"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:121
-#: src/opendlp/entrypoints/blueprints/admin.py:169
-#: src/opendlp/entrypoints/blueprints/admin.py:186
-#: src/opendlp/entrypoints/blueprints/admin.py:217
-#: src/opendlp/entrypoints/blueprints/admin.py:258
+#: src/opendlp/entrypoints/blueprints/admin.py:126
+#: src/opendlp/entrypoints/blueprints/admin.py:181
+#: src/opendlp/entrypoints/blueprints/admin.py:207
+#: src/opendlp/entrypoints/blueprints/admin.py:247
+#: src/opendlp/entrypoints/blueprints/admin.py:295
 #: src/opendlp/service_layer/two_factor_service.py:48
 #: src/opendlp/service_layer/two_factor_service.py:94
 #: src/opendlp/service_layer/two_factor_service.py:152
@@ -767,746 +767,746 @@ msgstr "Hiba történt a gyűlés frissítése közben"
 msgid "User not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:129
+#: src/opendlp/entrypoints/blueprints/admin.py:136
 #, fuzzy
 msgid "An error occurred while loading the user details"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:162
+#: src/opendlp/entrypoints/blueprints/admin.py:169
 #, fuzzy, python-format
 msgid "User '%(email)s' updated successfully"
 msgstr "A '%(email)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:173
-#: src/opendlp/entrypoints/blueprints/admin.py:221
-#: src/opendlp/entrypoints/blueprints/admin.py:359
-#: src/opendlp/entrypoints/blueprints/admin.py:418
+#: src/opendlp/entrypoints/blueprints/admin.py:185
+#: src/opendlp/entrypoints/blueprints/admin.py:251
+#: src/opendlp/entrypoints/blueprints/admin.py:401
+#: src/opendlp/entrypoints/blueprints/admin.py:469
 #, fuzzy
 msgid "You don't have permission to perform this action"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:180
+#: src/opendlp/entrypoints/blueprints/admin.py:199
 #, fuzzy
 msgid "An error occurred while updating the user"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:194
+#: src/opendlp/entrypoints/blueprints/admin.py:217
 #, fuzzy
 msgid "An error occurred while loading the edit page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:208
+#: src/opendlp/entrypoints/blueprints/admin.py:231
 msgid "Two-factor authentication has been disabled for this user"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:225
+#: src/opendlp/entrypoints/blueprints/admin.py:257
 #, fuzzy
 msgid "An error occurred while disabling two-factor authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:266
+#: src/opendlp/entrypoints/blueprints/admin.py:308
 #, fuzzy
 msgid "An error occurred while loading the audit log"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:292
+#: src/opendlp/entrypoints/blueprints/admin.py:334
 #, fuzzy
 msgid "An error occurred while loading the invite list"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:323
+#: src/opendlp/entrypoints/blueprints/admin.py:365
 #, python-format
 msgid "Invite created successfully. Code: %(code)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:337
+#: src/opendlp/entrypoints/blueprints/admin.py:379
 #, python-format
 msgid "Invitation email sent to %(email)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:342
+#: src/opendlp/entrypoints/blueprints/admin.py:384
 msgid "Failed to send invitation email. Please share the invite code manually."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:348
+#: src/opendlp/entrypoints/blueprints/admin.py:390
 msgid "Error sending invitation email. Please share the invite code manually."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:356
-#: src/opendlp/entrypoints/blueprints/admin.py:363
+#: src/opendlp/entrypoints/blueprints/admin.py:398
+#: src/opendlp/entrypoints/blueprints/admin.py:405
 #, fuzzy
 msgid "An error occurred while creating the invite"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:369
+#: src/opendlp/entrypoints/blueprints/admin.py:411
 #, fuzzy
 msgid "An error occurred while loading the page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:387
-#: src/opendlp/entrypoints/blueprints/admin.py:414
+#: src/opendlp/entrypoints/blueprints/admin.py:431
+#: src/opendlp/entrypoints/blueprints/admin.py:465
 #, fuzzy
 msgid "Invite not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:395
+#: src/opendlp/entrypoints/blueprints/admin.py:441
 #, fuzzy
 msgid "An error occurred while loading the invite details"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:409
+#: src/opendlp/entrypoints/blueprints/admin.py:455
 #, python-format
 msgid "Invite '%(code)s' has been revoked"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:422
+#: src/opendlp/entrypoints/blueprints/admin.py:473
 #, fuzzy
 msgid "An error occurred while revoking the invite"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:437
+#: src/opendlp/entrypoints/blueprints/admin.py:488
 #, fuzzy
 msgid "No expired invites to clean up"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:439
+#: src/opendlp/entrypoints/blueprints/admin.py:490
 #, fuzzy
 msgid "Cleaned up 1 expired invite"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:441
+#: src/opendlp/entrypoints/blueprints/admin.py:492
 #, python-format
 msgid "Cleaned up %(count)s expired invites"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:447
+#: src/opendlp/entrypoints/blueprints/admin.py:498
 #, fuzzy
 msgid "An error occurred while cleaning up invites"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:110
-#: src/opendlp/entrypoints/blueprints/auth.py:232
-#: src/opendlp/entrypoints/blueprints/auth.py:604
-#: src/opendlp/entrypoints/blueprints/auth.py:712
+#: src/opendlp/entrypoints/blueprints/auth.py:113
+#: src/opendlp/entrypoints/blueprints/auth.py:235
+#: src/opendlp/entrypoints/blueprints/auth.py:607
+#: src/opendlp/entrypoints/blueprints/auth.py:715
 #, fuzzy
 msgid "Signed in successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:117
-#: src/opendlp/entrypoints/blueprints/auth.py:124
+#: src/opendlp/entrypoints/blueprints/auth.py:120
+#: src/opendlp/entrypoints/blueprints/auth.py:127
 msgid "Invalid email or password."
 msgstr "Érvénytelen email cím vagy jelszó."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:127
+#: src/opendlp/entrypoints/blueprints/auth.py:130
 msgid ""
 "Please confirm your email address before logging in. Check your inbox for"
 " the confirmation link."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:133
+#: src/opendlp/entrypoints/blueprints/auth.py:136
 #, python-format
 msgid "Didn't receive the email? <a href=\"%(url)s\">Resend confirmation</a>"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:141
+#: src/opendlp/entrypoints/blueprints/auth.py:144
 msgid "An error occurred during login. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:154
+#: src/opendlp/entrypoints/blueprints/auth.py:157
 msgid "No pending two-factor authentication. Please log in first."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:167
+#: src/opendlp/entrypoints/blueprints/auth.py:170
 msgid "Two-factor authentication session expired. Please log in again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:174
+#: src/opendlp/entrypoints/blueprints/auth.py:177
 msgid "Invalid session. Please log in again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:226
+#: src/opendlp/entrypoints/blueprints/auth.py:229
 #, python-format
 msgid ""
 "Backup code used successfully. You have %(remaining)s backup codes "
 "remaining."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:252
+#: src/opendlp/entrypoints/blueprints/auth.py:255
 msgid "Please enter a verification code"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:264
-#: src/opendlp/entrypoints/blueprints/auth.py:292
+#: src/opendlp/entrypoints/blueprints/auth.py:267
+#: src/opendlp/entrypoints/blueprints/auth.py:295
 msgid ""
 "Too many failed attempts. Please try again in 15 minutes or use a backup "
 "code."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:273
+#: src/opendlp/entrypoints/blueprints/auth.py:276
 msgid "Two-factor authentication is not enabled for this account."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:287
+#: src/opendlp/entrypoints/blueprints/auth.py:290
 #, python-format
 msgid "Invalid verification code. %(attempts)s attempts remaining."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:305
+#: src/opendlp/entrypoints/blueprints/auth.py:308
 #, fuzzy
 msgid "An error occurred during verification. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:317
+#: src/opendlp/entrypoints/blueprints/auth.py:320
 msgid "You have been logged out."
 msgstr "Kijelentkeztél."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:355
+#: src/opendlp/entrypoints/blueprints/auth.py:358
 msgid "Registration successful! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:364
+#: src/opendlp/entrypoints/blueprints/auth.py:367
 msgid "Registration successful! Please check your email to confirm your account."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:374
-#: src/opendlp/entrypoints/blueprints/auth.py:531
-#: src/opendlp/entrypoints/blueprints/profile.py:310
+#: src/opendlp/entrypoints/blueprints/auth.py:377
+#: src/opendlp/entrypoints/blueprints/auth.py:534
+#: src/opendlp/entrypoints/blueprints/profile.py:313
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:377
+#: src/opendlp/entrypoints/blueprints/auth.py:380
 msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:396
-#: src/opendlp/entrypoints/blueprints/auth.py:410
-#: src/opendlp/entrypoints/blueprints/auth.py:441
-#: src/opendlp/entrypoints/blueprints/auth.py:494
-#: src/opendlp/entrypoints/blueprints/auth.py:534
+#: src/opendlp/entrypoints/blueprints/auth.py:399
+#: src/opendlp/entrypoints/blueprints/auth.py:413
+#: src/opendlp/entrypoints/blueprints/auth.py:444
+#: src/opendlp/entrypoints/blueprints/auth.py:497
+#: src/opendlp/entrypoints/blueprints/auth.py:537
 #, fuzzy
 msgid "An error occurred. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:402
+#: src/opendlp/entrypoints/blueprints/auth.py:405
 msgid "Email confirmed successfully! You can now log in."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:432
+#: src/opendlp/entrypoints/blueprints/auth.py:435
 msgid ""
 "If that email is registered and unconfirmed, a confirmation link has been"
 " sent."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:485
+#: src/opendlp/entrypoints/blueprints/auth.py:488
 msgid "If an account exists with this email, a password reset link has been sent."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:524
+#: src/opendlp/entrypoints/blueprints/auth.py:527
 msgid "Your password has been reset successfully. You can now log in."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:577
-#: src/opendlp/entrypoints/blueprints/profile.py:149
+#: src/opendlp/entrypoints/blueprints/auth.py:580
+#: src/opendlp/entrypoints/blueprints/profile.py:152
 msgid "Failed to get user information from Google"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:602
-#: src/opendlp/entrypoints/blueprints/auth.py:710
+#: src/opendlp/entrypoints/blueprints/auth.py:605
+#: src/opendlp/entrypoints/blueprints/auth.py:713
 #, fuzzy
 msgid "Account created successfully! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:616
+#: src/opendlp/entrypoints/blueprints/auth.py:619
 #, fuzzy
 msgid "An error occurred during Google sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:685
-#: src/opendlp/entrypoints/blueprints/profile.py:210
+#: src/opendlp/entrypoints/blueprints/auth.py:688
+#: src/opendlp/entrypoints/blueprints/profile.py:213
 msgid "Failed to get user information from Microsoft"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:724
+#: src/opendlp/entrypoints/blueprints/auth.py:727
 #, fuzzy
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:99
-#: src/opendlp/entrypoints/blueprints/main.py:203
+#: src/opendlp/entrypoints/blueprints/backoffice.py:102
+#: src/opendlp/entrypoints/blueprints/main.py:224
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:103
-#: src/opendlp/entrypoints/blueprints/main.py:207
+#: src/opendlp/entrypoints/blueprints/backoffice.py:106
+#: src/opendlp/entrypoints/blueprints/main.py:228
 msgid "You don't have permission to create assemblies"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:107
-#: src/opendlp/entrypoints/blueprints/backoffice.py:111
-#: src/opendlp/entrypoints/blueprints/main.py:211
-#: src/opendlp/entrypoints/blueprints/main.py:214
+#: src/opendlp/entrypoints/blueprints/backoffice.py:110
+#: src/opendlp/entrypoints/blueprints/backoffice.py:114
+#: src/opendlp/entrypoints/blueprints/main.py:232
+#: src/opendlp/entrypoints/blueprints/main.py:235
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:160
-#: src/opendlp/entrypoints/blueprints/backoffice.py:395
-#: src/opendlp/entrypoints/blueprints/backoffice.py:442
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:162
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:79
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:91
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:126
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:161
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:359
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:430
-#: src/opendlp/entrypoints/blueprints/gsheets.py:316
-#: src/opendlp/entrypoints/blueprints/gsheets.py:722
-#: src/opendlp/entrypoints/blueprints/gsheets.py:989
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:160
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:221
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:269
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:483
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:571
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:826
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:882
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1125
-#: src/opendlp/entrypoints/blueprints/main.py:83
-#: src/opendlp/entrypoints/blueprints/main.py:132
-#: src/opendlp/entrypoints/blueprints/main.py:175
-#: src/opendlp/entrypoints/blueprints/main.py:274
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:165
-#: src/opendlp/entrypoints/blueprints/respondents.py:417
-#: src/opendlp/entrypoints/blueprints/respondents.py:524
-#: src/opendlp/entrypoints/blueprints/respondents.py:673
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:81
-#: src/opendlp/entrypoints/blueprints/targets.py:146
-#: src/opendlp/entrypoints/blueprints/targets.py:898
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:102
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:731
+#: src/opendlp/entrypoints/blueprints/backoffice.py:168
+#: src/opendlp/entrypoints/blueprints/backoffice.py:430
+#: src/opendlp/entrypoints/blueprints/backoffice.py:485
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:170
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:82
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:94
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:129
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:164
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:361
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:432
+#: src/opendlp/entrypoints/blueprints/gsheets.py:323
+#: src/opendlp/entrypoints/blueprints/gsheets.py:731
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1012
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:181
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:267
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:331
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:622
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:722
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1046
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1116
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1442
+#: src/opendlp/entrypoints/blueprints/main.py:91
+#: src/opendlp/entrypoints/blueprints/main.py:146
+#: src/opendlp/entrypoints/blueprints/main.py:195
+#: src/opendlp/entrypoints/blueprints/main.py:311
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:170
+#: src/opendlp/entrypoints/blueprints/respondents.py:442
+#: src/opendlp/entrypoints/blueprints/respondents.py:573
+#: src/opendlp/entrypoints/blueprints/respondents.py:726
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:84
+#: src/opendlp/entrypoints/blueprints/targets.py:154
+#: src/opendlp/entrypoints/blueprints/targets.py:910
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:105
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:732
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:164
-#: src/opendlp/entrypoints/blueprints/backoffice.py:258
-#: src/opendlp/entrypoints/blueprints/backoffice.py:297
-#: src/opendlp/entrypoints/blueprints/backoffice.py:391
-#: src/opendlp/entrypoints/blueprints/backoffice.py:438
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:166
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:250
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:281
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:306
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:351
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:412
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:440
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:464
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:76
+#: src/opendlp/entrypoints/blueprints/backoffice.py:174
+#: src/opendlp/entrypoints/blueprints/backoffice.py:278
+#: src/opendlp/entrypoints/blueprints/backoffice.py:325
+#: src/opendlp/entrypoints/blueprints/backoffice.py:421
+#: src/opendlp/entrypoints/blueprints/backoffice.py:476
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:176
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:269
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:299
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:323
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:375
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:436
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:463
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:487
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:79
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:381
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:408
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:88
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:123
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:158
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:356
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:406
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:427
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:444
-#: src/opendlp/entrypoints/blueprints/gsheets.py:312
-#: src/opendlp/entrypoints/blueprints/gsheets.py:718
-#: src/opendlp/entrypoints/blueprints/gsheets.py:985
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:154
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:215
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:263
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:477
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:565
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:820
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:876
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1119
-#: src/opendlp/entrypoints/blueprints/main.py:78
-#: src/opendlp/entrypoints/blueprints/main.py:128
-#: src/opendlp/entrypoints/blueprints/main.py:171
-#: src/opendlp/entrypoints/blueprints/main.py:268
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:161
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:183
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:230
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:294
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:316
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:344
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:384
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:411
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:459
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:482
-#: src/opendlp/entrypoints/blueprints/respondents.py:206
-#: src/opendlp/entrypoints/blueprints/respondents.py:325
-#: src/opendlp/entrypoints/blueprints/respondents.py:413
-#: src/opendlp/entrypoints/blueprints/respondents.py:464
-#: src/opendlp/entrypoints/blueprints/respondents.py:520
-#: src/opendlp/entrypoints/blueprints/respondents.py:670
-#: src/opendlp/entrypoints/blueprints/respondents.py:716
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:78
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:164
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:188
-#: src/opendlp/entrypoints/blueprints/targets.py:142
-#: src/opendlp/entrypoints/blueprints/targets.py:217
-#: src/opendlp/entrypoints/blueprints/targets.py:260
-#: src/opendlp/entrypoints/blueprints/targets.py:895
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:99
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:167
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:728
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:407
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:91
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:126
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:161
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:358
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:408
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:429
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:446
+#: src/opendlp/entrypoints/blueprints/gsheets.py:319
+#: src/opendlp/entrypoints/blueprints/gsheets.py:727
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1006
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:172
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:258
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:322
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:613
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:713
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1037
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1107
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1433
+#: src/opendlp/entrypoints/blueprints/main.py:81
+#: src/opendlp/entrypoints/blueprints/main.py:137
+#: src/opendlp/entrypoints/blueprints/main.py:186
+#: src/opendlp/entrypoints/blueprints/main.py:302
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:166
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:188
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:235
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:299
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:321
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:349
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:389
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:416
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:464
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:487
+#: src/opendlp/entrypoints/blueprints/respondents.py:215
+#: src/opendlp/entrypoints/blueprints/respondents.py:341
+#: src/opendlp/entrypoints/blueprints/respondents.py:433
+#: src/opendlp/entrypoints/blueprints/respondents.py:499
+#: src/opendlp/entrypoints/blueprints/respondents.py:564
+#: src/opendlp/entrypoints/blueprints/respondents.py:723
+#: src/opendlp/entrypoints/blueprints/respondents.py:769
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:81
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:166
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:189
+#: src/opendlp/entrypoints/blueprints/targets.py:145
+#: src/opendlp/entrypoints/blueprints/targets.py:226
+#: src/opendlp/entrypoints/blueprints/targets.py:271
+#: src/opendlp/entrypoints/blueprints/targets.py:907
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:102
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:169
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:729
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:168
+#: src/opendlp/entrypoints/blueprints/backoffice.py:178
 #, fuzzy
 msgid "An error occurred while loading the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:217
-#: src/opendlp/entrypoints/blueprints/main.py:243
+#: src/opendlp/entrypoints/blueprints/backoffice.py:227
+#: src/opendlp/entrypoints/blueprints/main.py:264
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:221
+#: src/opendlp/entrypoints/blueprints/backoffice.py:231
 #, python-format
 msgid "The URL slug '%(slug)s' is already in use"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:235
-#: src/opendlp/entrypoints/blueprints/backoffice.py:264
-#: src/opendlp/entrypoints/blueprints/backoffice.py:293
-#: src/opendlp/entrypoints/blueprints/main.py:249
+#: src/opendlp/entrypoints/blueprints/backoffice.py:248
+#: src/opendlp/entrypoints/blueprints/backoffice.py:287
+#: src/opendlp/entrypoints/blueprints/backoffice.py:319
+#: src/opendlp/entrypoints/blueprints/main.py:273
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:241
-#: src/opendlp/entrypoints/blueprints/backoffice.py:245
-#: src/opendlp/entrypoints/blueprints/main.py:255
-#: src/opendlp/entrypoints/blueprints/main.py:258
+#: src/opendlp/entrypoints/blueprints/backoffice.py:257
+#: src/opendlp/entrypoints/blueprints/backoffice.py:263
+#: src/opendlp/entrypoints/blueprints/main.py:282
+#: src/opendlp/entrypoints/blueprints/main.py:290
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:275
+#: src/opendlp/entrypoints/blueprints/backoffice.py:298
 msgid "Please enter a valid positive number"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:287
+#: src/opendlp/entrypoints/blueprints/backoffice.py:310
 #, python-format
 msgid "Number to select updated to %(number)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:400
+#: src/opendlp/entrypoints/blueprints/backoffice.py:436
 #, fuzzy
 msgid "An error occurred while loading assembly data"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:447
+#: src/opendlp/entrypoints/blueprints/backoffice.py:491
 #, fuzzy
 msgid "An error occurred while loading team members"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:486
-#: src/opendlp/entrypoints/blueprints/main.py:316
+#: src/opendlp/entrypoints/blueprints/backoffice.py:530
+#: src/opendlp/entrypoints/blueprints/main.py:355
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:493
+#: src/opendlp/entrypoints/blueprints/backoffice.py:537
 msgid "Please select a user and role"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:499
+#: src/opendlp/entrypoints/blueprints/backoffice.py:543
 #, fuzzy, python-format
 msgid "Could not add user to assembly: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:505
-#: src/opendlp/entrypoints/blueprints/main.py:335
+#: src/opendlp/entrypoints/blueprints/backoffice.py:552
+#: src/opendlp/entrypoints/blueprints/main.py:377
 #, fuzzy
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:511
-#: src/opendlp/entrypoints/blueprints/main.py:341
+#: src/opendlp/entrypoints/blueprints/backoffice.py:561
+#: src/opendlp/entrypoints/blueprints/main.py:386
 #, fuzzy
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:531
-#: src/opendlp/entrypoints/blueprints/main.py:361
+#: src/opendlp/entrypoints/blueprints/backoffice.py:581
+#: src/opendlp/entrypoints/blueprints/main.py:406
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:539
-#: src/opendlp/entrypoints/blueprints/main.py:369
+#: src/opendlp/entrypoints/blueprints/backoffice.py:589
+#: src/opendlp/entrypoints/blueprints/main.py:414
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:545
-#: src/opendlp/entrypoints/blueprints/main.py:375
+#: src/opendlp/entrypoints/blueprints/backoffice.py:598
+#: src/opendlp/entrypoints/blueprints/main.py:423
 #, fuzzy
 msgid "You don't have permission to remove users from this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:551
-#: src/opendlp/entrypoints/blueprints/main.py:381
+#: src/opendlp/entrypoints/blueprints/backoffice.py:607
+#: src/opendlp/entrypoints/blueprints/main.py:432
 #, fuzzy
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:172
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:182
 #, fuzzy
 msgid "An error occurred while loading registration settings"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:183
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:193
 #, fuzzy
 msgid "Registration form published successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:184
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:194
 #, fuzzy
 msgid "Registration form HTML updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:187
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:197
 #, fuzzy
 msgid "Registration form unpublished"
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:190
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:200
 #, fuzzy
 msgid "Registration form closed"
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:193
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:203
 #, fuzzy
 msgid "Registration form reopened"
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:196
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:206
 #, fuzzy
 msgid "Registration form saved and republished"
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:197
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:207
 #, fuzzy
 msgid "Registration form saved"
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:242
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:408
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:254
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:432
 msgid "Please create a registration page first from the Details tab."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:246
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:278
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:410
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:438
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:462
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:263
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:296
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:434
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:461
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:485
 #, fuzzy
 msgid "You don't have permission to modify this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:261
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:279
 #, fuzzy
 msgid "An error occurred while saving registration settings"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:273
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:291
 msgid ""
 "Registration page created. URLs have been generated automatically and can"
 " be edited below."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:286
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:304
 msgid "This assembly already has a registration page."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:291
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:308
 #, fuzzy
 msgid "An error occurred while creating the registration page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:304
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:347
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:321
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:369
 #, fuzzy
 msgid "You don't have permission to access this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:309
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:326
 #, fuzzy
 msgid "An error occurred while generating the form skeleton"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:355
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:379
 #, fuzzy
 msgid "An error occurred while generating QR code"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:382
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:406
 #, fuzzy
 msgid "No file was selected"
 msgstr "Táblázat lapfülei"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:388
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:412
 msgid "Failed to read the uploaded file"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:392
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:428
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:416
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:451
 #: templates/backoffice/assembly_registration.html:901
 #: templates/backoffice/assembly_registration.html:1034
 msgid "Alt text is required for accessibility"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:416
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:439
 #, fuzzy
 msgid "An error occurred while uploading the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:434
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:458
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:457
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:481
 #, fuzzy
 msgid "Image not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:436
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:460
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:459
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:483
 #, fuzzy
 msgid "Registration page not found"
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:443
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:466
 #, fuzzy
 msgid "An error occurred while updating the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:467
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:490
 #, fuzzy
 msgid "An error occurred while deleting the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:54
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:57
 msgid "Please review and save the selection settings before checking data."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:63
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:66
 #, python-format
 msgid ""
 "Data validation passed: %(features)s targets, %(people)s respondents "
 "ready for selection."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:84
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:166
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:86
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:168
 #, fuzzy
 msgid "An unexpected error occurred while checking data"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:101
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:180
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:103
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:182
 #: templates/backoffice/assembly_selection.html:58
 msgid "Please review and save the selection settings before running selection."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:115
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:189
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:357
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:117
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:191
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:446
 #, fuzzy, python-format
 msgid "Could not start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:118
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:192
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:361
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:120
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:194
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:454
 #, python-format
 msgid "Failed to start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:121
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:123
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:384
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:195
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:409
-#: src/opendlp/entrypoints/blueprints/gsheets.py:784
-#: src/opendlp/entrypoints/blueprints/gsheets.py:840
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:368
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:405
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:690
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:747
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:982
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1014
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:197
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:411
+#: src/opendlp/entrypoints/blueprints/gsheets.py:795
+#: src/opendlp/entrypoints/blueprints/gsheets.py:854
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:464
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:516
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:871
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:939
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1246
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1289
 msgid "You don't have permission to manage this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:126
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:199
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:373
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:127
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:201
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:473
 msgid "An unexpected error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:184
-#: src/opendlp/entrypoints/blueprints/gsheets.py:509
-#: src/opendlp/entrypoints/blueprints/gsheets.py:654
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:188
+#: src/opendlp/entrypoints/blueprints/gsheets.py:519
+#: src/opendlp/entrypoints/blueprints/gsheets.py:664
 #, fuzzy
 msgid "Task cancelled"
 msgstr "Kész"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:194
-#: src/opendlp/entrypoints/blueprints/gsheets.py:519
-#: src/opendlp/entrypoints/blueprints/gsheets.py:664
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:198
+#: src/opendlp/entrypoints/blueprints/gsheets.py:529
+#: src/opendlp/entrypoints/blueprints/gsheets.py:674
 #, fuzzy, python-format
 msgid "Cannot cancel task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:198
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:255
-#: src/opendlp/entrypoints/blueprints/gsheets.py:523
-#: src/opendlp/entrypoints/blueprints/gsheets.py:668
-#: src/opendlp/entrypoints/blueprints/gsheets.py:863
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:431
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:773
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1040
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:202
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:257
+#: src/opendlp/entrypoints/blueprints/gsheets.py:533
+#: src/opendlp/entrypoints/blueprints/gsheets.py:678
+#: src/opendlp/entrypoints/blueprints/gsheets.py:879
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:551
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:974
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1324
 #: src/opendlp/service_layer/sortition.py:739
 #, fuzzy
 msgid "Task not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:202
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:263
-#: src/opendlp/entrypoints/blueprints/gsheets.py:527
-#: src/opendlp/entrypoints/blueprints/gsheets.py:672
-#: src/opendlp/entrypoints/blueprints/gsheets.py:873
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:443
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:785
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1052
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:206
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:265
+#: src/opendlp/entrypoints/blueprints/gsheets.py:537
+#: src/opendlp/entrypoints/blueprints/gsheets.py:682
+#: src/opendlp/entrypoints/blueprints/gsheets.py:894
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:572
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:995
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1345
 #, fuzzy
 msgid "You don't have permission to cancel this task"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:207
-#: src/opendlp/entrypoints/blueprints/gsheets.py:532
-#: src/opendlp/entrypoints/blueprints/gsheets.py:677
-#: src/opendlp/entrypoints/blueprints/gsheets.py:878
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:448
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:790
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1057
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:210
+#: src/opendlp/entrypoints/blueprints/gsheets.py:541
+#: src/opendlp/entrypoints/blueprints/gsheets.py:686
+#: src/opendlp/entrypoints/blueprints/gsheets.py:899
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:581
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1004
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1354
 #, fuzzy
 msgid "An error occurred while cancelling the task"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:236
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:270
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:307
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:293
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:323
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:239
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:272
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:308
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:295
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:325
 #, fuzzy
 msgid "You don't have permission to download this data"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:241
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:275
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:243
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:276
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:312
 #, fuzzy
 msgid "An error occurred while generating the download"
@@ -1517,874 +1517,874 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 msgid "Selection settings saved successfully."
 msgstr "További beállítások"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:389
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:388
 #, fuzzy
 msgid "An error occurred while saving settings"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:404
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:441
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:185
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:403
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:443
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:186
 #, python-format
 msgid "Reset %(count)s respondents to Pool status"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:411
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:447
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:191
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:410
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:449
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:192
 #, fuzzy
 msgid "You don't have permission to reset selection status"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:416
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:414
 #, fuzzy
 msgid "An error occurred while resetting respondent status"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:108
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:246
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:510
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:851
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1083
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:111
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:300
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:655
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1079
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1388
 msgid "Invalid task ID for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:142
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:145
 msgid "Please review and save the selection settings before checking targets."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:250
-#: src/opendlp/entrypoints/blueprints/gsheets.py:858
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:424
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:766
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1033
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:252
+#: src/opendlp/entrypoints/blueprints/gsheets.py:872
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:539
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:962
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1312
 msgid "Task has been cancelled"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:393
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:395
 #, fuzzy
 msgid "Selection settings saved"
 msgstr "További beállítások"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:452
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:86
+#: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:453
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:88
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:196
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:107
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:109
 #, fuzzy
 msgid "An unexpected error occurred"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:103
-#: src/opendlp/entrypoints/blueprints/dev.py:123
-#: src/opendlp/entrypoints/blueprints/dev.py:1093
-#: src/opendlp/entrypoints/blueprints/dev.py:1118
+#: src/opendlp/entrypoints/blueprints/dev.py:106
+#: src/opendlp/entrypoints/blueprints/dev.py:126
+#: src/opendlp/entrypoints/blueprints/dev.py:1095
+#: src/opendlp/entrypoints/blueprints/dev.py:1120
 #, fuzzy
 msgid "You don't have permission to access developer tools"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1126
+#: src/opendlp/entrypoints/blueprints/dev.py:1128
 msgid "Success! Your changes have been saved."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1127
+#: src/opendlp/entrypoints/blueprints/dev.py:1129
 msgid "Warning: Please review the data before continuing."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1128
+#: src/opendlp/entrypoints/blueprints/dev.py:1130
 #, fuzzy
 msgid "Error: Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1129
+#: src/opendlp/entrypoints/blueprints/dev.py:1131
 msgid "Info: A new feature is available."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:321
+#: src/opendlp/entrypoints/blueprints/gsheets.py:327
 #, fuzzy
 msgid "An error occurred while loading the selection page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:451
-#: src/opendlp/entrypoints/blueprints/gsheets.py:486
-#: src/opendlp/entrypoints/blueprints/gsheets.py:554
-#: src/opendlp/entrypoints/blueprints/gsheets.py:582
+#: src/opendlp/entrypoints/blueprints/gsheets.py:463
+#: src/opendlp/entrypoints/blueprints/gsheets.py:497
+#: src/opendlp/entrypoints/blueprints/gsheets.py:563
+#: src/opendlp/entrypoints/blueprints/gsheets.py:590
 #, fuzzy
 msgid "Please configure a Google Spreadsheet first"
 msgstr "Adja meg a Google táblázat beállításait"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:455
-#: src/opendlp/entrypoints/blueprints/gsheets.py:490
+#: src/opendlp/entrypoints/blueprints/gsheets.py:467
+#: src/opendlp/entrypoints/blueprints/gsheets.py:501
 #, fuzzy
 msgid "You don't have permission to run selection"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:460
+#: src/opendlp/entrypoints/blueprints/gsheets.py:471
 #, fuzzy
 msgid "An error occurred while starting the validation task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:495
+#: src/opendlp/entrypoints/blueprints/gsheets.py:505
 #, fuzzy
 msgid "An error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:558
-#: src/opendlp/entrypoints/blueprints/gsheets.py:586
+#: src/opendlp/entrypoints/blueprints/gsheets.py:567
+#: src/opendlp/entrypoints/blueprints/gsheets.py:594
 #, fuzzy
 msgid "You don't have permission to manage tabs"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:563
+#: src/opendlp/entrypoints/blueprints/gsheets.py:571
 #, fuzzy
 msgid "An error occurred while starting the list tabs task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:591
+#: src/opendlp/entrypoints/blueprints/gsheets.py:598
 #, fuzzy
 msgid "An error occurred while starting the delete tabs task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:701
+#: src/opendlp/entrypoints/blueprints/gsheets.py:710
 #, fuzzy
 msgid "Selection run not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:706
+#: src/opendlp/entrypoints/blueprints/gsheets.py:715
 #, fuzzy
 msgid "Selection run does not belong to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:727
+#: src/opendlp/entrypoints/blueprints/gsheets.py:735
 #, fuzzy
 msgid "An error occurred while loading the run details"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:772
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:678
+#: src/opendlp/entrypoints/blueprints/gsheets.py:780
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:852
 #, fuzzy, python-format
 msgid "Could not start task to read gsheet: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:777
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:398
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:683
+#: src/opendlp/entrypoints/blueprints/gsheets.py:785
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:506
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:861
 #, python-format
 msgid "Failed to start loading task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:789
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:410
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:695
+#: src/opendlp/entrypoints/blueprints/gsheets.py:800
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:525
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:880
 msgid "An unexpected error occurred while starting the loading task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:804
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:711
+#: src/opendlp/entrypoints/blueprints/gsheets.py:815
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:896
 msgid "Number of people to select is required"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:810
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:717
+#: src/opendlp/entrypoints/blueprints/gsheets.py:821
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:902
 msgid "Number of people to select must be greater than zero"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:813
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:720
+#: src/opendlp/entrypoints/blueprints/gsheets.py:824
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:905
 msgid "Number of people to select must be a valid integer"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:833
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:740
+#: src/opendlp/entrypoints/blueprints/gsheets.py:844
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:929
 #, fuzzy, python-format
 msgid "Failed to start replacement task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:845
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:752
+#: src/opendlp/entrypoints/blueprints/gsheets.py:859
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:948
 #, fuzzy
 msgid "An unexpected error occurred while starting the replacement task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:915
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:114
+#: src/opendlp/entrypoints/blueprints/gsheets.py:936
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:117
 msgid "Google Spreadsheet configuration updated successfully"
 msgstr "Google táblázat beállításai sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:918
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:96
+#: src/opendlp/entrypoints/blueprints/gsheets.py:939
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:99
 msgid "Google Spreadsheet configuration created successfully"
 msgstr "Google táblázat beállításai sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:928
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:124
+#: src/opendlp/entrypoints/blueprints/gsheets.py:949
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:127
 msgid ""
 "Warning: No columns to keep specified. This means the output will only "
 "include participant data columns used for the targets and address "
 "checking. Is this intentional?"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:953
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1015
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:136
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:186
+#: src/opendlp/entrypoints/blueprints/gsheets.py:974
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1039
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:143
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:219
 msgid "You don't have permission to manage Google Spreadsheet for this assembly"
 msgstr ""
 "Nincs jogosultsága a közösségi gyűléshez tartozó Google táblázat "
 "megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:957
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:142
+#: src/opendlp/entrypoints/blueprints/gsheets.py:978
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:153
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:960
-#: src/opendlp/entrypoints/blueprints/gsheets.py:994
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:147
+#: src/opendlp/entrypoints/blueprints/gsheets.py:981
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1016
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:162
 msgid "An error occurred while saving the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1005
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:176
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1027
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:202
 msgid "Google Spreadsheet configuration removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1011
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:180
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1033
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:210
 msgid "Google Spreadsheet configuration not found"
 msgstr "Google táblázat beállításai nem találhatóak"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1020
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:190
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1043
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:228
 msgid "An error occurred while removing the Google Spreadsheet configuration"
 msgstr "Hiba történt a Google táblázat beállításainak törlésekor"
 
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:393
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:497
 #, fuzzy, python-format
 msgid "Could not start load spreadsheet task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:975
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1236
 #, fuzzy, python-format
 msgid "Failed to start listing task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:987
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1255
 #, fuzzy
 msgid "An unexpected error occurred while starting the listing task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1007
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1279
 #, fuzzy, python-format
 msgid "Failed to start deletion task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1019
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1298
 #, fuzzy
 msgid "An unexpected error occurred while starting the deletion task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1075
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1377
 #, fuzzy
 msgid "Task run not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1114
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1423
 msgid "Unknown task type"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:323
+#: src/opendlp/entrypoints/blueprints/main.py:362
 #, fuzzy
 msgid "Please check the form and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:329
+#: src/opendlp/entrypoints/blueprints/main.py:368
 #, fuzzy
 msgid "Invalid user selection"
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:57
+#: src/opendlp/entrypoints/blueprints/profile.py:60
 #, fuzzy
 msgid "Profile updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:62
+#: src/opendlp/entrypoints/blueprints/profile.py:65
 #, fuzzy
 msgid "An error occurred while updating your profile"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:73
+#: src/opendlp/entrypoints/blueprints/profile.py:76
 msgid "You need to set a password first"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:93
+#: src/opendlp/entrypoints/blueprints/profile.py:96
 #, fuzzy
 msgid "Password changed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:97
+#: src/opendlp/entrypoints/blueprints/profile.py:100
 msgid "Current password is incorrect"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:99
+#: src/opendlp/entrypoints/blueprints/profile.py:102
 #, fuzzy, python-format
 msgid "New password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:102
+#: src/opendlp/entrypoints/blueprints/profile.py:105
 #, fuzzy
 msgid "An error occurred while changing your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:134
-#: src/opendlp/entrypoints/blueprints/profile.py:194
+#: src/opendlp/entrypoints/blueprints/profile.py:137
+#: src/opendlp/entrypoints/blueprints/profile.py:197
 msgid "Invalid OAuth linking request"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:157
+#: src/opendlp/entrypoints/blueprints/profile.py:160
 #, fuzzy
 msgid "Google account linked successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:165
+#: src/opendlp/entrypoints/blueprints/profile.py:168
 #, fuzzy
 msgid "An error occurred while linking your Google account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:220
+#: src/opendlp/entrypoints/blueprints/profile.py:223
 #, fuzzy
 msgid "Microsoft account linked successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:228
+#: src/opendlp/entrypoints/blueprints/profile.py:231
 #, fuzzy
 msgid "An error occurred while linking your Microsoft account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:240
+#: src/opendlp/entrypoints/blueprints/profile.py:243
 #, fuzzy
 msgid "Password authentication removed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:245
+#: src/opendlp/entrypoints/blueprints/profile.py:248
 #, fuzzy
 msgid "An error occurred while removing password authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:258
+#: src/opendlp/entrypoints/blueprints/profile.py:261
 #, fuzzy
 msgid "OAuth authentication removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:263
+#: src/opendlp/entrypoints/blueprints/profile.py:266
 #, fuzzy
 msgid "An error occurred while removing OAuth authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:274
+#: src/opendlp/entrypoints/blueprints/profile.py:277
 msgid "You already have a password. Use 'Change password' instead."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:279
+#: src/opendlp/entrypoints/blueprints/profile.py:282
 msgid "Cannot set password without another authentication method"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:306
+#: src/opendlp/entrypoints/blueprints/profile.py:309
 #, fuzzy
 msgid "Password set successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:313
+#: src/opendlp/entrypoints/blueprints/profile.py:316
 #, fuzzy
 msgid "An error occurred while setting your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:333
+#: src/opendlp/entrypoints/blueprints/profile.py:336
 #, fuzzy
 msgid "An error occurred while loading 2FA settings"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:362
+#: src/opendlp/entrypoints/blueprints/profile.py:365
 #, fuzzy
 msgid "An error occurred while setting up 2FA"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:373
+#: src/opendlp/entrypoints/blueprints/profile.py:376
 msgid "Please enter the verification code from your authenticator app"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:381
+#: src/opendlp/entrypoints/blueprints/profile.py:384
 msgid "Setup session expired. Please start over."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:392
+#: src/opendlp/entrypoints/blueprints/profile.py:395
 #, fuzzy
 msgid "Two-factor authentication has been enabled successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:400
+#: src/opendlp/entrypoints/blueprints/profile.py:403
 #, fuzzy
 msgid "An error occurred while enabling 2FA"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:411
+#: src/opendlp/entrypoints/blueprints/profile.py:414
 #, fuzzy
 msgid "Please enter your verification code to disable 2FA"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:418
+#: src/opendlp/entrypoints/blueprints/profile.py:421
 msgid "Two-factor authentication has been disabled"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:426
+#: src/opendlp/entrypoints/blueprints/profile.py:429
 #, fuzzy
 msgid "An error occurred while disabling 2FA"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:437
+#: src/opendlp/entrypoints/blueprints/profile.py:440
 #, fuzzy
 msgid "Please enter your verification code to regenerate backup codes"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:452
+#: src/opendlp/entrypoints/blueprints/profile.py:455
 #, fuzzy
 msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/registration.py:84
+#: src/opendlp/entrypoints/blueprints/registration.py:85
 msgid "Leave this blank"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/registration.py:302
+#: src/opendlp/entrypoints/blueprints/registration.py:304
 #, fuzzy
 msgid "Too many registrations from your location. Please try again later."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:129
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:132
 #: templates/backoffice/respondent_field_schema/view.html:188
 msgid "Not shown"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:130
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:133
 #, fuzzy
 msgid "Optional"
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:131
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:134
 #: templates/backoffice/patterns/_custom.html:71
 msgid "Required"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:177
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:182
 #, python-format
 msgid "Schema initialised with %(count)d fixed fields."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:179
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:184
 #, fuzzy
 msgid "Schema already exists."
 msgstr "A felhasználó már létezik"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:181
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:186
 #, fuzzy
 msgid "You don't have permission to initialise the schema"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:204
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:209
 msgid "Field key is required (letters, numbers and underscores)."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:224
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:229
 #, fuzzy
 msgid "Field added."
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:228
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:292
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:314
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:342
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:382
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:409
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:480
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:233
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:297
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:319
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:347
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:387
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:414
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:485
 #, fuzzy
 msgid "You don't have permission to edit the schema"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:248
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:253
 msgid "No changes submitted."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:286
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:291
 #, fuzzy
 msgid "Field updated."
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:290
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:340
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:437
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:478
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:295
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:345
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:442
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:483
 #, fuzzy
 msgid "Field not found."
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:310
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:315
 #, python-format
 msgid "Guessed types for %(count)d fields."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:312
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:317
 msgid "No fields were guessed — no untouched text rows to update."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:331
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:398
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:336
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:403
 msgid "Option value is required."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:336
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:341
 #, fuzzy
 msgid "Option added."
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:360
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:365
 msgid "Original option value is required."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:363
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:368
 msgid "Option value cannot be blank."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:376
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:381
 #, fuzzy
 msgid "Option updated."
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:380
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:407
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:385
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:412
 #, fuzzy
 msgid "Option not found."
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:403
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:408
 #, fuzzy
 msgid "Option removed."
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:429
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:434
 #, fuzzy
 msgid "Invalid move direction."
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:457
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:462
 #, fuzzy
 msgid "You don't have permission to reorder fields"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:474
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:479
 msgid "Field removed."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:104
+#: src/opendlp/entrypoints/blueprints/respondents.py:107
 #, python-format
 msgid "Respondents uploaded with warnings: %(count)d imported, %(errors)d errors"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:112
+#: src/opendlp/entrypoints/blueprints/respondents.py:115
 #, python-format
 msgid "Respondents uploaded successfully: %(count)d imported"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:124
-#: src/opendlp/entrypoints/blueprints/respondents.py:131
+#: src/opendlp/entrypoints/blueprints/respondents.py:127
+#: src/opendlp/entrypoints/blueprints/respondents.py:134
 #, fuzzy
 msgid "No file selected"
 msgstr "Táblázat lapfülei"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:144
+#: src/opendlp/entrypoints/blueprints/respondents.py:150
 #, python-format
 msgid ""
 "CSV is too large: limit is %(limit)d MB. Update MAX_CSV_UPLOAD_MB if a "
 "larger file is needed."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:192
-#: src/opendlp/entrypoints/blueprints/respondents.py:236
+#: src/opendlp/entrypoints/blueprints/respondents.py:198
+#: src/opendlp/entrypoints/blueprints/respondents.py:249
 #, fuzzy, python-format
 msgid "Invalid CSV format: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:200
+#: src/opendlp/entrypoints/blueprints/respondents.py:209
 #, fuzzy
 msgid "You don't have permission to upload respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:211
+#: src/opendlp/entrypoints/blueprints/respondents.py:224
 #, fuzzy
 msgid "An error occurred while uploading respondents"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:223
-#: src/opendlp/entrypoints/blueprints/respondents.py:276
+#: src/opendlp/entrypoints/blueprints/respondents.py:236
+#: src/opendlp/entrypoints/blueprints/respondents.py:289
 msgid "Upload session expired. Please upload the CSV again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:281
+#: src/opendlp/entrypoints/blueprints/respondents.py:294
 #, fuzzy
 msgid "Upload cancelled."
 msgstr "Kész"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:310
+#: src/opendlp/entrypoints/blueprints/respondents.py:323
 #, python-format
 msgid "Respondents deleted: %(count)d removed"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:319
-#: src/opendlp/entrypoints/blueprints/respondents.py:456
+#: src/opendlp/entrypoints/blueprints/respondents.py:335
+#: src/opendlp/entrypoints/blueprints/respondents.py:486
 #, fuzzy
 msgid "You don't have permission to delete respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:330
+#: src/opendlp/entrypoints/blueprints/respondents.py:350
 #, fuzzy
 msgid "An error occurred while deleting respondents"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:424
+#: src/opendlp/entrypoints/blueprints/respondents.py:451
 #, fuzzy
 msgid "An error occurred while loading assembly respondents"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:437
+#: src/opendlp/entrypoints/blueprints/respondents.py:464
 #, fuzzy
 msgid "A comment is required when deleting a respondent"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:449
+#: src/opendlp/entrypoints/blueprints/respondents.py:476
 #, fuzzy
 msgid "Respondent personal data deleted"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:460
-#: src/opendlp/entrypoints/blueprints/respondents.py:516
-#: src/opendlp/entrypoints/blueprints/respondents.py:667
-#: src/opendlp/entrypoints/blueprints/respondents.py:713
+#: src/opendlp/entrypoints/blueprints/respondents.py:495
+#: src/opendlp/entrypoints/blueprints/respondents.py:560
+#: src/opendlp/entrypoints/blueprints/respondents.py:720
+#: src/opendlp/entrypoints/blueprints/respondents.py:766
 #, fuzzy
 msgid "Respondent not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:469
+#: src/opendlp/entrypoints/blueprints/respondents.py:508
 #, fuzzy
 msgid "An error occurred while deleting the respondent"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:529
+#: src/opendlp/entrypoints/blueprints/respondents.py:582
 #, fuzzy
 msgid "An error occurred while loading the respondent"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:603
-#: src/opendlp/entrypoints/blueprints/respondents.py:623
+#: src/opendlp/entrypoints/blueprints/respondents.py:656
+#: src/opendlp/entrypoints/blueprints/respondents.py:676
 #, fuzzy
 msgid "You don't have permission to edit respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:605
+#: src/opendlp/entrypoints/blueprints/respondents.py:658
 #, fuzzy
 msgid "Respondent updated."
 msgstr "Feladat állapota"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:630
+#: src/opendlp/entrypoints/blueprints/respondents.py:683
 #, fuzzy
 msgid "Cannot edit a deleted respondent"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:689
+#: src/opendlp/entrypoints/blueprints/respondents.py:742
 #, fuzzy
 msgid "A comment is required when changing selection status"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:694
+#: src/opendlp/entrypoints/blueprints/respondents.py:747
 msgid "Invalid target status"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:707
+#: src/opendlp/entrypoints/blueprints/respondents.py:760
 #, fuzzy
 msgid "Status updated."
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:711
+#: src/opendlp/entrypoints/blueprints/respondents.py:764
 #, fuzzy
 msgid "You don't have permission to change this respondent's status"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:145
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:147
 #, python-format
 msgid "Successfully imported %(count)s respondents from %(file)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:151
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:153
 #, python-format
 msgid " ... and %(more)s more"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:153
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:155
 #, python-format
 msgid "%(count)s rows were skipped: %(errors)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:161
-#: src/opendlp/entrypoints/blueprints/targets.py:214
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:164
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:163
+#: src/opendlp/entrypoints/blueprints/targets.py:223
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:166
 #, fuzzy, python-format
 msgid "CSV import failed: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:167
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:169
 #, fuzzy
 msgid "You don't have permission to import respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
-#: src/opendlp/entrypoints/blueprints/targets.py:223
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:173
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:172
+#: src/opendlp/entrypoints/blueprints/targets.py:232
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:175
 msgid "Could not read CSV file. Please ensure it is UTF-8 encoded."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:175
-#: src/opendlp/entrypoints/blueprints/targets.py:228
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:178
+#: src/opendlp/entrypoints/blueprints/respondents_legacy.py:176
+#: src/opendlp/entrypoints/blueprints/targets.py:236
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:179
 #, fuzzy
 msgid "An unexpected error occurred during import"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:151
+#: src/opendlp/entrypoints/blueprints/targets.py:160
 #, fuzzy
 msgid "An error occurred while loading assembly targets"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:202
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:152
+#: src/opendlp/entrypoints/blueprints/targets.py:211
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:154
 #, python-format
 msgid ""
 "Successfully imported %(cats)s categories with %(vals)s values from "
 "%(file)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:220
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:170
+#: src/opendlp/entrypoints/blueprints/targets.py:229
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:172
 #, fuzzy
 msgid "You don't have permission to import targets"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:245
+#: src/opendlp/entrypoints/blueprints/targets.py:253
 #, python-format
 msgid "Targets deleted: %(count)d categories removed"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:254
+#: src/opendlp/entrypoints/blueprints/targets.py:265
 #, fuzzy
 msgid "You don't have permission to delete targets"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:265
+#: src/opendlp/entrypoints/blueprints/targets.py:277
 #, fuzzy
 msgid "An error occurred while deleting targets"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:284
-#: src/opendlp/entrypoints/blueprints/targets.py:358
-#: src/opendlp/entrypoints/blueprints/targets.py:463
-#: src/opendlp/entrypoints/blueprints/targets.py:558
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:194
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:261
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:356
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:441
+#: src/opendlp/entrypoints/blueprints/targets.py:296
+#: src/opendlp/entrypoints/blueprints/targets.py:370
+#: src/opendlp/entrypoints/blueprints/targets.py:475
+#: src/opendlp/entrypoints/blueprints/targets.py:570
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:195
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:262
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:357
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:442
 msgid "Please correct the errors below"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:322
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:226
+#: src/opendlp/entrypoints/blueprints/targets.py:334
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:227
 #, python-format
 msgid "Category '%(name)s' added"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:333
-#: src/opendlp/entrypoints/blueprints/targets.py:400
-#: src/opendlp/entrypoints/blueprints/targets.py:521
-#: src/opendlp/entrypoints/blueprints/targets.py:617
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:237
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:300
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:408
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:494
+#: src/opendlp/entrypoints/blueprints/targets.py:345
+#: src/opendlp/entrypoints/blueprints/targets.py:412
+#: src/opendlp/entrypoints/blueprints/targets.py:533
+#: src/opendlp/entrypoints/blueprints/targets.py:629
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:238
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:301
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:409
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:495
 #, python-format
 msgid "Error: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:387
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:287
+#: src/opendlp/entrypoints/blueprints/targets.py:399
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:288
 #, python-format
 msgid "Category renamed to '%(name)s'"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:425
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:322
+#: src/opendlp/entrypoints/blueprints/targets.py:437
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:323
 #, fuzzy
 msgid "Category deleted"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:496
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:386
+#: src/opendlp/entrypoints/blueprints/targets.py:508
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:387
 #, python-format
 msgid "Value '%(value)s' added"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:592
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:472
+#: src/opendlp/entrypoints/blueprints/targets.py:604
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:473
 #, fuzzy
 msgid "Value updated"
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:654
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:527
+#: src/opendlp/entrypoints/blueprints/targets.py:666
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:528
 #, fuzzy
 msgid "Value deleted"
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:672
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:545
+#: src/opendlp/entrypoints/blueprints/targets.py:684
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:546
 msgid "No values to add"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:718
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:588
+#: src/opendlp/entrypoints/blueprints/targets.py:730
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:589
 #, python-format
 msgid "Added %(count)s values"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:772
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:608
+#: src/opendlp/entrypoints/blueprints/targets.py:784
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:609
 #, fuzzy
 msgid "No columns selected"
 msgstr "Táblázat lapfülei"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:822
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:660
+#: src/opendlp/entrypoints/blueprints/targets.py:834
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:661
 #, python-format
 msgid "Created %(count)s categories with %(values)s values: %(names)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:831
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:669
+#: src/opendlp/entrypoints/blueprints/targets.py:843
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:670
 #, python-format
 msgid "Created %(count)s categories: %(names)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:835
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:673
+#: src/opendlp/entrypoints/blueprints/targets.py:847
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:674
 #, fuzzy
 msgid "No new categories were created"
 msgstr "Feladat állapota"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:903
+#: src/opendlp/entrypoints/blueprints/targets.py:914
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:736
 #, fuzzy
 msgid "An unexpected error occurred while checking targets"
@@ -2605,13 +2605,13 @@ msgstr ""
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/service_layer/email_template_service.py:54
+#: src/opendlp/service_layer/email_template_service.py:55
 msgid ""
 "The registration page does not collect an email address, so the auto-"
 "reply can never be sent. Add a required email field to the page."
 msgstr ""
 
-#: src/opendlp/service_layer/email_template_service.py:64
+#: src/opendlp/service_layer/email_template_service.py:65
 msgid ""
 "The email address is optional on the registration page, so respondents "
 "who leave it blank will not receive the auto-reply."
@@ -2768,14 +2768,14 @@ msgstr ""
 msgid "The image could not be read"
 msgstr ""
 
-#: src/opendlp/service_layer/login_rate_limit_service.py:72
-#: src/opendlp/service_layer/login_rate_limit_service.py:81
+#: src/opendlp/service_layer/login_rate_limit_service.py:74
+#: src/opendlp/service_layer/login_rate_limit_service.py:83
 #, fuzzy
 msgid "login"
 msgstr "Bejelentkezés"
 
-#: src/opendlp/service_layer/registration_bot_protection_service.py:69
-#: src/opendlp/service_layer/registration_bot_protection_service.py:78
+#: src/opendlp/service_layer/registration_bot_protection_service.py:71
+#: src/opendlp/service_layer/registration_bot_protection_service.py:82
 #, fuzzy
 msgid "registration"
 msgstr "Vissza a regisztrációhoz"
@@ -9590,6 +9590,10 @@ msgstr "Vissza a regisztrációhoz"
 
 #: templates/register/thank_you_default.html:11
 msgid "We'll be in touch."
+msgstr ""
+
+#: templates/register/thank_you_default.html:14
+msgid "Please click here if you wish to start a new registration."
 msgstr ""
 
 #: templates/respondents/view_respondents.html:5

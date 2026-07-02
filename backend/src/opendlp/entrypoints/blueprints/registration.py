@@ -375,7 +375,7 @@ def thank_you(url_slug: str) -> ResponseReturnValue:
             custom_html=custom_html,
         )
 
-    return render_template("register/thank_you_default.html")
+    return render_template("register/thank_you_default.html", referer=request.referrer or "")
 
 
 @registration_bp.route("/r/<short_url_slug>", methods=["GET"])

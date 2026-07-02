@@ -9,6 +9,11 @@
                 <div class="govuk-panel__body">{{ _("Your registration has been received") }}</div>
             </div>
             <p class="govuk-body">{{ _("We'll be in touch.") }}</p>
+            {% if referer %}
+                <p class="govuk-body">
+                    <a class="govuk-link" href="{{ referer }}">{{ _("Please click here if you wish to start a new registration.") }}</a>
+                </p>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

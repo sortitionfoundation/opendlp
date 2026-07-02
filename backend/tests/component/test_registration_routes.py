@@ -285,6 +285,29 @@ class TestThankYouPage:
         assert response.status_code == 200
         assert b"Custom Thank You" in response.data
 
+    def test_default_thank_you_links_back_to_referer(self, client: FlaskClient, fake_store, admin_user: User) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_thank_you_html(uow, admin_user.id, page.assembly_id, "")
+
+        form_url = f"http://localhost/register/{page.url_slug}"
+        response = client.get(
+            f"/register/{page.url_slug}/thank-you",
+            headers={"Referer": form_url},
+        )
+        assert response.status_code == 200
+        assert b"start a new registration" in response.data
+        assert form_url.encode() in response.data
+
+    def test_default_thank_you_no_link_without_referer(self, client: FlaskClient, fake_store, admin_user: User) -> None:
+        page = _seed_published_page(fake_store, admin_user)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_thank_you_html(uow, admin_user.id, page.assembly_id, "")
+
+        response = client.get(f"/register/{page.url_slug}/thank-you")
+        assert response.status_code == 200
+        assert b"start a new registration" not in response.data
+
 
 class TestShortUrlRedirect:
     def test_returns_404_when_page_not_found(self, client: FlaskClient) -> None:
