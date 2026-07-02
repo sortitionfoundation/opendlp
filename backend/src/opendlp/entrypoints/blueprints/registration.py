@@ -290,6 +290,7 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
         check_registration_rate_limit(
             ip_address,
             email,
+            url_slug=url_slug,
             max_per_ip=current_app.config["REGISTRATION_RATE_LIMIT_PER_IP"],
             max_per_email=current_app.config["REGISTRATION_RATE_LIMIT_PER_EMAIL"],
             ip_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES"],

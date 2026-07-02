@@ -36,6 +36,7 @@ def _email_key(email: str) -> str:
 def check_registration_rate_limit(
     ip_address: str,
     email: str,
+    url_slug: str = "",
     max_per_ip: int = DEFAULT_MAX_PER_IP,
     max_per_email: int = DEFAULT_MAX_PER_EMAIL,
     ip_window_minutes: int = DEFAULT_IP_WINDOW_MINUTES,
@@ -50,6 +51,7 @@ def check_registration_rate_limit(
     Args:
         ip_address: The IP address of the request.
         email: The email address being registered.
+        url_slug: The registration page slug, for log correlation.
         max_per_ip: Maximum submissions allowed per IP within the IP window.
         max_per_email: Maximum submissions allowed per email within the email window.
         ip_window_minutes: Time window in minutes for the IP counter.
@@ -64,7 +66,7 @@ def check_registration_rate_limit(
     raw_ip_count: bytes | str | None = r.get(_ip_key(ip_address))
     ip_count = int(raw_ip_count) if raw_ip_count else 0
     if ip_count >= max_per_ip:
-        logger.warning("Bot protection: IP rate limit exceeded", ip_address=ip_address)
+        logger.warning("Bot protection: IP rate limit exceeded", ip_address=ip_address, slug=url_slug)
         raise RateLimitExceeded(
             operation=_("registration"),
             retry_after_seconds=ip_window_minutes * 60,
@@ -75,7 +77,7 @@ def check_registration_rate_limit(
     if email_count >= max_per_email:
         # Log a stable HMAC of the email (not the address itself) so we can count
         # how many unique emails are being rate limited without storing PII.
-        logger.warning("Bot protection: email rate limit exceeded", email_hash=hash_email(email))
+        logger.warning("Bot protection: email rate limit exceeded", email_hash=hash_email(email), slug=url_slug)
         raise RateLimitExceeded(
             operation=_("registration"),
             retry_after_seconds=email_window_minutes * 60,
