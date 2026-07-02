@@ -227,10 +227,10 @@ def _check_form_tokens(
             )
         except TimingTooFastError as exc:
             logger.warning(
-                "Bot protection: timing check failed (IP: %s, slug: %s, age: %.1fs)",
-                request.remote_addr,
-                url_slug,
-                exc.age_seconds,
+                "Bot protection: timing check failed",
+                ip_address=request.remote_addr,
+                slug=url_slug,
+                age_seconds=round(exc.age_seconds, 1),
             )
             _record_submission(ip_address, email)
             return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
@@ -275,9 +275,9 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
 
     if request.form.get("_opendlp_ttoken_"):
         logger.warning(
-            "Bot protection: honeypot triggered (IP: %s, slug: %s)",
-            request.remote_addr,
-            url_slug,
+            "Bot protection: honeypot triggered",
+            ip_address=request.remote_addr,
+            slug=url_slug,
         )
         _record_submission(ip_address, email)
         return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)

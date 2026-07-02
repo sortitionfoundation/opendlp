@@ -1,15 +1,15 @@
 # ABOUTME: Redis-based rate limiting for registration form submissions
 # ABOUTME: Tracks registration attempts by IP and email address to prevent bot abuse
 
-import logging
-
+import structlog
 from redis import Redis
 
 from opendlp.config import RedisCfg
+from opendlp.log_redaction import hash_email
 from opendlp.service_layer.exceptions import RateLimitExceeded
 from opendlp.translations import gettext as _
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 _KEY_PREFIX_IP = "reg_ratelimit:ip:"
 _KEY_PREFIX_EMAIL = "reg_ratelimit:email:"
@@ -64,7 +64,7 @@ def check_registration_rate_limit(
     raw_ip_count: bytes | str | None = r.get(_ip_key(ip_address))
     ip_count = int(raw_ip_count) if raw_ip_count else 0
     if ip_count >= max_per_ip:
-        logger.warning("Bot protection: IP rate limit exceeded (IP: %s)", ip_address)
+        logger.warning("Bot protection: IP rate limit exceeded", ip_address=ip_address)
         raise RateLimitExceeded(
             operation=_("registration"),
             retry_after_seconds=ip_window_minutes * 60,
@@ -73,7 +73,9 @@ def check_registration_rate_limit(
     raw_email_count: bytes | str | None = r.get(_email_key(email))
     email_count = int(raw_email_count) if raw_email_count else 0
     if email_count >= max_per_email:
-        logger.warning("Bot protection: email rate limit exceeded")
+        # Log a stable HMAC of the email (not the address itself) so we can count
+        # how many unique emails are being rate limited without storing PII.
+        logger.warning("Bot protection: email rate limit exceeded", email_hash=hash_email(email))
         raise RateLimitExceeded(
             operation=_("registration"),
             retry_after_seconds=email_window_minutes * 60,

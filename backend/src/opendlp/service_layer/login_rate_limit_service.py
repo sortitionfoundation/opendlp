@@ -78,7 +78,7 @@ def check_login_rate_limit(
     raw_ip_count: bytes | str | None = r.get(_ip_key(ip_address))
     ip_count = int(raw_ip_count) if raw_ip_count else 0
     if ip_count >= max_per_ip:
-        logger.warning("Login rate limit exceeded for IP: %s", ip_address)
+        logger.warning("Login rate limit exceeded for IP", ip_address=ip_address)
         raise RateLimitExceeded(
             operation=_("login"),
             retry_after_seconds=retry_after_seconds,
