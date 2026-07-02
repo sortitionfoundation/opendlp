@@ -10,6 +10,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/modal.html" import modal %}
 {% from "backoffice/components/url_display.html" import readonly_url_display %}
+{% from "backoffice/components/stepper.html" import stepper %}
 
 {% block title %}{{ assembly.title }} - Registration{% endblock %}
 
@@ -64,283 +65,337 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                 </div>
             </div>
         {% else %}
+        {# Sub-navigation within the Registration tab: registration page → auto-reply email → preview & publish.
+           URL contract: ?section=form|email|preview. Panels are peers (any step reachable at any time),
+           so the stepper is rendered in tabs mode. #}
+            {% set section_base = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) %}
+            {{ stepper(
+            id="reg-steps",
+            items=[
+            {"key": "form", "label": _("Registration page"), "href": section_base ~ "?section=form", "active": active_section == "form"},
+            {"key": "email", "label": _("Auto-reply email"), "href": section_base ~ "?section=email", "active": active_section == "email"},
+            {"key": "preview", "label": _("Preview and publish"), "href": section_base ~ "?section=preview", "active": active_section == "preview"}
+            ],
+            aria_label=_("Registration setup steps"),
+            mode="tabs"
+            ) }}
+
+            {% if active_section == "form" %}
+                <div id="reg-steps-panel-form"
+                     role="tabpanel"
+                     aria-labelledby="reg-steps-tab-form"
+                     tabindex="0">
         {# Editor (form) takes the remaining width on the left, Assets panel is a
            fixed-width column on the right. The panel sits OUTSIDE the form so
            uploading or deleting an image never submits the HTML editor — unsaved
            edits in the textarea are preserved. #}
-            <div class="flex flex-col lg:flex-row gap-6">
-                <div class="flex-1 min-w-0">
-                    <form method="post"
-                          action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
-                          x-data
-                          x-preserve-scroll-on-submit>
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        <div class="flex-1 min-w-0">
+                            <form method="post"
+                                  action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
+                                  x-data
+                                  x-preserve-scroll-on-submit>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
             {# Registration Form HTML Section #}
-                        <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-3">
-                                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
+                                <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center gap-3">
+                                            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
 
                         {# Publication status indicator (tri-state). Wrapped in a fixed-min-width slot so the
                            variable badge width ("Test" / "Published" / "Closed") doesn't shift everything to
                            its right as the status changes. #}
-                                    <div class="inline-flex items-center" style="min-width: 7rem;">
-                                        {% if registration_status == "PUBLISHED" %}
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
-                                                  style="background-color: var(--color-success-100); color: var(--color-success-600);">
-                                                <span class="w-2 h-2 rounded-full" style="background-color: var(--color-success-400);"></span>
-                                                {{ _("Published") }}
-                                            </span>
-                                        {% elif registration_status == "CLOSED" %}
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
-                                                  style="background-color: var(--color-error-100); color: var(--color-error-600);">
-                                                <span class="w-2 h-2 rounded-full" style="background-color: var(--color-error-400);"></span>
-                                                {{ _("Closed") }}
-                                            </span>
-                                        {% else %}
+                                            <div class="inline-flex items-center" style="min-width: 7rem;">
+                                                {% if registration_status == "PUBLISHED" %}
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                                                          style="background-color: var(--color-success-100); color: var(--color-success-600);">
+                                                        <span class="w-2 h-2 rounded-full" style="background-color: var(--color-success-400);"></span>
+                                                        {{ _("Published") }}
+                                                    </span>
+                                                {% elif registration_status == "CLOSED" %}
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                                                          style="background-color: var(--color-error-100); color: var(--color-error-600);">
+                                                        <span class="w-2 h-2 rounded-full" style="background-color: var(--color-error-400);"></span>
+                                                        {{ _("Closed") }}
+                                                    </span>
+                                                {% else %}
                                 {# TEST status (default) #}
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
-                                                  style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
-                                                <span class="w-2 h-2 rounded-full" style="background-color: var(--color-warning-400);"></span>
-                                                {{ _("Test") }}
-                                            </span>
-                                        {% endif %}
-                                    </div>
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-body-sm font-medium"
+                                                          style="background-color: var(--color-warning-100); color: var(--color-warning-600);">
+                                                        <span class="w-2 h-2 rounded-full" style="background-color: var(--color-warning-400);"></span>
+                                                        {{ _("Test") }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
 
                         {# Change status dropdown — items are named after the TARGET state, with a one-line
                            explanation of what visitors will see. Forbidden jumps (TEST↔CLOSED) are simply
                            absent from the menu. #}
-                                    {% if registration_status == "TEST" %}
-                                        {% set status_items = [
-                                        {
-                                        "text": _("Published"),
-                                        "description": _("Form goes live; submissions enter the selection pool."),
-                                        "dot_color": "var(--color-success-400)",
-                                        "attrs": 'name="action" value="publish"'
-                                        },
-                                        ] %}
-                                    {% elif registration_status == "PUBLISHED" %}
-                                        {% set status_items = [
-                                        {
-                                        "text": _("Closed for Submissions"),
-                                        "description": _("Visitors are redirected to a registration-closed page; no new submissions are accepted."),
-                                        "dot_color": "var(--color-error-400)",
-                                        "attrs": 'name="action" value="close"'
-                                        },
-                                        {
-                                        "text": _("Test"),
-                                        "description": _("Form stays public, but new submissions are flagged as test entries and skipped from the pool."),
-                                        "dot_color": "var(--color-warning-400)",
-                                        "attrs": 'name="action" value="unpublish"'
-                                        },
-                                        ] %}
-                                    {% else %}
-                                        {% set status_items = [
-                                        {
-                                        "text": _("Published"),
-                                        "description": _("Form goes live again; new submissions enter the selection pool."),
-                                        "dot_color": "var(--color-success-400)",
-                                        "attrs": 'name="action" value="reopen"'
-                                        },
-                                        ] %}
-                                    {% endif %}
-                                    {{ dropdown_button(
-                                    label=_("Change status"),
-                                    items=status_items,
-                                    variant="secondary",
-                                    id="status-control",
-                                    disabled=edit_mode,
-                                    ) }}
-                                </div>
+                                            {% if registration_status == "TEST" %}
+                                                {% set status_items = [
+                                                {
+                                                "text": _("Published"),
+                                                "description": _("Form goes live; submissions enter the selection pool."),
+                                                "dot_color": "var(--color-success-400)",
+                                                "attrs": 'name="action" value="publish"'
+                                                },
+                                                ] %}
+                                            {% elif registration_status == "PUBLISHED" %}
+                                                {% set status_items = [
+                                                {
+                                                "text": _("Closed for Submissions"),
+                                                "description": _("Visitors are redirected to a registration-closed page; no new submissions are accepted."),
+                                                "dot_color": "var(--color-error-400)",
+                                                "attrs": 'name="action" value="close"'
+                                                },
+                                                {
+                                                "text": _("Test"),
+                                                "description": _("Form stays public, but new submissions are flagged as test entries and skipped from the pool."),
+                                                "dot_color": "var(--color-warning-400)",
+                                                "attrs": 'name="action" value="unpublish"'
+                                                },
+                                                ] %}
+                                            {% else %}
+                                                {% set status_items = [
+                                                {
+                                                "text": _("Published"),
+                                                "description": _("Form goes live again; new submissions enter the selection pool."),
+                                                "dot_color": "var(--color-success-400)",
+                                                "attrs": 'name="action" value="reopen"'
+                                                },
+                                                ] %}
+                                            {% endif %}
+                                            {{ dropdown_button(
+                                            label=_("Change status"),
+                                            items=status_items,
+                                            variant="secondary",
+                                            id="status-control",
+                                            disabled=edit_mode,
+                                            ) }}
+                                        </div>
                      {# Header right: editorial helper only (status controls live on the left next to the badge) #}
-                                <div class="flex items-center gap-2">
-                                    {% set code_icon %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                                        </svg>
-                                    {% endset %}
-                                    {{ button(
-                                    _("Show Form Skeleton"),
-                                    variant="tertiary",
-                                    leading_icon=code_icon,
-                                    attrs='@click="fetchSkeleton()" :disabled="skeletonLoading"'
-                                    ) }}
-                                </div>
-                            </div>
+                                        <div class="flex items-center gap-2">
+                                            {% set code_icon %}
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                                </svg>
+                                            {% endset %}
+                                            {{ button(
+                                            _("Show Form Skeleton"),
+                                            variant="tertiary",
+                                            leading_icon=code_icon,
+                                            attrs='@click="fetchSkeleton()" :disabled="skeletonLoading"'
+                                            ) }}
+                                        </div>
+                                    </div>
 
-                            <div class="space-y-4">
-                                <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                                    {{ _("Paste your HTML form code below. The only required placeholders are {{ form_action }} for the form's action attribute and {{ csrf_form_element }} for CSRF protection.") }}
-                                </p>
+                                    <div class="space-y-4">
+                                        <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                            {{ _("Paste your HTML form code below. The only required placeholders are {{ form_action }} for the form's action attribute and {{ csrf_form_element }} for CSRF protection.") }}
+                                        </p>
 
                     {# HTML Textarea with monospace font. `readonly` is the default;
                        ?edit=1 unlocks it via the Edit CTA below. #}
-                                {% set textarea_attrs %}
-                                    {% if not edit_mode %}readonly aria-readonly="true" {% endif %}style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
-                                {% endset %}
-                                {{ textarea(
-                                name="html_content",
-                                label="",
-                                value=html_content,
-                                placeholder="<form action=\"{{ form_action }}\" method=\"POST\">\n  {{ csrf_form_element }}\n  <div>\n    <label for=\"first_name\">First Name</label>\n    <input type=\"text\" id=\"first_name\" name=\"first_name\" required />\n  </div>\n  <!-- Add more fields here -->\n  <button type=\"submit\">Register</button>\n</form>",
-                                rows=25,
-                                attrs=textarea_attrs|trim
-                                ) }}
+                                        {% set textarea_attrs %}
+                                            {% if not edit_mode %}readonly aria-readonly="true" {% endif %}style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                                        {% endset %}
+                                        {{ textarea(
+                                        name="html_content",
+                                        label="",
+                                        value=html_content,
+                                        placeholder="<form action=\"{{ form_action }}\" method=\"POST\">\n  {{ csrf_form_element }}\n  <div>\n    <label for=\"first_name\">First Name</label>\n    <input type=\"text\" id=\"first_name\" name=\"first_name\" required />\n  </div>\n  <!-- Add more fields here -->\n  <button type=\"submit\">Register</button>\n</form>",
+                                        rows=25,
+                                        attrs=textarea_attrs|trim
+                                        ) }}
 
                     {# Footer: review the form + save edits. Status transitions live in the header dropdown.
                        The primary action slot toggles between Edit (read-only, default) and Save/Cancel (edit_mode). #}
-                                <div class="flex justify-end gap-3">
-                                    {% set edit_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id, edit="1") %}
-                                    {% set view_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id) %}
+                                        <div class="flex justify-end gap-3">
+                                            {% set edit_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id, edit="1") %}
+                                            {% set view_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id) %}
                         {# Preview / Share lives next to Save — "view what you just edited" pairs with "save it" #}
-                                    {% if registration_status == "TEST" %}
-                                        {% set eye_icon %}
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        {% endset %}
-                                        {{ button(
-                                        _("Preview and Test Responses"),
-                                        variant="tertiary",
-                                        leading_icon=eye_icon,
-                                        attrs='@click="openPreviewModal()"'
-                                        ) }}
-                                        {% if edit_mode %}
-                                            {{ button(_("Cancel"), variant="secondary", href=view_url) }}
-                                            {{ button(_("Save"), type="submit", variant="primary", attrs='name="action" value="save"') }}
-                                        {% else %}
-                                            {{ button(_("Edit"), variant="primary", href=edit_url) }}
-                                        {% endif %}
-                                    {% else %}
-                                        {% set link_icon %}
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                            </svg>
-                                        {% endset %}
-                                        {% if registration_status == "PUBLISHED" %}
-                                            {{ button(
-                                            _("Share Form"),
-                                            variant="tertiary",
-                                            leading_icon=link_icon,
-                                            attrs='@click="openPreviewModal()"'
-                                            ) }}
-                                            {% if edit_mode %}
-                                                {{ button(_("Cancel"), variant="secondary", href=view_url) }}
-                                                {{ button(_("Save and Republish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                                            {% if registration_status == "TEST" %}
+                                                {% set eye_icon %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                {% endset %}
+                                                {{ button(
+                                                _("Preview and Test Responses"),
+                                                variant="tertiary",
+                                                leading_icon=eye_icon,
+                                                attrs='@click="openPreviewModal()"'
+                                                ) }}
+                                                {% if edit_mode %}
+                                                    {{ button(_("Cancel"), variant="secondary", href=view_url) }}
+                                                    {{ button(_("Save"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                                                {% else %}
+                                                    {{ button(_("Edit"), variant="primary", href=edit_url) }}
+                                                {% endif %}
                                             {% else %}
-                                                {{ button(_("Edit"), variant="primary", href=edit_url) }}
-                                            {% endif %}
-                                        {% else %}
+                                                {% set link_icon %}
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                                    </svg>
+                                                {% endset %}
+                                                {% if registration_status == "PUBLISHED" %}
+                                                    {{ button(
+                                                    _("Share Form"),
+                                                    variant="tertiary",
+                                                    leading_icon=link_icon,
+                                                    attrs='@click="openPreviewModal()"'
+                                                    ) }}
+                                                    {% if edit_mode %}
+                                                        {{ button(_("Cancel"), variant="secondary", href=view_url) }}
+                                                        {{ button(_("Save and Republish"), type="submit", variant="primary", attrs='name="action" value="save"') }}
+                                                    {% else %}
+                                                        {{ button(_("Edit"), variant="primary", href=edit_url) }}
+                                                    {% endif %}
+                                                {% else %}
                                 {# CLOSED: no save (form is redirecting) and no Edit — admins must reopen first. #}
-                                            {{ button(
-                                            _("Share Form"),
-                                            variant="tertiary",
-                                            leading_icon=link_icon,
-                                            disabled=true,
-                                            aria_label=_("Registration is closed — the form URL redirects to the closed page"),
-                                            attrs='title="' ~ _("Registration is closed — the form URL redirects to the closed page") ~ '"'
-                                            ) }}
-                                        {% endif %}
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </section>
-                    </form>
-                </div>
+                                                    {{ button(
+                                                    _("Share Form"),
+                                                    variant="tertiary",
+                                                    leading_icon=link_icon,
+                                                    disabled=true,
+                                                    aria_label=_("Registration is closed — the form URL redirects to the closed page"),
+                                                    attrs='title="' ~ _("Registration is closed — the form URL redirects to the closed page") ~ '"'
+                                                    ) }}
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </section>
+                            </form>
+                        </div>
 
             {# Assets panel (image library). Lives outside the editor form so its
                buttons never submit the HTML editor. Initial list is rendered
                server-side; uploads/deletes mutate the Alpine `images` array in
                place, no page reload required. #}
-                <aside class="lg:flex-shrink-0 w-full lg:w-[400px]">
-                    <section class="rounded-lg p-6 sticky top-4 w-full"
-                             style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
-                            {% set upload_icon %}
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14" />
-                                </svg>
-                            {% endset %}
-                            {{ button(
-                            _("Upload"),
-                            variant="tertiary",
-                            leading_icon=upload_icon,
-                            attrs='type="button" @click="openImageUploadModal()"'
-                            ) }}
-                        </div>
+                        <aside class="lg:flex-shrink-0 w-full lg:w-[400px]">
+                            <section class="rounded-lg p-6 sticky top-4 w-full"
+                                     style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
+                                    {% set upload_icon %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14" />
+                                        </svg>
+                                    {% endset %}
+                                    {{ button(
+                                    _("Upload"),
+                                    variant="tertiary",
+                                    leading_icon=upload_icon,
+                                    attrs='type="button" @click="openImageUploadModal()"'
+                                    ) }}
+                                </div>
 
                     {# Format / size hint #}
-                        <div class="rounded-md p-3 mb-4 flex gap-2 items-start"
-                             style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0" style="color: var(--color-info-600);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p class="text-body-sm" style="color: var(--color-info-700);">
-                                {{ _("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb) }}
-                            </p>
-                        </div>
+                                <div class="rounded-md p-3 mb-4 flex gap-2 items-start"
+                                     style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0" style="color: var(--color-info-600);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="text-body-sm" style="color: var(--color-info-700);">
+                                        {{ _("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb) }}
+                                    </p>
+                                </div>
 
                     {# Empty state #}
-                        <template x-if="!images.length">
-                            <p class="text-body-sm text-center py-4" style="color: var(--color-secondary-text);">
-                                {{ _("No images uploaded yet.") }}
-                            </p>
-                        </template>
+                                <template x-if="!images.length">
+                                    <p class="text-body-sm text-center py-4" style="color: var(--color-secondary-text);">
+                                        {{ _("No images uploaded yet.") }}
+                                    </p>
+                                </template>
 
                     {# Image list #}
-                        <ul class="space-y-2" x-show="images.length" x-cloak>
-                            <template x-for="image in images" :key="image.id">
-                                <li class="rounded-md px-3 py-2 flex items-center justify-between"
-                                    style="background-color: var(--color-subtle-background-panels);">
-                                    <a :href="image.public_url"
-                                       :title="image.alt || image.file_name"
-                                       target="_blank"
-                                       rel="noopener"
-                                       class="text-body-sm truncate flex-1 mr-2"
-                                       style="color: var(--color-body-text);"
-                                       x-text="image.display_name"></a>
-                                    <div class="flex items-center gap-1 flex-shrink-0">
+                                <ul class="space-y-2" x-show="images.length" x-cloak>
+                                    <template x-for="image in images" :key="image.id">
+                                        <li class="rounded-md px-3 py-2 flex items-center justify-between"
+                                            style="background-color: var(--color-subtle-background-panels);">
+                                            <a :href="image.public_url"
+                                               :title="image.alt || image.file_name"
+                                               target="_blank"
+                                               rel="noopener"
+                                               class="text-body-sm truncate flex-1 mr-2"
+                                               style="color: var(--color-body-text);"
+                                               x-text="image.display_name"></a>
+                                            <div class="flex items-center gap-1 flex-shrink-0">
                                     {# Image details / edit alt text #}
-                                        <button type="button"
-                                                @click="openImageDetailsModal(image)"
-                                                class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
-                                                style="color: var(--color-secondary-text);"
-                                                :aria-label="'{{ _('Details for') }} ' + image.display_name">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </button>
+                                                <button type="button"
+                                                        @click="openImageDetailsModal(image)"
+                                                        class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                                                        style="color: var(--color-secondary-text);"
+                                                        :aria-label="'{{ _('Details for') }} ' + image.display_name">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </button>
                                     {# Copy <img> snippet to clipboard #}
-                                        <button type="button"
-                                                @click="copyImageSnippet(image)"
-                                                class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
-                                                style="color: var(--color-secondary-text);"
-                                                :aria-label="'{{ _('Copy <img> snippet for') }} ' + image.display_name">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            </svg>
-                                        </button>
+                                                <button type="button"
+                                                        @click="copyImageSnippet(image)"
+                                                        class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                                                        style="color: var(--color-secondary-text);"
+                                                        :aria-label="'{{ _('Copy <img> snippet for') }} ' + image.display_name">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                    </svg>
+                                                </button>
                                     {# Delete #}
-                                        <button type="button"
-                                                @click="deleteImage(image)"
-                                                :disabled="imageBeingDeletedId === image.id"
-                                                class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
-                                                style="color: var(--color-secondary-text);"
-                                                :aria-label="'{{ _('Delete') }} ' + image.display_name">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </li>
-                            </template>
-                        </ul>
-                    </section>
-                </aside>
-            </div>
+                                                <button type="button"
+                                                        @click="deleteImage(image)"
+                                                        :disabled="imageBeingDeletedId === image.id"
+                                                        class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                                                        style="color: var(--color-secondary-text);"
+                                                        :aria-label="'{{ _('Delete') }} ' + image.display_name">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </section>
+                        </aside>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if active_section == "email" %}
+                <div id="reg-steps-panel-email"
+                     role="tabpanel"
+                     aria-labelledby="reg-steps-tab-email"
+                     tabindex="0"
+                     class="rounded-lg p-6"
+                     style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                    <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">
+                        {{ _("Auto-reply email") }}
+                    </h2>
+                    <p class="text-body-md" style="color: var(--color-secondary-text);">
+                        {{ _("Coming soon — you will be able to edit the email respondents receive after registering.") }}
+                    </p>
+                </div>
+            {% endif %}
+
+            {% if active_section == "preview" %}
+                <div id="reg-steps-panel-preview"
+                     role="tabpanel"
+                     aria-labelledby="reg-steps-tab-preview"
+                     tabindex="0"
+                     class="rounded-lg p-6"
+                     style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                    <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">
+                        {{ _("Preview and publish") }}
+                    </h2>
+                    <p class="text-body-md" style="color: var(--color-secondary-text);">
+                        {{ _("Coming soon — a combined preview of the registration form and the auto-reply email, together with the publish controls.") }}
+                    </p>
+                </div>
+            {% endif %}
         {% endif %}
 
         {# Form Skeleton Modal - only shown when registration page exists #}

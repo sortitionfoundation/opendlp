@@ -139,6 +139,11 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # have no save path so we always keep them read-only regardless of the param.
         edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
 
+        # Sub-section within the Registration tab (stepper). Default to the form editor.
+        active_section = request.args.get("section", "form")
+        if active_section not in ("form", "email", "preview"):
+            active_section = "form"
+
         return render_template(
             "backoffice/assembly_registration.html",
             assembly=nav.assembly,
@@ -159,6 +164,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             max_image_upload_mb=get_max_image_upload_mb(),
             allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
             edit_mode=edit_mode,
+            active_section=active_section,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(
