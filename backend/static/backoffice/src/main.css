@@ -529,6 +529,131 @@
     }
 
     /* ========================================
+       STEPPER COMPONENT STYLES
+       Numbered step navigation. Same panel-id
+       convention as .tab-bar; visual is
+       numbered pill + label + connector line.
+       ======================================== */
+
+    /* Container: horizontal row of steps */
+    .stepper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* Each step item — grows so the connector fills the row */
+    .stepper-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+    }
+
+    /* All but the last item grow to distribute space */
+    .stepper-item:not(:last-child) {
+        flex: 1 1 auto;
+    }
+
+    /* Connector line drawn as pseudo-element after each item except the last */
+    .stepper-item:not(:last-child)::after {
+        content: '';
+        flex: 1 1 auto;
+        min-width: 24px;
+        height: 1px;
+        margin-left: 8px;
+        background-color: var(--color-borders-dividers);
+    }
+
+    /* The clickable step (anchor) or disabled span */
+    .stepper-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+        border-radius: 12px;
+        padding: 2px 4px;
+    }
+
+    .stepper-link:focus-visible {
+        outline: 2px solid var(--color-focus-ring);
+        outline-offset: 4px;
+    }
+
+    .stepper-link:focus:not(:focus-visible) {
+        outline: none;
+    }
+
+    /* Numbered/iconed pill */
+    .stepper-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 16px;
+        font-family: var(--font-body);
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 16px;
+        letter-spacing: 0.1px;
+        color: #FFFFFF;
+        background-color: var(--color-secondary-text);
+        flex-shrink: 0;
+    }
+
+    .stepper-label {
+        font-family: var(--font-body);
+        font-size: 14px;
+        line-height: 20px;
+        letter-spacing: 0.25px;
+        font-weight: 400;
+        color: var(--color-secondary-text);
+        white-space: nowrap;
+    }
+
+    /* States — set on the <li>, inherited into number/label */
+    .stepper-item-active .stepper-number {
+        background-color: var(--color-primary-action);
+    }
+    .stepper-item-active .stepper-label {
+        color: var(--color-headings);
+        font-weight: 500;
+    }
+
+    .stepper-item-done .stepper-number {
+        background-color: var(--color-success-400);
+    }
+    .stepper-item-done .stepper-label {
+        color: var(--color-headings);
+    }
+
+    .stepper-item-error .stepper-number {
+        background-color: var(--color-error-400);
+    }
+    .stepper-item-error .stepper-label {
+        color: var(--color-error-600);
+        font-weight: 500;
+    }
+
+    /* Disabled step (wizard mode locked): dim + no pointer */
+    .stepper-link[aria-disabled="true"] {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    /* Hover — only for non-active, non-disabled steps in tabs mode */
+    .stepper-link:not([aria-disabled="true"]):hover .stepper-label {
+        color: var(--color-headings);
+    }
+
+    /* ========================================
        BREADCRUMB COMPONENT STYLES
        Navigation trail with CSS-based separators
        ======================================== */
