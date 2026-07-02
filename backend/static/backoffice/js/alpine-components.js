@@ -146,8 +146,13 @@ document.addEventListener("alpine:init", function () {
     /**
      * Focus preserve directive
      *
-     * Automatically appends focus hash to href when clicking a link,
-     * if the element has data-focus-id and keyboard focus.
+     * Automatically appends focus hash to href when a **keyboard-initiated**
+     * click activates a link. Gates on `event.detail === 0` — a MouseEvent's
+     * `detail` is the click count for real pointer clicks (>= 1), and is 0
+     * for clicks synthesised from keyboard activation (Enter/Space on a
+     * focused element, or a scripted `.click()` call). This avoids reviving a
+     * visible focus outline on the destination page after a mouse click on
+     * browsers/OSes that focus links on click (Windows Chrome, Firefox).
      *
      * Usage:
      *   <a href="/page" data-focus-id="my-link" x-data x-focus-preserve>Link</a>
@@ -155,7 +160,8 @@ document.addEventListener("alpine:init", function () {
     Alpine.directive("focus-preserve", function (el) {
         el.addEventListener("click", function (event) {
             var focusId = el.dataset.focusId;
-            if (focusId && document.activeElement === el && el.href) {
+            var isKeyboardClick = event.detail === 0;
+            if (isKeyboardClick && focusId && el.href) {
                 event.preventDefault();
                 window.location.href = el.href + "#focus=" + focusId;
             }
@@ -513,16 +519,25 @@ document.addEventListener("alpine:init", function () {
      * - Home: Move to first tab
      * - End: Move to last tab
      *
-     * Uses automatic activation (focus moves and navigates simultaneously).
+     * Activation modes (per the WAI-ARIA APG):
+     * - "automatic" (default): focus movement also activates the tab
+     *   (synthesises a click). Suitable when panel switching is cheap.
+     * - "manual": arrow keys only move focus. The user presses Enter or
+     *   Space to activate the focused tab. Prefer this when tab activation
+     *   causes a full page navigation, so arrow-key exploration doesn't
+     *   trigger reload after reload.
      *
      * Usage:
-     *   <ul role="tablist" x-data="tabsKeyboard()" @keydown="handleKeydown($event)">
+     *   <ul role="tablist"
+     *       x-data="tabsKeyboard({ activation: 'manual' })"
+     *       @keydown="handleKeydown($event)">
      *     <li role="presentation">
      *       <a role="tab" href="?tab=one" tabindex="0">Tab 1</a>
      *     </li>
      *   </ul>
      */
-    Alpine.data("tabsKeyboard", function () {
+    Alpine.data("tabsKeyboard", function (config) {
+        var activation = config && config.activation === "manual" ? "manual" : "automatic";
         return {
             handleKeydown: function (event) {
                 var key = event.key;
@@ -567,8 +582,11 @@ document.addEventListener("alpine:init", function () {
                     event.preventDefault();
                     var targetTab = tabs[newIndex];
                     targetTab.focus();
-                    // Automatic activation - navigate when focus moves
-                    targetTab.click();
+                    if (activation === "automatic") {
+                        // Follow the link when focus moves
+                        targetTab.click();
+                    }
+                    // Manual mode: focus only, wait for Enter/Space to activate
                 }
             },
         };

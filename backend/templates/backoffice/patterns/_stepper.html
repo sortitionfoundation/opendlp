@@ -1,0 +1,167 @@
+{#
+ABOUTME: Showcase for the stepper() macro — tabs mode + wizard mode live examples
+ABOUTME: Documents states (active/inactive/done/error), URL contract, and panel convention
+#}
+{% from "backoffice/components/card.html" import card, card_body %}
+{% from "backoffice/components/stepper.html" import stepper %}
+
+<div class="space-y-6">
+    <div class="rounded-lg p-4 mb-4"
+         style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400); color: var(--color-info-600);">
+        <p class="text-body-md">
+            <span class="font-semibold">🪜 {{ _("Stepper") }}:</span>
+            {{ _("Numbered step navigation with two semantic modes. Use tabs mode when the panels are peer views of the same content; use wizard mode when steps must be completed in order.") }}
+        </p>
+    </div>
+
+    {# ===== tabs mode ===== #}
+    {% call card(title="Tabs mode (default)", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("All steps are always clickable, arrow-key navigation moves focus between steps, and the active step is announced with aria-selected. Under the hood this is a tablist — use it when the panels are peers.") }}
+            </p>
+
+            <div class="mb-6">
+                {{ stepper(
+                id="showcase-tabs",
+                items=[
+                {"key": "one", "label": _("Registration page"), "href": "?tab=stepper&mode=tabs&step=one", "state": "done"},
+                {"key": "two", "label": _("Auto-reply email"), "href": "?tab=stepper&mode=tabs&step=two", "active": true},
+                {"key": "three", "label": _("Preview and publish"), "href": "?tab=stepper&mode=tabs&step=three"}
+                ],
+                aria_label=_("Example stepper (tabs mode)"),
+                mode="tabs",
+                preserve_scroll=true
+                ) }}
+            </div>
+
+            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Code") }}</h4>
+            <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto"
+                 style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{% from "backoffice/components/stepper.html" import stepper %}
+
+{{ stepper(
+    id="reg-steps",
+    items=[
+        {"key": "form",    "label": "Registration page",   "href": "?section=form",    "state": "done"},
+        {"key": "email",   "label": "Auto-reply email",    "href": "?section=email",   "active": true},
+        {"key": "preview", "label": "Preview and publish", "href": "?section=preview"}
+    ],
+    aria_label="Registration setup steps",
+    mode="tabs"
+) }}{% endraw %}</pre>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== wizard mode ===== #}
+    {% call card(title="Wizard mode", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Later steps can be disabled until earlier ones are complete. The active step is marked with aria-current='step' and disabled steps render as non-focusable spans. Use this when there is a genuine linear dependency.") }}
+            </p>
+
+            <div class="mb-6">
+                {{ stepper(
+                id="showcase-wizard",
+                items=[
+                {"key": "one", "label": _("Sign the agreement"), "href": "?tab=stepper&mode=wizard&step=one", "state": "done"},
+                {"key": "two", "label": _("Verify your email"), "href": "?tab=stepper&mode=wizard&step=two", "active": true},
+                {"key": "three", "label": _("Choose a plan"), "href": "?tab=stepper&mode=wizard&step=three", "disabled": true}
+                ],
+                aria_label=_("Example stepper (wizard mode)"),
+                mode="wizard",
+                preserve_scroll=true
+                ) }}
+            </div>
+
+            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Code") }}</h4>
+            <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto"
+                 style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{{ stepper(
+    id="signup-wizard",
+    items=[
+        {"key": "agree",  "label": "Sign the agreement", "href": "?step=agree",  "state": "done"},
+        {"key": "verify", "label": "Verify your email", "href": "?step=verify", "active": true},
+        {"key": "plan",   "label": "Choose a plan",     "href": "?step=plan",   "disabled": true}
+    ],
+    aria_label="Sign-up wizard",
+    mode="wizard"
+) }}{% endraw %}</pre>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== State reference ===== #}
+    {% call card(title="States", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Set per item via the `state` key, or let it default from the `active` bool. Each state has its own colour treatment.") }}
+            </p>
+
+            <div class="mb-4">
+                <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">state: "active"</p>
+                {{ stepper(
+                id="showcase-active",
+                items=[{"key": "a", "label": _("Active step"), "href": "#", "state": "active"}],
+                aria_label=_("Active state"),
+                mode="wizard"
+                ) }}
+            </div>
+
+            <div class="mb-4">
+                <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">state: "inactive" (default)</p>
+                {{ stepper(
+                id="showcase-inactive",
+                items=[{"key": "a", "label": _("Inactive step"), "href": "#", "state": "inactive"}],
+                aria_label=_("Inactive state"),
+                mode="wizard"
+                ) }}
+            </div>
+
+            <div class="mb-4">
+                <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">state: "done"</p>
+                {{ stepper(
+                id="showcase-done",
+                items=[{"key": "a", "label": _("Completed step"), "href": "#", "state": "done"}],
+                aria_label=_("Done state"),
+                mode="wizard"
+                ) }}
+            </div>
+
+            <div>
+                <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">state: "error"</p>
+                {{ stepper(
+                id="showcase-error",
+                items=[{"key": "a", "label": _("Step with an error"), "href": "#", "state": "error"}],
+                aria_label=_("Error state"),
+                mode="wizard"
+                ) }}
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# ===== API reference ===== #}
+    {% call card(title="API", composed=true) %}
+        {% call card_body() %}
+            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Signature") }}</h4>
+            <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto mb-4"
+                 style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">stepper(items=[], aria_label="", id="", mode="tabs", preserve_scroll=false)</pre>
+
+            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Item keys") }}</h4>
+            <ul class="text-body-sm font-mono mb-4" style="color: var(--color-body-text);">
+                <li>key: str ✅ ({{ _("unique per stepper — used for tab/panel ids") }})</li>
+                <li>label: str ✅</li>
+                <li>href: str ✅</li>
+                <li>state: "active" | "inactive" | "done" | "error" ❌ ({{ _("derived from `active` if omitted") }})</li>
+                <li>active: bool ❌ ({{ _("shortcut for state='active'") }})</li>
+                <li>disabled: bool ❌ ({{ _("only meaningful in wizard mode") }})</li>
+            </ul>
+
+            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Panel convention (same as tabs macro)") }}</h4>
+            <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto"
+                 style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;div id="{id}-panel-{key}"
+                role="tabpanel"
+                aria-labelledby="{id}-tab-{key}"
+                tabindex="0"&gt;
+                …
+                &lt;/div&gt;</pre>
+        {% endcall %}
+    {% endcall %}
+</div>

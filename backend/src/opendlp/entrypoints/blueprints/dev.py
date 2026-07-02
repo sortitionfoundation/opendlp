@@ -32,12 +32,24 @@ from opendlp.service_layer.assembly_service import (
     update_csv_config,
     update_selection_settings,
 )
+from opendlp.service_layer.email_template_service import (
+    assign_auto_reply_template,
+    auto_reply_readiness_problems,
+    create_email_template,
+    delete_email_template,
+    get_email_template,
+    list_email_templates,
+    update_email_template,
+)
 from opendlp.service_layer.exceptions import (
+    EmailTemplateInvalid,
+    EmailTemplateNotFoundError,
     ImageQuotaExceeded,
     InsufficientPermissions,
     InvalidSelection,
     NotFoundError,
     RegistrationImageNotFoundError,
+    RegistrationPageNotFoundError,
 )
 from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.registration_image_service import (
@@ -128,7 +140,17 @@ def service_docs() -> ResponseReturnValue:
 
     # Get active tab from query parameter, default to 'respondents'
     active_tab = request.args.get("tab", "respondents")
-    valid_tabs = ["respondents", "targets", "config", "selection", "assembly", "registration", "fields", "images"]
+    valid_tabs = [
+        "respondents",
+        "targets",
+        "config",
+        "selection",
+        "assembly",
+        "registration",
+        "fields",
+        "images",
+        "emails",
+    ]
     if active_tab not in valid_tabs:
         active_tab = "respondents"
 
@@ -1036,6 +1058,148 @@ def _handle_get_registration_image_for_serving(uow: Any, params: dict[str, Any])
     return {"status": "success", "found": True, "image": _serialise_image(image)}
 
 
+def _serialise_email_template(template: Any) -> dict[str, Any]:
+    return {
+        "id": str(template.id),
+        "assembly_id": str(template.assembly_id),
+        "name": template.name,
+        "subject": template.subject,
+        "body_html_preview": template.body_html[:300] + "..." if len(template.body_html) > 300 else template.body_html,
+        "body_html_bytes": len(template.body_html.encode("utf-8")),
+        "created_at": template.created_at.isoformat() if template.created_at else None,
+        "updated_at": template.updated_at.isoformat() if template.updated_at else None,
+    }
+
+
+def _handle_create_email_template(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle create_email_template service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    name = params.get("name", "")
+    subject = params.get("subject", "")
+    body_html = params.get("body_html", "")
+    try:
+        template = create_email_template(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            name=name,
+            subject=subject,
+            body_html=body_html,
+        )
+        return {"status": "success", "template": _serialise_email_template(template)}
+    except EmailTemplateInvalid as e:
+        return {"status": "error", "error": str(e), "error_type": "EmailTemplateInvalid", "problems": e.problems}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_list_email_templates(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle list_email_templates service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    try:
+        templates = list_email_templates(uow=uow, user_id=current_user.id, assembly_id=assembly_id)
+        return {
+            "status": "success",
+            "total_count": len(templates),
+            "templates": [_serialise_email_template(t) for t in templates],
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_get_email_template(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle get_email_template service call."""
+    template_id = uuid.UUID(params["template_id"])
+    try:
+        template = get_email_template(uow=uow, user_id=current_user.id, template_id=template_id)
+        return {"status": "success", "template": _serialise_email_template(template)}
+    except EmailTemplateNotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "EmailTemplateNotFoundError"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_update_email_template(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle update_email_template service call."""
+    template_id = uuid.UUID(params["template_id"])
+    try:
+        template = update_email_template(
+            uow=uow,
+            user_id=current_user.id,
+            template_id=template_id,
+            name=params.get("name"),
+            subject=params.get("subject"),
+            body_html=params.get("body_html"),
+        )
+        return {"status": "success", "template": _serialise_email_template(template)}
+    except EmailTemplateInvalid as e:
+        return {"status": "error", "error": str(e), "error_type": "EmailTemplateInvalid", "problems": e.problems}
+    except EmailTemplateNotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "EmailTemplateNotFoundError"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_delete_email_template(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle delete_email_template service call."""
+    template_id = uuid.UUID(params["template_id"])
+    try:
+        delete_email_template(uow=uow, user_id=current_user.id, template_id=template_id)
+        return {"status": "success", "deleted_template_id": str(template_id)}
+    except EmailTemplateNotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "EmailTemplateNotFoundError"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_assign_auto_reply_template(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle assign_auto_reply_template service call. Pass empty/null template_id to clear."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    template_id_raw = params.get("template_id")
+    template_id = uuid.UUID(template_id_raw) if template_id_raw else None
+    try:
+        assign_auto_reply_template(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            template_id=template_id,
+        )
+        return {
+            "status": "success",
+            "assembly_id": str(assembly_id),
+            "auto_reply_email_template_id": str(template_id) if template_id else None,
+        }
+    except EmailTemplateNotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "EmailTemplateNotFoundError"}
+    except RegistrationPageNotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "RegistrationPageNotFoundError"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_auto_reply_readiness_problems(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle auto_reply_readiness_problems service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    problems = auto_reply_readiness_problems(uow=uow, assembly_id=assembly_id)
+    return {
+        "status": "success",
+        "problem_count": len(problems),
+        "problems": [{"severity": p.severity.value, "message": p.message} for p in problems],
+    }
+
+
 # Mapping of service names to their handler functions
 _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = {
     "import_respondents_from_csv": _handle_import_respondents,
@@ -1064,6 +1228,13 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "set_registration_image_alt": _handle_set_registration_image_alt,
     "list_image_snippets": _handle_list_image_snippets,
     "get_registration_image_for_serving": _handle_get_registration_image_for_serving,
+    "create_email_template": _handle_create_email_template,
+    "list_email_templates": _handle_list_email_templates,
+    "get_email_template": _handle_get_email_template,
+    "update_email_template": _handle_update_email_template,
+    "delete_email_template": _handle_delete_email_template,
+    "assign_auto_reply_template": _handle_assign_auto_reply_template,
+    "auto_reply_readiness_problems": _handle_auto_reply_readiness_problems,
 }
 
 
@@ -1097,7 +1268,17 @@ def patterns() -> ResponseReturnValue:
 
     # Get active tab from query parameter, default to 'dropdown'
     active_tab = request.args.get("tab", "dropdown")
-    valid_tabs = ["dropdown", "form", "ajax", "file-upload", "progress", "pagination", "scroll", "floating-alerts"]
+    valid_tabs = [
+        "dropdown",
+        "form",
+        "ajax",
+        "file-upload",
+        "progress",
+        "pagination",
+        "scroll",
+        "floating-alerts",
+        "stepper",
+    ]
     if active_tab not in valid_tabs:
         active_tab = "dropdown"
 

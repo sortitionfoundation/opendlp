@@ -126,6 +126,10 @@ flsh: flask-shell
 flask $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
   @uv run flask run --debug
 
+# run flask locally on a custom port (default 5001)
+flask-port port="5001" $FLASK_APP="src/opendlp/entrypoints/flask_app.py":
+  @uv run flask run --port={{port}} --debug
+
 # run flask for BDD tests - the BDD tests will use this server if it exists
 flask-bdd:
   # env vars are set inline to override any values from .env (loaded by set dotenv-load)
