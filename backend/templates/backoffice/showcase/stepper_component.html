@@ -1,0 +1,148 @@
+{#
+ABOUTME: Showcase section for the stepper component
+ABOUTME: Pure visual showcase — no route wiring, no scroll preservation
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens, showcase_subtitle %}
+{% from "backoffice/components/stepper.html" import stepper %}
+
+{% macro stepper_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Stepper Component") }}
+        {{ showcase_description("Numbered step navigation with two semantic modes. Tabs mode uses tablist ARIA and lets any step be reached; wizard mode marks the active step with aria-current='step' and can lock later steps until earlier ones are done. Per-step state: active, inactive, done, or error.") }}
+
+        {% call showcase_example('{% from "backoffice/components/stepper.html" import stepper %}
+
+            {{ stepper(
+            id="my-steps",
+            items=[
+            {"key": "form",    "label": "Registration page",   "href": "#", "state": "done"},
+            {"key": "email",   "label": "Auto-reply email",    "href": "#", "active": true},
+            {"key": "preview", "label": "Preview and publish", "href": "#"}
+            ],
+            aria_label="Registration setup steps",
+            mode="tabs"
+            ) }}') %}
+            <div class="flex flex-col gap-8">
+                {# Tabs mode — the common case #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Tabs mode (default)</span>
+                    {{ stepper(
+                    id="showcase-stepper-tabs",
+                    items=[
+                    {"key": "form", "label": "Registration page", "href": "#", "state": "done"},
+                    {"key": "email", "label": "Auto-reply email", "href": "#", "active": true},
+                    {"key": "preview", "label": "Preview and publish", "href": "#"}
+                    ],
+                    aria_label="Example stepper - tabs mode",
+                    mode="tabs"
+                    ) }}
+                </div>
+
+                {# Wizard mode with a locked step #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Wizard mode — step 3 locked until step 2 is done</span>
+                    {{ stepper(
+                    id="showcase-stepper-wizard",
+                    items=[
+                    {"key": "agree", "label": "Sign the agreement", "href": "#", "state": "done"},
+                    {"key": "verify", "label": "Verify your email", "href": "#", "active": true},
+                    {"key": "plan", "label": "Choose a plan", "href": "#", "disabled": true}
+                    ],
+                    aria_label="Example stepper - wizard mode",
+                    mode="wizard"
+                    ) }}
+                </div>
+
+                {# State reference #}
+                {{ showcase_subtitle("States") }}
+
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">state: "active"</span>
+                    {{ stepper(
+                    id="showcase-stepper-state-active",
+                    items=[{"key": "a", "label": "Active step", "href": "#", "state": "active"}],
+                    aria_label="Active state",
+                    mode="wizard"
+                    ) }}
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">state: "inactive" (default)</span>
+                    {{ stepper(
+                    id="showcase-stepper-state-inactive",
+                    items=[{"key": "a", "label": "Inactive step", "href": "#", "state": "inactive"}],
+                    aria_label="Inactive state",
+                    mode="wizard"
+                    ) }}
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">state: "done"</span>
+                    {{ stepper(
+                    id="showcase-stepper-state-done",
+                    items=[{"key": "a", "label": "Completed step", "href": "#", "state": "done"}],
+                    aria_label="Done state",
+                    mode="wizard"
+                    ) }}
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">state: "error"</span>
+                    {{ stepper(
+                    id="showcase-stepper-state-error",
+                    items=[{"key": "a", "label": "Step with an error", "href": "#", "state": "error"}],
+                    aria_label="Error state",
+                    mode="wizard"
+                    ) }}
+                </div>
+
+                {# Two steps #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">Two steps</span>
+                    {{ stepper(
+                    id="showcase-stepper-two",
+                    items=[
+                    {"key": "one", "label": "First step", "href": "#", "state": "done"},
+                    {"key": "two", "label": "Second step", "href": "#", "active": true}
+                    ],
+                    aria_label="Example stepper - two steps",
+                    mode="tabs"
+                    ) }}
+                </div>
+
+                {# Keyboard-nav info — the tabs-mode variant supports it #}
+                <div class="p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                    <h4 class="text-label-md mb-2" style="color: var(--color-headings);">Keyboard navigation (tabs mode)</h4>
+                    <p class="text-body-sm mb-2" style="color: var(--color-body-text);">
+                        The stepper uses <em>manual activation</em> — arrow keys only move focus, they do not activate the step. Press Enter or Space to follow the focused step's link.
+                    </p>
+                    <ul class="text-body-sm space-y-1" style="color: var(--color-body-text);">
+                        <li><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">←</kbd> / <kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">→</kbd> Move focus to previous/next step</li>
+                        <li><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">Home</kbd> / <kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">End</kbd> First / last step</li>
+                        <li><kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">Enter</kbd> / <kbd class="px-1.5 py-0.5 rounded text-xs" style="background-color: var(--color-borders-dividers);">Space</kbd> Activate the focused step</li>
+                    </ul>
+                    <p class="text-body-sm mt-3" style="color: var(--color-secondary-text);">
+                        Wired-up examples with URL state, scroll preservation and panels live at <code>/backoffice/dev/patterns?tab=stepper</code>.
+                    </p>
+                </div>
+            </div>
+        {% endcall %}
+
+        {{ showcase_tokens([
+        "--color-primary-action",
+        "--color-secondary-text",
+        "--color-headings",
+        "--color-borders-dividers",
+        "--color-success-400",
+        "--color-error-400",
+        ".stepper",
+        ".stepper-item",
+        ".stepper-item-active",
+        ".stepper-item-done",
+        ".stepper-item-error",
+        ".stepper-link",
+        ".stepper-number",
+        ".stepper-label"
+        ]) }}
+    {% endcall %}
+{% endmacro %}
