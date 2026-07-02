@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Registration fields and how they map to selection targets</title>
+        <style>
+            :root {
+                --link: #1d70b8;
+                --ink: #0b0c0c;
+                --muted: #505a5f;
+                --paper: #ffffff;
+                --panel: #f3f2f1;
+                --highlight: #fff7d6;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                max-width: 1100px;
+                margin: 2rem auto;
+                padding: 0 1.25rem 4rem;
+                color: var(--ink);
+                line-height: 1.5;
+                background: var(--paper);
+            }
+            h1, h2, h3 { color: var(--ink); line-height: 1.2; }
+            h1 { border-bottom: 3px solid var(--link); padding-bottom: .5rem; margin-top: 0; }
+            h2 { margin-top: 2.5rem; border-bottom: 1px solid #b1b4b6; padding-bottom: .25rem; }
+            a { color: var(--link); }
+            p.lede { font-size: 1.1rem; color: var(--muted); }
+
+            .legend {
+                display: flex;
+                gap: .5rem;
+                flex-wrap: wrap;
+                font-size: .85rem;
+                margin: 1rem 0 .5rem;
+            }
+            .legend span {
+                padding: .2rem .55rem;
+                border-radius: 3px;
+                border: 1px solid rgba(0,0,0,.15);
+            }
+            .leg-check   { background: #e1bee7; }
+            .leg-contact { background: #cce2f7; }
+            .leg-about   { background: #c8e6c9; }
+            .leg-derived { background: #f3f2f1; }
+            .leg-target  { background: #fad7a8; }
+            .leg-usage   { background: #d7ccc8; }
+
+            .flowchart {
+                background: var(--panel);
+                padding: 1rem;
+                border-radius: 4px;
+                overflow-x: auto;
+                margin: 1rem 0 .5rem;
+            }
+            .hint {
+                font-size: .9rem;
+                color: var(--muted);
+                margin: 0 0 2rem;
+            }
+
+            details {
+                background: #f8f8f8;
+                border-left: 4px solid var(--link);
+                padding: .75rem 1rem;
+                margin: .5rem 0;
+                border-radius: 2px;
+            }
+            details summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+            details[open] summary { margin-bottom: .5rem; }
+
+            .glossary dt {
+                font-weight: 700;
+                margin-top: 1.25rem;
+                color: var(--link);
+            }
+            .glossary dd {
+                margin-left: 1.25rem;
+                margin-top: .25rem;
+            }
+            code {
+                background: #eef;
+                padding: 1px 5px;
+                border-radius: 2px;
+                font-size: .9em;
+                word-break: break-all;
+            }
+            ul, ol { padding-left: 1.4rem; }
+            li { margin: .15rem 0; }
+
+            table {
+                border-collapse: collapse;
+                margin: .5rem 0;
+                font-size: .95rem;
+            }
+            th, td {
+                border: 1px solid #b1b4b6;
+                padding: .35rem .6rem;
+                text-align: left;
+            }
+            th { background: var(--panel); }
+
+  /* Highlight a section briefly when jumped to via fragment link */
+            :target {
+                animation: flash 1.5s ease-out;
+            }
+            @keyframes flash {
+                0%   { background: var(--highlight); }
+                100% { background: transparent; }
+            }
+
+            .mermaid .node rect, .mermaid .node polygon { cursor: pointer; }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    </head>
+    <body>
+        <h1>Registration fields and how they map to selection targets</h1>
+        <p class="lede">
+            A worked example of a real registration page: the fields on the left (coloured by the section they appear in), the stratification targets on the right, and the arrows showing how each field's data flows through — sometimes directly, sometimes via a derived intermediate value.
+        </p>
+        <div class="legend" aria-label="Diagram legend">
+            <span class="leg-check">Checkboxes</span>
+            <span class="leg-contact">Contact details</span>
+            <span class="leg-about">About you</span>
+            <span class="leg-derived">Derived / intermediate value</span>
+            <span class="leg-target">Selection target</span>
+            <span class="leg-usage">Other usage (not a target)</span>
+        </div>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef check   fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+    classDef contact fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef about   fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef derived fill:#f3f2f1,stroke:#505a5f,color:#0b0c0c
+    classDef target  fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef usage   fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+
+    subgraph CH["Checkboxes"]
+        direction TB
+        f_can_attend["can_attend"]:::check
+        f_eligible["eligible"]:::check
+        f_consent["consent"]:::check
+        f_stay["stay_on_db"]:::check
+    end
+
+    subgraph CO["Contact details"]
+        direction TB
+        f_first["first_name"]:::contact
+        f_last["last_name"]:::contact
+        f_email["email"]:::contact
+        f_phone["phone"]:::contact
+        f_addr1["address_line_1"]:::contact
+        f_addr2["address_line_2"]:::contact
+        f_city["city"]:::contact
+        f_postcode["post_code"]:::contact
+    end
+
+    subgraph AB["About you"]
+        direction TB
+        f_gender["gender"]:::about
+        f_dob_d["dob_day"]:::about
+        f_dob_m["dob_month"]:::about
+        f_dob_y["dob_year"]:::about
+        f_ethnicity["ethnicity"]:::about
+        f_disability["disability"]:::about
+        f_education["education_level"]:::about
+        f_occupation["occupation"]:::about
+    end
+
+    age(["age"]):::derived
+    ethmap["combine 10 options&lt;br/&gt;into buckets"]:::derived
+    geolook["post_code lookup table"]:::derived
+    rulook["post_code lookup table"]:::derived
+    addrmatch["match against&lt;br/&gt;posted-letter addresses"]:::derived
+
+    subgraph TG["Selection targets"]
+        direction TB
+        t_gender["gender"]:::target
+        t_age["age_bracket"]:::target
+        t_eth["ethnicity_bucket"]:::target
+        t_dis["disability"]:::target
+        t_edu["education_level"]:::target
+        t_occ["occupation"]:::target
+        t_geo["geo_bucket"]:::target
+        t_ru["rural_urban"]:::target
+        t_addr["address_check&lt;br/&gt;(target zero for BAD)"]:::target
+    end
+
+    subgraph US["Other usages (not targets)"]
+        direction TB
+        u_gate["Allowed to submit&lt;br/&gt;the form"]:::usage
+        u_future["Future-contact&lt;br/&gt;opt-in list"]:::usage
+        u_contact["Contact &amp; confirm&lt;br/&gt;attendance"]:::usage
+    end
+
+    f_can_attend --> u_gate
+    f_eligible --> u_gate
+    f_consent --> u_gate
+    f_stay --> u_future
+
+    f_first --> u_contact
+    f_last --> u_contact
+    f_email --> u_contact
+    f_phone --> u_contact
+    f_addr1 --> u_contact
+    f_addr2 --> u_contact
+    f_city --> u_contact
+    f_postcode --> u_contact
+
+    f_gender --> t_gender
+    f_dob_d --> age
+    f_dob_m --> age
+    f_dob_y --> age
+    age --> t_age
+    f_ethnicity --> ethmap --> t_eth
+    f_disability --> t_dis
+    f_education --> t_edu
+    f_occupation --> t_occ
+    f_postcode --> geolook --> t_geo
+    f_postcode --> rulook --> t_ru
+
+    f_addr1 --> addrmatch
+    f_addr2 --> addrmatch
+    f_city --> addrmatch
+    f_postcode --> addrmatch
+    addrmatch --> t_addr
+
+    click age "#age-detail" "How age and age_bracket are derived"
+    click t_age "#age-detail" "How age and age_bracket are derived"
+    click ethmap "#eth-detail" "How ethnicity is bucketed"
+    click t_eth "#eth-detail" "How ethnicity is bucketed"
+    click geolook "#geo-detail" "Postcode lookups"
+    click rulook "#geo-detail" "Postcode lookups"
+    click t_geo "#geo-detail" "Postcode lookups"
+    click t_ru "#geo-detail" "Postcode lookups"
+    click addrmatch "#addr-detail" "How the address check works"
+    click t_addr "#addr-detail" "How the address check works"
+    click t_gender "#direct-detail" "Fields used directly as targets"
+    click t_dis "#direct-detail" "Fields used directly as targets"
+    click t_edu "#direct-detail" "Fields used directly as targets"
+    click t_occ "#direct-detail" "Fields used directly as targets"
+    click f_postcode "#postcode-detail" "post_code is used in more than one way"
+    click u_gate "#nontarget-detail" "Fields not used for targets"
+    click u_future "#nontarget-detail" "Fields not used for targets"
+    click u_contact "#nontarget-detail" "Fields not used for targets"
+            </pre>
+        </div>
+        <p class="hint">
+            Click any box in the diagram to jump to its details below. This is one real-world example, not an exhaustive template — it's meant to give a good feel for how fields and targets relate.
+        </p>
+
+        <h2>How the mapping works</h2>
+
+        <details id="direct-detail">
+            <summary>Fields used directly as targets</summary>
+            <p>
+                Several fields are collected in the same shape they're used for stratification, so they flow straight across with no transformation:
+            </p>
+            <ul>
+                <li><code>gender</code> &rarr; <code>gender</code></li>
+                <li><code>disability</code> &rarr; <code>disability</code></li>
+                <li><code>education_level</code> &rarr; <code>education_level</code></li>
+                <li><code>occupation</code> &rarr; <code>occupation</code></li>
+            </ul>
+            <p>
+                Even "direct" fields still come from a fixed set of options agreed with the client, so the recorded value already matches a target category.
+            </p>
+        </details>
+
+        <details id="age-detail">
+            <summary>Date of birth &rarr; age &rarr; age_bracket</summary>
+            <p>
+                The three separate fields <code>dob_day</code>, <code>dob_month</code> and <code>dob_year</code> are combined to calculate an intermediate value, <strong>age</strong>. The age is then mapped into an <code>age_bracket</code>, and it's the bracket — not the raw age — that is used as the target.
+            </p>
+            <p>The brackets used in this example, with a note on some special cases:</p>
+            <table>
+                <thead>
+                    <tr><th>Bracket</th><th>Note</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>0&ndash;17</td><td>Target is <strong>zero</strong> — under-18s are not selected</td></tr>
+                    <tr><td>18&ndash;24</td><td></td></tr>
+                    <tr><td>25&ndash;34</td><td></td></tr>
+                    <tr><td>35&ndash;50</td><td></td></tr>
+                    <tr><td>51&ndash;64</td><td></td></tr>
+                    <tr><td>65&ndash;74</td><td></td></tr>
+                    <tr><td>75&ndash;100</td><td></td></tr>
+                    <tr><td>100+</td><td>Target is <strong>zero</strong>; any 100+ value is double-checked to confirm the data is actually valid</td></tr>
+                </tbody>
+            </table>
+            <p>
+                So the flow is: <code>dob_day</code> + <code>dob_month</code> + <code>dob_year</code> &rarr; <em>age</em> &rarr; <code>age_bracket</code>.
+            </p>
+        </details>
+
+        <details id="eth-detail">
+            <summary>Ethnicity &rarr; ethnicity_bucket</summary>
+            <p>
+                The form offers <strong>10</strong> ethnicity options, deliberately fine-grained so that people feel included and can see themselves represented. For the target, though, those options are combined into a smaller number of <code>ethnicity_bucket</code> values.
+            </p>
+            <p>For example, several "White" options collapse into a single bucket:</p>
+            <ul>
+                <li><code>White British</code>, <code>White Irish</code>, <code>White - other</code> &rarr; <code>White</code></li>
+            </ul>
+            <p>
+                So the field value is recorded at full granularity, and the bucketing happens on the way to the target.
+            </p>
+        </details>
+
+        <details id="geo-detail">
+            <summary>Post code &rarr; geo_bucket and rural_urban</summary>
+            <p>
+                The single <code>post_code</code> field feeds two separate targets, each derived through its own lookup table:
+            </p>
+            <ul>
+                <li><code>post_code</code> &rarr; lookup table &rarr; <code>geo_bucket</code></li>
+                <li><code>post_code</code> &rarr; lookup table &rarr; <code>rural_urban</code></li>
+            </ul>
+            <p>
+                The registrant only ever enters their postcode; the geographic bucket and the rural/urban classification are looked up from it, so neither is asked for directly.
+            </p>
+        </details>
+
+        <details id="addr-detail">
+            <summary>Address fields &rarr; address_check (the exclusion mechanism)</summary>
+            <p>
+                Invitation letters were posted to a randomly selected set of addresses. When someone registers, the address they enter — <code>address_line_1</code>, <code>address_line_2</code>, <code>city</code> and <code>post_code</code> — is matched against that list of addresses we wrote to:
+            </p>
+            <ul>
+                <li>Address matches one we posted a letter to &rarr; <code>address_check = OK</code></li>
+                <li>No match &rarr; <code>address_check = BAD</code></li>
+            </ul>
+            <p>
+                <code>address_check</code> is then used as a target with a value of <strong>zero for <code>BAD</code></strong>. Because the selection cannot pick anyone into a category whose target is zero, this is the mechanism that excludes registrations from addresses we didn't invite.
+            </p>
+            <p>
+                You can read this either way round: as a <em>target</em> (shown on the right of the diagram), or as a post-submission filter that drops invalid registrations. They're the same thing — the zero target <em>is</em> the drop.
+            </p>
+        </details>
+
+        <details id="postcode-detail">
+            <summary>One field, used more than once</summary>
+            <p>
+                A field appears exactly once on the registration page, but the same value can be used in several ways. <code>post_code</code> is the clearest example:
+            </p>
+            <ul>
+                <li>As part of the registrant's <strong>contact address</strong></li>
+                <li>Derived into the <code>geo_bucket</code> target</li>
+                <li>Derived into the <code>rural_urban</code> target</li>
+                <li>Part of the <code>address_check</code> match (with the other address fields)</li>
+            </ul>
+            <p>
+                There may be others — the point is that "collected once" does not mean "used once".
+            </p>
+        </details>
+
+        <details id="nontarget-detail">
+            <summary>Fields that are not targets</summary>
+            <p>Not every field feeds the stratified selection. In this example:</p>
+            <ul>
+                <li>
+                    <strong>Must-check boxes</strong> — <code>can_attend</code>, <code>eligible</code> and <code>consent</code> all have to be ticked before the form can be submitted at all. They gate submission rather than describing the person.
+                </li>
+                <li>
+                    <strong>Real choice</strong> — <code>stay_on_db</code> ("keep my details and contact me about similar events in the future") can be ticked or not; it drives a future-contact opt-in list, not selection.
+                </li>
+                <li>
+                    <strong>Contact details</strong> — name, email, phone and address are used to reach the registrant and confirm attendance. (<code>post_code</code> is the exception that also feeds targets — see above.)
+                </li>
+            </ul>
+        </details>
+
+        <script>
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'default',
+                securityLevel: 'loose',
+                flowchart: { curve: 'basis', useMaxWidth: true }
+            });
+
+  // When a diagram click jumps to a <details>, open it so the content is visible.
+            window.addEventListener('hashchange', () => {
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+  // Also handle the case where the page loads with a hash already set.
+            window.addEventListener('load', () => {
+                if (!window.location.hash) return;
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+        </script>
+    </body>
+</html>
