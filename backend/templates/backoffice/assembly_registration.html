@@ -169,12 +169,14 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 </section>
                             </div>
 
-            {# Assets panel (image library). Buttons all use type="button" so they never
-               submit the parent editor form. Initial list is rendered server-side; uploads
-               and deletes mutate the Alpine `images` array in place, no page reload required. #}
-                            <aside class="lg:flex-shrink-0 w-full lg:w-[400px]">
-                                <section class="rounded-lg p-6 sticky top-4 w-full"
-                                         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+            {# Assets panel (image library). The aside carries the visual box (border/bg) so it
+               stretches to match the left column's height (align-items: stretch is the flex default),
+               and only the inner content sticks to the top on scroll. That way the box's bottom lines
+               up with the editor's bottom instead of leaving the CTAs disconnected. Buttons all use
+               type="button" so they never submit the parent editor form. #}
+                            <aside class="lg:flex-shrink-0 w-full lg:w-[400px] rounded-lg"
+                                   style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                                <div class="p-6 sticky top-4 w-full">
                                     <div class="flex items-center justify-between mb-4">
                                         <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
                                         {% set upload_icon %}
@@ -256,7 +258,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             </li>
                                         </template>
                                     </ul>
-                                </section>
+                                </div>
                             </aside>
                         </div>
 
@@ -395,10 +397,12 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                     </section>
                                 </div>
 
-                                {# Variables reference sidebar — styled like the Assets panel from the form section. #}
-                                <aside class="lg:flex-shrink-0 w-full lg:w-[400px]">
-                                    <section class="rounded-lg p-6 sticky top-4 w-full"
-                                             style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                                {# Variables reference sidebar — the aside carries the visual box so it stretches
+                                   to match the editor's height, and only the inner content sticks on scroll
+                                   (same trick as the S1 Assets panel). #}
+                                <aside class="lg:flex-shrink-0 w-full lg:w-[400px] rounded-lg"
+                                       style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                                    <div class="p-6 sticky top-4 w-full">
                                         <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">
                                             {{ _("Available variables") }}
                                         </h2>
@@ -443,7 +447,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                                 </li>
                                             {% endfor %}
                                         </ul>
-                                    </section>
+                                    </div>
                                 </aside>
                             </div>
 
