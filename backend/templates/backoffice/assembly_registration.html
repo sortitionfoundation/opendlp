@@ -404,10 +404,10 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                             </form>
                         </section>
                     {% else %}
-                        {# Send-auto-reply toggle: outside both boxes, top-right, auto-submits on change so it feels
+                        {# Send-auto-reply toggle: outside both boxes, top-left, auto-submits on change so it feels
                            like a proper toggle. The `action` field flips based on the current state, so the checkbox
                            value doesn't need to be read; toggling always inverts the state. #}
-                        <div class="flex justify-end mb-4">
+                        <div class="flex justify-start mb-4">
                             <form method="post"
                                   action="{{ email_save_url }}"
                                   x-data
