@@ -167,44 +167,151 @@
 
     /* ========================================
        BUTTON COMPONENT STYLES
-       Hover and focus states for button variants
+       Atomic BEM structure: .btn base + .btn--{variant} + .is-loading
+       Focus is intentionally left to the browser default outline — see
+       docs/frontend_security.md and prior design system decisions.
        ======================================== */
 
-    /* Primary button hover */
-    .btn-primary-hover:hover:not(:disabled) {
-        background-color: var(--color-button-primary-bg-hover) !important;
+    /* Base — layout, typography, transitions. No colour. */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        box-sizing: border-box;
+        font: 600 0.875rem/1rem var(--font-button);
+        letter-spacing: 0.4px;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
 
-    /* Secondary button hover */
-    .btn-secondary-hover:hover:not(:disabled) {
-        background-color: var(--color-button-secondary-bg-hover) !important;
+    .btn:disabled,
+    .btn[aria-disabled="true"] {
+        cursor: not-allowed;
     }
 
-    /* Tertiary/Icon button hover */
-    .btn-tertiary-hover:hover:not(:disabled) {
-        background-color: var(--color-button-tertiary-bg-hover) !important;
+    .btn--full-width {
+        width: 100%;
     }
 
-    /* Danger button hover */
-    .btn-danger-hover:hover:not(:disabled) {
-        background-color: var(--color-button-danger-bg-hover) !important;
+    /* Variant: primary — filled brand */
+    .btn--primary {
+        background-color: var(--color-button-primary-bg);
+        color: var(--color-button-primary-text);
     }
 
-    /* Runtime-disabled look (toggled by Alpine via the button macro's
-       `alpine_disabled` param). Layers on top of the variant's inline style
-       without touching padding/base styles. */
-    .btn-runtime-disabled {
-        background-color: var(--color-disabled-borders) !important;
-        color: var(--color-placeholder-text) !important;
-        border: none !important;
-        cursor: not-allowed !important;
-        opacity: 0.5 !important;
+    .btn--primary:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-primary-bg-hover);
     }
 
-    /* Focus ring for buttons - use browser default outline for keyboard navigation */
-    /* The .btn-focus class enables :focus-visible styling (no custom override needed) */
+    .btn--primary:disabled:not(.is-loading),
+    .btn--primary[aria-disabled="true"]:not(.is-loading) {
+        background-color: var(--color-disabled-borders);
+        color: var(--color-placeholder-text);
+    }
 
-    /* Icon sizing within buttons */
+    /* Variant: secondary — outlined, keeps shape when disabled */
+    .btn--secondary {
+        background-color: var(--color-button-secondary-bg);
+        color: var(--color-button-secondary-text);
+        border: 1px solid var(--color-button-secondary-border);
+    }
+
+    .btn--secondary:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-secondary-bg-hover);
+    }
+
+    .btn--secondary:disabled:not(.is-loading),
+    .btn--secondary[aria-disabled="true"]:not(.is-loading) {
+        background-color: var(--color-button-secondary-bg);
+        color: var(--color-placeholder-text);
+        border-color: var(--color-placeholder-text);
+    }
+
+    /* Variant: tertiary — ghost, transparent when disabled */
+    .btn--tertiary {
+        background-color: var(--color-button-tertiary-bg);
+        color: var(--color-button-tertiary-text);
+    }
+
+    .btn--tertiary:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-tertiary-bg-hover);
+    }
+
+    .btn--tertiary:disabled:not(.is-loading),
+    .btn--tertiary[aria-disabled="true"]:not(.is-loading) {
+        background-color: transparent;
+        color: var(--color-placeholder-text);
+    }
+
+    /* Variant: danger — transparent, red text */
+    .btn--danger {
+        background-color: var(--color-button-danger-bg);
+        color: var(--color-button-danger-text);
+    }
+
+    .btn--danger:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-danger-bg-hover);
+    }
+
+    .btn--danger:disabled:not(.is-loading),
+    .btn--danger[aria-disabled="true"]:not(.is-loading) {
+        background-color: transparent;
+        color: var(--color-placeholder-text);
+    }
+
+    /* Variant: icon — square-ish, tertiary look, tighter horizontal padding */
+    .btn--icon {
+        padding: 12px 8px;
+        background-color: var(--color-button-tertiary-bg);
+        color: var(--color-button-tertiary-text);
+    }
+
+    .btn--icon:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-tertiary-bg-hover);
+    }
+
+    .btn--icon:disabled:not(.is-loading),
+    .btn--icon[aria-disabled="true"]:not(.is-loading) {
+        background-color: transparent;
+        color: var(--color-placeholder-text);
+    }
+
+    /* Loading state — spinner overlay, content hidden, keeps button width */
+    .btn.is-loading {
+        position: relative;
+        pointer-events: none;
+        cursor: wait;
+    }
+
+    .btn.is-loading > * {
+        visibility: hidden;
+    }
+
+    .btn.is-loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 1rem;
+        height: 1rem;
+        margin: -0.5rem 0 0 -0.5rem;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: btn-spin 0.6s linear infinite;
+    }
+
+    @keyframes btn-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Icon wrapper inside buttons — used by leading_icon/trailing_icon/icon
+       slots on the button macro. Not to be confused with .btn--icon (variant). */
     .btn-icon {
         display: inline-flex;
         align-items: center;

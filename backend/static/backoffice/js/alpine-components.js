@@ -699,6 +699,27 @@ document.addEventListener("alpine:init", function () {
         };
     });
 
+    /**
+     * Button loading-state demo for the design-system showcase.
+     *
+     * Toggles `saving` for a fixed duration so the button's loading state
+     * can be triggered from a click without inlining setTimeout in an
+     * Alpine expression (which the CSP build forbids).
+     */
+    Alpine.data("buttonLoadingDemo", function () {
+        return {
+            saving: false,
+
+            simulate: function () {
+                var self = this;
+                self.saving = true;
+                setTimeout(function () {
+                    self.saving = false;
+                }, 2000);
+            },
+        };
+    });
+
     Alpine.data("progressModalDemo", function () {
         return {
             modalOpen: false,

@@ -1,188 +1,115 @@
 {#
 ABOUTME: Button component macro for backoffice design system
-ABOUTME: Supports primary, secondary, tertiary, icon variants with icons and full a11y support
+ABOUTME: Composes .btn / .btn--{variant} / .is-loading CSS atoms; no inline styling
 #}
 
-{% macro button(text="", variant="primary", disabled=false, alpine_disabled="", type="button", href="", id="", classes="", attrs="", leading_icon="", trailing_icon="", icon="", full_width=false, aria_label="", aria_pressed="", aria_haspopup="", aria_expanded="", aria_describedby="") %}
+{% macro button(text="", variant="primary", disabled=false, alpine_disabled="", loading=false, alpine_loading="", type="button", href="", id="", classes="", attrs="", leading_icon="", trailing_icon="", icon="", full_width=false, aria_label="", aria_pressed="", aria_haspopup="", aria_expanded="", aria_describedby="") %}
     {#
-    Button component based on Figma OpenDLP UI specification.
-    Renders as <a> when href is provided, otherwise <button>.
-    Follows WAI-ARIA button pattern for accessibility.
+    Button component matching Figma OpenDLP UI spec (node 1350:7712).
+    Renders as <a> when href is provided AND button isn't disabled, otherwise <button>.
+    All visual styling lives in the .btn / .btn--* rules in main.css.
 
     Args:
-        text: Button label text (or use {% call button() %}content{% endcall %} for custom inner content)
-        variant: "primary" | "secondary" | "tertiary" | "danger" | "icon" | "outline" (default: "primary")
-                 Note: "outline" is deprecated, use "secondary" instead
-                 "danger" is a transparent-background red-text button for destructive actions
-        disabled: boolean to disable the button (Jinja-time)
-        alpine_disabled: Alpine.js boolean expression — when truthy at runtime the button
-                         renders the HTML `disabled` attribute AND the muted variant style.
-                         Use this when the disabled state depends on Alpine state. Example:
-                         alpine_disabled="!form.name || saving"
-                         The expression is rendered into double-quoted attributes; Jinja
-                         autoescape handles any `"` inside the expression, but prefer
-                         single quotes for string literals (e.g. `status === 'ready'`) to
-                         keep the rendered HTML readable.
-        type: button type attribute (default: "button")
-        href: if provided, renders as <a> instead of <button>
-        id: optional id attribute
-        classes: additional CSS classes to append
-        attrs: additional HTML attributes (e.g., '@click="open = !open"' for Alpine.js)
-        leading_icon: HTML/SVG for icon before the label (16x16)
-        trailing_icon: HTML/SVG for icon after the label (16x16)
-        icon: HTML/SVG for icon-only variant (16x16)
-        full_width: if true, button stretches to 100% width
+        text: Button label text (or use {% call button() %}content{% endcall %})
+        variant: "primary" | "secondary" | "tertiary" | "danger" | "icon" | "outline"
+                 "outline" is a deprecated alias for "secondary" (kept for 33 legacy callers).
+        disabled: Jinja-time disabled state (renders `disabled` + `aria-disabled` on button
+                  or downgrades <a> to <button>)
+        alpine_disabled: Runtime disabled — Alpine expression bound via :disabled.
+                         Example: alpine_disabled="!form.name || saving"
+        loading: Jinja-time loading state — spinner overlay, disables interaction,
+                 preserves button width
+        alpine_loading: Runtime loading — Alpine expression bound via :class + :disabled.
+                        Loading implies disabled.
+        type: <button type> attribute (default: "button")
+        href: if provided (and not disabled), renders as <a role="button">
+        id: element id
+        classes: extra classes to append
+        attrs: raw HTML attributes (e.g. '@click="foo()"' for Alpine)
+        leading_icon / trailing_icon: HTML/SVG (16x16)
+        icon: HTML/SVG for icon-only variant (16x16); REQUIRES aria_label
+        full_width: stretch to 100%
 
-    Accessibility Args (WAI-ARIA):
-        aria_label: Accessible name for icon-only buttons or to override visible text.
-                    REQUIRED for icon-only variant when no text is provided.
-                    Note: aria-label is not translated by browsers, so prefer visible text when possible.
-        aria_pressed: For toggle buttons - "true", "false", or "mixed". Omit for non-toggle buttons.
-                      The visible label should NOT change based on pressed state.
-        aria_haspopup: For menu buttons - "true", "menu", "listbox", "tree", "grid", or "dialog".
-        aria_expanded: For expandable buttons - "true" or "false". Use with aria_haspopup.
-        aria_describedby: ID of element(s) that describe the button's function.
+    Accessibility (WAI-ARIA):
+        aria_label: name for icon-only buttons; REQUIRED for variant="icon" without text
+        aria_pressed: "true"/"false"/"mixed" for toggle buttons (visible label MUST NOT change)
+        aria_haspopup: "true"/"menu"/"listbox"/"tree"/"grid"/"dialog"
+        aria_expanded: "true"/"false" — use with aria_haspopup
+        aria_describedby: id of element that describes this button
 
     Usage:
         {{ button("Click me") }}
         {{ button("Submit", variant="primary", type="submit") }}
         {{ button("Cancel", variant="secondary") }}
-        {{ button("Ghost", variant="tertiary") }}
-        {{ button("Delete", variant="danger", type="submit") }}
-        {{ button("Disabled", disabled=true) }}
-
-    With icons:
-        {{ button("Edit", leading_icon='<svg>...</svg>') }}
-        {{ button("Options", trailing_icon='<svg>...</svg>') }}
-        {{ button(variant="icon", icon='<svg>...</svg>', aria_label="Add item") }}
-
-    As a link:
-        {{ button("Go to Dashboard", href="/dashboard") }}
-
-    Toggle button:
-        {{ button("Mute", aria_pressed="true") }}
-
-    Menu button:
-        {{ button("Actions", trailing_icon=chevron, aria_haspopup="menu", aria_expanded="false") }}
+        {{ button("Delete", variant="danger", loading=true) }}
+        {{ button(variant="icon", icon='<svg>…</svg>', aria_label="Edit") }}
+        {{ button("Save", alpine_loading="saving") }}
     #}
 
-    {# Base styles shared by all variants #}
-    {% set base_styles %}
-        font-family: var(--font-button);
-        font-weight: 700;
-        font-size: 14px;
-        line-height: 16px;
-        letter-spacing: 0.4px;
-        border-radius: 4px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        transition: background-color 150ms ease, border-color 150ms ease;
-        text-decoration: none;
-        box-sizing: border-box;
-    {% endset %}
+    {# Map deprecated "outline" alias to secondary #}
+    {% set _variant = "secondary" if variant == "outline" else variant %}
 
-    {# Padding differs for icon-only variant #}
-    {% if variant == "icon" %}
-        {% set padding_styles = "padding: 12px 8px;" %}
-    {% else %}
-        {% set padding_styles = "padding: 12px 16px;" %}
-    {% endif %}
+    {# Compose class list — everything visual is a class, nothing inline #}
+    {% set _classes = ["btn", "btn--" ~ _variant] %}
+    {% if full_width %}{% set _ = _classes.append("btn--full-width") %}{% endif %}
+    {% if loading %}{% set _ = _classes.append("is-loading") %}{% endif %}
+    {% if classes %}{% set _ = _classes.append(classes) %}{% endif %}
+    {% set class_attr = _classes | join(" ") %}
 
-    {# Width handling #}
-    {% if full_width %}
-        {% set width_styles = "width: 100%;" %}
-    {% else %}
-        {% set width_styles = "" %}
-    {% endif %}
-
-    {# Variant-specific styles. Jinja-time `disabled=true` swaps to the muted look
-       inline; the same muted look is applied at runtime via the `.btn-runtime-disabled`
-       class toggled by Alpine when `alpine_disabled` is set. #}
-    {% if disabled %}
-        {% set variant_styles = "background-color: var(--color-disabled-borders); color: var(--color-placeholder-text); cursor: not-allowed; border: none; opacity: 0.5;" %}
-        {% set hover_class = "" %}
-    {% elif variant == "primary" %}
-        {% set variant_styles = "background-color: var(--color-button-primary-bg); color: var(--color-button-primary-text); border: none;" %}
-        {% set hover_class = "btn-primary-hover" %}
-    {% elif variant == "secondary" or variant == "outline" %}
-        {# "outline" is kept for backwards compatibility, maps to secondary #}
-        {% set variant_styles = "background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-button-secondary-border);" %}
-        {% set hover_class = "btn-secondary-hover" %}
-    {% elif variant == "tertiary" %}
-        {% set variant_styles = "background-color: var(--color-button-tertiary-bg); color: var(--color-button-tertiary-text); border: none;" %}
-        {% set hover_class = "btn-tertiary-hover" %}
-    {% elif variant == "danger" %}
-        {% set variant_styles = "background-color: var(--color-button-danger-bg); color: var(--color-button-danger-text); border: none;" %}
-        {% set hover_class = "btn-danger-hover" %}
-    {% elif variant == "icon" %}
-        {% set variant_styles = "background-color: var(--color-button-tertiary-bg); color: var(--color-button-tertiary-text); border: none;" %}
-        {% set hover_class = "btn-tertiary-hover" %}
-    {% else %}
-        {# Default to primary #}
-        {% set variant_styles = "background-color: var(--color-button-primary-bg); color: var(--color-button-primary-text); border: none;" %}
-        {% set hover_class = "btn-primary-hover" %}
-    {% endif %}
-
-    {# Combined styles #}
-    {% set all_styles = base_styles ~ padding_styles ~ width_styles ~ variant_styles %}
-
-    {# Focus class for outline styling #}
-    {% set focus_class = "btn-focus" %}
-
-    {# Button content #}
+    {# Button content. Text is wrapped in <span> so `.is-loading > *`
+       can hide it via visibility while keeping the button's width stable. #}
     {% set button_content %}
-        {%- if variant == "icon" and icon -%}
+        {%- if _variant == "icon" and icon -%}
             <span class="btn-icon">{{ icon | safe }}</span>
         {%- else -%}
-            {%- if leading_icon -%}
-                <span class="btn-icon">{{ leading_icon | safe }}</span>
-            {%- endif -%}
+            {%- if leading_icon -%}<span class="btn-icon">{{ leading_icon | safe }}</span>{%- endif -%}
             {%- if caller -%}
                 {{ caller() }}
             {%- elif text -%}
-                {{ text }}
+                <span>{{ text }}</span>
             {%- endif -%}
-            {%- if trailing_icon -%}
-                <span class="btn-icon">{{ trailing_icon | safe }}</span>
-            {%- endif -%}
+            {%- if trailing_icon -%}<span class="btn-icon">{{ trailing_icon | safe }}</span>{%- endif -%}
         {%- endif -%}
     {% endset %}
 
     {% if href and not disabled %}
-        <a
-            href="{{ href }}"
-            role="button"
-            {% if id %}id="{{ id }}"{% endif %}
-            {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
-            {% if aria_pressed %}aria-pressed="{{ aria_pressed }}"{% endif %}
-            {% if aria_haspopup %}aria-haspopup="{{ aria_haspopup }}"{% endif %}
-            {% if aria_expanded %}aria-expanded="{{ aria_expanded }}"{% endif %}
-            {% if aria_describedby %}aria-describedby="{{ aria_describedby }}"{% endif %}
-            {% if attrs %}{{ attrs | safe }}{% endif %}
-            style="{{ all_styles }}"
-            class="{{ hover_class }} {{ focus_class }} {{ classes }}"
-        >{{ button_content }}</a>
+        <a href="{{ href }}"
+           role="button"
+           class="{{ class_attr }}"
+           {% if id %}id="{{ id }}"{% endif %}
+           {% if loading %}aria-busy="true"{% endif %}
+           {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+           {% if aria_pressed %}aria-pressed="{{ aria_pressed }}"{% endif %}
+           {% if aria_haspopup %}aria-haspopup="{{ aria_haspopup }}"{% endif %}
+           {% if aria_expanded %}aria-expanded="{{ aria_expanded }}"{% endif %}
+           {% if aria_describedby %}aria-describedby="{{ aria_describedby }}"{% endif %}
+           {% if attrs %}{{ attrs | safe }}{% endif %}>{{ button_content }}</a>
     {% else %}
-        <button
-            type="{{ type }}"
-            {% if id %}id="{{ id }}"{% endif %}
-            {% if disabled %}disabled aria-disabled="true"{% endif %}
-            {% if alpine_disabled %}
-                :disabled="{{ alpine_disabled }}"
-                :aria-disabled="({{ alpine_disabled }}) ? 'true' : 'false'"
-                :class="{ 'btn-runtime-disabled': ({{ alpine_disabled }}) }"
-            {% endif %}
-            {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
-            {% if aria_pressed %}aria-pressed="{{ aria_pressed }}"{% endif %}
-            {% if aria_haspopup %}aria-haspopup="{{ aria_haspopup }}"{% endif %}
-            {% if aria_expanded %}aria-expanded="{{ aria_expanded }}"{% endif %}
-            {% if aria_describedby %}aria-describedby="{{ aria_describedby }}"{% endif %}
-            {% if attrs %}{{ attrs | safe }}{% endif %}
-            style="{{ all_styles }}"
-            class="{{ hover_class }} {{ focus_class }} {{ classes }}"
-        >{{ button_content }}</button>
+        <button type="{{ type }}"
+                class="{{ class_attr }}"
+                {% if id %}id="{{ id }}"{% endif %}
+                {% if disabled or loading %}disabled aria-disabled="true"{% endif %}
+                {% if loading %}aria-busy="true"{% endif %}
+                {# Runtime disabled/loading via Alpine. If both are set, :disabled is the OR. #}
+                {% if alpine_loading and alpine_disabled %}
+                    :disabled="({{ alpine_disabled }}) || ({{ alpine_loading }})"
+                    :aria-disabled="(({{ alpine_disabled }}) || ({{ alpine_loading }})) ? 'true' : 'false'"
+                    :class="{ 'is-loading': ({{ alpine_loading }}) }"
+                    :aria-busy="({{ alpine_loading }}) ? 'true' : 'false'"
+                {% elif alpine_loading %}
+                    :disabled="{{ alpine_loading }}"
+                    :aria-disabled="({{ alpine_loading }}) ? 'true' : 'false'"
+                    :class="{ 'is-loading': ({{ alpine_loading }}) }"
+                    :aria-busy="({{ alpine_loading }}) ? 'true' : 'false'"
+                {% elif alpine_disabled %}
+                    :disabled="{{ alpine_disabled }}"
+                    :aria-disabled="({{ alpine_disabled }}) ? 'true' : 'false'"
+                {% endif %}
+                {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+                {% if aria_pressed %}aria-pressed="{{ aria_pressed }}"{% endif %}
+                {% if aria_haspopup %}aria-haspopup="{{ aria_haspopup }}"{% endif %}
+                {% if aria_expanded %}aria-expanded="{{ aria_expanded }}"{% endif %}
+                {% if aria_describedby %}aria-describedby="{{ aria_describedby }}"{% endif %}
+                {% if attrs %}{{ attrs | safe }}{% endif %}>{{ button_content }}</button>
     {% endif %}
 {% endmacro %}

@@ -2,7 +2,7 @@
 ABOUTME: Showcase section for button component
 ABOUTME: Displays button variants and usage examples
 #}
-{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import switch %}
 
@@ -37,105 +37,178 @@ ABOUTME: Displays button variants and usage examples
 {% macro button_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Button Component") }}
-        {{ showcase_description("Reusable button macro with variant support and icon slots. Based on OpenDLP Figma UI specification.") }}
+        {{ showcase_description("Reusable button macro composing .btn / .btn--{variant} / .is-loading CSS atoms. Matches Figma OpenDLP UI spec (node 1350:7712). Focus ring uses browser default outline.") }}
+
+        {# ============================================================
+           STATE MATRIX — variant × state, matches Figma
+        ============================================================ #}
+        {{ showcase_subtitle("State Matrix") }}
+        <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+            Default / Hover / Focused / Disabled / Loading × Primary / Secondary / Tertiary / Icon.
+            Hover with your mouse or tab through with the keyboard to see the hover and focus states.
+        </p>
+        <div class="rounded-lg p-6 mb-8" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+            <div class="grid gap-6" style="grid-template-columns: 80px repeat(5, minmax(0, 1fr));">
+                {# Header row #}
+                <span></span>
+                <span class="text-label-md" style="color: var(--color-secondary-text);">Default</span>
+                <span class="text-label-md" style="color: var(--color-secondary-text);">Hover</span>
+                <span class="text-label-md" style="color: var(--color-secondary-text);">Focused</span>
+                <span class="text-label-md" style="color: var(--color-secondary-text);">Disabled</span>
+                <span class="text-label-md" style="color: var(--color-secondary-text);">Loading</span>
+
+                {# Primary row #}
+                <span class="text-label-md self-center" style="color: var(--color-secondary-text);">Primary</span>
+                {{ button("Button", variant="primary", leading_icon=edit_icon, trailing_icon=chevron_down_icon) }}
+                <span class="text-caption self-center" style="color: var(--color-placeholder-text);">— hover me —</span>
+                <span class="text-caption self-center" style="color: var(--color-placeholder-text);">— tab to me —</span>
+                {{ button("Button", variant="primary", disabled=true, leading_icon=edit_icon, trailing_icon=chevron_down_icon) }}
+                {{ button("Button", variant="primary", loading=true, leading_icon=edit_icon, trailing_icon=chevron_down_icon) }}
+
+                {# Secondary row #}
+                <span class="text-label-md self-center" style="color: var(--color-secondary-text);">Secondary</span>
+                {{ button("Button", variant="secondary", leading_icon=edit_icon, trailing_icon=chevron_down_icon) }}
+                <span class="text-caption self-center" style="color: var(--color-placeholder-text);">— hover me —</span>
+                <span class="text-caption self-center" style="color: var(--color-placeholder-text);">— tab to me —</span>
+                {{ button("Button", variant="secondary", disabled=true, leading_icon=edit_icon, trailing_icon=chevron_down_icon) }}
+                {{ button("Button", variant="secondary", loading=true, leading_icon=edit_icon, trailing_icon=chevron_down_icon) }}
+
+                {# Tertiary row #}
+                <span class="text-label-md self-center" style="color: var(--color-secondary-text);">Tertiary</span>
+                {{ button("Button", variant="tertiary", leading_icon=edit_icon, trailing_icon=chevron_down_icon) }}
+                <span class="text-caption self-center" style="color: var(--color-placeholder-text);">— hover me —</span>
+                <span class="text-caption self-center" style="color: var(--color-placeholder-text);">— tab to me —</span>
+                {{ button("Button", variant="tertiary", disabled=true, leading_icon=edit_icon, trailing_icon=chevron_down_icon) }}
+                {{ button("Button", variant="tertiary", loading=true, leading_icon=edit_icon, trailing_icon=chevron_down_icon) }}
+
+                {# Icon row #}
+                <span class="text-label-md self-center" style="color: var(--color-secondary-text);">Icon</span>
+                <div>{{ button(variant="icon", icon=edit_icon, aria_label="Edit") }}</div>
+                <span class="text-caption self-center" style="color: var(--color-placeholder-text);">— hover me —</span>
+                <span class="text-caption self-center" style="color: var(--color-placeholder-text);">— tab to me —</span>
+                <div>{{ button(variant="icon", icon=edit_icon, aria_label="Edit", disabled=true) }}</div>
+                <div>{{ button(variant="icon", icon=edit_icon, aria_label="Edit", loading=true) }}</div>
+            </div>
+        </div>
+
+        {# ============================================================
+           LOADING — interactive demo
+        ============================================================ #}
+        {{ showcase_subtitle("Loading State") }}
+        <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+            <code class="code-inline">loading=true</code> hides the label and centres a spinner without shifting the button's width.
+            Use <code class="code-inline">alpine_loading="expr"</code> to bind loading state to an Alpine expression.
+        </p>
+        {% call showcase_example('{# Jinja-time #}
+        {{ button("Saving", variant="primary", loading=true) }}
+
+{# Runtime — Alpine expression becomes truthy during async work #}
+        <div x-data="buttonLoadingDemo()">
+            {{ button("Save changes", variant="primary", alpine_loading="saving", attrs=\'@click="simulate()"\') }}
+        </div>') %}
+        <div class="flex flex-wrap gap-4 items-center" x-data="buttonLoadingDemo()">
+            {{ button("Save changes", variant="primary", alpine_loading="saving", attrs='@click="simulate()"') }}
+            <span class="text-caption" style="color: var(--color-secondary-text);">Click to trigger 2s Alpine loading</span>
+        </div>
+    {% endcall %}
 
         {# Variants Section #}
-        {% call showcase_example('{% from "backoffice/components/button.html" import button %}
-            {% from "backoffice/components/input.html" import switch %}
+    {% call showcase_example('{% from "backoffice/components/button.html" import button %}
+        {% from "backoffice/components/input.html" import switch %}
 
 {# Basic variants #}
-            {{ button("Primary", variant="primary") }}
-            {{ button("Secondary", variant="secondary") }}
-            {{ button("Tertiary", variant="tertiary") }}
-            {{ button("Delete", variant="danger") }}
-            {{ button("Disabled", disabled=true) }}
+        {{ button("Primary", variant="primary") }}
+        {{ button("Secondary", variant="secondary") }}
+        {{ button("Tertiary", variant="tertiary") }}
+        {{ button("Delete", variant="danger") }}
+        {{ button("Disabled", disabled=true) }}
 
 {# Reactive disabled — the HTML disabled attribute AND the muted look are
    toggled at runtime from an Alpine expression. Pair with form state, e.g.
    alpine_disabled="!form.name || saving". #}
-            <div x-data="{ enabled: false }">
-                {{ switch("demo-toggle", label="Enable", attrs=\'x-model="enabled"\') }}
-                {{ button("Save", variant="primary", alpine_disabled="!enabled") }}
-            </div>') %}
-            <div class="flex flex-wrap gap-4 items-center">
-                <div class="flex flex-col items-center gap-2">
-                    {{ button("Primary", variant="primary", id="btn-primary") }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Primary</span>
-                </div>
-                <div class="flex flex-col items-center gap-2">
-                    {{ button("Secondary", variant="secondary", id="btn-secondary") }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Secondary</span>
-                </div>
-                <div class="flex flex-col items-center gap-2">
-                    {{ button("Tertiary", variant="tertiary", id="btn-tertiary") }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Tertiary</span>
-                </div>
-                <div class="flex flex-col items-center gap-2">
-                    {{ button("Delete", variant="danger", id="btn-danger") }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Danger</span>
-                </div>
-                <div class="flex flex-col items-center gap-2">
-                    {{ button("Disabled", disabled=true, id="btn-disabled") }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled (Jinja)</span>
-                </div>
-                <div class="flex flex-col items-center gap-3" x-data="{ enabled: false }">
-                    {{ button("Save",
-                    variant="primary",
-                    id="btn-reactive",
-                    alpine_disabled="!enabled") }}
-                    {{ switch("btn-reactive-toggle", label="Enable", attrs='x-model="enabled"') }}
-                    <span class="text-caption" style="color: var(--color-secondary-text);">Disabled (Alpine)</span>
-                </div>
-            </div>
-        {% endcall %}
-
-        {# Icons Section #}
-        {% call showcase_example('{# With leading icon #}
-        {{ button("Edit", variant="primary", leading_icon=edit_icon) }}
-
-{# With trailing icon (dropdown) #}
-        {{ button("Options", variant="secondary", trailing_icon=chevron_icon) }}
-
-{# Icon-only button - aria_label is REQUIRED for accessibility #}
-        {{ button(variant="icon", icon=plus_icon, aria_label="Add item") }}') %}
+        <div x-data="{ enabled: false }">
+            {{ switch("demo-toggle", label="Enable", attrs=\'x-model="enabled"\') }}
+            {{ button("Save", variant="primary", alpine_disabled="!enabled") }}
+        </div>') %}
         <div class="flex flex-wrap gap-4 items-center">
             <div class="flex flex-col items-center gap-2">
-                {{ button("Edit", variant="primary", leading_icon=edit_icon) }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Leading icon</span>
+                {{ button("Primary", variant="primary", id="btn-primary") }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Primary</span>
             </div>
             <div class="flex flex-col items-center gap-2">
-                {{ button("Options", variant="secondary", trailing_icon=chevron_down_icon) }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Trailing icon</span>
+                {{ button("Secondary", variant="secondary", id="btn-secondary") }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Secondary</span>
             </div>
             <div class="flex flex-col items-center gap-2">
-                {{ button("Add New", variant="tertiary", leading_icon=plus_icon) }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Tertiary + icon</span>
+                {{ button("Tertiary", variant="tertiary", id="btn-tertiary") }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Tertiary</span>
             </div>
             <div class="flex flex-col items-center gap-2">
-                {{ button(variant="icon", icon=edit_icon, aria_label="Edit") }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Icon-only</span>
+                {{ button("Delete", variant="danger", id="btn-danger") }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Danger</span>
             </div>
             <div class="flex flex-col items-center gap-2">
-                {{ button(variant="icon", icon=trash_icon, aria_label="Delete") }}
-                <span class="text-caption" style="color: var(--color-secondary-text);">Icon-only</span>
+                {{ button("Disabled", disabled=true, id="btn-disabled") }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Disabled (Jinja)</span>
+            </div>
+            <div class="flex flex-col items-center gap-3" x-data="{ enabled: false }">
+                {{ button("Save",
+                variant="primary",
+                id="btn-reactive",
+                alpine_disabled="!enabled") }}
+                {{ switch("btn-reactive-toggle", label="Enable", attrs='x-model="enabled"') }}
+                <span class="text-caption" style="color: var(--color-secondary-text);">Disabled (Alpine)</span>
             </div>
         </div>
     {% endcall %}
 
-        {# Link buttons #}
-    {% call showcase_example('{# Button as link (renders as <a> instead of <button>) #}
-    {{ button("Go to Dashboard", href="/dashboard") }}
-    {{ button("External Link", href="https://example.com", variant="secondary") }}') %}
+        {# Icons Section #}
+    {% call showcase_example('{# With leading icon #}
+    {{ button("Edit", variant="primary", leading_icon=edit_icon) }}
+
+{# With trailing icon (dropdown) #}
+    {{ button("Options", variant="secondary", trailing_icon=chevron_icon) }}
+
+{# Icon-only button - aria_label is REQUIRED for accessibility #}
+    {{ button(variant="icon", icon=plus_icon, aria_label="Add item") }}') %}
     <div class="flex flex-wrap gap-4 items-center">
         <div class="flex flex-col items-center gap-2">
-            {{ button("Go to Dashboard", href="#", id="btn-link-primary") }}
-            <span class="text-caption" style="color: var(--color-secondary-text);">Link (Primary)</span>
+            {{ button("Edit", variant="primary", leading_icon=edit_icon) }}
+            <span class="text-caption" style="color: var(--color-secondary-text);">Leading icon</span>
         </div>
         <div class="flex flex-col items-center gap-2">
-            {{ button("External Link", href="#", variant="secondary", id="btn-link-secondary") }}
-            <span class="text-caption" style="color: var(--color-secondary-text);">Link (Secondary)</span>
+            {{ button("Options", variant="secondary", trailing_icon=chevron_down_icon) }}
+            <span class="text-caption" style="color: var(--color-secondary-text);">Trailing icon</span>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+            {{ button("Add New", variant="tertiary", leading_icon=plus_icon) }}
+            <span class="text-caption" style="color: var(--color-secondary-text);">Tertiary + icon</span>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+            {{ button(variant="icon", icon=edit_icon, aria_label="Edit") }}
+            <span class="text-caption" style="color: var(--color-secondary-text);">Icon-only</span>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+            {{ button(variant="icon", icon=trash_icon, aria_label="Delete") }}
+            <span class="text-caption" style="color: var(--color-secondary-text);">Icon-only</span>
         </div>
     </div>
+{% endcall %}
+
+        {# Link buttons #}
+{% call showcase_example('{# Button as link (renders as <a> instead of <button>) #}
+{{ button("Go to Dashboard", href="/dashboard") }}
+{{ button("External Link", href="https://example.com", variant="secondary") }}') %}
+<div class="flex flex-wrap gap-4 items-center">
+    <div class="flex flex-col items-center gap-2">
+        {{ button("Go to Dashboard", href="#", id="btn-link-primary") }}
+        <span class="text-caption" style="color: var(--color-secondary-text);">Link (Primary)</span>
+    </div>
+    <div class="flex flex-col items-center gap-2">
+        {{ button("External Link", href="#", variant="secondary", id="btn-link-secondary") }}
+        <span class="text-caption" style="color: var(--color-secondary-text);">Link (Secondary)</span>
+    </div>
+</div>
 {% endcall %}
 
         {# Full width #}
