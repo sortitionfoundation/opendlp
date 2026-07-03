@@ -496,38 +496,46 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                         {{ _("Available variables") }}
                                     </h2>
                                     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                                        {{ _("Paste any of these into the subject or body. Missing values render as an empty string.") }}
+                                        {{ _("Click a variable to select it, then copy and paste into the subject or body. Missing values render as an empty string.") }}
                                     </p>
-                                    <dl class="text-body-sm space-y-3" style="color: var(--color-body-text);">
-                                        <div>
-                                            <dt class="font-mono">{{ '{{ assembly.title }}' }}</dt>
-                                            <dd style="color: var(--color-secondary-text);">{{ _("Assembly title") }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="font-mono">{{ '{{ assembly.question }}' }}</dt>
-                                            <dd style="color: var(--color-secondary-text);">{{ _("Assembly question") }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="font-mono">{{ '{{ assembly.first_assembly_date }}' }}</dt>
-                                            <dd style="color: var(--color-secondary-text);">{{ _("First assembly date (ISO)") }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="font-mono">{{ '{{ respondent.first_name }}' }}</dt>
-                                            <dd style="color: var(--color-secondary-text);">{{ _("Respondent first name") }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="font-mono">{{ '{{ respondent.first_name_or_friend }}' }}</dt>
-                                            <dd style="color: var(--color-secondary-text);">{{ _("First name, or 'Friend' as a fallback") }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="font-mono">{{ '{{ respondent.full_name }}' }}</dt>
-                                            <dd style="color: var(--color-secondary-text);">{{ _("Respondent full name") }}</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="font-mono">{{ '{{ respondent.email }}' }}</dt>
-                                            <dd style="color: var(--color-secondary-text);">{{ _("Respondent email address") }}</dd>
-                                        </div>
-                                    </dl>
+                                    {% set variables = [
+                                    {"expr": "{{ assembly.title }}", "label": _("Assembly title")},
+                                    {"expr": "{{ assembly.question }}", "label": _("Assembly question")},
+                                    {"expr": "{{ assembly.first_assembly_date }}", "label": _("First assembly date (ISO)")},
+                                    {"expr": "{{ respondent.first_name }}", "label": _("Respondent first name")},
+                                    {"expr": "{{ respondent.first_name_or_friend }}", "label": _("First name, or 'Friend' as a fallback")},
+                                    {"expr": "{{ respondent.full_name }}", "label": _("Respondent full name")},
+                                    {"expr": "{{ respondent.email }}", "label": _("Respondent email address")}
+                                    ] %}
+                                    <ul class="space-y-3">
+                                        {% for variable in variables %}
+                                            <li>
+                                                <label for="variable-{{ loop.index0 }}"
+                                                       class="text-body-sm font-medium block mb-1"
+                                                       style="color: var(--color-headings);">
+                                                    {{ variable.label }}
+                                                </label>
+                                                <div class="flex gap-2">
+                                                    <input type="text"
+                                                           id="variable-{{ loop.index0 }}"
+                                                           readonly
+                                                           value="{{ variable.expr }}"
+                                                           @click="$event.target.select()"
+                                                           class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
+                                                           style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                                                    <button type="button"
+                                                            @click="copyToClipboard('{{ variable.expr }}', '{{ _('Variable copied to clipboard') }}')"
+                                                            class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
+                                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text);"
+                                                            aria-label="{{ _('Copy %(label)s variable', label=variable.label) }}">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
                                 </section>
                             </aside>
                         </div>
