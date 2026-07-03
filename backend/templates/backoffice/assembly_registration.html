@@ -454,11 +454,14 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                             </div>
 
                             {# Bottom CTAs — sit below both columns and align to the far right of the layout,
-                               matching the S1 pattern. #}
+                               matching the S1 pattern. Back sits on the far left (mr-auto pushes it away
+                               from the right-side group). #}
                             {% set email_edit_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email', edit='1') %}
                             {% set email_view_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email') %}
                             {% set preview_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='preview') %}
+                            {% set back_to_form_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='form') %}
                             <div class="flex justify-end gap-3 mt-4">
+                                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
                                 {% if edit_mode %}
                                     {{ button(_("Cancel"), variant="secondary", href=email_view_url) }}
                                     {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
@@ -540,10 +543,13 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {% endif %}
                     </section>
 
-                    {# Bottom CTA — Publish is the primary happy-path action in TEST. Once PUBLISHED the badge on
-                       step 1 conveys the state; CLOSED is terminal (no Reopen in the UI). #}
-                    {% if registration_status == "TEST" and registration_page %}
-                        <div class="flex justify-end gap-3 mt-4">
+                    {# Bottom CTAs — Back on the left is always available; Publish is the primary happy-path
+                       action in TEST. Once PUBLISHED the badge above the stepper conveys the state;
+                       CLOSED is terminal (no Reopen in the UI). #}
+                    {% set back_to_email_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email') %}
+                    <div class="flex justify-end gap-3 mt-4">
+                        <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_email_url) }}</span>
+                        {% if registration_status == "TEST" and registration_page %}
                             <form method="post"
                                   action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
                                   x-data
@@ -552,8 +558,8 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 <input type="hidden" name="action" value="publish" />
                                 {{ button(_("Publish"), type="submit", variant="primary") }}
                             </form>
-                        </div>
-                    {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
             {% endif %}
         {% endif %}
