@@ -86,15 +86,13 @@ class TestEditModeRendersExpectedHtml:
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         assert "readonly" in _extract_textarea(body)
-        assert f"/backoffice/assembly/{assembly_id}/registration?edit=1" in body
+        # Edit link points at the section-scoped edit URL
+        assert f"/backoffice/assembly/{assembly_id}/registration?section=form&amp;edit=1" in body
+        # Next → CTA advances to the auto-reply email step
+        assert f"/backoffice/assembly/{assembly_id}/registration?section=email" in body
         assert "Cancel</a>" not in body
-        assert 'id="status-control-toggle"' in body
-        toggle_attrs = body.split('id="status-control-toggle"', 1)[1].split(">", 1)[0]
-        assert "disabled" not in toggle_attrs
 
-    def test_test_status_edit_mode_unlocks_textarea_and_disables_dropdown(
-        self, logged_in_admin, fake_store, assembly_id
-    ):
+    def test_test_status_edit_mode_shows_save_and_next_buttons(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
@@ -104,9 +102,8 @@ class TestEditModeRendersExpectedHtml:
         assert "readonly" not in _extract_textarea(body)
         assert "Cancel</a>" in body
         assert "Save</button>" in body
-        assert 'id="status-control-toggle"' in body
-        toggle_attrs = body.split('id="status-control-toggle"', 1)[1].split(">", 1)[0]
-        assert "disabled" in toggle_attrs
+        assert "Save and next →</button>" in body
+        # Cancel returns to read-only on the form step
         cancel_block = body.split("Cancel</a>", 1)[0]
         anchor = cancel_block.rsplit("<a", 1)[1]
         assert f"/backoffice/assembly/{assembly_id}/registration" in anchor

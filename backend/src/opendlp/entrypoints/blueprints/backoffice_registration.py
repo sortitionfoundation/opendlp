@@ -231,19 +231,32 @@ def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uu
     return _("Registration form saved")
 
 
+_SAVE_ACTIONS = frozenset({"save", "save_and_next"})
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/save", methods=["POST"])
 @login_required
 def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Save and publish registration form HTML content."""
+    """Save the registration HTML and/or trigger a lifecycle transition.
+
+    Actions:
+      - save            → update HTML; land back in read-only on the form step.
+      - save_and_next   → update HTML; advance to the auto-reply email step.
+      - publish         → transition TEST → PUBLISHED. No HTML update.
+      - unpublish / close / reopen — deprecated lifecycle transitions kept for
+                          backwards compatibility with older POSTs; the UI no
+                          longer offers them.
+    """
     action = request.form.get("action", "save")
-    # If the user was editing (action="save") and the request fails, keep them in
-    # edit mode so they can fix and retry. Status transitions only fire from
-    # read-only mode (the dropdown is disabled while editing), so they land back
-    # in read-only on error.
-    view_kwargs: dict[str, Any] = {"assembly_id": assembly_id}
-    if action == "save":
-        view_kwargs["edit"] = "1"
-    error_redirect_url = url_for("backoffice_registration.view_assembly_registration", **view_kwargs)
+    # On failure of a save action, land back in edit mode of the form step so the
+    # user can fix and retry. Non-save actions (publish/etc) come from the read-only
+    # preview step, so failure just lands them back on the preview step.
+    error_kwargs: dict[str, Any] = {"assembly_id": assembly_id, "section": "form"}
+    if action in _SAVE_ACTIONS:
+        error_kwargs["edit"] = "1"
+    elif action == "publish":
+        error_kwargs["section"] = "preview"
+    error_redirect_url = url_for("backoffice_registration.view_assembly_registration", **error_kwargs)
     try:
         # Verify user has permission to access this assembly (side effect: raises if unauthorized)
         get_assembly_nav_context(
@@ -253,17 +266,22 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "",
         )
 
-        html_content = request.form.get("html_content", "")
-
-        # Update HTML content (will raise RegistrationPageNotFoundError if page doesn't exist)
-        uow = bootstrap.get_flask_uow()
-        update_registration_page_html(uow, current_user.id, assembly_id, html_content)
+        # Only save-family actions carry HTML content. Publish/close/etc post from
+        # buttons that don't render the editor, so guard against blanking the HTML.
+        if "html_content" in request.form:
+            uow = bootstrap.get_flask_uow()
+            update_registration_page_html(uow, current_user.id, assembly_id, request.form["html_content"])
 
         flash_message = _handle_registration_action(action, current_user.id, assembly_id)
         flash(flash_message, "success")
-        # Success drops ?edit=1 — the user lands back in read-only.
+        # save_and_next advances to the email step; everything else lands back on the form step.
+        next_section = "email" if action == "save_and_next" else "form"
         return redirect_preserving_scroll(
-            url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id)
+            url_for(
+                "backoffice_registration.view_assembly_registration",
+                assembly_id=assembly_id,
+                section=next_section,
+            )
         )
     except RegistrationPageNotReady as e:
         # Show specific validation errors for publishing
@@ -397,7 +415,9 @@ def _handle_email_action_disable(assembly_id: uuid.UUID) -> str:
     return _email_section_url(assembly_id)
 
 
-def _handle_email_action_save(assembly_id: uuid.UUID, current_template_id: uuid.UUID | None) -> str:
+def _handle_email_action_save(
+    assembly_id: uuid.UUID, current_template_id: uuid.UUID | None, *, advance: bool = False
+) -> str:
     if current_template_id is None:
         flash(_("There is no auto-reply email to save yet — set one up first."), "warning")
         return _email_section_url(assembly_id)
@@ -412,6 +432,12 @@ def _handle_email_action_save(assembly_id: uuid.UUID, current_template_id: uuid.
         body_html=request.form.get("template_body_html", ""),
     )
     flash(_("Auto-reply email saved."), "success")
+    if advance:
+        return url_for(
+            "backoffice_registration.view_assembly_registration",
+            assembly_id=assembly_id,
+            section="preview",
+        )
     return _email_section_url(assembly_id)
 
 
@@ -438,7 +464,7 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID) -> str:
         return _handle_email_action_enable(assembly_id, posted_id or current_template_id)
     if action == "disable":
         return _handle_email_action_disable(assembly_id)
-    return _handle_email_action_save(assembly_id, posted_id or current_template_id)
+    return _handle_email_action_save(assembly_id, posted_id or current_template_id, advance=(action == "save_and_next"))
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/email/save", methods=["POST"])
