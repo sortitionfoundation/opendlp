@@ -1,6 +1,6 @@
 {#
 ABOUTME: Split button component - primary action + dropdown menu of related actions
-ABOUTME: Visually joined buttons sharing the same variant; CSP-safe Alpine.js for the menu
+ABOUTME: Composes .btn / .btn--{variant} / .btn--joined-* atoms; menu uses .menu / .menu-item
 #}
 
 {% macro split_button(primary_text="", items=None, variant="primary", primary_type="submit", primary_attrs="", id="", aria_label_menu="") %}
@@ -13,16 +13,16 @@ ABOUTME: Visually joined buttons sharing the same variant; CSP-safe Alpine.js fo
     Args:
         primary_text: Label for the primary (left) button.
         items: List of dicts describing menu items. Each item:
-            { "text": str, "attrs": str (optional, raw HTML attrs e.g. 'name="action" value="unpublish"'), "type": str (optional, default "submit") }
-        variant: Style variant for both halves: "primary" | "secondary" | "danger" (default: "primary").
+            { "text": str, "attrs": str (optional, raw HTML attrs), "type": str (optional, default "submit") }
+        variant: "primary" | "secondary" | "danger" (default: "primary").
         primary_type: type attribute for the primary <button> (default: "submit").
-        primary_attrs: Extra HTML attributes on the primary button (e.g. 'name="action" value="close"').
+        primary_attrs: Extra HTML attributes on the primary button.
         id: Optional id prefix used for the toggle and menu (defaults to a stable string).
         aria_label_menu: aria-label for the chevron toggle (default: "More actions").
 
     Accessibility:
-        - The chevron toggle uses aria-haspopup="menu" and aria-expanded bound to open state.
-        - The dropdown uses role="menu" with role="menuitem" entries.
+        - Chevron toggle uses aria-haspopup="menu" and aria-expanded bound to open state.
+        - Dropdown uses role="menu" with role="menuitem" entries.
         - Keyboard: Escape closes the menu, click outside closes it.
 
     Usage:
@@ -40,65 +40,25 @@ ABOUTME: Visually joined buttons sharing the same variant; CSP-safe Alpine.js fo
     {% set menu_id = prefix ~ "-menu" %}
     {% set toggle_id = prefix ~ "-toggle" %}
 
-    {# Variant styling - identical to the standard button macro so the halves look native #}
-    {% if variant == "secondary" %}
-        {% set var_bg = "var(--color-button-secondary-bg)" %}
-        {% set var_fg = "var(--color-button-secondary-text)" %}
-        {% set var_border = "var(--color-button-secondary-border)" %}
-        {% set hover_class = "btn-secondary-hover" %}
-    {% elif variant == "danger" %}
-        {% set var_bg = "var(--color-button-danger-bg)" %}
-        {% set var_fg = "var(--color-button-danger-text)" %}
-        {% set var_border = "transparent" %}
-        {% set hover_class = "btn-danger-hover" %}
-    {% else %}
-        {% set var_bg = "var(--color-button-primary-bg)" %}
-        {% set var_fg = "var(--color-button-primary-text)" %}
-        {% set var_border = "transparent" %}
-        {% set hover_class = "btn-primary-hover" %}
-    {% endif %}
-
-    {% set base_styles %}
-        font-family: var(--font-button);
-        font-weight: 700;
-        font-size: 14px;
-        line-height: 16px;
-        letter-spacing: 0.4px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        transition: background-color 150ms ease, border-color 150ms ease;
-        text-decoration: none;
-        box-sizing: border-box;
-        background-color: {{ var_bg }};
-        color: {{ var_fg }};
-        border: 1px solid {{ var_border }};
-    {% endset %}
+    {# Map deprecated "outline" alias to secondary #}
+    {% set _variant = "secondary" if variant == "outline" else variant %}
 
     <div class="relative inline-flex" x-data="{ open: false }" @keydown.escape.window="open = false">
         {# Primary (left) button #}
-        <button
-            type="{{ primary_type }}"
-            {% if primary_attrs %}{{ primary_attrs | safe }}{% endif %}
-            style="{{ base_styles }} padding: 12px 16px; border-top-left-radius: 4px; border-bottom-left-radius: 4px; border-top-right-radius: 0; border-bottom-right-radius: 0;"
-            class="{{ hover_class }} btn-focus"
-        >{{ primary_text }}</button>
+        <button type="{{ primary_type }}"
+                class="btn btn--{{ _variant }} btn--joined-left"
+                {% if primary_attrs %}{{ primary_attrs | safe }}{% endif %}>{{ primary_text }}</button>
 
         {# Chevron toggle (right) #}
-        <button
-            type="button"
-            id="{{ toggle_id }}"
-            @click="open = !open"
-            @click.outside="open = false"
-            aria-haspopup="menu"
-            x-bind:aria-expanded="open ? 'true' : 'false'"
-            aria-controls="{{ menu_id }}"
-            aria-label="{{ aria_label_menu if aria_label_menu else _('More actions') }}"
-            style="{{ base_styles }} padding: 12px 8px; border-top-left-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-left: 1px solid rgba(0,0,0,0.15);"
-            class="{{ hover_class }} btn-focus"
-        >
+        <button type="button"
+                id="{{ toggle_id }}"
+                class="btn btn--{{ _variant }} btn--joined-right"
+                @click="open = !open"
+                @click.outside="open = false"
+                aria-haspopup="menu"
+                x-bind:aria-expanded="open ? 'true' : 'false'"
+                aria-controls="{{ menu_id }}"
+                aria-label="{{ aria_label_menu if aria_label_menu else _('More actions') }}">
             <span class="btn-icon" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 12 15 18 9"/>
@@ -106,29 +66,19 @@ ABOUTME: Visually joined buttons sharing the same variant; CSP-safe Alpine.js fo
             </span>
         </button>
 
-        {# Dropdown menu #}
-        <div
-            x-show="open"
-            x-cloak
-            id="{{ menu_id }}"
-            role="menu"
-            aria-labelledby="{{ toggle_id }}"
-            class="absolute z-30 mt-1 rounded-lg shadow-lg overflow-hidden"
-            style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers); top: 100%; right: 0; min-width: 100%;"
-        >
+        {# Dropdown menu — anchored to the right edge of the split button #}
+        <div x-show="open"
+             x-cloak
+             id="{{ menu_id }}"
+             role="menu"
+             aria-labelledby="{{ toggle_id }}"
+             class="menu menu--right">
             {% for item in items %}
-                <button
-                    type="{{ item.type if item.type else 'submit' }}"
-                    role="menuitem"
-                    {% if item.attrs %}{{ item.attrs | safe }}{% endif %}
-                    @click="open = false"
-                    @mouseenter="$el.style.backgroundColor='var(--color-subtle-background-panels)'"
-                    @mouseleave="$el.style.backgroundColor='transparent'"
-                    @focus="$el.style.backgroundColor='var(--color-subtle-background-panels)'"
-                    @blur="$el.style.backgroundColor='transparent'"
-                    class="w-full text-left px-4 py-3 text-body-md transition-colors btn-focus"
-                    style="background-color: transparent; color: var(--color-body-text); border: none; cursor: pointer; white-space: nowrap;"
-                >{{ item.text }}</button>
+                <button type="{{ item.type if item.type else 'submit' }}"
+                        role="menuitem"
+                        class="menu-item"
+                        @click="open = false"
+                        {% if item.attrs %}{{ item.attrs | safe }}{% endif %}>{{ item.text }}</button>
             {% endfor %}
         </div>
     </div>

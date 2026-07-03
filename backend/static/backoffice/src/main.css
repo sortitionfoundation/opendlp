@@ -310,6 +310,70 @@
         to { transform: rotate(360deg); }
     }
 
+    /* Joined variants — used by split_button to fuse two adjacent .btn instances.
+       Left half flattens its right corners; right half flattens its left corners
+       and tightens horizontal padding to hug the chevron. Filled variants
+       (primary/danger) draw a subtle hairline divider on the right half so the
+       fused pair still reads as two distinct hit targets. */
+    .btn--joined-left {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .btn--joined-right {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .btn--primary.btn--joined-right,
+    .btn--danger.btn--joined-right {
+        border-left: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    /* Menu / menu-item — dropdown surface used by split_button and dropdown_button.
+       .menu positions and paints the surface; .menu--left / .menu--right anchor
+       the horizontal edge. Menu items handle hover/focus via CSS so we drop
+       the mouseenter/leave/focus/blur DOM-mutating Alpine handlers. */
+    .menu {
+        position: absolute;
+        z-index: 30;
+        top: 100%;
+        margin-top: 0.25rem;
+        background-color: var(--color-tables-cards);
+        border: 1px solid var(--color-borders-dividers);
+        border-radius: 0.5rem;
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+    }
+
+    .menu--left {
+        left: 0;
+    }
+
+    .menu--right {
+        right: 0;
+    }
+
+    .menu-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        background-color: transparent;
+        color: var(--color-body-text);
+        border: none;
+        cursor: pointer;
+        font: 400 0.875rem/1.25rem var(--font-body);
+        transition: background-color 0.15s ease;
+    }
+
+    .menu-item:hover:not(:disabled),
+    .menu-item:focus-visible {
+        background-color: var(--color-button-tertiary-bg-hover);
+    }
+
     /* Icon wrapper inside buttons — used by leading_icon/trailing_icon/icon
        slots on the button macro. Not to be confused with .btn--icon (variant). */
     .btn-icon {
