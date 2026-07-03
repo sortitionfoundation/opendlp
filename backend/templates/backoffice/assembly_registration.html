@@ -6,7 +6,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 {% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/dropdown_button.html" import dropdown_button %}
-{% from "backoffice/components/input.html" import input, switch, textarea %}
+{% from "backoffice/components/input.html" import checkbox, input, switch, textarea %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/modal.html" import modal %}
 {% from "backoffice/components/url_display.html" import readonly_url_display %}
@@ -371,14 +371,167 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                      role="tabpanel"
                      aria-labelledby="reg-steps-tab-email"
                      tabindex="0"
-                     class="rounded-lg p-6"
-                     style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                    <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">
-                        {{ _("Auto-reply email") }}
-                    </h2>
-                    <p class="text-body-md" style="color: var(--color-secondary-text);">
-                        {{ _("Coming soon — you will be able to edit the email respondents receive after registering.") }}
-                    </p>
+                     class="space-y-4">
+                    {% set email_save_url = url_for('backoffice_registration.save_assembly_registration_email', assembly_id=assembly.id) %}
+
+                    {# Readiness banner — surfaces problems that would stop the auto-reply from actually being delivered #}
+                    {% for problem in email_readiness_problems %}
+                        {% set is_error = problem.severity == "error" %}
+                        <div class="rounded-lg p-4"
+                             role="alert"
+                             style="background-color: var({{ '--color-error-100' if is_error else '--color-warning-100' }}); border: 1px solid var({{ '--color-error-400' if is_error else '--color-warning-400' }}); color: var({{ '--color-error-600' if is_error else '--color-warning-600' }});">
+                            <p class="text-body-md">
+                                <span class="font-semibold">{% if is_error %}⛔ {{ _("Auto-reply cannot be sent") }}:{% else %}⚠️ {{ _("Heads up") }}:{% endif %}</span>
+                                {{ problem.message }}
+                            </p>
+                        </div>
+                    {% endfor %}
+
+                    {% if not email_template %}
+                        {# Empty state — no template exists yet. One button to create + assign + enter edit mode. #}
+                        <section class="rounded-lg p-6"
+                                 style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                            <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">
+                                {{ _("Auto-reply email") }}
+                            </h2>
+                            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                                {{ _("Automatically send a confirmation email to people after they register. Templates support variables like the respondent's first name and the assembly title.") }}
+                            </p>
+                            <form method="post" action="{{ email_save_url }}" x-data x-preserve-scroll-on-submit>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="action" value="create" />
+                                {{ button(_("Set up auto-reply email"), type="submit", variant="primary") }}
+                            </form>
+                        </section>
+                    {% else %}
+                        {# Send-auto-reply toggle: outside both boxes, top-right, auto-submits on change so it feels
+                           like a proper toggle. The `action` field flips based on the current state, so the checkbox
+                           value doesn't need to be read; toggling always inverts the state. #}
+                        <div class="flex justify-end mb-4">
+                            <form method="post"
+                                  action="{{ email_save_url }}"
+                                  x-data
+                                  x-preserve-scroll-on-submit
+                                  class="px-2 py-1">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="action" value="{{ 'disable' if auto_reply_enabled else 'enable' }}" />
+                                {# Tell the backend which template to enable — the currently-displayed one. #}
+                                <input type="hidden" name="template_id" value="{{ email_template.id }}" />
+                                {{ checkbox(
+                                name="auto_reply_enabled",
+                                label=_("Send auto-reply email"),
+                                checked=auto_reply_enabled,
+                                attrs='@change="$el.form.submit()"'
+                                ) }}
+                            </form>
+                        </div>
+
+                        {# Two-box layout mirroring the form section: editor on the left (2/3), variables reference
+                           on the right (1/3, sticky). The two panels start at the same vertical offset, which is
+                           pushed down together by the send toggle above. #}
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <div class="flex-1 min-w-0">
+                                <form method="post"
+                                      action="{{ email_save_url }}"
+                                      x-data
+                                      x-preserve-scroll-on-submit>
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <input type="hidden" name="action" value="save" />
+
+                                    <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                                        <div class="flex items-center justify-between mb-4 gap-4">
+                                            <h2 class="text-heading-lg" style="color: var(--color-headings);">
+                                                {{ _("Auto-reply email template") }}
+                                            </h2>
+                                        </div>
+
+                                        <div class="space-y-4">
+                                            {% set common_input_attrs %}{% if not edit_mode %}readonly aria-readonly="true" style="background-color: var(--color-subtle-background-panels); cursor: default;"{% endif %}{% endset %}
+
+                                            {# Template name is not exposed yet — one template per page, always called "Registration
+                                               auto-reply". When multi-template support ships this becomes a visible input. #}
+
+                                            {{ input(
+                                            name="template_subject",
+                                            label=_("Email subject"),
+                                            value=email_template.subject,
+                                            hint=_("Jinja variables allowed, e.g. {{ assembly.title }}."),
+                                            required=true,
+                                            attrs=common_input_attrs|trim
+                                            ) }}
+
+                                            {% set body_attrs %}
+                                                {% if not edit_mode %}readonly aria-readonly="true" {% endif %}style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                                            {% endset %}
+                                            {{ textarea(
+                                            name="template_body_html",
+                                            label=_("HTML body"),
+                                            value=email_template.body_html,
+                                            hint=_("Jinja + HTML. A plain-text version is generated automatically for email clients that need it."),
+                                            required=true,
+                                            rows=18,
+                                            attrs=body_attrs|trim
+                                            ) }}
+
+                                            <div class="flex justify-end gap-3">
+                                                {% set email_edit_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email', edit='1') %}
+                                                {% set email_view_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email') %}
+                                                {% if edit_mode %}
+                                                    {{ button(_("Cancel"), variant="secondary", href=email_view_url) }}
+                                                    {{ button(_("Save"), type="submit", variant="primary") }}
+                                                {% else %}
+                                                    {{ button(_("Edit"), variant="primary", href=email_edit_url) }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </section>
+                                </form>
+                            </div>
+
+                            {# Variables reference sidebar — styled like the Assets panel from the form section. #}
+                            <aside class="lg:flex-shrink-0 w-full lg:w-[400px]">
+                                <section class="rounded-lg p-6 sticky top-4 w-full"
+                                         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                                    <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">
+                                        {{ _("Available variables") }}
+                                    </h2>
+                                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                        {{ _("Paste any of these into the subject or body. Missing values render as an empty string.") }}
+                                    </p>
+                                    <dl class="text-body-sm space-y-3" style="color: var(--color-body-text);">
+                                        <div>
+                                            <dt class="font-mono">{{ '{{ assembly.title }}' }}</dt>
+                                            <dd style="color: var(--color-secondary-text);">{{ _("Assembly title") }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="font-mono">{{ '{{ assembly.question }}' }}</dt>
+                                            <dd style="color: var(--color-secondary-text);">{{ _("Assembly question") }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="font-mono">{{ '{{ assembly.first_assembly_date }}' }}</dt>
+                                            <dd style="color: var(--color-secondary-text);">{{ _("First assembly date (ISO)") }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="font-mono">{{ '{{ respondent.first_name }}' }}</dt>
+                                            <dd style="color: var(--color-secondary-text);">{{ _("Respondent first name") }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="font-mono">{{ '{{ respondent.first_name_or_friend }}' }}</dt>
+                                            <dd style="color: var(--color-secondary-text);">{{ _("First name, or 'Friend' as a fallback") }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="font-mono">{{ '{{ respondent.full_name }}' }}</dt>
+                                            <dd style="color: var(--color-secondary-text);">{{ _("Respondent full name") }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="font-mono">{{ '{{ respondent.email }}' }}</dt>
+                                            <dd style="color: var(--color-secondary-text);">{{ _("Respondent email address") }}</dd>
+                                        </div>
+                                    </dl>
+                                </section>
+                            </aside>
+                        </div>
+                    {% endif %}
                 </div>
             {% endif %}
 
