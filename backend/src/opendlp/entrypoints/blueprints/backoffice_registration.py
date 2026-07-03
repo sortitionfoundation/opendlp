@@ -27,7 +27,17 @@ from opendlp.domain.registration_page import (
 from opendlp.entrypoints.blueprints.registration import registration_url, short_url
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
+from opendlp.service_layer.email_template_service import (
+    assign_auto_reply_template,
+    auto_reply_readiness_problems,
+    create_email_template,
+    get_email_template,
+    list_email_templates,
+    update_email_template,
+)
 from opendlp.service_layer.exceptions import (
+    EmailTemplateInvalid,
+    EmailTemplateNotFoundError,
     ImageQuotaExceeded,
     InsufficientPermissions,
     NotFoundError,
@@ -144,6 +154,11 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if active_section not in ("form", "email", "preview"):
             active_section = "form"
 
+        # Auto-reply email data — the template (if assigned) plus readiness problems.
+        email_template, auto_reply_enabled, email_readiness_problems = _load_auto_reply_context(
+            registration_page, assembly_id
+        )
+
         return render_template(
             "backoffice/assembly_registration.html",
             assembly=nav.assembly,
@@ -165,6 +180,9 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
             edit_mode=edit_mode,
             active_section=active_section,
+            email_template=email_template,
+            auto_reply_enabled=auto_reply_enabled,
+            email_readiness_problems=email_readiness_problems,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(
@@ -286,6 +304,213 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect_preserving_scroll(error_redirect_url)
 
 
+def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> tuple[Any, bool, list[dict[str, str]]]:
+    """Load the auto-reply template and readiness problems for the view route.
+
+    Prefers the template currently assigned to the page. When nothing is assigned
+    (either because the switch is off, or the template was auto-created and not
+    yet turned on) falls back to the first template stored for the assembly, so
+    the editor still shows the pre-created copy for the manager to work on.
+    """
+    email_template = None
+    auto_reply_enabled = False
+    email_readiness_problems: list[dict[str, str]] = []
+    if registration_page is None:
+        return email_template, auto_reply_enabled, email_readiness_problems
+
+    template_id = registration_page.auto_reply_email_template_id
+    if template_id is not None:
+        try:
+            email_template = get_email_template(bootstrap.get_flask_uow(), current_user.id, template_id)
+            auto_reply_enabled = True
+        except (EmailTemplateNotFoundError, InsufficientPermissions):
+            email_template = None
+
+    if email_template is None:
+        try:
+            templates = list_email_templates(bootstrap.get_flask_uow(), current_user.id, assembly_id)
+            if templates:
+                email_template = templates[0]
+        except InsufficientPermissions:
+            email_template = None
+
+    problems = auto_reply_readiness_problems(bootstrap.get_flask_uow(), assembly_id)
+    email_readiness_problems = [{"severity": p.severity.value, "message": p.message} for p in problems]
+    return email_template, auto_reply_enabled, email_readiness_problems
+
+
+def _default_email_template_content() -> dict[str, str]:
+    """Sensible starter values for a freshly-created auto-reply template.
+
+    The name is not shown to respondents; it's a manager-facing label. When we
+    later support multiple templates per assembly we'll expose it in the UI —
+    for now it's a stable default so the domain-level requirement is satisfied
+    without any manager input.
+    """
+    return {
+        "name": _("Registration auto-reply"),
+        "subject": _("Thanks for registering for {{ assembly.title }}"),
+        "body_html": _(
+            "<p>Hi {{ respondent.first_name_or_friend }},</p>\n"
+            "<p>Thanks for registering for <strong>{{ assembly.title }}</strong>.</p>\n"
+            "<p>We'll be in touch about the assembly on {{ assembly.first_assembly_date }}.</p>\n"
+            "<p>Best wishes,<br>The team</p>"
+        ),
+    }
+
+
+def _email_section_url(assembly_id: uuid.UUID, edit: bool = False) -> str:
+    kwargs: dict[str, Any] = {"assembly_id": assembly_id, "section": "email"}
+    if edit:
+        kwargs["edit"] = "1"
+    return url_for("backoffice_registration.view_assembly_registration", **kwargs)
+
+
+def _handle_email_action_create(assembly_id: uuid.UUID) -> str:
+    """Create a stub auto-reply template, assign it, and return the redirect URL (edit mode)."""
+    defaults = _default_email_template_content()
+    template = create_email_template(
+        bootstrap.get_flask_uow(),
+        current_user.id,
+        assembly_id,
+        name=defaults["name"],
+        subject=defaults["subject"],
+        body_html=defaults["body_html"],
+    )
+    assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, template.id)
+    flash(_("Auto-reply email created. Edit it below and click Save."), "success")
+    return _email_section_url(assembly_id, edit=True)
+
+
+def _handle_email_action_enable(assembly_id: uuid.UUID, current_template_id: uuid.UUID | None) -> str:
+    if current_template_id is None:
+        flash(_("Please set up the auto-reply email first."), "warning")
+        return _email_section_url(assembly_id)
+    assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, current_template_id)
+    flash(_("Auto-reply enabled. Respondents will now receive this email after registering."), "success")
+    return _email_section_url(assembly_id)
+
+
+def _handle_email_action_disable(assembly_id: uuid.UUID) -> str:
+    assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, None)
+    flash(_("Auto-reply disabled. Respondents will no longer receive this email."), "success")
+    return _email_section_url(assembly_id)
+
+
+def _handle_email_action_save(assembly_id: uuid.UUID, current_template_id: uuid.UUID | None) -> str:
+    if current_template_id is None:
+        flash(_("There is no auto-reply email to save yet — set one up first."), "warning")
+        return _email_section_url(assembly_id)
+    # Name is intentionally not overwritten here — the UI doesn't expose it yet,
+    # so we keep the value that was set at auto-creation time. Once multi-template
+    # support ships we'll add name to the form and pass it here.
+    update_email_template(
+        bootstrap.get_flask_uow(),
+        current_user.id,
+        current_template_id,
+        subject=request.form.get("template_subject", "").strip(),
+        body_html=request.form.get("template_body_html", ""),
+    )
+    flash(_("Auto-reply email saved."), "success")
+    return _email_section_url(assembly_id)
+
+
+def _dispatch_email_action(action: str, assembly_id: uuid.UUID) -> str:
+    """Run the requested action and return the URL to redirect to.
+
+    Raises the service-layer exceptions the caller handles centrally.
+    """
+    get_assembly_nav_context(bootstrap.get_flask_uow, current_user.id, assembly_id, "")
+    result = get_registration_page_with_source(bootstrap.get_flask_uow(), current_user.id, assembly_id)
+    if result is None:
+        raise RegistrationPageNotFoundError(f"No registration page for assembly {assembly_id}")
+
+    # For enable/save we prefer the id that came in the form (from the switch or editor form) —
+    # this lets the switch turn on a template that isn't yet assigned. Fall back to what's
+    # currently assigned on the page for enable, and require it for save.
+    posted_template_id = request.form.get("template_id", "").strip()
+    posted_id = uuid.UUID(posted_template_id) if posted_template_id else None
+    current_template_id = result[0].auto_reply_email_template_id
+
+    if action == "create":
+        return _handle_email_action_create(assembly_id)
+    if action == "enable":
+        return _handle_email_action_enable(assembly_id, posted_id or current_template_id)
+    if action == "disable":
+        return _handle_email_action_disable(assembly_id)
+    return _handle_email_action_save(assembly_id, posted_id or current_template_id)
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/email/save", methods=["POST"])
+@login_required
+def save_assembly_registration_email(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Create, update, enable or disable the auto-reply email template.
+
+    Action-based POST endpoint:
+
+    - create   → create a template with default copy and assign it as the auto-reply.
+                 Lands the user in edit mode so they can immediately customise it.
+    - save     → update name / subject / body_html on the existing template.
+    - enable   → assign the template as the page's auto-reply (switch on).
+    - disable  → unassign the template (switch off). The template row is kept
+                 so re-enabling later is one click.
+    """
+    action = request.form.get("action", "save")
+    try:
+        return redirect_preserving_scroll(_dispatch_email_action(action, assembly_id))
+    except EmailTemplateInvalid as e:
+        for problem in e.problems:
+            flash(problem, "error")
+        return redirect_preserving_scroll(_email_section_url(assembly_id, edit=True))
+    except EmailTemplateNotFoundError:
+        flash(_("The auto-reply email could not be found."), "error")
+        return redirect_preserving_scroll(_email_section_url(assembly_id))
+    except RegistrationPageNotFoundError:
+        flash(_("Please create a registration page first from the Details tab."), "warning")
+        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to modify this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        logger.exception(
+            "Save assembly registration email error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("An error occurred while saving the auto-reply email"), "error")
+        return redirect_preserving_scroll(_email_section_url(assembly_id))
+
+
+def _create_default_auto_reply_template(assembly_id: uuid.UUID) -> None:
+    """Best-effort: seed a default auto-reply email template for a new page.
+
+    Not fatal — if this fails (validation, race, etc.) we log and let the manager
+    hit the "Set up auto-reply" fallback in the UI. Deliberately leaves the
+    template unassigned so the auto-reply switch defaults to OFF.
+    """
+    try:
+        defaults = _default_email_template_content()
+        create_email_template(
+            bootstrap.get_flask_uow(),
+            current_user.id,
+            assembly_id,
+            name=defaults["name"],
+            subject=defaults["subject"],
+            body_html=defaults["body_html"],
+        )
+    except Exception as e:
+        logger.warning(
+            "Failed to seed default auto-reply email template",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/create", methods=["POST"])
 @login_required
 def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -293,6 +518,7 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
     try:
         uow = bootstrap.get_flask_uow()
         create_registration_page_with_slugs(uow, current_user.id, assembly_id)
+        _create_default_auto_reply_template(assembly_id)
         flash(
             _("Registration page created. URLs have been generated automatically and can be edited below."),
             "success",
