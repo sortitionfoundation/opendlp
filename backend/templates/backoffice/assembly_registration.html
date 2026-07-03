@@ -85,18 +85,18 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                      role="tabpanel"
                      aria-labelledby="reg-steps-tab-form"
                      tabindex="0">
-        {# Editor (form) takes the remaining width on the left, Assets panel is a
-           fixed-width column on the right. The panel sits OUTSIDE the form so
-           uploading or deleting an image never submits the HTML editor — unsaved
-           edits in the textarea are preserved. #}
-                    <div class="flex flex-col lg:flex-row gap-6">
-                        <div class="flex-1 min-w-0">
-                            <form method="post"
-                                  action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
-                                  x-data
-                                  x-preserve-scroll-on-submit>
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
+        {# Editor takes the remaining width on the left, Assets panel is a fixed-width column on the right.
+           The whole two-column layout + CTA row sit inside a single form so the CTAs align to the far
+           right edge of the whole layout (not just the left column's edge) and the sticky assets panel
+           unsticks at the flex-row's bottom rather than trailing past the CTAs. The assets buttons all
+           use type="button" so they never accidentally submit the editor form. #}
+                    <form method="post"
+                          action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
+                          x-data
+                          x-preserve-scroll-on-submit>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <div class="flex-1 min-w-0">
             {# Registration Form HTML Section #}
                                 <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
                                     <div class="flex items-center justify-between mb-4">
@@ -167,120 +167,120 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
                                     </div>
                                 </section>
+                            </div>
 
-                    {# Bottom CTAs — outside the editor box, right-aligned. Same shape across all three steps:
-                       Read = Edit + Next, Edit = Cancel + Save + Save and next. Primary is the forward action. #}
-                                {% set edit_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id, section="form", edit="1") %}
-                                {% set view_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id, section="form") %}
-                                {% set next_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id, section="email") %}
-                                {% set save_label = _("Save and Republish") if registration_status == "PUBLISHED" else _("Save") %}
-                                {% set save_next_label = _("Save and Republish and next →") if registration_status == "PUBLISHED" else _("Save and next →") %}
-                                <div class="flex justify-end gap-3 mt-4">
-                                    {% if edit_mode %}
-                                        {{ button(_("Cancel"), variant="secondary", href=view_url) }}
-                                        {{ button(save_label, type="submit", variant="secondary", attrs='name="action" value="save"') }}
-                                        {{ button(save_next_label, type="submit", variant="primary", attrs='name="action" value="save_and_next"') }}
-                                    {% else %}
-                                        {% if registration_status != "CLOSED" %}
-                                            {{ button(_("Edit"), variant="secondary", href=edit_url) }}
-                                        {% endif %}
-                                        {{ button(_("Next →"), variant="primary", href=next_url) }}
-                                    {% endif %}
-                                </div>
-                            </form>
-                        </div>
-
-            {# Assets panel (image library). Lives outside the editor form so its
-               buttons never submit the HTML editor. Initial list is rendered
-               server-side; uploads/deletes mutate the Alpine `images` array in
-               place, no page reload required. #}
-                        <aside class="lg:flex-shrink-0 w-full lg:w-[400px]">
-                            <section class="rounded-lg p-6 sticky top-4 w-full"
-                                     style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                                <div class="flex items-center justify-between mb-4">
-                                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
-                                    {% set upload_icon %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14" />
-                                        </svg>
-                                    {% endset %}
-                                    {{ button(
-                                    _("Upload"),
-                                    variant="tertiary",
-                                    leading_icon=upload_icon,
-                                    attrs='type="button" @click="openImageUploadModal()"'
-                                    ) }}
-                                </div>
+            {# Assets panel (image library). Buttons all use type="button" so they never
+               submit the parent editor form. Initial list is rendered server-side; uploads
+               and deletes mutate the Alpine `images` array in place, no page reload required. #}
+                            <aside class="lg:flex-shrink-0 w-full lg:w-[400px]">
+                                <section class="rounded-lg p-6 sticky top-4 w-full"
+                                         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Assets") }}</h2>
+                                        {% set upload_icon %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14" />
+                                            </svg>
+                                        {% endset %}
+                                        {{ button(
+                                        _("Upload"),
+                                        variant="tertiary",
+                                        leading_icon=upload_icon,
+                                        attrs='type="button" @click="openImageUploadModal()"'
+                                        ) }}
+                                    </div>
 
                     {# Format / size hint #}
-                                <div class="rounded-md p-3 mb-4 flex gap-2 items-start"
-                                     style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0" style="color: var(--color-info-600);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <p class="text-body-sm" style="color: var(--color-info-700);">
-                                        {{ _("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb) }}
-                                    </p>
-                                </div>
+                                    <div class="rounded-md p-3 mb-4 flex gap-2 items-start"
+                                         style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0" style="color: var(--color-info-600);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p class="text-body-sm" style="color: var(--color-info-700);">
+                                            {{ _("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb) }}
+                                        </p>
+                                    </div>
 
                     {# Empty state #}
-                                <template x-if="!images.length">
-                                    <p class="text-body-sm text-center py-4" style="color: var(--color-secondary-text);">
-                                        {{ _("No images uploaded yet.") }}
-                                    </p>
-                                </template>
+                                    <template x-if="!images.length">
+                                        <p class="text-body-sm text-center py-4" style="color: var(--color-secondary-text);">
+                                            {{ _("No images uploaded yet.") }}
+                                        </p>
+                                    </template>
 
                     {# Image list #}
-                                <ul class="space-y-2" x-show="images.length" x-cloak>
-                                    <template x-for="image in images" :key="image.id">
-                                        <li class="rounded-md px-3 py-2 flex items-center justify-between"
-                                            style="background-color: var(--color-subtle-background-panels);">
-                                            <a :href="image.public_url"
-                                               :title="image.alt || image.file_name"
-                                               target="_blank"
-                                               rel="noopener"
-                                               class="text-body-sm truncate flex-1 mr-2"
-                                               style="color: var(--color-body-text);"
-                                               x-text="image.display_name"></a>
-                                            <div class="flex items-center gap-1 flex-shrink-0">
+                                    <ul class="space-y-2" x-show="images.length" x-cloak>
+                                        <template x-for="image in images" :key="image.id">
+                                            <li class="rounded-md px-3 py-2 flex items-center justify-between"
+                                                style="background-color: var(--color-subtle-background-panels);">
+                                                <a :href="image.public_url"
+                                                   :title="image.alt || image.file_name"
+                                                   target="_blank"
+                                                   rel="noopener"
+                                                   class="text-body-sm truncate flex-1 mr-2"
+                                                   style="color: var(--color-body-text);"
+                                                   x-text="image.display_name"></a>
+                                                <div class="flex items-center gap-1 flex-shrink-0">
                                     {# Image details / edit alt text #}
-                                                <button type="button"
-                                                        @click="openImageDetailsModal(image)"
-                                                        class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
-                                                        style="color: var(--color-secondary-text);"
-                                                        :aria-label="'{{ _('Details for') }} ' + image.display_name">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </button>
+                                                    <button type="button"
+                                                            @click="openImageDetailsModal(image)"
+                                                            class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                                                            style="color: var(--color-secondary-text);"
+                                                            :aria-label="'{{ _('Details for') }} ' + image.display_name">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    </button>
                                     {# Copy <img> snippet to clipboard #}
-                                                <button type="button"
-                                                        @click="copyImageSnippet(image)"
-                                                        class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
-                                                        style="color: var(--color-secondary-text);"
-                                                        :aria-label="'{{ _('Copy <img> snippet for') }} ' + image.display_name">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                    </svg>
-                                                </button>
+                                                    <button type="button"
+                                                            @click="copyImageSnippet(image)"
+                                                            class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                                                            style="color: var(--color-secondary-text);"
+                                                            :aria-label="'{{ _('Copy <img> snippet for') }} ' + image.display_name">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                        </svg>
+                                                    </button>
                                     {# Delete #}
-                                                <button type="button"
-                                                        @click="deleteImage(image)"
-                                                        :disabled="imageBeingDeletedId === image.id"
-                                                        class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
-                                                        style="color: var(--color-secondary-text);"
-                                                        :aria-label="'{{ _('Delete') }} ' + image.display_name">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </li>
-                                    </template>
-                                </ul>
-                            </section>
-                        </aside>
-                    </div>
+                                                    <button type="button"
+                                                            @click="deleteImage(image)"
+                                                            :disabled="imageBeingDeletedId === image.id"
+                                                            class="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                                                            style="color: var(--color-secondary-text);"
+                                                            :aria-label="'{{ _('Delete') }} ' + image.display_name">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </section>
+                            </aside>
+                        </div>
+
+                        {# Bottom CTAs — sit below the whole two-column layout so they align to the far right
+                           of the page (past the sticky aside), not the left column's edge. Same shape across
+                           all three stepper steps. #}
+                        {% set edit_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id, section="form", edit="1") %}
+                        {% set view_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id, section="form") %}
+                        {% set next_url = url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly.id, section="email") %}
+                        {% set save_label = _("Save and Republish") if registration_status == "PUBLISHED" else _("Save") %}
+                        {% set save_next_label = _("Save and Republish and next →") if registration_status == "PUBLISHED" else _("Save and next →") %}
+                        <div class="flex justify-end gap-3 mt-4">
+                            {% if edit_mode %}
+                                {{ button(_("Cancel"), variant="secondary", href=view_url) }}
+                                {{ button(save_label, type="submit", variant="secondary", attrs='name="action" value="save"') }}
+                                {{ button(save_next_label, type="submit", variant="primary", attrs='name="action" value="save_and_next"') }}
+                            {% else %}
+                                {% if registration_status != "CLOSED" %}
+                                    {{ button(_("Edit"), variant="secondary", href=edit_url) }}
+                                {% endif %}
+                                {{ button(_("Next →"), variant="primary", href=next_url) }}
+                            {% endif %}
+                        </div>
+                    </form>
                 </div>
             {% endif %}
 
@@ -345,17 +345,17 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         </div>
 
                         {# Two-box layout mirroring the form section: editor on the left (2/3), variables reference
-                           on the right (1/3, sticky). The two panels start at the same vertical offset, which is
-                           pushed down together by the send toggle above. #}
-                        <div class="flex flex-col lg:flex-row gap-6">
-                            <div class="flex-1 min-w-0">
-                                <form method="post"
-                                      action="{{ email_save_url }}"
-                                      x-data
-                                      x-preserve-scroll-on-submit>
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <input type="hidden" name="action" value="save" />
-
+                           on the right (1/3, sticky). The form wraps both columns and the CTA row so the CTAs
+                           align to the far right of the whole layout and the sticky aside unsticks at the
+                           flex-row's bottom. #}
+                        <form method="post"
+                              action="{{ email_save_url }}"
+                              x-data
+                              x-preserve-scroll-on-submit>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <input type="hidden" name="action" value="save" />
+                            <div class="flex flex-col lg:flex-row gap-6">
+                                <div class="flex-1 min-w-0">
                                     <section class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
                                         <div class="flex items-center justify-between mb-4 gap-4">
                                             <h2 class="text-heading-lg" style="color: var(--color-headings);">
@@ -393,75 +393,76 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
                                         </div>
                                     </section>
+                                </div>
 
-                    {# Bottom CTAs — mirror the S1 pattern: outside the editor box, right-aligned. #}
-                                    {% set email_edit_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email', edit='1') %}
-                                    {% set email_view_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email') %}
-                                    {% set preview_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='preview') %}
-                                    <div class="flex justify-end gap-3 mt-4">
-                                        {% if edit_mode %}
-                                            {{ button(_("Cancel"), variant="secondary", href=email_view_url) }}
-                                            {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
-                                            {{ button(_("Save and next →"), type="submit", variant="primary", attrs='name="action" value="save_and_next"') }}
-                                        {% else %}
-                                            {{ button(_("Edit"), variant="secondary", href=email_edit_url) }}
-                                            {{ button(_("Next →"), variant="primary", href=preview_url) }}
-                                        {% endif %}
-                                    </div>
-                                </form>
+                                {# Variables reference sidebar — styled like the Assets panel from the form section. #}
+                                <aside class="lg:flex-shrink-0 w-full lg:w-[400px]">
+                                    <section class="rounded-lg p-6 sticky top-4 w-full"
+                                             style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+                                        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">
+                                            {{ _("Available variables") }}
+                                        </h2>
+                                        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                            {{ _("Click a variable to select it, then copy and paste into the subject or body. Missing values render as an empty string.") }}
+                                        </p>
+                                        {% set variables = [
+                                        {"expr": "{{ assembly.title }}", "label": _("Assembly title")},
+                                        {"expr": "{{ assembly.question }}", "label": _("Assembly question")},
+                                        {"expr": "{{ assembly.first_assembly_date }}", "label": _("First assembly date (ISO)")},
+                                        {"expr": "{{ respondent.first_name }}", "label": _("Respondent first name")},
+                                        {"expr": "{{ respondent.first_name_or_friend }}", "label": _("First name, or 'Friend' as a fallback")},
+                                        {"expr": "{{ respondent.full_name }}", "label": _("Respondent full name")},
+                                        {"expr": "{{ respondent.email }}", "label": _("Respondent email address")}
+                                        ] %}
+                                        <ul class="space-y-3">
+                                            {% for variable in variables %}
+                                                <li>
+                                                    <label for="variable-{{ loop.index0 }}"
+                                                           class="text-body-sm font-medium block mb-1"
+                                                           style="color: var(--color-headings);">
+                                                        {{ variable.label }}
+                                                    </label>
+                                                    <div class="flex gap-2">
+                                                        <input type="text"
+                                                               id="variable-{{ loop.index0 }}"
+                                                               readonly
+                                                               value="{{ variable.expr }}"
+                                                               @click="$event.target.select()"
+                                                               class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
+                                                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                                                        <button type="button"
+                                                                @click="copyToClipboard('{{ variable.expr }}', '{{ _('Variable copied to clipboard') }}')"
+                                                                class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
+                                                                style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text);"
+                                                                aria-label="{{ _('Copy %(label)s variable', label=variable.label) }}">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </section>
+                                </aside>
                             </div>
 
-                            {# Variables reference sidebar — styled like the Assets panel from the form section. #}
-                            <aside class="lg:flex-shrink-0 w-full lg:w-[400px]">
-                                <section class="rounded-lg p-6 sticky top-4 w-full"
-                                         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                                    <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">
-                                        {{ _("Available variables") }}
-                                    </h2>
-                                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                                        {{ _("Click a variable to select it, then copy and paste into the subject or body. Missing values render as an empty string.") }}
-                                    </p>
-                                    {% set variables = [
-                                    {"expr": "{{ assembly.title }}", "label": _("Assembly title")},
-                                    {"expr": "{{ assembly.question }}", "label": _("Assembly question")},
-                                    {"expr": "{{ assembly.first_assembly_date }}", "label": _("First assembly date (ISO)")},
-                                    {"expr": "{{ respondent.first_name }}", "label": _("Respondent first name")},
-                                    {"expr": "{{ respondent.first_name_or_friend }}", "label": _("First name, or 'Friend' as a fallback")},
-                                    {"expr": "{{ respondent.full_name }}", "label": _("Respondent full name")},
-                                    {"expr": "{{ respondent.email }}", "label": _("Respondent email address")}
-                                    ] %}
-                                    <ul class="space-y-3">
-                                        {% for variable in variables %}
-                                            <li>
-                                                <label for="variable-{{ loop.index0 }}"
-                                                       class="text-body-sm font-medium block mb-1"
-                                                       style="color: var(--color-headings);">
-                                                    {{ variable.label }}
-                                                </label>
-                                                <div class="flex gap-2">
-                                                    <input type="text"
-                                                           id="variable-{{ loop.index0 }}"
-                                                           readonly
-                                                           value="{{ variable.expr }}"
-                                                           @click="$event.target.select()"
-                                                           class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
-                                                           style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
-                                                    <button type="button"
-                                                            @click="copyToClipboard('{{ variable.expr }}', '{{ _('Variable copied to clipboard') }}')"
-                                                            class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
-                                                            style="border: 1px solid var(--color-borders-dividers); color: var(--color-secondary-text);"
-                                                            aria-label="{{ _('Copy %(label)s variable', label=variable.label) }}">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </section>
-                            </aside>
-                        </div>
+                            {# Bottom CTAs — sit below both columns and align to the far right of the layout,
+                               matching the S1 pattern. #}
+                            {% set email_edit_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email', edit='1') %}
+                            {% set email_view_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email') %}
+                            {% set preview_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='preview') %}
+                            <div class="flex justify-end gap-3 mt-4">
+                                {% if edit_mode %}
+                                    {{ button(_("Cancel"), variant="secondary", href=email_view_url) }}
+                                    {{ button(_("Save"), type="submit", variant="secondary", attrs='name="action" value="save"') }}
+                                    {{ button(_("Save and next →"), type="submit", variant="primary", attrs='name="action" value="save_and_next"') }}
+                                {% else %}
+                                    {{ button(_("Edit"), variant="secondary", href=email_edit_url) }}
+                                    {{ button(_("Next →"), variant="primary", href=preview_url) }}
+                                {% endif %}
+                            </div>
+                        </form>
                     {% endif %}
                 </div>
             {% endif %}
