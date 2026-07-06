@@ -100,11 +100,11 @@ class TestEditModeRendersExpectedHtml:
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         assert "readonly" not in _extract_textarea(body)
-        assert "Cancel</a>" in body
-        assert "Save</button>" in body
-        assert "Save and next →</button>" in body
+        assert "Cancel</span></a>" in body
+        assert "Save</span></button>" in body
+        assert "Save and next →</span></button>" in body
         # Cancel returns to read-only on the form step
-        cancel_block = body.split("Cancel</a>", 1)[0]
+        cancel_block = body.split("Cancel</span></a>", 1)[0]
         anchor = cancel_block.rsplit("<a", 1)[1]
         assert f"/backoffice/assembly/{assembly_id}/registration" in anchor
         assert "edit=1" not in anchor
@@ -118,7 +118,7 @@ class TestEditModeRendersExpectedHtml:
         body = response.get_data(as_text=True)
         assert "readonly" not in _extract_textarea(body)
         assert "Save and Republish" in body
-        assert "Cancel</a>" in body
+        assert "Cancel</span></a>" in body
 
     def test_closed_status_ignores_edit_param(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)

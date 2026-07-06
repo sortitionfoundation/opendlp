@@ -107,9 +107,7 @@ Requires wrapping element with x-data="modal({...})" Alpine component:
                     {{ dialog_close_icon() }}
                 </button>
             {% endcall %}
-            {% call dialog_body() %}
-                {{ caller() }}
-            {% endcall %}
+            <div class="dialog-body">{{ caller() }}</div>
         </div>
     </div>
 {% endmacro %}
@@ -167,9 +165,7 @@ Usage: See selection_progress_modal.html for a complete example.
                     {{ dialog_close_icon() }}
                 </button>
             {% endcall %}
-            {% call dialog_body() %}
-                {{ caller() }}
-            {% endcall %}
+            <div class="dialog-body">{{ caller() }}</div>
         </div>
     </div>
 </div>
