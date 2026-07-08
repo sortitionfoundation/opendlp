@@ -392,7 +392,7 @@ is driven by a test before the layer above it exists.
 
 10. ✅ **`FakeGSheetExportTarget`** (fakes) + *unit* tests exercising
     `export_respondents` against it (records the single `(title, table)` write).
-11. **`AssemblyRespondentGSheet` model** (+ ORM, repo, Alembic migration,
+11. ✅ **`AssemblyRespondentGSheet` model** (+ ORM, repo, Alembic migration,
     `_delete_all_test_data()` / BDD `delete_all_except_standard_users()` updates,
     contract tests for the new repo). No `AssemblyGSheet` rename this round (S3).
 12. **`GSheetExportTarget`** real adapter — *test* with gspread mocked at the

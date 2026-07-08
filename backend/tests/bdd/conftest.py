@@ -486,6 +486,7 @@ def delete_all_except_standard_users(session: Session) -> None:
     session.execute(orm.email_templates.delete())
     session.execute(orm.target_categories.delete())
     session.execute(orm.assembly_gsheets.delete())
+    session.execute(orm.assembly_respondent_gsheets.delete())
     session.execute(orm.assembly_csv.delete())
     session.execute(orm.selection_settings.delete())
     session.execute(orm.user_invites.delete())

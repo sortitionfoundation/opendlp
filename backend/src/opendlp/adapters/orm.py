@@ -411,6 +411,26 @@ assembly_csv = Table(
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )
 
+# Assembly respondent export Google Sheet table
+assembly_respondent_gsheets = Table(
+    "assembly_respondent_gsheets",
+    metadata,
+    Column("assembly_respondent_gsheet_id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "assembly_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        unique=True,  # One export sheet per assembly
+    ),
+    Column("url", String(500), nullable=False, default=""),
+    Column("worksheet_name", String(100), nullable=False, default="Respondents"),
+    Column("id_column", String(100), nullable=False, default="external_id"),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+)
+
 # Selection run records table
 selection_run_records = Table(
     "selection_run_records",
