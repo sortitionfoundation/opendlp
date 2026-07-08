@@ -79,7 +79,7 @@ def create_respondent(
         return respondent.create_detached_copy()
 
 
-def import_respondents_from_csv(  # noqa: C901
+def import_respondents_from_csv(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
@@ -94,6 +94,39 @@ def import_respondents_from_csv(  # noqa: C901
     CSV format: id_column is required, all other columns become attributes.
     If id_column is not provided, the first column in the CSV is used.
     The filename, if provided, is recorded in the CREATE comment each row gets.
+    Returns: (list of created respondents, list of error messages, resolved id_column name)
+    """
+    reader = csv.DictReader(StringIO(csv_content))
+    headers = list(reader.fieldnames) if reader.fieldnames else []
+    rows = list(reader) if reader.fieldnames else []
+    return import_respondents_from_rows(
+        uow,
+        user_id,
+        assembly_id,
+        headers,
+        rows,
+        replace_existing=replace_existing,
+        id_column=id_column,
+        filename=filename,
+    )
+
+
+def import_respondents_from_rows(  # noqa: C901
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    headers: list[str],
+    rows: list[dict[str, str]],
+    replace_existing: bool = False,
+    id_column: str | None = None,
+    filename: str = "",
+) -> tuple[list[Respondent], list[str], str]:
+    """Import respondents from already-parsed tabular rows.
+
+    Shared core behind CSV import (and, in future, Google Sheets import).
+    ``headers`` is the ordered column list; ``rows`` maps each header to its
+    value. The id_column becomes external_id; all other columns become
+    attributes. If id_column is not provided, the first column is used.
     Returns: (list of created respondents, list of error messages, resolved id_column name)
     """
     with uow:
@@ -111,18 +144,14 @@ def import_respondents_from_csv(  # noqa: C901
                 required_role="assembly-manager, global-organiser or admin",
             )
 
-        # Parse CSV
-        csv_file = StringIO(csv_content)
-        reader = csv.DictReader(csv_file)
-
-        if not reader.fieldnames:
+        if not headers:
             raise InvalidSelection("CSV file is empty or has no header row")
 
-        # Auto-detect id_column from first CSV column if not provided
+        # Auto-detect id_column from first column if not provided
         if id_column is None:
-            id_column = reader.fieldnames[0]
+            id_column = headers[0]
 
-        if id_column not in reader.fieldnames:
+        if id_column not in headers:
             raise InvalidSelection(f"CSV must have '{id_column}' column")
 
         errors = []
@@ -133,8 +162,8 @@ def import_respondents_from_csv(  # noqa: C901
 
         # Create respondents
         respondents = []
-        seen_ids = set()  # Track IDs within this CSV to catch duplicates
-        for row in reader:
+        seen_ids = set()  # Track IDs within this import to catch duplicates
+        for row in rows:
             external_id = row.get(id_column, "").strip()
             if not external_id:
                 errors.append(f"Skipped row with empty {id_column}")
@@ -146,7 +175,7 @@ def import_respondents_from_csv(  # noqa: C901
                 errors.append(f"Skipped duplicate {id_column}: {external_id}")
                 continue
 
-            # Check for duplicate within this CSV
+            # Check for duplicate within this import
             if external_id in seen_ids:
                 errors.append(f"Skipped duplicate {id_column}: {external_id}")
                 continue
@@ -194,7 +223,7 @@ def import_respondents_from_csv(  # noqa: C901
         update_schema_from_headers(
             uow,
             assembly_id,
-            list(reader.fieldnames),
+            list(headers),
             id_column,
             target_category_names=target_category_names,
         )
