@@ -12,7 +12,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.adapters.tabular_export import CsvExportTarget
+from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
 from opendlp.config import get_max_csv_upload_bytes, get_max_csv_upload_mb
 from opendlp.domain.respondent_field_schema import CHOICE_TYPES, GROUP_DISPLAY_ORDER, GROUP_LABELS, FieldType
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
@@ -515,7 +515,30 @@ def _run_gsheet_export(
                 target=target,
             )
     except ValueError as e:
+        # A malformed spreadsheet URL is rejected by the domain validator.
         flash(_("Could not export to Google Sheets: %(error)s", error=str(e)), "error")
+        return redirect(respondents_url)
+    except ExportTargetError as e:
+        # The sheet could not be written — typically it is not shared with the
+        # service account, or the URL points at a sheet that does not exist.
+        logger.warning(
+            "Google Sheets export failed",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        service_account_email = get_service_account_email()
+        if service_account_email:
+            flash(
+                _(
+                    "Could not write to the Google Sheet. Check the URL is correct and that "
+                    "the sheet is shared with %(email)s.",
+                    email=service_account_email,
+                ),
+                "error",
+            )
+        else:
+            flash(_("Could not write to the Google Sheet. Check the URL and sharing settings."), "error")
         return redirect(respondents_url)
 
     result_url = getattr(target, "result_url", "")

@@ -47,7 +47,7 @@ share the same tabular-data builder:
 - `service_layer/respondent_export_service.py` — `build_respondent_table`,
   `resolve_status_filter`, `export_respondents`, `export_respondents_to_gsheet`.
 - `adapters/tabular_export.py` — `TabularData`, `AbstractTabularExportTarget`,
-  `CsvExportTarget`.
+  `CsvExportTarget`, `ExportTargetError`.
 - `adapters/gsheet_export.py` — `GSheetExportTarget` (gspread).
 
 The two targets are wired differently on purpose. The **CSV target is
@@ -58,3 +58,8 @@ service, so it is fully exercised by the normal tests and needs no seam. The
 calls the real Google Sheets API, so tests override the factory with
 `FakeGSheetExportTarget` (in `tests/fakes.py`) and no real Google access is
 needed.
+
+When a Google Sheets write fails — most commonly because the sheet has not been
+shared with the service account — `GSheetExportTarget` raises `ExportTargetError`
+(wrapping the underlying `gspread` exception) so the blueprint can flash a
+controlled "share the sheet with …" message instead of returning a 500.
