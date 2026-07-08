@@ -2,33 +2,16 @@
 ABOUTME: Export modal fragment (HTMX-loaded) for exporting respondents
 ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the export
 #}
-<div x-data="{ open: true, destination: 'csv' }"
-     x-show="open"
-     x-cloak
-     class="fixed inset-0 z-50 flex items-center justify-center"
-     role="dialog"
-     aria-modal="true"
-     aria-labelledby="export-modal-title">
-    <div class="fixed inset-0 z-40"
-         style="background-color: rgba(0, 0, 0, 0.5)"
-         @click="open = false"></div>
-    <div class="pointer-events-auto relative z-50 w-full max-w-lg mx-4 rounded-lg shadow-xl overflow-hidden"
-         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)">
-        <div class="px-6 py-4 flex items-center justify-between"
-             style="border-bottom: 1px solid var(--color-borders-dividers)">
-            <h2 id="export-modal-title" class="text-heading-lg" style="color: var(--color-headings)">
-                {{ _("Export respondents") }}
-            </h2>
-            <button type="button"
-                    @click="open = false"
-                    class="p-2 rounded-lg"
-                    style="color: var(--color-secondary-text);"
-                    aria-label="{{ _('Close') }}">&times;</button>
-        </div>
+{% from "backoffice/components/modal.html" import modal %}
+{% from "backoffice/components/button.html" import button %}
 
+{# Alpine state for the modal shell (isOpen/canClose/close/closeIfAllowed are the
+   contract the modal() macro expects) plus the CSV-vs-gsheet destination toggle. #}
+<div x-data="{ isOpen: true, canClose: true, destination: 'csv', close() { this.isOpen = false; }, closeIfAllowed() { this.close(); } }">
+    {% call modal(id="export-modal", title=_("Export respondents")) %}
         <form method="post"
               action="{{ url_for('respondents.run_export', assembly_id=assembly_id) }}"
-              class="px-6 py-4 flex flex-col gap-4">
+              class="flex flex-col gap-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <fieldset class="flex flex-col gap-2">
@@ -85,18 +68,9 @@ ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the exp
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
-                <button type="button"
-                        @click="open = false"
-                        class="px-4 py-2 rounded-lg text-body-md"
-                        style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
-                    {{ _("Cancel") }}
-                </button>
-                <button type="submit"
-                        class="px-4 py-2 rounded-lg text-body-md"
-                        style="background-color: var(--color-primary-action); color: white;">
-                    {{ _("Export") }}
-                </button>
+                {{ button(_("Cancel"), variant="secondary", attrs='@click="close()"') }}
+                {{ button(_("Export"), type="submit", variant="primary") }}
             </div>
         </form>
-    </div>
+    {% endcall %}
 </div>
