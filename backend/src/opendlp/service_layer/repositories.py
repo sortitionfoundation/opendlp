@@ -429,6 +429,20 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_by_assembly_id_statuses(
+        self,
+        assembly_id: uuid.UUID,
+        statuses: list[RespondentStatus] | None = None,
+    ) -> list[Respondent]:
+        """Get respondents for an assembly ordered by created_at ascending.
+
+        With ``statuses=None`` returns every non-DELETED respondent; with a list
+        returns respondents whose selection_status is in that list. Used by the
+        export, which needs a stable oldest-first order across status filters.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_by_assembly_id_paginated(
         self,
         assembly_id: uuid.UUID,

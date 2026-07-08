@@ -569,3 +569,57 @@ class TestGetSelectedAttributeValueCounts:
 
     def test_returns_empty_for_no_respondents(self, respondent_backend: ContractBackend):
         assert respondent_backend.repo.get_selected_attribute_value_counts(uuid.uuid4(), "gender") == {}
+
+
+class TestGetByAssemblyIdStatuses:
+    def _add_with_created_at(self, backend, assembly_id, external_id, created_at, status=RespondentStatus.POOL):
+        respondent = Respondent(
+            assembly_id=assembly_id,
+            external_id=external_id,
+            selection_status=status,
+            created_at=created_at,
+        )
+        backend.repo.add(respondent)
+        backend.commit()
+        return respondent
+
+    def test_orders_by_created_at_ascending(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        self._add_with_created_at(respondent_backend, assembly.id, "R-new", datetime(2026, 3, 1, tzinfo=UTC))
+        self._add_with_created_at(respondent_backend, assembly.id, "R-old", datetime(2026, 1, 1, tzinfo=UTC))
+        self._add_with_created_at(respondent_backend, assembly.id, "R-mid", datetime(2026, 2, 1, tzinfo=UTC))
+
+        result = respondent_backend.repo.get_by_assembly_id_statuses(assembly.id)
+
+        assert [r.external_id for r in result] == ["R-old", "R-mid", "R-new"]
+
+    def test_none_returns_all_except_deleted(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        self._add_with_created_at(
+            respondent_backend, assembly.id, "R-pool", datetime(2026, 1, 1, tzinfo=UTC), RespondentStatus.POOL
+        )
+        self._add_with_created_at(
+            respondent_backend, assembly.id, "R-del", datetime(2026, 1, 2, tzinfo=UTC), RespondentStatus.DELETED
+        )
+
+        result = respondent_backend.repo.get_by_assembly_id_statuses(assembly.id)
+
+        assert {r.external_id for r in result} == {"R-pool"}
+
+    def test_filters_to_given_statuses_ordered(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        self._add_with_created_at(
+            respondent_backend, assembly.id, "R-pool", datetime(2026, 1, 1, tzinfo=UTC), RespondentStatus.POOL
+        )
+        self._add_with_created_at(
+            respondent_backend, assembly.id, "R-conf", datetime(2026, 1, 3, tzinfo=UTC), RespondentStatus.CONFIRMED
+        )
+        self._add_with_created_at(
+            respondent_backend, assembly.id, "R-sel", datetime(2026, 1, 2, tzinfo=UTC), RespondentStatus.SELECTED
+        )
+
+        result = respondent_backend.repo.get_by_assembly_id_statuses(
+            assembly.id, [RespondentStatus.SELECTED, RespondentStatus.CONFIRMED]
+        )
+
+        assert [r.external_id for r in result] == ["R-sel", "R-conf"]

@@ -1095,6 +1095,18 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
 
         return query.order_by(orm.respondents.c.created_at.desc()).all()
 
+    def get_by_assembly_id_statuses(
+        self,
+        assembly_id: uuid.UUID,
+        statuses: list[RespondentStatus] | None = None,
+    ) -> list[Respondent]:
+        query = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id)
+        if statuses is None:
+            query = query.filter(orm.respondents.c.selection_status != RespondentStatus.DELETED)
+        else:
+            query = query.filter(orm.respondents.c.selection_status.in_(statuses))
+        return query.order_by(orm.respondents.c.created_at.asc()).all()
+
     def count_by_assembly_id(self, assembly_id: uuid.UUID, include_deleted: bool = False) -> int:
         query = self.session.query(Respondent).filter(orm.respondents.c.assembly_id == assembly_id)
         if not include_deleted:

@@ -98,11 +98,8 @@ def build_respondent_table(
 
     headers = [id_column_header, *schema_keys, *leftover, *_INTERNAL_COLUMNS]
 
-    # Oldest respondent first, newest last.
-    ordered = sorted(respondents, key=lambda r: r.created_at)
-
     rows: list[list[str]] = []
-    for respondent in ordered:
+    for respondent in respondents:
         row = [respondent.external_id]
         row.extend(_serialise_field(respondent, key) for key in schema_keys)
         row.extend(_serialise_field(respondent, key) for key in leftover)
@@ -124,12 +121,12 @@ def _fetch_respondents(
     assembly_id: uuid.UUID,
     status_filter: list[RespondentStatus] | None,
 ) -> list[Respondent]:
-    if status_filter is None:
-        return list(uow.respondents.get_by_assembly_id(assembly_id, include_deleted=False))
-    respondents: list[Respondent] = []
-    for status in status_filter:
-        respondents.extend(uow.respondents.get_by_assembly_id(assembly_id, status=status))
-    return respondents
+    """Fetch respondents for the export, ordered oldest-first by created_at.
+
+    ``None`` means every non-DELETED respondent; a list means those statuses.
+    Ordering is done in the query so the export is stable regardless of status.
+    """
+    return list(uow.respondents.get_by_assembly_id_statuses(assembly_id, status_filter))
 
 
 def _require_manage(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> object:
