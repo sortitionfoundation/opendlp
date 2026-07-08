@@ -7,7 +7,7 @@ from io import StringIO
 from typing import Any
 
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
-from opendlp.domain.respondents import Respondent, pop_normalised
+from opendlp.domain.respondents import Respondent, normalise_field_name, pop_normalised
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import (
     ALLOWED_SELECTION_STATUS_TRANSITIONS,
@@ -30,6 +30,11 @@ from opendlp.service_layer.permissions import (
 )
 from opendlp.service_layer.respondent_field_schema_service import update_schema_from_headers
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+
+# Internal, export-only columns recognised and skipped on import. They mirror
+# the extra columns build_respondent_table appends, so an exported file
+# re-imports without colliding with reserved Respondent field names.
+_INTERNAL_IMPORT_SKIP_COLUMNS = ("selection_status", "selection_run_id", "source_type", "created_at", "updated_at")
 
 
 def create_respondent(
@@ -156,6 +161,14 @@ def import_respondents_from_rows(  # noqa: C901
 
         errors = []
 
+        # Internal export-only columns are recognised and skipped so that a
+        # previously-exported file re-imports cleanly (they would otherwise
+        # collide with reserved Respondent field names). Report each once.
+        skip_normalised = {normalise_field_name(c) for c in _INTERNAL_IMPORT_SKIP_COLUMNS}
+        for header in headers:
+            if header != id_column and normalise_field_name(header) in skip_normalised:
+                errors.append(f"Ignored internal column not imported: {header}")
+
         # Replace existing if requested
         if replace_existing:
             uow.respondents.delete_all_for_assembly(assembly_id)
@@ -194,7 +207,18 @@ def import_respondents_from_rows(  # noqa: C901
             can_attend_str = pop_normalised(attributes, "can_attend")
             can_attend = can_attend_str.lower() == "true" if can_attend_str else None
 
+            # stay_on_db is honoured when creating a fresh record (e.g. importing
+            # from an internal system). A future update path must instead ignore
+            # it, since bulk import must never silently flip an existing consent.
+            stay_on_db_str = pop_normalised(attributes, "stay_on_db")
+            stay_on_db = stay_on_db_str.lower() == "true" if stay_on_db_str else None
+
             email = pop_normalised(attributes, "email", "")
+
+            # Discard internal export-only columns before constructing the
+            # Respondent so they never land in attributes.
+            for skip_column in _INTERNAL_IMPORT_SKIP_COLUMNS:
+                pop_normalised(attributes, skip_column)
 
             respondent = Respondent(
                 assembly_id=assembly_id,
@@ -203,6 +227,7 @@ def import_respondents_from_rows(  # noqa: C901
                 consent=consent,
                 eligible=eligible,
                 can_attend=can_attend,
+                stay_on_db=stay_on_db,
                 email=email,
                 source_type=RespondentSourceType.CSV_IMPORT,
             )

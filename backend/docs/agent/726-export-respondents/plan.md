@@ -382,7 +382,7 @@ is driven by a test before the layer above it exists.
 
 8. ✅ **Extract `import_respondents_from_rows`** — refactor with existing import
    tests staying green; add *unit* tests for the new core directly.
-9. **Column-skip + `stay_on_db` rules** — *unit* + *integration*: an exported
+9. ✅ **Column-skip + `stay_on_db` rules** — *unit* + *integration*: an exported
    file re-imports without crashing; internal reserved columns skipped with a
    status message; `stay_on_db` honoured on **create**; (guard test for the
    future update path — ignored + reported — even if update isn't wired yet).
