@@ -98,8 +98,11 @@ def build_respondent_table(
 
     headers = [id_column_header, *schema_keys, *leftover, *_INTERNAL_COLUMNS]
 
+    # Oldest respondent first, newest last.
+    ordered = sorted(respondents, key=lambda r: r.created_at)
+
     rows: list[list[str]] = []
-    for respondent in respondents:
+    for respondent in ordered:
         row = [respondent.external_id]
         row.extend(_serialise_field(respondent, key) for key in schema_keys)
         row.extend(_serialise_field(respondent, key) for key in leftover)

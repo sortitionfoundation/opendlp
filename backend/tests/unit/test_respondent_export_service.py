@@ -195,6 +195,27 @@ class TestBuildRespondentTable:
         table = build_respondent_table([respondent], schema, id_column_header="external_id")
         assert all(len(row) == len(table.headers) for row in table.rows)
 
+    def test_rows_ordered_by_created_at_oldest_first(self):
+        newest = Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="R-new",
+            created_at=datetime(2026, 3, 1, tzinfo=UTC),
+        )
+        oldest = Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="R-old",
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        middle = Respondent(
+            assembly_id=uuid.uuid4(),
+            external_id="R-mid",
+            created_at=datetime(2026, 2, 1, tzinfo=UTC),
+        )
+
+        table = build_respondent_table([newest, oldest, middle], [], id_column_header="external_id")
+
+        assert [row[0] for row in table.rows] == ["R-old", "R-mid", "R-new"]
+
 
 def _seed(uow: FakeUnitOfWork, *, global_role: GlobalRole = GlobalRole.ADMIN) -> tuple[User, Assembly]:
     user = User(email="admin@example.com", global_role=global_role, password_hash="hash")
