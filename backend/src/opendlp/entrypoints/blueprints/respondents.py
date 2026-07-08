@@ -372,6 +372,10 @@ def export_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Invalid export filter: %(error)s", error=str(e)), "error")
         return redirect(respondents_url)
 
+    # The CSV target is built inline rather than injected through an app factory:
+    # it is pure in-memory work with no external service, so it needs no fake and
+    # no seam. The Google Sheets target (see _run_gsheet_export) is injected
+    # instead, because exercising it means calling the real Google Sheets API.
     target = CsvExportTarget()
     try:
         uow = bootstrap.get_flask_uow()
@@ -492,6 +496,10 @@ def _run_gsheet_export(
         flash(_("A Google Sheet URL is required to export to Google Sheets"), "error")
         return redirect(respondents_url)
 
+    # The Google Sheets target is injected via an app factory (registered in
+    # flask_app.py, overridable in tests) because writing to it calls the real
+    # Google Sheets API, so tests substitute a fake. The CSV target needs no such
+    # seam — see the comment in export_respondents_csv.
     factory = current_app.extensions["gsheet_export_target_factory"]
     target = factory(spreadsheet_url)
     try:

@@ -50,5 +50,11 @@ share the same tabular-data builder:
   `CsvExportTarget`.
 - `adapters/gsheet_export.py` — `GSheetExportTarget` (gspread).
 
-Tests inject `FakeGSheetExportTarget` (in `tests/fakes.py`) so no real Google
-access is needed.
+The two targets are wired differently on purpose. The **CSV target is
+constructed inline** in the blueprint: it is pure in-memory work with no external
+service, so it is fully exercised by the normal tests and needs no seam. The
+**Google Sheets target is injected** through an app factory
+(`gsheet_export_target_factory`, registered in `flask_app.py`): writing to it
+calls the real Google Sheets API, so tests override the factory with
+`FakeGSheetExportTarget` (in `tests/fakes.py`) and no real Google access is
+needed.
