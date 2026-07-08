@@ -368,7 +368,7 @@ is driven by a test before the layer above it exists.
    D14); missing user/assembly → correct errors; each filter variant produces
    the expected rows via a `CsvExportTarget`; `DELETED` never appears; the
    SELECTED-or-CONFIRMED path issues the two queries and merges (D5/Option C).
-5. **CSV export route** — *component* (`tests/component/`, Flask over
+5. ✅ **CSV export route** — *component* (`tests/component/`, Flask over
    `FakeUnitOfWork`): `GET .../respondents/export?status=...` → 200, `text/csv`,
    `Content-Disposition: attachment; filename=...`, correct header row + one row
    per matching respondent; permission failure → flash/redirect; filter variants.

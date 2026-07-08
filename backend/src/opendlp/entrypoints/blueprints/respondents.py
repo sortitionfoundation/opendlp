@@ -7,11 +7,12 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.config import get_max_csv_upload_bytes, get_max_csv_upload_mb
 from opendlp.domain.respondent_field_schema import CHOICE_TYPES, GROUP_DISPLAY_ORDER, GROUP_LABELS, FieldType
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
@@ -45,6 +46,7 @@ from opendlp.service_layer.exceptions import (
     RespondentNotFoundError,
 )
 from opendlp.service_layer.permissions import can_edit_respondent, can_manage_assembly
+from opendlp.service_layer.respondent_export_service import export_respondents, resolve_status_filter
 from opendlp.service_layer.respondent_field_schema_service import (
     compute_diff_for_pending_csv,
     get_schema,
@@ -351,6 +353,49 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )
+
+
+@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/export")
+@login_required
+def export_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Export respondents as a CSV download, filtered by selection status."""
+    respondents_url = url_for("respondents.view_assembly_respondents", assembly_id=assembly_id)
+    try:
+        status_filter = resolve_status_filter(request.args.get("status", ""))
+    except InvalidSelection as e:
+        flash(_("Invalid export filter: %(error)s", error=str(e)), "error")
+        return redirect(respondents_url)
+
+    target = CsvExportTarget()
+    try:
+        uow = bootstrap.get_flask_uow()
+        export_respondents(
+            uow,
+            current_user.id,
+            assembly_id,
+            status_filter=status_filter,
+            target=target,
+        )
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions to export respondents",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to export respondents"), "error")
+        return redirect(respondents_url)
+    except NotFoundError as e:
+        logger.warning("Assembly not found for respondents export", assembly_id=str(assembly_id), error=str(e))
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    filename = f"respondents-{str(assembly_id)[:8]}.csv"
+    return Response(
+        target.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @respondents_bp.route("/assembly/<uuid:assembly_id>/respondents")
