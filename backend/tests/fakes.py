@@ -1073,9 +1073,18 @@ class FakeGSheetExportTarget(AbstractTabularExportTarget):
     component and unit tests can drive the export flow without gspread.
     """
 
-    def __init__(self, result_url: str = "https://docs.google.com/spreadsheets/d/fake") -> None:
+    def __init__(
+        self,
+        result_url: str = "https://docs.google.com/spreadsheets/d/fake",
+        error: Exception | None = None,
+    ) -> None:
         self.writes: list[tuple[str, TabularData]] = []
         self.result_url = result_url
+        # When set, write_sheet raises this instead of recording the write, so
+        # tests can drive the "sheet could not be written" failure path.
+        self._error = error
 
     def write_sheet(self, title: str, table: TabularData) -> None:
+        if self._error is not None:
+            raise self._error
         self.writes.append((title, table))

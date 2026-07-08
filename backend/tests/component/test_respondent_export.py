@@ -6,6 +6,7 @@ from io import StringIO
 
 from flask.testing import FlaskClient
 
+from opendlp.adapters.tabular_export import ExportTargetError
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
 from opendlp.domain.respondents import Respondent
@@ -175,3 +176,31 @@ class TestRunExport:
         )
 
         assert response.status_code == 302
+
+    def test_run_gsheet_write_failure_flashes_error_and_saves_nothing(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        # Simulate the sheet not being shared with the service account: the target
+        # raises ExportTargetError (as the real gspread adapter does on failure).
+        def factory(url: str) -> FakeGSheetExportTarget:
+            return FakeGSheetExportTarget(error=ExportTargetError("no access"))
+
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = factory
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            data={
+                "destination": "gsheet",
+                "status": "",
+                "spreadsheet_url": _SHEET_URL,
+                "worksheet_name": "Export tab",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert "Could not write to the Google Sheet" in response.get_data(as_text=True)
+        # The write failed before commit, so no config row should have been saved.
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.assembly_respondent_gsheets.get_by_assembly_id(existing_assembly.id) is None

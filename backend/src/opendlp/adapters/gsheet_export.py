@@ -5,10 +5,10 @@ from collections.abc import Callable
 from typing import Any
 
 import gspread
-from gspread.exceptions import WorksheetNotFound
+from gspread.exceptions import GSpreadException, WorksheetNotFound
 
 from opendlp import config
-from opendlp.adapters.tabular_export import AbstractTabularExportTarget, TabularData
+from opendlp.adapters.tabular_export import AbstractTabularExportTarget, ExportTargetError, TabularData
 
 __all__ = ["GSheetExportTarget", "WorksheetNotFound"]
 
@@ -40,12 +40,17 @@ class GSheetExportTarget(AbstractTabularExportTarget):
         self.result_url: str = ""
 
     def write_sheet(self, title: str, table: TabularData) -> None:
-        client = self._client_factory()
-        spreadsheet = client.open_by_url(self.spreadsheet_url)
         try:
-            worksheet = spreadsheet.worksheet(title)
-            worksheet.clear()
-        except WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title=title, rows=_DEFAULT_ROWS, cols=_DEFAULT_COLS)
-        worksheet.update([table.headers, *table.rows])
-        self.result_url = worksheet.url
+            client = self._client_factory()
+            spreadsheet = client.open_by_url(self.spreadsheet_url)
+            try:
+                worksheet = spreadsheet.worksheet(title)
+                worksheet.clear()
+            except WorksheetNotFound:
+                worksheet = spreadsheet.add_worksheet(title=title, rows=_DEFAULT_ROWS, cols=_DEFAULT_COLS)
+            worksheet.update([table.headers, *table.rows])
+            self.result_url = worksheet.url
+        except GSpreadException as exc:
+            # Wrap any Google Sheets failure (missing sheet, no access, API error)
+            # so callers handle one export-layer exception, not gspread internals.
+            raise ExportTargetError(str(exc)) from exc

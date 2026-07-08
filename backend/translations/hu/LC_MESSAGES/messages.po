@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-08 11:26+0000\n"
+"POT-Creation-Date: 2026-07-08 15:32+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -1076,9 +1076,9 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/main.py:195
 #: src/opendlp/entrypoints/blueprints/main.py:311
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:170
-#: src/opendlp/entrypoints/blueprints/respondents.py:600
-#: src/opendlp/entrypoints/blueprints/respondents.py:731
-#: src/opendlp/entrypoints/blueprints/respondents.py:884
+#: src/opendlp/entrypoints/blueprints/respondents.py:637
+#: src/opendlp/entrypoints/blueprints/respondents.py:768
+#: src/opendlp/entrypoints/blueprints/respondents.py:921
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:84
 #: src/opendlp/entrypoints/blueprints/targets.py:154
 #: src/opendlp/entrypoints/blueprints/targets.py:910
@@ -1137,14 +1137,14 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:487
 #: src/opendlp/entrypoints/blueprints/respondents.py:223
 #: src/opendlp/entrypoints/blueprints/respondents.py:349
-#: src/opendlp/entrypoints/blueprints/respondents.py:396
-#: src/opendlp/entrypoints/blueprints/respondents.py:435
-#: src/opendlp/entrypoints/blueprints/respondents.py:475
-#: src/opendlp/entrypoints/blueprints/respondents.py:591
-#: src/opendlp/entrypoints/blueprints/respondents.py:657
-#: src/opendlp/entrypoints/blueprints/respondents.py:722
-#: src/opendlp/entrypoints/blueprints/respondents.py:881
-#: src/opendlp/entrypoints/blueprints/respondents.py:927
+#: src/opendlp/entrypoints/blueprints/respondents.py:401
+#: src/opendlp/entrypoints/blueprints/respondents.py:441
+#: src/opendlp/entrypoints/blueprints/respondents.py:483
+#: src/opendlp/entrypoints/blueprints/respondents.py:628
+#: src/opendlp/entrypoints/blueprints/respondents.py:694
+#: src/opendlp/entrypoints/blueprints/respondents.py:759
+#: src/opendlp/entrypoints/blueprints/respondents.py:918
+#: src/opendlp/entrypoints/blueprints/respondents.py:964
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:81
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:166
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:189
@@ -2141,7 +2141,7 @@ msgid "Respondents deleted: %(count)d removed"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:343
-#: src/opendlp/entrypoints/blueprints/respondents.py:644
+#: src/opendlp/entrypoints/blueprints/respondents.py:681
 #, fuzzy
 msgid "You don't have permission to delete respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
@@ -2152,37 +2152,37 @@ msgid "An error occurred while deleting respondents"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:372
-#: src/opendlp/entrypoints/blueprints/respondents.py:456
+#: src/opendlp/entrypoints/blueprints/respondents.py:462
 #, fuzzy, python-format
 msgid "Invalid export filter: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:392
-#: src/opendlp/entrypoints/blueprints/respondents.py:432
-#: src/opendlp/entrypoints/blueprints/respondents.py:472
+#: src/opendlp/entrypoints/blueprints/respondents.py:397
+#: src/opendlp/entrypoints/blueprints/respondents.py:438
+#: src/opendlp/entrypoints/blueprints/respondents.py:480
 #, fuzzy
 msgid "You don't have permission to export respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:414
+#: src/opendlp/entrypoints/blueprints/respondents.py:419
 #: src/opendlp/service_layer/selection_report.py:209
 #, fuzzy
 msgid "All respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:415
+#: src/opendlp/entrypoints/blueprints/respondents.py:420
 #, fuzzy
 msgid "Selected or confirmed"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:416
+#: src/opendlp/entrypoints/blueprints/respondents.py:421
 #: templates/backoffice/assembly_respondents.html:110
 #: templates/backoffice/components/table.html:200
 #: templates/respondents/view_respondents.html:131
 msgid "Pool"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:417
+#: src/opendlp/entrypoints/blueprints/respondents.py:422
 #: src/opendlp/service_layer/selection_report.py:211
 #: templates/backoffice/assembly_respondents.html:111
 #: templates/backoffice/assembly_view_respondent.html:234
@@ -2194,7 +2194,7 @@ msgstr ""
 msgid "Selected"
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:418
+#: src/opendlp/entrypoints/blueprints/respondents.py:423
 #: templates/backoffice/assembly_respondents.html:112
 #: templates/backoffice/components/table.html:203
 #: templates/respondents/view_respondents.html:133
@@ -2202,95 +2202,106 @@ msgstr "Kiválasztás"
 msgid "Confirmed"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:419
+#: src/opendlp/entrypoints/blueprints/respondents.py:424
 #: templates/backoffice/assembly_respondents.html:113
 #: templates/backoffice/components/table.html:209
 #: templates/respondents/view_respondents.html:134
 msgid "Withdrawn"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:420
+#: src/opendlp/entrypoints/blueprints/respondents.py:425
 msgid "Test submission"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:488
+#: src/opendlp/entrypoints/blueprints/respondents.py:496
 msgid "A Google Sheet URL is required to export to Google Sheets"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:504
+#: src/opendlp/entrypoints/blueprints/respondents.py:519
 #, fuzzy, python-format
 msgid "Could not export to Google Sheets: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:508
+#: src/opendlp/entrypoints/blueprints/respondents.py:534
+#, python-format
+msgid ""
+"Could not write to the Google Sheet. Check the URL is correct and that "
+"the sheet is shared with %(email)s."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondents.py:541
+msgid "Could not write to the Google Sheet. Check the URL and sharing settings."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondents.py:545
 #, fuzzy
 msgid "Respondents exported to Google Sheets."
 msgstr "Adja meg a Google táblázat beállításait"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:609
+#: src/opendlp/entrypoints/blueprints/respondents.py:646
 #, fuzzy
 msgid "An error occurred while loading assembly respondents"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:622
+#: src/opendlp/entrypoints/blueprints/respondents.py:659
 #, fuzzy
 msgid "A comment is required when deleting a respondent"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:634
+#: src/opendlp/entrypoints/blueprints/respondents.py:671
 #, fuzzy
 msgid "Respondent personal data deleted"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:653
-#: src/opendlp/entrypoints/blueprints/respondents.py:718
-#: src/opendlp/entrypoints/blueprints/respondents.py:878
-#: src/opendlp/entrypoints/blueprints/respondents.py:924
+#: src/opendlp/entrypoints/blueprints/respondents.py:690
+#: src/opendlp/entrypoints/blueprints/respondents.py:755
+#: src/opendlp/entrypoints/blueprints/respondents.py:915
+#: src/opendlp/entrypoints/blueprints/respondents.py:961
 #, fuzzy
 msgid "Respondent not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:666
+#: src/opendlp/entrypoints/blueprints/respondents.py:703
 #, fuzzy
 msgid "An error occurred while deleting the respondent"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:740
+#: src/opendlp/entrypoints/blueprints/respondents.py:777
 #, fuzzy
 msgid "An error occurred while loading the respondent"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:814
-#: src/opendlp/entrypoints/blueprints/respondents.py:834
+#: src/opendlp/entrypoints/blueprints/respondents.py:851
+#: src/opendlp/entrypoints/blueprints/respondents.py:871
 #, fuzzy
 msgid "You don't have permission to edit respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:816
+#: src/opendlp/entrypoints/blueprints/respondents.py:853
 #, fuzzy
 msgid "Respondent updated."
 msgstr "Feladat állapota"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:841
+#: src/opendlp/entrypoints/blueprints/respondents.py:878
 #, fuzzy
 msgid "Cannot edit a deleted respondent"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:900
+#: src/opendlp/entrypoints/blueprints/respondents.py:937
 #, fuzzy
 msgid "A comment is required when changing selection status"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:905
+#: src/opendlp/entrypoints/blueprints/respondents.py:942
 msgid "Invalid target status"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:918
+#: src/opendlp/entrypoints/blueprints/respondents.py:955
 #, fuzzy
 msgid "Status updated."
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:922
+#: src/opendlp/entrypoints/blueprints/respondents.py:959
 #, fuzzy
 msgid "You don't have permission to change this respondent's status"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
@@ -2859,7 +2870,7 @@ msgstr "Bejelentkezés"
 msgid "registration"
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/service_layer/respondent_export_service.py:48
+#: src/opendlp/service_layer/respondent_export_service.py:44
 #, python-format
 msgid "Invalid respondent status filter: %(value)s"
 msgstr ""
@@ -3276,7 +3287,7 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/backoffice/components/edit_number_to_select_modal.html:37
 #: templates/backoffice/components/respondent_status_form.html:87
 #: templates/backoffice/respondents/confirm_upload_diff.html:107
-#: templates/backoffice/respondents/export_modal.html:92
+#: templates/backoffice/respondents/export_modal.html:71
 #: templates/backoffice/targets/category_block.html:47
 #: templates/backoffice/targets/category_block.html:228
 #: templates/backoffice/targets/category_block.html:330
@@ -4187,7 +4198,7 @@ msgid ""
 msgstr "Frissítse a közösségi gyűléshez tartozó Google Táblázat beállításait."
 
 #: templates/backoffice/assembly_data.html:102
-#: templates/backoffice/respondents/export_modal.html:64
+#: templates/backoffice/respondents/export_modal.html:47
 #: templates/gsheets/components/view_config.html:3
 msgid "Spreadsheet URL"
 msgstr "Google Táblázat teljes linkje"
@@ -4584,7 +4595,7 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 #: templates/backoffice/assembly_respondents.html:85
 #: templates/backoffice/assembly_view_respondent.html:20
 #: templates/backoffice/components/assembly_tabs.html:61
-#: templates/backoffice/respondents/export_modal.html:76
+#: templates/backoffice/respondents/export_modal.html:59
 #: templates/backoffice/service_docs.html:44
 #: templates/backoffice/targets/category_block.html:103
 #: templates/db_selection/select.html:43
@@ -4833,7 +4844,6 @@ msgstr "Rétegzett kiválasztás"
 #: templates/backoffice/components/modal.html:133
 #: templates/backoffice/components/replacement_modal.html:170
 #: templates/backoffice/components/selection_progress_modal.html:89
-#: templates/backoffice/respondents/export_modal.html:26
 #, fuzzy
 msgid "Close"
 msgstr "Menü bezárása"
@@ -5065,7 +5075,7 @@ msgid "View Data Configuration"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
 #: templates/backoffice/assembly_respondents.html:93
-#: templates/backoffice/respondents/export_modal.html:97
+#: templates/backoffice/respondents/export_modal.html:72
 #, fuzzy
 msgid "Export"
 msgstr "Kezdés dátuma"
@@ -7640,36 +7650,36 @@ msgstr ""
 msgid "Confirm and import"
 msgstr "Új jelszó"
 
-#: templates/backoffice/respondents/export_modal.html:20
+#: templates/backoffice/respondents/export_modal.html:11
 #, fuzzy
 msgid "Export respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/respondents/export_modal.html:36
+#: templates/backoffice/respondents/export_modal.html:19
 #, fuzzy
 msgid "Destination"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/respondents/export_modal.html:40
+#: templates/backoffice/respondents/export_modal.html:23
 msgid "CSV download"
 msgstr ""
 
-#: templates/backoffice/respondents/export_modal.html:44
+#: templates/backoffice/respondents/export_modal.html:27
 #, fuzzy
 msgid "Google Sheet"
 msgstr "Google Táblázat teljes linkje"
 
-#: templates/backoffice/respondents/export_modal.html:50
+#: templates/backoffice/respondents/export_modal.html:33
 #, fuzzy
 msgid "Filter"
 msgstr "Állapot"
 
-#: templates/backoffice/respondents/export_modal.html:73
+#: templates/backoffice/respondents/export_modal.html:56
 #, fuzzy
 msgid "Worksheet / tab name"
 msgstr "Vezetéknév"
 
-#: templates/backoffice/respondents/export_modal.html:82
+#: templates/backoffice/respondents/export_modal.html:65
 #, python-format
 msgid "Share the sheet with %(email)s so it can be written to."
 msgstr ""

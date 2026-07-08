@@ -10,6 +10,14 @@ from io import StringIO
 _CSV_BOM = "﻿"
 
 
+class ExportTargetError(Exception):
+    """An export target could not complete a write.
+
+    Raised when the destination itself fails (for example a Google Sheet that is
+    missing or not shared with the service account), so entrypoints can surface a
+    controlled message without depending on any concrete backend's exceptions."""
+
+
 @dataclass(frozen=True)
 class TabularData:
     """A single sheet of already-stringified tabular data.
