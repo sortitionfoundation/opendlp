@@ -61,3 +61,14 @@ def csv_contains_ids(downloaded_csv: str) -> None:
     assert "R001" in downloaded_csv
     assert "R002" in downloaded_csv
     assert "selection_status" in downloaded_csv
+
+
+@when("I dismiss the export modal with the Cancel button")
+def dismiss_export_modal(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Cancel").click()
+
+
+@then("the export modal is no longer visible")
+def export_modal_hidden(admin_logged_in_page: Page) -> None:
+    # close() flips isOpen to false, so the modal panel (and its status select) hides.
+    expect(admin_logged_in_page.locator("#export-modal-container select#export-status")).not_to_be_visible()
