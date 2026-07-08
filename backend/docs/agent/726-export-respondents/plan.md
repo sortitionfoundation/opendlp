@@ -363,7 +363,7 @@ is driven by a test before the layer above it exists.
    per §4.
 3. ✅ **`resolve_status_filter`** — *unit*: All (everything but DELETED), single
    status, SELECTED-or-CONFIRMED; invalid input handled.
-4. **`export_respondents` service** — *unit* over `FakeUnitOfWork`:
+4. ✅ **`export_respondents` service** — *unit* over `FakeUnitOfWork`:
    permission denied → `InsufficientPermissions` (uses `can_manage_assembly`,
    D14); missing user/assembly → correct errors; each filter variant produces
    the expected rows via a `CsvExportTarget`; `DELETED` never appears; the

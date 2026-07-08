@@ -1,12 +1,23 @@
 """ABOUTME: Service layer for exporting respondents to CSV or Google Sheets
 ABOUTME: Builds tabular data, resolves status filters, orchestrates the export"""
 
-from opendlp.adapters.tabular_export import TabularData
+import uuid
+
+from opendlp.adapters.tabular_export import AbstractTabularExportTarget, TabularData
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentStatus
-from opendlp.service_layer.exceptions import InvalidSelection
+from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
+    InsufficientPermissions,
+    InvalidSelection,
+    UserNotFoundError,
+)
+from opendlp.service_layer.permissions import can_manage_assembly
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
+
+DEFAULT_SHEET_TITLE = "Respondents"
 
 # UI filter tokens accepted by resolve_status_filter alongside plain status names.
 STATUS_FILTER_ALL = "all"
@@ -95,3 +106,61 @@ def build_respondent_table(
         rows.append(row)
 
     return TabularData(headers=headers, rows=rows)
+
+
+def _resolve_id_column_header(assembly: object) -> str:
+    csv_config = getattr(assembly, "csv", None)
+    if csv_config is not None and csv_config.csv_id_column:
+        return str(csv_config.csv_id_column)
+    return "external_id"
+
+
+def _fetch_respondents(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    status_filter: list[RespondentStatus] | None,
+) -> list[Respondent]:
+    if status_filter is None:
+        return list(uow.respondents.get_by_assembly_id(assembly_id, include_deleted=False))
+    respondents: list[Respondent] = []
+    for status in status_filter:
+        respondents.extend(uow.respondents.get_by_assembly_id(assembly_id, status=status))
+    return respondents
+
+
+def export_respondents(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    *,
+    status_filter: list[RespondentStatus] | None,
+    target: AbstractTabularExportTarget,
+    sheet_title: str = DEFAULT_SHEET_TITLE,
+) -> None:
+    """Export an assembly's respondents to the given target.
+
+    ``status_filter`` of ``None`` exports every non-DELETED respondent; a list
+    of statuses exports just those (fetched with one query each and merged).
+    Requires manage permission on the assembly.
+    """
+    with uow:
+        user = uow.users.get(user_id)
+        if not user:
+            raise UserNotFoundError(f"User {user_id} not found")
+
+        assembly = uow.assemblies.get(assembly_id)
+        if not assembly:
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(
+                action="export respondents",
+                required_role="assembly-manager, global-organiser or admin",
+            )
+
+        respondents = _fetch_respondents(uow, assembly_id, status_filter)
+        schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+        id_column_header = _resolve_id_column_header(assembly)
+
+        table = build_respondent_table(respondents, schema, id_column_header)
+        target.write_sheet(sheet_title, table)

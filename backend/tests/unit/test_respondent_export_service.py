@@ -1,21 +1,39 @@
 """ABOUTME: Unit tests for the respondent export service
 ABOUTME: Covers table building, status-filter resolution and the export orchestration"""
 
+import csv
 import uuid
 from datetime import UTC, datetime
+from io import StringIO
 
 import pytest
 
+from opendlp.adapters.tabular_export import CsvExportTarget
+from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition, RespondentFieldGroup
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
-from opendlp.service_layer.exceptions import InvalidSelection
+from opendlp.domain.users import User
+from opendlp.domain.value_objects import GlobalRole, RespondentSourceType, RespondentStatus
+from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
+    InsufficientPermissions,
+    InvalidSelection,
+    UserNotFoundError,
+)
 from opendlp.service_layer.respondent_export_service import (
     STATUS_FILTER_ALL,
     STATUS_FILTER_SELECTED_OR_CONFIRMED,
     build_respondent_table,
+    export_respondents,
     resolve_status_filter,
 )
+from tests.fakes import FakeUnitOfWork
+
+
+def _parse_export(target: CsvExportTarget) -> list[dict[str, str]]:
+    content = target.getvalue().lstrip("﻿")
+    return list(csv.DictReader(StringIO(content)))
 
 
 class TestResolveStatusFilter:
@@ -174,3 +192,92 @@ class TestBuildRespondentTable:
         )
         table = build_respondent_table([respondent], schema, id_column_header="external_id")
         assert all(len(row) == len(table.headers) for row in table.rows)
+
+
+def _seed(uow: FakeUnitOfWork, *, global_role: GlobalRole = GlobalRole.ADMIN) -> tuple[User, Assembly]:
+    user = User(email="admin@example.com", global_role=global_role, password_hash="hash")
+    uow.users.add(user)
+    assembly = Assembly(title="Test Assembly")
+    uow.assemblies.add(assembly)
+    return user, assembly
+
+
+def _add_respondent(uow: FakeUnitOfWork, assembly: Assembly, external_id: str, status: RespondentStatus) -> None:
+    uow.respondents.add(Respondent(assembly_id=assembly.id, external_id=external_id, selection_status=status))
+
+
+class TestExportRespondents:
+    def test_raises_when_user_missing(self):
+        uow = FakeUnitOfWork()
+        _, assembly = _seed(uow)
+        with pytest.raises(UserNotFoundError):
+            export_respondents(uow, uuid.uuid4(), assembly.id, status_filter=None, target=CsvExportTarget())
+
+    def test_raises_when_assembly_missing(self):
+        uow = FakeUnitOfWork()
+        user, _ = _seed(uow)
+        with pytest.raises(AssemblyNotFoundError):
+            export_respondents(uow, user.id, uuid.uuid4(), status_filter=None, target=CsvExportTarget())
+
+    def test_requires_manage_permission(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow, global_role=GlobalRole.USER)
+        with pytest.raises(InsufficientPermissions):
+            export_respondents(uow, user.id, assembly.id, status_filter=None, target=CsvExportTarget())
+
+    def test_all_exports_every_non_deleted_respondent(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R-pool", RespondentStatus.POOL)
+        _add_respondent(uow, assembly, "R-selected", RespondentStatus.SELECTED)
+        _add_respondent(uow, assembly, "R-deleted", RespondentStatus.DELETED)
+
+        target = CsvExportTarget()
+        export_respondents(uow, user.id, assembly.id, status_filter=None, target=target)
+
+        ids = {row["external_id"] for row in _parse_export(target)}
+        assert ids == {"R-pool", "R-selected"}
+
+    def test_single_status_filter(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R-pool", RespondentStatus.POOL)
+        _add_respondent(uow, assembly, "R-selected", RespondentStatus.SELECTED)
+
+        target = CsvExportTarget()
+        export_respondents(uow, user.id, assembly.id, status_filter=[RespondentStatus.SELECTED], target=target)
+
+        ids = {row["external_id"] for row in _parse_export(target)}
+        assert ids == {"R-selected"}
+
+    def test_selected_or_confirmed_filter(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R-pool", RespondentStatus.POOL)
+        _add_respondent(uow, assembly, "R-selected", RespondentStatus.SELECTED)
+        _add_respondent(uow, assembly, "R-confirmed", RespondentStatus.CONFIRMED)
+
+        target = CsvExportTarget()
+        export_respondents(
+            uow,
+            user.id,
+            assembly.id,
+            status_filter=[RespondentStatus.SELECTED, RespondentStatus.CONFIRMED],
+            target=target,
+        )
+
+        ids = {row["external_id"] for row in _parse_export(target)}
+        assert ids == {"R-selected", "R-confirmed"}
+
+    def test_uses_configured_id_column_header(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id, csv_id_column="nationbuilder_id")
+        _add_respondent(uow, assembly, "R1", RespondentStatus.POOL)
+
+        target = CsvExportTarget()
+        export_respondents(uow, user.id, assembly.id, status_filter=None, target=target)
+
+        rows = _parse_export(target)
+        assert "nationbuilder_id" in rows[0]
+        assert rows[0]["nationbuilder_id"] == "R1"
