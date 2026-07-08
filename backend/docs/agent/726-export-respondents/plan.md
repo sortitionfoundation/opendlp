@@ -232,11 +232,14 @@ is needed for this export round.**
 
 - `DELETED` respondents are **never** exported (D10): their PII is already
   blanked, so rows would be empty.
-- **Fetching the SELECTED-or-CONFIRMED set (decision D5 = Option C):** run two
-  existing single-status queries (`get_by_assembly_id(status=SELECTED)` and
-  `…status=CONFIRMED`) and concatenate in Python. No new repository method, no
-  new contract test. The "All" case uses
-  `get_by_assembly_id(include_deleted=False)` (which already excludes `DELETED`).
+- **Fetching respondents (decision D5 = Option B — reversed from Option C):** a
+  new repository method `get_by_assembly_id_statuses(assembly_id, statuses)`
+  returns respondents ordered by `created_at` ascending (oldest first) — with
+  `statuses=None` meaning all non-DELETED, and a list meaning `status IN (...)`.
+  Both export cases go through this one query so ordering is done in SQL, not
+  Python. (Option C's two-query Python merge could not produce a global
+  created_at order for the SELECTED-or-CONFIRMED case, which is why it was
+  reversed.) The method has fake + SQL implementations and a contract test.
 
 ## 6. Round-trip / re-import safety
 
@@ -418,7 +421,7 @@ is driven by a test before the layer above it exists.
 | Level | Covers |
 | --- | --- |
 | **Unit** | `TabularData`/`CsvExportTarget`, `build_respondent_table`, `resolve_status_filter`, `export_respondents` over `FakeUnitOfWork`, the new import core + skip/`stay_on_db` rules, GSheet export against `FakeGSheetExportTarget`. |
-| **Contract** | New `AssemblyRespondentGSheet` repository (fake vs SQL parity). No new respondent-repo method (D5/Option C reuses existing ones). |
+| **Contract** | New `AssemblyRespondentGSheet` repository (fake vs SQL parity); new `RespondentRepository.get_by_assembly_id_statuses` (ordering + status filtering, fake vs SQL parity, D5/Option B). |
 | **Integration** | Re-import-safety round trip (real DB); `AssemblyRespondentGSheet` persistence/JSON round-trips. |
 | **Component** | Export route(s) over `FakeUnitOfWork`: content-type, disposition, body, filters, permissions; GSheet route with `FakeGSheetExportTarget`. |
 | **e2e** | One PostgreSQL happy-path smoke per new route. |
@@ -456,8 +459,10 @@ only thing mocked at the boundary.
 - **D3** Append non-schema leftover attribute keys, sorted.
 - **D4** Include **all** internal columns (`selection_status`, `source_type`,
   `selection_run_id`, `created_at`, `updated_at`).
-- **D5** SELECTED-or-CONFIRMED via **two existing queries merged in Python**
-  (Option C).
+- **D5** ~~two existing queries merged in Python (Option C)~~ → **reversed to
+  Option B**: a new `get_by_assembly_id_statuses` repo method with a `status IN`
+  query ordered by `created_at` ascending, so exports are oldest-first and
+  ordering lives in SQL.
 - **D6** `write_sheet` returns `None`; result read off the concrete target.
 - **D7** `CsvExportTarget` allows **one** `write_sheet` call only.
 - **D8** File headers are **raw field keys**.

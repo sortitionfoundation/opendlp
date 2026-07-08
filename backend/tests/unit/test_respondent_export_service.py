@@ -195,26 +195,14 @@ class TestBuildRespondentTable:
         table = build_respondent_table([respondent], schema, id_column_header="external_id")
         assert all(len(row) == len(table.headers) for row in table.rows)
 
-    def test_rows_ordered_by_created_at_oldest_first(self):
-        newest = Respondent(
-            assembly_id=uuid.uuid4(),
-            external_id="R-new",
-            created_at=datetime(2026, 3, 1, tzinfo=UTC),
-        )
-        oldest = Respondent(
-            assembly_id=uuid.uuid4(),
-            external_id="R-old",
-            created_at=datetime(2026, 1, 1, tzinfo=UTC),
-        )
-        middle = Respondent(
-            assembly_id=uuid.uuid4(),
-            external_id="R-mid",
-            created_at=datetime(2026, 2, 1, tzinfo=UTC),
-        )
+    def test_rows_preserve_input_order(self):
+        first = Respondent(assembly_id=uuid.uuid4(), external_id="R1")
+        second = Respondent(assembly_id=uuid.uuid4(), external_id="R2")
+        third = Respondent(assembly_id=uuid.uuid4(), external_id="R3")
 
-        table = build_respondent_table([newest, oldest, middle], [], id_column_header="external_id")
+        table = build_respondent_table([first, second, third], [], id_column_header="external_id")
 
-        assert [row[0] for row in table.rows] == ["R-old", "R-mid", "R-new"]
+        assert [row[0] for row in table.rows] == ["R1", "R2", "R3"]
 
 
 def _seed(uow: FakeUnitOfWork, *, global_role: GlobalRole = GlobalRole.ADMIN) -> tuple[User, Assembly]:
@@ -230,6 +218,24 @@ def _add_respondent(uow: FakeUnitOfWork, assembly: Assembly, external_id: str, s
 
 
 class TestExportRespondents:
+    def test_rows_ordered_oldest_first(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        uow.respondents.add(
+            Respondent(assembly_id=assembly.id, external_id="R-new", created_at=datetime(2026, 3, 1, tzinfo=UTC))
+        )
+        uow.respondents.add(
+            Respondent(assembly_id=assembly.id, external_id="R-old", created_at=datetime(2026, 1, 1, tzinfo=UTC))
+        )
+        uow.respondents.add(
+            Respondent(assembly_id=assembly.id, external_id="R-mid", created_at=datetime(2026, 2, 1, tzinfo=UTC))
+        )
+
+        target = CsvExportTarget()
+        export_respondents(uow, user.id, assembly.id, status_filter=None, target=target)
+
+        assert [row["external_id"] for row in _parse_export(target)] == ["R-old", "R-mid", "R-new"]
+
     def test_raises_when_user_missing(self):
         uow = FakeUnitOfWork()
         _, assembly = _seed(uow)

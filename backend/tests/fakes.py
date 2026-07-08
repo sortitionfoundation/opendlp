@@ -683,6 +683,18 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             results = [r for r in results if r.eligible is not False and r.can_attend is not False]
         return results
 
+    def get_by_assembly_id_statuses(
+        self,
+        assembly_id: uuid.UUID,
+        statuses: list[RespondentStatus] | None = None,
+    ) -> list[Respondent]:
+        results = [r for r in self._items if r.assembly_id == assembly_id]
+        if statuses is None:
+            results = [r for r in results if r.selection_status != RespondentStatus.DELETED]
+        else:
+            results = [r for r in results if r.selection_status in statuses]
+        return sorted(results, key=lambda r: r.created_at)
+
     def get_by_assembly_id_paginated(
         self,
         assembly_id: uuid.UUID,
