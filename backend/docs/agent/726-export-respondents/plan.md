@@ -397,7 +397,7 @@ is driven by a test before the layer above it exists.
     contract tests for the new repo). No `AssemblyGSheet` rename this round (S3).
 12. ✅ **`GSheetExportTarget`** real adapter — *test* with gspread mocked at the
     boundary (or a manually-run integration check); unit-level auth/tab logic.
-13. **Export modal + Google Sheets route** (§3.3) — *component* over
+13. ✅ **Export modal + Google Sheets route** (§3.3) — *component* over
     `FakeUnitOfWork` with the fake target injected: HTMX-loaded modal with
     destination + filter; Google-Sheet fields pre-filled from
     `AssemblyRespondentGSheet` and saved on export; surface the service-account

@@ -81,7 +81,20 @@ ABOUTME: Displays respondent data configuration for assemblies
     {% elif data_source == "csv" %}
         <div class="mb-8">
             {% call section() %}
-                <h2 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ _("Respondents") }}</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-heading-md" style="color: var(--color-headings);">{{ _("Respondents") }}</h2>
+                    {% if total_count > 0 %}
+                        <button type="button"
+                                class="px-4 py-2 rounded-lg text-body-md"
+                                style="background-color: var(--color-primary-action); color: white;"
+                                hx-get="{{ url_for('respondents.export_modal', assembly_id=assembly.id) }}"
+                                hx-target="#export-modal-container"
+                                hx-swap="innerHTML">
+                            {{ _("Export") }}
+                        </button>
+                    {% endif %}
+                </div>
+                <div id="export-modal-container"></div>
                 {# Filter controls - show when there are respondents or when filter is active #}
                 {% if total_count > 0 or status_filter %}
                     <div class="flex justify-end mb-4">

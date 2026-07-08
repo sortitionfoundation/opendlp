@@ -1,0 +1,102 @@
+{#
+ABOUTME: Export modal fragment (HTMX-loaded) for exporting respondents
+ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the export
+#}
+<div x-data="{ open: true, destination: 'csv' }"
+     x-show="open"
+     x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="export-modal-title">
+    <div class="fixed inset-0 z-40"
+         style="background-color: rgba(0, 0, 0, 0.5)"
+         @click="open = false"></div>
+    <div class="pointer-events-auto relative z-50 w-full max-w-lg mx-4 rounded-lg shadow-xl overflow-hidden"
+         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)">
+        <div class="px-6 py-4 flex items-center justify-between"
+             style="border-bottom: 1px solid var(--color-borders-dividers)">
+            <h2 id="export-modal-title" class="text-heading-lg" style="color: var(--color-headings)">
+                {{ _("Export respondents") }}
+            </h2>
+            <button type="button"
+                    @click="open = false"
+                    class="p-2 rounded-lg"
+                    style="color: var(--color-secondary-text);"
+                    aria-label="{{ _('Close') }}">&times;</button>
+        </div>
+
+        <form method="post"
+              action="{{ url_for('respondents.run_export', assembly_id=assembly_id) }}"
+              class="px-6 py-4 flex flex-col gap-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <fieldset class="flex flex-col gap-2">
+                <legend class="text-body-md font-medium mb-1" style="color: var(--color-headings);">
+                    {{ _("Destination") }}
+                </legend>
+                <label class="flex items-center gap-2 text-body-md">
+                    <input type="radio" name="destination" value="csv" x-model="destination" checked>
+                    {{ _("CSV download") }}
+                </label>
+                <label class="flex items-center gap-2 text-body-md">
+                    <input type="radio" name="destination" value="gsheet" x-model="destination">
+                    {{ _("Google Sheet") }}
+                </label>
+            </fieldset>
+
+            <div class="flex flex-col gap-1">
+                <label for="export-status" class="text-body-md font-medium" style="color: var(--color-headings);">
+                    {{ _("Filter") }}
+                </label>
+                <select id="export-status" name="status"
+                        class="px-3 py-2 rounded-lg text-body-md"
+                        style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                    {% for option in status_options %}
+                        <option value="{{ option.value }}">{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div x-show="destination === 'gsheet'" x-cloak class="flex flex-col gap-3">
+                <div class="flex flex-col gap-1">
+                    <label for="export-url" class="text-body-md font-medium" style="color: var(--color-headings);">
+                        {{ _("Spreadsheet URL") }}
+                    </label>
+                    <input id="export-url" type="url" name="spreadsheet_url"
+                           value="{{ gsheet_config.url if gsheet_config else '' }}"
+                           class="px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label for="export-tab" class="text-body-md font-medium" style="color: var(--color-headings);">
+                        {{ _("Worksheet / tab name") }}
+                    </label>
+                    <input id="export-tab" type="text" name="worksheet_name"
+                           value="{{ gsheet_config.worksheet_name if gsheet_config else _('Respondents') }}"
+                           class="px-3 py-2 rounded-lg text-body-md"
+                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                </div>
+                {% if service_account_email %}
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Share the sheet with %(email)s so it can be written to.", email=service_account_email) }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button"
+                        @click="open = false"
+                        class="px-4 py-2 rounded-lg text-body-md"
+                        style="border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                    {{ _("Cancel") }}
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 rounded-lg text-body-md"
+                        style="background-color: var(--color-primary-action); color: white;">
+                    {{ _("Export") }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
