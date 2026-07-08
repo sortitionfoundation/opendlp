@@ -29,7 +29,6 @@ def upgrade() -> None:
         sa.Column("assembly_id", sa.UUID(), nullable=False),
         sa.Column("url", sa.String(length=500), nullable=False),
         sa.Column("worksheet_name", sa.String(length=100), nullable=False),
-        sa.Column("id_column", sa.String(length=100), nullable=False),
         sa.Column("created_at", opendlp.adapters.orm.TZAwareDatetime(timezone=True), nullable=False),
         sa.Column("updated_at", opendlp.adapters.orm.TZAwareDatetime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["assembly_id"], ["assemblies.id"], ondelete="CASCADE"),

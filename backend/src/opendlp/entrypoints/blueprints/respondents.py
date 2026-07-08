@@ -541,7 +541,7 @@ def _run_gsheet_export(
             flash(_("Could not write to the Google Sheet. Check the URL and sharing settings."), "error")
         return redirect(respondents_url)
 
-    result_url = getattr(target, "result_url", "")
+    result_url = target.result_url
     flash(_("Respondents exported to Google Sheets."), "success")
     if result_url:
         flash(result_url, "info")
