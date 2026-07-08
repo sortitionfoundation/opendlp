@@ -443,37 +443,41 @@ class TestCreateRespondentEmitsCreateComment:
 
 
 class TestImportRespondentsFromRows:
-    def test_imports_rows_with_id_column_and_attributes(self):
+    # Row-to-Respondent mapping (attributes, flags, internal columns, comment) is
+    # covered directly in TestRespondentFromRow. These tests cover the
+    # orchestration: id-column resolution, deduplication, and permissions.
+    def test_auto_detects_id_column_from_first_column(self):
         uow = FakeUnitOfWork()
         user, assembly, _ = _seed(uow)
-        headers = ["external_id", "Gender"]
-        rows = [{"external_id": "ROW-1", "Gender": "Female"}, {"external_id": "ROW-2", "Gender": "Male"}]
+        headers = ["person_id", "Gender"]
+        rows = [{"person_id": "ROW-1", "Gender": "Female"}, {"person_id": "ROW-2", "Gender": "Male"}]
 
         respondents, errors, id_col = respondent_service.import_respondents_from_rows(
             uow, user.id, assembly.id, headers, rows
         )
 
         assert errors == []
-        assert id_col == "external_id"
+        assert id_col == "person_id"
         assert {r.external_id for r in respondents} == {"ROW-1", "ROW-2"}
-        assert respondents[0].attributes.get("Gender") == "Female"
 
-    def test_extracts_boolean_and_email_fixed_fields(self):
+    def test_skips_empty_and_duplicate_ids(self):
         uow = FakeUnitOfWork()
         user, assembly, _ = _seed(uow)
-        headers = ["external_id", "email", "consent", "eligible", "can_attend"]
-        rows = [{"external_id": "R1", "email": "a@b.com", "consent": "true", "eligible": "true", "can_attend": "false"}]
+        headers = ["external_id", "Gender"]
+        rows = [
+            {"external_id": "R1", "Gender": "Female"},
+            {"external_id": "  ", "Gender": "Male"},  # empty id → skipped
+            {"external_id": "R1", "Gender": "Other"},  # duplicate within import → skipped
+        ]
 
-        respondents, _errors, _id = respondent_service.import_respondents_from_rows(
+        respondents, errors, _id = respondent_service.import_respondents_from_rows(
             uow, user.id, assembly.id, headers, rows
         )
 
-        r = respondents[0]
-        assert r.email == "a@b.com"
-        assert r.consent is True
-        assert r.eligible is True
-        assert r.can_attend is False
-        assert "email" not in r.attributes
+        assert [r.external_id for r in respondents] == ["R1"]
+        assert len(errors) == 2
+        assert any("empty" in e for e in errors)
+        assert any("duplicate" in e.lower() for e in errors)
 
     def test_empty_headers_raise(self):
         uow = FakeUnitOfWork()
@@ -494,41 +498,20 @@ class TestImportRespondentsFromRows:
 
 
 class TestImportSkipsInternalColumns:
-    def test_stay_on_db_extracted_on_create(self):
+    # That the internal columns are discarded from attributes is covered by
+    # TestRespondentFromRow.test_discards_internal_columns. This test covers the
+    # import-level behaviour: the columns are reported to the organiser, and a
+    # re-imported (previously exported) row lands back in POOL.
+    def test_internal_columns_are_reported_and_reset_to_pool(self):
         uow = FakeUnitOfWork()
         user, assembly, _ = _seed(uow)
-        headers = ["external_id", "stay_on_db"]
-        rows = [{"external_id": "R1", "stay_on_db": "true"}, {"external_id": "R2", "stay_on_db": "false"}]
-
-        respondents, _errors, _id = respondent_service.import_respondents_from_rows(
-            uow, user.id, assembly.id, headers, rows
-        )
-
-        by_id = {r.external_id: r for r in respondents}
-        assert by_id["R1"].stay_on_db is True
-        assert by_id["R2"].stay_on_db is False
-        assert "stay_on_db" not in by_id["R1"].attributes
-
-    def test_internal_columns_are_skipped_not_stored(self):
-        uow = FakeUnitOfWork()
-        user, assembly, _ = _seed(uow)
-        headers = [
-            "external_id",
-            "Gender",
-            "selection_status",
-            "source_type",
-            "created_at",
-            "updated_at",
-            "selection_run_id",
-        ]
+        headers = ["external_id", "Gender", "selection_status", "source_type", "selection_run_id"]
         rows = [
             {
                 "external_id": "R1",
                 "Gender": "Female",
                 "selection_status": "SELECTED",
                 "source_type": "CSV_IMPORT",
-                "created_at": "2026-01-01T00:00:00+00:00",
-                "updated_at": "2026-01-02T00:00:00+00:00",
                 "selection_run_id": "abc",
             }
         ]
@@ -537,12 +520,59 @@ class TestImportSkipsInternalColumns:
             uow, user.id, assembly.id, headers, rows
         )
 
-        r = respondents[0]
-        # Internal columns must not leak into attributes (would collide with reserved names).
-        for key in ("selection_status", "source_type", "created_at", "updated_at", "selection_run_id"):
-            assert key not in r.attributes
-        assert r.attributes.get("Gender") == "Female"
-        # A new record imported afresh keeps the default POOL status.
-        assert r.selection_status == RespondentStatus.POOL
+        # A new record imported afresh keeps the default POOL status, even though
+        # the row said SELECTED.
+        assert respondents[0].selection_status == RespondentStatus.POOL
         # The skipped columns are reported so the organiser knows they were ignored.
         assert any("selection_status" in e for e in errors)
+
+
+class TestRespondentFromRow:
+    def test_maps_id_column_and_attributes(self):
+        row = {"external_id": "R1", "Gender": "Female", "Age": "42"}
+        respondent = respondent_service.respondent_from_row(uuid.uuid4(), uuid.uuid4(), row, "R1", "external_id")
+        assert respondent.external_id == "R1"
+        assert respondent.attributes == {"Gender": "Female", "Age": "42"}
+
+    def test_extracts_boolean_flags_and_email(self):
+        row = {
+            "external_id": "R1",
+            "email": "a@b.com",
+            "consent": "true",
+            "eligible": "true",
+            "can_attend": "false",
+            "stay_on_db": "true",
+        }
+        respondent = respondent_service.respondent_from_row(uuid.uuid4(), uuid.uuid4(), row, "R1", "external_id")
+        assert respondent.email == "a@b.com"
+        assert respondent.consent is True
+        assert respondent.eligible is True
+        assert respondent.can_attend is False
+        assert respondent.stay_on_db is True
+        # The lifted fields must not linger in attributes.
+        for key in ("email", "consent", "eligible", "can_attend", "stay_on_db"):
+            assert key not in respondent.attributes
+
+    def test_missing_flags_are_none(self):
+        respondent = respondent_service.respondent_from_row(
+            uuid.uuid4(), uuid.uuid4(), {"external_id": "R1"}, "R1", "external_id"
+        )
+        assert respondent.consent is None
+        assert respondent.eligible is None
+        assert respondent.can_attend is None
+        assert respondent.stay_on_db is None
+
+    def test_discards_internal_columns(self):
+        row = {"external_id": "R1", "Gender": "Female", "selection_status": "SELECTED", "source_type": "CSV_IMPORT"}
+        respondent = respondent_service.respondent_from_row(uuid.uuid4(), uuid.uuid4(), row, "R1", "external_id")
+        assert respondent.attributes == {"Gender": "Female"}
+
+    def test_adds_create_comment_with_filename(self):
+        user_id = uuid.uuid4()
+        respondent = respondent_service.respondent_from_row(
+            uuid.uuid4(), user_id, {"external_id": "R1"}, "R1", "external_id", filename="people.csv"
+        )
+        create_comments = [c for c in respondent.comments if c.action == RespondentAction.CREATE]
+        assert len(create_comments) == 1
+        assert "people.csv" in create_comments[0].text
+        assert create_comments[0].author_id == user_id
