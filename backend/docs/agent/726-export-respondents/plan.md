@@ -356,7 +356,7 @@ is driven by a test before the layer above it exists.
 1. ✅ **`TabularData` + `CsvExportTarget`** — *unit* (`tests/unit/`, no db/redis):
    header + rows → BOM-prefixed CSV; quoting/commas handled by `csv`; a second
    `write_sheet` call raises (D7).
-2. **`build_respondent_table`** — *unit*, pure over plain `Respondent` objects +
+2. ✅ **`build_respondent_table`** — *unit*, pure over plain `Respondent` objects +
    a schema list: id-column header rule; schema-ordered columns; fixed from
    top-level; attributes from dict; derived **included**; leftover attribute keys
    appended sorted; all internal columns appended; bool/enum/None serialisation
