@@ -13,6 +13,7 @@ from opendlp.service_layer import respondent_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
+    InvalidSelection,
     RespondentNotFoundError,
     UserNotFoundError,
 )
@@ -439,3 +440,54 @@ class TestCreateRespondentEmitsCreateComment:
             assert "CSV import" in create_comments[0].text
             assert "people.csv" in create_comments[0].text
             assert create_comments[0].author_id == user.id
+
+
+class TestImportRespondentsFromRows:
+    def test_imports_rows_with_id_column_and_attributes(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)
+        headers = ["external_id", "Gender"]
+        rows = [{"external_id": "ROW-1", "Gender": "Female"}, {"external_id": "ROW-2", "Gender": "Male"}]
+
+        respondents, errors, id_col = respondent_service.import_respondents_from_rows(
+            uow, user.id, assembly.id, headers, rows
+        )
+
+        assert errors == []
+        assert id_col == "external_id"
+        assert {r.external_id for r in respondents} == {"ROW-1", "ROW-2"}
+        assert respondents[0].attributes.get("Gender") == "Female"
+
+    def test_extracts_boolean_and_email_fixed_fields(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)
+        headers = ["external_id", "email", "consent", "eligible", "can_attend"]
+        rows = [{"external_id": "R1", "email": "a@b.com", "consent": "true", "eligible": "true", "can_attend": "false"}]
+
+        respondents, _errors, _id = respondent_service.import_respondents_from_rows(
+            uow, user.id, assembly.id, headers, rows
+        )
+
+        r = respondents[0]
+        assert r.email == "a@b.com"
+        assert r.consent is True
+        assert r.eligible is True
+        assert r.can_attend is False
+        assert "email" not in r.attributes
+
+    def test_empty_headers_raise(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)
+        with pytest.raises(InvalidSelection):
+            respondent_service.import_respondents_from_rows(uow, user.id, assembly.id, [], [])
+
+    def test_requires_manage_permission(self):
+        uow = FakeUnitOfWork()
+        user = User(email="plain@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(user)
+        assembly = Assembly(title="Locked")
+        uow.assemblies.add(assembly)
+        with pytest.raises(InsufficientPermissions):
+            respondent_service.import_respondents_from_rows(
+                uow, user.id, assembly.id, ["external_id"], [{"external_id": "R1"}]
+            )

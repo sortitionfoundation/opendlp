@@ -375,11 +375,12 @@ is driven by a test before the layer above it exists.
 6. ✅ **PostgreSQL smoke** — *e2e*: one happy-path per new route (real DB round-trip).
 7. **BDD** (decision D15): a feature — "organiser exports SELECTED-or-CONFIRMED
    respondents to CSV" — asserting the download happens and contains expected
-   rows/columns.
+   rows/columns. *(Deferred until after step 13: the BDD scenario drives the
+   export modal, which is built with the Google Sheets route.)*
 
 ### Row-oriented import refactor + re-import safety (D13, §6)
 
-8. **Extract `import_respondents_from_rows`** — refactor with existing import
+8. ✅ **Extract `import_respondents_from_rows`** — refactor with existing import
    tests staying green; add *unit* tests for the new core directly.
 9. **Column-skip + `stay_on_db` rules** — *unit* + *integration*: an exported
    file re-imports without crashing; internal reserved columns skipped with a
