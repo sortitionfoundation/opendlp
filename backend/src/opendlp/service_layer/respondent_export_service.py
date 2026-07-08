@@ -4,17 +4,13 @@ ABOUTME: Builds tabular data, resolves status filters, orchestrates the export""
 import uuid
 
 from opendlp.adapters.tabular_export import AbstractTabularExportTarget, TabularData
+from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentStatus
-from opendlp.service_layer.exceptions import (
-    AssemblyNotFoundError,
-    InsufficientPermissions,
-    InvalidSelection,
-    UserNotFoundError,
-)
-from opendlp.service_layer.permissions import can_manage_assembly
+from opendlp.service_layer.exceptions import AssemblyNotFoundError, InvalidSelection
+from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
@@ -109,10 +105,9 @@ def build_respondent_table(
     return TabularData(headers=headers, rows=rows)
 
 
-def _resolve_id_column_header(assembly: object) -> str:
-    csv_config = getattr(assembly, "csv", None)
-    if csv_config is not None and csv_config.csv_id_column:
-        return str(csv_config.csv_id_column)
+def _resolve_id_column_header(assembly: Assembly) -> str:
+    if assembly.csv is not None and assembly.csv.csv_id_column:
+        return str(assembly.csv.csv_id_column)
     return "external_id"
 
 
@@ -129,28 +124,22 @@ def _fetch_respondents(
     return list(uow.respondents.get_by_assembly_id_statuses(assembly_id, status_filter))
 
 
-def _require_manage(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> object:
-    """Load the assembly after checking the user may manage it."""
-    user = uow.users.get(user_id)
-    if not user:
-        raise UserNotFoundError(f"User {user_id} not found")
+def _load_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> Assembly:
+    """Load the assembly, assuming the caller has already checked permissions.
 
-    assembly = uow.assemblies.get(assembly_id)
+    Manage permission is enforced by the ``require_assembly_permission``
+    decorator on the public functions, so this only guards against a missing
+    row (which the decorator also rejects, but mypy needs the narrowing)."""
+    assembly: Assembly | None = uow.assemblies.get(assembly_id)
     if not assembly:
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
-
-    if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="export respondents",
-            required_role="assembly-manager, global-organiser or admin",
-        )
     return assembly
 
 
 def _write_export(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
-    assembly: object,
+    assembly: Assembly,
     status_filter: list[RespondentStatus] | None,
     target: AbstractTabularExportTarget,
     sheet_title: str,
@@ -164,6 +153,7 @@ def _write_export(
     target.write_sheet(sheet_title, table)
 
 
+@require_assembly_permission(can_manage_assembly)
 def export_respondents(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -176,26 +166,26 @@ def export_respondents(
     """Export an assembly's respondents to the given target.
 
     ``status_filter`` of ``None`` exports every non-DELETED respondent; a list
-    of statuses exports just those (fetched with one query each and merged).
-    Requires manage permission on the assembly.
+    of statuses exports just those (fetched in a single query). Requires manage
+    permission on the assembly. The caller is expected to manage the ``uow``
+    context (``with uow: ...``).
     """
-    with uow:
-        assembly = _require_manage(uow, user_id, assembly_id)
-        _write_export(uow, assembly_id, assembly, status_filter, target, sheet_title)
+    assembly = _load_assembly(uow, assembly_id)
+    _write_export(uow, assembly_id, assembly, status_filter, target, sheet_title)
 
 
+@require_assembly_permission(can_manage_assembly)
 def get_respondent_gsheet_config(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> "AssemblyRespondentGSheet | None":
     """Return the saved respondent-export sheet config, or None. Manage-gated."""
-    with uow:
-        _require_manage(uow, user_id, assembly_id)
-        config = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
-        return config.create_detached_copy() if config else None
+    config = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
+    return config.create_detached_copy() if config else None
 
 
+@require_assembly_permission(can_manage_assembly)
 def export_respondents_to_gsheet(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -210,22 +200,22 @@ def export_respondents_to_gsheet(
 
     ``target`` is the (real or fake) Google Sheets target; the caller reads its
     result URL afterwards. The spreadsheet URL and worksheet name are persisted
-    to AssemblyRespondentGSheet so later exports can pre-fill the form.
+    to AssemblyRespondentGSheet so later exports can pre-fill the form. The
+    caller is expected to manage the ``uow`` context (``with uow: ...``).
     """
     worksheet_name = worksheet_name.strip() or DEFAULT_SHEET_TITLE
-    with uow:
-        assembly = _require_manage(uow, user_id, assembly_id)
+    assembly = _load_assembly(uow, assembly_id)
 
-        config = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
-        if config is None:
-            config = AssemblyRespondentGSheet(
-                assembly_id=assembly_id,
-                url=spreadsheet_url,
-                worksheet_name=worksheet_name,
-            )
-            uow.assembly_respondent_gsheets.add(config)
-        else:
-            config.update_values(url=spreadsheet_url, worksheet_name=worksheet_name)
+    config = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
+    if config is None:
+        config = AssemblyRespondentGSheet(
+            assembly_id=assembly_id,
+            url=spreadsheet_url,
+            worksheet_name=worksheet_name,
+        )
+        uow.assembly_respondent_gsheets.add(config)
+    else:
+        config.update_values(url=spreadsheet_url, worksheet_name=worksheet_name)
 
-        _write_export(uow, assembly_id, assembly, status_filter, target, worksheet_name)
-        uow.commit()
+    _write_export(uow, assembly_id, assembly, status_filter, target, worksheet_name)
+    uow.commit()

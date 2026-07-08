@@ -375,13 +375,14 @@ def export_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
     target = CsvExportTarget()
     try:
         uow = bootstrap.get_flask_uow()
-        export_respondents(
-            uow,
-            current_user.id,
-            assembly_id,
-            status_filter=status_filter,
-            target=target,
-        )
+        with uow:
+            export_respondents(
+                uow,
+                current_user.id,
+                assembly_id,
+                status_filter=status_filter,
+                target=target,
+            )
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to export respondents",
@@ -427,7 +428,8 @@ def export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the export modal fragment (HTMX-loaded)."""
     try:
         uow = bootstrap.get_flask_uow()
-        gsheet_config = get_respondent_gsheet_config(uow, current_user.id, assembly_id)
+        with uow:
+            gsheet_config = get_respondent_gsheet_config(uow, current_user.id, assembly_id)
     except InsufficientPermissions:
         flash(_("You don't have permission to export respondents"), "error")
         return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
@@ -460,13 +462,15 @@ def run_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if destination == "gsheet":
             return _run_gsheet_export(assembly_id, status_filter, respondents_url)
         target = CsvExportTarget()
-        export_respondents(
-            bootstrap.get_flask_uow(),
-            current_user.id,
-            assembly_id,
-            status_filter=status_filter,
-            target=target,
-        )
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            export_respondents(
+                uow,
+                current_user.id,
+                assembly_id,
+                status_filter=status_filter,
+                target=target,
+            )
         return _csv_download_response(assembly_id, target)
     except InsufficientPermissions:
         flash(_("You don't have permission to export respondents"), "error")
@@ -491,15 +495,17 @@ def _run_gsheet_export(
     factory = current_app.extensions["gsheet_export_target_factory"]
     target = factory(spreadsheet_url)
     try:
-        export_respondents_to_gsheet(
-            bootstrap.get_flask_uow(),
-            current_user.id,
-            assembly_id,
-            status_filter=status_filter,
-            spreadsheet_url=spreadsheet_url,
-            worksheet_name=worksheet_name,
-            target=target,
-        )
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            export_respondents_to_gsheet(
+                uow,
+                current_user.id,
+                assembly_id,
+                status_filter=status_filter,
+                spreadsheet_url=spreadsheet_url,
+                worksheet_name=worksheet_name,
+                target=target,
+            )
     except ValueError as e:
         flash(_("Could not export to Google Sheets: %(error)s", error=str(e)), "error")
         return redirect(respondents_url)
