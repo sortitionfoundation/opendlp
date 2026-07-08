@@ -194,50 +194,7 @@ def import_respondents_from_rows(  # noqa: C901
                 continue
             seen_ids.add(external_id)
 
-            # All columns except id_column become attributes
-            attributes = {k: v for k, v in row.items() if k != id_column}
-
-            # Extract boolean flags if present (leave as None if not in CSV)
-            consent_str = pop_normalised(attributes, "consent")
-            consent = consent_str.lower() == "true" if consent_str else None
-
-            eligible_str = pop_normalised(attributes, "eligible")
-            eligible = eligible_str.lower() == "true" if eligible_str else None
-
-            can_attend_str = pop_normalised(attributes, "can_attend")
-            can_attend = can_attend_str.lower() == "true" if can_attend_str else None
-
-            # stay_on_db is honoured when creating a fresh record (e.g. importing
-            # from an internal system). A future update path must instead ignore
-            # it, since bulk import must never silently flip an existing consent.
-            stay_on_db_str = pop_normalised(attributes, "stay_on_db")
-            stay_on_db = stay_on_db_str.lower() == "true" if stay_on_db_str else None
-
-            email = pop_normalised(attributes, "email", "")
-
-            # Discard internal export-only columns before constructing the
-            # Respondent so they never land in attributes.
-            for skip_column in _INTERNAL_IMPORT_SKIP_COLUMNS:
-                pop_normalised(attributes, skip_column)
-
-            respondent = Respondent(
-                assembly_id=assembly_id,
-                external_id=external_id,
-                attributes=attributes,
-                consent=consent,
-                eligible=eligible,
-                can_attend=can_attend,
-                stay_on_db=stay_on_db,
-                email=email,
-                source_type=RespondentSourceType.CSV_IMPORT,
-            )
-            create_text = f"Created via CSV import ({filename})" if filename else "Created via CSV import"
-            respondent.add_comment(
-                text=create_text,
-                author_id=user_id,
-                action=RespondentAction.CREATE,
-            )
-            respondents.append(respondent)
+            respondents.append(respondent_from_row(assembly_id, user_id, row, external_id, id_column, filename))
 
         # Bulk add for performance
         uow.respondents.bulk_add(respondents)
@@ -256,6 +213,69 @@ def import_respondents_from_rows(  # noqa: C901
         uow.commit()
 
         return [r.create_detached_copy() for r in respondents], errors, id_column
+
+
+def respondent_from_row(
+    assembly_id: uuid.UUID,
+    user_id: uuid.UUID,
+    row: dict[str, str],
+    external_id: str,
+    id_column: str,
+    filename: str = "",
+) -> Respondent:
+    """Build a single ``Respondent`` from one parsed import row.
+
+    ``external_id`` is the already-stripped id value: the caller needs it for
+    duplicate detection, so it is passed in rather than re-derived here. Every
+    column except ``id_column`` becomes an attribute; the boolean flags and email
+    are lifted out of the attributes, and internal export-only columns are
+    discarded so they never land in ``attributes``. A CREATE comment recording
+    the import (with the filename when known) is attached.
+    """
+    # All columns except id_column become attributes
+    attributes = {k: v for k, v in row.items() if k != id_column}
+
+    # Extract boolean flags if present (leave as None if not in CSV)
+    consent_str = pop_normalised(attributes, "consent")
+    consent = consent_str.lower() == "true" if consent_str else None
+
+    eligible_str = pop_normalised(attributes, "eligible")
+    eligible = eligible_str.lower() == "true" if eligible_str else None
+
+    can_attend_str = pop_normalised(attributes, "can_attend")
+    can_attend = can_attend_str.lower() == "true" if can_attend_str else None
+
+    # stay_on_db is honoured when creating a fresh record (e.g. importing
+    # from an internal system). A future update path must instead ignore
+    # it, since bulk import must never silently flip an existing consent.
+    stay_on_db_str = pop_normalised(attributes, "stay_on_db")
+    stay_on_db = stay_on_db_str.lower() == "true" if stay_on_db_str else None
+
+    email = pop_normalised(attributes, "email", "")
+
+    # Discard internal export-only columns before constructing the
+    # Respondent so they never land in attributes.
+    for skip_column in _INTERNAL_IMPORT_SKIP_COLUMNS:
+        pop_normalised(attributes, skip_column)
+
+    respondent = Respondent(
+        assembly_id=assembly_id,
+        external_id=external_id,
+        attributes=attributes,
+        consent=consent,
+        eligible=eligible,
+        can_attend=can_attend,
+        stay_on_db=stay_on_db,
+        email=email,
+        source_type=RespondentSourceType.CSV_IMPORT,
+    )
+    create_text = f"Created via CSV import ({filename})" if filename else "Created via CSV import"
+    respondent.add_comment(
+        text=create_text,
+        author_id=user_id,
+        action=RespondentAction.CREATE,
+    )
+    return respondent
 
 
 def reset_selection_status(
