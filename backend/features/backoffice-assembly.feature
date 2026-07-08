@@ -151,3 +151,14 @@ Feature: Backoffice Assembly Management
     Then I should be on the selection page for "Selection Test Assembly"
     And I should see "updated"
     And the number to select should be "50"
+
+  Scenario: User dismisses the edit number modal without saving
+    Given I am logged in as an admin user
+    And there is an assembly called "Dismiss Number Assembly" with number to select "25"
+    And the assembly "Dismiss Number Assembly" has a gsheet configuration
+    When I visit the selection page for "Dismiss Number Assembly"
+    And I click the "Edit" link next to number to select
+    And I close the edit number modal
+    Then the edit number modal is no longer shown
+    And I should be on the selection page for "Dismiss Number Assembly"
+    And the number to select should be "25"

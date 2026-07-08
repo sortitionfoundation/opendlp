@@ -466,6 +466,9 @@ document.addEventListener("alpine:init", function () {
      *   - initialOpen: Whether modal starts open (default: false)
      *   - canClose: Whether modal can be closed (default: true)
      *   - refreshOnClose: Whether to refresh page when closing (default: false)
+     *   - closeUrl: URL to navigate to when closing (default: none). Takes
+     *       precedence over refreshOnClose. Use for server-driven modals whose
+     *       open state lives in the URL, so closing clears it.
      *
      * Methods:
      *   - open(): Open the modal
@@ -477,6 +480,7 @@ document.addEventListener("alpine:init", function () {
         var initialOpen = options.initialOpen || false;
         var initialCanClose = options.canClose !== undefined ? options.canClose : true;
         var refreshOnClose = options.refreshOnClose || false;
+        var closeUrl = options.closeUrl || "";
 
         return {
             isOpen: initialOpen,
@@ -489,7 +493,9 @@ document.addEventListener("alpine:init", function () {
             close: function () {
                 if (this.canClose) {
                     this.isOpen = false;
-                    if (refreshOnClose) {
+                    if (closeUrl) {
+                        window.location.href = closeUrl;
+                    } else if (refreshOnClose) {
                         window.location.reload();
                     }
                 }

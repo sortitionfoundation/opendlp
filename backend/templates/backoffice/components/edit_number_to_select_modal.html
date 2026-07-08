@@ -3,8 +3,11 @@
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import modal %}
 
-{# Alpine.js component for the modal state #}
-<div x-data="{ isOpen: {{ 'true' if edit_number_modal_open else 'false' }}, canClose: true, close() { if (this.canClose) window.location.href = '{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) }}'; }, closeIfAllowed() { this.close(); } }">
+{# Modal state comes from the registered modal() Alpine component: closing
+   navigates back to the selection view (which clears the ?edit_number=1 that
+   opens this modal). The methods must come from a registered component because
+   the CSP Alpine build does not register methods defined inline in x-data. #}
+<div x-data="modal({ initialOpen: {{ 'true' if edit_number_modal_open else 'false' }}, closeUrl: '{{ url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) }}' })">
     {% call modal(id="edit-number-modal", title=_("Edit Number to Select")) %}
         <p class="text-body-md mb-4" style="color: var(--color-body-text);">
             {{ _("Set the number of participants to select from the pool.") }}
