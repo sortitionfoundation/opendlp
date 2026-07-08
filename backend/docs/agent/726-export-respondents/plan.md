@@ -373,10 +373,9 @@ is driven by a test before the layer above it exists.
    `Content-Disposition: attachment; filename=...`, correct header row + one row
    per matching respondent; permission failure → flash/redirect; filter variants.
 6. ✅ **PostgreSQL smoke** — *e2e*: one happy-path per new route (real DB round-trip).
-7. **BDD** (decision D15): a feature — "organiser exports SELECTED-or-CONFIRMED
-   respondents to CSV" — asserting the download happens and contains expected
-   rows/columns. *(Deferred until after step 13: the BDD scenario drives the
-   export modal, which is built with the Google Sheets route.)*
+7. ✅ **BDD** (decision D15): a feature — "organiser exports respondents to CSV" —
+   asserting the download happens and contains expected rows/columns. *(Built
+   after step 13 since the BDD scenario drives the export modal.)*
 
 ### Row-oriented import refactor + re-import safety (D13, §6)
 
