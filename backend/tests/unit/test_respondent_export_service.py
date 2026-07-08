@@ -4,10 +4,43 @@ ABOUTME: Covers table building, status-filter resolution and the export orchestr
 import uuid
 from datetime import UTC, datetime
 
+import pytest
+
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition, RespondentFieldGroup
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentSourceType, RespondentStatus
-from opendlp.service_layer.respondent_export_service import build_respondent_table
+from opendlp.service_layer.exceptions import InvalidSelection
+from opendlp.service_layer.respondent_export_service import (
+    STATUS_FILTER_ALL,
+    STATUS_FILTER_SELECTED_OR_CONFIRMED,
+    build_respondent_table,
+    resolve_status_filter,
+)
+
+
+class TestResolveStatusFilter:
+    def test_empty_means_all(self):
+        assert resolve_status_filter("") is None
+
+    def test_all_token_means_all(self):
+        assert resolve_status_filter(STATUS_FILTER_ALL) is None
+
+    def test_selected_or_confirmed(self):
+        assert resolve_status_filter(STATUS_FILTER_SELECTED_OR_CONFIRMED) == [
+            RespondentStatus.SELECTED,
+            RespondentStatus.CONFIRMED,
+        ]
+
+    def test_single_status(self):
+        assert resolve_status_filter("POOL") == [RespondentStatus.POOL]
+
+    def test_deleted_is_rejected(self):
+        with pytest.raises(InvalidSelection):
+            resolve_status_filter("DELETED")
+
+    def test_invalid_value_is_rejected(self):
+        with pytest.raises(InvalidSelection):
+            resolve_status_filter("not-a-status")
 
 
 def _field(field_key: str, *, is_fixed: bool = False, is_derived: bool = False) -> RespondentFieldDefinition:

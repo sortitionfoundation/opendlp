@@ -4,6 +4,13 @@ ABOUTME: Builds tabular data, resolves status filters, orchestrates the export""
 from opendlp.adapters.tabular_export import TabularData
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.value_objects import RespondentStatus
+from opendlp.service_layer.exceptions import InvalidSelection
+from opendlp.translations import gettext as _
+
+# UI filter tokens accepted by resolve_status_filter alongside plain status names.
+STATUS_FILTER_ALL = "all"
+STATUS_FILTER_SELECTED_OR_CONFIRMED = "selected_or_confirmed"
 
 # Reserved top-level fields read directly off the Respondent rather than
 # from its attributes dict. Kept in sync with the fixed schema fields.
@@ -11,6 +18,23 @@ _TOP_LEVEL_FIELD_KEYS = frozenset({"email", "eligible", "can_attend", "consent",
 
 # Internal-only columns appended after the schema and attribute columns.
 _INTERNAL_COLUMNS = ("selection_status", "source_type", "selection_run_id", "created_at", "updated_at")
+
+
+def resolve_status_filter(raw: str) -> list[RespondentStatus] | None:
+    """Map a UI filter token to the statuses to export.
+
+    Returns ``None`` for "all" (every status except DELETED, applied at fetch
+    time). Rejects DELETED and unrecognised values with InvalidSelection.
+    """
+    value = (raw or "").strip()
+    if not value or value == STATUS_FILTER_ALL:
+        return None
+    if value == STATUS_FILTER_SELECTED_OR_CONFIRMED:
+        return [RespondentStatus.SELECTED, RespondentStatus.CONFIRMED]
+    status = RespondentStatus.from_str(value)
+    if status is None or status == RespondentStatus.DELETED:
+        raise InvalidSelection(_("Invalid respondent status filter: %(value)s", value=value))
+    return [status]
 
 
 def _serialise_bool(value: bool | None) -> str:

@@ -361,7 +361,7 @@ is driven by a test before the layer above it exists.
    top-level; attributes from dict; derived **included**; leftover attribute keys
    appended sorted; all internal columns appended; bool/enum/None serialisation
    per §4.
-3. **`resolve_status_filter`** — *unit*: All (everything but DELETED), single
+3. ✅ **`resolve_status_filter`** — *unit*: All (everything but DELETED), single
    status, SELECTED-or-CONFIRMED; invalid input handled.
 4. **`export_respondents` service** — *unit* over `FakeUnitOfWork`:
    permission denied → `InsufficientPermissions` (uses `can_manage_assembly`,
