@@ -426,7 +426,6 @@ assembly_respondent_gsheets = Table(
     ),
     Column("url", String(500), nullable=False, default=""),
     Column("worksheet_name", String(100), nullable=False, default="Respondents"),
-    Column("id_column", String(100), nullable=False, default="external_id"),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )

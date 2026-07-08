@@ -21,7 +21,6 @@ class AssemblyRespondentGSheet:
     assembly_respondent_gsheet_id: uuid.UUID | None = None
     url: str = ""
     worksheet_name: str = "Respondents"
-    id_column: str = "external_id"
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
