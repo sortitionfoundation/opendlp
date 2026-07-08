@@ -390,7 +390,7 @@ is driven by a test before the layer above it exists.
 
 ### Stage 2 — Google Sheets export
 
-10. **`FakeGSheetExportTarget`** (fakes) + *unit* tests exercising
+10. ✅ **`FakeGSheetExportTarget`** (fakes) + *unit* tests exercising
     `export_respondents` against it (records the single `(title, table)` write).
 11. **`AssemblyRespondentGSheet` model** (+ ORM, repo, Alembic migration,
     `_delete_all_test_data()` / BDD `delete_all_except_standard_users()` updates,

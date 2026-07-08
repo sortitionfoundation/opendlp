@@ -28,7 +28,7 @@ from opendlp.service_layer.respondent_export_service import (
     export_respondents,
     resolve_status_filter,
 )
-from tests.fakes import FakeUnitOfWork
+from tests.fakes import FakeGSheetExportTarget, FakeUnitOfWork
 
 
 def _parse_export(target: CsvExportTarget) -> list[dict[str, str]]:
@@ -281,3 +281,21 @@ class TestExportRespondents:
         rows = _parse_export(target)
         assert "nationbuilder_id" in rows[0]
         assert rows[0]["nationbuilder_id"] == "R1"
+
+
+class TestExportToGSheetTarget:
+    def test_records_single_write_with_table(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R1", RespondentStatus.POOL)
+        _add_respondent(uow, assembly, "R2", RespondentStatus.SELECTED)
+
+        target = FakeGSheetExportTarget()
+        export_respondents(uow, user.id, assembly.id, status_filter=None, target=target, sheet_title="Respondents")
+
+        assert len(target.writes) == 1
+        title, table = target.writes[0]
+        assert title == "Respondents"
+        assert table.headers[0] == "external_id"
+        exported_ids = {row[0] for row in table.rows}
+        assert exported_ids == {"R1", "R2"}
