@@ -403,7 +403,7 @@ is driven by a test before the layer above it exists.
     `AssemblyRespondentGSheet` and saved on export; surface the service-account
     email + a confirmation before writing PII externally. (The CSV path of the
     modal reuses the Stage-1 route.)
-14. **e2e** smoke for the GSheet export route (fake target).
+14. ✅ **e2e** smoke for the GSheet export route (fake target).
 
 ### Cross-cutting
 
