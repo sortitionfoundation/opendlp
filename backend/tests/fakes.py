@@ -855,6 +855,7 @@ _REPO_NAMES = (
     "users",
     "assemblies",
     "assembly_gsheets",
+    "assembly_respondent_gsheets",
     "user_invites",
     "user_assembly_roles",
     "selection_run_records",

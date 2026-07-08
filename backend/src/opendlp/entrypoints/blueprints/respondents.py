@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -18,6 +18,7 @@ from opendlp.domain.respondent_field_schema import CHOICE_TYPES, GROUP_DISPLAY_O
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import ALLOWED_SELECTION_STATUS_TRANSITIONS, RespondentStatus
+from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.edit_respondent_form import (
     ATTR_FIELD_PREFIX,
     build_edit_respondent_form,
@@ -46,7 +47,12 @@ from opendlp.service_layer.exceptions import (
     RespondentNotFoundError,
 )
 from opendlp.service_layer.permissions import can_edit_respondent, can_manage_assembly
-from opendlp.service_layer.respondent_export_service import export_respondents, resolve_status_filter
+from opendlp.service_layer.respondent_export_service import (
+    export_respondents,
+    export_respondents_to_gsheet,
+    get_respondent_gsheet_config,
+    resolve_status_filter,
+)
 from opendlp.service_layer.respondent_field_schema_service import (
     compute_diff_for_pending_csv,
     get_schema,
@@ -390,12 +396,119 @@ def export_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
+    return _csv_download_response(assembly_id, target)
+
+
+def _csv_download_response(assembly_id: uuid.UUID, target: CsvExportTarget) -> Response:
     filename = f"respondents-{str(assembly_id)[:8]}.csv"
     return Response(
         target.getvalue(),
         mimetype="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+def _export_status_options() -> list[dict[str, str]]:
+    """Filter options offered in the export modal (value, label)."""
+    return [
+        {"value": "", "label": _("All respondents")},
+        {"value": "selected_or_confirmed", "label": _("Selected or confirmed")},
+        {"value": "POOL", "label": _("Pool")},
+        {"value": "SELECTED", "label": _("Selected")},
+        {"value": "CONFIRMED", "label": _("Confirmed")},
+        {"value": "WITHDRAWN", "label": _("Withdrawn")},
+        {"value": "TEST_SUBMISSION", "label": _("Test submission")},
+    ]
+
+
+@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/export/modal")
+@login_required
+def export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Render the export modal fragment (HTMX-loaded)."""
+    try:
+        uow = bootstrap.get_flask_uow()
+        gsheet_config = get_respondent_gsheet_config(uow, current_user.id, assembly_id)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to export respondents"), "error")
+        return redirect(url_for("respondents.view_assembly_respondents", assembly_id=assembly_id))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    return render_template(
+        "backoffice/respondents/export_modal.html",
+        assembly_id=assembly_id,
+        gsheet_config=gsheet_config,
+        status_options=_export_status_options(),
+        service_account_email=get_service_account_email(),
+    ), 200
+
+
+@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/export/run", methods=["POST"])
+@login_required
+def run_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Run an export from the modal: CSV download or Google Sheets write."""
+    respondents_url = url_for("respondents.view_assembly_respondents", assembly_id=assembly_id)
+    destination = request.form.get("destination", "csv")
+    try:
+        status_filter = resolve_status_filter(request.form.get("status", ""))
+    except InvalidSelection as e:
+        flash(_("Invalid export filter: %(error)s", error=str(e)), "error")
+        return redirect(respondents_url)
+
+    try:
+        if destination == "gsheet":
+            return _run_gsheet_export(assembly_id, status_filter, respondents_url)
+        target = CsvExportTarget()
+        export_respondents(
+            bootstrap.get_flask_uow(),
+            current_user.id,
+            assembly_id,
+            status_filter=status_filter,
+            target=target,
+        )
+        return _csv_download_response(assembly_id, target)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to export respondents"), "error")
+        return redirect(respondents_url)
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
+def _run_gsheet_export(
+    assembly_id: uuid.UUID,
+    status_filter: list[RespondentStatus] | None,
+    respondents_url: str,
+) -> ResponseReturnValue:
+    """Export to Google Sheets, then flash the resulting sheet URL."""
+    spreadsheet_url = request.form.get("spreadsheet_url", "").strip()
+    worksheet_name = request.form.get("worksheet_name", "").strip()
+    if not spreadsheet_url:
+        flash(_("A Google Sheet URL is required to export to Google Sheets"), "error")
+        return redirect(respondents_url)
+
+    factory = current_app.extensions["gsheet_export_target_factory"]
+    target = factory(spreadsheet_url)
+    try:
+        export_respondents_to_gsheet(
+            bootstrap.get_flask_uow(),
+            current_user.id,
+            assembly_id,
+            status_filter=status_filter,
+            spreadsheet_url=spreadsheet_url,
+            worksheet_name=worksheet_name,
+            target=target,
+        )
+    except ValueError as e:
+        flash(_("Could not export to Google Sheets: %(error)s", error=str(e)), "error")
+        return redirect(respondents_url)
+
+    result_url = getattr(target, "result_url", "")
+    flash(_("Respondents exported to Google Sheets."), "success")
+    if result_url:
+        flash(result_url, "info")
+    return redirect(respondents_url)
 
 
 @respondents_bp.route("/assembly/<uuid:assembly_id>/respondents")

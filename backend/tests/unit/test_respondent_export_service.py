@@ -26,6 +26,8 @@ from opendlp.service_layer.respondent_export_service import (
     STATUS_FILTER_SELECTED_OR_CONFIRMED,
     build_respondent_table,
     export_respondents,
+    export_respondents_to_gsheet,
+    get_respondent_gsheet_config,
     resolve_status_filter,
 )
 from tests.fakes import FakeGSheetExportTarget, FakeUnitOfWork
@@ -299,3 +301,69 @@ class TestExportToGSheetTarget:
         assert table.headers[0] == "external_id"
         exported_ids = {row[0] for row in table.rows}
         assert exported_ids == {"R1", "R2"}
+
+
+_SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
+
+
+class TestExportRespondentsToGSheet:
+    def test_writes_and_saves_config(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R1", RespondentStatus.SELECTED)
+
+        target = FakeGSheetExportTarget()
+        export_respondents_to_gsheet(
+            uow,
+            user.id,
+            assembly.id,
+            status_filter=[RespondentStatus.SELECTED],
+            spreadsheet_url=_SHEET_URL,
+            worksheet_name="Export tab",
+            target=target,
+        )
+
+        assert len(target.writes) == 1
+        title, table = target.writes[0]
+        assert title == "Export tab"
+        assert {row[0] for row in table.rows} == {"R1"}
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.url == _SHEET_URL
+        assert saved.worksheet_name == "Export tab"
+
+    def test_updates_existing_config(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R1", RespondentStatus.POOL)
+
+        export_respondents_to_gsheet(
+            uow,
+            user.id,
+            assembly.id,
+            status_filter=None,
+            spreadsheet_url=_SHEET_URL,
+            worksheet_name="First",
+            target=FakeGSheetExportTarget(),
+        )
+        export_respondents_to_gsheet(
+            uow,
+            user.id,
+            assembly.id,
+            status_filter=None,
+            spreadsheet_url=_SHEET_URL,
+            worksheet_name="Second",
+            target=FakeGSheetExportTarget(),
+        )
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.worksheet_name == "Second"
+        # Still one config row for the assembly.
+        assert len(list(uow.assembly_respondent_gsheets.all())) == 1
+
+    def test_get_config_returns_none_when_unset(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        assert get_respondent_gsheet_config(uow, user.id, assembly.id) is None
