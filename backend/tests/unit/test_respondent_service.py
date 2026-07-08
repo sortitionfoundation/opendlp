@@ -491,3 +491,58 @@ class TestImportRespondentsFromRows:
             respondent_service.import_respondents_from_rows(
                 uow, user.id, assembly.id, ["external_id"], [{"external_id": "R1"}]
             )
+
+
+class TestImportSkipsInternalColumns:
+    def test_stay_on_db_extracted_on_create(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)
+        headers = ["external_id", "stay_on_db"]
+        rows = [{"external_id": "R1", "stay_on_db": "true"}, {"external_id": "R2", "stay_on_db": "false"}]
+
+        respondents, _errors, _id = respondent_service.import_respondents_from_rows(
+            uow, user.id, assembly.id, headers, rows
+        )
+
+        by_id = {r.external_id: r for r in respondents}
+        assert by_id["R1"].stay_on_db is True
+        assert by_id["R2"].stay_on_db is False
+        assert "stay_on_db" not in by_id["R1"].attributes
+
+    def test_internal_columns_are_skipped_not_stored(self):
+        uow = FakeUnitOfWork()
+        user, assembly, _ = _seed(uow)
+        headers = [
+            "external_id",
+            "Gender",
+            "selection_status",
+            "source_type",
+            "created_at",
+            "updated_at",
+            "selection_run_id",
+        ]
+        rows = [
+            {
+                "external_id": "R1",
+                "Gender": "Female",
+                "selection_status": "SELECTED",
+                "source_type": "CSV_IMPORT",
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-02T00:00:00+00:00",
+                "selection_run_id": "abc",
+            }
+        ]
+
+        respondents, errors, _id = respondent_service.import_respondents_from_rows(
+            uow, user.id, assembly.id, headers, rows
+        )
+
+        r = respondents[0]
+        # Internal columns must not leak into attributes (would collide with reserved names).
+        for key in ("selection_status", "source_type", "created_at", "updated_at", "selection_run_id"):
+            assert key not in r.attributes
+        assert r.attributes.get("Gender") == "Female"
+        # A new record imported afresh keeps the default POOL status.
+        assert r.selection_status == RespondentStatus.POOL
+        # The skipped columns are reported so the organiser knows they were ignored.
+        assert any("selection_status" in e for e in errors)
