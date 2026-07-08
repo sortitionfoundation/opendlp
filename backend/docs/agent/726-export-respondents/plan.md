@@ -372,7 +372,7 @@ is driven by a test before the layer above it exists.
    `FakeUnitOfWork`): `GET .../respondents/export?status=...` → 200, `text/csv`,
    `Content-Disposition: attachment; filename=...`, correct header row + one row
    per matching respondent; permission failure → flash/redirect; filter variants.
-6. **PostgreSQL smoke** — *e2e*: one happy-path per new route (real DB round-trip).
+6. ✅ **PostgreSQL smoke** — *e2e*: one happy-path per new route (real DB round-trip).
 7. **BDD** (decision D15): a feature — "organiser exports SELECTED-or-CONFIRMED
    respondents to CSV" — asserting the download happens and contains expected
    rows/columns.
