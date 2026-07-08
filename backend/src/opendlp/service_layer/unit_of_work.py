@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyGSheetRepository,
     SqlAlchemyAssemblyRepository,
+    SqlAlchemyAssemblyRespondentGSheetRepository,
     SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyEmailTemplateRepository,
     SqlAlchemyPasswordResetTokenRepository,
@@ -32,6 +33,7 @@ from opendlp.adapters.sql_repository import (
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
+    AssemblyRespondentGSheetRepository,
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
@@ -58,6 +60,7 @@ class AbstractUnitOfWork(abc.ABC):
     users: UserRepository
     assemblies: AssemblyRepository
     assembly_gsheets: AssemblyGSheetRepository
+    assembly_respondent_gsheets: AssemblyRespondentGSheetRepository
     user_invites: UserInviteRepository
     user_assembly_roles: UserAssemblyRoleRepository
     selection_run_records: SelectionRunRecordRepository
@@ -140,6 +143,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.users = SqlAlchemyUserRepository(self.session)
         self.assemblies = SqlAlchemyAssemblyRepository(self.session)
         self.assembly_gsheets = SqlAlchemyAssemblyGSheetRepository(self.session)
+        self.assembly_respondent_gsheets = SqlAlchemyAssemblyRespondentGSheetRepository(self.session)
         self.user_invites = SqlAlchemyUserInviteRepository(self.session)
         self.user_assembly_roles = SqlAlchemyUserAssemblyRoleRepository(self.session)
         self.selection_run_records = SqlAlchemySelectionRunRecordRepository(self.session)

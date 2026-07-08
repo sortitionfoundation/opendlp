@@ -8,6 +8,7 @@ from typing import Any
 
 from opendlp.adapters.tabular_export import AbstractTabularExportTarget, TabularData
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
@@ -36,6 +37,7 @@ from opendlp.service_layer.repositories import (
     AbstractRepository,
     AssemblyGSheetRepository,
     AssemblyRepository,
+    AssemblyRespondentGSheetRepository,
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
@@ -324,6 +326,29 @@ class FakeAssemblyGSheetRepository(FakeRepository, AssemblyGSheetRepository):
 
     def delete(self, item: AssemblyGSheet) -> None:
         """Delete an AssemblyGSheet from the repository."""
+        if item in self._items:
+            self._items.remove(item)
+
+
+class FakeAssemblyRespondentGSheetRepository(FakeRepository, AssemblyRespondentGSheetRepository):
+    """Fake implementation of AssemblyRespondentGSheetRepository."""
+
+    def get(self, item_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
+        """Get an AssemblyRespondentGSheet by its ID."""
+        for item in self._items:
+            if item.assembly_respondent_gsheet_id == item_id:
+                return item
+        return None
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
+        """Get an AssemblyRespondentGSheet by its assembly ID."""
+        for item in self._items:
+            if item.assembly_id == assembly_id:
+                return item
+        return None
+
+    def delete(self, item: AssemblyRespondentGSheet) -> None:
+        """Delete an AssemblyRespondentGSheet from the repository."""
         if item in self._items:
             self._items.remove(item)
 
@@ -862,6 +887,7 @@ class FakeStore:
         self.users = FakeUserRepository()
         self.assemblies = FakeAssemblyRepository()
         self.assembly_gsheets = FakeAssemblyGSheetRepository()
+        self.assembly_respondent_gsheets = FakeAssemblyRespondentGSheetRepository()
         self.user_invites = FakeUserInviteRepository()
         self.user_assembly_roles = FakeUserAssemblyRoleRepository()
         self.selection_run_records = FakeSelectionRunRecordRepository()

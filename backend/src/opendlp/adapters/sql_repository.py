@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
@@ -40,6 +41,7 @@ from opendlp.domain.value_objects import (
 from opendlp.service_layer.repositories import (
     AssemblyGSheetRepository,
     AssemblyRepository,
+    AssemblyRespondentGSheetRepository,
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
@@ -455,6 +457,30 @@ class SqlAlchemyAssemblyGSheetRepository(SqlAlchemyRepository, AssemblyGSheetRep
 
     def delete(self, item: AssemblyGSheet) -> None:
         """Delete an AssemblyGSheet from the repository."""
+        self.session.delete(item)
+
+
+class SqlAlchemyAssemblyRespondentGSheetRepository(SqlAlchemyRepository, AssemblyRespondentGSheetRepository):
+    """SQLAlchemy implementation of AssemblyRespondentGSheetRepository."""
+
+    def add(self, item: AssemblyRespondentGSheet) -> None:
+        """Add an AssemblyRespondentGSheet to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
+        """Get an AssemblyRespondentGSheet by its ID."""
+        return self.session.query(AssemblyRespondentGSheet).filter_by(assembly_respondent_gsheet_id=item_id).first()
+
+    def all(self) -> Iterable[AssemblyRespondentGSheet]:
+        """Get all AssemblyRespondentGSheets."""
+        return self.session.query(AssemblyRespondentGSheet).all()
+
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
+        """Get an AssemblyRespondentGSheet by its assembly ID."""
+        return self.session.query(AssemblyRespondentGSheet).filter_by(assembly_id=assembly_id).first()
+
+    def delete(self, item: AssemblyRespondentGSheet) -> None:
+        """Delete an AssemblyRespondentGSheet from the repository."""
         self.session.delete(item)
 
 

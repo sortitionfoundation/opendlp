@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Any
 
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
@@ -213,6 +214,20 @@ class AssemblyGSheetRepository(AbstractRepository):
     @abc.abstractmethod
     def delete(self, item: AssemblyGSheet) -> None:
         """Delete an AssemblyGSheet from the repository."""
+        raise NotImplementedError
+
+
+class AssemblyRespondentGSheetRepository(AbstractRepository):
+    """Repository interface for AssemblyRespondentGSheet domain objects."""
+
+    @abc.abstractmethod
+    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
+        """Get an AssemblyRespondentGSheet by its assembly ID."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: AssemblyRespondentGSheet) -> None:
+        """Delete an AssemblyRespondentGSheet from the repository."""
         raise NotImplementedError
 
 
