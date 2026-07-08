@@ -132,7 +132,8 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 | Module                       | Purpose                                                                                            | Key dependencies                                                            |
 | ---------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `assembly_service`           | Assembly CRUD, GSheet config, target categories/values, CSV config, selection settings             | SQLAlchemy, `sortition-algorithms`                                          |
-| `respondent_service`         | Respondent CRUD, CSV import, attribute analysis                                                    | CSV parsing, permissions                                                    |
+| `respondent_service`         | Respondent CRUD, CSV/row import, attribute analysis                                                | CSV parsing, permissions                                                    |
+| `respondent_export_service`  | Build tabular respondent data and export it to CSV or Google Sheets, with status filtering         | `tabular_export`, `gsheet_export`, permissions                              |
 | `sortition`                  | Celery task dispatch for GSheet + DB selection workflows; run status/cancellation/health           | `celery`, `sortition-algorithms`, `error_translation`, `report_translation` |
 | `user_service`               | User lifecycle, authentication, OAuth linking, assembly role management, profile updates           | email adapter, template renderer, URL generator, `security`                 |
 | `invite_service`             | Invite generation (single/batch), validation, revocation, cleanup                                  | user domain, permissions                                                    |
@@ -201,6 +202,8 @@ Roughly grouped:
 | `sortition_algorithms.py`   | `CSVGSheetDataSource` and related adapters wrapping the `sortition-algorithms` library                               |
 | `sortition_data_adapter.py` | `OpenDLPDataAdapter` exposing respondent/target data to `sortition-algorithms` for DB-driven selection               |
 | `sortition_progress.py`     | `DatabaseProgressReporter` — writes `sortition-algorithms` progress into `SelectionRunRecord` rows                   |
+| `tabular_export.py`         | `TabularData`, `AbstractTabularExportTarget` and the in-memory `CsvExportTarget` for respondent exports              |
+| `gsheet_export.py`          | `GSheetExportTarget` — writes a table into a worksheet of an existing spreadsheet via `gspread`                      |
 
 `bootstrap.py` wires these together: it calls `start_mappers()`, builds a session factory, and returns a `SqlAlchemyUnitOfWork` along with an email adapter / template renderer / URL generator selected from config.
 

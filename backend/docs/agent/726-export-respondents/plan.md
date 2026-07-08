@@ -406,8 +406,8 @@ is driven by a test before the layer above it exists.
 
 ### Cross-cutting
 
-15. **i18n**: wrap new UI strings in `_()`/`_l()`; run `just translate-regen`.
-16. **Docs**: update `docs/architecture.md` (respondent service/adapters/new
+15. ✅ **i18n**: wrap new UI strings in `_()`/`_l()`; run `just translate-regen`.
+16. ✅ **Docs**: update `docs/architecture.md` (respondent service/adapters/new
     model rows); short respondent-export doc. (The `AssemblyGSheet` →
     `AssemblySelectionGSheet` rename is a separate follow-up round, S3.) Run
     `just check` + `just test`; regenerate `../.secrets.baseline` if test secret
