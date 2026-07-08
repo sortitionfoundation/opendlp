@@ -1184,6 +1184,21 @@ def click_save_button(page: Page):
     page.wait_for_load_state("networkidle")
 
 
+@when("I close the edit number modal")
+def close_edit_number_modal(page: Page):
+    """Dismiss the modal via its close (X) button, which calls the modal's close()."""
+    page.locator("#edit-number-modal").get_by_role("button", name="Close").click()
+    page.wait_for_load_state("networkidle")
+
+
+@then("the edit number modal is no longer shown")
+def edit_number_modal_not_shown(page: Page):
+    """close() navigates back to the clean selection URL, so the modal (only
+    rendered when ?edit_number=1) is gone entirely. If close() had errored the
+    page would still carry edit_number=1 and the modal would remain."""
+    expect(page.locator("#edit-number-modal")).to_have_count(0)
+
+
 @then(parsers.parse('I should be on the selection page for "{title}"'))
 def should_be_on_selection_page(page: Page, title: str, test_database):
     """Verify we're on the selection page for the specified assembly."""
