@@ -96,6 +96,21 @@ class TestBackofficeUploadRespondents:
         # Each error sits on its own line, separated from the summary by <br>.
         assert message.count("<br>") == 2
 
+    def test_upload_with_many_warnings_caps_flash_lines(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The flash lists at most 20 errors plus an 'and N more' line."""
+        # One valid row followed by 25 duplicates of it, so 25 rows are skipped.
+        rows = "\n".join(["id,name", "ID001,Alice"] + [f"ID001,Dup{i}" for i in range(25)])
+        _upload(logged_in_admin, existing_assembly.id, rows)
+        with logged_in_admin.session_transaction() as session:
+            warnings = [msg[1] for msg in session.get("_flashes", []) if msg[0] == "warning"]
+        assert len(warnings) == 1
+        message = warnings[0]
+        # Summary + 20 capped error lines + the "and N more" line = 21 <br> separators.
+        assert message.count("<br>") == 21
+        assert "and 5 more" in message
+
     def test_upload_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
         """Unauthenticated users are redirected to login."""
         response = client.post(

@@ -74,6 +74,10 @@ respondents_bp = Blueprint("respondents", __name__)
 
 logger = structlog.get_logger(__name__)
 
+# Cap how many per-row import warnings we list in the flash message; the full
+# list always goes to the logs. Beyond this a bottom-right alert is unwieldy.
+_MAX_FLASH_ERROR_LINES = 20
+
 
 def _run_csv_import(
     assembly_id: uuid.UUID,
@@ -123,10 +127,20 @@ def _run_csv_import(
             count=len(respondents),
             errors=len(errors),
         )
-        # Render the summary and each per-row warning on its own line. Errors can
-        # contain CSV-supplied values (eg. a duplicate id), so escape() each one
-        # before joining with <br> to keep the flash safe from injection.
-        lines = [escape(summary)] + [escape(error) for error in errors]
+        # Render the summary and each per-row warning on its own line, capped so
+        # a bottom-right alert stays usable; the full list is in the logs above.
+        # Errors can contain CSV-supplied values (eg. a duplicate id), so escape()
+        # each one before joining with <br> to keep the flash safe from injection.
+        lines = [escape(summary)] + [escape(error) for error in errors[:_MAX_FLASH_ERROR_LINES]]
+        if len(errors) > _MAX_FLASH_ERROR_LINES:
+            lines.append(
+                escape(
+                    _(
+                        "... and %(count)d more (see the server logs for the full list)",
+                        count=len(errors) - _MAX_FLASH_ERROR_LINES,
+                    )
+                )
+            )
         flash(Markup("<br>").join(lines), "warning")
     else:
         flash(
