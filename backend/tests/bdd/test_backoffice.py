@@ -13,6 +13,7 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
+from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
 
@@ -24,6 +25,7 @@ scenarios("../../features/backoffice-assembly.feature")
 scenarios("../../features/backoffice-assembly-members.feature")
 scenarios("../../features/backoffice-assembly-gsheet.feature")
 scenarios("../../features/backoffice-csv-upload.feature")
+scenarios("../../features/backoffice-registration-editor.feature")
 
 
 # Store assembly data between steps
@@ -378,6 +380,37 @@ def create_test_assembly_with_number_to_select(title: str, number: int, admin_us
         number_to_select=number,
     )
     _assembly_name_id_cache.add_existing(title, assembly)
+
+
+@given(parsers.parse('there is an assembly called "{title}" with a registration page'))
+def create_test_assembly_with_registration_page(title: str, admin_user, test_database):
+    """Create a test assembly that already has a registration page (in TEST status)."""
+    session_factory = test_database
+    assembly = create_assembly(
+        uow=SqlAlchemyUnitOfWork(session_factory),
+        title=title,
+        created_by_user_id=admin_user.id,
+    )
+    _assembly_name_id_cache.add_existing(title, assembly)
+    create_registration_page_with_slugs(
+        uow=SqlAlchemyUnitOfWork(session_factory),
+        user_id=admin_user.id,
+        assembly_id=assembly.id,
+    )
+
+
+@when(parsers.parse('I visit the registration form editor for "{title}"'))
+def visit_registration_form_editor(page: Page, title: str, test_database):
+    """Open the registration form step in edit mode."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form&edit=1")
+
+
+@then("the HTML content field should be a mounted code editor")
+def html_content_is_code_editor(page: Page):
+    """The CodeMirror editor mounts as the textarea's sibling and becomes visible."""
+    editor = page.locator("textarea[name='html_content'] + .cm-editor")
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when("I try to access the backoffice dashboard")

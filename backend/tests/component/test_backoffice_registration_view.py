@@ -201,3 +201,38 @@ class TestSaveRedirectPreservesEditMode:
 
         assert response.status_code == 302
         assert "edit=1" not in response.location
+
+
+class TestCodeEditorEnhancement:
+    """The HTML textareas opt into the CodeMirror progressive enhancement."""
+
+    def test_html_content_textarea_marked_for_code_editor_in_read_only(self, logged_in_admin, fake_store, assembly_id):
+        """Read-only view still tags the textarea so it renders highlighted (Q4)."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+
+        assert response.status_code == 200
+        textarea = _extract_textarea(response.get_data(as_text=True))
+        assert "data-code-editor" in textarea
+        assert "readonly" in textarea
+
+    def test_html_content_textarea_marked_for_code_editor_in_edit_mode(self, logged_in_admin, fake_store, assembly_id):
+        """Edit mode tags the textarea and leaves it editable."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
+
+        assert response.status_code == 200
+        textarea = _extract_textarea(response.get_data(as_text=True))
+        assert "data-code-editor" in textarea
+        assert "readonly" not in textarea
+
+    def test_editor_bundle_is_loaded_on_the_page(self, logged_in_admin, fake_store, assembly_id):
+        """The CodeMirror bundle is referenced so the enhancement can run."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+
+        assert response.status_code == 200
+        assert "backoffice/js/dist/html-editor.js" in response.get_data(as_text=True)
