@@ -186,7 +186,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
             {% if required %}required{% endif %}
             {% if disabled %}disabled{% endif %}
-            {% if code_editor %}data-code-editor data-language="html"{% endif %}
+            {% if code_editor %}data-code-editor{% endif %}
             {% if attrs %}{{ attrs | safe }}{% endif %}
             class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 resize-y {{ classes }}"
             style="
