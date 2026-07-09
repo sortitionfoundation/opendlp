@@ -307,9 +307,11 @@ already rely on `just setup` — confirm during implementation).
 4. ✅ **Done** — docs (7.7: frontend_build.md added, design-system + security docs updated, AGENTS.md
    linked) and CI/BDD build step (7.8: `setup-python-env` action now runs `npm run build`, so the JS
    bundle is built before BDD).
-5. ✅ **Done** — tests (§5): component assertions + a BDD editor-mount scenario. The BDD scenario
-   binds/collects cleanly; full browser execution needs the DB/redis/docker stack (unavailable in the
-   implementation sandbox), so it must be run via `just test-bdd` / CI to confirm end-to-end.
+5. ✅ **Done** — tests (§5): component assertions + a BDD editor-mount scenario, **all executed and
+   passing**: 63/63 backoffice BDD scenarios (incl. the new editor mount in real Chromium against
+   Postgres/Redis), 19 e2e+component registration tests, 584 component tests. Only `docker` is
+   unavailable in the sandbox, so the Dockerfile build path (§7.4) still wants a real `docker build`
+   to confirm esbuild's linux binary resolves.
 
 ## Sources
 
