@@ -303,9 +303,13 @@ already rely on `just setup` — confirm during implementation).
    full CM6 initialiser bundle (7.1) building via `just build-all`. `just check` green.
 2. ✅ **Done** — initialiser: read-only vs editable, textarea sync, light theme, accessibility (§4)
    (implemented up-front in step 1's `html-editor.js` rather than as a separate pass).
-3. Macro flag + template wiring for all three textareas (7.6).
-4. Docs (7.7) and CI/BDD build step (7.8).
-5. Tests (§5).
+3. ✅ **Done** — macro flag + template wiring for all three textareas (7.6).
+4. ✅ **Done** — docs (7.7: frontend_build.md added, design-system + security docs updated, AGENTS.md
+   linked) and CI/BDD build step (7.8: `setup-python-env` action now runs `npm run build`, so the JS
+   bundle is built before BDD).
+5. ✅ **Done** — tests (§5): component assertions + a BDD editor-mount scenario. The BDD scenario
+   binds/collects cleanly; full browser execution needs the DB/redis/docker stack (unavailable in the
+   implementation sandbox), so it must be run via `just test-bdd` / CI to confirm end-to-end.
 
 ## Sources
 
