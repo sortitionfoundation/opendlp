@@ -12,19 +12,27 @@ This project uses the GOV.UK Frontend framework v5.11.1 with custom Sortition Fo
 
 ## Build Pipeline
 
-CSS must be built using npm/Sass before running the application:
+Frontend assets (CSS and JavaScript) must be built using npm before running the application.
+There are three build tools: Dart Sass (GOV.UK CSS), Tailwind (backoffice CSS), and esbuild
+(backoffice JavaScript bundles). See [Frontend Build](../frontend_build.md) for the full picture.
 
 ```bash
-# Build CSS once
-just build-css
-# or: npm run build:sass
+# Build everything (CSS + JS) once
+just build-all
+# or: npm run build
 
-# Watch and rebuild CSS on changes
-just watch-css
-# or: npm run watch:sass
+# Build CSS only
+just build-css        # GOV.UK (npm run build:sass)
+just build-backoffice # backoffice Tailwind (npm run build:backoffice)
+
+# Build JS only
+just build-js         # esbuild (npm run build:js)
+
+# Watch and rebuild on changes
+just watch-css        # or watch-backoffice / watch-js
 
 # Build and run application
-just run  # Automatically builds CSS first
+just run  # Automatically runs build-all first
 ```
 
 ## Sortition Foundation Color Palette

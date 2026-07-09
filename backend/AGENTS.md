@@ -155,7 +155,7 @@ See [docs/configuration.md](docs/configuration.md) for complete configuration re
 ### Code Style
 
 - Follow Black code style (double quotes preferred)
-- All code files start with 2-line ABOUTME comment
+- All code files start with 2-line ABOUTME comment (but not Markdown files)
 - Type hints required (`mypy` configured with strict settings)
 - Line length: 120 characters (configured in Ruff)
 - Don't use `datetime.utcnow()` - instead use `datetime.now(UTC)` - or `opendlp.utils.aware_utcnow` if you need to pass a function with no arguments
@@ -254,6 +254,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Postfix Email Configuration](docs/postfix_configuration.md) - SMTP relay setup for production
 - [Google Service Account Setup](docs/google_service_account.md) - Google Sheets integration credentials
 - [Frontend Security Guidelines](docs/frontend_security.md) - CSP compliance, JavaScript/Alpine.js/CSS patterns
+- [Frontend Build Pipeline](docs/frontend_build.md) - Sass/Tailwind/esbuild asset build and `just` targets
 - [Project Specification](docs/spec.md) - Original project specification
 
 ### Agent-Specific Documentation
@@ -272,6 +273,7 @@ The `docs/agent/` folder contains documentation for AI agents. See [docs/agent/A
 **IMPORTANT - Before creating or modifying UI components:**
 
 Read the [Component Accessibility Guide](docs/agent/component_accessibility.md). All components MUST comply with:
+
 - Semantic HTML structure
 - WAI-ARIA attributes (aria-label for icon buttons, aria-pressed for toggles, etc.)
 - Keyboard navigation (focusable, logical tab order, expected shortcuts)

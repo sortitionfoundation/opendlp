@@ -44,6 +44,21 @@ Our CSP uses `'strict-dynamic'` which provides strong XSS protection:
 
 **Important:** With `'strict-dynamic'` CSP, ALL `<script>` tags (even external ones) need the `nonce` attribute.
 
+### Bundled JavaScript (esbuild)
+
+Larger first-party JavaScript that depends on npm packages (e.g. the CodeMirror HTML editor) is
+authored as ES modules under `static/backoffice/js/src/` and bundled by esbuild into
+`static/backoffice/js/dist/`. The bundled output is loaded exactly like any other script — with a
+`nonce` and cache busting — and is served from `'self'` (no third-party CDN, so no SRI needed). The
+bundle is gitignored and built by `npm run build` (see [Frontend Build](frontend_build.md)).
+
+```html
+<script
+  nonce="{{ csp_nonce }}"
+  src="{{ url_for('static', filename='backoffice/js/dist/html-editor.js', v=static_hashes('backoffice/js/dist/html-editor.js')) }}"
+></script>
+```
+
 ### Inline Scripts (Minimal Use)
 
 Only for critical functionality that must run before external scripts load.
@@ -182,7 +197,9 @@ Static assets use query parameter versioning:
 <script src="{{ url_for('static', filename='js/utilities.js', v=static_hashes('js/utilities.js')) }}"></script>
 ```
 
-When files change, hashes change → new URL → cache bypass. Note a new JS file needs a new hash in the context processor.
+When files change, hashes change → new URL → cache bypass. `static_hashes()` hashes the file on
+demand from its path, so a new JS or CSS file needs no registration — it just has to exist under the
+static directory at request time (which for built bundles means running `npm run build` first).
 
 **Don't manually version files** - the hash system handles it.
 
