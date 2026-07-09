@@ -435,6 +435,23 @@ def saved_registration_html_contains(page: Page, text: str):
     expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when("I open the form skeleton preview")
+def open_form_skeleton_preview(page: Page):
+    """Click the 'Show Form Skeleton' button to fetch the skeleton and open its modal."""
+    page.get_by_role("button", name="Show Form Skeleton").click()
+
+
+@then("the form skeleton should be shown in a read-only code editor")
+def skeleton_shown_in_read_only_editor(page: Page):
+    """The skeleton modal mounts a non-editable CodeMirror editor holding the generated form HTML."""
+    editor = page.locator('[aria-labelledby="skeleton-modal-title"] .cm-editor')
+    expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # A read-only CodeMirror view is not editable — its content is not contentEditable.
+    expect(editor.locator(".cm-content")).to_have_attribute("contenteditable", "false")
+    # The generated skeleton always ends with a submit button labelled "Register".
+    expect(editor).to_contain_text("Register")
+
+
 @when("I try to access the backoffice dashboard")
 def try_access_backoffice_dashboard(page: Page):
     """Attempt to access the backoffice dashboard."""

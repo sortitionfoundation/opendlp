@@ -16,3 +16,10 @@ Feature: Backoffice registration HTML editor
     And I type "ROUNDTRIP-MARKER-4931" into the HTML content code editor
     And I save the registration form
     Then the saved registration HTML should contain "ROUNDTRIP-MARKER-4931"
+
+  Scenario: The form skeleton preview is shown in a read-only code editor
+    Given I am logged in as an admin user
+    And there is an assembly called "Skeleton Assembly" with a registration page
+    When I visit the registration form editor for "Skeleton Assembly"
+    And I open the form skeleton preview
+    Then the form skeleton should be shown in a read-only code editor
