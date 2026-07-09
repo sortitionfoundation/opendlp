@@ -299,9 +299,10 @@ already rely on `just setup` — confirm during implementation).
 
 ### 7.9 Rollout order (suggested)
 
-1. Add esbuild + scripts (7.2), justfile targets (7.3), a trivial CM6 entry that mounts on one
-   textarea — prove the pipeline end-to-end locally and in a Docker build.
-2. Build out the initialiser: read-only vs editable, textarea sync, light theme, accessibility (§4).
+1. ✅ **Done** — esbuild + scripts (7.2), justfile targets (7.3), Dockerfile comment (7.4), and the
+   full CM6 initialiser bundle (7.1) building via `just build-all`. `just check` green.
+2. ✅ **Done** — initialiser: read-only vs editable, textarea sync, light theme, accessibility (§4)
+   (implemented up-front in step 1's `html-editor.js` rather than as a separate pass).
 3. Macro flag + template wiring for all three textareas (7.6).
 4. Docs (7.7) and CI/BDD build step (7.8).
 5. Tests (§5).
