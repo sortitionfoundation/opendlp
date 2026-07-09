@@ -413,6 +413,28 @@ def html_content_is_code_editor(page: Page):
     expect(editor).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when(parsers.parse('I type "{text}" into the HTML content code editor'))
+def type_into_html_content_editor(page: Page, text: str):
+    """Focus the mounted CodeMirror editor and type into it (plain text avoids auto-close-tags)."""
+    content = page.locator("textarea[name='html_content'] + .cm-editor .cm-content")
+    expect(content).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    content.click()
+    page.keyboard.type(text)
+
+
+@when("I save the registration form")
+def save_registration_form(page: Page):
+    """Submit the form via the 'Save' button; the editor syncs its content back to the textarea."""
+    page.get_by_role("button", name="Save", exact=True).click()
+
+
+@then(parsers.parse('the saved registration HTML should contain "{text}"'))
+def saved_registration_html_contains(page: Page, text: str):
+    """After saving we land on the read-only form view, whose editor shows the persisted HTML."""
+    editor = page.locator("textarea[name='html_content'] + .cm-editor")
+    expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when("I try to access the backoffice dashboard")
 def try_access_backoffice_dashboard(page: Page):
     """Attempt to access the backoffice dashboard."""

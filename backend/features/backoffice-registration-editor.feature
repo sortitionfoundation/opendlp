@@ -8,3 +8,11 @@ Feature: Backoffice registration HTML editor
     And there is an assembly called "Editor Assembly" with a registration page
     When I visit the registration form editor for "Editor Assembly"
     Then the HTML content field should be a mounted code editor
+
+  Scenario: Editing the HTML in the code editor and saving persists the content
+    Given I am logged in as an admin user
+    And there is an assembly called "Roundtrip Assembly" with a registration page
+    When I visit the registration form editor for "Roundtrip Assembly"
+    And I type "ROUNDTRIP-MARKER-4931" into the HTML content code editor
+    And I save the registration form
+    Then the saved registration HTML should contain "ROUNDTRIP-MARKER-4931"
