@@ -10356,6 +10356,10 @@ msgid ""
 "same address."
 msgstr ""
 
+#: templates/backoffice/assembly_registration.html:609
+msgid "Form skeleton preview"
+msgstr ""
+
 #~ msgid "Assemblies"
 #~ msgstr "Gyűlések"
 
