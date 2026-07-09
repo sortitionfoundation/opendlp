@@ -176,21 +176,24 @@ def import_respondents_from_rows(  # noqa: C901
         # Create respondents
         respondents = []
         seen_ids = set()  # Track IDs within this import to catch duplicates
-        for row in rows:
+        # rows have had the header row stripped, so the first data row is line 2
+        # of the file; start=2 makes row_number match what the user sees when
+        # they open the file to fix a flagged row.
+        for row_number, row in enumerate(rows, start=2):
             external_id = row.get(id_column, "").strip()
             if not external_id:
-                errors.append(f"Skipped row with empty {id_column}")
+                errors.append(f"Row {row_number}: skipped, empty {id_column}")
                 continue
 
             # Check for duplicate in database
             existing = uow.respondents.get_by_external_id(assembly_id, external_id)
             if existing:
-                errors.append(f"Skipped duplicate {id_column}: {external_id}")
+                errors.append(f"Row {row_number}: skipped duplicate {id_column}: {external_id}")
                 continue
 
             # Check for duplicate within this import
             if external_id in seen_ids:
-                errors.append(f"Skipped duplicate {id_column}: {external_id}")
+                errors.append(f"Row {row_number}: skipped duplicate {id_column}: {external_id}")
                 continue
             seen_ids.add(external_id)
 

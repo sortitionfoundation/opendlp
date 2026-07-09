@@ -10,6 +10,7 @@ import structlog
 from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
+from markupsafe import Markup, escape
 
 from opendlp import bootstrap
 from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
@@ -110,14 +111,23 @@ def _run_csv_import(
     )
 
     if errors:
-        flash(
-            _(
-                "Respondents uploaded with warnings: %(count)d imported, %(errors)d errors",
-                count=len(respondents),
-                errors=len(errors),
-            ),
-            "warning",
+        logger.warning(
+            "respondent CSV import completed with warnings",
+            assembly_id=str(assembly_id),
+            imported=len(respondents),
+            error_count=len(errors),
+            errors=errors,
         )
+        summary = _(
+            "Respondents uploaded with warnings: %(count)d imported, %(errors)d errors",
+            count=len(respondents),
+            errors=len(errors),
+        )
+        # Render the summary and each per-row warning on its own line. Errors can
+        # contain CSV-supplied values (eg. a duplicate id), so escape() each one
+        # before joining with <br> to keep the flash safe from injection.
+        lines = [escape(summary)] + [escape(error) for error in errors]
+        flash(Markup("<br>").join(lines), "warning")
     else:
         flash(
             _("Respondents uploaded successfully: %(count)d imported", count=len(respondents)),
