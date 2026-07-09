@@ -9,7 +9,6 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required, login_user, logout_user
-from markupsafe import Markup
 from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
@@ -75,6 +74,7 @@ def login() -> ResponseReturnValue:
         return redirect(url_for(default_dashboard_endpoint()))
 
     form = LoginForm()
+    show_resend_confirmation = False
 
     if form.validate_on_submit():
         try:
@@ -130,20 +130,15 @@ def login() -> ResponseReturnValue:
                 _("Please confirm your email address before logging in. Check your inbox for the confirmation link."),
                 "error",
             )
-            flash(
-                Markup(  # noqa: S704
-                    _(
-                        'Didn\'t receive the email? <a href="%(url)s">Resend confirmation</a>',
-                        url=url_for("auth.resend_confirmation"),
-                    )
-                ),
-                "info",
-            )
+            # The resend link is rendered by the template (as real HTML) rather
+            # than flashed: flask-session serialises flashes with msgspec, which
+            # rejects Markup with "Encoding objects of type Markup is unsupported".
+            show_resend_confirmation = True
         except Exception as e:
             logger.exception("Login error", error=str(e))
             flash(_("An error occurred during login. Please try again."), "error")
 
-    return render_template("auth/login.html", form=form)
+    return render_template("auth/login.html", form=form, show_resend_confirmation=show_resend_confirmation)
 
 
 def _validate_2fa_session() -> tuple[bool, str | None]:

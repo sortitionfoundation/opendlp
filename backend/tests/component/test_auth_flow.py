@@ -4,7 +4,9 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from flask import message_flashed
 from flask.testing import FlaskClient
+from markupsafe import Markup
 
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
@@ -139,6 +141,43 @@ class TestLogin:
             data={"email": "nonexistent@example.com", "password": "somepassword"},  # pragma: allowlist secret
         )
         assert response.status_code == 200
+
+    def test_login_unconfirmed_email_renders_resend_link_not_markup_flash(
+        self, client: FlaskClient, fake_store: FakeStore, valid_invite: UserInvite
+    ) -> None:
+        """Unconfirmed login renders a real resend link and flashes only plain text.
+
+        flask-session serialises flashes with msgspec, which rejects Markup, so the
+        resend link is rendered by the template rather than flashed as Markup.
+        """
+        with FakeUnitOfWork(store=fake_store) as uow:
+            create_user(
+                uow=uow,
+                email="pending@example.com",
+                password="securepassword123",  # pragma: allowlist secret
+                invite_code=valid_invite.code,
+            )
+
+        flashed: list[object] = []
+
+        def _record(sender: object, message: object, category: str) -> None:
+            flashed.append(message)
+
+        with message_flashed.connected_to(_record):
+            response = client.post(
+                "/auth/login",
+                data={"email": "pending@example.com", "password": "securepassword123"},  # pragma: allowlist secret
+            )
+
+        assert response.status_code == 200
+        # No flashed message may be Markup, or flask-session's msgspec serialiser fails.
+        assert flashed
+        assert not any(isinstance(msg, Markup) for msg in flashed)
+        assert any("Please confirm your email address before logging in" in str(msg) for msg in flashed)
+        # The resend link is rendered by the template as real, styled HTML.
+        body = response.data.decode()
+        assert "Resend confirmation" in body
+        assert "/auth/resend-confirmation" in body
 
     @pytest.mark.filterwarnings("ignore:datetime.datetime.utcnow:DeprecationWarning")
     def test_login_remember_me_functionality(self, client: FlaskClient, regular_user: User) -> None:

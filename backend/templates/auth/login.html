@@ -89,6 +89,12 @@
                     </form>
                 {% endif %}
             {% endif %}
+            {% if show_resend_confirmation %}
+                <p class="govuk-body govuk-!-margin-top-6">
+                    {{ _("Didn't receive the email?") }}
+                    <a href="{{ url_for('auth.resend_confirmation') }}" class="govuk-link">{{ _("Resend confirmation") }}</a>
+                </p>
+            {% endif %}
             <p class="govuk-body govuk-!-margin-top-6">
                 <a href="{{ url_for('auth.forgot_password') }}" class="govuk-link">{{ _("Forgot your password?") }}</a>
             </p>
