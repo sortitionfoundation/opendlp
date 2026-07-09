@@ -133,7 +133,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro textarea(name, label="", value="", placeholder="", hint="", error="", required=false, disabled=false, rows=4, id="", classes="", attrs="", dim=true) %}
+{% macro textarea(name, label="", value="", placeholder="", hint="", error="", required=false, disabled=false, rows=4, id="", classes="", attrs="", dim=true, code_editor=false) %}
     {#
     Textarea component using semantic design tokens.
 
@@ -152,10 +152,14 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         attrs: Additional HTML attributes
         dim: When disabled, controls whether the value text is dimmed (default true).
              Pass dim=false to keep body-text colour for read-only display contexts.
+        code_editor: When true, marks the textarea for progressive enhancement into a
+             CodeMirror HTML editor (syntax highlighting + auto-indent). Requires the
+             backoffice/js/dist/html-editor.js bundle to be loaded on the page. Default off.
 
     Usage:
         {{ textarea("description", label="Description", placeholder="Enter description...") }}
         {{ textarea("question", label="Assembly Question", value=assembly.question, rows=6) }}
+        {{ textarea("html_content", label="HTML", value=html, rows=25, code_editor=true) }}
     #}
     {% set input_id = id if id else name %}
     {% set has_error = error | length > 0 %}
@@ -182,6 +186,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
             {% if required %}required{% endif %}
             {% if disabled %}disabled{% endif %}
+            {% if code_editor %}data-code-editor data-language="html"{% endif %}
             {% if attrs %}{{ attrs | safe }}{% endif %}
             class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 resize-y {{ classes }}"
             style="
