@@ -82,10 +82,9 @@ install:
   @uv sync
   @echo "🚀 Setting up prek (pre-commit) hooks"
   @uv tool run prek install
-  @echo "🚀 Install node dependencies & build CSS"
+  @echo "🚀 Install node dependencies & build frontend assets"
   @npm install
-  @npm run build:sass
-  @npm run build:backoffice
+  @npm run build
   @echo "🚀 Compile translations"
   @uv run pybabel compile -d translations
 
@@ -183,8 +182,23 @@ watch-backoffice:
 # build all CSS (GOV.UK + backoffice)
 build-all-css: build-css build-backoffice
 
+# build backoffice JavaScript bundles (esbuild)
+build-js:
+  @echo "🚀 Building JavaScript bundles with esbuild"
+  @npm run build:js
+  # this will restart flask, if it is running
+  @touch src/opendlp/entrypoints/flask_app.py
+
+# watch and rebuild backoffice JavaScript bundles (esbuild)
+watch-js:
+  @echo "🚀 Watching and building JavaScript bundles with esbuild"
+  @npm run watch:js
+
+# build all frontend assets (CSS + JavaScript)
+build-all: build-all-css build-js
+
 # run flask locally
-run: build-all-css flask
+run: build-all flask
 
 # connect to docker postgres (local services)
 psql:
