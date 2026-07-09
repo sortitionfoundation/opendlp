@@ -27,10 +27,17 @@ const editorTheme = EditorView.theme({
     border: "1px solid var(--color-borders-dividers)",
     backgroundColor: "var(--color-page-background)",
     color: "var(--color-body-text)",
+    // Fixed height with an internal scrollbar (set per-instance from the
+    // textarea's rows), resizable like the textarea it replaces.
+    resize: "vertical",
+    overflow: "hidden",
   },
   "&.cm-focused": {
     outline: "2px solid var(--color-primary-action)",
     outlineOffset: "0",
+  },
+  ".cm-scroller": {
+    overflow: "auto",
   },
   ".cm-content": {
     fontFamily:
@@ -105,9 +112,7 @@ function mount(textarea) {
   }
 
   const rows = parseInt(textarea.getAttribute("rows"), 10);
-  if (rows > 0) {
-    view.dom.style.minHeight = `${rows * 1.5}em`;
-  }
+  view.dom.style.height = `${(rows > 0 ? rows : 10) * 1.5}em`;
 
   // A required + display:none textarea blocks submit ("not focusable"); the editor
   // keeps the value in sync and server-side validation still guards emptiness.
