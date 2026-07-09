@@ -163,6 +163,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                         value=html_content,
                                         placeholder="<form action=\"{{ form_action }}\" method=\"POST\">\n  {{ csrf_form_element }}\n  <div>\n    <label for=\"first_name\">First Name</label>\n    <input type=\"text\" id=\"first_name\" name=\"first_name\" required />\n  </div>\n  <!-- Add more fields here -->\n  <button type=\"submit\">Register</button>\n</form>",
                                         rows=25,
+                                        code_editor=true,
                                         attrs=textarea_attrs|trim
                                         ) }}
 
@@ -394,6 +395,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             hint=_("Jinja + HTML. A plain-text version is generated automatically for email clients that need it."),
                                             required=true,
                                             rows=18,
+                                            code_editor=true,
                                             attrs=body_attrs|trim
                                             ) }}
 
@@ -610,6 +612,8 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                     {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form.") }}
                                 </p>
                                 <textarea readonly
+                                          data-code-editor
+                                          data-language="html"
                                           x-ref="skeletonTextarea"
                                           x-text="skeletonHtml"
                                           class="w-full rounded-lg p-4"
@@ -902,6 +906,8 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
     </div>
 
     {% if has_registration_page %}
+        <script nonce="{{ csp_nonce }}"
+                src="{{ url_for('static', filename='backoffice/js/dist/html-editor.js', v=static_hashes('backoffice/js/dist/html-editor.js')) }}"></script>
         <script nonce="{{ csp_nonce }}">
             document.addEventListener('alpine:init', () => {
                 Alpine.data('registrationPageController', () => ({
