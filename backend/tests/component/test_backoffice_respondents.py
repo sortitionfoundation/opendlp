@@ -77,6 +77,25 @@ class TestBackofficeUploadRespondents:
             messages = [msg[1].lower() for msg in session.get("_flashes", [])]
         assert any("success" in m or "uploaded" in m for m in messages)
 
+    def test_upload_with_warnings_lists_each_error_in_flash(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """A partial import flashes the summary plus one line per skipped row."""
+        _upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "id,name\nID001,Alice\nID001,Bob\n,Carol",
+        )
+        with logged_in_admin.session_transaction() as session:
+            warnings = [msg[1] for msg in session.get("_flashes", []) if msg[0] == "warning"]
+        assert len(warnings) == 1
+        message = warnings[0]
+        # Row 3 is the duplicate ID001 (row 2 is the first ID001); row 4 is empty.
+        assert "Row 3: skipped duplicate id: ID001" in message
+        assert "Row 4: skipped, empty id" in message
+        # Each error sits on its own line, separated from the summary by <br>.
+        assert message.count("<br>") == 2
+
     def test_upload_redirects_when_not_logged_in(self, client: FlaskClient, existing_assembly: Assembly) -> None:
         """Unauthenticated users are redirected to login."""
         response = client.post(

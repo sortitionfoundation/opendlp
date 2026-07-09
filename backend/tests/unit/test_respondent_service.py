@@ -476,8 +476,9 @@ class TestImportRespondentsFromRows:
 
         assert [r.external_id for r in respondents] == ["R1"]
         assert len(errors) == 2
-        assert any("empty" in e for e in errors)
-        assert any("duplicate" in e.lower() for e in errors)
+        # Errors carry the file line number (header is line 1, so data starts at 2).
+        assert any(e.startswith("Row 3:") and "empty" in e for e in errors)
+        assert any(e.startswith("Row 4:") and "duplicate" in e.lower() for e in errors)
 
     def test_empty_headers_raise(self):
         uow = FakeUnitOfWork()
