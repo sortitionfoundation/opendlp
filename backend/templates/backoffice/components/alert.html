@@ -69,9 +69,9 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
             {{ styles.icon }}
         </span>
 
-        {# Message #}
-        <p class="text-body-md flex-1" style="color: {{ styles.text }};">
-            {% if use_caller %}{{ caller() }}{% else %}{{ message }}{% endif %}
+        {# Message: white-space: pre-line renders newlines in multi-line flashes #}
+        <p class="text-body-md flex-1" style="color: {{ styles.text }}; white-space: pre-line;">
+            {%- if use_caller %}{{ caller() }}{% else %}{{ message }}{% endif -%}
         </p>
 
         {# Dismiss button #}
