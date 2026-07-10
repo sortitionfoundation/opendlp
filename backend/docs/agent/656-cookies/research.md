@@ -1,7 +1,8 @@
 # Cookie consent — research
 
 **Issue:** #656
-**Status:** Research complete, awaiting decision from Hamish
+**Status:** Research complete, all decisions made (see [§9](#9-decisions)). Ready for
+implementation; legal sign-off required before the branch merges.
 **Date:** 2026-07-10
 
 ---
@@ -12,8 +13,11 @@
 currently sets falls within a statutory exception to the consent requirement, in both the UK
 and the EU.
 
-What we _do_ need is a **cookies page** and a link to it from the footer. That is a
-static-content task, not an engineering one.
+What we _do_ need is a **cookies page** and a link to it from the footer. The page will be
+published on the docs site (`docs.sortitionlab.org`) alongside the User Data Agreement, and
+linked via a configurable URL (§9 D8) — so it is mostly a content task. The one piece of real
+engineering is that `base_public.html`, the template behind the public registration form, has
+**no footer at all** and needs one (§8.3).
 
 Two findings worth flagging up front:
 
@@ -26,6 +30,10 @@ Two findings worth flagging up front:
    app that needs anything beyond a plain factual disclosure.
 
 Recommended option: **Option A — cookies page, no banner** (see [§6](#6-options)).
+
+**Agreed.** Option A is the chosen approach, and if analytics is ever added it will be
+cookieless and self-hosted (§7 Path 1). Both decisions are recorded in [§9](#9-decisions).
+The one outstanding gate is legal sign-off before merge.
 
 ---
 
@@ -205,11 +213,24 @@ the canonical reading of exception (B), and expressly exempts:
 - **session-scoped load-balancing cookies**
 - **UI-customisation cookies** (e.g. language choice) — _when session-scoped_
 
-**This matters to us.** `SUPPORTED_LANGUAGES` defaults to `en,es,fr,de` (`config.py:477`) and we
-ship Hungarian translations. OpenDLP is plainly intended for EU-based assemblies. So we must
-satisfy the **stricter EU rule**, and we cannot lean on the UK's new analytics exception for
-EU users. Any future analytics decision has to be made on the EU footing, or with geo-based
-logic — which is a genuine complexity cost.
+**This matters to us, and more than I first thought.** Two independent facts put us on the EU
+footing:
+
+1. **EU users.** `SUPPORTED_LANGUAGES` defaults to `en,es,fr,de` (`config.py:477`) and we ship
+   Hungarian translations. People in the EU are a key audience (confirmed).
+2. **EU hosting.** The service is hosted in the EU (confirmed). That is an *establishment* in
+   the Union, which engages EU law directly rather than merely via the extraterritorial
+   targeting test.
+
+The second is the stronger point. Where a service targets EU users from outside, there is at
+least an argument about scope. Where it is *established and hosted* in the EU, the ePrivacy
+Directive as implemented by that member state applies straightforwardly, and the UK's DUAA
+relaxations are simply unavailable.
+
+So: we must satisfy the **stricter EU rule**, and we cannot lean on the UK's new analytics
+exception at all. Any future analytics decision has to be made on the EU footing, or with
+geo-based logic — which is a genuine complexity cost, and which §7 concludes is not worth
+paying.
 
 ---
 
@@ -238,8 +259,11 @@ Two problems, both minor, both fixable without a banner:
 
 There is a decent argument that a user clicking "Español" has _explicitly requested_ the
 service of being shown Spanish, which lands it back in strictly-necessary. I would not lose
-sleep over this. But it's the one place where a lawyer might quibble, so it's flagged as an
-open question ([Q3](#q3-the-language-cookie)).
+sleep over this. But it's the one place where a lawyer might quibble, so it is called out for
+the sign-off in D6.
+
+**Decided ([D3](#d3-the-language-cookie-stays-as-it-is-and-gets-documented)):** leave the
+behaviour alone, document the reasoning. No code change.
 
 Note also: language selection is the **only way an anonymous front-page visitor can acquire a
 cookie**. Everything else requires them to log in or open a form.
@@ -296,10 +320,15 @@ do matter elsewhere.
 
 ## 6. Options
 
-### Option A — Cookies page, no banner _(recommended)_
+### Option A — Cookies page, no banner _(recommended; **approved**, §9 D1)_
 
-Add a `/cookies` page listing both cookies, linked from the footer. Reword the "remember me"
-label. Add a line to the privacy notice.
+Publish a cookies page **on the docs site** (`docs.sortitionlab.org`), and link to it from the
+app footer via a configurable URL — exactly as we already do for the User Data Agreement.
+Reword the "remember me" label. Add a line to the privacy notice.
+
+**Decided (§9 D8):** the page is hosted externally, not served by Flask. New config var
+`HELP_SITE_COOKIES`, defaulting to `https://docs.sortitionlab.org/data-and-legal/cookies/`,
+threaded through in the same way as `HELP_SITE_DATA_AGREEMENT`. Mechanics in §8.2.
 
 **Pros**
 
@@ -307,11 +336,15 @@ label. Add a line to the privacy notice.
 - Zero friction on the registration form — the interaction we most care about.
 - No new dependency, no new JS, no CSP headaches.
 - Follows GOV.UK guidance exactly, and matches our existing design system.
+- Hosting it on the docs site matches the established pattern for legal content, keeps legal
+  copy out of the deploy cycle, and lets it be corrected without shipping the app.
 - Roughly a day of work, mostly content.
 
 **Cons**
 
-- Someone has to keep the cookies page accurate as the app changes.
+- Someone has to keep the cookies page accurate as the app changes — and now that "someone"
+  is editing a *different repo*, so drift is likelier, not less likely (§8.2, §8.7).
+- The docs site is English-only; an in-app page would have gone through `_()`. See §8.7.
 - If we add analytics later, we then have to build the banner anyway (but see §7 — we'd have to
   do that under any option).
 - Requires the confidence to _not_ ship a banner, which can feel exposed if a client asks
@@ -368,17 +401,26 @@ Detect UK vs EU visitors and apply the DUAA analytics exception only to UK users
 **Cons**
 
 - Only worth anything _if_ we adopt analytics **and** decide the UK relaxation is worth
-  exploiting. Speculative on both counts.
+  exploiting. Speculative on both counts — and §9 now settles both against it.
 - Geo-IP adds a dependency, and misclassification creates the legal exposure it was meant to
   avoid.
 - Complexity is disproportionate for a project with no advertising and no commercial analytics
   motive.
+- **The service is hosted in the EU** (§3.2). Geo-gating the *user* does not help when the
+  *controller and the hosting* are established in the EU — EU law applies to the service, not
+  merely to whichever visitors happen to be in the Union.
 
-**Verdict:** premature. Revisit only if analytics is actually adopted (§7).
+**Verdict: rejected, not merely premature.** The commitment to cookieless analytics (§9 D2)
+removes the only scenario in which this would have paid for itself, and the EU hosting removes
+the legal basis it was built on.
 
 ---
 
 ## 7. If we add analytics later
+
+> **Decision (§9 D2): if analytics is ever added, it will be cookieless and self-hosted —
+> Path 1 below.** The rest of this section records why, and what would have to be true for
+> that to change.
 
 This is the decision that would change everything, so it's worth pre-computing.
 
@@ -414,92 +456,452 @@ cookies on).
   relaxation buys us nothing unless we also build geo-logic (Option D).
 
 **The asymmetry is stark.** Path 1 costs a banner-free life. Paths 2 and 3 both cost a full
-consent mechanism, because of our EU users. So if analytics is ever wanted, **Path 1 is
-overwhelmingly the right call**, and it happens to be the one most aligned with what this
-project is for.
+consent mechanism, because we have EU users *and* EU hosting (§3.2). So if analytics is ever
+wanted, **Path 1 is overwhelmingly the right call**, and it happens to be the one most aligned
+with what this project is for.
+
+This is now settled rather than advisory (§9 D2). The practical consequence for the work in §8:
+the cookies page can state plainly that we use no analytics cookies, and that commitment should
+be recorded in `docs/personal-data.md` so a future contributor reaching for Google Analytics
+discovers the constraint before they discover the lawyer.
 
 ---
 
-## 8. Proposed implementation (if Option A is approved)
+## 8. Proposed implementation
 
-Small, and mostly content:
+Option A is approved (§9 D1), with the cookies page hosted on the docs site (§9 D8). The work is
+small, and mostly content.
 
-1. **`/cookies` page** — new route on the `main` blueprint, template using the GOV.UK table
-   component. Columns: Name, Purpose, Expires. Two rows. Explain that the session cookie covers
-   security (CSRF), sign-in, form messages and language choice; explain `remember_token`;
-   explain there is no advertising and no analytics. Must be i18n'd (`_()`), like everything
-   else.
-2. **Footer link** — from `base.html` _and_ `base_public.html`, so the registration form has it
-   too. GOV.UK requires this.
-3. **"Remember me" label** — confirm it is unticked by default; reword so the cookie
-   consequence is explicit.
-4. **Privacy notice** — add a cookies paragraph pointing at `/cookies`.
-5. **Tests** — a route test for `/cookies` (200, both cookie names present in the rendered
-   body), and a test asserting `GET /` emits **no** `Set-Cookie`. That second test is the
-   valuable one: it locks in the property this whole analysis rests on, and will fail loudly
+1. **Cookies page on the docs site** — authored at
+   `https://docs.sortitionlab.org/data-and-legal/cookies/`, in the docs repo, not here. Content:
+   a table of Name / Purpose / Expires, two rows. Explain that the session cookie covers security
+   (CSRF), sign-in, form messages and language choice; explain `remember_token`; state plainly
+   that there is no advertising and no analytics.
+2. **`HELP_SITE_COOKIES` config var** — threaded through exactly as `HELP_SITE_DATA_AGREEMENT`
+   is. Mechanics and the gotchas in §8.2.
+3. **Footer links** — `base.html` has a footer and takes a one-line addition.
+   **`base_public.html` has no footer at all** — this needs building. See §8.3; it is the only
+   item here with real work in it.
+4. **"Remember me" label** — confirm it is unticked by default; reword so the cookie
+   consequence is explicit. This is the only code change the law actually compels (§4.2).
+5. **Privacy notice** — add a cookies paragraph pointing at the docs-site page.
+6. **`docs/personal-data.md`** — a permanent reference doc, and the most important item on this
+   list. See §8.4–§8.6.
+7. **Tests** — a test asserting `GET /` emits **no** `Set-Cookie`, and context-processor tests
+   for the new URL. Note we *lose* the ability to test the page's content, because it is no
+   longer ours (§8.7). The `GET /` test is now the only executable check in the whole scheme; it
+   locks in the property this analysis rests on, and will fail loudly
    the day someone adds a `flash()` to the front page.
+
+### 8.1 Hosting the page on the docs site
+
+The User Data Agreement is already an external page linked from the app by a configurable URL.
+The cookies page follows the same pattern. This is the right call: it keeps legal copy out of the
+deploy cycle, so a wording fix from a lawyer does not require a release, and it puts all the
+"data and legal" pages in one place for a reader.
+
+### 8.2 Threading `HELP_SITE_COOKIES` through
+
+Traced from the existing `HELP_SITE_DATA_AGREEMENT`. Five files, plus tests:
+
+| File | Change |
+|---|---|
+| `src/opendlp/config.py:441-444` | Add `self.HELP_SITE_COOKIES: str = os.environ.get("HELP_SITE_COOKIES", "https://docs.sortitionlab.org/data-and-legal/cookies/")` alongside `HELP_SITE_HOME` / `HELP_SITE_DATA_AGREEMENT`. |
+| `src/opendlp/entrypoints/context_processors.py:131-134` | Convert `get_help_site_urls()` to return a `NamedTuple` (§8.2.1) and add the third URL. |
+| `src/opendlp/entrypoints/context_processors.py:156,165` | Use attribute access and expose `help_site_cookies` in `inject_template_globals()`. |
+| `env.example:89-91` | Add `HELP_SITE_COOKIES=...` under the existing "External help site URLs" comment. |
+| `docs/configuration.md:200-210` | Add to the same block; update the prose, which currently says the URLs feed the header "Help" link and footer "User Data Agreement" link. |
+
+#### 8.2.1 `get_help_site_urls()` returns a NamedTuple
+
+**Decided (§9 D9).** Today it returns a positional `tuple[str, str]`:
+
+```python
+@cache
+def get_help_site_urls() -> tuple[str, str]:
+    flask_config = config.get_config()
+    return flask_config.HELP_SITE_HOME, flask_config.HELP_SITE_DATA_AGREEMENT
+```
+
+Two positional strings is survivable; three is where positional unpacking starts inviting
+silent transposition bugs — the elements are all `str`, so swapping two would type-check, pass
+mypy, and quietly render the wrong link. Replace with a `typing.NamedTuple`:
+
+```python
+class HelpSiteUrls(NamedTuple):
+    home: str
+    data_agreement: str
+    cookies: str
+
+
+@cache
+def get_help_site_urls() -> HelpSiteUrls:
+    flask_config = config.get_config()
+    return HelpSiteUrls(
+        home=flask_config.HELP_SITE_HOME,
+        data_agreement=flask_config.HELP_SITE_DATA_AGREEMENT,
+        cookies=flask_config.HELP_SITE_COOKIES,
+    )
+```
+
+and at the call site (`context_processors.py:156`), replace the tuple unpacking with attribute
+access: `help_site_urls.home`, `.data_agreement`, `.cookies`.
+
+Notes:
+
+- `NamedTuple` is `typing` stdlib — boring, no new dependency. It is immutable and hashable, so
+  it remains compatible with the `@cache` decorator.
+- There is exactly **one call site** (`context_processors.py:156`), so this is a contained
+  change, not a sprawling refactor. That is what makes it worth doing now rather than "later".
+- It stays tuple-compatible, so nothing that treats the result as a sequence breaks.
+- `src/` currently contains no other `NamedTuple`, so this introduces the idiom. Given it is
+  stdlib and the alternative is a bare 3-tuple of same-typed strings, I think that is fine — but
+  worth a reviewer's eye, since "match the surrounding style" is a house rule.
+
+#### 8.2.2 Tests
+
+- `tests/unit/test_context_processors.py:132-137` hard-codes the two default URLs and must gain
+  an assertion for `help_site_cookies`.
+- **Correction to an earlier draft of this document:** `tests/unit/test_dashboard_feature_flags.py:90`
+  is *not* affected by the NamedTuple change. It never calls `get_help_site_urls()`; it passes
+  `help_site_data_agreement=` straight into `render_template_string` as a template variable. It
+  only needs touching if `backoffice/components/footer.html` gains a cookies link that the test's
+  rendered template then requires.
+- `get_help_site_urls` is `@cache`d and, unlike `_get_file_hash` / `get_opendlp_version` /
+  `get_service_account_email`, has no `cache_clear()` call in the test suite. Any test that wants
+  to vary `HELP_SITE_COOKIES` via the environment will need one. Worth knowing before writing the
+  tests, not after.
+
+### 8.3 `base_public.html` has no footer — the one piece of real work
+
+`templates/base.html:175` already has a footer with the `help_site_data_agreement` link; adding a
+cookies link there is one line.
+
+**`templates/base_public.html` has no footer whatsoever.** It goes from `<main>` (line 27-29)
+straight to `</body>` (line 43). There is no `govuk-footer` markup in the file at all.
+
+This matters more than it sounds. `base_public.html` is the template behind the **public
+registration form** — which is:
+
+- the one page an anonymous member of the public actually lands on;
+- the page that **does** set a cookie (`generate_csrf()`, §2.2); and
+- therefore the single page on the site that most needs a cookies link.
+
+GOV.UK is explicit that the cookies page must be linked from the footer. So this task requires
+**adding a footer to `base_public.html`**, not just adding a link to an existing one.
+
+**Decided (§9 D11):** add a minimal GOV.UK footer, carrying the cookies link and the User Data
+Agreement link, and nothing else. The public page should stay uncluttered — it is the one page
+where added visual noise costs us completions from people we reached by post.
+
+Because this is a visible change to the most sensitive template we have, the rendered page wants
+its own look rather than being waved through as "add a link". Check it against the GOV.UK footer
+component and `docs/agent/component_accessibility.md`.
+
+### 8.4 The documentation problem
+
+The conclusion "no banner needed" is only valid while its premises hold. Those premises are
+invisible in the code: nothing in `config.py` announces that adding Google Analytics would
+oblige us to build a consent mechanism. A future contributor — or a future us — will reach for
+an analytics snippet and have no idea they have just walked into PECR.
+
+Worse, the person about to break a rule usually reads only the doc for the area they are
+working in. Someone adding a language cookie reads `docs/translations.md`. Someone swapping the
+honeypot for Turnstile reads `docs/bot-protection.md`. Neither has any reason to open a doc
+about cookies. **A central doc nobody is routed to is a doc that does not exist.**
+
+So the design has two halves: one canonical doc, and a set of tripwires in the docs people
+actually read.
+
+### 8.5 `docs/personal-data.md` — the hub
+
+**On the name.** The suggestion was `user-data.md`. I'd argue against it, on a specific
+codebase-local ground: *User* is a domain term here — `domain/users.py`, an aggregate with
+roles and passwords. But the most sensitive personal data we hold belongs to **registrants**,
+who are explicitly *not* `User`s (see `CLAUDE.md`: "Users/Organisers are separate aggregates
+from Assembly/Registrants"). A doc called `user-data.md` invites a reader to conclude it does
+not govern the registration pool, which is exactly backwards. `personal-data.md` is the UK/EU
+GDPR term of art, and it correctly spans cookies (device identifiers), log lines, registrants,
+users, and the IP addresses in our rate-limit keys.
+
+**What it contains.** A hub, covering:
+
+- **Principles** — the standing constraints, which are the actual load-bearing content:
+  - no advertising, ever;
+  - no analytics that sets a cookie or reads the device — if analytics is added it must be
+    cookieless and self-hosted (§7 Path 1, decided in §9 D2);
+  - no third-party cookies; no cross-site or cross-device tracking;
+  - bot protection stays server-side (no Turnstile / reCAPTCHA / hCaptcha);
+  - never log raw PII;
+  - no long-term copies of personal data that cannot be found and blanked.
+- **Cookies** — canonical, and deliberately so. The §2.1 table, the legal conclusion and its
+  statutory basis (strictly necessary; appearance), and the language-cookie reasoning (§9 D3).
+  The public page on the docs site is a *copy* of this table written for a lay audience; this
+  file is the source of truth, and must say so, naming the published URL and instructing anyone
+  who edits the table to update the published page (§8.9).
+- **The English-only trade-off** — record that the published cookies page is not translated, that
+  this was a deliberate decision (§9 D10) taken to keep legal copy out of the deploy cycle, and
+  that translating it is the remedy if the language mix of registrants makes it bite. Written
+  down so a future reader finds a decision rather than an oversight.
+- **The EU footing** — EU users *and* EU hosting, so the UK DUAA relaxations do not apply
+  (§3.2). The single fact most likely to be forgotten and most likely to cause an error.
+- **Logging PII** — the *principle* and the why, linking to `docs/agent/code_quality_rules.md`
+  for the code-level rules.
+- **GDPR / right to be forgotten** — the blank-don't-delete strategy, and the prohibition on
+  long-term file storage. Currently in `AGENTS.md`.
+- **"What would change the answer"** — a short, blunt list: *if you are about to do any of the
+  following, this doc is now wrong and you must revisit issue #656.* Covers each principle
+  above, plus adding any new persistent cookie, plus adding a third-party script.
+- **Legal sign-off status** (§9 D6), so nobody assumes more assurance than we have.
+- A pointer back to this research doc for the full reasoning.
+
+**What it does *not* do: absorb `code_quality_rules.md`'s logging section.** That section is
+code-level how-to — use `structlog`, pass `user_id` not `email`, hash with `hash_email`, beware
+`error=str(e)` — with good/bad examples. Three reasons to leave it where it is:
+
+1. `sf-code-review` already routes reviewers to `code_quality_rules.md`. Moving the rules breaks
+   a working path.
+2. Copying them creates two sources of truth that will drift. The next person to update one will
+   not know about the other.
+3. It is the right *altitude* split. `personal-data.md` answers "what may I do, and why";
+   `code_quality_rules.md` answers "how do I write the log call". Hub states the principle and
+   links; the how-to stays put.
+
+Note that `code_quality_rules.md:39-40` *already* justifies the logging rule by reference to
+GDPR erasure. The unifying thread is latent in the text; the hub just makes it explicit.
+
+For the same reason, the `AGENTS.md` sections on "Logging (PII / secrets)" and "GDPR and the
+right to be forgotten" should shrink to short pointers at `personal-data.md` rather than being
+deleted or duplicated. `AGENTS.md` is loaded into every agent's context, so it should carry the
+one-line rule and the link, not the full treatment. (`CLAUDE.md` is a symlink to `AGENTS.md`,
+so this is one edit, not two.)
+
+Add `personal-data.md` to the *Further Documentation* list in `AGENTS.md`.
+
+### 8.6 Tripwires — links from the docs people actually read
+
+Each of these is two or three sentences: state the assumption that currently holds, say what
+would break it, link to the hub. They are not summaries of the hub; they are alarms.
+
+| Doc | Assumption to state | Why it's the right place |
+|---|---|---|
+| `docs/bot-protection.md` | Current protection is honeypot + signed timing token + Redis IP counters, and **sets no cookies and stores nothing on the device**. Turnstile/reCAPTCHA/hCaptcha would introduce third-party cookies and a consent requirement. Also: rate-limit keys contain **IP addresses**, which are personal data, retained only for the counter TTL. | It has a *Related documentation* section already. Anyone replacing the honeypot reads this file first. |
+| `docs/translations.md` | Language detection order (line 99-105) has "Session preference (persisted across requests)" as step 2 — **this is the one cookie an anonymous front-page visitor can acquire**. It rides the 7-day session cookie. Relies on the *appearance* exception / explicit user choice. | Anyone touching locale persistence, or adding a dedicated `lang` cookie, reads this. Step 3 ("user account language preference — future feature") is a DB field, not a cookie, and is fine. |
+| `docs/analytics.md` *(new)* | **We have no analytics, deliberately.** If you are adding it, it must be cookieless and self-hosted (Plausible / Umami / GoatCounter / Matomo-cookieless). Google Analytics is ruled out. Anything that sets a cookie or reads the device requires a full opt-in consent banner, because we are hosted in the EU. | A doc for a thing that does not exist is exactly right here: it is a tripwire. The person who greps `docs/` for "analytics" before adding it is the person we need to catch. |
+
+Two further candidates, weaker, worth a line each if cheap:
+
+- `docs/configuration.md` — where `SESSION_*` / `REMEMBER_COOKIE_*` are documented; a pointer
+  saves someone lengthening a cookie lifetime without thought.
+- `docs/frontend_security.md` — the CSP allowlist is where a third-party script gets waved
+  through (§2.4).
+
+### 8.7 `sf-code-review` — make it a standing check
+
+Add a bullet to *Things to Check* in `.claude/skills/sf-code-review/SKILL.md`:
+
+> - Does the change touch cookies, sessions, logging of personal data, analytics, third-party
+>   scripts, or data retention? If so, check it against `docs/personal-data.md` — especially the
+>   "what would change the answer" list.
+
+This is the piece that makes the whole structure self-enforcing rather than aspirational. The
+tripwires catch someone who reads the docs; the review check catches someone who doesn't.
+
+Worth being honest about the limit: the skill's instructions say "if the diff is big, consider
+giving each of the Things to Check to a subagent", so this bullet must be self-contained enough
+to hand to a subagent with no other context. Phrasing it as "check the diff against this named
+file" rather than "consider privacy implications" is deliberate.
+
+### 8.8 Scope and sequencing
 
 Explicitly **not** in scope: any banner, any consent cookie, any JS.
 
-Separately, and I'd argue more urgently: **self-host the jsDelivr assets** (§2.4). Happy to
-raise that as its own issue.
+**Sequencing gate (§9 D6):** the draft implementation can proceed now, but the branch must not
+merge until someone legally qualified has signed off the conclusion. Practically: build it,
+open the PR, mark it draft or block the merge, and get the sign-off in parallel.
+`docs/personal-data.md` should carry the sign-off status so the record travels with the code.
+
+Separately, and I'd argue more urgently: **self-host the jsDelivr assets** (§2.4). Hamish is
+raising this himself (§9 D7); it is out of scope for this issue.
+
+### 8.9 Risks
+
+**A hub that rots.** The obvious failure mode is that `personal-data.md` becomes a grab-bag
+nobody maintains, and the tripwires point at something stale. Mitigations, in order of how much
+I trust them:
+
+1. **The `sf-code-review` bullet** (§8.7) — the only one with teeth, because it runs on every
+   review.
+2. **The `GET /` no-cookie test** (§8 item 7) — turns one premise into a build failure rather
+   than a document.
+3. Keeping the hub short, and linking rather than copying, so there is less to rot.
+
+**A cookies page that rots, in another repo.** Hosting on the docs site (§9 D8) trades one
+maintenance problem for a slightly worse one. The page must accurately list the cookies we set;
+that list now lives outside the repo where the cookies are defined, in a codebase with no
+knowledge of `config.py`. Nothing fails when they diverge, and an inaccurate cookies page is a
+compliance failure in a way that an inaccurate help page is not.
+
+Two mitigations, both cheap:
+
+- Make `docs/personal-data.md` the **canonical source of the cookie table** (§8.5), and have the
+  docs-site page be a copy of it written for a public audience. Then "is the docs site right?"
+  reduces to "is `personal-data.md` right?", which the review check (§8.7) already asks.
+- Have `personal-data.md` name the docs-site URL and say explicitly: *if you change the cookie
+  table here, update the published page too.*
+
+**Loss of translation.** An in-app page would have gone through `_()` and been translated
+alongside everything else. The docs site is English-only. So a Hungarian-speaking registrant on
+the registration form gets a footer link to an English cookies page. Not a legal defect —
+PECR/GDPR require "clear and comprehensive information", with no explicit language mandate, and
+nothing here requires consent anyway — but it is a real accessibility regression for exactly the
+audience the public form exists to serve. **Accepted deliberately** (§9 D10), and to be recorded
+as such in `docs/personal-data.md` so it reads as a decision rather than an oversight.
+
+**The counter-argument to the whole structure**, honestly stated: five documents referring to one
+another is more machinery than a two-cookie app deserves. I think it survives on the grounds that
+the cost of the tripwires is a few sentences each, and the failure they prevent — shipping Google
+Analytics onto a democratic-participation tool hosted in the EU, with no consent mechanism — is
+bad enough to be worth a few sentences.
 
 ---
 
-## 9. Open questions for Hamish
+## 9. Decisions
 
-### Q1. Do you accept the "no banner" conclusion?
+All six open questions raised by this research have been answered by Hamish. Recorded here so
+the reasoning survives the branch.
 
-It rests on: no advertising, no analytics, no third-party cookies. All three verified in the
-code today. If there's a commitment to a client or funder that assumes a banner exists,
-that changes the calculus and I should know.
+### D1. Option A is approved — cookies page, no banner
 
-COMMENT: I've done some reading myself and I accept the conclusion
+Hamish independently read the material and accepts the conclusion. No client or funder
+commitment assumes a banner exists.
 
-### Q2. Do we need sign-off from someone legally qualified?
+### D2. If analytics arrives, it will be cookieless and self-hosted
 
-I've read the primary sources and I'm confident in the analysis, but I'm not a lawyer, and
-"Claude read the ICO website" is not a defensible position in a DPIA. Given the Sortition
-Foundation processes fairly sensitive demographic data about members of the public, does the
-organisation have a DPO or retained legal advice that should bless this? The cost of asking is
-low; the cost of being wrong is an ICO complaint on a project whose entire premise is public
-trust.
+Hamish was already inclined towards cookieless self-hosted analytics, and is happy to commit on
+this basis. This turns §7 Path 1 from a recommendation into a **standing constraint**, which is
+what makes the "no banner" answer durable rather than a snapshot: the conclusion cannot be
+quietly invalidated by someone dropping in a GA snippet, because the constraint is now written
+down (§8.5), routed to from `docs/analytics.md` (§8.6), and checked on every code review (§8.7).
 
-COMMENT: we might need sign off before merging the branch, but we can do a draft implementation now.
+Corollary: **Option D (geo-aware consent) is rejected outright**, not deferred.
 
-### Q3. The language cookie
+### D3. The language cookie stays as it is, and gets documented
 
-Are you comfortable relying on "the user explicitly clicked Español, therefore it's part of the
-service they requested"? The alternative — making the language preference a session-only cookie
-rather than riding the 7-day session — would put it beyond any argument under WP29, at the cost
-that users re-pick their language each week. I lean towards leaving it and documenting it.
+Agreed: rely on "the user explicitly chose Español, so it forms part of the service they
+requested", and document the reasoning rather than re-engineering the session. No code change.
+It goes in `docs/personal-data.md` with its rationale, and is flagged from `docs/translations.md`
+(§8.6), so that the argument is on record if it is ever
+challenged, rather than being reconstructed from scratch under pressure.
 
-COMMENT: I agree, just document it.
+### D4. We are firmly on the EU footing — users *and* hosting
 
-### Q4. Is analytics actually coming?
+Confirmed: people in the EU are a key audience, **and the service is hosted in the EU**.
 
-You said "might be added at some point". If it's genuinely on the roadmap, I'd rather we commit
-to a **cookieless, self-hosted** tool now (§7 Path 1) and design the cookies page around that,
-than build a banner later. If it's idle speculation, ignore this.
+The hosting fact is new to this analysis and strengthens it. An EU establishment engages EU law
+directly, so we are not relying on a scope argument about who our visitors are. Consequences,
+now settled rather than assumed:
 
-COMMENT: Let's commit to a cookieless self-hosted tool.
+- The UK DUAA relaxations (statistical purposes, appearance) are **unavailable to us**.
+- Every cookie must clear the narrower two-exception ePrivacy test, which §4 shows they all do.
+- Any cookie-setting analytics would require **prior opt-in consent**, with no UK escape hatch.
 
-### Q5. Is the EU exposure real?
+§3.2 has been updated accordingly. This is the fact most likely to be forgotten by a future
+contributor, so it is called out explicitly in the permanent doc (§8.2).
 
-I've assumed OpenDLP serves EU assemblies, based on `SUPPORTED_LANGUAGES = en,es,fr,de` plus
-Hungarian translations. If in fact it's UK-only for the foreseeable future, the analysis gets
-_easier_ (the DUAA exceptions become available), but I don't think it changes the
-recommendation — Option A works under both regimes, which is precisely its appeal.
+### D5. Draft implementation proceeds now, with a documentation hub and tripwires
 
-COMMENT: Yes, people in the EU are a key audience for us. And the service is hosted in the EU.
+Per §8. Hamish asked that future work be able to find both the assumptions made and what would
+change them — a conclusion is only as durable as the record of its premises. That grew into the
+structure in §8.4–§8.7:
 
-### Q6. Should I raise the jsDelivr issue separately?
+- a single canonical `docs/personal-data.md` (named for the GDPR term, *not* `user-data.md`,
+  because "User" is a domain aggregate here and registrants are not Users — §8.5);
+- short tripwire sections in `docs/bot-protection.md`, `docs/translations.md`, and a new
+  `docs/analytics.md`, each stating the assumption its area currently relies on and linking to
+  the hub (§8.6);
+- a standing check in `.claude/skills/sf-code-review/SKILL.md` (§8.7).
 
-Self-hosting govuk-frontend, Alpine and htmx removes a third-party IP disclosure on every page
-load. I think this is a bigger genuine privacy improvement than anything in this document, and
-it's a contained piece of work. Want me to open an issue?
+The hub links to `docs/agent/code_quality_rules.md` for the code-level logging rules rather than
+absorbing them, to avoid two sources of truth (§8.5).
 
-COMMENT: I'll raise it myself.
+### D6. Legal sign-off is a merge gate, not a start gate
+
+We may need sign-off before merging the branch; a draft implementation can proceed in parallel.
+So: build it, open the PR, hold the merge until someone legally qualified has blessed the
+conclusion. `docs/personal-data.md` should record the sign-off status, so nobody downstream
+assumes more assurance than we actually have.
+
+I'd still note the asymmetry that motivated the question: the cost of asking is low, and the
+cost of being wrong is an ICO complaint against a project whose entire premise is public trust.
+
+### D7. The jsDelivr issue — Hamish will raise it
+
+Out of scope here. Self-hosting govuk-frontend, Alpine and htmx would remove a third-party IP
+and referrer disclosure on every page load (§2.4). Not a PECR matter — nothing is stored on the
+device — but in my view a larger real-world privacy improvement than anything in this document.
+
+### D8. The cookies page is hosted on the docs site, not served by Flask
+
+Following the User Data Agreement pattern. New config var `HELP_SITE_COOKIES`, default
+`https://docs.sortitionlab.org/data-and-legal/cookies/`, threaded through `config.py`,
+`context_processors.py`, `env.example` and `docs/configuration.md` (§8.2).
+
+This simplifies the app — no route, no template, no i18n for the page — and keeps legal copy out
+of the deploy cycle. It creates two consequences worth naming rather than discovering later:
+
+1. **We can no longer test the page's contents**, because they aren't ours. The mitigation is to
+   make `docs/personal-data.md` the canonical cookie table and treat the published page as a
+   rendering of it (§8.9). After this, the `GET /` no-`Set-Cookie` assertion is the *only*
+   executable check in the entire scheme, which raises its value considerably.
+2. **The page will be English-only** where an in-app page would have been translated. Accepted
+   and noted (§9 D10).
+
+One implementation detail the pattern hides, in §8.2: `get_help_site_urls()` returns a positional
+tuple, which becomes a `NamedTuple` (§9 D9).
+
+### D9. `get_help_site_urls()` becomes a NamedTuple
+
+Agreed to make the change rather than defer it. Design in §8.2.1.
+
+The reasoning that makes this worth doing *now* rather than filing for later: with three
+same-typed strings, positional unpacking gets a transposition bug past both mypy and the type
+checker silently — you would find out when a footer link pointed at the wrong page. There is
+exactly one call site, `NamedTuple` is `typing` stdlib (no new dependency), and it stays hashable
+so `@cache` keeps working. Small, contained, and it removes a real class of error.
+
+Two things a reviewer should look at: it introduces the `NamedTuple` idiom to `src/`, which has
+none today; and `get_help_site_urls` has no `cache_clear()` in the test suite, unlike its
+siblings, which matters if a test wants to vary the URL via the environment (§8.2.2).
+
+### D10. The English-only cookies page is accepted, and noted
+
+Agreed: accept it, note it. The docs site is not translated; a Hungarian- or Spanish-speaking
+registrant on the public form gets a footer link to an English page.
+
+Not a legal defect — the information duty is "clear and comprehensive", with no language mandate,
+and none of our cookies require consent in the first place. But it is a real accessibility
+regression for exactly the audience the public registration form exists to reach: people invited
+by post who may not be confident in English.
+
+So it must be **written down rather than quietly accepted**. `docs/personal-data.md` should record
+that the published cookies page is English-only, that this was a deliberate trade for keeping
+legal copy out of the deploy cycle, and that translating it is the obvious remedy if the language
+mix of registrants ever makes it bite. That way the next person to look at this finds a decision,
+not an oversight.
+
+### D11. Add a minimal GOV.UK footer to `base_public.html`
+
+Agreed. `base_public.html` has no footer at all — it runs from `<main>` (lines 27-29) straight to
+`</body>` (line 43), with no `govuk-footer` markup anywhere (§8.3).
+
+Scope: a minimal GOV.UK footer carrying the cookies link and the User Data Agreement link, and
+nothing else. The public registration form should stay uncluttered — it is the one page where
+added visual noise costs us completions from people we reached by post.
+
+This is the only item in the plan with meaningful implementation work, and it lands on the most
+sensitive template we have, so it deserves its own careful review of the rendered page rather
+than being waved through as "add a link".
 
 ---
 
