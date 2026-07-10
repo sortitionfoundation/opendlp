@@ -472,9 +472,12 @@ discovers the constraint before they discover the lawyer.
 Option A is approved (§9 D1), with the cookies page hosted on the docs site (§9 D8). The work is
 small, and mostly content.
 
-**Progress:** items 2, 3, 4 and 7 are done. Item 6 is in progress. Item 1 is in the docs repo,
-not this one. Item 5 has no in-app target — there is no privacy notice template in the app
-(§8.10).
+**Progress: complete in this repo.** Items 2, 3, 4, 6 and 7 are done. Item 1 is in the docs
+repo, not this one, and remains outstanding. Item 5 has no in-app target — there is no privacy
+notice template in the app (§8.10).
+
+Remaining before merge: author the cookies page on the docs site (item 1), and obtain legal
+sign-off (D6).
 
 1. **Cookies page on the docs site** — authored at
    `https://docs.sortitionlab.org/data-and-legal/cookies/`, in the docs repo, not here. Content:

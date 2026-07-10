@@ -108,7 +108,8 @@ except Exception as e:
 Specific, expected exceptions (e.g. `except NotFoundError`) where no traceback
 is wanted may stay on `logger.error`.
 
-See [docs/agent/617-log-redaction/](617-log-redaction/) for the redaction design.
+See [docs/personal-data.md](../personal-data.md) for why these rules exist and what else they
+constrain, and [docs/agent/617-log-redaction/](617-log-redaction/) for the redaction design.
 
 ## Cyclomatic Complexity
 
