@@ -104,8 +104,24 @@ OpenDLP detects user language in this order:
 4. Browser Accept-Language header
 5. Default locale fallback
 
+### The session preference is a cookie
+
+Step 2 stores the language under the `"language"` key inside the Flask session, so it rides on
+the 7-day `session` cookie. **This is the only cookie an anonymous front-page visitor can
+acquire** — everything else requires them to sign in or open a form.
+
+There is no dedicated language cookie, and adding one would be a decision rather than a
+refactor. We rely on the argument that a user who clicks "Español" has explicitly requested
+the service of being shown Spanish, which keeps the cookie inside the *strictly necessary*
+exception and means we need no consent banner.
+
+If you are changing how the language preference persists — a dedicated cookie, a longer
+lifetime, `localStorage` — read [docs/personal-data.md](personal-data.md) first. Step 3, the
+future account preference, is a database field rather than a cookie, and raises none of this.
+
 ## Further Reading
 
+- [Personal Data](personal-data.md) — cookies, logging, and the right to erasure
 - [Flask-Babel Documentation](https://python-babel.github.io/flask-babel/)
 - [GNU gettext Manual](https://www.gnu.org/software/gettext/manual/)
 - [Babel Documentation](https://babel.pocoo.org/)

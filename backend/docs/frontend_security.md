@@ -197,6 +197,11 @@ Before adding frontend code, verify:
 - [ ] External JS/CSS referenced with cache busting (`v=static_hashes('relative/path/to/file')`)
 - [ ] No use of eval(), Function(), or similar
 - [ ] All scripts from trusted CDNs only
+- [ ] No new third-party script, font, embed or analytics snippet — see [Personal Data](personal-data.md)
+
+Widening the CSP allowlist is how a third-party script gets waved through. A third party that
+sets a cookie, or that reads the device, would oblige us to build a consent banner we do not
+have. Read [docs/personal-data.md](personal-data.md) before adding a host to the allowlist.
 
 ## Testing CSP Compliance
 
@@ -207,6 +212,7 @@ Before adding frontend code, verify:
 
 ## Further Reading
 
+- [Personal Data](personal-data.md) — cookies, third-party scripts, logging, and erasure
 - [MDN: Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)
 - [Alpine.js CSP Build](https://alpinejs.dev/advanced/csp)
 - [OWASP: Cross Site Scripting Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)

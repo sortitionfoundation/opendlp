@@ -221,18 +221,27 @@ This approach maintains the separation between domain objects (plain Python) and
   exists (e.g. pre-auth), hash the value with `log_redaction.hash_email`.
 - `log_redaction.censor_pii` redacts emails and sensitive fields from all log
   output as a backstop — treat it as a safety net, not a licence to log PII.
-- See [docs/agent/617-log-redaction/](docs/agent/617-log-redaction/) for the design.
+- See [docs/personal-data.md](docs/personal-data.md) for why, and
+  [docs/agent/617-log-redaction/](docs/agent/617-log-redaction/) for the design.
 
 ### GDPR and the right to be forgotten
 
-We need to support people asking for their details to be deleted. So we should be able to find all persistent copies of someones details easily. Our strategy is to blank the details but keep a row with a unique ID - so anything that refers to that ID will not have a broken reference, but instead will know that the details have been deleted.
+We must support people asking for their details to be deleted, so every persistent copy of someone's details must be easy to find. Our strategy is to **blank the details but keep the row** with its unique ID, so anything referring to that ID keeps a valid reference and learns the details are gone.
 
-This requirement also means that we MUST NOT have copies of details in long term storage that cannot be easily found and blanked. In particular, we should not keep long term copies of uploaded or generated files (eg. CSV or Excel files) in the database or on disk. Such files can be held in memory, written to a data attribute in an HTML file sent to a user, be a file available for download in a directory which regularly has old files deleted, cached in Redis or similar.
+It follows that we MUST NOT hold copies of details in long term storage that cannot be easily found and blanked - in particular, no long term copies of uploaded or generated files (eg. CSV or Excel) in the database or on disk. Such files can be held in memory, written to a data attribute in an HTML file sent to a user, put in a download directory that is regularly swept, or cached in Redis.
+
+### Cookies, analytics and third-party scripts
+
+OpenDLP sets two cookies, both exempt from consent, so we have **no cookie banner**. That conclusion rests on premises that are invisible in the code. Adding any cookie, any analytics, or any third-party script or embed may invalidate it.
+
+Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) - it is the canonical reference for cookies, PII logging and erasure, and carries a "what would change the answer" list.
 
 ## Further Documentation
 
 ### General Documentation
 
+- [Personal Data](docs/personal-data.md) - Cookies, PII logging, and the right to erasure
+- [Analytics](docs/analytics.md) - Why we have none, and the constraints if you add some
 - [Testing Strategy](docs/testing.md) - Unit, contract, integration, e2e, and BDD testing
 - [Configuration Guide](docs/configuration.md) - Detailed environment variables and config classes
 - [Command Line Interface](docs/cli.md) - System administration CLI commands

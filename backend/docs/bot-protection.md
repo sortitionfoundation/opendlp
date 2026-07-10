@@ -92,7 +92,22 @@ redis-cli DEL reg_ratelimit:ip:<ip>
 redis-cli DEL reg_ratelimit:email:<email>
 ```
 
+## Privacy assumptions
+
+The current protection is honeypot + signed timing token + Redis IP counters. It **sets no
+cookies and stores nothing on the user's device** — everything is a form field, a response
+header, or a server-side counter.
+
+This matters. Replacing it with **Turnstile, reCAPTCHA or hCaptcha** would introduce
+third-party cookies and, for reCAPTCHA, a consent requirement — which is unworkable on a form
+we need members of the public to complete. If you are considering that, read
+[docs/personal-data.md](personal-data.md) first.
+
+Note also that the rate-limit keys above contain **IP addresses and email addresses**, which
+are personal data. They are retained only for the counter's TTL.
+
 ## Related documentation
 
+- [Personal Data](personal-data.md) — cookies, logging, and the right to erasure
 - [Frontend Security Guidelines](frontend_security.md) — CSP, nonce requirements, and JavaScript patterns
 - [research.md](agent/614-bot-protection/research.md) — Full threat model, call-centre handling options, and later-round work (address-match integration, email-job signed links)

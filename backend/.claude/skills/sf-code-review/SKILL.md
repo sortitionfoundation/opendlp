@@ -22,6 +22,7 @@ I want you to review the changes on this branch, compared to the main branch. Ge
 - Has anything been added to `config.py` (or removed)? Any new feature flags, or have we cleaned up any? If so, are there examples in `env.example` and explanations in `docs/configuration.md`
 - If templates have been added/updated, are we using the Jinja components well? Also review `docs/agent/component_accessibility.md`
 - Is most JavaScript in files under `static/js/`? Will it work with CSP restrictions - see `docs/frontend_security.md`
+- Does the change touch cookies, sessions, logging of personal data, analytics, third-party scripts, or data retention? If so, check it against `docs/personal-data.md` — especially the "What would change the answer" list. Anything on that list needs a decision, not just a review.
 
 ### Do NOT report
 
