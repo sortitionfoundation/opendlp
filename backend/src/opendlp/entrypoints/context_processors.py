@@ -8,6 +8,7 @@ import subprocess
 from collections.abc import Callable
 from functools import cache
 from pathlib import Path
+from typing import NamedTuple
 
 from opendlp import config
 from opendlp.feature_flags import has_feature
@@ -128,10 +129,22 @@ def get_support_email() -> str:
     return flask_config.SUPPORT_EMAIL
 
 
+class HelpSiteUrls(NamedTuple):
+    """URLs of pages published on the external docs site."""
+
+    home: str
+    data_agreement: str
+    cookies: str
+
+
 @cache
-def get_help_site_urls() -> tuple[str, str]:
+def get_help_site_urls() -> HelpSiteUrls:
     flask_config = config.get_config()
-    return flask_config.HELP_SITE_HOME, flask_config.HELP_SITE_DATA_AGREEMENT
+    return HelpSiteUrls(
+        home=flask_config.HELP_SITE_HOME,
+        data_agreement=flask_config.HELP_SITE_DATA_AGREEMENT,
+        cookies=flask_config.HELP_SITE_COOKIES,
+    )
 
 
 def inject_feature_flags() -> dict[str, object]:
@@ -153,7 +166,7 @@ def inject_template_globals() -> dict[str, str | Callable]:
     support email, and external help-site URLs.
     """
     site_banner_text, site_banner_colour = get_site_banner_config()
-    help_site_home, help_site_data_agreement = get_help_site_urls()
+    help_site_urls = get_help_site_urls()
     return {
         "opendlp_version": get_opendlp_version(),
         "google_service_account_email": get_service_account_email(),
@@ -161,6 +174,7 @@ def inject_template_globals() -> dict[str, str | Callable]:
         "site_banner_colour": site_banner_colour,
         "static_hashes": static_hashes,
         "support_email_address": get_support_email(),
-        "help_site_home": help_site_home,
-        "help_site_data_agreement": help_site_data_agreement,
+        "help_site_home": help_site_urls.home,
+        "help_site_data_agreement": help_site_urls.data_agreement,
+        "help_site_cookies": help_site_urls.cookies,
     }

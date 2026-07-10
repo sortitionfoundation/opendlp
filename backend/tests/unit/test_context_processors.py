@@ -2,6 +2,7 @@
 ABOUTME: Tests context processors that inject variables into template context"""
 
 import hashlib
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -9,6 +10,7 @@ import pytest
 
 from opendlp.entrypoints.context_processors import (
     _get_file_hash,
+    get_help_site_urls,
     get_opendlp_version,
     get_service_account_email,
     inject_template_globals,
@@ -135,6 +137,30 @@ class TestInjectTemplateGlobals:
 
         assert context["help_site_home"] == "https://docs.sortitionlab.org/help/"
         assert context["help_site_data_agreement"] == "https://docs.sortitionlab.org/data-and-legal/data-agreement/"
+        assert context["help_site_cookies"] == "https://docs.sortitionlab.org/data-and-legal/cookies/"
+
+
+class TestGetHelpSiteUrls:
+    """Test the get_help_site_urls context processor helper."""
+
+    @pytest.fixture(autouse=True)
+    def clear_cache(self):
+        get_help_site_urls.cache_clear()
+        yield
+        get_help_site_urls.cache_clear()
+
+    def test_returns_named_tuple_with_attribute_access(self):
+        """Test that the URLs are reachable by name, not just by position."""
+        urls = get_help_site_urls()
+
+        assert urls.home == "https://docs.sortitionlab.org/help/"
+        assert urls.data_agreement == "https://docs.sortitionlab.org/data-and-legal/data-agreement/"
+        assert urls.cookies == "https://docs.sortitionlab.org/data-and-legal/cookies/"
+
+    def test_cookies_url_can_be_overridden_by_environment(self):
+        """Test that HELP_SITE_COOKIES overrides the default cookies page URL."""
+        with patch.dict(os.environ, {"HELP_SITE_COOKIES": "https://example.com/cookies/"}):
+            assert get_help_site_urls().cookies == "https://example.com/cookies/"
 
 
 class TestGetOpendlpVersion:
