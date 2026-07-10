@@ -12,7 +12,7 @@
 currently sets falls within a statutory exception to the consent requirement, in both the UK
 and the EU.
 
-What we *do* need is a **cookies page** and a link to it from the footer. That is a
+What we _do_ need is a **cookies page** and a link to it from the footer. That is a
 static-content task, not an engineering one.
 
 Two findings worth flagging up front:
@@ -22,7 +22,7 @@ Two findings worth flagging up front:
    fields, a signed timestamp embedded in the HTML, and Redis counters keyed on IP address.
    Nothing is stored on the user's device.
 2. **The front page sets no cookie for an anonymous visitor** — verified empirically, not just
-   by reading the code. But `/?lang=es` *does* set one, which is the only cookie in the whole
+   by reading the code. But `/?lang=es` _does_ set one, which is the only cookie in the whole
    app that needs anything beyond a plain factual disclosure.
 
 Recommended option: **Option A — cookies page, no banner** (see [§6](#6-options)).
@@ -48,21 +48,21 @@ Recommended option: **Option A — cookies page, no banner** (see [§6](#6-optio
 
 There are exactly **two** cookies. Both are first-party, both are `HttpOnly`.
 
-| Cookie | Set by | When | Lifetime | Prod attributes |
-|---|---|---|---|---|
-| `session` | Flask-Session | On CSRF token generation, `flash()`, `?lang=` selection, 2FA, OAuth start | 7 days (`PERMANENT_SESSION_LIFETIME`, `config.py:400`) | `Secure`, `SameSite=Lax`, `HttpOnly` (`config.py:561-562`) |
-| `remember_token` | Flask-Login | Only when the user ticks "remember me" at login | 7 days (`config.py:566`) | `Secure`, `SameSite=Lax`, `HttpOnly` (`config.py:564-565`) |
+| Cookie           | Set by        | When                                                                      | Lifetime                                               | Prod attributes                                            |
+| ---------------- | ------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------- |
+| `session`        | Flask-Session | On CSRF token generation, `flash()`, `?lang=` selection, 2FA, OAuth start | 7 days (`PERMANENT_SESSION_LIFETIME`, `config.py:400`) | `Secure`, `SameSite=Lax`, `HttpOnly` (`config.py:561-562`) |
+| `remember_token` | Flask-Login   | Only when the user ticks "remember me" at login                           | 7 days (`config.py:566`)                               | `Secure`, `SameSite=Lax`, `HttpOnly` (`config.py:564-565`) |
 
 Notes:
 
-- `SESSION_TYPE = "redis"` (`config.py:509`) means the session *payload* lives in Redis, but a
+- `SESSION_TYPE = "redis"` (`config.py:509`) means the session _payload_ lives in Redis, but a
   browser-side cookie carrying the session id is still set. Server-side sessions do not avoid
   the cookie.
 - **There is no separate CSRF cookie.** Flask-WTF stores the CSRF secret inside the Flask
   session (`WTF_CSRF_COOKIE` / double-submit mode is not configured). So CSRF protection is a
-  *reason the `session` cookie gets set*, not a cookie of its own.
+  _reason the `session` cookie gets set_, not a cookie of its own.
 - **There is no language cookie.** The chosen language is stored under the `"language"` key
-  *inside* the session (`extensions.py:132`).
+  _inside_ the session (`extensions.py:132`).
 - No `localStorage`, no `sessionStorage`, no `document.cookie` anywhere in `static/`. (One
   stale comment in `templates/backoffice/patterns/_pagination.html:131` claims scroll position
   is "saved to sessionStorage" — it isn't; scroll state is passed as a URL query param via
@@ -81,18 +81,18 @@ Run against the real app with the Flask test client:
 
 So, against the three use cases in the issue:
 
-| Use case | Cookie set? | Why |
-|---|---|---|
-| **Anonymous visitor browsing the front page** | **No** | `main.index` renders no form, emits no flash, writes nothing to the session. `get_flashed_messages()` on an empty session is a read-only no-op. |
-| **Anonymous visitor on the registration page** | **Yes — `session`** | `GET /register/<slug>` calls `generate_csrf()` (`registration.py:82`), which writes the CSRF token into the session. This is CSRF protection, not bot protection. |
-| **Signed-in user** | **Yes — `session`**, plus `remember_token` if they opted in | Authentication. |
+| Use case                                       | Cookie set?                                                 | Why                                                                                                                                                               |
+| ---------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Anonymous visitor browsing the front page**  | **No**                                                      | `main.index` renders no form, emits no flash, writes nothing to the session. `get_flashed_messages()` on an empty session is a read-only no-op.                   |
+| **Anonymous visitor on the registration page** | **Yes — `session`**                                         | `GET /register/<slug>` calls `generate_csrf()` (`registration.py:82`), which writes the CSRF token into the session. This is CSRF protection, not bot protection. |
+| **Signed-in user**                             | **Yes — `session`**, plus `remember_token` if they opted in | Authentication.                                                                                                                                                   |
 
 Two caveats that flip the front-page answer:
 
 - Arriving at `/?lang=es` writes `session["language"]` and therefore sets the cookie.
 - Landing on `/` via a redirect that queued a `flash()` message sets the cookie.
 
-Neither changes the legal conclusion, but both mean *"the front page never sets a cookie"* is
+Neither changes the legal conclusion, but both mean _"the front page never sets a cookie"_ is
 not a claim we should put in writing on a cookies page. Better to say: "we set a cookie when
 you choose a language, sign in, or fill in a form."
 
@@ -116,7 +116,7 @@ we would be having a much harder conversation: those set third-party cookies and
 reCAPTCHA, are widely regarded as requiring consent — which is unworkable on a form you need
 people to complete. Worth remembering if anyone ever proposes "just add Turnstile".
 
-The one thing the registration page *does* set a cookie for is **CSRF**, which is squarely
+The one thing the registration page _does_ set a cookie for is **CSRF**, which is squarely
 exempt.
 
 ### 2.4 Third parties (not a cookie problem, but adjacent)
@@ -148,20 +148,20 @@ regulation 6; in the EU it's Article 5(3) of the ePrivacy Directive as implement
 member state. The rule is the same in shape: **you need consent to store or access information
 on a user's device, unless an exception applies.**
 
-Importantly, the rule bites on the *storage*, regardless of whether the data is personal.
+Importantly, the rule bites on the _storage_, regardless of whether the data is personal.
 
 ### 3.1 UK — PECR as amended by the DUAA 2025
 
 The Data (Use and Access) Act 2025 amended PECR with effect from **5 February 2026**; the ICO
 published final guidance on **29 April 2026**. There are now **five exceptions**:
 
-| Exception | Applies when | Extra conditions |
-|---|---|---|
-| **Communication** | Sole purpose is transmitting a communication (e.g. session-scoped load balancing) | — |
-| **Strictly necessary** | Essential to provide the service the user requests | — |
-| **Statistical purposes** ("analytics") | Sole purpose is aggregate statistics about use of *your* service, to improve it | Clear information **and** a simple, free means of objecting |
-| **Appearance** | Sole purpose is adapting appearance/functionality to the user's preference | Clear information **and** a simple, free means of objecting |
-| **Emergency assistance** | Locating a user who needs emergency help | — |
+| Exception                              | Applies when                                                                      | Extra conditions                                            |
+| -------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **Communication**                      | Sole purpose is transmitting a communication (e.g. session-scoped load balancing) | —                                                           |
+| **Strictly necessary**                 | Essential to provide the service the user requests                                | —                                                           |
+| **Statistical purposes** ("analytics") | Sole purpose is aggregate statistics about use of _your_ service, to improve it   | Clear information **and** a simple, free means of objecting |
+| **Appearance**                         | Sole purpose is adapting appearance/functionality to the user's preference        | Clear information **and** a simple, free means of objecting |
+| **Emergency assistance**               | Locating a user who needs emergency help                                          | —                                                           |
 
 The ICO's non-exhaustive list of activities meeting **strictly necessary** includes, verbatim:
 
@@ -184,7 +184,7 @@ Under **appearance**, the ICO gives as an explicit ✔ example:
 > "Remembering the language the subscriber or user selects (eg on a multilingual website)."
 
 Crucially, the exception must be judged **from the user's perspective**, and if a technology is
-used for more than one purpose, *every* purpose must independently qualify.
+used for more than one purpose, _every_ purpose must independently qualify.
 
 ### 3.2 EU — ePrivacy Directive Art. 5(3)
 
@@ -203,7 +203,7 @@ the canonical reading of exception (B), and expressly exempts:
 - **user-security cookies** (e.g. CSRF / brute-force protection)
 - multimedia player session cookies
 - **session-scoped load-balancing cookies**
-- **UI-customisation cookies** (e.g. language choice) — *when session-scoped*
+- **UI-customisation cookies** (e.g. language choice) — _when session-scoped_
 
 **This matters to us.** `SUPPORTED_LANGUAGES` defaults to `en,es,fr,de` (`config.py:477`) and we
 ship Hungarian translations. OpenDLP is plainly intended for EU-based assemblies. So we must
@@ -215,14 +215,14 @@ logic — which is a genuine complexity cost.
 
 ## 4. Applying the law to our two cookies
 
-| Cookie | Purpose | UK basis | EU basis | Consent needed? |
-|---|---|---|---|---|
-| `session` — CSRF token on public registration form | "ensuring the security of terminal equipment" / "preventing fraud" | Strictly necessary | Strictly necessary (WP29: user-security cookie) | **No** |
-| `session` — CSRF token on any logged-in form | Security | Strictly necessary | Strictly necessary | **No** |
-| `session` — authentication after login | "authenticating the subscriber or user" | Strictly necessary | Strictly necessary (WP29: authentication session cookie) | **No** |
-| `session` — flash messages | "recording information or selections the user makes" | Strictly necessary | Strictly necessary (user-input cookie) | **No** |
-| `session` — `?lang=` language choice | Remembering a language the user explicitly chose | **Appearance** exception → needs info + opt-out | WP29 UI-customisation → strictly necessary **if session-scoped** | **No**, with caveats — see 4.1 |
-| `remember_token` — "remember me" | Persistent login | Not strictly necessary — but see 4.2 | Same | **No**, the checkbox *is* the consent — see 4.2 |
+| Cookie                                             | Purpose                                                            | UK basis                                        | EU basis                                                         | Consent needed?                                 |
+| -------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------- |
+| `session` — CSRF token on public registration form | "ensuring the security of terminal equipment" / "preventing fraud" | Strictly necessary                              | Strictly necessary (WP29: user-security cookie)                  | **No**                                          |
+| `session` — CSRF token on any logged-in form       | Security                                                           | Strictly necessary                              | Strictly necessary                                               | **No**                                          |
+| `session` — authentication after login             | "authenticating the subscriber or user"                            | Strictly necessary                              | Strictly necessary (WP29: authentication session cookie)         | **No**                                          |
+| `session` — flash messages                         | "recording information or selections the user makes"               | Strictly necessary                              | Strictly necessary (user-input cookie)                           | **No**                                          |
+| `session` — `?lang=` language choice               | Remembering a language the user explicitly chose                   | **Appearance** exception → needs info + opt-out | WP29 UI-customisation → strictly necessary **if session-scoped** | **No**, with caveats — see 4.1                  |
+| `remember_token` — "remember me"                   | Persistent login                                                   | Not strictly necessary — but see 4.2            | Same                                                             | **No**, the checkbox _is_ the consent — see 4.2 |
 
 ### 4.1 The language cookie is the one genuine wrinkle
 
@@ -236,7 +236,7 @@ Two problems, both minor, both fixable without a banner:
   UI-customisation cookie needs "additional information" to be exempt, not necessarily consent
   — the user has, after all, deliberately clicked a language.
 
-There is a decent argument that a user clicking "Español" has *explicitly requested* the
+There is a decent argument that a user clicking "Español" has _explicitly requested_ the
 service of being shown Spanish, which lands it back in strictly-necessary. I would not lose
 sleep over this. But it's the one place where a lawyer might quibble, so it's flagged as an
 open question ([Q3](#q3-the-language-cookie)).
@@ -246,7 +246,7 @@ cookie**. Everything else requires them to log in or open a form.
 
 ### 4.2 "Remember me" — the checkbox is the consent
 
-The ICO and WP29 both take the view that a **persistent** login cookie is *not* strictly
+The ICO and WP29 both take the view that a **persistent** login cookie is _not_ strictly
 necessary: the user's reasonable expectation is that the session ends when the browser closes.
 
 But this does not require a banner. The standard, regulator-endorsed answer is that **the
@@ -255,6 +255,7 @@ unambiguous, affirmative act, freely given, and unticked by default. That is tex
 standard consent.
 
 Requirements to make that hold:
+
 - The checkbox must be **unticked by default** (verify this).
 - The label should make the consequence clear — "Keep me signed in for 7 days (sets a cookie
   on this device)" rather than a bare "Remember me".
@@ -271,7 +272,7 @@ No, because:
 
 - Every cookie we set is exempt from consent (§4).
 - No advertising, ever (stated policy). No analytics today. No cross-site tracking.
-- The two exempt-with-conditions items (language, remember-me) are satisfied by *information*
+- The two exempt-with-conditions items (language, remember-me) are satisfied by _information_
   and by a checkbox respectively, not by a consent gate.
 
 The GOV.UK Design System agrees with this reading:
@@ -283,11 +284,11 @@ The GOV.UK Design System agrees with this reading:
 And the ICO is clear that even where every cookie is exempt, the **transparency duty under
 UK GDPR Articles 13/14 still applies** — users must be told what is stored and why.
 
-There is also a positive argument for *not* having a banner. OpenDLP exists to run democratic
+There is also a positive argument for _not_ having a banner. OpenDLP exists to run democratic
 lotteries; its public-facing page is a registration form completed by members of the public who
 were invited by post, many of whom are not confident internet users. A consent banner on that
 form is friction on the one interaction that matters, in exchange for zero privacy gain. And a
-banner that offers no real choice ("Accept" with nothing to reject) is *worse* than none — the
+banner that offers no real choice ("Accept" with nothing to reject) is _worse_ than none — the
 ICO explicitly criticises consent theatre, and it trains users to click through banners that
 do matter elsewhere.
 
@@ -295,12 +296,13 @@ do matter elsewhere.
 
 ## 6. Options
 
-### Option A — Cookies page, no banner *(recommended)*
+### Option A — Cookies page, no banner _(recommended)_
 
 Add a `/cookies` page listing both cookies, linked from the footer. Reword the "remember me"
 label. Add a line to the privacy notice.
 
 **Pros**
+
 - Legally correct for what we do today, in both UK and EU.
 - Zero friction on the registration form — the interaction we most care about.
 - No new dependency, no new JS, no CSP headaches.
@@ -308,10 +310,11 @@ label. Add a line to the privacy notice.
 - Roughly a day of work, mostly content.
 
 **Cons**
+
 - Someone has to keep the cookies page accurate as the app changes.
 - If we add analytics later, we then have to build the banner anyway (but see §7 — we'd have to
   do that under any option).
-- Requires the confidence to *not* ship a banner, which can feel exposed if a client asks
+- Requires the confidence to _not_ ship a banner, which can feel exposed if a client asks
   "where's your cookie banner?". Mitigation: the cookies page answers that question, and we can
   point at the GOV.UK precedent.
 
@@ -320,28 +323,30 @@ label. Add a line to the privacy notice.
 Ship the GOV.UK cookie banner component in its "we only use essential cookies" form.
 
 **Pros**
+
 - Visibly signals that we've thought about it. Reassuring to institutional clients.
 - The scaffolding exists if analytics arrive later.
 
 **Cons**
+
 - **Not recommended by GOV.UK for essential-only services.** We'd be adding a banner the
   guidance says to skip.
 - It is consent theatre: nothing to accept or reject. Actively bad practice.
 - Friction on the public registration form, hurting completion rates for the users we most
   need to reach.
-- Still needs the cookies page anyway, so it is strictly *additional* work, not alternative.
+- Still needs the cookies page anyway, so it is strictly _additional_ work, not alternative.
 
 ### Option C — A Flask consent library
 
 **Assessment: don't.** The landscape is thin.
 
-| Library | State | Verdict |
-|---|---|---|
-| `Flask-Consent` | 11 stars, 12 commits, 3 tags, no recent activity | Effectively unmaintained. A toy. |
-| `flask-cookies` | Built to wire up **Google Tag Manager** consent modes | Solves a problem we do not have and never will |
-| Commercial CMPs (CookieYes, Usercentrics, OneTrust) | Mature | Third-party JS that phones home; ironic on a privacy tool; costs money; CSP pain |
+| Library                                             | State                                                 | Verdict                                                                          |
+| --------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `Flask-Consent`                                     | 11 stars, 12 commits, 3 tags, no recent activity      | Effectively unmaintained. A toy.                                                 |
+| `flask-cookies`                                     | Built to wire up **Google Tag Manager** consent modes | Solves a problem we do not have and never will                                   |
+| Commercial CMPs (CookieYes, Usercentrics, OneTrust) | Mature                                                | Third-party JS that phones home; ironic on a privacy tool; costs money; CSP pain |
 
-**Pros of a library:** categories and opt-out plumbing for free, *if* we ever need them.
+**Pros of a library:** categories and opt-out plumbing for free, _if_ we ever need them.
 
 **Cons:** every option either is unmaintained, is built around ad-tech we reject, or introduces
 the exact third-party tracking we are trying to avoid. Against our "boring technology with a
@@ -357,10 +362,12 @@ boring, mature, well-documented choice here; the "library" is the design system.
 Detect UK vs EU visitors and apply the DUAA analytics exception only to UK users.
 
 **Pros**
+
 - Maximises analytics coverage under UK law.
 
 **Cons**
-- Only worth anything *if* we adopt analytics **and** decide the UK relaxation is worth
+
+- Only worth anything _if_ we adopt analytics **and** decide the UK relaxation is worth
   exploiting. Speculative on both counts.
 - Geo-IP adds a dependency, and misclassification creates the legal exposure it was meant to
   avoid.
@@ -397,7 +404,7 @@ Google.
   Foundation about whether shipping Google tracking on a democratic-participation tool is
   consistent with the project's values.
 
-**Path 3 — Self-hosted analytics that *does* set a first-party cookie** (e.g. Matomo with
+**Path 3 — Self-hosted analytics that _does_ set a first-party cookie** (e.g. Matomo with
 cookies on).
 
 - UK: likely fits the new statistical-purposes exception → **information + opt-out**, no
@@ -422,7 +429,7 @@ Small, and mostly content:
    security (CSRF), sign-in, form messages and language choice; explain `remember_token`;
    explain there is no advertising and no analytics. Must be i18n'd (`_()`), like everything
    else.
-2. **Footer link** — from `base.html` *and* `base_public.html`, so the registration form has it
+2. **Footer link** — from `base.html` _and_ `base_public.html`, so the registration form has it
    too. GOV.UK requires this.
 3. **"Remember me" label** — confirm it is unticked by default; reword so the cookie
    consequence is explicit.
@@ -447,6 +454,8 @@ It rests on: no advertising, no analytics, no third-party cookies. All three ver
 code today. If there's a commitment to a client or funder that assumes a banner exists,
 that changes the calculus and I should know.
 
+COMMENT: I've done some reading myself and I accept the conclusion
+
 ### Q2. Do we need sign-off from someone legally qualified?
 
 I've read the primary sources and I'm confident in the analysis, but I'm not a lawyer, and
@@ -456,6 +465,8 @@ organisation have a DPO or retained legal advice that should bless this? The cos
 low; the cost of being wrong is an ICO complaint on a project whose entire premise is public
 trust.
 
+COMMENT: we might need sign off before merging the branch, but we can do a draft implementation now.
+
 ### Q3. The language cookie
 
 Are you comfortable relying on "the user explicitly clicked Español, therefore it's part of the
@@ -463,24 +474,32 @@ service they requested"? The alternative — making the language preference a se
 rather than riding the 7-day session — would put it beyond any argument under WP29, at the cost
 that users re-pick their language each week. I lean towards leaving it and documenting it.
 
+COMMENT: I agree, just document it.
+
 ### Q4. Is analytics actually coming?
 
 You said "might be added at some point". If it's genuinely on the roadmap, I'd rather we commit
 to a **cookieless, self-hosted** tool now (§7 Path 1) and design the cookies page around that,
 than build a banner later. If it's idle speculation, ignore this.
 
+COMMENT: Let's commit to a cookieless self-hosted tool.
+
 ### Q5. Is the EU exposure real?
 
 I've assumed OpenDLP serves EU assemblies, based on `SUPPORTED_LANGUAGES = en,es,fr,de` plus
 Hungarian translations. If in fact it's UK-only for the foreseeable future, the analysis gets
-*easier* (the DUAA exceptions become available), but I don't think it changes the
+_easier_ (the DUAA exceptions become available), but I don't think it changes the
 recommendation — Option A works under both regimes, which is precisely its appeal.
+
+COMMENT: Yes, people in the EU are a key audience for us. And the service is hosted in the EU.
 
 ### Q6. Should I raise the jsDelivr issue separately?
 
 Self-hosting govuk-frontend, Alpine and htmx removes a third-party IP disclosure on every page
 load. I think this is a bigger genuine privacy improvement than anything in this document, and
 it's a contained piece of work. Want me to open an issue?
+
+COMMENT: I'll raise it myself.
 
 ---
 
