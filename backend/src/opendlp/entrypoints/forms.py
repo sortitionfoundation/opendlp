@@ -101,7 +101,9 @@ class LoginForm(FlaskForm):  # type: ignore[no-any-unimported]
         _l("Password"), validators=[DataRequired()], render_kw={"autocomplete": "current-password"}
     )
 
-    remember_me = BooleanField(_l("Remember me"))
+    # Ticking this is the user's consent for the persistent remember_token cookie,
+    # so the label must state the consequence. See docs/personal-data.md.
+    remember_me = BooleanField(_l("Keep me signed in for 7 days (sets a cookie on this device)"))
 
 
 class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]

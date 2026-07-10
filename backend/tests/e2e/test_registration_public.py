@@ -200,6 +200,19 @@ class TestRegistrationFormRendering:
         assert b"govuk-button" in response.data
         assert b"name" in response.data
 
+    def test_public_form_footer_links_to_cookies_page(
+        self, client: FlaskClient, published_registration_page: RegistrationPage
+    ) -> None:
+        """The public form is the one page an anonymous visitor lands on, and the one
+        that sets a cookie, so GOV.UK requires a footer link to the cookies page."""
+        response = client.get(
+            route_url(client, "registration.show_registration_form", url_slug=published_registration_page.url_slug)
+        )
+
+        assert b"govuk-footer" in response.data
+        assert b"https://docs.sortitionlab.org/data-and-legal/cookies/" in response.data
+        assert b"https://docs.sortitionlab.org/data-and-legal/data-agreement/" in response.data
+
 
 class TestRegistrationFormSubmission:
     """Test POST /register/<url_slug> route."""

@@ -88,6 +88,7 @@ class TestFooterOldDashboardLink:
             return render_template_string(
                 template,
                 help_site_data_agreement="https://example.com/data",
+                help_site_cookies="https://example.com/cookies",
                 opendlp_version="test-version",
             )
 
@@ -105,3 +106,9 @@ class TestFooterOldDashboardLink:
         html = self._render_footer()
         assert "Old Dashboard" in html
         assert "/dashboard" in html
+
+    def test_footer_links_to_cookies_page(self, monkeypatch):
+        """The backoffice footer must carry the cookies link, as the GOV.UK footer does."""
+        monkeypatch.delenv("FF_DASHBOARD_SWITCH_LINKS", raising=False)
+        html = self._render_footer()
+        assert "https://example.com/cookies" in html

@@ -28,6 +28,27 @@
                 {% block content %}{% endblock %}
             </main>
         </div>
+        <footer class="govuk-footer" role="contentinfo">
+            <div class="govuk-width-container">
+                <div class="govuk-footer__meta">
+                    <div class="govuk-footer__meta-item govuk-footer__meta-item--grow">
+                        <h2 class="govuk-visually-hidden">{{ _("Support links") }}</h2>
+                        <ul class="govuk-footer__inline-list">
+                            <li class="govuk-footer__inline-list-item">
+                                <a class="govuk-footer__link"
+                                   href="{{ help_site_data_agreement }}"
+                                   target="_blank">{{ _("User Data Agreement") }}</a>
+                            </li>
+                            <li class="govuk-footer__inline-list-item">
+                                <a class="govuk-footer__link"
+                                   href="{{ help_site_cookies }}"
+                                   target="_blank">{{ _("Cookies") }}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </footer>
         <script nonce="{{ csp_nonce }}"
                 src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"
                 integrity="sha384-gDZkBYDiXRQUvstxmxJ+TbB7CxTGzhmH+ZmBAGzbAEgYb/bglRLXcnh6ZxhaVYLy"{# pragma: allowlist secret #}

@@ -472,6 +472,10 @@ discovers the constraint before they discover the lawyer.
 Option A is approved (§9 D1), with the cookies page hosted on the docs site (§9 D8). The work is
 small, and mostly content.
 
+**Progress:** items 2, 3, 4 and 7 are done. Item 6 is in progress. Item 1 is in the docs repo,
+not this one. Item 5 has no in-app target — there is no privacy notice template in the app
+(§8.10).
+
 1. **Cookies page on the docs site** — authored at
    `https://docs.sortitionlab.org/data-and-legal/cookies/`, in the docs repo, not here. Content:
    a table of Name / Purpose / Expires, two rows. Explain that the session cookie covers security
@@ -763,6 +767,29 @@ another is more machinery than a two-cookie app deserves. I think it survives on
 the cost of the tripwires is a few sentences each, and the failure they prevent — shipping Google
 Analytics onto a democratic-participation tool hosted in the EU, with no consent mechanism — is
 bad enough to be worth a few sentences.
+
+### 8.10 Two things found during implementation
+
+**There is no privacy notice in the app.** Item 5 of the list above assumed one existed. Nothing
+under `templates/` mentions privacy; the notice, if there is one, lives on the docs site. So
+"add a cookies paragraph to the privacy notice" is a docs-repo task, not a code task, and it is
+recorded here rather than silently dropped.
+
+**`REMEMBER_COOKIE_DURATION = 7 days` is set only in `FlaskProductionConfig`** (`config.py:569`),
+not in `FlaskBaseConfig`. Outside production the cookie inherits Flask-Login's default of **365
+days**. Production is what the public sees, so the "7 days" on the cookies page and on the
+remember-me label is accurate for real users, and nothing here is a compliance defect.
+
+But it is a trap. Anyone reading `FlaskBaseConfig` to learn the cookie's lifetime gets the wrong
+answer, and a future non-production deployment (a demo or staging instance with real people on
+it) would quietly hand out year-long cookies. Moving the setting to `FlaskBaseConfig` would fix
+this in one line. It is deliberately **not** done here, because it is outside this issue's
+scope — it is flagged in `docs/personal-data.md` and worth its own issue.
+
+**A third, smaller one:** the backoffice footer (`templates/backoffice/components/footer.html`)
+also needed the cookies link. §8.3 only named `base.html` and `base_public.html`. The backoffice
+is where signed-in users spend their time, so all three footers now carry it. This is the case
+§8.2.2 anticipated, and `tests/unit/test_dashboard_feature_flags.py` was updated accordingly.
 
 ---
 

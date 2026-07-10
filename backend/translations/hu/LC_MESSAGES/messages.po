@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-14 09:14+0000\n"
+"POT-Creation-Date: 2026-07-14 15:02+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -239,257 +239,256 @@ msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már léte
 msgid "Number cannot be negative"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:97 src/opendlp/entrypoints/forms.py:131
-#: src/opendlp/entrypoints/forms.py:171 src/opendlp/entrypoints/forms.py:182
+#: src/opendlp/entrypoints/forms.py:97 src/opendlp/entrypoints/forms.py:133
+#: src/opendlp/entrypoints/forms.py:173 src/opendlp/entrypoints/forms.py:184
 #: templates/profile/view.html:10
 msgid "Email address"
 msgstr "Email cím"
 
-#: src/opendlp/entrypoints/forms.py:101 src/opendlp/entrypoints/forms.py:137
-#: src/opendlp/entrypoints/forms.py:499 templates/admin/user_view.html:75
+#: src/opendlp/entrypoints/forms.py:101 src/opendlp/entrypoints/forms.py:139
+#: src/opendlp/entrypoints/forms.py:501 templates/admin/user_view.html:75
 #: templates/profile/view.html:37
 msgid "Password"
 msgstr "Jelszó"
 
-#: src/opendlp/entrypoints/forms.py:104
-#, fuzzy
-msgid "Remember me"
-msgstr "Maradjak bejelentkezve"
+#: src/opendlp/entrypoints/forms.py:106
+msgid "Keep me signed in for 7 days (sets a cookie on this device)"
+msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:111 src/opendlp/entrypoints/forms.py:513
+#: src/opendlp/entrypoints/forms.py:113 src/opendlp/entrypoints/forms.py:515
 #: templates/admin/invite_view.html:22
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py:113 src/opendlp/entrypoints/forms.py:515
+#: src/opendlp/entrypoints/forms.py:115 src/opendlp/entrypoints/forms.py:517
 #, fuzzy
 msgid "Enter your invitation code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/forms.py:117 src/opendlp/entrypoints/forms.py:381
-#: src/opendlp/entrypoints/forms.py:459 templates/admin/user_view.html:28
+#: src/opendlp/entrypoints/forms.py:119 src/opendlp/entrypoints/forms.py:383
+#: src/opendlp/entrypoints/forms.py:461 templates/admin/user_view.html:28
 #: templates/profile/view.html:16
 msgid "First Name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:119
+#: src/opendlp/entrypoints/forms.py:121
 msgid "Optional - your first name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:124 src/opendlp/entrypoints/forms.py:388
-#: src/opendlp/entrypoints/forms.py:466 templates/admin/user_view.html:38
+#: src/opendlp/entrypoints/forms.py:126 src/opendlp/entrypoints/forms.py:390
+#: src/opendlp/entrypoints/forms.py:468 templates/admin/user_view.html:38
 #: templates/profile/view.html:22
 msgid "Last Name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:126
+#: src/opendlp/entrypoints/forms.py:128
 msgid "Optional - your last name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:141 src/opendlp/entrypoints/forms.py:503
+#: src/opendlp/entrypoints/forms.py:143 src/opendlp/entrypoints/forms.py:505
 #, fuzzy
 msgid "Confirm Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:142 src/opendlp/entrypoints/forms.py:198
-#: src/opendlp/entrypoints/forms.py:490 src/opendlp/entrypoints/forms.py:504
+#: src/opendlp/entrypoints/forms.py:144 src/opendlp/entrypoints/forms.py:200
+#: src/opendlp/entrypoints/forms.py:492 src/opendlp/entrypoints/forms.py:506
 #, fuzzy
 msgid "Passwords must match"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:147 src/opendlp/entrypoints/forms.py:519
+#: src/opendlp/entrypoints/forms.py:149 src/opendlp/entrypoints/forms.py:521
 #, fuzzy
 msgid "Accept Data Agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:148 src/opendlp/entrypoints/forms.py:520
+#: src/opendlp/entrypoints/forms.py:150 src/opendlp/entrypoints/forms.py:522
 #, fuzzy
 msgid "You must accept the data agreement to register"
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
 "megállapodásunkat."
 
-#: src/opendlp/entrypoints/forms.py:149 src/opendlp/entrypoints/forms.py:521
+#: src/opendlp/entrypoints/forms.py:151 src/opendlp/entrypoints/forms.py:523
 #, fuzzy
 msgid "I agree to the data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:160 src/opendlp/entrypoints/forms.py:532
+#: src/opendlp/entrypoints/forms.py:162 src/opendlp/entrypoints/forms.py:534
 msgid "Invalid or expired invite code."
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/forms.py:173
+#: src/opendlp/entrypoints/forms.py:175
 #, fuzzy
 msgid "Enter your email address to receive a password reset link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
-#: src/opendlp/entrypoints/forms.py:184
+#: src/opendlp/entrypoints/forms.py:186
 #, fuzzy
 msgid "Enter your email address and we will send you a new confirmation link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
-#: src/opendlp/entrypoints/forms.py:193 src/opendlp/entrypoints/forms.py:483
+#: src/opendlp/entrypoints/forms.py:195 src/opendlp/entrypoints/forms.py:485
 #, fuzzy
 msgid "New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:197 src/opendlp/entrypoints/forms.py:489
+#: src/opendlp/entrypoints/forms.py:199 src/opendlp/entrypoints/forms.py:491
 #, fuzzy
 msgid "Confirm New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:207
+#: src/opendlp/entrypoints/forms.py:209
 #, fuzzy
 msgid "Assembly Title"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/entrypoints/forms.py:209
+#: src/opendlp/entrypoints/forms.py:211
 #, fuzzy
 msgid "Enter the title for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/forms.py:213
+#: src/opendlp/entrypoints/forms.py:215
 #: templates/backoffice/assembly_details.html:44
 #: templates/main/view_assembly_details.html:6
 msgid "Assembly Question"
 msgstr "A gyűlés fő témája"
 
-#: src/opendlp/entrypoints/forms.py:215
+#: src/opendlp/entrypoints/forms.py:217
 msgid "Optional - the key question this assembly will address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:220
+#: src/opendlp/entrypoints/forms.py:222
 #: templates/backoffice/assembly_details.html:68
 #: templates/main/view_assembly_details.html:20
 msgid "First Assembly Date"
 msgstr "Első gyűlés időpontja"
 
-#: src/opendlp/entrypoints/forms.py:222
+#: src/opendlp/entrypoints/forms.py:224
 msgid "Optional - when the first assembly meeting will take place"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:226
+#: src/opendlp/entrypoints/forms.py:228
 #: templates/backoffice/assembly_details.html:77
 #: templates/main/view_assembly_details.html:27
 msgid "Number to Select"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/entrypoints/forms.py:228
+#: src/opendlp/entrypoints/forms.py:230
 msgid "The number of participants to select for this assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:245
+#: src/opendlp/entrypoints/forms.py:247
 #, fuzzy
 msgid "Google Spreadsheet URL"
 msgstr "Google Táblázat teljes linkje"
 
-#: src/opendlp/entrypoints/forms.py:247
+#: src/opendlp/entrypoints/forms.py:249
 msgid "Full URL of the Google Spreadsheet containing respondent data"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:266
+#: src/opendlp/entrypoints/forms.py:268
 msgid ""
 "You must specify address columns when 'Check Same Address' is enabled. "
 "Please enter column names or disable 'Check Same Address'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:277 src/opendlp/entrypoints/forms.py:293
+#: src/opendlp/entrypoints/forms.py:279 src/opendlp/entrypoints/forms.py:295
 #, fuzzy
 msgid "Respondents Tab Name"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/forms.py:279
+#: src/opendlp/entrypoints/forms.py:281
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:285 src/opendlp/entrypoints/forms.py:301
+#: src/opendlp/entrypoints/forms.py:287 src/opendlp/entrypoints/forms.py:303
 #, fuzzy
 msgid "Targets Tab Name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:287
+#: src/opendlp/entrypoints/forms.py:289
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:295
+#: src/opendlp/entrypoints/forms.py:297
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:303
+#: src/opendlp/entrypoints/forms.py:305
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:308
+#: src/opendlp/entrypoints/forms.py:310
 msgid "Already Selected Tab Name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:310
+#: src/opendlp/entrypoints/forms.py:312
 msgid "Name of the tab containing already selected people (used for Replacements)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:315 src/opendlp/entrypoints/forms.py:625
+#: src/opendlp/entrypoints/forms.py:317 src/opendlp/entrypoints/forms.py:627
 #: templates/backoffice/assembly_data.html:175
 #: templates/backoffice/assembly_data.html:432
 #: templates/gsheets/components/view_config.html:48
 msgid "Check Same Address"
 msgstr "Címegyezés ellenőrzése"
 
-#: src/opendlp/entrypoints/forms.py:316
+#: src/opendlp/entrypoints/forms.py:318
 msgid "Enable checking for participants with the same address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:321
+#: src/opendlp/entrypoints/forms.py:323
 #: templates/backoffice/assembly_data.html:181
 #: templates/gsheets/components/view_config.html:54
 msgid "Generate Remaining Tab"
 msgstr "Fennmaradó résztvevők lap generálása"
 
-#: src/opendlp/entrypoints/forms.py:322
+#: src/opendlp/entrypoints/forms.py:324
 msgid "Create a tab with remaining participants after selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:327
+#: src/opendlp/entrypoints/forms.py:329
 #: templates/backoffice/assembly_data.html:191
 #, fuzzy
 msgid "Team Configuration"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
-#: src/opendlp/entrypoints/forms.py:329
+#: src/opendlp/entrypoints/forms.py:331
 #: templates/backoffice/assembly_data.html:193
 msgid "UK Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:330
+#: src/opendlp/entrypoints/forms.py:332
 #: templates/backoffice/assembly_data.html:194
 msgid "EU Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:331
+#: src/opendlp/entrypoints/forms.py:333
 #: templates/backoffice/assembly_data.html:195
 msgid "Australia Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:332
+#: src/opendlp/entrypoints/forms.py:334
 #: templates/backoffice/assembly_data.html:196
 #, fuzzy
 msgid "Custom configuration"
 msgstr "Beállítások mentése"
 
-#: src/opendlp/entrypoints/forms.py:337
+#: src/opendlp/entrypoints/forms.py:339
 msgid ""
 "Select the team configuration to use for default settings for ID Column, "
 "Address Columns and Columns To Keep."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:342 src/opendlp/entrypoints/forms.py:613
+#: src/opendlp/entrypoints/forms.py:344 src/opendlp/entrypoints/forms.py:615
 #: templates/backoffice/assembly_data.html:209
 #: templates/backoffice/assembly_data.html:239
 #: templates/backoffice/assembly_data.html:397
@@ -498,130 +497,130 @@ msgstr ""
 msgid "ID Column"
 msgstr "ID (azonosító) oszlop"
 
-#: src/opendlp/entrypoints/forms.py:346
+#: src/opendlp/entrypoints/forms.py:348
 msgid ""
 "Name of column containing unique identifiers for respondents. Note will "
 "be overridden if the Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:351
+#: src/opendlp/entrypoints/forms.py:353
 #: templates/backoffice/assembly_data.html:217
 #: templates/backoffice/assembly_data.html:245
 #: templates/gsheets/components/view_config.html:66
 msgid "Address Columns"
 msgstr "Cím oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:354
+#: src/opendlp/entrypoints/forms.py:356
 msgid ""
 "Comma-separated list of column names used for checking same address "
 "(e.g., primary_address1, zip_royal_mail). Note will be overridden if the "
 "Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:360
+#: src/opendlp/entrypoints/forms.py:362
 #: templates/backoffice/assembly_data.html:225
 #: templates/backoffice/assembly_data.html:251
 #: templates/gsheets/components/view_config.html:72
 msgid "Columns to Keep"
 msgstr "Megtartandó oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:363
+#: src/opendlp/entrypoints/forms.py:365
 msgid ""
 "Comma-separated list of column names to keep in output (e.g., first_name,"
 " last_name, email). Note will be overridden if the Team Configuration is "
 "not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:383
+#: src/opendlp/entrypoints/forms.py:385
 #, fuzzy
 msgid "User's first name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:390
+#: src/opendlp/entrypoints/forms.py:392
 #, fuzzy
 msgid "User's last name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:395 templates/admin/user_view.html:48
+#: src/opendlp/entrypoints/forms.py:397 templates/admin/user_view.html:48
 #, fuzzy
 msgid "Global Role"
 msgstr "Szereped/jogosultságod"
 
-#: src/opendlp/entrypoints/forms.py:399
+#: src/opendlp/entrypoints/forms.py:401
 msgid "User's global role determines their permissions across the system"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:403
+#: src/opendlp/entrypoints/forms.py:405
 #, fuzzy
 msgid "Active Account"
 msgstr "Hozzon létre fiókot"
 
-#: src/opendlp/entrypoints/forms.py:404
+#: src/opendlp/entrypoints/forms.py:406
 msgid "Inactive users cannot log in to the system"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:413
+#: src/opendlp/entrypoints/forms.py:415
 msgid "Role for New User"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:417
+#: src/opendlp/entrypoints/forms.py:419
 msgid "The role that will be granted to the user who uses this invite"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:422
+#: src/opendlp/entrypoints/forms.py:424
 #, fuzzy
 msgid "Email Address (Optional)"
 msgstr "Email cím"
 
-#: src/opendlp/entrypoints/forms.py:424
+#: src/opendlp/entrypoints/forms.py:426
 msgid "Optional - if provided, the invite will be emailed to this address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:429
+#: src/opendlp/entrypoints/forms.py:431
 msgid "Expires In (Hours)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:431
+#: src/opendlp/entrypoints/forms.py:433
 msgid ""
 "Optional - number of hours until the invite expires (default: 168 hours /"
 " 7 days)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:440
+#: src/opendlp/entrypoints/forms.py:442
 #, fuzzy
 msgid "User Email"
 msgstr "Hiba részletei"
 
-#: src/opendlp/entrypoints/forms.py:442
+#: src/opendlp/entrypoints/forms.py:444
 #, fuzzy
 msgid "Select a user to add to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/forms.py:446
+#: src/opendlp/entrypoints/forms.py:448
 #, fuzzy
 msgid "Assembly Role"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/entrypoints/forms.py:450
+#: src/opendlp/entrypoints/forms.py:452
 msgid "Select the role this user will have on the assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:461
+#: src/opendlp/entrypoints/forms.py:463
 #, fuzzy
 msgid "Your first name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:468
+#: src/opendlp/entrypoints/forms.py:470
 #, fuzzy
 msgid "Your last name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:477
+#: src/opendlp/entrypoints/forms.py:479
 #, fuzzy
 msgid "Current Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:543 src/opendlp/entrypoints/forms.py:595
+#: src/opendlp/entrypoints/forms.py:545 src/opendlp/entrypoints/forms.py:597
 #: templates/backoffice/assembly_data.html:339
 #: templates/backoffice/assembly_data.html:391
 #: templates/backoffice/assembly_targets.html:193
@@ -629,28 +628,28 @@ msgstr "Új jelszó"
 msgid "CSV File"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:545 src/opendlp/entrypoints/forms.py:597
+#: src/opendlp/entrypoints/forms.py:547 src/opendlp/entrypoints/forms.py:599
 msgid "Please select a CSV file to upload"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:546 src/opendlp/entrypoints/forms.py:598
+#: src/opendlp/entrypoints/forms.py:548 src/opendlp/entrypoints/forms.py:600
 msgid "Only CSV files are allowed"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:548
+#: src/opendlp/entrypoints/forms.py:550
 msgid "Select a CSV file containing target categories"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:556 src/opendlp/entrypoints/forms.py:566
+#: src/opendlp/entrypoints/forms.py:558 src/opendlp/entrypoints/forms.py:568
 #, fuzzy
 msgid "Category Name"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/forms.py:558
+#: src/opendlp/entrypoints/forms.py:560
 msgid "e.g. Gender, Age, Ethnicity"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:575
+#: src/opendlp/entrypoints/forms.py:577
 #: templates/backoffice/targets/category_block.html:96
 #: templates/targets/components/category_block.html:69
 #: templates/targets/components/category_block.html:136
@@ -658,11 +657,11 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:577
+#: src/opendlp/entrypoints/forms.py:579
 msgid "e.g. Male, Female, 16-29"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:581
+#: src/opendlp/entrypoints/forms.py:583
 #: src/opendlp/service_layer/selection_report.py:220
 #: templates/backoffice/targets/category_block.html:98
 #: templates/targets/components/category_block.html:70
@@ -671,7 +670,7 @@ msgstr ""
 msgid "Min"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:586
+#: src/opendlp/entrypoints/forms.py:588
 #: src/opendlp/service_layer/selection_report.py:221
 #: templates/backoffice/targets/category_block.html:100
 #: templates/targets/components/category_block.html:71
@@ -680,58 +679,58 @@ msgstr ""
 msgid "Max"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:600
+#: src/opendlp/entrypoints/forms.py:602
 msgid "Select a CSV file containing respondent data"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:604
+#: src/opendlp/entrypoints/forms.py:606
 msgid "Replace all existing respondents"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:606
+#: src/opendlp/entrypoints/forms.py:608
 msgid ""
 "Warning: this will delete all existing respondents for this assembly "
 "before importing. Uncheck to add to existing respondents."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:616
+#: src/opendlp/entrypoints/forms.py:618
 #: templates/backoffice/assembly_data.html:400
 msgid ""
 "Name of column containing unique identifiers. If blank, the first column "
 "in the CSV will be used."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:627
+#: src/opendlp/entrypoints/forms.py:629
 msgid "Prevent selecting multiple participants from the same address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:631
+#: src/opendlp/entrypoints/forms.py:633
 #: templates/backoffice/assembly_data.html:461
 #, fuzzy
 msgid "Address Attributes"
 msgstr "Cím oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:633
+#: src/opendlp/entrypoints/forms.py:635
 msgid "Comma-separated respondent attribute names used for address matching"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:637
+#: src/opendlp/entrypoints/forms.py:639
 #: templates/backoffice/assembly_data.html:470
 #, fuzzy
 msgid "Attributes to Keep"
 msgstr "Megtartandó oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:639
+#: src/opendlp/entrypoints/forms.py:641
 msgid "Comma-separated respondent attribute names to include in CSV output"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:658
+#: src/opendlp/entrypoints/forms.py:660
 msgid ""
 "You must specify address attributes when 'Check Same Address' is enabled."
 " Please enter attribute names or disable 'Check Same Address'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:675 src/opendlp/entrypoints/forms.py:684
+#: src/opendlp/entrypoints/forms.py:677 src/opendlp/entrypoints/forms.py:686
 #, python-format
 msgid "Unrecognised attribute names: %(names)s"
 msgstr ""
@@ -3186,25 +3185,35 @@ msgid "Important"
 msgstr "Fontos"
 
 #: templates/backoffice/components/footer.html:16 templates/base.html:176
+#: templates/base_public.html:40
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
 
-#: templates/base.html:181
+#: templates/backoffice/components/footer.html:19 templates/base.html:181
+#: templates/base_public.html:45
+msgid "Cookies"
+msgstr ""
+
+#: templates/base.html:186
 #, fuzzy
 msgid "New Dashboard"
 msgstr "Irányító pult"
 
-#: templates/base.html:185
+#: templates/base.html:190
 msgid "OpenDLP Version"
 msgstr ""
 
-#: templates/backoffice/components/footer.html:30 templates/base.html:190
+#: templates/backoffice/components/footer.html:33 templates/base.html:195
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
 msgstr ""
 "Az OpenDLPegy nyílt forráskódú platform közösségi gyűlések szervezésére "
 "és a résztvevők véletlenszerű kiválasztására."
+
+#: templates/base_public.html:35
+msgid "Support links"
+msgstr ""
 
 #: templates/admin/index.html:2 templates/admin/index.html:4
 #, fuzzy
@@ -6046,12 +6055,12 @@ msgstr "Kiválasztandó emberek száma"
 msgid "Enter a positive number"
 msgstr ""
 
-#: templates/backoffice/components/footer.html:20
+#: templates/backoffice/components/footer.html:23
 #, fuzzy
 msgid "Old Dashboard"
 msgstr "Irányító pult"
 
-#: templates/backoffice/components/footer.html:24
+#: templates/backoffice/components/footer.html:27
 msgid "Version"
 msgstr ""
 
@@ -13116,3 +13125,4 @@ msgstr ""
 
 #~ msgid "Filter"
 #~ msgstr "Állapot"
+

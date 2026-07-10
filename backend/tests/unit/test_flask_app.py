@@ -121,6 +121,24 @@ class TestMainBlueprint:
         assert response.status_code == 200
         assert b"OpenDLP" in response.data
 
+    def test_index_sets_no_cookie_for_anonymous_visitor(self, client: FlaskClient) -> None:
+        """The front page must set no cookie for an anonymous visitor.
+
+        This is the load-bearing premise of docs/personal-data.md: an anonymous
+        visitor acquires a cookie only by choosing a language, signing in, or
+        opening a form. Adding a flash(), a CSRF token, or any session write to
+        the index view would break that, and must be a deliberate decision.
+        """
+        response = client.get("/")
+
+        assert response.status_code == 200
+        assert "Set-Cookie" not in response.headers
+
+    def test_index_footer_links_to_cookies_page(self, client: FlaskClient) -> None:
+        """Test the footer carries a cookies page link, as GOV.UK guidance requires."""
+        response = client.get("/")
+        assert b"https://docs.sortitionlab.org/data-and-legal/cookies/" in response.data
+
     def test_dashboard_requires_login(self, client: FlaskClient) -> None:
         """Test dashboard route requires authentication."""
         response = client.get("/dashboard")
