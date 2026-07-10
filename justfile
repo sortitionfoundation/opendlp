@@ -64,7 +64,7 @@ deploy-preview-hd-resetdb:
     echo "claude code is not allowed to deploy"
     exit 1
   fi
-  ssh opendlp-test just --justfile /home/hamish/hdpreview/justfile resetdb
+  ssh -t opendlp-test just --justfile /home/hamish/hdpreview/justfile resetdb
 
 # build docker with the current code, copy the image to the preview server and run on gg.preview
 deploy-preview-gg:
@@ -91,4 +91,4 @@ deploy-preview-gg-resetdb:
     echo "claude code is not allowed to deploy"
     exit 1
   fi
-  ssh opendlp-test just --justfile /home/gergo/ggpreview/justfile resetdb
+  ssh -t opendlp-test just --justfile /home/gergo/ggpreview/justfile resetdb
