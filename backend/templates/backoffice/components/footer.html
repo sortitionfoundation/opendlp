@@ -15,6 +15,9 @@ ABOUTME: Site-wide footer with support links and version info
                 <a href="{{ help_site_data_agreement }}" target="_blank" class="text-body-sm transition duration-150 ease-in-out hover:opacity-80" style="color: var(--color-secondary-text);">
                     {{ _("User Data Agreement") }}
                 </a>
+                <a href="{{ help_site_cookies }}" target="_blank" class="text-body-sm transition duration-150 ease-in-out hover:opacity-80" style="color: var(--color-secondary-text);">
+                    {{ _("Cookies") }}
+                </a>
                 {% if feature('dashboard_switch_links') %}
                     <a href="{{ url_for('main.dashboard') }}" class="text-body-sm transition duration-150 ease-in-out hover:opacity-80" style="color: var(--color-secondary-text);">
                         {{ _("Old Dashboard") }}
