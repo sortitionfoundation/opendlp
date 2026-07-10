@@ -198,7 +198,8 @@ description, provisioning steps, and operator runbook.
 
 ### Help Site URLs
 
-External help site URLs linked from base templates (header "Help" link and footer "User Data Agreement" link):
+External help site URLs linked from base templates (header "Help" link, and the footer
+"User Data Agreement" and "Cookies" links):
 
 ```bash
 # Help site landing page (replaces the in-app support page)
@@ -206,7 +207,19 @@ HELP_SITE_HOME=https://docs.sortitionlab.org/help/
 
 # Data agreement page (replaces the in-app user data agreement page)
 HELP_SITE_DATA_AGREEMENT=https://docs.sortitionlab.org/data-and-legal/data-agreement/
+
+# Cookies page, linked from the footer of every page including the public
+# registration form. Must accurately list the cookies we set - see
+# docs/personal-data.md, which is the canonical source of that list.
+HELP_SITE_COOKIES=https://docs.sortitionlab.org/data-and-legal/cookies/
 ```
+
+### Session and cookie lifetimes
+
+`SESSION_COOKIE_*` and `REMEMBER_COOKIE_*` control the only two cookies OpenDLP sets.
+Before changing their lifetimes, or adding a cookie, read
+[docs/personal-data.md](personal-data.md) — the "no cookie banner" conclusion rests on
+what those cookies are for and how long they last.
 
 ### Site Banner Configuration
 

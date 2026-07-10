@@ -442,6 +442,9 @@ class FlaskBaseConfig:
         self.HELP_SITE_DATA_AGREEMENT: str = os.environ.get(
             "HELP_SITE_DATA_AGREEMENT", "https://docs.sortitionlab.org/data-and-legal/data-agreement/"
         )
+        self.HELP_SITE_COOKIES: str = os.environ.get(
+            "HELP_SITE_COOKIES", "https://docs.sortitionlab.org/data-and-legal/cookies/"
+        )
 
         # Login rate limiting
         self.LOGIN_RATE_LIMIT_PER_EMAIL: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_EMAIL", "5"))
