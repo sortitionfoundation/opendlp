@@ -529,7 +529,8 @@ def _create_default_auto_reply_template(assembly_id: uuid.UUID) -> None:
             body_html=defaults["body_html"],
         )
     except Exception as e:
-        logger.warning(
+        # Non-fatal: log with traceback per code_quality_rules for catch-all blocks.
+        logger.exception(
             "Failed to seed default auto-reply email template",
             assembly_id=str(assembly_id),
             user_id=str(current_user.id),
