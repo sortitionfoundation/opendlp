@@ -6,7 +6,7 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any
 
-from opendlp.adapters.tabular_export import AbstractTabularExportTarget, TabularData
+from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, TabularData
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
@@ -1066,20 +1066,23 @@ class FakeURLGenerator:
         return f"http://localhost/{endpoint.replace('.', '/')}"
 
 
-class FakeGSheetExportTarget(AbstractTabularExportTarget):
+class FakeGSheetExportTarget(AbstractGSheetExportTarget):
     """In-memory fake Google Sheets export target for tests.
 
-    Records each ``write_sheet`` call and exposes a fixed result URL, so
-    component and unit tests can drive the export flow without gspread.
+    Records each ``write_sheet`` call and exposes a fixed result URL and
+    spreadsheet title, so component and unit tests can drive the export flow
+    without gspread.
     """
 
     def __init__(
         self,
         result_url: str = "https://docs.google.com/spreadsheets/d/fake",
+        result_title: str = "Fake Spreadsheet",
         error: Exception | None = None,
     ) -> None:
         self.writes: list[tuple[str, TabularData]] = []
         self.result_url = result_url
+        self.result_title = result_title
         # When set, write_sheet raises this instead of recording the write, so
         # tests can drive the "sheet could not be written" failure path.
         self._error = error

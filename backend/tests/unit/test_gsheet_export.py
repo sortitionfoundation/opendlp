@@ -20,7 +20,8 @@ class _FakeWorksheet:
 
 
 class _FakeSpreadsheet:
-    def __init__(self) -> None:
+    def __init__(self, title: str = "Assembly Data") -> None:
+        self.title = title
         self.worksheets_by_title: dict[str, _FakeWorksheet] = {}
         self.added: list[str] = []
 
@@ -63,6 +64,7 @@ class TestGSheetExportTarget:
         ws = spreadsheet.worksheets_by_title["Respondents"]
         assert ws.updated == [["id", "name"], ["R1", "Alice"]]
         assert target.result_url == ws.url
+        assert target.result_title == spreadsheet.title
 
     def test_clears_existing_worksheet(self):
         spreadsheet = _FakeSpreadsheet()

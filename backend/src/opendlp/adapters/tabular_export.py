@@ -41,6 +41,19 @@ class AbstractTabularExportTarget(ABC):
         """Write one sheet of tabular data to this target."""
 
 
+class AbstractGSheetExportTarget(AbstractTabularExportTarget):
+    """A Google-Sheets-style target.
+
+    After ``write_sheet`` it exposes the direct link to the written worksheet
+    (``result_url``) and the containing spreadsheet's own title
+    (``result_title``), so the caller can persist and display them. Both are
+    blank until a write has happened.
+    """
+
+    result_url: str = ""
+    result_title: str = ""
+
+
 class CsvExportTarget(AbstractTabularExportTarget):
     """Accumulate a single sheet into an in-memory, BOM-prefixed CSV string."""
 

@@ -8,7 +8,7 @@ import gspread
 from gspread.exceptions import GSpreadException, WorksheetNotFound
 
 from opendlp import config
-from opendlp.adapters.tabular_export import AbstractTabularExportTarget, ExportTargetError, TabularData
+from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, ExportTargetError, TabularData
 
 __all__ = ["GSheetExportTarget", "WorksheetNotFound"]
 
@@ -22,7 +22,7 @@ def _default_client_factory() -> Any:
     return gspread.service_account(filename=str(config.get_google_auth_json_path()))
 
 
-class GSheetExportTarget(AbstractTabularExportTarget):
+class GSheetExportTarget(AbstractGSheetExportTarget):
     """Write a table into a worksheet of an existing Google Spreadsheet.
 
     The service account must have edit access to the target spreadsheet
@@ -38,6 +38,7 @@ class GSheetExportTarget(AbstractTabularExportTarget):
         self.spreadsheet_url = spreadsheet_url
         self._client_factory = client_factory
         self.result_url: str = ""
+        self.result_title: str = ""
 
     def write_sheet(self, title: str, table: TabularData) -> None:
         try:
@@ -50,6 +51,7 @@ class GSheetExportTarget(AbstractTabularExportTarget):
                 worksheet = spreadsheet.add_worksheet(title=title, rows=_DEFAULT_ROWS, cols=_DEFAULT_COLS)
             worksheet.update([table.headers, *table.rows])
             self.result_url = worksheet.url
+            self.result_title = spreadsheet.title
         except GSpreadException as exc:
             # Wrap any Google Sheets failure (missing sheet, no access, API error)
             # so callers handle one export-layer exception, not gspread internals.

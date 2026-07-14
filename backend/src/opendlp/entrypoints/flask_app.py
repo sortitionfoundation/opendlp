@@ -14,7 +14,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 import opendlp.logging
 from opendlp import bootstrap, config
-from opendlp.adapters.tabular_export import AbstractTabularExportTarget
+from opendlp.adapters.tabular_export import AbstractGSheetExportTarget
 from opendlp.entrypoints.context_processors import inject_feature_flags, inject_template_globals
 from opendlp.entrypoints.extensions import init_extensions
 
@@ -24,7 +24,7 @@ def generate_csp_nonce() -> str:
     return secrets.token_urlsafe(16)
 
 
-def default_gsheet_export_target_factory(spreadsheet_url: str) -> "AbstractTabularExportTarget":
+def default_gsheet_export_target_factory(spreadsheet_url: str) -> "AbstractGSheetExportTarget":
     """Build a real gspread-backed export target for a spreadsheet URL."""
     from opendlp.adapters.gsheet_export import GSheetExportTarget  # noqa: PLC0415
 
