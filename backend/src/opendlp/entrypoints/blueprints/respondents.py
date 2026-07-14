@@ -564,10 +564,9 @@ def _run_gsheet_export(
             flash(_("Could not write to the Google Sheet. Check the URL and sharing settings."), "error")
         return redirect(respondents_url)
 
-    result_url = target.result_url
+    # The direct link to the exported worksheet is saved on the export config and
+    # shown next to the Respondents heading, so we no longer flash the raw URL.
     flash(_("Respondents exported to Google Sheets."), "success")
-    if result_url:
-        flash(result_url, "info")
     return redirect(respondents_url)
 
 
