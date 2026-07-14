@@ -621,6 +621,15 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with contextlib.suppress(Exception):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
+        # The saved respondent-export sheet config (if the organiser has exported
+        # to Google Sheets) drives the "Exported to Google Spreadsheet" link.
+        respondent_gsheet = None
+        # No export config is expected until the first Google Sheets export.
+        with contextlib.suppress(Exception):
+            saved = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
+            if saved is not None:
+                respondent_gsheet = saved.create_detached_copy()
+
         # Determine data source
         data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
 
@@ -644,6 +653,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             total_count=total_count,
             status_filter=status_filter_str,
             can_edit=can_edit,
+            respondent_gsheet=respondent_gsheet,
         ), 200
     except NotFoundError as e:
         logger.warning("Assembly not found", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e))

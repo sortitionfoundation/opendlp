@@ -52,7 +52,10 @@ class TestGSheetExportSmoke:
         captured = []
 
         def factory(url):
-            target = FakeGSheetExportTarget()
+            target = FakeGSheetExportTarget(
+                result_url="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit#gid=3",
+                result_title="Assembly Data",
+            )
             captured.append((url, target))
             return target
 
@@ -77,3 +80,7 @@ class TestGSheetExportSmoke:
             config = uow.assembly_respondent_gsheets.get_by_assembly_id(existing_assembly.id)
             assert config is not None
             assert config.url == sheet_url
+            assert config.spreadsheet_title == "Assembly Data"
+            assert config.worksheet_url == (
+                "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit#gid=3"
+            )

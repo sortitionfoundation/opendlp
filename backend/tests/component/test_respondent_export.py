@@ -142,6 +142,43 @@ class TestExportModal:
         assert "Saved Tab" in body
 
 
+class TestRespondentsPageGSheetLink:
+    _WORKSHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit#gid=7"
+
+    def test_link_shown_when_export_config_exists(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.assembly_respondent_gsheets.add(
+                AssemblyRespondentGSheet(
+                    assembly_id=existing_assembly.id,
+                    url=_SHEET_URL,
+                    worksheet_name="Export tab",
+                    spreadsheet_title="Assembly Data",
+                    worksheet_url=self._WORKSHEET_URL,
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "Exported to Google Spreadsheet" in body
+        assert self._WORKSHEET_URL in body
+        assert "Assembly Data" in body
+
+    def test_no_link_when_no_export_config(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
+
+        assert "Exported to Google Spreadsheet" not in response.get_data(as_text=True)
+
+
 class TestRunExport:
     def test_run_csv_returns_download(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
