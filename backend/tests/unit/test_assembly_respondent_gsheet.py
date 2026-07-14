@@ -38,6 +38,13 @@ class TestPostInit:
         assert config.created_at is not None
         assert config.updated_at is not None
 
+    def test_result_fields_default_to_empty(self) -> None:
+        # spreadsheet_title and worksheet_url are populated after an export; they
+        # start blank so the config can be created before any write has happened.
+        config = AssemblyRespondentGSheet(assembly_id=uuid.uuid4())
+        assert config.spreadsheet_title == ""
+        assert config.worksheet_url == ""
+
 
 class TestUpdateValues:
     def test_updates_editable_fields(self) -> None:
@@ -45,6 +52,15 @@ class TestUpdateValues:
         config.update_values(url=OTHER_VALID_URL, worksheet_name="New tab")
         assert config.url == OTHER_VALID_URL
         assert config.worksheet_name == "New tab"
+
+    def test_updates_result_fields(self) -> None:
+        config = AssemblyRespondentGSheet(assembly_id=uuid.uuid4(), url=VALID_URL)
+        config.update_values(
+            spreadsheet_title="Assembly Data",
+            worksheet_url="https://docs.google.com/spreadsheets/d/abc#gid=1",
+        )
+        assert config.spreadsheet_title == "Assembly Data"
+        assert config.worksheet_url == "https://docs.google.com/spreadsheets/d/abc#gid=1"
 
     def test_bumps_updated_at(self) -> None:
         past = datetime(2020, 1, 1, tzinfo=UTC)

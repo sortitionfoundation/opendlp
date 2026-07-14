@@ -41,6 +41,20 @@ class TestAddAndGet:
     def test_get_nonexistent_returns_none(self, assembly_respondent_gsheet_backend: ContractBackend):
         assert assembly_respondent_gsheet_backend.repo.get(uuid.uuid4()) is None
 
+    def test_result_fields_round_trip(self, assembly_respondent_gsheet_backend: ContractBackend):
+        assembly = assembly_respondent_gsheet_backend.make_assembly()
+        config = _add(
+            assembly_respondent_gsheet_backend,
+            assembly_id=assembly.id,
+            spreadsheet_title="Assembly Data",
+            worksheet_url="https://docs.google.com/spreadsheets/d/abc#gid=1",
+        )
+
+        retrieved = assembly_respondent_gsheet_backend.repo.get(config.assembly_respondent_gsheet_id)
+        assert retrieved is not None
+        assert retrieved.spreadsheet_title == "Assembly Data"
+        assert retrieved.worksheet_url == "https://docs.google.com/spreadsheets/d/abc#gid=1"
+
     def test_all_returns_added(self, assembly_respondent_gsheet_backend: ContractBackend):
         c1 = _add(assembly_respondent_gsheet_backend)
         c2 = _add(assembly_respondent_gsheet_backend)

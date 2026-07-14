@@ -21,6 +21,11 @@ class AssemblyRespondentGSheet:
     assembly_respondent_gsheet_id: uuid.UUID | None = None
     url: str = ""
     worksheet_name: str = "Respondents"
+    # Captured from the sheet on the last export: the spreadsheet's own title and
+    # the direct link to the exported worksheet, used to show a link on the
+    # respondents page. Blank until the first successful export.
+    spreadsheet_title: str = ""
+    worksheet_url: str = ""
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
