@@ -47,7 +47,7 @@ ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the exp
 
             <div x-show="destination === 'gsheet'" x-cloak class="flex flex-col gap-3">
                 <p class="text-body-sm rounded-lg p-3"
-                   style="background-color: var(--color-warning-background, var(--color-tables-cards)); color: var(--color-body-text); border: 1px solid var(--color-borders-dividers);">
+                   style="background-color: var(--color-warning-background); color: var(--color-warning-text); border: 1px solid var(--color-warning-text);">
                     {{ _("This will overwrite any existing data in the chosen tab. Data in other tabs of the spreadsheet is left untouched.") }}
                 </p>
                 <div class="flex flex-col gap-1">
