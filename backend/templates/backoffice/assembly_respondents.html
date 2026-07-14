@@ -88,7 +88,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                             <p class="text-body-sm" style="color: var(--color-secondary-text);">
                                 {{ _("Exported to Google Spreadsheet") }}
                                 <a href="{{ respondent_gsheet.worksheet_url }}" target="_blank" rel="noopener"
-                                   style="color: var(--color-links);">{{ respondent_gsheet.spreadsheet_title or _("Google Spreadsheet") }}</a>
+                                   class="underline" style="color: var(--color-primary-action);">{{ respondent_gsheet.spreadsheet_title or _("Google Spreadsheet") }}</a>
                             </p>
                         {% endif %}
                     </div>
