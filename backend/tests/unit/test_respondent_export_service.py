@@ -360,6 +360,30 @@ class TestExportRespondentsToGSheet:
         assert saved.url == _SHEET_URL
         assert saved.worksheet_name == "Export tab"
 
+    def test_saves_title_and_worksheet_url_from_target(self):
+        uow = FakeUnitOfWork()
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R1", RespondentStatus.SELECTED)
+
+        target = FakeGSheetExportTarget(
+            result_url="https://docs.google.com/spreadsheets/d/abc#gid=42",
+            result_title="Assembly Data",
+        )
+        export_respondents_to_gsheet(
+            uow,
+            user.id,
+            assembly.id,
+            status_filter=None,
+            spreadsheet_url=_SHEET_URL,
+            worksheet_name="Export tab",
+            target=target,
+        )
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.spreadsheet_title == "Assembly Data"
+        assert saved.worksheet_url == "https://docs.google.com/spreadsheets/d/abc#gid=42"
+
     def test_updates_existing_config(self):
         uow = FakeUnitOfWork()
         user, assembly = _seed(uow)
