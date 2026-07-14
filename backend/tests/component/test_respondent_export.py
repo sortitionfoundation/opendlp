@@ -104,6 +104,18 @@ class TestExportModal:
         assert 'name="spreadsheet_url"' in body
         assert "Selected or confirmed" in body
 
+    def test_modal_preselects_status_from_query(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.SELECTED)
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal?status=SELECTED"
+        )
+
+        body = response.get_data(as_text=True)
+        assert '<option value="SELECTED" selected>' in body
+
     def test_modal_prefills_saved_gsheet_config(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
     ) -> None:

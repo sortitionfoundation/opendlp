@@ -468,6 +468,7 @@ def export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
         assembly_id=assembly_id,
         gsheet_config=gsheet_config,
         status_options=_export_status_options(),
+        selected_status=request.args.get("status", ""),
         service_account_email=get_service_account_email(),
     ), 200
 
