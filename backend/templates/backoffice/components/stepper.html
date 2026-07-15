@@ -27,6 +27,10 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
                   be disabled via `disabled: true`. Use when steps must be
                   completed in order.
     preserve_scroll: whether to preserve scroll position on navigation (default false)
+                     When true, requires the `x-scroll-preserve-links` Alpine directive
+                     (registered in `static/js/alpine-scroll-manager.js`, loaded by
+                     `backoffice/base.html`). Silently no-ops if used from a base
+                     template that doesn't load that script.
 
     Panel convention (same as tabs macro):
         <div id="{{ id }}-panel-{{ key }}" role="tabpanel"
@@ -45,7 +49,9 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
     #}
     {% set is_wizard = mode == "wizard" %}
     {% set list_role = "list" if is_wizard else "tablist" %}
-    <nav class="mb-8" aria-label="{{ aria_label }}" {% if preserve_scroll %}x-data x-scroll-preserve-links{% endif %}>
+    {# aria_label goes on the inner <ol> (the actual tab/step list); repeating it on the
+       outer <nav> landmark just doubles the announcement without adding meaning. #}
+    <nav class="mb-8" {% if preserve_scroll %}x-data x-scroll-preserve-links{% endif %}>
         <ol class="stepper"
             role="{{ list_role }}"
             aria-label="{{ aria_label }}"
@@ -82,7 +88,7 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
                                 {% if state == "done" %}
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 10 8 14 16 6"></polyline></svg>
                                 {% elif state == "error" %}
-                                    !
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L18 17 L2 17 Z"></path><line x1="10" y1="9" x2="10" y2="12"></line><line x1="10" y1="15" x2="10.01" y2="15"></line></svg>
                                 {% else %}
                                     {{ loop.index }}
                                 {% endif %}
@@ -111,7 +117,7 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
                                 {% if state == "done" %}
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 10 8 14 16 6"></polyline></svg>
                                 {% elif state == "error" %}
-                                    !
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L18 17 L2 17 Z"></path><line x1="10" y1="9" x2="10" y2="12"></line><line x1="10" y1="15" x2="10.01" y2="15"></line></svg>
                                 {% else %}
                                     {{ loop.index }}
                                 {% endif %}
