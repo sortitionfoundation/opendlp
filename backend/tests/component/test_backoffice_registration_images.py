@@ -263,8 +263,9 @@ class TestImageDetailsModalTemplate:
         assert ':value="editingImage.file_name"' in modal_block
         # Click-to-select the value
         assert "$event.target.select()" in modal_block
-        # Copy uses the new generic clipboard helper
-        assert "copyToClipboard(editingImage.file_name" in modal_block
+        # Copy uses the CSP-safe data-attribute pattern instead of string args in @click.
+        assert ':data-copy-text="editingImage.file_name"' in modal_block
+        assert "copyToClipboard($el)" in modal_block
 
     def test_original_filename_shown_in_metadata_block_only_when_present(self, modal_block):
         """Original filename sits inside the top metadata block alongside Dimensions
@@ -275,7 +276,7 @@ class TestImageDetailsModalTemplate:
         assert 'x-if="editingImage.original_filename"' in modal_block
         # No standalone copy input/button for the original filename
         assert 'id="image-details-original-filename"' not in modal_block
-        assert "copyToClipboard(editingImage.original_filename" not in modal_block
+        assert ':data-copy-text="editingImage.original_filename"' not in modal_block
 
     def test_read_only_snippet_input_has_copy_handler(self, modal_block):
         assert 'id="image-details-snippet"' in modal_block
@@ -294,8 +295,11 @@ class TestImageDetailsModalTemplate:
         assert 'button(_("Save"),' not in modal_block
 
     def test_alpine_data_block_exposes_copy_helper_and_delete_method(self, alpine_data_block):
-        # Generic clipboard helper used by the filename copy button
-        assert "copyToClipboard(text, successMessage)" in alpine_data_block
+        # CSP-safe clipboard helper: reads the copy target/message from data-* attributes
+        # on the triggering element rather than accepting string literals as arguments
+        # (Alpine CSP build doesn't officially support literal-arg method calls).
+        assert "copyToClipboard($el)" in alpine_data_block
+        assert "$el.dataset.copyText" in alpine_data_block
         # Modal-scoped delete that closes the modal on success and skips the panel's confirm()
         assert "deleteEditingImage()" in alpine_data_block
         assert "this.imageDetailsModalOpen = false" in alpine_data_block
