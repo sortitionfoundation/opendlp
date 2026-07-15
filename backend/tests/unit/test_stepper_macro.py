@@ -35,14 +35,14 @@ class TestStepperScreenReaderState:
     must not be colour-only. Screen readers should be told the state in words."""
 
     def test_done_step_carries_visually_hidden_completed_text(self):
+        # Anchor on the exact span markup so incidental copy elsewhere in the
+        # rendered output (labels, comments) can't accidentally satisfy the assertion.
         html = _render(f'{{{{ stepper(id="s", aria_label="Steps", {_TABS_ITEMS}) }}}}')
-        assert 'class="sr-only"' in html, "expected an sr-only span for state text"
-        assert "completed" in html
+        assert '<span class="sr-only"> (completed)</span>' in html
 
     def test_error_step_carries_visually_hidden_error_text(self):
         html = _render(f'{{{{ stepper(id="s", aria_label="Steps", {_TABS_ITEMS}) }}}}')
-        # "has errors" is the exact string the macro emits for the error state.
-        assert "has errors" in html
+        assert '<span class="sr-only"> (has errors)</span>' in html
 
     def test_active_and_inactive_steps_do_not_get_sr_only_state(self):
         """Active is already announced via aria-selected/aria-current; inactive is the
@@ -82,3 +82,40 @@ class TestStepperAriaByMode:
             "]) }}"
         )
         assert 'aria-disabled="true"' in html
+
+
+class TestStepperExtraAttrsEscaping:
+    """Pass-through attribute values must be HTML-escaped, because the macro joins
+    them into a raw string and renders with |safe. An unescaped quote in a value
+    would break out of the attribute."""
+
+    def test_quote_in_pass_through_value_is_escaped(self):
+        html = _render(
+            '{{ stepper(id="s", aria_label="Steps", items=['
+            '  {"key": "a", "label": "One", "href": "#", "active": true,'
+            '   "data-note": \'evil" onclick="alert(1)\'}'
+            "]) }}"
+        )
+        # The literal attack payload must not appear intact — the quote must be
+        # entity-encoded so it cannot terminate the attribute.
+        assert 'onclick="alert(1)' not in html
+        assert "&#34;" in html or "&quot;" in html
+
+    def test_angle_bracket_in_pass_through_value_is_escaped(self):
+        html = _render(
+            '{{ stepper(id="s", aria_label="Steps", items=['
+            '  {"key": "a", "label": "One", "href": "#", "active": true,'
+            "   \"data-note\": '<script>alert(1)</script>'}"
+            "]) }}"
+        )
+        assert "<script>" not in html
+        assert "&lt;script&gt;" in html
+
+    def test_benign_pass_through_value_still_reaches_output(self):
+        html = _render(
+            '{{ stepper(id="s", aria_label="Steps", items=['
+            '  {"key": "a", "label": "One", "href": "#", "active": true,'
+            '   "data-cy": "step-one"}'
+            "]) }}"
+        )
+        assert 'data-cy="step-one"' in html
