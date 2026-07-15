@@ -341,7 +341,22 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
         try:
             email_template = get_email_template(bootstrap.get_flask_uow(), current_user.id, template_id)
             auto_reply_enabled = True
-        except (EmailTemplateNotFoundError, InsufficientPermissions):
+        except EmailTemplateNotFoundError:
+            logger.debug(
+                "auto_reply_template_load_failed",
+                assembly_id=str(assembly_id),
+                template_id=str(template_id),
+                reason="not_found",
+            )
+            email_template = None
+        except InsufficientPermissions:
+            logger.debug(
+                "auto_reply_template_load_failed",
+                assembly_id=str(assembly_id),
+                template_id=str(template_id),
+                user_id=str(current_user.id),
+                reason="forbidden",
+            )
             email_template = None
 
     if email_template is None:
@@ -350,6 +365,12 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
             if templates:
                 email_template = templates[0]
         except InsufficientPermissions:
+            logger.debug(
+                "auto_reply_template_list_failed",
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
+                reason="forbidden",
+            )
             email_template = None
 
     problems = auto_reply_readiness_problems(bootstrap.get_flask_uow(), assembly_id)
