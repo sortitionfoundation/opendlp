@@ -96,6 +96,12 @@ def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
         "width": image.width,
         "height": image.height,
         "byte_size": image.byte_size,
+        # Pre-computed accessible labels — built server-side with %(name)s placeholders
+        # so translators can reorder the parts. Concatenating in the template
+        # (e.g. "Delete " + display_name) hard-codes English word order.
+        "aria_label_details": _("Details for %(name)s", name=display_name),
+        "aria_label_copy_snippet": _("Copy <img> snippet for %(name)s", name=display_name),
+        "aria_label_delete": _("Delete %(name)s", name=display_name),
     }
 
 
