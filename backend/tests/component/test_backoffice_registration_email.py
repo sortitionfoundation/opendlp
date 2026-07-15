@@ -105,6 +105,34 @@ class TestCreateAction:
         assert page.auto_reply_email_template_id == template.id
 
 
+class TestEditFormMarkup:
+    """The edit form must not carry a hidden name="action" input.
+
+    Regression: a hidden <input name="action" value="save"> alongside the submit
+    buttons (Save / Save-and-next) is sent as a duplicate. request.form.get("action")
+    returns the first entry, so the hidden always wins and Save-and-next silently
+    behaves like plain Save (no advance to the preview step). The submit buttons
+    already carry the action name/value; no fallback needed.
+    """
+
+    def test_edit_mode_form_has_no_hidden_action_input(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?section=email&edit=1")
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        # The Save and Save-and-next submit buttons render as <button name="action" value="…">.
+        # A hidden <input> with the same name would be sent as a duplicate and win over the
+        # button value in Werkzeug's form.get(). Other forms on the page have hidden action
+        # inputs with different values (create/enable/disable/publish) — those are OK because
+        # their surrounding forms don't have a submit button carrying name="action".
+        assert '<input type="hidden" name="action" value="save"' not in html, (
+            "hidden action=save would win over the Save-and-next button "
+            "(browsers send both fields; Werkzeug's form.get() returns the first)"
+        )
+
+
 class TestSaveAction:
     """action=save updates fields on the existing template; save_and_next also advances step."""
 
