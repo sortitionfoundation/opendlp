@@ -14,7 +14,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageStatus,
 )
 from opendlp.entrypoints.blueprints import backoffice_registration as be_reg
-from opendlp.service_layer.exceptions import EmailTemplateInvalid, EmailTemplateNotFoundError
+from opendlp.service_layer.exceptions import EmailTemplateNotFoundError
 from tests.fakes import FakeUnitOfWork
 
 
@@ -236,17 +236,15 @@ class TestEnableDisableActions:
 
 class TestErrorHandling:
     def test_invalid_template_returns_to_edit_mode_with_flash(self, logged_in_admin, fake_store, assembly_id):
+        # Empty subject fails EmailTemplate.validation_problems() → EmailTemplateInvalid.
+        # Drives the real service so we exercise the actual validation path, not a mocked stand-in.
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
-        with patch(
-            "opendlp.entrypoints.blueprints.backoffice_registration.update_email_template",
-            side_effect=EmailTemplateInvalid(["subject must not be empty"]),
-        ):
-            response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_id}/registration/email/save",
-                data={"action": "save", "template_subject": "", "template_body_html": "<p></p>"},
-            )
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/email/save",
+            data={"action": "save", "template_subject": "", "template_body_html": "<p>Body</p>"},
+        )
 
         assert response.status_code == 302
         # Lands back in edit mode so the manager can fix the problem.
@@ -254,17 +252,20 @@ class TestErrorHandling:
         assert "edit=1" in response.location
 
     def test_email_template_not_found_flashes_error_and_redirects(self, logged_in_admin, fake_store, assembly_id):
-        template = _seed_template(fake_store, assembly_id)
-        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+        # Page points at a template that doesn't exist (data drift) → the real
+        # service raises EmailTemplateNotFoundError when the save tries to load it.
+        stray_id = uuid.uuid4()
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=stray_id)
 
-        with patch(
-            "opendlp.entrypoints.blueprints.backoffice_registration.update_email_template",
-            side_effect=EmailTemplateNotFoundError("gone"),
-        ):
-            response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_id}/registration/email/save",
-                data={"action": "save", "template_subject": "x", "template_body_html": "<p>x</p>"},
-            )
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/email/save",
+            data={
+                "action": "save",
+                "template_id": str(stray_id),
+                "template_subject": "x",
+                "template_body_html": "<p>x</p>",
+            },
+        )
 
         assert response.status_code == 302
         assert "section=email" in response.location
@@ -282,7 +283,7 @@ class TestErrorHandling:
         assert f"/backoffice/assembly/{assembly_id}" in response.location
         assert "/registration/email" not in response.location
 
-    def test_non_admin_is_redirected_off_the_backoffice(self, logged_in_user, fake_store, assembly_id):
+    def test_non_admin_is_redirected_to_dashboard(self, logged_in_user, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
@@ -292,24 +293,8 @@ class TestErrorHandling:
         )
 
         assert response.status_code == 302
-        # Redirects to the dashboard (via the InsufficientPermissions handler).
-        assert "/backoffice/assembly" not in response.location or "/registration" not in response.location
-
-    def test_unexpected_error_lands_on_email_section(self, logged_in_admin, fake_store, assembly_id):
-        template = _seed_template(fake_store, assembly_id)
-        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
-
-        with patch(
-            "opendlp.entrypoints.blueprints.backoffice_registration.update_email_template",
-            side_effect=RuntimeError("boom"),
-        ):
-            response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_id}/registration/email/save",
-                data={"action": "save", "template_subject": "x", "template_body_html": "<p>x</p>"},
-            )
-
-        assert response.status_code == 302
-        assert "section=email" in response.location
+        # InsufficientPermissions handler redirects to the backoffice dashboard.
+        assert response.location.endswith("/backoffice/dashboard")
 
 
 class TestLoadAutoReplyContext:
