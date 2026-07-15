@@ -59,11 +59,13 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
                 {% set is_disabled = item.disabled and is_wizard %}
                 {% set step_role = "step" if is_wizard else "tab" %}
 
-                {# Pass-through attributes for anything not consumed above #}
+                {# Pass-through attributes for anything not consumed above.
+                   Value is HTML-escaped; the surrounding = and " are marked safe so Jinja
+                   doesn't re-escape them when concatenating with the escaped Markup value. #}
                 {% set extra_attrs = [] %}
                 {% for key, value in item.items() %}
                     {% if key not in ["label", "href", "active", "disabled", "key", "state"] %}
-                        {% set _ = extra_attrs.append(key ~ '="' ~ value ~ '"') %}
+                        {% set _ = extra_attrs.append(key ~ ('="' | safe) ~ (value | e) ~ ('"' | safe)) %}
                     {% endif %}
                 {% endfor %}
 
