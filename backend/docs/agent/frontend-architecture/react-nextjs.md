@@ -1,8 +1,3 @@
-<!--
-ABOUTME: Advocacy and honest cost analysis for adopting a React / Next.js frontend for OpenDLP.
-ABOUTME: A decision document for a two-person team; makes the strongest case while being scrupulous about the costs.
--->
-
 # Frontend architecture option: React / Next.js
 
 **Status:** advocacy document — one option among several. Read alongside the other
@@ -118,9 +113,12 @@ is mostly **serialisation over functions that already exist**, not new business 
 The domain is plain Python and UUID-keyed, so it serialises cleanly. If we were going
 to build an API, we're starting from a good place.
 
-And the Node toolchain is **already in the repo**: `package.json` builds SCSS and
-Tailwind, and `govuk-frontend` is already an npm dependency. We would not be
-introducing Node from zero.
+And the Node toolchain is **already in the repo**: `package.json` builds SCSS,
+Tailwind, and — via **esbuild** — bundles first-party JS (npm-dependency modules
+such as the CodeMirror editor) into a self-hosted IIFE bundle, with `govuk-frontend`
+already an npm dependency (see [docs/frontend_build.md](../../frontend_build.md)).
+We would not be introducing Node, npm packages, or a JS bundler from zero — though
+none of that is the same as introducing React's runtime and component model.
 
 ---
 
@@ -328,10 +326,12 @@ path is listed only to be explicitly rejected.
 
 ### 3.5 Build & deploy
 
-- Reuse the existing Node toolchain. Add a bundler (Next.js, or Vite if we choose a
-  plain SPA-behind-login rather than full Next). Wire `npm run build` into the deploy
-  so Flask serves hashed, CSP-nonce-compatible assets (extends the current
-  `static_hashes` cache-busting approach).
+- Reuse the existing Node toolchain — which already runs esbuild for first-party JS
+  bundles (`build:js`). React needs a heavier bundler than the current single-entry
+  esbuild step: adopt Next.js's build, or Vite if we choose a plain SPA-behind-login
+  rather than full Next. Wire `npm run build` into the deploy so Flask serves hashed,
+  CSP-nonce-compatible assets (extends the current `static_hashes` cache-busting
+  approach that the esbuild `dist/` output already uses).
 - If using full Next.js SSR, add the Node runtime to the deployment; otherwise a
   static SPA build served by Flask keeps deployment single-target (this is the lighter
   option and worth preferring).

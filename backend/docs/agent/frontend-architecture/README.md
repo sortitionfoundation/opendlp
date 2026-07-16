@@ -1,8 +1,3 @@
-<!--
-ABOUTME: Neutral index for the frontend-interactivity architecture decision, framing the choice and linking the three option documents.
-ABOUTME: Does not pick a winner; summarises each option, the shared constraints, and the points all three advocates agree on.
--->
-
 # Frontend interactivity: architecture options
 
 **Status:** open decision. This folder collects the material for choosing how
@@ -62,9 +57,11 @@ approach they argue for — which makes them worth weighting:
 - **The two-person team size is the decisive maintainability variable** — cited as a
   point *for* HTMX and vanilla/Alpine, and as the weakness that most likely sinks
   React.
-- **We currently have no JS unit-test runner, no eslint, no JS bundler.** Any option
-  that pushes logic into client JS implies adding JS testing (Vitest et al.), which
-  needs an explicit decision.
+- **We currently have no JS unit-test runner and no eslint.** (We *do* have an
+  esbuild bundler — `build:js` in `package.json`, see
+  [docs/frontend_build.md](../../frontend_build.md) — so a bundler is no longer a
+  gap.) Any option that pushes logic into client JS implies adding JS testing
+  (Vitest et al.), which needs an explicit decision.
 
 ## How to read these
 

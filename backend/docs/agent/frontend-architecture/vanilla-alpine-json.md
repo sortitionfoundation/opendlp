@@ -1,6 +1,3 @@
-<!-- ABOUTME: Advocacy/decision document arguing for vanilla JS + Alpine.js with JSON-returning routes -->
-<!-- ABOUTME: as OpenDLP's frontend interactivity approach, with organisation, testing and CSP conventions -->
-
 # Frontend interactivity: vanilla JS + Alpine.js with JSON routes
 
 **Status:** proposal / decision document
@@ -31,7 +28,7 @@ So the question is **not** "should we introduce JSON + JS?" We have. The questio
 
 **The accidental version is already hurting.** `templates/backoffice/assembly_registration.html` is **1078 lines**, a large chunk of which is an inline `<script nonce>` block of Alpine components doing `fetch()` with `X-CSRFToken` headers against those JSON endpoints. `patterns.html` and `service_docs.html` have the same shape. That inline JS is: untested, uncacheable, not lintable, invisible to any build step, and mixed line-by-line with Jinja. This is the split-brain problem in its worst form — and notice it is a problem we _already own_. The good news is the well-factored counter-examples (`alpine-components.js`) prove we know how to do it right.
 
-**Testing today is Python-only.** We have `pytest-bdd` + Playwright BDD/e2e (`tests/bdd/`, headless in CI), plus unit/component/contract/integration suites. There is **no JS unit test runner, no eslint, no JS bundler** — `package.json` only builds Sass and Tailwind. So every line of the inline `fetch`/Alpine logic above is currently untestable except through a full browser BDD run.
+**Testing today is Python-only.** We have `pytest-bdd` + Playwright BDD/e2e (`tests/bdd/`, headless in CI), plus unit/component/contract/integration suites. There is **no JS unit test runner and no eslint**. We *do* now have a JS bundler: `package.json`'s `build:js` runs **esbuild**, bundling first-party ES modules from `static/backoffice/js/src/` into a self-hosted, nonce'd IIFE under `dist/` (see [docs/frontend_build.md](../../frontend_build.md); first consumer is the CodeMirror HTML editor). So the build pipeline for authored JS already exists — but every line of the inline `fetch`/Alpine logic above is still currently untestable except through a full browser BDD run.
 
 **Public pages already degrade gracefully.** The public registration flow (`registration.py`) is fully server-rendered form POST — the organiser literally pastes plain HTML with `{{ form_action }}` and `{{ csrf_form_element }}`. No JavaScript is required to register. That constraint is real and we must not break it.
 
@@ -127,8 +124,8 @@ Not a plan to execute now — a shape to agree on.
 - Everything under `static/js/` (shared) and `static/backoffice/js/` (backoffice). No behavioural logic inline in templates; inline `<script nonce>` limited to tiny bootstrap (the `js-enabled` class) as the CSP doc already says.
 - Split the current omnibus registries by concern: `components/` (Alpine.data components: `modal`, `autocomplete`, `tabs`, `imageManager`, …), `lib/` (pure helpers: `url-utils`, formatting), `init/` (directives, magics, `alpine:init` wiring). ABOUTME headers on every file (house rule).
 
-**Build / bundling (needs a decision)**
-- Today JS is served as individual nonce'd `<script>` tags — simple, and arguably fine to keep. If module `import`/`export` and a single cache-bustable bundle become worth it, add **esbuild** (one binary, boring, fast) producing `static/**/dist/*.js`, wired into `npm run build` alongside Sass/Tailwind and into `just build-css`'s siblings. **Adding a bundler is a new tool — flag for agreement.** Default position: stay with plain files + `static_hashes()` cache-busting until the import graph actually hurts. Also vendor Alpine/HTMX locally (see §3.5).
+**Build / bundling (already in place)**
+- Most JS is served as individual nonce'd `<script>` tags — simple, and fine to keep for plain global scripts. For anything that pulls in npm packages or wants module `import`/`export`, the **esbuild** step already exists: `build:js` bundles `static/backoffice/js/src/*` into a minified, self-hosted IIFE under `dist/`, wired into `npm run build` and the `just build-js` target ([docs/frontend_build.md](../../frontend_build.md)). So there is no new bundler to decide on — extending it to new entry points is the documented pattern. Default position: keep plain files + `static_hashes()` cache-busting for simple scripts, reach for the esbuild pipeline when a script grows npm dependencies or a real import graph. Also vendor Alpine/HTMX locally through the same pipeline (see §3.5).
 
 **JSON API conventions**
 - Endpoints intended for `fetch` live in clearly-named views; return either **data** (`jsonify({...})`) or a **rendered fragment** (`{"html": ...}`), never a mix for one widget.
@@ -160,4 +157,4 @@ None of this reimplements a feature — it relocates and tests code that already
 
 ## 6. Recommendation
 
-Adopt vanilla JS + Alpine (CSP build) + JSON routes as the deliberate approach for internal, interaction-heavy screens; keep server-rendered HTML (and HTMX) as the default and the whole story for public/no-JS pages. Pay the two-state-model and CSP costs with eyes open, and buy them back with file organisation, JSON-route contract tests, and — the load-bearing new piece — **JS unit testing (Vitest) plus BDD**. The three things that need your explicit yes before I touch anything: **Vitest**, **eslint/prettier**, and (only if we decide we want it) **esbuild**. Everything else is reorganising and testing code we already ship.
+Adopt vanilla JS + Alpine (CSP build) + JSON routes as the deliberate approach for internal, interaction-heavy screens; keep server-rendered HTML (and HTMX) as the default and the whole story for public/no-JS pages. Pay the two-state-model and CSP costs with eyes open, and buy them back with file organisation, JSON-route contract tests, and — the load-bearing new piece — **JS unit testing (Vitest) plus BDD**. The two things that need your explicit yes before I touch anything: **Vitest** and **eslint/prettier**. The esbuild bundler is already in the repo, so it's a pattern to extend rather than a decision to make. Everything else is reorganising and testing code we already ship.

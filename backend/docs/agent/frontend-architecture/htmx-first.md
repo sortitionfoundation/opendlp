@@ -1,8 +1,3 @@
-<!--
-ABOUTME: Decision document advocating an HTMX-first approach to frontend interactivity in OpenDLP.
-ABOUTME: Covers testing, maintainability, no-JS constraints, history/bookmarks, trade-offs, and a migration sketch.
--->
-
 # Lean into HTMX for OpenDLP's frontend interactivity
 
 **Status:** proposal / advocacy. Author: exploring agent. Audience: the two of us.
@@ -292,9 +287,13 @@ order:
     `docs/personal-data.md`. I'd propose **vendoring `htmx.min.js` into
     `static/js/`** and serving it with our nonce + cache-busting like our other
     assets. It's not strictly part of "HTMX-first," but adopting HTMX more
-    widely raises the stakes of that CDN dependency. (CSP-wise HTMX 2 is fine
-    under `strict-dynamic` as long as we avoid `hx-on`/`js:` eval-style
-    features.)
+    widely raises the stakes of that CDN dependency. We now have the mechanism
+    for this: the esbuild step (`build:js` in `package.json`, see
+    [docs/frontend_build.md](../../frontend_build.md)) already bundles
+    first-party JS from `static/backoffice/js/src/` into a self-hosted, nonce'd,
+    `static_hashes()`-busted IIFE under `dist/`, so vendoring a third-party lib
+    fits an established pattern. (CSP-wise HTMX 2 is fine under `strict-dynamic`
+    as long as we avoid `hx-on`/`js:` eval-style features.)
 
 **i18n and accessibility** stay exactly as they are: fragments are Jinja, so
 `_()` / `_l()` work unchanged, and because fragments are server-rendered we keep
