@@ -461,6 +461,25 @@ recorded here as decisions and folded into the body of the plan above.
     the download path; the organiser upload-journey BDD defers with the upload
     blueprint (it drives UI that doesn't exist yet). Nothing in this plan's scope
     ships untested (§8).
+11. **Data retention — these documents are organiser public content, not
+    respondent PII.** The PDF bytes live long-term as a Postgres `bytea`
+    (`registration_documents.data`, §2.2). `docs/personal-data.md` forbids
+    long-term copies of *personal data* that cannot be found and blanked, and
+    "data retention" is on its "what would change the answer" list — so this
+    storage model needs a recorded decision, not just a review. The decision:
+    these are organiser-authored, publicly downloadable documents (e.g. an info
+    pack linked from the public form), so they are **not respondent personal
+    data** and the erasure rule's spirit is satisfied. Each row is addressable
+    by its UUID `id`, carries `created_by`, cascades from its page, and is
+    hard-deletable via `delete_registration_document` — so it is findable and
+    removable. This is the same storage model as `registration_images` already
+    in `main`. **Constraint that this decision rests on:** organisers must not
+    upload a PDF *containing* respondent personal data — such bytes would sit in
+    the blob unlinked to any respondent identity, so a respondent-initiated
+    erasure could not locate them. If a registrant-facing document upload is
+    ever added, this storage model must be revisited against `personal-data.md`.
+    The organiser-facing upload UI (deferred to `blueprint-plan.md`) should
+    surface this constraint to organisers.
 
 ## 10. Build order
 
