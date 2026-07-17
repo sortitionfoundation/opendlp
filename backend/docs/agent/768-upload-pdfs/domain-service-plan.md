@@ -468,7 +468,7 @@ recorded here as decisions and folded into the body of the plan above.
    `DocumentValidationError` (+ unit tests).
 2. ✅ `document_processing.validate_pdf` (+ unit tests).
 3. ✅ ORM table + mapping + migration + conftest teardown entries.
-4. Repository (abstract + SQLAlchemy) + UoW wiring (+ contract tests).
+4. ✅ Repository (abstract + SQLAlchemy) + UoW wiring (+ contract tests).
 5. Config knobs + `_UPLOAD_SIZE_CONTRIBUTORS` entry.
 6. Exceptions + `registration_document_service.py` (+ service tests).
 7. Download route (+ e2e tests).

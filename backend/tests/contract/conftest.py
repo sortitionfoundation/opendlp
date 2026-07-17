@@ -19,6 +19,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyEmailTemplateRepository,
     SqlAlchemyPasswordResetTokenRepository,
+    SqlAlchemyRegistrationDocumentRepository,
     SqlAlchemyRegistrationImageRepository,
     SqlAlchemyRegistrationPageHtmlRepository,
     SqlAlchemyRegistrationPageRepository,
@@ -37,6 +38,7 @@ from opendlp.adapters.sql_repository import (
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_send_record import EmailSendOutcome, RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
+from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage
 from opendlp.domain.respondents import Respondent
@@ -52,6 +54,7 @@ from tests.fakes import (
     FakeEmailConfirmationTokenRepository,
     FakeEmailTemplateRepository,
     FakePasswordResetTokenRepository,
+    FakeRegistrationDocumentRepository,
     FakeRegistrationImageRepository,
     FakeRegistrationPageHtmlRepository,
     FakeRegistrationPageRepository,
@@ -134,6 +137,17 @@ def make_registration_image(registration_page_id: uuid.UUID, sha256: str = "", *
     defaults: dict[str, Any] = {"byte_size": 8, "width": 10, "height": 10, "data": b"pngbytes"}
     defaults.update(kwargs)
     return RegistrationImage(registration_page_id=registration_page_id, sha256=sha256, **defaults)
+
+
+def make_registration_document(
+    registration_page_id: uuid.UUID, sha256: str = "", **kwargs: Any
+) -> RegistrationDocument:
+    """Create a RegistrationDocument domain object with sensible defaults."""
+    if not sha256:
+        sha256 = uuid.uuid4().hex + uuid.uuid4().hex[:32]
+    defaults: dict[str, Any] = {"byte_size": 13, "data": b"%PDF-1.7 body"}
+    defaults.update(kwargs)
+    return RegistrationDocument(registration_page_id=registration_page_id, sha256=sha256, **defaults)
 
 
 def make_respondent(assembly_id: uuid.UUID | None = None, **kwargs: Any) -> Respondent:
@@ -221,6 +235,16 @@ class ContractBackend:
         self.repo.add(image)
         self.commit()
         return image
+
+    def make_registration_document(
+        self, registration_page_id: uuid.UUID | None = None, **kwargs: Any
+    ) -> RegistrationDocument:
+        if registration_page_id is None:
+            registration_page_id = self.make_registration_page().id
+        document = make_registration_document(registration_page_id=registration_page_id, **kwargs)
+        self.repo.add(document)
+        self.commit()
+        return document
 
     def make_respondent(self, assembly_id: uuid.UUID | None = None, **kwargs: Any) -> Respondent:
         if assembly_id is None:
@@ -420,6 +444,13 @@ def registration_image_backend(request, postgres_session) -> ContractBackend:
     if request.param == "fake":
         return FakeContractBackend(repo=FakeRegistrationImageRepository(), commit=lambda: None)
     return SqlContractBackend(repo=SqlAlchemyRegistrationImageRepository(postgres_session), session=postgres_session)
+
+
+@pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
+def registration_document_backend(request, postgres_session) -> ContractBackend:
+    if request.param == "fake":
+        return FakeContractBackend(repo=FakeRegistrationDocumentRepository(), commit=lambda: None)
+    return SqlContractBackend(repo=SqlAlchemyRegistrationDocumentRepository(postgres_session), session=postgres_session)
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])

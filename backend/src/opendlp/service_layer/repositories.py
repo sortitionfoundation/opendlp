@@ -15,6 +15,7 @@ from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
@@ -620,6 +621,30 @@ class RegistrationImageRepository(AbstractRepository):
     @abc.abstractmethod
     def delete(self, item: RegistrationImage) -> None:
         """Delete a registration image from the repository."""
+        raise NotImplementedError
+
+
+class RegistrationDocumentRepository(AbstractRepository):
+    """Repository interface for RegistrationDocument domain objects."""
+
+    @abc.abstractmethod
+    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationDocument | None:
+        """Get a document for a page by its content hash, or None."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationDocument]:
+        """Get all documents for a registration page, oldest first."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+        """Count documents for a registration page."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, item: RegistrationDocument) -> None:
+        """Delete a registration document from the repository."""
         raise NotImplementedError
 
 
