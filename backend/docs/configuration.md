@@ -146,6 +146,26 @@ REGISTRATION_FORM_HTML_MAX_BYTES=204800
 # Maximum size in bytes for a registration page's thank-you HTML
 # (default: 51200 = 50 KB, clamped to [1 KB, 10 MB])
 REGISTRATION_THANK_YOU_HTML_MAX_BYTES=51200
+
+# Maximum size in MB for an uploaded registration image
+# (default: 10, clamped to [1, 25])
+MAX_IMAGE_UPLOAD_MB=10
+
+# Longest edge in pixels an uploaded image is resized to
+# (default: 2048, clamped to [256, 4096])
+REGISTRATION_IMAGE_MAX_EDGE_PX=2048
+
+# Maximum number of images stored per registration page
+# (default: 10, clamped to [1, 50])
+MAX_IMAGES_PER_REGISTRATION_PAGE=10
+
+# Maximum size in MB for an uploaded registration PDF document
+# (default: 5, clamped to [1, 25])
+MAX_PDF_UPLOAD_MB=5
+
+# Maximum number of PDF documents stored per registration page
+# (default: 5, clamped to [1, 20])
+MAX_DOCUMENTS_PER_REGISTRATION_PAGE=5
 ```
 
 Bot protection for the public registration form is tuneable at runtime via
