@@ -469,7 +469,7 @@ recorded here as decisions and folded into the body of the plan above.
 2. ✅ `document_processing.validate_pdf` (+ unit tests).
 3. ✅ ORM table + mapping + migration + conftest teardown entries.
 4. ✅ Repository (abstract + SQLAlchemy) + UoW wiring (+ contract tests).
-5. Config knobs + `_UPLOAD_SIZE_CONTRIBUTORS` entry.
+5. ✅ Config knobs + `_UPLOAD_SIZE_CONTRIBUTORS` entry.
 6. Exceptions + `registration_document_service.py` (+ service tests).
 7. Download route (+ e2e tests).
 8. `just check` + `just test` green; `just translate-regen` for new strings.

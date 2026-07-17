@@ -12,11 +12,15 @@ from opendlp.config import (
     FlaskTestConfig,
     InvalidConfig,
     get_config,
+    get_max_content_length,
     get_max_csv_upload_bytes,
     get_max_csv_upload_mb,
+    get_max_documents_per_registration_page,
     get_max_image_upload_bytes,
     get_max_image_upload_mb,
     get_max_images_per_registration_page,
+    get_max_pdf_upload_bytes,
+    get_max_pdf_upload_mb,
     get_monitor_assembly_id,
     get_monitor_health_max_age_minutes,
     get_monitor_user_id,
@@ -463,6 +467,70 @@ class TestGetMaxImagesPerRegistrationPage:
     def test_clamps_above_ceiling(self, temp_env_vars):
         temp_env_vars(MAX_IMAGES_PER_REGISTRATION_PAGE="500")
         assert get_max_images_per_registration_page() == 50
+
+
+class TestGetMaxPdfUploadMb:
+    """Test the get_max_pdf_upload_mb / _bytes functions."""
+
+    def test_returns_default_when_not_set(self, clear_env_vars):
+        clear_env_vars("MAX_PDF_UPLOAD_MB")
+        assert get_max_pdf_upload_mb() == 5
+
+    def test_returns_default_when_empty_string(self, temp_env_vars):
+        temp_env_vars(MAX_PDF_UPLOAD_MB="")
+        assert get_max_pdf_upload_mb() == 5
+
+    def test_returns_set_value(self, temp_env_vars):
+        temp_env_vars(MAX_PDF_UPLOAD_MB="10")
+        assert get_max_pdf_upload_mb() == 10
+
+    def test_invalid_string_falls_back_to_default(self, temp_env_vars):
+        temp_env_vars(MAX_PDF_UPLOAD_MB="not-a-number")
+        assert get_max_pdf_upload_mb() == 5
+
+    def test_clamps_below_minimum(self, temp_env_vars):
+        temp_env_vars(MAX_PDF_UPLOAD_MB="0")
+        assert get_max_pdf_upload_mb() == 1
+
+    def test_clamps_above_ceiling(self, temp_env_vars):
+        temp_env_vars(MAX_PDF_UPLOAD_MB="999")
+        assert get_max_pdf_upload_mb() == 25
+
+    def test_bytes_helper_multiplies_by_1024_squared(self, temp_env_vars):
+        temp_env_vars(MAX_PDF_UPLOAD_MB="3")
+        assert get_max_pdf_upload_bytes() == 3 * 1024 * 1024
+
+
+class TestGetMaxDocumentsPerRegistrationPage:
+    """Test the get_max_documents_per_registration_page function."""
+
+    def test_returns_default_when_not_set(self, clear_env_vars):
+        clear_env_vars("MAX_DOCUMENTS_PER_REGISTRATION_PAGE")
+        assert get_max_documents_per_registration_page() == 5
+
+    def test_returns_set_value(self, temp_env_vars):
+        temp_env_vars(MAX_DOCUMENTS_PER_REGISTRATION_PAGE="3")
+        assert get_max_documents_per_registration_page() == 3
+
+    def test_invalid_string_falls_back_to_default(self, temp_env_vars):
+        temp_env_vars(MAX_DOCUMENTS_PER_REGISTRATION_PAGE="lots")
+        assert get_max_documents_per_registration_page() == 5
+
+    def test_clamps_below_minimum(self, temp_env_vars):
+        temp_env_vars(MAX_DOCUMENTS_PER_REGISTRATION_PAGE="0")
+        assert get_max_documents_per_registration_page() == 1
+
+    def test_clamps_above_ceiling(self, temp_env_vars):
+        temp_env_vars(MAX_DOCUMENTS_PER_REGISTRATION_PAGE="500")
+        assert get_max_documents_per_registration_page() == 20
+
+
+class TestPdfUploadContributesToMaxContentLength:
+    """The WSGI gateway limit must admit a max-size PDF upload."""
+
+    def test_content_length_covers_pdf_cap(self, temp_env_vars):
+        temp_env_vars(MAX_PDF_UPLOAD_MB="25")
+        assert get_max_content_length() >= get_max_pdf_upload_bytes()
 
 
 class TestGetSecretKey:
