@@ -3,7 +3,7 @@
 
 # PDF uploads for registration pages — research
 
-**Issue:** 768 · **Status:** research / pre-decision (blocked on one number) · **Date:** 2026-07-16
+**Issue:** 768 · **Status:** decided — **Option A (`bytea`)**; see `domain-service-plan.md` · **Date:** 2026-07-16 (decision 2026-07-17)
 
 ## 0. TL;DR
 
@@ -27,10 +27,15 @@ PDFs are consumed as a **download link**, not an inline embed. Serving them as
 our origin, so the security story collapses back to "cheap validation + forced
 download" and neither re-encoding nor a separate origin is required.
 
-That leaves **one open question that is the whole storage decision**: _how big do
-these PDFs actually get, and how many per page?_ We are waiting on the team for
-that number (expected in a day or two). This doc spells out both storage options
-in full so we can commit the moment the number lands.
+> **DECIDED (2026-07-17): Option A — Postgres `bytea`.** The team confirmed the
+> PDFs are **all under 1 MB, at most 3 per assembly, and often zero.** That is
+> comfortably inside the ~256 KB–1 MB parity band the 672 research cited, so the
+> two costs that would have pushed us to on-disk storage — memory-per-download
+> and dump bloat — are negligible at this size and volume. We therefore **mirror
+> the shipped image feature**: bytea in a new `registration_documents` table,
+> served by an app route with `Content-Disposition: attachment`. Option B
+> (on-disk) stays on record below as the fallback if the size/volume assumption
+> ever breaks. Implementation is specified in `domain-service-plan.md`.
 
 ## 1. What we are trying to do
 
@@ -48,8 +53,8 @@ Decided so far (with Doctor Chewie, 2026-07-16):
   the decision that simplifies security (see §5).
 - **Intended use: public documents** (info pack, agenda, etc.), not registrant
   personal data. Makes GDPR neutral for the content (see §6).
-- **Size/volume: unknown.** Pending team input. This is the storage pivot (§3)
-  and the only thing left blocking the decision.
+- **Size/volume: all under 1 MB, ≤3 per assembly, often zero** (team, 2026-07-17).
+  This resolves the storage pivot (§3) in favour of **Option A (`bytea`)**.
 
 ## 2. What we already have (from issue 672)
 
@@ -226,14 +231,18 @@ per our rules needs Doctor Chewie's explicit sign-off, and 672 carried a stated
 "no cloud service" constraint. Recorded as the escalation path if volumes ever
 get genuinely large; **not** proposed for this story.
 
-### Storage recommendation (conditional on the pending number)
+### Storage recommendation (resolved)
 
-- **PDFs ≈ ≤ 2 MB and few → Option A (`bytea`).** Mirror the image feature: one
-  store, one backup, transactional cascade, zero new infra, consistent code.
+The pending number came back **< 1 MB, ≤ 3 per assembly, often zero**, which
+lands squarely in the first bullet below. **Decision: Option A (`bytea`).**
+
+- **PDFs ≈ ≤ 2 MB and few → Option A (`bytea`). ← this is us.** Mirror the image
+  feature: one store, one backup, transactional cascade, zero new infra,
+  consistent code.
 - **PDFs routinely 5 MB+ or many → Option B (single-container volume +
-  `X-Sendfile`).** Accept the backup split and orphan-management in exchange for
-  bounded memory and lean dumps. 672 already sanctioned this as the fallback
-  "if bytes get big" — this is that case.
+  on-disk serving).** Accept the backup split and orphan-management in exchange
+  for bounded memory and lean dumps. 672 already sanctioned this as the fallback
+  "if bytes get big" — kept on record if the size assumption ever breaks.
 - **In between / genuinely unbounded → escalate** to Doctor Chewie; consider
   Option C.
 
@@ -389,21 +398,17 @@ documents"`.
 | Referencing model                   | Decided     | Paste a ready-made `<a>` snippet; clean seam for a future picker             |
 | New dependencies                    | Decided     | **None** expected (no `python-magic`, no ClamAV)                             |
 | Personal data in PDFs               | Decided     | **No** — public docs (info pack, agenda); GDPR neutral (§6)                  |
-| **Storage (bytea vs disk)**         | **PENDING** | **Depends on the size number** — A if ≤~2 MB & few, B if 5 MB+ / many        |
+| **Storage (bytea vs disk)**         | **Decided** | **Option A (`bytea`)** — files < 1 MB, ≤ 3 per assembly (team, 2026-07-17)   |
 
-## 9. The one open question blocking the storage decision
+## 9. Resolved
 
-**How big, and how many?** Typical and worst-case PDF size, and rough count per
-registration page. This is the entire A-vs-B pivot (§3), and it's the only thing
-left to settle — the GDPR/personal-data question is resolved (public docs, §6).
-Expected from the team within a day or two.
-
-If it helps frame the answer for them: **≤ ~2 MB and a handful per page → Option
-A** (bytea, mirror images, zero new infra); **routinely 5 MB+ or many → Option
-B** (on-disk + `send_file`/Caddy `file_server`, accept the backup split).
-
-Once that number lands, this doc converts to a short decision/ADR and a
-`plan.md`, and implementation can start. Nothing else is blocking.
+The one open question — how big, and how many — came back from the team on
+2026-07-17: **all PDFs are under 1 MB, at most 3 per assembly, and often zero.**
+That settles the storage pivot (§3) in favour of **Option A (`bytea`)**, and
+nothing else was blocking. Implementation is specified in the sibling
+`domain-service-plan.md` (data/domain layer, service layer, and the public
+download endpoint; the backoffice upload/management blueprints are deferred to a
+later plan).
 
 ---
 
