@@ -1,73 +1,119 @@
 {#
-ABOUTME: Modal component macros for backoffice design system
-ABOUTME: Includes base modal, progress_modal for long-running tasks, and helper macros
+ABOUTME: Dialog / modal macros for the backoffice design system
+ABOUTME: Atomic composition — see dialog-* utility classes in main.css. Includes alert_dialog, modal, progress_modal.
 #}
-{% macro modal(id="", title="", classes="") %}
+{# ============================================================================
+   ATOMS — thin Jinja wrappers around the .dialog-* CSS utility classes.
+   All static styling lives in main.css; these macros only compose slots.
+============================================================================ #}
+{% macro dialog_close_icon() %}
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+{% endmacro %}
+{% macro dialog_header(title, title_id="") %}
+    {# Header row: title + close-X slot. Caller provides the close button (Alpine vs vanilla differs). #}
+    <div class="dialog-header">
+        {% if title %}
+            <h2 class="dialog-title"{% if title_id %} id="{{ title_id }}"{% endif %}>{{ title }}</h2>
+        {% else %}
+            <span></span>
+        {% endif %}
+        {{ caller() }}
+    </div>
+{% endmacro %}
+{% macro dialog_body() %}
+    <div class="dialog-body">{{ caller() }}</div>
+{% endmacro %}
+{% macro dialog_footer() %}
+    <div class="dialog-footer">{{ caller() }}</div>
+{% endmacro %}
+{# ============================================================================
+   ALERT DIALOG — matches Figma 1601:856
+   Compact confirm pattern: title + description + actions. No header bar, no
+   scroll. Alpine-driven (open/close via x-data="modal({...})" on wrapper).
+============================================================================ #}
+{% macro alert_dialog(id="", title="", description="") %}
     {#
-Modal component using semantic design tokens and Alpine.js for state.
-Requires wrapping element with x-data="modal({...})" Alpine component.
-
 Args:
-  id: Optional id attribute for the modal
-  title: Modal title displayed in header
-  classes: Additional CSS classes for the modal panel
+  id: Optional element id (used to compute the aria-labelledby target)
+  title: Bold title text
+  description: Supporting text
 
-The modal component requires an Alpine.js wrapper that provides:
-  - isOpen: boolean state for visibility
-  - canClose: boolean state for whether close is allowed
-  - close(): method to close modal if allowed
-  - closeIfAllowed(): method to close via escape key
+The caller provides the action buttons.
+
+Requires wrapping element with x-data="modal({...})" Alpine component:
+  - isOpen, canClose, close(), closeIfAllowed()
     #}
-    {# Backdrop overlay #}
+    {% set title_id = (id ~ '-title') if id else '' %}
     <div x-show="isOpen"
          x-cloak
-         class="fixed inset-0 z-40"
-         style="background-color: rgba(0, 0, 0, 0.5)"
+         class="dialog-backdrop dialog-backdrop--clickable"
          @click="closeIfAllowed()"
          @keydown.escape.window="closeIfAllowed()"></div>
-    {# Modal panel #}
     <div x-show="isOpen"
          x-cloak
          {% if id %}id="{{ id }}"{% endif %}
-         class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-         role="dialog"
+         class="dialog-positioner"
+         role="alertdialog"
          aria-modal="true"
-         {% if title %}aria-labelledby="{{ id }}-title"{% endif %}>
-        <div class="pointer-events-auto w-full max-w-2xl mx-4 rounded-lg shadow-xl overflow-hidden {{ classes }}"
-             style="background-color: var(--color-tables-cards);
-                    border: 1px solid var(--color-borders-dividers)"
-             @click.stop>
-            {# Header with title and close button #}
-            <div class="px-6 py-4 flex items-center justify-between"
-                 style="border-bottom: 1px solid var(--color-borders-dividers)">
+         {% if title_id %}aria-labelledby="{{ title_id }}"{% endif %}>
+        <div class="dialog-panel dialog-panel--alert" @click.stop>
+            <div class="dialog-text-stack">
                 {% if title %}
-                    <h2 {% if id %}id="{{ id }}-title"{% endif %}
-                        class="text-heading-lg"
-                        style="color: var(--color-headings)">{{ title }}</h2>
+                    <p class="dialog-text-stack__title"{% if title_id %} id="{{ title_id }}"{% endif %}>{{ title }}</p>
                 {% endif %}
-                <button type="button"
-                        @click="close()"
-                        :disabled="!canClose"
-                        class="p-2 rounded-lg transition-colors"
-                        :class="canClose ? 'hover:bg-gray-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'"
-                        :style="canClose ? 'color: var(--color-secondary-text);' : 'color: var(--color-secondary-text); opacity: 0.5;'"
-                        aria-label="{{ _('Close') }}">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-5 w-5"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+                {% if description %}
+                    <p class="dialog-text-stack__description">{{ description }}</p>
+                {% endif %}
             </div>
-            {# Modal content #}
-            <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">{{ caller() }}</div>
+            <div class="dialog-actions">{{ caller() }}</div>
         </div>
     </div>
 {% endmacro %}
 {# ============================================================================
-   Progress Modal - For long-running tasks with optional HTMX polling
+   MODAL — Alpine-driven content modal with header bar, scroll body, footer
+============================================================================ #}
+{% macro modal(id="", title="", classes="") %}
+    {#
+Args:
+  id: Optional id attribute for the modal
+  title: Header title
+  classes: Extra classes on the panel
+
+Requires wrapping element with x-data="modal({...})" Alpine component:
+  - isOpen, canClose, close(), closeIfAllowed()
+    #}
+    {% set title_id = (id ~ '-title') if id else '' %}
+    <div x-show="isOpen"
+         x-cloak
+         class="dialog-backdrop"
+         @click="closeIfAllowed()"
+         @keydown.escape.window="closeIfAllowed()"></div>
+    <div x-show="isOpen"
+         x-cloak
+         {% if id %}id="{{ id }}"{% endif %}
+         class="dialog-positioner"
+         role="dialog"
+         aria-modal="true"
+         {% if title_id %}aria-labelledby="{{ title_id }}"{% endif %}>
+        <div class="dialog-panel dialog-panel--default {{ classes }}" @click.stop>
+            {% call dialog_header(title=title, title_id=title_id) %}
+                <button type="button"
+                        @click="close()"
+                        :disabled="!canClose"
+                        class="dialog-close-btn"
+                        aria-label="{{ _('Close') }}">
+                    {{ dialog_close_icon() }}
+                </button>
+            {% endcall %}
+            <div class="dialog-body">{{ caller() }}</div>
+        </div>
+    </div>
+{% endmacro %}
+{# ============================================================================
+   PROGRESS MODAL — HTMX-polled task viewer (no Alpine)
+   IDs and .progress-modal class are consumed by utilities.js.
 ============================================================================ #}
 {% macro progress_modal(
 id="progress-modal",
@@ -81,17 +127,18 @@ classes=""
     {#
 Progress modal for displaying long-running task status.
 
-Supports both static display (showcase) and HTMX polling (production).
-Does NOT use Alpine.js - pure HTML/HTMX/vanilla JS for CSP compliance.
+Supports static display (showcase) and HTMX polling (production).
+Pure HTML/HTMX/vanilla JS for CSP compliance. Wired by utilities.js against
+element ids {id}-panel, {id}-close-btn, {id}-backdrop and class .progress-modal.
 
 Args:
-    id: Modal element id (used for HTMX swap target)
-    title: Modal title displayed in header
+    id: Modal element id (also used for HTMX swap target)
+    title: Header title
     can_close: Whether close button/backdrop/escape are enabled
     close_url: URL to navigate to when closing
     htmx_poll_url: URL for HTMX polling (if empty, no polling)
     htmx_poll_interval: HTMX polling interval (default: "1s")
-    classes: Additional CSS classes
+    classes: Extra classes on the panel
 
 Usage: See selection_progress_modal.html for a complete example.
     #}
@@ -100,57 +147,37 @@ Usage: See selection_progress_modal.html for a complete example.
      data-can-close="{{ 'true' if can_close else 'false' }}"
      data-close-url="{{ close_url }}"
      {% if htmx_poll_url %} hx-get="{{ htmx_poll_url }}" hx-trigger="every {{ htmx_poll_interval }}" hx-swap="outerHTML" {% endif %}>
-        {# Backdrop overlay #}
     <div id="{{ id }}-backdrop"
-         class="fixed inset-0 z-40"
-         style="background-color: rgba(0, 0, 0, 0.5);
-                {% if can_close %}cursor: pointer;{% endif %}"></div>
-        {# Modal panel #}
-    <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+         class="dialog-backdrop{% if can_close %} dialog-backdrop--clickable{% endif %}"></div>
+    <div class="dialog-positioner"
          role="dialog"
          aria-modal="true"
          aria-labelledby="{{ id }}-title">
         <div id="{{ id }}-panel"
              tabindex="-1"
-             class="pointer-events-auto w-full max-w-2xl mx-4 rounded-lg shadow-xl overflow-hidden {{ classes }}"
-             style="background-color: var(--color-tables-cards);
-                    border: 1px solid var(--color-borders-dividers)">
-                {# Header with title and close button #}
-            <div class="px-6 py-4 flex items-center justify-between"
-                 style="border-bottom: 1px solid var(--color-borders-dividers)">
-                <h2 id="{{ id }}-title"
-                    class="text-heading-lg"
-                    style="color: var(--color-headings)">{{ title }}</h2>
+             class="dialog-panel dialog-panel--default {{ classes }}">
+            {% call dialog_header(title=title, title_id=id ~ '-title') %}
                 <button type="button"
                         id="{{ id }}-close-btn"
                         {% if not can_close %}disabled{% endif %}
-                        class="p-2 rounded-lg transition-colors"
-                        style="color: var(--color-secondary-text);
-                               {% if not can_close %} opacity: 0.5;
-                                   cursor: not-allowed;
-                               {% else %} cursor: pointer;
-                               {% endif %}"
+                        class="dialog-close-btn"
                         aria-label="{{ _('Close') }}">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-5 w-5"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    {{ dialog_close_icon() }}
                 </button>
-            </div>
-                {# Modal content - provided by caller #}
-            <div class="px-6 py-4 max-h-[70vh] overflow-y-auto">{{ caller() }}</div>
+            {% endcall %}
+            <div class="dialog-body">{{ caller() }}</div>
         </div>
     </div>
 </div>
 {% endmacro %}
+{# ============================================================================
+   Back-compat footer shim — production callers use these to append a footer
+   inside the progress_modal body. Emits the same .dialog-footer as dialog_footer().
+   The -mx-6 -mb-4 negative margins cancel the .dialog-body padding so the
+   footer bleeds to the panel edges.
+============================================================================ #}
 {% macro modal_footer_start() %}
-    {# Start of footer section for progress_modal. Use with modal_footer_end(). #}
-    <div class="px-6 py-3 flex gap-2 justify-end -mx-6 -mb-4 mt-4"
-         style="border-top: 1px solid var(--color-borders-dividers);
-                background-color: var(--color-tables-cards)">
+    <div class="dialog-footer -mx-6 -mb-4 mt-4">
 {% endmacro %}
 {% macro modal_footer_end() %}
     </div>
@@ -219,7 +246,7 @@ Usage:
     {% set style = badge_styles.get(status, badge_styles["pending"]) %}
     <div class="mb-4">
         {% if label %}
-            <span class="text-body-md font-medium" style="color: var(--color-headings)">{{ label }}</span>
+            <span class="text-label-lg" style="color: var(--color-headings)">{{ label }}</span>
         {% endif %}
         <span class="text-body-md px-2 py-1 rounded"
               style="background-color: {{ style.bg }};
@@ -241,7 +268,7 @@ Usage:
     #}
     {% set default_empty = _("Waiting for task to start...") %}
     <div class="mb-4">
-        <span class="text-body-md font-medium" style="color: var(--color-headings)">{{ _("Messages:") }}</span>
+        <span class="text-label-lg" style="color: var(--color-headings)">{{ _("Messages:") }}</span>
         <div id="{{ id }}"
              class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto"
              style="background-color: var(--color-subtle-background-panels);
@@ -327,7 +354,7 @@ Usage:
     {{ labeled_value(_("Error:"), error_msg, "color: var(--color-error-text);") }}
     #}
     <div class="mb-4">
-        <span class="text-body-md font-medium" style="color: var(--color-headings)">{{ label }}</span>
+        <span class="text-label-lg" style="color: var(--color-headings)">{{ label }}</span>
         <span class="text-body-md"
               style="{{ value_style or 'color: var(--color-body-text) ;
                      ' }}">{{ value }}</span>

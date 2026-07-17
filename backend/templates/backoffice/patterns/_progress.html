@@ -76,7 +76,7 @@ ABOUTME: Partial template included by patterns.html
                         📋 {{ _("Copy") }}
                     </button>
                 </div>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# Import the macro #}
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# Import the macro #}
 {% from "backoffice/components/modal.html" import progress_bar %}
 
 {# Indeterminate spinner (default) #}
@@ -128,37 +128,37 @@ ABOUTME: Partial template included by patterns.html
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">read_gsheet</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">read_gsheet</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Reading from spreadsheet…") }}</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">❌</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">multiplicative_weights</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">multiplicative_weights</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Finding diverse committees (X of Y rounds)") }}</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">maximin_optimization</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">maximin_optimization</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Optimising for maximin fairness (iteration X)") }}</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">nash_optimization</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">nash_optimization</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Optimising for Nash fairness (iteration X)") }}</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">leximin_outer</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">leximin_outer</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Optimising for leximin fairness (X of Y fixed)") }}</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">write_gsheet</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">write_gsheet</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">{{ _("Writing results back to spreadsheet…") }}</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">❌</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">legacy_attempt</td>
+                                <td class="px-3 py-2 text-code">legacy_attempt</td>
                                 <td class="px-3 py-2">{{ _("Running selection attempt X of Y") }}</td>
                                 <td class="px-3 py-2">✅</td>
                             </tr>
@@ -183,37 +183,37 @@ ABOUTME: Partial template included by patterns.html
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/modal.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/modal.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">257</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">progress_bar macro definition</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/modal.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/modal.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">297</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">progress_indicator wrapper macro</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/db_selection_progress_modal.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/db_selection_progress_modal.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">22</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">DB selection progress modal</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/selection_progress_modal.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/selection_progress_modal.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">25</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">GSheet selection progress modal</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/domain/assembly.py</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/domain/assembly.py</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">287</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">progress_info property (phase→label mapping)</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/domain/value_objects.py</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/domain/value_objects.py</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">129</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">ProgressInfo dataclass</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">src/opendlp/adapters/sortition_progress.py</td>
+                                <td class="px-3 py-2 text-code">src/opendlp/adapters/sortition_progress.py</td>
                                 <td class="px-3 py-2">15</td>
                                 <td class="px-3 py-2">DatabaseProgressReporter</td>
                             </tr>

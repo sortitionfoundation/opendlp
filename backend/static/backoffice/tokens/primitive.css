@@ -4,15 +4,9 @@
  * These are the foundation that semantic tokens reference
  */
 
-/* @font-face declarations - self-hosted via @fontsource */
-@font-face {
-    font-family: "Montserrat";
-    font-style: normal;
-    font-display: swap;
-    font-weight: 500;
-    src: url("/static/backoffice/fonts/montserrat-latin-500-normal.woff2") format("woff2");
-}
-
+/* @font-face declarations - self-hosted via @fontsource
+ * Lato ships at weights 100/300/400/700/900 only. Weights 500 and 600
+ * are browser-synthesized (matches Figma intent even without real files). */
 @font-face {
     font-family: "Lato";
     font-style: normal;
@@ -80,15 +74,20 @@
 
     /* ========================================
      TYPOGRAPHY - Font Families (Primitives)
+     Lato throughout. Per-role aliases retained so future re-branding can
+     swap one role without touching consumers.
      ======================================== */
 
-    --font-display: "Montserrat", sans-serif;
-    --font-heading: "Montserrat", sans-serif;
-    --font-body: "Lato", sans-serif;
-    --font-caption: "Lato", sans-serif;
-    --font-overline: "Lato", sans-serif;
-    --font-label: "Lato", sans-serif;
-    --font-button: "Lato", sans-serif;
+    --font-sans: "Lato", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+    --font-display: var(--font-sans);
+    --font-heading: var(--font-sans);
+    --font-body: var(--font-sans);
+    --font-caption: var(--font-sans);
+    --font-overline: var(--font-sans);
+    --font-label: var(--font-sans);
+    --font-button: var(--font-sans);
 
     /* ========================================
      BORDERS & EFFECTS

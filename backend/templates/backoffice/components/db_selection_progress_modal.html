@@ -28,7 +28,7 @@ htmx_poll_url=htmx_poll_url
     {# Success message #}
 {% if run_record.is_completed %}
     <div class="mb-4">
-        <span class="text-body-md font-medium"
+        <span class="text-label-lg"
               style="color: var(--color-success-text)">{{ _("Result:") }}</span>
         <span class="text-body-md" style="color: var(--color-success-text);">{{ _("Task completed successfully.") }}</span>
     </div>
@@ -46,7 +46,7 @@ htmx_poll_url=htmx_poll_url
         <div class="mb-4 p-4 rounded-lg"
              style="background-color: var(--color-subtle-background-panels);
                     border: 1px solid var(--color-borders-dividers)">
-            <p class="text-body-md font-medium mb-3"
+            <p class="text-label-lg mb-3"
                style="color: var(--color-headings)">{{ _("Download Results") }}</p>
             <div class="flex gap-3 flex-wrap">
                 {{ button(_("Download Selected") ,
@@ -68,7 +68,7 @@ htmx_poll_url=htmx_poll_url
     {# Cancelled message #}
 {% if run_record.is_cancelled %}
     <div class="mb-4">
-        <span class="text-body-md font-medium"
+        <span class="text-label-lg"
               style="color: var(--color-warning-text)">{{ _("Task Cancelled") }}</span>
         {% if run_record.error_message %}
                 {# error_message is HTML rendered by server code that escapes user content #}
@@ -81,7 +81,7 @@ htmx_poll_url=htmx_poll_url
     {# Full run report (collapsed, shown when finished) #}
 {% if run_record.has_finished and translated_report_html %}
     <details class="mb-4">
-        <summary class="text-body-md font-medium cursor-pointer"
+        <summary class="text-label-lg cursor-pointer"
                  style="color: var(--color-headings)">{{ _("Full Run Report") }}</summary>
         <div class="rounded-lg p-4 mt-2"
              style="background-color: var(--color-subtle-background-panels);

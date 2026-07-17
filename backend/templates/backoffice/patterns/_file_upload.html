@@ -87,7 +87,7 @@ ABOUTME: Partial template included by patterns.html
                         📋 {{ _("Copy") }}
                     </button>
                 </div>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# Import the component #}
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{# Import the component #}
 {% from "backoffice/components/input.html" import file_input %}
 
 {# Form with multipart encoding #}
@@ -119,7 +119,7 @@ ABOUTME: Partial template included by patterns.html
                         📋 {{ _("Copy") }}
                     </button>
                 </div>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);"># Flask-WTF Form
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);"># Flask-WTF Form
 class UploadCsvForm(FlaskForm):
     csv_file = FileField(
         _l("CSV File"),
@@ -178,42 +178,42 @@ def upload_csv():
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/input.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/components/input.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">426</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">file_input macro</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/entrypoints/forms.py</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/entrypoints/forms.py</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">552</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">UploadRespondentsCsvForm</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/entrypoints/blueprints/respondents.py</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/entrypoints/blueprints/respondents.py</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">92</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">upload_respondents_csv route</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/respondents/view_respondents.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/respondents/view_respondents.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">27</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">File upload form (old design)</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">370</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Upload targets CSV form (plain HTML)</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">412</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Upload respondents CSV form (plain HTML)</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/entrypoints/blueprints/backoffice.py</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">src/opendlp/entrypoints/blueprints/backoffice.py</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">325</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">upload_targets_csv route</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">src/opendlp/entrypoints/blueprints/backoffice.py</td>
+                                <td class="px-3 py-2 text-code">src/opendlp/entrypoints/blueprints/backoffice.py</td>
                                 <td class="px-3 py-2">414</td>
                                 <td class="px-3 py-2">upload_respondents_csv route</td>
                             </tr>

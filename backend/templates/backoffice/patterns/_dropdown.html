@@ -59,7 +59,7 @@ ABOUTME: Partial template included by patterns.html
                         📋 {{ _("Copy") }}
                     </button>
                 </div>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;div x-data="urlSelect({
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">&lt;div x-data="urlSelect({
     baseUrl: '{% raw %}{{ url_for(...) }}{% endraw %}',
     paramName: 'source',
     initialValue: '{% raw %}{{ current_value }}{% endraw %}'
@@ -99,17 +99,17 @@ ABOUTME: Partial template included by patterns.html
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">static/backoffice/js/alpine-components.js</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">static/backoffice/js/alpine-components.js</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">229</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Component definition</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/assembly_data.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">47</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Data source selector</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">templates/backoffice/patterns.html</td>
+                                <td class="px-3 py-2 text-code">templates/backoffice/patterns.html</td>
                                 <td class="px-3 py-2">—</td>
                                 <td class="px-3 py-2">This documentation page</td>
                             </tr>
@@ -171,7 +171,7 @@ ABOUTME: Partial template included by patterns.html
                         📋 {{ _("Copy") }}
                     </button>
                 </div>
-                            <pre class="text-body-sm font-mono p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">// In your Alpine component, declare FLAT property:
+                            <pre class="text-code p-4 rounded-lg overflow-x-auto" style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">// In your Alpine component, declare FLAT property:
 Alpine.data('myComponent', () =&gt; ({
     assemblyId: '',  // Flat property
     // NOT: form: { assemblyId: '' }  // Nested - won't work with CSP
@@ -196,7 +196,7 @@ Alpine.data('myComponent', () =&gt; ({
                         {# CSP Notes #}
             <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-error-600);">🚫 {{ _("Common Mistake") }}</h4>
-                            <pre class="text-body-sm font-mono p-2 rounded" style="background-color: var(--color-page-background);">// ❌ THIS DOES NOT WORK with CSP build:
+                            <pre class="text-code p-2 rounded" style="background-color: var(--color-page-background);">// ❌ THIS DOES NOT WORK with CSP build:
 x-model="forms.import.assembly_id"
 
 // ✅ USE FLAT PROPERTIES INSTEAD:
@@ -222,12 +222,12 @@ x-model="importAssemblyId"</pre>
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-2 font-mono" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/service_docs.html</td>
+                                <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">templates/backoffice/service_docs.html</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">150, 326, 453, 544</td>
                                 <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Service form dropdowns</td>
                             </tr>
                             <tr>
-                                <td class="px-3 py-2 font-mono">templates/backoffice/assembly_data.html</td>
+                                <td class="px-3 py-2 text-code">templates/backoffice/assembly_data.html</td>
                                 <td class="px-3 py-2">244</td>
                                 <td class="px-3 py-2">Team member selector</td>
                             </tr>

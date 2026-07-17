@@ -28,7 +28,7 @@ htmx_poll_url=htmx_poll_url
     {# Cancelled message #}
 {% if manage_tabs_run_record.is_cancelled %}
     <div class="mb-4">
-        <span class="text-body-md font-medium"
+        <span class="text-label-lg"
               style="color: var(--color-warning-text)">{{ _("Task Cancelled") }}</span>
         {% if manage_tabs_run_record.error_message %}
                 {# error_message is HTML rendered by server code that escapes user content #}
@@ -40,7 +40,7 @@ htmx_poll_url=htmx_poll_url
 {% if manage_tabs_status and manage_tabs_status.is_list_completed %}
     {% if manage_tabs_tab_names %}
         <div class="mb-4">
-            <span class="text-body-md font-medium"
+            <span class="text-label-lg"
                   style="color: var(--color-headings)">{{ _("Found old tabs:") }}</span>
             <div class="rounded-lg p-4 mt-2 max-h-48 overflow-y-auto"
                  style="background-color: var(--color-subtle-background-panels);
@@ -67,7 +67,7 @@ htmx_poll_url=htmx_poll_url
 {% if manage_tabs_status and manage_tabs_status.is_finished and not manage_tabs_status.is_list_completed %}
     {% if not manage_tabs_run_record.is_failed and not manage_tabs_run_record.is_cancelled %}
         <div class="mb-4">
-            <span class="text-body-md font-medium"
+            <span class="text-label-lg"
                   style="color: var(--color-success-text)">{{ _("Result:") }}</span>
             <span class="text-body-md" style="color: var(--color-success-text);">
                 {{ _("Old tabs have been deleted successfully.") }}
@@ -75,7 +75,7 @@ htmx_poll_url=htmx_poll_url
             {% if gsheet %}
                 <a href="{{ gsheet.url }}"
                    target="_blank"
-                   class="text-body-md font-medium hover:underline ml-2"
+                   class="text-label-lg hover:underline ml-2"
                    style="color: var(--color-primary-action)">{{ _("View spreadsheet") }}</a>
             {% endif %}
         </div>

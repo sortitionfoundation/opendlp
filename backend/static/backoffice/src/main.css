@@ -28,36 +28,36 @@
    ======================================== */
 
 @layer components {
-    /* Display (Montserrat) - Page/section titles */
+    /* Display (Lato) - Page/section titles */
     .text-display-lg {
-        font: 500 2rem/2.5rem var(--font-display);
-        letter-spacing: -0.32px;
-    }
-
-    .text-display-md {
-        font: 500 1.75rem/2.25rem var(--font-display);
-        letter-spacing: -0.28px;
-    }
-
-    .text-display-sm {
-        font: 500 1.5rem/2rem var(--font-display);
-        letter-spacing: -0.12px;
-    }
-
-    /* Heading (Montserrat) - Card/panel/group headers */
-    .text-heading-lg {
-        font: 500 1.25rem/1.75rem var(--font-heading);
+        font: 700 1.875rem/2.5rem var(--font-display);
         letter-spacing: 0;
     }
 
+    .text-display-md {
+        font: 600 1.625rem/2.25rem var(--font-display);
+        letter-spacing: 0;
+    }
+
+    .text-display-sm {
+        font: 600 1.375rem/2rem var(--font-display);
+        letter-spacing: 0;
+    }
+
+    /* Heading (Lato) - Card/panel/group headers */
+    .text-heading-lg {
+        font: 600 1.125rem/1.75rem var(--font-heading);
+        letter-spacing: 0.1px;
+    }
+
     .text-heading-md {
-        font: 500 1.125rem/1.5rem var(--font-heading);
-        letter-spacing: 0.18px;
+        font: 500 1rem/1.5rem var(--font-heading);
+        letter-spacing: 0.2px;
     }
 
     .text-heading-sm {
-        font: 500 1rem/1.375rem var(--font-heading);
-        letter-spacing: 0.24px;
+        font: 500 0.9375rem/1.375rem var(--font-heading);
+        letter-spacing: 0.2px;
     }
 
     /* Body (Lato) - Content text */
@@ -73,89 +73,309 @@
 
     .text-body-sm {
         font: 400 0.8125rem/1.125rem var(--font-body);
-        letter-spacing: 0.13px;
+        letter-spacing: 0.1px;
     }
 
-    /* Caption (Lato) - Metadata */
+    /* Caption (Lato) - Metadata / dense secondary text */
     .text-caption {
-        font: 400 1rem/1.5rem var(--font-caption);
-        letter-spacing: 0;
+        font: 400 0.75rem/1rem var(--font-caption);
+        letter-spacing: 0.2px;
     }
 
-    /* Overline (Lato) - Uppercase labels */
+    /* Overline (Lato) - Uppercase micro-labels */
     .text-overline {
         font: 500 0.6875rem/0.875rem var(--font-overline);
-        letter-spacing: 0.88px;
+        letter-spacing: 0.8px;
         text-transform: uppercase;
     }
 
     /* Label (Lato) - Form labels */
     .text-label-lg {
         font: 500 0.875rem/1.25rem var(--font-label);
-        letter-spacing: 0.28px;
+        letter-spacing: 0.3px;
     }
 
     .text-label-md {
         font: 500 0.8125rem/1.125rem var(--font-label);
-        letter-spacing: 0.26px;
+        letter-spacing: 0.3px;
     }
 
-    /* Button (Lato) - Action text */
+    /* Button (Lato) - Action text. Figma specs only button-lg; md/sm
+       follow the same weight/tracking policy so the ramp is coherent. */
     .text-button-lg {
-        font: 700 0.875rem/1rem var(--font-button);
-        letter-spacing: 0.56px;
+        font: 600 0.875rem/1rem var(--font-button);
+        letter-spacing: 0.4px;
     }
 
     .text-button-md {
-        font: 700 0.8125rem/1rem var(--font-button);
-        letter-spacing: 0.65px;
+        font: 600 0.8125rem/1rem var(--font-button);
+        letter-spacing: 0.4px;
     }
 
     .text-button-sm {
-        font: 700 0.75rem/0.875rem var(--font-button);
-        letter-spacing: 0.72px;
+        font: 600 0.75rem/0.875rem var(--font-button);
+        letter-spacing: 0.4px;
+    }
+
+    /* Input (Lato) - Form input values. Same metrics as placeholder;
+       colour differs at the semantic-token layer (input=body-text,
+       placeholder=placeholder-text). */
+    .text-input-text {
+        font: 400 0.875rem/1.25rem var(--font-body);
+        letter-spacing: 0;
+    }
+
+    /* Table (Lato) - Column headers, cells, numeric cells */
+    .text-table-header {
+        font: 600 0.75rem/1rem var(--font-label);
+        letter-spacing: 0.4px;
+    }
+
+    .text-table-cell {
+        font: 400 0.8125rem/1.125rem var(--font-body);
+        letter-spacing: 0;
+    }
+
+    .text-numeric {
+        font: 500 0.8125rem/1.125rem var(--font-body);
+        letter-spacing: 0.1px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Code (monospace) - inline code chips and code blocks */
+    .text-code {
+        font: 400 0.8125rem/1.125rem var(--font-mono);
+        letter-spacing: 0;
+    }
+
+    /* Inline code chip - text-code + subtle panel background + tight padding.
+       Used to render class names / identifiers in prose. */
+    .code-inline {
+        font: 400 0.8125rem/1.125rem var(--font-mono);
+        letter-spacing: 0;
+        background-color: var(--color-subtle-background-panels);
+        border: 1px solid var(--color-borders-dividers);
+        padding: 0 0.25rem;
+        border-radius: 0.25rem;
+    }
+
+    /* Showcase table row dividers - applied to tbody to avoid a per-<tr>
+       inline style. All rows except the last render a bottom border. */
+    .showcase-divided > tr:not(:last-child) > td {
+        border-bottom: 1px solid var(--color-borders-dividers);
     }
 
     /* ========================================
        BUTTON COMPONENT STYLES
-       Hover and focus states for button variants
+       Atomic BEM structure: .btn base + .btn--{variant} + .is-loading
+       Focus is intentionally left to the browser default outline — see
+       docs/frontend_security.md and prior design system decisions.
        ======================================== */
 
-    /* Primary button hover */
-    .btn-primary-hover:hover:not(:disabled) {
-        background-color: var(--color-button-primary-bg-hover) !important;
+    /* Base — layout, typography, transitions. No colour. */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        box-sizing: border-box;
+        font: 600 0.875rem/1rem var(--font-button);
+        letter-spacing: 0.4px;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
 
-    /* Secondary button hover */
-    .btn-secondary-hover:hover:not(:disabled) {
-        background-color: var(--color-button-secondary-bg-hover) !important;
+    .btn:disabled,
+    .btn[aria-disabled="true"] {
+        cursor: not-allowed;
     }
 
-    /* Tertiary/Icon button hover */
-    .btn-tertiary-hover:hover:not(:disabled) {
-        background-color: var(--color-button-tertiary-bg-hover) !important;
+    .btn--full-width {
+        width: 100%;
     }
 
-    /* Danger button hover */
-    .btn-danger-hover:hover:not(:disabled) {
-        background-color: var(--color-button-danger-bg-hover) !important;
+    /* Variant: primary — filled brand */
+    .btn--primary {
+        background-color: var(--color-button-primary-bg);
+        color: var(--color-button-primary-text);
     }
 
-    /* Runtime-disabled look (toggled by Alpine via the button macro's
-       `alpine_disabled` param). Layers on top of the variant's inline style
-       without touching padding/base styles. */
-    .btn-runtime-disabled {
-        background-color: var(--color-disabled-borders) !important;
-        color: var(--color-placeholder-text) !important;
-        border: none !important;
-        cursor: not-allowed !important;
-        opacity: 0.5 !important;
+    .btn--primary:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-primary-bg-hover);
     }
 
-    /* Focus ring for buttons - use browser default outline for keyboard navigation */
-    /* The .btn-focus class enables :focus-visible styling (no custom override needed) */
+    .btn--primary:disabled:not(.is-loading),
+    .btn--primary[aria-disabled="true"]:not(.is-loading) {
+        background-color: var(--color-disabled-borders);
+        color: var(--color-placeholder-text);
+    }
 
-    /* Icon sizing within buttons */
+    /* Variant: secondary — outlined, keeps shape when disabled */
+    .btn--secondary {
+        background-color: var(--color-button-secondary-bg);
+        color: var(--color-button-secondary-text);
+        border: 1px solid var(--color-button-secondary-border);
+    }
+
+    .btn--secondary:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-secondary-bg-hover);
+    }
+
+    .btn--secondary:disabled:not(.is-loading),
+    .btn--secondary[aria-disabled="true"]:not(.is-loading) {
+        background-color: var(--color-button-secondary-bg);
+        color: var(--color-placeholder-text);
+        border-color: var(--color-placeholder-text);
+    }
+
+    /* Variant: tertiary — ghost, transparent when disabled */
+    .btn--tertiary {
+        background-color: var(--color-button-tertiary-bg);
+        color: var(--color-button-tertiary-text);
+    }
+
+    .btn--tertiary:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-tertiary-bg-hover);
+    }
+
+    .btn--tertiary:disabled:not(.is-loading),
+    .btn--tertiary[aria-disabled="true"]:not(.is-loading) {
+        background-color: transparent;
+        color: var(--color-placeholder-text);
+    }
+
+    /* Variant: danger — transparent, red text */
+    .btn--danger {
+        background-color: var(--color-button-danger-bg);
+        color: var(--color-button-danger-text);
+    }
+
+    .btn--danger:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-danger-bg-hover);
+    }
+
+    .btn--danger:disabled:not(.is-loading),
+    .btn--danger[aria-disabled="true"]:not(.is-loading) {
+        background-color: transparent;
+        color: var(--color-placeholder-text);
+    }
+
+    /* Variant: icon — square-ish, tertiary look, tighter horizontal padding */
+    .btn--icon {
+        padding: 12px 8px;
+        background-color: var(--color-button-tertiary-bg);
+        color: var(--color-button-tertiary-text);
+    }
+
+    .btn--icon:hover:not(:disabled):not([aria-disabled="true"]):not(.is-loading) {
+        background-color: var(--color-button-tertiary-bg-hover);
+    }
+
+    .btn--icon:disabled:not(.is-loading),
+    .btn--icon[aria-disabled="true"]:not(.is-loading) {
+        background-color: transparent;
+        color: var(--color-placeholder-text);
+    }
+
+    /* Loading state — spinner overlay, content hidden, keeps button width */
+    .btn.is-loading {
+        position: relative;
+        pointer-events: none;
+        cursor: wait;
+    }
+
+    .btn.is-loading > * {
+        visibility: hidden;
+    }
+
+    .btn.is-loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 1rem;
+        height: 1rem;
+        margin: -0.5rem 0 0 -0.5rem;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: btn-spin 0.6s linear infinite;
+    }
+
+    @keyframes btn-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Joined variants — used by split_button to fuse two adjacent .btn instances.
+       Left half flattens its right corners; right half flattens its left corners
+       and tightens horizontal padding to hug the chevron. Filled variants
+       (primary/danger) draw a subtle hairline divider on the right half so the
+       fused pair still reads as two distinct hit targets. */
+    .btn--joined-left {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .btn--joined-right {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .btn--primary.btn--joined-right,
+    .btn--danger.btn--joined-right {
+        border-left: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    /* Menu / menu-item — dropdown surface used by split_button and dropdown_button.
+       .menu positions and paints the surface; .menu--left / .menu--right anchor
+       the horizontal edge. Menu items handle hover/focus via CSS so we drop
+       the mouseenter/leave/focus/blur DOM-mutating Alpine handlers. */
+    .menu {
+        position: absolute;
+        z-index: 30;
+        top: 100%;
+        margin-top: 0.25rem;
+        background-color: var(--color-tables-cards);
+        border: 1px solid var(--color-borders-dividers);
+        border-radius: 0.5rem;
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+    }
+
+    .menu--left {
+        left: 0;
+    }
+
+    .menu--right {
+        right: 0;
+    }
+
+    .menu-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        background-color: transparent;
+        color: var(--color-body-text);
+        border: none;
+        cursor: pointer;
+        font: 400 0.875rem/1.25rem var(--font-body);
+        transition: background-color 0.15s ease;
+    }
+
+    .menu-item:hover:not(:disabled),
+    .menu-item:focus-visible {
+        background-color: var(--color-button-tertiary-bg-hover);
+    }
+
+    /* Icon wrapper inside buttons — used by leading_icon/trailing_icon/icon
+       slots on the button macro. Not to be confused with .btn--icon (variant). */
     .btn-icon {
         display: inline-flex;
         align-items: center;
@@ -676,5 +896,151 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E");
         background-size: contain;
         background-repeat: no-repeat;
+    }
+
+    /* ========================================
+       DIALOG COMPONENT STYLES
+       Shared visual atoms for modal(), progress_modal(), and alert_dialog().
+       Surface and rhythm match Figma node 1601:856 (alert dialog).
+       ======================================== */
+
+    .dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .dialog-backdrop--clickable {
+        cursor: pointer;
+    }
+
+    /* Panel positioning wrapper - centers the panel in the viewport */
+    .dialog-positioner {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    /* Shared panel surface — used by every dialog variant */
+    .dialog-panel {
+        pointer-events: auto;
+        width: 100%;
+        margin: 0 1rem;
+        background-color: var(--color-tables-cards);
+        border: 1px solid var(--color-borders-dividers);
+        border-radius: 0.5rem;
+        box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    /* Default size — for content/progress modals with chrome */
+    .dialog-panel--default {
+        max-width: 42rem; /* matches former max-w-2xl */
+    }
+
+    /* Alert size — compact confirmation dialog matching Figma 1601:856 */
+    .dialog-panel--alert {
+        max-width: 28rem;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 24px;
+    }
+
+    /* Header bar — title + optional close X, with bottom divider */
+    .dialog-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--color-borders-dividers);
+    }
+
+    .dialog-title {
+        font: 500 1.25rem/1.75rem var(--font-heading);
+        letter-spacing: 0;
+        color: var(--color-headings);
+        margin: 0;
+    }
+
+    /* Close button — uses :disabled selector for state, no inline :style needed */
+    .dialog-close-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        color: var(--color-secondary-text);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+
+    .dialog-close-btn:not(:disabled):hover {
+        background-color: var(--color-button-tertiary-bg-hover);
+    }
+
+    .dialog-close-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .dialog-close-btn svg {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
+    /* Body — scrolls when content overflows */
+    .dialog-body {
+        padding: 1rem 1.5rem;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    /* Footer — sticky action row inside the panel */
+    .dialog-footer {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        padding: 0.75rem 1.5rem;
+        border-top: 1px solid var(--color-borders-dividers);
+        background-color: var(--color-tables-cards);
+    }
+
+    /* Alert-dialog text block — title + description stack (Figma: gap 8) */
+    .dialog-text-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .dialog-text-stack__title {
+        font: 700 1.125rem/1.75rem var(--font-heading);
+        letter-spacing: 0.1px;
+        color: var(--color-headings);
+        margin: 0;
+    }
+
+    .dialog-text-stack__description {
+        font: 400 0.875rem/1.25rem var(--font-body);
+        color: var(--color-secondary-text);
+        margin: 0;
+    }
+
+    /* Alert-dialog actions row (Figma: justify-end, gap 8, no top divider) */
+    .dialog-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        width: 100%;
     }
 }

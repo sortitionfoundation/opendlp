@@ -10,7 +10,7 @@ set dotenv-load
 default: test-nobdd
 
 # Test the code with pytest, headless BDD, HTML report (includes BDD subprocess coverage)
-test-html:
+test-html: build-all-css
   #!/usr/bin/env bash
   set -uo pipefail
   rm -f .coverage .coverage.bdd-*
@@ -24,7 +24,7 @@ test-html:
   exit $PYTEST_EXIT
 
 # Test the code with pytest, headless BDD, XML report (includes BDD subprocess coverage)
-test-xml:
+test-xml: build-all-css
   #!/usr/bin/env bash
   set -uo pipefail
   rm -f .coverage .coverage.bdd-*
@@ -45,7 +45,7 @@ test-nobdd:
   uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
 
 # Run BDD tests with pytest-bdd and Playwright
-test-bdd:
+test-bdd: build-all-css
   @echo "🚀 Running BDD tests"
   CI=true uv run python -m pytest tests/bdd/ --verbose --tb=short
   echo "Independent processes for flask and celery - if not expected you might need to re-run:"
@@ -53,11 +53,11 @@ test-bdd:
   ps -ef | grep celery | grep solo
 
 # Run backoffice BDD tests only
-test-backoffice:
+test-backoffice: build-all-css
   @echo "🚀 Running backoffice BDD tests"
   CI=true uv run python -m pytest tests/bdd/test_backoffice.py --verbose --tb=short
 
-test-bdd-not-headless:
+test-bdd-not-headless: build-all-css
   @echo "🚀 Running BDD tests"
   uv run python -m pytest tests/bdd/ --verbose --tb=short
   echo "Independent processes for flask and celery - if not expected you might need to re-run:"
@@ -65,7 +65,7 @@ test-bdd-not-headless:
   ps -ef | grep celery | grep solo
 
 # Run BDD tests in headless mode (for CI)
-test-bdd-headless:
+test-bdd-headless: build-all-css
   @echo "🚀 Running BDD tests (headless)"
   @CI=true uv run python -m pytest tests/bdd/ --verbose --tracing=retain-on-failure
   echo "Independent processes for flask and celery - if not expected you might need to re-run:"

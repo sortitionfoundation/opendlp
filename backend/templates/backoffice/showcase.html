@@ -32,64 +32,113 @@
     <h1 class="text-display-lg" style="color: var(--color-headings);">Design System</h1>
     <p class="text-body-lg mt-2 mb-8" style="color: var(--color-secondary-text);">Backoffice design system using Pines UI + Tailwind CSS</p>
 
-    <div x-data="{ tab: 'components' }">
-        {# Tab navigation #}
-        <div class="flex gap-1 mb-8 border-b" style="border-color: var(--color-borders-dividers);">
-            <button
-                type="button"
-                class="text-label-lg px-4 py-3 -mb-px transition-colors"
-                :class="tab === 'foundations' ? 'font-semibold' : ''"
-                :style="tab === 'foundations'
-                        ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
-                        : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
-                @click="tab = 'foundations'"
-            >
-                Foundations
-            </button>
-            <button
-                type="button"
-                class="text-label-lg px-4 py-3 -mb-px transition-colors"
-                :class="tab === 'components' ? 'font-semibold' : ''"
-                :style="tab === 'components'
-                        ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
-                        : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
-                @click="tab = 'components'"
-            >
-                Components
-            </button>
+    <div x-data="showcaseNav">
+        {# Tab navigation (not sticky) #}
+        <div class="flex gap-1 mb-6 border-b" style="border-color: var(--color-borders-dividers);">
+            <button type="button"
+                    class="text-label-lg px-4 py-3 -mb-px transition-colors"
+                    :class="tab === 'foundations' ? 'font-semibold' : ''"
+                    :style="tab === 'foundations'
+                            ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
+                            : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
+                    @click="setTab('foundations')">Foundations</button>
+            <button type="button"
+                    class="text-label-lg px-4 py-3 -mb-px transition-colors"
+                    :class="tab === 'components' ? 'font-semibold' : ''"
+                    :style="tab === 'components'
+                            ? 'color: var(--color-headings); border-bottom: 2px solid var(--color-primary-action);'
+                            : 'color: var(--color-secondary-text); border-bottom: 2px solid transparent;'"
+                    @click="setTab('components')">Components</button>
+        </div>
+
+        {# Sticky jump-to-section header (below tab nav). Two selects — only the
+           active tab's is visible — so the dropdown always reflects the active tab. #}
+        <div class="sticky top-0 z-30 -mx-6 px-6 py-3 mb-6 flex flex-wrap items-center gap-3"
+             style="background-color: var(--color-page-background); border-bottom: 1px solid var(--color-borders-dividers);">
+            {# Caption only: the two selects are individually named via aria-label,
+               so a single `for` (which can only target one id) would be wrong. #}
+            <span class="text-label-md" style="color: var(--color-secondary-text);">Jump to section</span>
+
+            <select id="showcase-nav-jump-foundations"
+                    aria-label="{{ _('Jump to section') }}"
+                    x-show="tab === 'foundations'"
+                    x-model="selected"
+                    @change="goTo()"
+                    class="text-body-md rounded-md px-3 py-2 min-w-64"
+                    style="background-color: var(--color-page-background); color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
+                <option value="">Choose…</option>
+                <option value="foundations:primitive-tokens">Primitive Tokens</option>
+                <option value="foundations:semantic-tokens">Semantic Tokens</option>
+                <option value="foundations:spacing">Spacing Conventions</option>
+                <option value="foundations:responsive">Responsive Layout</option>
+                <option value="foundations:typography">Typography</option>
+            </select>
+
+            <select id="showcase-nav-jump-components"
+                    aria-label="{{ _('Jump to section') }}"
+                    x-show="tab === 'components'"
+                    x-model="selected"
+                    @change="goTo()"
+                    class="text-body-md rounded-md px-3 py-2 min-w-64"
+                    style="background-color: var(--color-page-background); color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
+                <option value="">Choose…</option>
+                <option value="components:button">Button</option>
+                <option value="components:split-button">Split Button</option>
+                <option value="components:input">Input</option>
+                <option value="components:checkbox">Checkbox</option>
+                <option value="components:radio">Radio Button</option>
+                <option value="components:switch">Switch</option>
+                <option value="components:search-dropdown">Search Dropdown</option>
+                <option value="components:select-dropdown">Select Dropdown</option>
+                <option value="components:card">Card</option>
+                <option value="components:section">Section</option>
+                <option value="components:modal">Modal</option>
+                <option value="components:progress">Progress Bar</option>
+                <option value="components:table">Table</option>
+                <option value="components:pagination">Pagination</option>
+                <option value="components:navigation">Navigation</option>
+                <option value="components:breadcrumb">Breadcrumb</option>
+                <option value="components:tabs">Tabs</option>
+                <option value="components:stepper">Stepper</option>
+                <option value="components:alert">Alert</option>
+                <option value="components:interactivity">Alpine.js Interactivity</option>
+            </select>
         </div>
 
         {# Foundations tab content #}
         <div x-show="tab === 'foundations'" x-cloak>
-            {{ primitive_tokens_section() }}
-            {{ semantic_tokens_section() }}
-            {{ spacing_section() }}
-            {{ responsive_section() }}
-            {{ typography_section() }}
+            <div id="primitive-tokens" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ primitive_tokens_section() }}</div>
+            <div id="semantic-tokens" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ semantic_tokens_section() }}</div>
+            <div id="spacing" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ spacing_section() }}</div>
+            <div id="responsive" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ responsive_section() }}</div>
+            <div id="typography" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ typography_section() }}</div>
         </div>
 
-        {# Components tab content #}
+        {# Components tab content. Each section is wrapped in an anchor whose id
+           matches the jump-to-section dropdown value (the part after the ':'),
+           mirroring the Foundations tab, so hash links and the dropdown scroll
+           to a real target. #}
         <div x-show="tab === 'components'" x-cloak>
-            {{ button_section() }}
-            {{ split_button_section() }}
-            {{ input_section() }}
-            {{ checkbox_section() }}
-            {{ radio_section() }}
-            {{ switch_section() }}
-            {{ search_dropdown_section() }}
-            {{ select_dropdown_section() }}
-            {{ card_section() }}
-            {{ section_section() }}
-            {{ modal_section() }}
-            {{ progress_section() }}
-            {{ table_section() }}
-            {{ pagination_section() }}
-            {{ navigation_section() }}
-            {{ breadcrumb_section() }}
-            {{ tabs_section() }}
-            {{ stepper_section() }}
-            {{ alert_section() }}
-            {{ interactivity_section() }}
+            <div id="button" data-tab="components" style="scroll-margin-top: 6rem;">{{ button_section() }}</div>
+            <div id="split-button" data-tab="components" style="scroll-margin-top: 6rem;">{{ split_button_section() }}</div>
+            <div id="input" data-tab="components" style="scroll-margin-top: 6rem;">{{ input_section() }}</div>
+            <div id="checkbox" data-tab="components" style="scroll-margin-top: 6rem;">{{ checkbox_section() }}</div>
+            <div id="radio" data-tab="components" style="scroll-margin-top: 6rem;">{{ radio_section() }}</div>
+            <div id="switch" data-tab="components" style="scroll-margin-top: 6rem;">{{ switch_section() }}</div>
+            <div id="search-dropdown" data-tab="components" style="scroll-margin-top: 6rem;">{{ search_dropdown_section() }}</div>
+            <div id="select-dropdown" data-tab="components" style="scroll-margin-top: 6rem;">{{ select_dropdown_section() }}</div>
+            <div id="card" data-tab="components" style="scroll-margin-top: 6rem;">{{ card_section() }}</div>
+            <div id="section" data-tab="components" style="scroll-margin-top: 6rem;">{{ section_section() }}</div>
+            <div id="modal" data-tab="components" style="scroll-margin-top: 6rem;">{{ modal_section() }}</div>
+            <div id="progress" data-tab="components" style="scroll-margin-top: 6rem;">{{ progress_section() }}</div>
+            <div id="table" data-tab="components" style="scroll-margin-top: 6rem;">{{ table_section() }}</div>
+            <div id="pagination" data-tab="components" style="scroll-margin-top: 6rem;">{{ pagination_section() }}</div>
+            <div id="navigation" data-tab="components" style="scroll-margin-top: 6rem;">{{ navigation_section() }}</div>
+            <div id="breadcrumb" data-tab="components" style="scroll-margin-top: 6rem;">{{ breadcrumb_section() }}</div>
+            <div id="tabs" data-tab="components" style="scroll-margin-top: 6rem;">{{ tabs_section() }}</div>
+            <div id="stepper" data-tab="components" style="scroll-margin-top: 6rem;">{{ stepper_section() }}</div>
+            <div id="alert" data-tab="components" style="scroll-margin-top: 6rem;">{{ alert_section() }}</div>
+            <div id="interactivity" data-tab="components" style="scroll-margin-top: 6rem;">{{ interactivity_section() }}</div>
         </div>
     </div>
 
