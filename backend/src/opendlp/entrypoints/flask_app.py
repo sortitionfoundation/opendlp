@@ -234,7 +234,10 @@ def get_secure_headers(config: Config) -> Secure:
     return secure_headers
 
 
-PUBLIC_IMMUTABLE_ASSET_ENDPOINTS = frozenset({"registration.serve_registration_image"})
+PUBLIC_IMMUTABLE_ASSET_ENDPOINTS = frozenset({
+    "registration.serve_registration_image",
+    "registration.serve_registration_document",
+})
 
 
 def register_after_request_handlers(app: Flask) -> None:

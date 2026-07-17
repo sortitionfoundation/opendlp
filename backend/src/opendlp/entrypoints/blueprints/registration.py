@@ -2,15 +2,17 @@
 ABOUTME: Handles form rendering, submission, and URL resolution without login"""
 
 from datetime import UTC, datetime
+from io import BytesIO
 
 import structlog
-from flask import Blueprint, Response, abort, current_app, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, current_app, redirect, render_template, request, send_file, url_for
 from flask.typing import ResponseReturnValue
 from flask_wtf.csrf import generate_csrf, validate_csrf
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
 from wtforms import ValidationError
 
 from opendlp import bootstrap
+from opendlp.domain.registration_document import PDF_CONTENT_TYPE, PDF_FILE_EXTENSION, RegistrationDocument
 from opendlp.domain.registration_image import IMAGE_CONTENT_TYPE
 from opendlp.entrypoints.decorators import require_feature
 from opendlp.entrypoints.extensions import csrf
@@ -20,6 +22,7 @@ from opendlp.service_layer.registration_bot_protection_service import (
     check_registration_rate_limit,
     record_registration_submission,
 )
+from opendlp.service_layer.registration_document_service import get_registration_document_for_serving
 from opendlp.service_layer.registration_image_service import get_registration_image_for_serving
 from opendlp.service_layer.registration_page_service import (
     RegistrationPageVisibilityState,
@@ -352,6 +355,33 @@ def serve_registration_image(url_slug: str, image_name: str) -> ResponseReturnVa
         abort(404)
 
     response = Response(served.data, mimetype=IMAGE_CONTENT_TYPE)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.set_etag(served.sha256)
+    return response.make_conditional(request)
+
+
+def _document_download_name(document: RegistrationDocument) -> str:
+    """The filename offered to the browser: the original name, else the content hash."""
+    return document.original_filename or f"{document.sha256}.{PDF_FILE_EXTENSION}"
+
+
+@registration_bp.route("/register/<url_slug>/documents/<document_name>", methods=["GET"])
+@require_feature("registration_page")
+def serve_registration_document(url_slug: str, document_name: str) -> ResponseReturnValue:
+    """Serve a registration page PDF from the database (public, attachment download)."""
+    uow = bootstrap.get_flask_uow()
+
+    served = get_registration_document_for_serving(uow, url_slug, document_name)
+    if served is None:
+        abort(404)
+
+    # send_file builds the Content-Disposition (attachment + RFC 5987 filename) for us.
+    response = send_file(
+        BytesIO(served.data),
+        mimetype=PDF_CONTENT_TYPE,
+        as_attachment=True,
+        download_name=_document_download_name(served),
+    )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.set_etag(served.sha256)
     return response.make_conditional(request)
