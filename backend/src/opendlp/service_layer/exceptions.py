@@ -9,6 +9,7 @@ from opendlp.translations import gettext as _
 __all__ = [
     "AssemblyNotFoundError",
     "CannotRemoveLastAuthMethod",
+    "DocumentQuotaExceeded",
     "EmailNotConfirmed",
     "EmailTemplateInvalid",
     "EmailTemplateNotFoundError",
@@ -27,6 +28,7 @@ __all__ = [
     "OpenDLPError",
     "PasswordTooWeak",
     "RateLimitExceeded",
+    "RegistrationDocumentNotFoundError",
     "RegistrationImageNotFoundError",
     "RegistrationPageNotFoundError",
     "RegistrationPageNotReady",
@@ -189,6 +191,10 @@ class RegistrationImageNotFoundError(NotFoundError):
     """A registration image could not be found in the database"""
 
 
+class RegistrationDocumentNotFoundError(NotFoundError):
+    """A registration document could not be found in the database"""
+
+
 class EmailTemplateNotFoundError(NotFoundError):
     """An email template could not be found in the database"""
 
@@ -206,6 +212,13 @@ class ImageQuotaExceeded(ServiceLayerError):
 
     def __init__(self, limit: int) -> None:
         super().__init__(_("This registration page already has the maximum of %(limit)s images", limit=limit))
+
+
+class DocumentQuotaExceeded(ServiceLayerError):
+    """Raised when a registration page already has the maximum number of documents."""
+
+    def __init__(self, limit: int) -> None:
+        super().__init__(_("This registration page already has the maximum of %(limit)s documents", limit=limit))
 
 
 class SelectionRunRecordNotFoundError(NotFoundError):
