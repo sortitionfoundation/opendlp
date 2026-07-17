@@ -59,14 +59,30 @@ No additional system dependencies are required. The sortition-algorithms library
 ### Testing and Quality
 
 ```bash
-# Run all tests with coverage
+# Run all tests with coverage - note this can take 10 minutes or more.
+# This runs everything (non-BDD then BDD) in a SINGLE serial process, so it is
+# always safe - nothing runs concurrently against the database.
 just test
+
+# Run all non-BDD tests with coverage with up to 8 parallel processes
+just test-nobdd
+# which is
+uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
 
 # Watch tests on file changes
 just watch-tests
 
-# use CI=true to ensure BDD tests run headless
+# Run the BDD tests headless (CI=true forces headless Playwright)
+just test-bdd-headless
+# which is roughly
 CI=true uv run pytest tests/bdd/
+
+# IMPORTANT: the non-BDD and BDD suites share the same database, and test-nobdd
+# runs parallel workers. So NEVER run two test invocations at the same time -
+# e.g. `just test-nobdd` and `just test-bdd-headless` concurrently would clobber
+# each other's database state. To split a run, do them one after the other:
+#   just test-nobdd && just test-bdd-headless
+# (`just test` is safe on its own because it is a single serial process.)
 
 # Run all quality checks (linting, type checking, dependency analysis)
 just check
@@ -76,6 +92,8 @@ uv run mypy                    # Type checking
 uv run deptry src              # Check for obsolete dependencies
 uv tool run prek run -a        # Run linting
 ```
+
+Full test runs can take many minutes. Recommend piping output to a temporary file to capture test failure details without filling context with full output.
 
 See [docs/testing.md](docs/testing.md) for complete testing strategy including contract and BDD tests.
 
