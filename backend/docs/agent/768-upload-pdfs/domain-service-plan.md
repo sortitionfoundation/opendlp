@@ -464,7 +464,7 @@ recorded here as decisions and folded into the body of the plan above.
 
 ## 10. Build order
 
-1. Domain object + shared filename helper + constants + `ValidatedDocument` +
+1. ✅ Domain object + shared filename helper + constants + `ValidatedDocument` +
    `DocumentValidationError` (+ unit tests).
 2. `document_processing.validate_pdf` (+ unit tests).
 3. ORM table + mapping + migration + conftest teardown entries.
@@ -473,6 +473,12 @@ recorded here as decisions and folded into the body of the plan above.
 6. Exceptions + `registration_document_service.py` (+ service tests).
 7. Download route (+ e2e tests).
 8. `just check` + `just test` green; `just translate-regen` for new strings.
+
+> **Implementation note (during build):** the immutable `Cache-Control` is not
+> set inline in the route (the plan's §7 sketch showed it inline). The codebase
+> applies it centrally in `flask_app.py` via `PUBLIC_IMMUTABLE_ASSET_ENDPOINTS`;
+> the document serving endpoint is added to that frozenset, mirroring how
+> `registration.serve_registration_image` gets its immutable cache header.
 
 Deferred to `blueprint-plan.md`: backoffice upload/list/delete routes and
 templates, the snippet-copy UI, and the organiser-journey BDD.
