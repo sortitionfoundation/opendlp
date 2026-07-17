@@ -686,6 +686,28 @@ registration_images = Table(
     Index("ix_registration_images_page_sha_unique", "registration_page_id", "sha256", unique=True),
 )
 
+# Registration documents table — PDF bytes offered as download links from a page's form HTML.
+registration_documents = Table(
+    "registration_documents",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "registration_page_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("registration_pages.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
+    Column("byte_size", Integer, nullable=False),
+    Column("sha256", String(64), nullable=False),
+    Column("data", LargeBinary, nullable=False),
+    Column("label", String, nullable=False, server_default=""),
+    Column("original_filename", String(255), nullable=False, server_default=""),
+    Column("created_by", PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=True),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    Index("ix_registration_documents_page_sha_unique", "registration_page_id", "sha256", unique=True),
+)
+
 # Email templates table — assembly-scoped, database-stored templated emails.
 email_templates = Table(
     "email_templates",

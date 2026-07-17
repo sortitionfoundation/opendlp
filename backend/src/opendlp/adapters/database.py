@@ -15,6 +15,7 @@ from opendlp.domain import (
     email_send_record,
     email_template,
     password_reset,
+    registration_document,
     registration_image,
     registration_page,
     respondent_field_schema,
@@ -223,6 +224,7 @@ def start_mappers() -> None:
         orm.mapper_registry.map_imperatively(registration_page.RegistrationPage, orm.registration_pages)
         orm.mapper_registry.map_imperatively(registration_page.RegistrationPageHtml, orm.registration_page_html_sources)
         orm.mapper_registry.map_imperatively(registration_image.RegistrationImage, orm.registration_images)
+        orm.mapper_registry.map_imperatively(registration_document.RegistrationDocument, orm.registration_documents)
 
         # Map EmailTemplate and RespondentEmailSendRecord domain objects. Mapped
         # independently - no ORM relationship; the service layer resolves links.
