@@ -105,6 +105,16 @@ class TestFlaskApp:
             assert response.headers["X-Content-Type-Options"] == "nosniff"
             assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
 
+    def test_csp_allows_youtube_nocookie_frames_only(self) -> None:
+        """The CSP must allow YouTube privacy-enhanced embeds but not plain youtube.com."""
+        app = create_app("testing")
+
+        with app.test_client() as client:
+            response = client.get("/")
+            csp = response.headers["Content-Security-Policy"]
+            assert "frame-src 'self' https://www.youtube-nocookie.com" in csp
+            assert "https://www.youtube.com" not in csp
+
 
 class TestMainBlueprint:
     """Test main blueprint routes."""

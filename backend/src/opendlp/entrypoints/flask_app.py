@@ -218,6 +218,9 @@ def get_secure_headers(config: Config) -> Secure:
         .style_src("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com")
         .font_src("'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com")
         .img_src("'self'", "data:")
+        # Only YouTube's privacy-enhanced domain: it sets no cookies until playback,
+        # which keeps us within the no-consent-banner position in docs/personal-data.md.
+        .frame_src("'self'", "https://www.youtube-nocookie.com")
         .frame_ancestors("'none'")
         .form_action("'self'", "https://accounts.google.com", "https://login.microsoftonline.com")
         .base_uri("'self'")

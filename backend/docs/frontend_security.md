@@ -220,6 +220,11 @@ Widening the CSP allowlist is how a third-party script gets waved through. A thi
 sets a cookie, or that reads the device, would oblige us to build a consent banner we do not
 have. Read [docs/personal-data.md](personal-data.md) before adding a host to the allowlist.
 
+The one sanctioned embed host is `https://www.youtube-nocookie.com` in `frame-src`, so
+organisers can embed YouTube videos in registration pages using YouTube's
+"privacy-enhanced mode" embed code. Plain `www.youtube.com` embeds are deliberately blocked —
+see [Personal Data](personal-data.md#third-party-embeds-the-youtube-exception).
+
 ## Testing CSP Compliance
 
 1. Load page in browser with DevTools open

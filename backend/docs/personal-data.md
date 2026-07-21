@@ -157,13 +157,35 @@ When adding a table that holds personal data, add a corresponding `DELETE` to
 `_delete_all_test_data()` in `tests/conftest.py` and to `delete_all_except_standard_users()` in
 `tests/bdd/conftest.py`, respecting foreign-key ordering.
 
+## Third-party embeds: the YouTube exception
+
+There is exactly **one** sanctioned third-party embed: YouTube videos in assembly
+registration pages, via the **privacy-enhanced domain only** (`www.youtube-nocookie.com`),
+allowed through the CSP `frame-src` directive (issue #769).
+
+The reasoning:
+
+- In privacy-enhanced mode YouTube sets **no cookies until the visitor plays the video**.
+  Merely viewing a registration page containing an embed stores nothing on the device, so
+  the no-consent-banner position holds for visitors who do not press play.
+- Pressing play is a deliberate act requesting content from YouTube; the visitor's IP
+  reaches Google at that point, as it would if they followed a link.
+- Plain `www.youtube.com` embeds set tracking cookies on page load and are **deliberately
+  not allowed** — organisers must use YouTube's "privacy-enhanced mode" embed code, and the
+  CSP blocks anything else. A test (`test_csp_allows_youtube_nocookie_frames_only`) pins
+  this.
+
+Widening this to plain YouTube, or adding any other embed host, reopens the consent-banner
+question below.
+
 ## What would change the answer
 
 **If you are about to do any of the following, this document is now wrong, and you must revisit
 [issue #656](agent/656-cookies/research.md) before shipping.**
 
 - Adding **any analytics**, or any third-party script or embed — including a font, a map, a
-  video player, or an error reporter such as Sentry.
+  video player, or an error reporter such as Sentry. The single existing exception is
+  documented in [Third-party embeds: the YouTube exception](#third-party-embeds-the-youtube-exception).
 - Adding **any new cookie**, or any use of `localStorage`, `sessionStorage` or `document.cookie`.
 - Making an existing cookie **persistent**, or lengthening its lifetime.
 - Using an existing cookie for a **new purpose**. Every purpose must independently qualify for
