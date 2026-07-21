@@ -236,6 +236,11 @@ def get_secure_headers(config: Config) -> Secure:
 
 PUBLIC_IMMUTABLE_ASSET_ENDPOINTS = frozenset({"registration.serve_registration_image"})
 
+# Endpoints that the backoffice embeds in a same-origin iframe. The global policy is
+# frame-ancestors 'none' / X-Frame-Options DENY; these endpoints relax it to
+# same-origin only — they must never become framable cross-origin.
+SAME_ORIGIN_FRAMEABLE_ENDPOINTS = frozenset({"backoffice_registration.preview_registration_form"})
+
 
 def register_after_request_handlers(app: Flask) -> None:
     """Register after request handlers."""
@@ -273,6 +278,15 @@ def register_after_request_handlers(app: Flask) -> None:
         # carry their content hash in the URL, so they are safe to cache immutably.
         if request.endpoint in PUBLIC_IMMUTABLE_ASSET_ENDPOINTS:
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+
+        # Same-origin-framable endpoints relax the global no-framing policy just enough
+        # for the backoffice to embed them (registration form preview).
+        if request.endpoint in SAME_ORIGIN_FRAMEABLE_ENDPOINTS:
+            response.headers["X-Frame-Options"] = "SAMEORIGIN"
+            if "Content-Security-Policy" in response.headers:
+                response.headers["Content-Security-Policy"] = response.headers["Content-Security-Policy"].replace(
+                    "frame-ancestors 'none'", "frame-ancestors 'self'"
+                )
 
         # Replace nonce placeholder with actual nonce for this request
         nonce = g.get("csp_nonce", "")

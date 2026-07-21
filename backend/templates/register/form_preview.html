@@ -1,0 +1,16 @@
+{#
+ABOUTME: Read-only preview of the public registration form, embedded in the backoffice preview step
+ABOUTME: Renders exactly like the public form but blocks submission (interactions still work)
+#}
+{% extends "register/form.html" %}
+{% block form_extras %}
+    <script nonce="{{ csp_nonce }}">
+        // Preview only: the form can be interacted with (dropdowns, inputs) but never
+        // submitted. Capture phase so author HTML cannot re-enable submission. If JS is
+        // unavailable, the form's empty action posts back to the GET-only preview route,
+        // which rejects it with 405 — no registration can be created either way.
+        document.addEventListener('submit', function (event) {
+            event.preventDefault();
+        }, true);
+    </script>
+{% endblock %}
