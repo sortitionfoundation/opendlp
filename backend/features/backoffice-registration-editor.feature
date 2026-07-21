@@ -37,6 +37,14 @@ Feature: Backoffice registration HTML editor
     And I click the Cancel button in the editor header
     Then I should be on the read-only registration form view
 
+  Scenario: Entering edit mode preserves the scroll position
+    Given I am logged in as an admin user
+    And there is an assembly called "Scroll Edit Assembly" with a registration page
+    When I visit the read-only registration form view for "Scroll Edit Assembly"
+    And I scroll down the page
+    And I click the Edit button in the editor header
+    Then the editor should be in edit mode with the page still scrolled down
+
   Scenario: Cancelling with unsaved changes asks for confirmation
     Given I am logged in as an admin user
     And there is an assembly called "Guard Assembly" with a registration page
