@@ -138,8 +138,11 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                         <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration Form HTML") }}</h2>
                      {# Header right: the editorial controls live here, next to the content they act on —
                         Edit swaps in place to Cancel/Save so the eye never travels to the footer for
-                        editing concerns. The footer below is navigation only. #}
-                                        <div class="flex items-center gap-2">
+                        editing concerns. The footer below is navigation only.
+                        x-scroll-preserve-links keeps the scroll position across the Edit/Cancel page
+                        reloads, so the editor stays in view when switching modes (the directive rewrites
+                        the href in capture phase, so the Cancel dirty-guard picks up the amended URL). #}
+                                        <div class="flex items-center gap-2" x-scroll-preserve-links>
                                             {% set code_icon %}
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -388,8 +391,10 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             {# Header right: the enable toggle plus the editorial controls — Edit swaps
                                                in place to Cancel/Save, mirroring the form step. The toggle posts to the
                                                sibling auto-reply-toggle form via the HTML5 form="" attribute (and is
-                                               excluded from dirty tracking in markEditDirty for the same reason). #}
-                                            <div class="flex items-center gap-4">
+                                               excluded from dirty tracking in markEditDirty for the same reason).
+                                               x-scroll-preserve-links keeps the scroll position across the Edit/Cancel
+                                               page reloads, matching the form step. #}
+                                            <div class="flex items-center gap-4" x-scroll-preserve-links>
                                                 {{ checkbox(
                                                 name="auto_reply_enabled",
                                                 label=_("Send auto-reply email"),
