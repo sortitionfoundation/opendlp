@@ -290,6 +290,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                        the modal layer (backdrops are z-40, panels z-50). While editing, navigation is
                        locked so the preview step can never silently lag unsaved changes. #}
                     <div class="sticky bottom-0 z-30 flex items-center justify-end gap-3 mt-6 py-3"
+                         x-scroll-preserve-links
                          style="background-color: var(--color-page-background); border-top: 1px solid var(--color-borders-dividers);">
                         {% if edit_mode %}
                             <span id="editing-nav-hint" class="mr-auto text-body-sm" style="color: var(--color-secondary-text);">
@@ -348,6 +349,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {# Sticky wizard footer — the auto-reply email is optional, so Back/Next stay
                            available even before a template exists. #}
                         <div class="sticky bottom-0 z-30 flex items-center justify-end gap-3 mt-6 py-3"
+                             x-scroll-preserve-links
                              style="background-color: var(--color-page-background); border-top: 1px solid var(--color-borders-dividers);">
                             <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
                             {{ button(_("Next →"), variant="primary", href=preview_url) }}
@@ -510,6 +512,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         {# Sticky wizard footer — navigation only (Edit/Cancel/Save live in the card header).
                            While editing, navigation is locked so unsaved changes can't be silently left behind. #}
                         <div class="sticky bottom-0 z-30 flex items-center justify-end gap-3 mt-6 py-3"
+                             x-scroll-preserve-links
                              style="background-color: var(--color-page-background); border-top: 1px solid var(--color-borders-dividers);">
                             {% if edit_mode %}
                                 <span class="mr-auto flex items-center gap-3">
@@ -631,6 +634,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                        CLOSED is terminal (no Reopen in the UI). #}
                     {% set back_to_email_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email') %}
                     <div class="sticky bottom-0 z-30 flex items-center justify-end gap-3 mt-6 py-3"
+                         x-scroll-preserve-links
                          style="background-color: var(--color-page-background); border-top: 1px solid var(--color-borders-dividers);">
                         <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_email_url) }}</span>
                         {% if registration_status == "TEST" and registration_page %}
