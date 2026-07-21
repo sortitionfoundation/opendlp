@@ -92,7 +92,7 @@ class TestEditModeRendersExpectedHtml:
         assert f"/backoffice/assembly/{assembly_id}/registration?section=email" in body
         assert "Cancel</a>" not in body
 
-    def test_test_status_edit_mode_shows_save_and_next_buttons(self, logged_in_admin, fake_store, assembly_id):
+    def test_test_status_edit_mode_shows_header_save_controls(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
@@ -102,12 +102,26 @@ class TestEditModeRendersExpectedHtml:
         assert "readonly" not in _extract_textarea(body)
         assert "Cancel</a>" in body
         assert "Save</button>" in body
-        assert "Save and next →</button>" in body
+        # Save-and-next is gone: the footer is navigation only, and it locks while editing
+        assert "Save and next" not in body
+        assert "Editing in progress" in body
         # Cancel returns to read-only on the form step
         cancel_block = body.split("Cancel</a>", 1)[0]
         anchor = cancel_block.rsplit("<a", 1)[1]
         assert f"/backoffice/assembly/{assembly_id}/registration" in anchor
         assert "edit=1" not in anchor
+
+    def test_view_mode_hides_assets_panel_and_edit_mode_shows_it(self, logged_in_admin, fake_store, assembly_id):
+        """The Assets panel is an editing tool, so it only renders in edit mode."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        view_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+        edit_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1").get_data(
+            as_text=True
+        )
+
+        assert ">Assets</h2>" not in view_body
+        assert ">Assets</h2>" in edit_body
 
     def test_published_status_edit_mode_uses_save_and_republish_label(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
