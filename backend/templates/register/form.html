@@ -19,4 +19,5 @@
         </div>
     {% endif %}
     {{ rendered_form | safe }}
+    {% block form_extras %}{% endblock %}
 {% endblock %}

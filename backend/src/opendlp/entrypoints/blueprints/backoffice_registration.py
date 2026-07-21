@@ -57,6 +57,7 @@ from opendlp.service_layer.registration_page_service import (
     generate_starter_form_html,
     get_registration_page_with_source,
     publish_registration_page,
+    render_registration_form,
     reopen_registration_page,
     unpublish_registration_page,
     update_registration_page_html,
@@ -610,6 +611,49 @@ def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.error("Generate skeleton error for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify({"error": _("An error occurred while generating the form skeleton")}), 500
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/form-preview")
+@login_required
+def preview_registration_form(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Read-only render of the saved registration form, embedded in the preview step.
+
+    Renders the last saved HTML through the same pipeline as the public route, so
+    organisers see exactly what visitors will see without opening the public URL.
+    Submission is neutralised twice over: the empty form action posts back to this
+    GET-only route (405), and the preview template's script blocks submit events so
+    interactions (dropdowns etc.) remain testable without ever leaving the page.
+    The security form elements (CSRF/timing/honeypot) are deliberately omitted —
+    they only exist to protect real submissions. The endpoint is exempted from the
+    global frame-ancestors 'none' policy (see SAME_ORIGIN_FRAMEABLE_ENDPOINTS) so
+    the backoffice can iframe it same-origin.
+    """
+    try:
+        uow = bootstrap.get_flask_uow()
+        result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+        if result is None:
+            abort(404)
+        page = result[0]
+        rendered_form = render_registration_form(
+            uow,
+            page,
+            csrf_form_element="<!-- preview: submission disabled, security fields omitted -->",
+            form_action="",
+        )
+        return render_template(
+            "register/form_preview.html",
+            rendered_form=rendered_form,
+            is_test=page.status == RegistrationPageStatus.TEST,
+        )
+    except HTTPException:
+        raise
+    except InsufficientPermissions:
+        abort(403)
+    except NotFoundError:
+        abort(404)
+    except Exception as e:
+        logger.error("Registration form preview error", assembly_id=str(assembly_id), error=str(e))
+        abort(500)
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/qr-code.png")
