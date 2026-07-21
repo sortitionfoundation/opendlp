@@ -37,6 +37,13 @@ Feature: Backoffice registration HTML editor
     And I click the Cancel button in the editor header
     Then I should be on the read-only registration form view
 
+  Scenario: The preview step embeds a read-only preview of the registration form
+    Given I am logged in as an admin user
+    And there is an assembly called "Form Preview Assembly" with a saved registration form
+    When I visit the registration preview step for "Form Preview Assembly"
+    Then I should see the embedded registration form preview
+    And submitting the embedded preview form does not leave the page
+
   Scenario: Entering edit mode preserves the scroll position
     Given I am logged in as an admin user
     And there is an assembly called "Scroll Edit Assembly" with a registration page

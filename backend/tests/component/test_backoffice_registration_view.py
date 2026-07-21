@@ -250,3 +250,62 @@ class TestCodeEditorEnhancement:
 
         assert response.status_code == 200
         assert "backoffice/js/dist/html-editor.js" in response.get_data(as_text=True)
+
+
+_PREVIEWABLE_FORM = (
+    '<form action="{{ form_action }}" method="post">'
+    "{{ csrf_form_element }}"
+    '<label for="fn">First name</label><input id="fn" name="first_name" />'
+    '<button type="submit">Register</button>'
+    "</form>"
+)
+
+
+class TestFormPreviewRoute:
+    """The embedded read-only preview of the saved registration form (preview step)."""
+
+    def test_preview_renders_saved_form_with_submission_disabled(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        # The saved form renders through the public pipeline...
+        assert 'name="first_name"' in body
+        assert ">Register</button>" in body
+        # ...but submission is neutralised: empty action, blocking script, no security fields
+        assert 'action=""' in body
+        assert "preview: submission disabled" in body
+        assert 'name="csrf_token"' not in body
+        assert "_opendlp_ttoken_" not in body
+
+    def test_preview_is_framable_by_same_origin_only(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.headers.get("X-Frame-Options") == "SAMEORIGIN"
+        assert "frame-ancestors 'self'" in response.headers.get("Content-Security-Policy", "")
+
+    def test_preview_404_without_registration_page(self, logged_in_admin, assembly_id):
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.status_code == 404
+
+    def test_preview_403_for_non_member(self, logged_in_user, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        response = logged_in_user.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.status_code == 403
+
+    def test_preview_section_embeds_the_preview_iframe(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?section=preview")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "<iframe" in body
+        assert f"/backoffice/assembly/{assembly_id}/registration/form-preview" in body

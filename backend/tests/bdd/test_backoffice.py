@@ -13,7 +13,10 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
-from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
+from opendlp.service_layer.registration_page_service import (
+    create_registration_page_with_slugs,
+    update_registration_page_html,
+)
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
 
@@ -433,6 +436,63 @@ def saved_registration_html_contains(page: Page, text: str):
     """After saving we land on the read-only form view, whose editor shows the persisted HTML."""
     editor = page.locator("textarea[name='html_content'] + .cm-editor")
     expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@given(parsers.parse('there is an assembly called "{title}" with a saved registration form'))
+def create_test_assembly_with_saved_form(title: str, admin_user, test_database):
+    """Create an assembly whose registration page already has saved, previewable form HTML."""
+    session_factory = test_database
+    assembly = create_assembly(
+        uow=SqlAlchemyUnitOfWork(session_factory),
+        title=title,
+        created_by_user_id=admin_user.id,
+    )
+    _assembly_name_id_cache.add_existing(title, assembly)
+    create_registration_page_with_slugs(
+        uow=SqlAlchemyUnitOfWork(session_factory),
+        user_id=admin_user.id,
+        assembly_id=assembly.id,
+    )
+    update_registration_page_html(
+        uow=SqlAlchemyUnitOfWork(session_factory),
+        user_id=admin_user.id,
+        assembly_id=assembly.id,
+        form_html=(
+            '<form action="{{ form_action }}" method="post">'
+            "{{ csrf_form_element }}"
+            '<label for="colour">Favourite colour</label>'
+            '<select id="colour" name="colour"><option>Red</option><option>Blue</option></select>'
+            '<button type="submit">Register</button>'
+            "</form>"
+        ),
+    )
+
+
+@when(parsers.parse('I visit the registration preview step for "{title}"'))
+def visit_registration_preview_step(page: Page, title: str, test_database):
+    """Open the preview-and-publish step of the registration wizard."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=preview")
+
+
+@then("I should see the embedded registration form preview")
+def see_embedded_form_preview(page: Page):
+    """The preview step iframes the saved form, rendered through the public pipeline."""
+    frame = page.frame_locator('iframe[title="Registration form preview"]')
+    expect(frame.locator("form")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("submitting the embedded preview form does not leave the page")
+def submitting_preview_form_does_nothing(page: Page):
+    """The preview form is interactive but its submission is blocked."""
+    frame = page.frame_locator('iframe[title="Registration form preview"]')
+    # Interactions work: pick a dropdown option before trying to submit.
+    frame.locator('select[name="colour"]').select_option("Blue")
+    frame.locator('form button[type="submit"]').click()
+    # The iframe still shows the form (no navigation, no thank-you page)...
+    expect(frame.locator("form")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # ...and the backoffice page itself has not navigated away.
+    assert "section=preview" in page.url
 
 
 @when(parsers.parse('I visit the read-only registration form view for "{title}"'))
