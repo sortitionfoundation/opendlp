@@ -435,6 +435,55 @@ def saved_registration_html_contains(page: Page, text: str):
     expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@then("the wizard Next button should be disabled")
+def wizard_next_button_disabled(page: Page):
+    """While editing, the sticky footer's navigation is locked."""
+    expect(page.get_by_role("button", name="Next →")).to_be_disabled()
+
+
+@when("I click the Cancel button in the editor header")
+def click_editor_cancel(page: Page):
+    """Cancel renders as a link-button in the editor card header."""
+    page.get_by_role("button", name="Cancel", exact=True).click()
+
+
+@then("I should see the discard changes confirmation")
+def see_discard_confirmation(page: Page):
+    """Cancelling with unsaved changes opens the discard-confirmation dialog."""
+    expect(page.locator('[aria-labelledby="leave-modal-title"]')).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I choose to keep editing")
+def choose_keep_editing(page: Page):
+    page.get_by_role("button", name="Keep editing").click()
+
+
+@then("the discard changes confirmation should be closed")
+def discard_confirmation_closed(page: Page):
+    """The dialog is inside a template x-if, so closing removes it from the DOM."""
+    expect(page.locator('[aria-labelledby="leave-modal-title"]')).to_have_count(0)
+
+
+@when("I choose to discard my changes")
+def choose_discard_changes(page: Page):
+    page.get_by_role("button", name="Discard changes").click()
+
+
+@then("I should be on the read-only registration form view")
+def on_read_only_form_view(page: Page):
+    """Leaving edit mode lands on the view URL (no edit=1) with a non-editable editor."""
+    page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
+    content = page.locator("textarea[name='html_content'] + .cm-editor .cm-content")
+    expect(content).to_have_attribute("contenteditable", "false", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the saved registration HTML should not contain "{text}"'))
+def saved_registration_html_not_contains(page: Page, text: str):
+    """Discarded edits must not be persisted."""
+    editor = page.locator("textarea[name='html_content'] + .cm-editor")
+    expect(editor).not_to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when("I open the form skeleton preview")
 def open_form_skeleton_preview(page: Page):
     """Click the 'Show Form Skeleton' button to fetch the skeleton and open its modal."""

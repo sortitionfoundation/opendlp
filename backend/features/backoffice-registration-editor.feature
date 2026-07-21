@@ -23,3 +23,30 @@ Feature: Backoffice registration HTML editor
     When I visit the registration form editor for "Skeleton Assembly"
     And I open the form skeleton preview
     Then the form skeleton should be shown in a read-only code editor
+
+  Scenario: Wizard navigation is locked while editing
+    Given I am logged in as an admin user
+    And there is an assembly called "Locked Nav Assembly" with a registration page
+    When I visit the registration form editor for "Locked Nav Assembly"
+    Then the wizard Next button should be disabled
+
+  Scenario: Cancelling without changes returns straight to the read-only view
+    Given I am logged in as an admin user
+    And there is an assembly called "Clean Cancel Assembly" with a registration page
+    When I visit the registration form editor for "Clean Cancel Assembly"
+    And I click the Cancel button in the editor header
+    Then I should be on the read-only registration form view
+
+  Scenario: Cancelling with unsaved changes asks for confirmation
+    Given I am logged in as an admin user
+    And there is an assembly called "Guard Assembly" with a registration page
+    When I visit the registration form editor for "Guard Assembly"
+    And I type "UNSAVED-MARKER-7719" into the HTML content code editor
+    And I click the Cancel button in the editor header
+    Then I should see the discard changes confirmation
+    When I choose to keep editing
+    Then the discard changes confirmation should be closed
+    When I click the Cancel button in the editor header
+    And I choose to discard my changes
+    Then I should be on the read-only registration form view
+    And the saved registration HTML should not contain "UNSAVED-MARKER-7719"
