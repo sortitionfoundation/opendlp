@@ -435,6 +435,32 @@ def saved_registration_html_contains(page: Page, text: str):
     expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when(parsers.parse('I visit the read-only registration form view for "{title}"'))
+def visit_registration_form_view(page: Page, title: str, test_database):
+    """Open the registration form step in its default read-only mode."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form")
+
+
+@when("I scroll down the page")
+def scroll_down_the_page(page: Page):
+    page.evaluate("window.scrollTo(0, 400)")
+    page.wait_for_function("window.scrollY > 0")
+
+
+@when("I click the Edit button in the editor header")
+def click_editor_edit(page: Page):
+    """Edit renders as a link-button in the editor card header."""
+    page.get_by_role("button", name="Edit", exact=True).click()
+
+
+@then("the editor should be in edit mode with the page still scrolled down")
+def edit_mode_with_scroll_preserved(page: Page):
+    """x-scroll-preserve-links carries the scroll position across the Edit reload."""
+    page.wait_for_url(lambda url: "edit=1" in url, timeout=PLAYWRIGHT_TIMEOUT)
+    page.wait_for_function("window.scrollY > 0", timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @then("the wizard Next button should be disabled")
 def wizard_next_button_disabled(page: Page):
     """While editing, the sticky footer's navigation is locked."""
