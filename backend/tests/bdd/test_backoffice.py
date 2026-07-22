@@ -15,6 +15,7 @@ from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
+    publish_registration_page,
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -438,10 +439,8 @@ def saved_registration_html_contains(page: Page, text: str):
     expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
 
 
-@given(parsers.parse('there is an assembly called "{title}" with a saved registration form'))
-def create_test_assembly_with_saved_form(title: str, admin_user, test_database):
-    """Create an assembly whose registration page already has saved, previewable form HTML."""
-    session_factory = test_database
+def _create_assembly_with_saved_form(title: str, admin_user, session_factory):
+    """Create an assembly whose registration page has saved, publishable form HTML."""
     assembly = create_assembly(
         uow=SqlAlchemyUnitOfWork(session_factory),
         title=title,
@@ -466,6 +465,68 @@ def create_test_assembly_with_saved_form(title: str, admin_user, test_database):
             "</form>"
         ),
     )
+    return assembly
+
+
+@given(parsers.parse('there is an assembly called "{title}" with a saved registration form'))
+def create_test_assembly_with_saved_form(title: str, admin_user, test_database):
+    """Create an assembly whose registration page already has saved, previewable form HTML."""
+    _create_assembly_with_saved_form(title, admin_user, test_database)
+
+
+@given(parsers.parse('there is an assembly called "{title}" with a published registration form'))
+def create_test_assembly_with_published_form(title: str, admin_user, test_database):
+    """Create an assembly whose saved registration form has been published."""
+    assembly = _create_assembly_with_saved_form(title, admin_user, test_database)
+    publish_registration_page(
+        uow=SqlAlchemyUnitOfWork(test_database),
+        user_id=admin_user.id,
+        assembly_id=assembly.id,
+    )
+
+
+@when("I click the Unpublish button")
+def click_unpublish(page: Page):
+    page.get_by_role("button", name="Unpublish", exact=True).click()
+
+
+@when("I click the Close registration button")
+def click_close_registration(page: Page):
+    """The footer's Close opener — outside the dialog it is the only button with this name."""
+    page.get_by_role("button", name="Close registration", exact=True).click()
+
+
+@then("I should see the close registration confirmation")
+def see_close_confirmation(page: Page):
+    expect(page.locator('[aria-labelledby="close-registration-modal-title"]')).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I choose to keep the registration open")
+def choose_keep_open(page: Page):
+    page.get_by_role("button", name="Keep it open").click()
+
+
+@then("the close registration confirmation should be closed")
+def close_confirmation_closed(page: Page):
+    """The dialog is inside a template x-if, so closing removes it from the DOM."""
+    expect(page.locator('[aria-labelledby="close-registration-modal-title"]')).to_have_count(0)
+
+
+@when("I confirm closing the registration")
+def confirm_close_registration(page: Page):
+    """The destructive submit inside the dialog (same label as the opener)."""
+    dialog = page.locator('[aria-labelledby="close-registration-modal-title"]')
+    dialog.get_by_role("button", name="Close registration", exact=True).click()
+
+
+@then("the registration should be shown as closed")
+def registration_shown_as_closed(page: Page):
+    expect(page.get_by_role("alert").filter(has_text="Registration closed")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the registration should be shown as in test mode")
+def registration_shown_as_test_mode(page: Page):
+    expect(page.get_by_role("alert").filter(has_text="Test mode")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when(parsers.parse('I visit the registration preview step for "{title}"'))

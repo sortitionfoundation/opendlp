@@ -236,6 +236,18 @@ def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uu
 
 
 _SAVE_ACTIONS = frozenset({"save", "save_and_next"})
+_LIFECYCLE_ACTIONS = frozenset({"publish", "unpublish", "close", "reopen"})
+
+
+def _post_action_section(action: str) -> str:
+    """Where to land after a successful action: save_and_next advances to the email
+    step, lifecycle actions return to the preview step (where their buttons live),
+    and plain save returns to the form step."""
+    if action == "save_and_next":
+        return "email"
+    if action in _LIFECYCLE_ACTIONS:
+        return "preview"
+    return "form"
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/save", methods=["POST"])
@@ -247,18 +259,19 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
       - save            → update HTML; land back in read-only on the form step.
       - save_and_next   → update HTML; advance to the auto-reply email step.
       - publish         → transition TEST → PUBLISHED. No HTML update.
-      - unpublish / close / reopen — deprecated lifecycle transitions kept for
-                          backwards compatibility with older POSTs; the UI no
-                          longer offers them.
+      - unpublish       → transition PUBLISHED → TEST (back to test mode).
+      - close           → transition to CLOSED. Terminal from the UI's point of
+                          view: reopen exists only for backwards compatibility
+                          with older POSTs and is not offered anywhere.
     """
     action = request.form.get("action", "save")
     # On failure of a save action, land back in edit mode of the form step so the
-    # user can fix and retry. Non-save actions (publish/etc) come from the read-only
-    # preview step, so failure just lands them back on the preview step.
+    # user can fix and retry. Lifecycle actions come from the read-only preview
+    # step, so failure just lands them back on the preview step.
     error_kwargs: dict[str, Any] = {"assembly_id": assembly_id, "section": "form"}
     if action in _SAVE_ACTIONS:
         error_kwargs["edit"] = "1"
-    elif action == "publish":
+    elif action in _LIFECYCLE_ACTIONS:
         error_kwargs["section"] = "preview"
     error_redirect_url = url_for("backoffice_registration.view_assembly_registration", **error_kwargs)
     try:
@@ -278,8 +291,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         flash_message = _handle_registration_action(action, current_user.id, assembly_id)
         flash(flash_message, "success")
-        # save_and_next advances to the email step; everything else lands back on the form step.
-        next_section = "email" if action == "save_and_next" else "form"
+        next_section = _post_action_section(action)
         return redirect_preserving_scroll(
             url_for(
                 "backoffice_registration.view_assembly_registration",
