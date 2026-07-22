@@ -76,16 +76,16 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
     assembly_id = _seed_assembly_with_required_email(postgres_session_factory, admin_user.id)
 
     # Step 0: create the registration page. Route seeds a default email template
-    # as a side effect (unassigned — the switch defaults to OFF).
+    # as a side effect and assigns it — the auto-reply is always-on.
     response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/create")
     assert response.status_code == 302
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         page = uow.registration_pages.get_by_assembly_id(assembly_id)
         assert page is not None, "page should have been created"
-        assert page.auto_reply_email_template_id is None, "seeded template starts unassigned"
         seeded = uow.email_templates.list_by_assembly(assembly_id)
         assert len(seeded) == 1, "creation should seed exactly one default template"
+        assert page.auto_reply_email_template_id == seeded[0].id, "seeded template is assigned (always-on)"
 
     # Step 1: save the form HTML with save_and_next. Redirects to the email section.
     response = logged_in_admin.post(
@@ -100,15 +100,8 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
         html = uow.registration_page_html_sources.get_by_page_id(page.id).create_detached_copy()
     assert "Email" in html.form_html
 
-    # Step 2: enable the auto-reply and save updated copy with save_and_next.
-    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        template = uow.email_templates.list_by_assembly(assembly_id)[0].create_detached_copy()
-    response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/email/save",
-        data={"action": "enable", "template_id": str(template.id)},
-    )
-    assert response.status_code == 302
-
+    # Step 2: save updated auto-reply copy with save_and_next (it is already
+    # assigned and always-on — there is no enable step).
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/email/save",
         data={

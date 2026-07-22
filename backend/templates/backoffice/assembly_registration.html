@@ -128,7 +128,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                           action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
                           x-data
                           x-preserve-scroll-on-submit
-                          {% if edit_mode %}@input="markEditDirty($event)" @change="markEditDirty($event)" @submit="allowLeave()"{% endif %}>
+                          {% if edit_mode %}@input="markEditDirty()" @change="markEditDirty()" @submit="allowLeave()"{% endif %}>
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                         <div class="flex flex-col lg:flex-row gap-6">
                             <div class="flex-1 min-w-0">
@@ -355,21 +355,6 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                             {{ button(_("Next →"), variant="primary", href=preview_url) }}
                         </div>
                     {% else %}
-                        {# Send-auto-reply toggle form. Sits as a sibling of the editor's save form (nested forms
-                           are illegal HTML) and the checkbox in the section header below binds to it via the
-                           HTML5 `form="auto-reply-toggle"` attribute. The `action` field flips based on the
-                           current state, so toggling always inverts. #}
-                        <form id="auto-reply-toggle"
-                              method="post"
-                              action="{{ email_save_url }}"
-                              x-data
-                              x-preserve-scroll-on-submit
-                              style="display: none;">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                            <input type="hidden" name="action" value="{{ 'disable' if auto_reply_enabled else 'enable' }}" />
-                            <input type="hidden" name="template_id" value="{{ email_template.id }}" />
-                        </form>
-
                         {# Two-box layout mirroring the form section: editor on the left (2/3), variables reference
                            on the right (1/3, sticky). The form wraps both columns and the CTA row so the CTAs
                            align to the far right of the whole layout and the sticky aside unsticks at the
@@ -381,7 +366,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                               action="{{ email_save_url }}"
                               x-data
                               x-preserve-scroll-on-submit
-                              {% if edit_mode %}@input="markEditDirty($event)" @change="markEditDirty($event)" @submit="allowLeave()"{% endif %}>
+                              {% if edit_mode %}@input="markEditDirty()" @change="markEditDirty()" @submit="allowLeave()"{% endif %}>
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <div class="flex flex-col lg:flex-row gap-6">
                                 <div class="flex-1 min-w-0">
@@ -390,18 +375,19 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                             <h2 class="text-heading-lg" style="color: var(--color-headings);">
                                                 {{ _("Auto-reply email template") }}
                                             </h2>
-                                            {# Header right: the enable toggle plus the editorial controls — Edit swaps
-                                               in place to Cancel/Save, mirroring the form step. The toggle posts to the
-                                               sibling auto-reply-toggle form via the HTML5 form="" attribute (and is
-                                               excluded from dirty tracking in markEditDirty for the same reason).
-                                               x-scroll-preserve-links keeps the scroll position across the Edit/Cancel
-                                               page reloads, matching the form step. #}
+                                            {# Header right: the always-on indicator plus the editorial controls — Edit
+                                               swaps in place to Cancel/Save, mirroring the form step. The checkbox is
+                                               deliberately checked and disabled: the auto-reply is always sent in the
+                                               current version of the product. When a real need to switch it off
+                                               emerges, a proper service-layer enable/disable gets built and this
+                                               checkbox gets wired to it. x-scroll-preserve-links keeps the scroll
+                                               position across the Edit/Cancel page reloads, matching the form step. #}
                                             <div class="flex items-center gap-4" x-scroll-preserve-links>
                                                 {{ checkbox(
                                                 name="auto_reply_enabled",
                                                 label=_("Send auto-reply email"),
-                                                checked=auto_reply_enabled,
-                                                attrs='form="auto-reply-toggle" @change="$el.form.submit()"'
+                                                checked=true,
+                                                disabled=true
                                                 ) }}
                                                 {% if edit_mode %}
                                                     {{ button(_("Cancel"), variant="secondary", href=email_view_url, attrs='@click="guardLeave($event)"') }}
@@ -1063,10 +1049,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         });
                     },
 
-                    markEditDirty(event) {
-                        // The auto-reply toggle posts its own form immediately; flipping it is not
-                        // part of the draft being edited.
-                        if (event.target && event.target.getAttribute('form') === 'auto-reply-toggle') return;
+                    markEditDirty() {
                         this.editDirty = true;
                     },
 
