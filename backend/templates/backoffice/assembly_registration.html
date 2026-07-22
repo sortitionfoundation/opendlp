@@ -289,17 +289,17 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                        Sticky so clicking through the steps never requires scrolling; z-30 keeps it under
                        the modal layer (backdrops are z-40, panels z-50). While editing, navigation is
                        locked so the preview step can never silently lag unsaved changes. #}
-                    <div class="sticky bottom-0 z-30 flex items-center justify-end gap-3 mt-6 py-3"
-                         x-scroll-preserve-links
-                         style="background-color: var(--color-page-background); border-top: 1px solid var(--color-borders-dividers);">
-                        {% if edit_mode %}
-                            <span id="editing-nav-hint" class="mr-auto text-body-sm" style="color: var(--color-secondary-text);">
-                                {{ _("Editing in progress — save or cancel to continue") }}
-                            </span>
-                            {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
-                        {% else %}
-                            {{ button(_("Next →"), variant="primary", href=next_url) }}
-                        {% endif %}
+                    <div class="wizard-footer" x-scroll-preserve-links>
+                        <div class="wizard-footer-box">
+                            {% if edit_mode %}
+                                <span id="editing-nav-hint" class="mr-auto text-body-sm" style="color: var(--color-secondary-text);">
+                                    {{ _("Editing in progress — save or cancel to continue") }}
+                                </span>
+                                {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
+                            {% else %}
+                                {{ button(_("Next →"), variant="primary", href=next_url) }}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             {% endif %}
@@ -348,11 +348,11 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
                         {# Sticky wizard footer — the auto-reply email is optional, so Back/Next stay
                            available even before a template exists. #}
-                        <div class="sticky bottom-0 z-30 flex items-center justify-end gap-3 mt-6 py-3"
-                             x-scroll-preserve-links
-                             style="background-color: var(--color-page-background); border-top: 1px solid var(--color-borders-dividers);">
-                            <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
-                            {{ button(_("Next →"), variant="primary", href=preview_url) }}
+                        <div class="wizard-footer" x-scroll-preserve-links>
+                            <div class="wizard-footer-box">
+                                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
+                                {{ button(_("Next →"), variant="primary", href=preview_url) }}
+                            </div>
                         </div>
                     {% else %}
                         {# Two-box layout mirroring the form section: editor on the left (2/3), variables reference
@@ -497,21 +497,21 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
                         {# Sticky wizard footer — navigation only (Edit/Cancel/Save live in the card header).
                            While editing, navigation is locked so unsaved changes can't be silently left behind. #}
-                        <div class="sticky bottom-0 z-30 flex items-center justify-end gap-3 mt-6 py-3"
-                             x-scroll-preserve-links
-                             style="background-color: var(--color-page-background); border-top: 1px solid var(--color-borders-dividers);">
-                            {% if edit_mode %}
-                                <span class="mr-auto flex items-center gap-3">
-                                    {{ button(_("← Back"), variant="tertiary", disabled=true, aria_describedby="editing-nav-hint") }}
-                                    <span id="editing-nav-hint" class="text-body-sm" style="color: var(--color-secondary-text);">
-                                        {{ _("Editing in progress — save or cancel to continue") }}
+                        <div class="wizard-footer" x-scroll-preserve-links>
+                            <div class="wizard-footer-box">
+                                {% if edit_mode %}
+                                    <span class="mr-auto flex items-center gap-3">
+                                        {{ button(_("← Back"), variant="tertiary", disabled=true, aria_describedby="editing-nav-hint") }}
+                                        <span id="editing-nav-hint" class="text-body-sm" style="color: var(--color-secondary-text);">
+                                            {{ _("Editing in progress — save or cancel to continue") }}
+                                        </span>
                                     </span>
-                                </span>
-                                {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
-                            {% else %}
-                                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
-                                {{ button(_("Next →"), variant="primary", href=preview_url) }}
-                            {% endif %}
+                                    {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
+                                {% else %}
+                                    <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
+                                    {{ button(_("Next →"), variant="primary", href=preview_url) }}
+                                {% endif %}
+                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -619,20 +619,20 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                        action in TEST. Once PUBLISHED the badge above the stepper conveys the state;
                        CLOSED is terminal (no Reopen in the UI). #}
                     {% set back_to_email_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email') %}
-                    <div class="sticky bottom-0 z-30 flex items-center justify-end gap-3 mt-6 py-3"
-                         x-scroll-preserve-links
-                         style="background-color: var(--color-page-background); border-top: 1px solid var(--color-borders-dividers);">
-                        <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_email_url) }}</span>
-                        {% if registration_status == "TEST" and registration_page %}
-                            <form method="post"
-                                  action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
-                                  x-data
-                                  x-preserve-scroll-on-submit>
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <input type="hidden" name="action" value="publish" />
-                                {{ button(_("Publish"), type="submit", variant="primary") }}
-                            </form>
-                        {% endif %}
+                    <div class="wizard-footer" x-scroll-preserve-links>
+                        <div class="wizard-footer-box">
+                            <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_email_url) }}</span>
+                            {% if registration_status == "TEST" and registration_page %}
+                                <form method="post"
+                                      action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
+                                      x-data
+                                      x-preserve-scroll-on-submit>
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <input type="hidden" name="action" value="publish" />
+                                    {{ button(_("Publish"), type="submit", variant="primary") }}
+                                </form>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             {% endif %}

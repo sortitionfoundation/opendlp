@@ -678,3 +678,60 @@
         background-repeat: no-repeat;
     }
 }
+
+/* ========================================
+   WIZARD STICKY FOOTER
+   ======================================== */
+
+/*
+ * In normal document flow the footer is a regular card — same border, radius
+ * and padding as the other boxes on the page. When its position:sticky engages
+ * at the viewport bottom, a CSS scroll-state container query stretches it to
+ * the full viewport width. No JavaScript involved; browsers without
+ * scroll-state support (non-Chromium, as of early 2026) simply keep the card
+ * look while stuck — a graceful degradation.
+ */
+@layer components {
+    .wizard-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 30; /* under the modal layer: backdrops are z-40, panels z-50 */
+        margin-top: 1.5rem;
+        container-type: scroll-state;
+    }
+
+    .wizard-footer-box {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        background-color: var(--color-tables-cards);
+        border: 1px solid var(--color-borders-dividers);
+        border-radius: 0.5rem;
+    }
+
+    @container scroll-state(stuck: bottom) {
+        .wizard-footer-box {
+            /* Break out of the centered content column to the full viewport
+               width; the matching padding keeps the buttons exactly where the
+               card had them, so nothing shifts at the stick/unstick moment. */
+            margin-inline: calc(50% - 50vw);
+            padding-inline: calc(50vw - 50% + 1.5rem);
+            border-radius: 0;
+            border-inline: none;
+            border-bottom: none;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+    }
+}
+
+/*
+ * The stuck footer's breakout margins are computed from 100vw, which includes
+ * the scrollbar gutter on platforms with classic scrollbars — that would add a
+ * few pixels of horizontal overflow. clip (unlike hidden) does not create a
+ * scroll container, so position:sticky keeps working.
+ */
+body {
+    overflow-x: clip;
+}
