@@ -44,6 +44,25 @@ Feature: Backoffice registration HTML editor
     Then I should see the embedded registration form preview
     And submitting the embedded preview form does not leave the page
 
+  Scenario: Unpublishing a published registration returns it to test mode
+    Given I am logged in as an admin user
+    And there is an assembly called "Unpublish Assembly" with a published registration form
+    When I visit the registration preview step for "Unpublish Assembly"
+    And I click the Unpublish button
+    Then the registration should be shown as in test mode
+
+  Scenario: Closing a published registration asks for confirmation
+    Given I am logged in as an admin user
+    And there is an assembly called "Close Guard Assembly" with a published registration form
+    When I visit the registration preview step for "Close Guard Assembly"
+    And I click the Close registration button
+    Then I should see the close registration confirmation
+    When I choose to keep the registration open
+    Then the close registration confirmation should be closed
+    When I click the Close registration button
+    And I confirm closing the registration
+    Then the registration should be shown as closed
+
   Scenario: Entering edit mode preserves the scroll position
     Given I am logged in as an admin user
     And there is an assembly called "Scroll Edit Assembly" with a registration page

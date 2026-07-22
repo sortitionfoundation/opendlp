@@ -615,22 +615,34 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         </aside>
                     </div>
 
-                    {# Bottom CTAs — Back on the left is always available; Publish is the primary happy-path
-                       action in TEST. Once PUBLISHED the badge above the stepper conveys the state;
-                       CLOSED is terminal (no Reopen in the UI). #}
+                    {# Bottom CTAs — Back on the left is always available. TEST offers Publish;
+                       PUBLISHED offers Unpublish (tertiary, reversible — back to test mode) and
+                       Close registration (secondary, terminal — goes through a confirmation
+                       dialog because there is no reopen). CLOSED offers nothing. #}
+                    {% set registration_save_url = url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) %}
                     {% set back_to_email_url = url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id, section='email') %}
                     <div class="wizard-footer" x-scroll-preserve-links>
                         <div class="wizard-footer-box">
                             <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_email_url) }}</span>
                             {% if registration_status == "TEST" and registration_page %}
                                 <form method="post"
-                                      action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
+                                      action="{{ registration_save_url }}"
                                       x-data
                                       x-preserve-scroll-on-submit>
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                     <input type="hidden" name="action" value="publish" />
                                     {{ button(_("Publish"), type="submit", variant="primary") }}
                                 </form>
+                            {% elif registration_status == "PUBLISHED" and registration_page %}
+                                <form method="post"
+                                      action="{{ registration_save_url }}"
+                                      x-data
+                                      x-preserve-scroll-on-submit>
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <input type="hidden" name="action" value="unpublish" />
+                                    {{ button(_("Unpublish"), type="submit", variant="tertiary") }}
+                                </form>
+                                {{ button(_("Close registration"), variant="secondary", attrs='type="button" @click="openConfirmClose()"') }}
                             {% endif %}
                         </div>
                     </div>
@@ -954,6 +966,50 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                 </div>
             </template>
 
+        {# Close-registration confirmation — closing is terminal (there is no reopen), so the
+           destructive action must be explicit. Same single-surface dialog style as the
+           discard confirmation: the safe action is the primary on the right and receives
+           initial focus; the destructive action is a plain red text button. Rendered only
+           where its opener exists (preview step of a published page). #}
+            {% if active_section == "preview" and registration_status == "PUBLISHED" and registration_page %}
+                <template x-if="confirmCloseOpen">
+                    <div x-cloak>
+                {# Backdrop overlay #}
+                        <div class="fixed inset-0 z-40"
+                             style="background-color: rgba(0, 0, 0, 0.5)"
+                             @click="cancelConfirmClose()"
+                             @keydown.escape.window="cancelConfirmClose()"></div>
+                {# Modal panel #}
+                        <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+                             role="dialog"
+                             aria-modal="true"
+                             aria-labelledby="close-registration-modal-title">
+                            <div class="pointer-events-auto w-full max-w-md mx-4 rounded-lg shadow-xl overflow-hidden px-6 py-5"
+                                 style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers)"
+                                 @click.stop>
+                                <h2 id="close-registration-modal-title" class="text-heading-lg mb-2" style="color: var(--color-headings)">
+                                    {{ _("Close registration?") }}
+                                </h2>
+                                <p class="text-body-md mb-5" style="color: var(--color-body-text);">
+                                    {{ _("This permanently stops new registrations. Visitors who follow the form link will see the 'registration closed' page, and the form cannot be reopened.") }}
+                                </p>
+                                <div class="flex gap-2 justify-end items-center">
+                                    <form method="post"
+                                          action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id) }}"
+                                          x-data
+                                          x-preserve-scroll-on-submit>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                        <input type="hidden" name="action" value="close" />
+                                        {{ button(_("Close registration"), type="submit", variant="danger") }}
+                                    </form>
+                                    {{ button(_("Keep it open"), variant="primary", attrs='type="button" x-ref="keepOpenBtn" @click="cancelConfirmClose()"') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            {% endif %}
+
         {# Discard-changes confirmation — opened by guardLeave() when the user tries to leave
            edit mode (Cancel or a stepper link) with unsaved changes. Only edit mode can be
            dirty, so this is the single home of the "was leaving intentional?" decision. #}
@@ -1051,6 +1107,20 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
                     markEditDirty() {
                         this.editDirty = true;
+                    },
+
+                    // Close-registration confirmation (closing is terminal — no reopen).
+                    confirmCloseOpen: false,
+
+                    openConfirmClose() {
+                        this.confirmCloseOpen = true;
+                        this.$nextTick(() => {
+                            if (this.$refs.keepOpenBtn) this.$refs.keepOpenBtn.focus();
+                        });
+                    },
+
+                    cancelConfirmClose() {
+                        this.confirmCloseOpen = false;
                     },
 
                     // Called on the editor form's submit so Save never trips the beforeunload guard.

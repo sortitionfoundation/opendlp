@@ -309,3 +309,71 @@ class TestFormPreviewRoute:
         body = response.get_data(as_text=True)
         assert "<iframe" in body
         assert f"/backoffice/assembly/{assembly_id}/registration/form-preview" in body
+
+
+class TestLifecycleFooterControls:
+    """The preview step's footer offers the lifecycle actions for the current status:
+    TEST → Publish; PUBLISHED → Unpublish + Close registration; CLOSED → nothing."""
+
+    def _preview_body(self, logged_in_admin, assembly_id) -> str:
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?section=preview")
+        assert response.status_code == 200
+        return response.get_data(as_text=True)
+
+    def test_test_status_offers_publish_only(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = self._preview_body(logged_in_admin, assembly_id)
+
+        assert 'value="publish"' in body
+        assert 'value="unpublish"' not in body
+        assert "Close registration" not in body
+
+    def test_published_status_offers_unpublish_and_close(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
+
+        body = self._preview_body(logged_in_admin, assembly_id)
+
+        assert 'value="publish"' not in body
+        assert 'value="unpublish"' in body
+        assert "Unpublish</button>" in body
+        assert "Close registration</button>" in body
+        # Close goes through the confirmation dialog (terminal action, no reopen).
+        assert "Close registration?" in body
+
+    def test_closed_status_offers_no_lifecycle_actions(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
+
+        body = self._preview_body(logged_in_admin, assembly_id)
+
+        assert 'value="publish"' not in body
+        assert 'value="unpublish"' not in body
+        assert "Close registration" not in body
+
+    def test_unpublish_returns_page_to_test_and_lands_on_preview(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/save",
+            data={"action": "unpublish"},
+        )
+
+        assert response.status_code == 302
+        assert "section=preview" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+        assert stored.status == RegistrationPageStatus.TEST
+
+    def test_close_closes_the_page_and_lands_on_preview(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/save",
+            data={"action": "close"},
+        )
+
+        assert response.status_code == 302
+        assert "section=preview" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+        assert stored.status == RegistrationPageStatus.CLOSED
