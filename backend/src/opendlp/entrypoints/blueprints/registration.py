@@ -403,6 +403,12 @@ def registration_closed() -> ResponseReturnValue:
 
 @registration_bp.after_request
 def add_noindex_header(response: Response) -> Response:
-    """Prevent search engines from indexing registration pages."""
-    response.headers["X-Robots-Tag"] = "noindex"
+    """Keep registration pages out of search engines entirely.
+
+    noindex keeps every route in this blueprint (form, thank-you, closed, short-url
+    redirects, images) out of the index regardless of page status; nofollow stops
+    crawlers from following any links out of author-provided form HTML. The public
+    templates carry a matching <meta name="robots"> tag as a second layer.
+    """
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response
