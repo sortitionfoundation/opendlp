@@ -440,15 +440,15 @@ class TestSubmissionRecording:
 
 class TestNoindexHeader:
     def test_get_form_has_noindex_header(self, client: FlaskClient, fake_store, admin_user: User) -> None:
-        """GET /register/<slug> includes X-Robots-Tag: noindex."""
+        """GET /register/<slug> includes X-Robots-Tag: noindex, nofollow."""
         page = _seed_published_page(fake_store, admin_user)
 
         response = client.get(f"/register/{page.url_slug}")
 
-        assert response.headers.get("X-Robots-Tag") == "noindex"
+        assert response.headers.get("X-Robots-Tag") == "noindex, nofollow"
 
     def test_post_form_has_noindex_header(self, client: FlaskClient, fake_store, admin_user: User) -> None:
-        """POST /register/<slug> includes X-Robots-Tag: noindex."""
+        """POST /register/<slug> includes X-Robots-Tag: noindex, nofollow."""
         page = _seed_published_page(fake_store, admin_user)
 
         response = client.post(
@@ -456,26 +456,40 @@ class TestNoindexHeader:
             data={"name": "User", "email": "user@example.com"},
         )
 
-        assert response.headers.get("X-Robots-Tag") == "noindex"
+        assert response.headers.get("X-Robots-Tag") == "noindex, nofollow"
 
     def test_thank_you_has_noindex_header(self, client: FlaskClient, fake_store, admin_user: User) -> None:
-        """GET /register/<slug>/thank-you includes X-Robots-Tag: noindex."""
+        """GET /register/<slug>/thank-you includes X-Robots-Tag: noindex, nofollow."""
         page = _seed_published_page(fake_store, admin_user)
 
         response = client.get(f"/register/{page.url_slug}/thank-you")
 
-        assert response.headers.get("X-Robots-Tag") == "noindex"
+        assert response.headers.get("X-Robots-Tag") == "noindex, nofollow"
 
     def test_short_url_redirect_has_noindex_header(self, client: FlaskClient, fake_store, admin_user: User) -> None:
-        """GET /r/<short_slug> includes X-Robots-Tag: noindex."""
+        """GET /r/<short_slug> includes X-Robots-Tag: noindex, nofollow."""
         page = _seed_published_page(fake_store, admin_user)
 
         response = client.get(f"/r/{page.short_url_slug}")
 
-        assert response.headers.get("X-Robots-Tag") == "noindex"
+        assert response.headers.get("X-Robots-Tag") == "noindex, nofollow"
 
     def test_closed_page_has_noindex_header(self, client: FlaskClient) -> None:
-        """GET /registration-closed includes X-Robots-Tag: noindex."""
+        """GET /registration-closed includes X-Robots-Tag: noindex, nofollow."""
         response = client.get("/registration-closed")
 
-        assert response.headers.get("X-Robots-Tag") == "noindex"
+        assert response.headers.get("X-Robots-Tag") == "noindex, nofollow"
+
+    def test_form_page_has_robots_meta_tag(self, client: FlaskClient, fake_store, admin_user: User) -> None:
+        """The rendered form carries the matching meta tag as a second layer."""
+        page = _seed_published_page(fake_store, admin_user)
+
+        response = client.get(f"/register/{page.url_slug}")
+
+        assert '<meta name="robots" content="noindex, nofollow">' in response.get_data(as_text=True)
+
+    def test_closed_page_has_robots_meta_tag(self, client: FlaskClient) -> None:
+        """The closed page carries the matching meta tag as a second layer."""
+        response = client.get("/registration-closed")
+
+        assert '<meta name="robots" content="noindex, nofollow">' in response.get_data(as_text=True)
