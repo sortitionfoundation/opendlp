@@ -162,9 +162,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             active_section = "form"
 
         # Auto-reply email data — the template (if assigned) plus readiness problems.
-        email_template, auto_reply_enabled, email_readiness_problems = _load_auto_reply_context(
-            registration_page, assembly_id
-        )
+        email_template, email_readiness_problems = _load_auto_reply_context(registration_page, assembly_id)
 
         return render_template(
             "backoffice/assembly_registration.html",
@@ -188,7 +186,6 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             edit_mode=edit_mode,
             active_section=active_section,
             email_template=email_template,
-            auto_reply_enabled=auto_reply_enabled,
             email_readiness_problems=email_readiness_problems,
         ), 200
     except InsufficientPermissions as e:
@@ -329,25 +326,23 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect_preserving_scroll(error_redirect_url)
 
 
-def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> tuple[Any, bool, list[dict[str, str]]]:
+def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> tuple[Any, list[dict[str, str]]]:
     """Load the auto-reply template and readiness problems for the view route.
 
     Prefers the template currently assigned to the page. When nothing is assigned
-    (either because the switch is off, or the template was auto-created and not
-    yet turned on) falls back to the first template stored for the assembly, so
-    the editor still shows the pre-created copy for the manager to work on.
+    (a legacy state from before the auto-reply became always-on) falls back to the
+    first template stored for the assembly, so the editor still shows the
+    pre-created copy for the manager to work on.
     """
     email_template = None
-    auto_reply_enabled = False
     email_readiness_problems: list[dict[str, str]] = []
     if registration_page is None:
-        return email_template, auto_reply_enabled, email_readiness_problems
+        return email_template, email_readiness_problems
 
     template_id = registration_page.auto_reply_email_template_id
     if template_id is not None:
         try:
             email_template = get_email_template(bootstrap.get_flask_uow(), current_user.id, template_id)
-            auto_reply_enabled = True
         except EmailTemplateNotFoundError:
             logger.debug(
                 "auto_reply_template_load_failed",
@@ -382,7 +377,7 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
 
     problems = auto_reply_readiness_problems(bootstrap.get_flask_uow(), assembly_id)
     email_readiness_problems = [{"severity": p.severity.value, "message": p.message} for p in problems]
-    return email_template, auto_reply_enabled, email_readiness_problems
+    return email_template, email_readiness_problems
 
 
 def _default_email_template_content() -> dict[str, str]:
@@ -428,25 +423,14 @@ def _handle_email_action_create(assembly_id: uuid.UUID) -> str:
     return _email_section_url(assembly_id, edit=True)
 
 
-def _handle_email_action_enable(assembly_id: uuid.UUID, current_template_id: uuid.UUID | None) -> str:
-    if current_template_id is None:
-        flash(_("Please set up the auto-reply email first."), "warning")
-        return _email_section_url(assembly_id)
-    assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, current_template_id)
-    flash(_("Auto-reply enabled. Respondents will now receive this email after registering."), "success")
-    return _email_section_url(assembly_id)
-
-
-def _handle_email_action_disable(assembly_id: uuid.UUID) -> str:
-    assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, None)
-    flash(_("Auto-reply disabled. Respondents will no longer receive this email."), "success")
-    return _email_section_url(assembly_id)
-
-
 def _handle_email_action_save(
-    assembly_id: uuid.UUID, current_template_id: uuid.UUID | None, *, advance: bool = False
+    assembly_id: uuid.UUID,
+    template_id: uuid.UUID | None,
+    *,
+    currently_assigned: uuid.UUID | None,
+    advance: bool = False,
 ) -> str:
-    if current_template_id is None:
+    if template_id is None:
         flash(_("There is no auto-reply email to save yet — set one up first."), "warning")
         return _email_section_url(assembly_id)
     # Name is intentionally not overwritten here — the UI doesn't expose it yet,
@@ -455,10 +439,15 @@ def _handle_email_action_save(
     update_email_template(
         bootstrap.get_flask_uow(),
         current_user.id,
-        current_template_id,
+        template_id,
         subject=request.form.get("template_subject", "").strip(),
         body_html=request.form.get("template_body_html", ""),
     )
+    # The auto-reply is always-on: a template that exists is a template that sends.
+    # Saving self-heals pages from before this rule, whose seeded template could be
+    # left unassigned by the old enable/disable switch.
+    if currently_assigned != template_id:
+        assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, template_id)
     flash(_("Auto-reply email saved."), "success")
     if advance:
         return url_for(
@@ -479,35 +468,42 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID) -> str:
     if result is None:
         raise RegistrationPageNotFoundError(f"No registration page for assembly {assembly_id}")
 
-    # For enable/save we prefer the id that came in the form (from the switch or editor form) —
-    # this lets the switch turn on a template that isn't yet assigned. Fall back to what's
-    # currently assigned on the page for enable, and require it for save.
+    # Prefer the id that came in the form, then the page's current assignment, then the
+    # assembly's stored template — the last covers legacy pages whose seeded template
+    # was never assigned by the old enable/disable switch.
     posted_template_id = request.form.get("template_id", "").strip()
     posted_id = uuid.UUID(posted_template_id) if posted_template_id else None
     current_template_id = result[0].auto_reply_email_template_id
+    fallback_id = None
+    if posted_id is None and current_template_id is None:
+        templates = list_email_templates(bootstrap.get_flask_uow(), current_user.id, assembly_id)
+        fallback_id = templates[0].id if templates else None
 
     if action == "create":
         return _handle_email_action_create(assembly_id)
-    if action == "enable":
-        return _handle_email_action_enable(assembly_id, posted_id or current_template_id)
-    if action == "disable":
-        return _handle_email_action_disable(assembly_id)
-    return _handle_email_action_save(assembly_id, posted_id or current_template_id, advance=(action == "save_and_next"))
+    return _handle_email_action_save(
+        assembly_id,
+        posted_id or current_template_id or fallback_id,
+        currently_assigned=current_template_id,
+        advance=(action == "save_and_next"),
+    )
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/email/save", methods=["POST"])
 @login_required
 def save_assembly_registration_email(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Create, update, enable or disable the auto-reply email template.
+    """Create or update the auto-reply email template.
 
     Action-based POST endpoint:
 
     - create   → create a template with default copy and assign it as the auto-reply.
                  Lands the user in edit mode so they can immediately customise it.
-    - save     → update name / subject / body_html on the existing template.
-    - enable   → assign the template as the page's auto-reply (switch on).
-    - disable  → unassign the template (switch off). The template row is kept
-                 so re-enabling later is one click.
+    - save     → update subject / body_html on the existing template (and ensure it
+                 is assigned — the auto-reply is always-on once a template exists).
+
+    There is deliberately no enable/disable: the product currently always sends the
+    auto-reply. If a real need to switch it off emerges, that gets a first-class
+    service-layer method — not the old assign/unassign-as-a-toggle trick.
     """
     action = request.form.get("action", "save")
     try:
@@ -543,12 +539,12 @@ def _create_default_auto_reply_template(assembly_id: uuid.UUID) -> None:
     """Best-effort: seed a default auto-reply email template for a new page.
 
     Not fatal — if this fails (validation, race, etc.) we log and let the manager
-    hit the "Set up auto-reply" fallback in the UI. Deliberately leaves the
-    template unassigned so the auto-reply switch defaults to OFF.
+    hit the "Set up auto-reply" fallback in the UI. The template is assigned
+    straight away: the auto-reply is always-on, so a page with a template sends it.
     """
     try:
         defaults = _default_email_template_content()
-        create_email_template(
+        template = create_email_template(
             bootstrap.get_flask_uow(),
             current_user.id,
             assembly_id,
@@ -556,6 +552,7 @@ def _create_default_auto_reply_template(assembly_id: uuid.UUID) -> None:
             subject=defaults["subject"],
             body_html=defaults["body_html"],
         )
+        assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, template.id)
     except Exception as e:
         # Non-fatal: log with traceback per code_quality_rules for catch-all blocks.
         logger.exception(
