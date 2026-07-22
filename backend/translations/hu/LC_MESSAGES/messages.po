@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-17 13:40+0100\n"
+"POT-Creation-Date: 2026-07-22 15:08+0200\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -1642,28 +1642,28 @@ msgstr "További beállítások"
 msgid "An unexpected error occurred"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:118
-#: src/opendlp/entrypoints/blueprints/dev.py:138
-#: src/opendlp/entrypoints/blueprints/dev.py:1266
-#: src/opendlp/entrypoints/blueprints/dev.py:1301
+#: src/opendlp/entrypoints/blueprints/dev.py:129
+#: src/opendlp/entrypoints/blueprints/dev.py:149
+#: src/opendlp/entrypoints/blueprints/dev.py:1452
+#: src/opendlp/entrypoints/blueprints/dev.py:1487
 #, fuzzy
 msgid "You don't have permission to access developer tools"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1309
+#: src/opendlp/entrypoints/blueprints/dev.py:1495
 msgid "Success! Your changes have been saved."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1310
+#: src/opendlp/entrypoints/blueprints/dev.py:1496
 msgid "Warning: Please review the data before continuing."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1311
+#: src/opendlp/entrypoints/blueprints/dev.py:1497
 #, fuzzy
 msgid "Error: Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1312
+#: src/opendlp/entrypoints/blueprints/dev.py:1498
 msgid "Info: A new feature is available."
 msgstr ""
 
@@ -3385,6 +3385,7 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/backoffice/components/respondent_status_form.html:87
 #: templates/backoffice/respondents/confirm_upload_diff.html:107
 #: templates/backoffice/respondents/export_modal.html:77
+#: templates/backoffice/showcase/modal_component.html:25
 #: templates/backoffice/targets/category_block.html:47
 #: templates/backoffice/targets/category_block.html:228
 #: templates/backoffice/targets/category_block.html:330
@@ -4293,6 +4294,7 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:82
 #: templates/backoffice/service_docs/_emails.html:365
+#: templates/backoffice/showcase/modal_component.html:26
 #: templates/backoffice/targets/category_block.html:32
 #: templates/backoffice/targets/category_block.html:157
 #: templates/targets/components/category_block.html:21
@@ -5054,8 +5056,8 @@ msgstr "Rétegzett kiválasztás"
 #: templates/backoffice/assembly_registration.html:757
 #: templates/backoffice/components/db_selection_progress_modal.html:117
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
-#: templates/backoffice/components/modal.html:54
-#: templates/backoffice/components/modal.html:133
+#: templates/backoffice/components/modal.html:106
+#: templates/backoffice/components/modal.html:164
 #: templates/backoffice/components/replacement_modal.html:170
 #: templates/backoffice/components/selection_progress_modal.html:89
 #, fuzzy
@@ -6114,13 +6116,23 @@ msgstr "Jelentések a folyamatról"
 
 #: templates/backoffice/service_docs.html:49
 #, fuzzy
+msgid "Documents"
+msgstr "Kieső emberek pótlása új kiválasztással"
+
+#: templates/backoffice/service_docs.html:50
+#, fuzzy
 msgid "Emails"
 msgstr "Hiba részletei"
 
-#: templates/backoffice/service_docs.html:51
+#: templates/backoffice/service_docs.html:52
 #, fuzzy
 msgid "Service categories"
 msgstr "Feladat állapota"
+
+#: templates/backoffice/showcase.html:63 templates/backoffice/showcase.html:78
+#, fuzzy
+msgid "Jump to section"
+msgstr "Kiválasztás"
 
 #: templates/backoffice/components/alert.html:84
 msgid "Dismiss"
@@ -6286,7 +6298,7 @@ msgid "Manage Tabs Progress"
 msgstr "Feladat folyamatban"
 
 #: templates/backoffice/components/manage_tabs_progress_modal.html:21
-#: templates/backoffice/components/modal.html:274
+#: templates/backoffice/components/modal.html:301
 #: templates/backoffice/components/replacement_modal.html:50
 msgid "Processing..."
 msgstr ""
@@ -6321,11 +6333,11 @@ msgstr "Táblázat megtekintése"
 msgid "Delete These Tabs"
 msgstr ""
 
-#: templates/backoffice/components/modal.html:242
+#: templates/backoffice/components/modal.html:269
 msgid "Waiting for task to start..."
 msgstr ""
 
-#: templates/backoffice/components/modal.html:244
+#: templates/backoffice/components/modal.html:271
 #, fuzzy
 msgid "Messages:"
 msgstr "Jelentések a folyamatról"
@@ -6420,7 +6432,7 @@ msgstr "Táblázat lapfülei"
 msgid "No results found"
 msgstr "Az oldal nem elérhető"
 
-#: templates/backoffice/components/split_button.html:98
+#: templates/backoffice/components/split_button.html:61
 #, fuzzy
 msgid "More actions"
 msgstr "Kiválasztás"
@@ -6525,6 +6537,7 @@ msgstr ""
 #: templates/backoffice/service_docs/_assembly.html:294
 #: templates/backoffice/service_docs/_config.html:25
 #: templates/backoffice/service_docs/_config.html:128
+#: templates/backoffice/service_docs/_documents.html:35
 #: templates/backoffice/service_docs/_emails.html:41
 #: templates/backoffice/service_docs/_emails.html:142
 #: templates/backoffice/service_docs/_emails.html:202
@@ -8061,6 +8074,8 @@ msgstr ""
 #: templates/backoffice/service_docs/_assembly.html:225
 #: templates/backoffice/service_docs/_assembly.html:333
 #: templates/backoffice/service_docs/_config.html:50
+#: templates/backoffice/service_docs/_documents.html:75
+#: templates/backoffice/service_docs/_documents.html:176
 #: templates/backoffice/service_docs/_emails.html:50
 #: templates/backoffice/service_docs/_emails.html:148
 #: templates/backoffice/service_docs/_emails.html:208
@@ -8110,6 +8125,12 @@ msgstr ""
 #: templates/backoffice/service_docs/_assembly.html:128
 #: templates/backoffice/service_docs/_assembly.html:235
 #: templates/backoffice/service_docs/_assembly.html:343
+#: templates/backoffice/service_docs/_documents.html:106
+#: templates/backoffice/service_docs/_documents.html:186
+#: templates/backoffice/service_docs/_documents.html:239
+#: templates/backoffice/service_docs/_documents.html:300
+#: templates/backoffice/service_docs/_documents.html:368
+#: templates/backoffice/service_docs/_documents.html:421
 #: templates/backoffice/service_docs/_images.html:106
 #: templates/backoffice/service_docs/_images.html:186
 #: templates/backoffice/service_docs/_images.html:239
@@ -8132,6 +8153,12 @@ msgstr ""
 #: templates/backoffice/service_docs/_assembly.html:166
 #: templates/backoffice/service_docs/_assembly.html:260
 #: templates/backoffice/service_docs/_assembly.html:384
+#: templates/backoffice/service_docs/_documents.html:149
+#: templates/backoffice/service_docs/_documents.html:209
+#: templates/backoffice/service_docs/_documents.html:270
+#: templates/backoffice/service_docs/_documents.html:338
+#: templates/backoffice/service_docs/_documents.html:391
+#: templates/backoffice/service_docs/_documents.html:449
 #: templates/backoffice/service_docs/_images.html:149
 #: templates/backoffice/service_docs/_images.html:209
 #: templates/backoffice/service_docs/_images.html:270
@@ -8260,6 +8287,76 @@ msgstr "Új jelszó"
 #, fuzzy
 msgid "Reset"
 msgstr "Válaszadókat tartalmazó lapful neve"
+
+#: templates/backoffice/service_docs/_documents.html:6
+msgid ""
+"Upload, list, relabel and delete PDF documents attached to an assembly's "
+"registration page. Uploads are size-capped, gated on the PDF magic bytes,"
+" stored as-uploaded and de-duplicated by SHA-256."
+msgstr ""
+
+#: templates/backoffice/service_docs/_documents.html:9
+msgid ""
+"Only PDF files are accepted. The page must already exist (use the "
+"Registration tab to create one)."
+msgstr ""
+
+#: templates/backoffice/service_docs/_documents.html:30
+msgid ""
+"Validate and store a PDF for the assembly's registration page. Identical "
+"bytes on the same page collapse to one row; on re-upload the caller's "
+"label wins."
+msgstr ""
+
+#: templates/backoffice/service_docs/_documents.html:84
+#: templates/backoffice/service_docs/_images.html:84
+#: templates/backoffice/service_docs/_registration.html:409
+#: templates/backoffice/service_docs/_registration.html:628
+#: templates/backoffice/service_docs/_registration.html:756
+#: templates/backoffice/service_docs/_registration.html:970
+#: templates/backoffice/service_docs/_registration.html:1086
+#: templates/backoffice/service_docs/_registration.html:1198
+#: templates/backoffice/service_docs/_registration.html:1310
+#: templates/backoffice/service_docs/_respondents.html:118
+#: templates/backoffice/service_docs/_respondents.html:304
+#: templates/backoffice/service_docs/_selection.html:245
+#: templates/backoffice/service_docs/_selection.html:320
+#, fuzzy
+msgid "Error Cases"
+msgstr "Hiba részletei"
+
+#: templates/backoffice/service_docs/_documents.html:173
+msgid ""
+"Return every document attached to the assembly's registration page. Empty"
+" list when no page exists yet."
+msgstr ""
+
+#: templates/backoffice/service_docs/_documents.html:233
+msgid ""
+"Permanently delete a document. The document_id must belong to the "
+"assembly's registration page."
+msgstr ""
+
+#: templates/backoffice/service_docs/_documents.html:294
+msgid ""
+"Update a document's label in place. Records an edit on the parent "
+"registration page."
+msgstr ""
+
+#: templates/backoffice/service_docs/_documents.html:362
+msgid ""
+"List documents paired with ready-to-paste <a> download snippets. URLs "
+"point at the public /register/<slug>/documents/<sha>.pdf route; link text"
+" is the label plus a human-readable size."
+msgstr ""
+
+#: templates/backoffice/service_docs/_documents.html:415
+msgid ""
+"Lookup helper used by the public "
+"/register/<slug>/documents/<document_name> route. Returns None unless the"
+" registration page is publicly loadable (TEST or PUBLISHED). The response"
+" here reports metadata; fetch the actual bytes from the public URL."
+msgstr ""
 
 #: templates/backoffice/service_docs/_emails.html:10
 #, fuzzy
@@ -8554,22 +8651,6 @@ msgid ""
 "page. Identical bytes on the same page collapse to one row."
 msgstr ""
 
-#: templates/backoffice/service_docs/_images.html:84
-#: templates/backoffice/service_docs/_registration.html:409
-#: templates/backoffice/service_docs/_registration.html:628
-#: templates/backoffice/service_docs/_registration.html:756
-#: templates/backoffice/service_docs/_registration.html:970
-#: templates/backoffice/service_docs/_registration.html:1086
-#: templates/backoffice/service_docs/_registration.html:1198
-#: templates/backoffice/service_docs/_registration.html:1310
-#: templates/backoffice/service_docs/_respondents.html:118
-#: templates/backoffice/service_docs/_respondents.html:304
-#: templates/backoffice/service_docs/_selection.html:245
-#: templates/backoffice/service_docs/_selection.html:320
-#, fuzzy
-msgid "Error Cases"
-msgstr "Hiba részletei"
-
 #: templates/backoffice/service_docs/_images.html:173
 msgid ""
 "Return every image attached to the assembly's registration page. Empty "
@@ -8841,6 +8922,17 @@ msgstr ""
 
 #: templates/backoffice/service_docs/_targets.html:151
 msgid "This operation always replaces existing targets for the selected assembly."
+msgstr ""
+
+#: templates/backoffice/showcase/modal_component.html:24
+#, fuzzy
+msgid "Delete Account?"
+msgstr "Hozzon létre fiókot"
+
+#: templates/backoffice/showcase/modal_component.html:24
+msgid ""
+"Deleting account is irreversible and will erase all your data. This "
+"action cannot be undone."
 msgstr ""
 
 #: templates/backoffice/showcase/pagination_component.html:82
@@ -13729,4 +13821,13 @@ msgstr ""
 #~ "Submissions made via these URLs are "
 #~ "recorded as test submissions and will"
 #~ " not enter the selection pool."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Upload, list, relabel and delete PDF "
+#~ "documents attached to an assembly's "
+#~ "registration page. Uploads are size-"
+#~ "capped, gated on the %PDF- magic "
+#~ "bytes, stored as-uploaded and de-"
+#~ "duplicated by SHA-256."
 #~ msgstr ""

@@ -13,6 +13,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.registration_document import PDF_FILE_EXTENSION, DocumentValidationError, RegistrationDocument
 from opendlp.domain.registration_image import IMAGE_FILE_EXTENSION, ImageValidationError, RegistrationImage
 from opendlp.domain.registration_page import RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
@@ -42,16 +43,26 @@ from opendlp.service_layer.email_template_service import (
     update_email_template,
 )
 from opendlp.service_layer.exceptions import (
+    DocumentQuotaExceeded,
     EmailTemplateInvalid,
     EmailTemplateNotFoundError,
     ImageQuotaExceeded,
     InsufficientPermissions,
     InvalidSelection,
     NotFoundError,
+    RegistrationDocumentNotFoundError,
     RegistrationImageNotFoundError,
     RegistrationPageNotFoundError,
 )
 from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.registration_document_service import (
+    add_registration_document,
+    delete_registration_document,
+    get_registration_document_for_serving,
+    list_document_snippets,
+    list_registration_documents,
+    set_registration_document_label,
+)
 from opendlp.service_layer.registration_image_service import (
     add_registration_image,
     delete_registration_image,
@@ -149,6 +160,7 @@ def service_docs() -> ResponseReturnValue:
         "registration",
         "fields",
         "images",
+        "documents",
         "emails",
     ]
     if active_tab not in valid_tabs:
@@ -1058,6 +1070,174 @@ def _handle_get_registration_image_for_serving(uow: Any, params: dict[str, Any])
     return {"status": "success", "found": True, "image": _serialise_image(image)}
 
 
+def _serialise_document(document: RegistrationDocument) -> dict[str, Any]:
+    return {
+        "id": str(document.id),
+        "registration_page_id": str(document.registration_page_id),
+        "byte_size": document.byte_size,
+        "sha256": document.sha256,
+        "label": document.label,
+        "created_by": str(document.created_by) if document.created_by else None,
+        "created_at": document.created_at.isoformat() if document.created_at else None,
+        "file_name": f"{document.sha256}.{PDF_FILE_EXTENSION}",
+        "original_filename": document.original_filename,
+    }
+
+
+def _handle_add_registration_document(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle add_registration_document service call.
+
+    The PDF bytes are expected as a base64-encoded string under ``pdf_base64``
+    (a ``data:`` URL prefix is stripped if present).
+    """
+    assembly_id = uuid.UUID(params["assembly_id"])
+    label = params.get("label", "")
+    original_filename = params.get("original_filename", "")
+    raw_b64 = params.get("pdf_base64", "")
+    if "," in raw_b64 and raw_b64.startswith("data:"):
+        raw_b64 = raw_b64.split(",", 1)[1]
+    try:
+        raw_bytes = base64.b64decode(raw_b64, validate=True)
+    except (binascii.Error, ValueError):
+        return {"status": "error", "error": "pdf_base64 is not valid base64", "error_type": "ValidationError"}
+    if not raw_bytes:
+        return {"status": "error", "error": "pdf_base64 is empty", "error_type": "ValidationError"}
+
+    try:
+        document = add_registration_document(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            raw=raw_bytes,
+            original_filename=original_filename,
+            label=label,
+        )
+        return {"status": "success", "document": _serialise_document(document)}
+    except DocumentValidationError as e:
+        return {"status": "error", "error": e.message, "error_type": "DocumentValidationError", "reason": e.reason}
+    except DocumentQuotaExceeded as e:
+        return {"status": "error", "error": str(e), "error_type": "DocumentQuotaExceeded"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_list_registration_documents(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle list_registration_documents service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    try:
+        documents = list_registration_documents(uow=uow, user_id=current_user.id, assembly_id=assembly_id)
+        return {
+            "status": "success",
+            "total_count": len(documents),
+            "documents": [_serialise_document(document) for document in documents],
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_delete_registration_document(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle delete_registration_document service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    document_id = uuid.UUID(params["document_id"])
+    try:
+        delete_registration_document(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            document_id=document_id,
+        )
+        return {"status": "success", "deleted_document_id": str(document_id)}
+    except RegistrationDocumentNotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "RegistrationDocumentNotFoundError"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_set_registration_document_label(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle set_registration_document_label service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    document_id = uuid.UUID(params["document_id"])
+    label = params.get("label", "")
+    try:
+        document = set_registration_document_label(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            document_id=document_id,
+            label=label,
+        )
+        return {"status": "success", "document": _serialise_document(document)}
+    except RegistrationDocumentNotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "RegistrationDocumentNotFoundError"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_list_document_snippets(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle list_document_snippets service call.
+
+    Uses the same URL builder as the public registration route so the snippets
+    show the URL the public page would render.
+    """
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    page_repo_uow = bootstrap.get_flask_uow()
+    with page_repo_uow:
+        page = page_repo_uow.registration_pages.get_by_assembly_id(assembly_id)
+    url_slug = page.url_slug if page else ""
+
+    def url_for_document(document: RegistrationDocument) -> str:
+        if url_slug:
+            return url_for(
+                "registration.serve_registration_document",
+                url_slug=url_slug,
+                document_name=f"{document.sha256}.{PDF_FILE_EXTENSION}",
+            )
+        return f"<no-slug>/{document.sha256}.{PDF_FILE_EXTENSION}"
+
+    try:
+        pairs = list_document_snippets(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            url_for_document=url_for_document,
+        )
+        return {
+            "status": "success",
+            "total_count": len(pairs),
+            "snippets": [
+                {"document": _serialise_document(document), "html": html_snippet} for document, html_snippet in pairs
+            ],
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_get_registration_document_for_serving(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle get_registration_document_for_serving service call.
+
+    Bytes are not returned in the JSON response - we report metadata and whether
+    the lookup succeeded. Use the public /register/<slug>/documents/<document_name>
+    route to actually fetch the PDF.
+    """
+    url_slug = params.get("url_slug", "")
+    document_name = params.get("document_name", "")
+    document = get_registration_document_for_serving(uow, url_slug, document_name)
+    if document is None:
+        return {"status": "success", "found": False, "document": None}
+    return {"status": "success", "found": True, "document": _serialise_document(document)}
+
+
 def _serialise_email_template(template: Any) -> dict[str, Any]:
     return {
         "id": str(template.id),
@@ -1228,6 +1408,12 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "set_registration_image_alt": _handle_set_registration_image_alt,
     "list_image_snippets": _handle_list_image_snippets,
     "get_registration_image_for_serving": _handle_get_registration_image_for_serving,
+    "add_registration_document": _handle_add_registration_document,
+    "list_registration_documents": _handle_list_registration_documents,
+    "delete_registration_document": _handle_delete_registration_document,
+    "set_registration_document_label": _handle_set_registration_document_label,
+    "list_document_snippets": _handle_list_document_snippets,
+    "get_registration_document_for_serving": _handle_get_registration_document_for_serving,
     "create_email_template": _handle_create_email_template,
     "list_email_templates": _handle_list_email_templates,
     "get_email_template": _handle_get_email_template,
