@@ -46,6 +46,7 @@ ABOUTME: Provides testing console with code references, sample data, and executi
         {"key": "config", "label": _("CSV Config"), "href": url_for('dev.service_docs', tab='config'), "active": active_tab == 'config'},
         {"key": "selection", "label": _("Selection"), "href": url_for('dev.service_docs', tab='selection'), "active": active_tab == 'selection'},
         {"key": "images", "label": _("Images"), "href": url_for('dev.service_docs', tab='images'), "active": active_tab == 'images'},
+        {"key": "documents", "label": _("Documents"), "href": url_for('dev.service_docs', tab='documents'), "active": active_tab == 'documents'},
         {"key": "emails", "label": _("Emails"), "href": url_for('dev.service_docs', tab='emails'), "active": active_tab == 'emails'}
         ],
         aria_label=_("Service categories"),
@@ -83,6 +84,10 @@ ABOUTME: Provides testing console with code references, sample data, and executi
 
         {% if active_tab == 'images' %}
             {% include "backoffice/service_docs/_images.html" %}
+        {% endif %}
+
+        {% if active_tab == 'documents' %}
+            {% include "backoffice/service_docs/_documents.html" %}
         {% endif %}
 
         {% if active_tab == 'emails' %}
@@ -159,6 +164,21 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                 serveImageUrlSlug: '',
                 serveImageImageName: '',
 
+                // Document form properties
+                addDocumentAssemblyId: '',
+                addDocumentBase64: '',
+                addDocumentFileName: '',
+                addDocumentLabel: '',
+                listDocumentsAssemblyId: '',
+                deleteDocumentAssemblyId: '',
+                deleteDocumentDocumentId: '',
+                setLabelAssemblyId: '',
+                setLabelDocumentId: '',
+                setLabelText: '',
+                listDocSnippetsAssemblyId: '',
+                serveDocumentUrlSlug: '',
+                serveDocumentDocumentName: '',
+
                 // Registration form properties
                 createRegistrationAssemblyId: '',
                 getRegistrationAssemblyId: '',
@@ -220,6 +240,12 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     set_image_alt: false,
                     list_snippets: false,
                     serve_image: false,
+                    add_document: false,
+                    list_documents: false,
+                    delete_document: false,
+                    set_document_label: false,
+                    list_document_snippets: false,
+                    serve_document: false,
                     create_email_template: false,
                     list_email_templates: false,
                     get_email_template: false,
@@ -257,6 +283,12 @@ ABOUTME: Provides testing console with code references, sample data, and executi
                     set_image_alt: null,
                     list_snippets: null,
                     serve_image: null,
+                    add_document: null,
+                    list_documents: null,
+                    delete_document: null,
+                    set_document_label: null,
+                    list_document_snippets: null,
+                    serve_document: null,
                     create_email_template: null,
                     list_email_templates: null,
                     get_email_template: null,
@@ -324,6 +356,12 @@ Age,51+,2,5,1,1`,
                         'set_registration_image_alt': 'set_image_alt',
                         'list_image_snippets': 'list_snippets',
                         'get_registration_image_for_serving': 'serve_image',
+                        'add_registration_document': 'add_document',
+                        'list_registration_documents': 'list_documents',
+                        'delete_registration_document': 'delete_document',
+                        'set_registration_document_label': 'set_document_label',
+                        'list_document_snippets': 'list_document_snippets',
+                        'get_registration_document_for_serving': 'serve_document',
                         'create_email_template': 'create_email_template',
                         'list_email_templates': 'list_email_templates',
                         'get_email_template': 'get_email_template',
@@ -587,6 +625,70 @@ Age,51+,2,5,1,1`,
                     this.executeService('get_registration_image_for_serving', {
                         url_slug: this.serveImageUrlSlug,
                         image_name: this.serveImageImageName
+                    });
+                },
+
+                // ===== Document service execute methods =====
+                handleDocumentFileChange(event) {
+                    const file = event.target.files && event.target.files[0];
+                    if (!file) {
+                        this.addDocumentBase64 = '';
+                        this.addDocumentFileName = '';
+                        return;
+                    }
+                    this.addDocumentFileName = file.name;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        // FileReader.readAsDataURL returns "data:<mime>;base64,<payload>"
+                        const result = String(reader.result || '');
+                        const idx = result.indexOf(',');
+                        this.addDocumentBase64 = idx >= 0 ? result.slice(idx + 1) : result;
+                    };
+                    reader.onerror = () => {
+                        this.addDocumentBase64 = '';
+                        this.showToast('Failed to read file', 'error');
+                    };
+                    reader.readAsDataURL(file);
+                },
+                executeAddRegistrationDocument() {
+                    if (!this.addDocumentBase64) {
+                        this.responses.add_document = { status: 'error', error: 'Please choose a PDF file first', error_type: 'ValidationError' };
+                        return;
+                    }
+                    this.executeService('add_registration_document', {
+                        assembly_id: this.addDocumentAssemblyId,
+                        pdf_base64: this.addDocumentBase64,
+                        original_filename: this.addDocumentFileName,
+                        label: this.addDocumentLabel
+                    });
+                },
+                executeListRegistrationDocuments() {
+                    this.executeService('list_registration_documents', {
+                        assembly_id: this.listDocumentsAssemblyId
+                    });
+                },
+                executeDeleteRegistrationDocument() {
+                    this.executeService('delete_registration_document', {
+                        assembly_id: this.deleteDocumentAssemblyId,
+                        document_id: this.deleteDocumentDocumentId
+                    });
+                },
+                executeSetRegistrationDocumentLabel() {
+                    this.executeService('set_registration_document_label', {
+                        assembly_id: this.setLabelAssemblyId,
+                        document_id: this.setLabelDocumentId,
+                        label: this.setLabelText
+                    });
+                },
+                executeListDocumentSnippets() {
+                    this.executeService('list_document_snippets', {
+                        assembly_id: this.listDocSnippetsAssemblyId
+                    });
+                },
+                executeGetRegistrationDocumentForServing() {
+                    this.executeService('get_registration_document_for_serving', {
+                        url_slug: this.serveDocumentUrlSlug,
+                        document_name: this.serveDocumentDocumentName
                     });
                 },
 

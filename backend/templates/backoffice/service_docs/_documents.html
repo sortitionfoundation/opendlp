@@ -1,0 +1,456 @@
+<div class="space-y-6">
+    {# Overview #}
+    {% call card(title="Registration Document Services", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Upload, list, relabel and delete PDF documents attached to an assembly's registration page. Uploads are size-capped, gated on the PDF magic bytes, stored as-uploaded and de-duplicated by SHA-256.") }}
+            </p>
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                {{ _("Only PDF files are accepted. The page must already exist (use the Registration tab to create one).") }}
+            </p>
+        {% endcall %}
+    {% endcall %}
+
+    {# add_registration_document #}
+    {% call card(title="add_registration_document()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_document_service.py:49
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Validate and store a PDF for the assembly's registration page. Identical bytes on the same page collapse to one row; on re-upload the caller's label wins.") }}
+            </p>
+
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm"
+                           style="border: 1px solid var(--color-borders-dividers)">
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 text-code"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">assembly_id</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">UUID</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">Target assembly ID</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 text-code"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">raw</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">bytes</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">✅</td>
+                                <td class="px-3 py-2"
+                                    style="border-bottom: 1px solid var(--color-borders-dividers)">
+                                    PDF bytes. Sent as <code>pdf_base64</code> over the wire and decoded server-side.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 text-code">label</td>
+                                <td class="px-3 py-2">str</td>
+                                <td class="px-3 py-2">❌</td>
+                                <td class="px-3 py-2">Link text shown to registrants (default: the sanitised filename)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    RegistrationDocument  →  Stored document metadata (existing row on dedup)
+                </code>
+            </div>
+
+            {# Error Cases #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+                <ul class="list-disc list-inside text-body-sm space-y-1"
+                    style="color: var(--color-body-text)">
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">DocumentValidationError</code> — too large, or the bytes are not a PDF
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">DocumentQuotaExceeded</code> — page already at the per-page document limit
+                    </li>
+                    <li>
+                        <code class="px-1 rounded"
+                              style="background-color: var(--color-error-100)">RegistrationPageNotFoundError</code> — assembly has no registration page
+                    </li>
+                </ul>
+            </div>
+
+            {# Interactive Form #}
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-label-md block mb-1">Assembly</label>
+                        <select x-model="addDocumentAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-label-md block mb-1">PDF file</label>
+                        <input type="file"
+                               accept="application/pdf"
+                               @change="handleDocumentFileChange($event)"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                        <p class="text-body-sm mt-1" x-show="addDocumentFileName" x-cloak style="color: var(--color-secondary-text);">
+                            <span x-text="addDocumentFileName"></span>
+                            (<span x-text="addDocumentBase64.length"></span> base64 chars)
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-label-md block mb-1">Label (optional)</label>
+                        <input type="text"
+                               x-model="addDocumentLabel"
+                               placeholder="Assembly information pack"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeAddRegistrationDocument()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.add_document">
+                        <span x-show="!loading.add_document">Execute</span>
+                        <span x-show="loading.add_document">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.add_document" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('add_document')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# list_registration_documents #}
+    {% call card(title="list_registration_documents()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_document_service.py:94
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_view_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Return every document attached to the assembly's registration page. Empty list when no page exists yet.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    list[RegistrationDocument]
+                </code>
+            </div>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-label-md block mb-1">Assembly</label>
+                        <select x-model="listDocumentsAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button @click="executeListRegistrationDocuments()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.list_documents">
+                        <span x-show="!loading.list_documents">Execute</span>
+                        <span x-show="loading.list_documents">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.list_documents" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('list_documents')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# delete_registration_document #}
+    {% call card(title="delete_registration_document()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_document_service.py:107
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Permanently delete a document. The document_id must belong to the assembly's registration page.") }}
+            </p>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-label-md block mb-1">Assembly</label>
+                        <select x-model="deleteDocumentAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-label-md block mb-1">Document ID (UUID)</label>
+                        <input type="text"
+                               x-model="deleteDocumentDocumentId"
+                               placeholder="copy from list_registration_documents() response"
+                               class="w-full px-3 py-2 rounded text-code"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeDeleteRegistrationDocument()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-error-500); color: white;"
+                            :disabled="loading.delete_document">
+                        <span x-show="!loading.delete_document">Delete</span>
+                        <span x-show="loading.delete_document">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.delete_document" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('delete_document')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# set_registration_document_label #}
+    {% call card(title="set_registration_document_label()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_document_service.py:123
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_manage_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Update a document's label in place. Records an edit on the parent registration page.") }}
+            </p>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-label-md block mb-1">Assembly</label>
+                        <select x-model="setLabelAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-label-md block mb-1">Document ID (UUID)</label>
+                        <input type="text"
+                               x-model="setLabelDocumentId"
+                               placeholder="copy from list_registration_documents() response"
+                               class="w-full px-3 py-2 rounded text-code"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <div>
+                        <label class="text-label-md block mb-1">New label</label>
+                        <input type="text"
+                               x-model="setLabelText"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeSetRegistrationDocumentLabel()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.set_document_label">
+                        <span x-show="!loading.set_document_label">Execute</span>
+                        <span x-show="loading.set_document_label">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.set_document_label" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('set_document_label')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# list_document_snippets #}
+    {% call card(title="list_document_snippets()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_document_service.py:140
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-warning-100);
+                                 color: var(--color-warning-600)">🔒 can_view_assembly()</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("List documents paired with ready-to-paste <a> download snippets. URLs point at the public /register/<slug>/documents/<sha>.pdf route; link text is the label plus a human-readable size.") }}
+            </p>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-label-md block mb-1">Assembly</label>
+                        <select x-model="listDocSnippetsAssemblyId"
+                                class="w-full px-3 py-2 rounded text-body-sm"
+                                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+                            <option value="">Select an assembly...</option>
+                            {% for assembly in assemblies %}
+                                <option value="{{ assembly.id }}">{{ assembly.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button @click="executeListDocumentSnippets()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.list_document_snippets">
+                        <span x-show="!loading.list_document_snippets">Execute</span>
+                        <span x-show="loading.list_document_snippets">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.list_document_snippets" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('list_document_snippets')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# get_registration_document_for_serving #}
+    {% call card(title="get_registration_document_for_serving()", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    registration_document_service.py:157
+                </code>
+                <div class="flex gap-2">
+                    <span class="text-body-sm px-2 py-1 rounded"
+                          style="background-color: var(--color-info-100);
+                                 color: var(--color-info-700)">🌐 public (no auth)</span>
+                </div>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Lookup helper used by the public /register/<slug>/documents/<document_name> route. Returns None unless the registration page is publicly loadable (TEST or PUBLISHED). The response here reports metadata; fetch the actual bytes from the public URL.") }}
+            </p>
+
+            <div class="p-4 rounded-lg mb-4"
+                 style="background-color: var(--color-subtle-background-panels);
+                        border: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-label-md block mb-1">URL slug</label>
+                        <input type="text"
+                               x-model="serveDocumentUrlSlug"
+                               placeholder="my-assembly-2026"
+                               class="w-full px-3 py-2 rounded text-body-sm"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <div>
+                        <label class="text-label-md block mb-1">Document name (sha256.pdf)</label>
+                        <input type="text"
+                               x-model="serveDocumentDocumentName"
+                               placeholder="ab12...cd.pdf"
+                               class="w-full px-3 py-2 rounded text-code"
+                               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+                    </div>
+                    <button @click="executeGetRegistrationDocumentForServing()"
+                            class="px-4 py-2 rounded text-button-sm"
+                            style="background-color: var(--color-primary-action); color: white;"
+                            :disabled="loading.serve_document">
+                        <span x-show="!loading.serve_document">Execute</span>
+                        <span x-show="loading.serve_document">Loading...</span>
+                    </button>
+                </div>
+            </div>
+            <div x-show="responses.serve_document" x-cloak>
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+                <pre class="p-3 rounded text-body-sm overflow-x-auto"
+                     style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+                     x-text="formatResponse('serve_document')"></pre>
+            </div>
+        {% endcall %}
+    {% endcall %}
+</div>

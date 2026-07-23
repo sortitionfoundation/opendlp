@@ -13,6 +13,7 @@ from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
@@ -41,6 +42,7 @@ from opendlp.service_layer.repositories import (
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
+    RegistrationDocumentRepository,
     RegistrationImageRepository,
     RegistrationPageHtmlRepository,
     RegistrationPageRepository,
@@ -424,6 +426,31 @@ class FakeRegistrationImageRepository(FakeRepository, RegistrationImageRepositor
 
     def delete(self, item: RegistrationImage) -> None:
         """Delete a RegistrationImage from the repository."""
+        if item in self._items:
+            self._items.remove(item)
+
+
+class FakeRegistrationDocumentRepository(FakeRepository, RegistrationDocumentRepository):
+    """Fake implementation of RegistrationDocumentRepository."""
+
+    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationDocument | None:
+        """Get a document for a page by its content hash, or None."""
+        for item in self._items:
+            if item.registration_page_id == registration_page_id and item.sha256 == sha256:
+                return item
+        return None
+
+    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationDocument]:
+        """Get all documents for a registration page, oldest first."""
+        items = [item for item in self._items if item.registration_page_id == registration_page_id]
+        return sorted(items, key=lambda item: item.created_at)
+
+    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+        """Count documents for a registration page."""
+        return sum(1 for item in self._items if item.registration_page_id == registration_page_id)
+
+    def delete(self, item: RegistrationDocument) -> None:
+        """Delete a RegistrationDocument from the repository."""
         if item in self._items:
             self._items.remove(item)
 
@@ -882,6 +909,7 @@ _REPO_NAMES = (
     "registration_pages",
     "registration_page_html_sources",
     "registration_images",
+    "registration_documents",
     "email_templates",
     "respondent_email_send_records",
 )
@@ -915,6 +943,7 @@ class FakeStore:
         self.registration_pages = FakeRegistrationPageRepository()
         self.registration_page_html_sources = FakeRegistrationPageHtmlRepository()
         self.registration_images = FakeRegistrationImageRepository()
+        self.registration_documents = FakeRegistrationDocumentRepository()
         self.email_templates = FakeEmailTemplateRepository()
         self.respondent_email_send_records = FakeRespondentEmailSendRecordRepository()
 

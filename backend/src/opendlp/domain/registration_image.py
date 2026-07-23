@@ -2,33 +2,27 @@
 ABOUTME: Holds a stored registration image plus pure <img> HTML generation"""
 
 import html as html_lib
-import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
+
+from opendlp.domain.uploads import MAX_ORIGINAL_FILENAME_LENGTH, sanitise_original_filename
 
 IMAGE_CONTENT_TYPE = "image/png"
 IMAGE_FILE_EXTENSION = "png"
 ALLOWED_INPUT_FORMATS = {"PNG", "JPEG", "WEBP"}
 
-# Bound on the stored original filename to stop an oversized name bloating the row.
-MAX_ORIGINAL_FILENAME_LENGTH = 255
-
-_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
-
-
-def sanitise_original_filename(name: str) -> str:
-    """Reduce an uploaded filename to a safe, readable, bounded basename.
-
-    Strips any directory components (handling both ``/`` and ``\\`` separators) and
-    control characters, then truncates to ``MAX_ORIGINAL_FILENAME_LENGTH``. Spaces,
-    unicode and case are preserved so the name still reflects what the user called
-    the file.
-    """
-    # Take the basename relative to either separator so a Windows path doesn't slip through.
-    basename = re.split(r"[\\/]", name)[-1]
-    cleaned = _CONTROL_CHARS.sub("", basename).strip()
-    return cleaned[:MAX_ORIGINAL_FILENAME_LENGTH]
+__all__ = [
+    "ALLOWED_INPUT_FORMATS",
+    "IMAGE_CONTENT_TYPE",
+    "IMAGE_FILE_EXTENSION",
+    "MAX_ORIGINAL_FILENAME_LENGTH",
+    "ImageValidationError",
+    "ProcessedImage",
+    "RegistrationImage",
+    "generate_image_html",
+    "sanitise_original_filename",
+]
 
 
 class ImageValidationError(Exception):

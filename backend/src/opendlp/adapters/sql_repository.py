@@ -17,6 +17,7 @@ from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.password_reset import PasswordResetToken
+from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
@@ -45,6 +46,7 @@ from opendlp.service_layer.repositories import (
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
+    RegistrationDocumentRepository,
     RegistrationImageRepository,
     RegistrationPageHtmlRepository,
     RegistrationPageRepository,
@@ -584,6 +586,49 @@ class SqlAlchemyRegistrationImageRepository(SqlAlchemyRepository, RegistrationIm
 
     def delete(self, item: RegistrationImage) -> None:
         """Delete a RegistrationImage from the repository."""
+        self.session.delete(item)
+
+
+class SqlAlchemyRegistrationDocumentRepository(SqlAlchemyRepository, RegistrationDocumentRepository):
+    """SQLAlchemy implementation of RegistrationDocumentRepository."""
+
+    def add(self, item: RegistrationDocument) -> None:
+        """Add a RegistrationDocument to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> RegistrationDocument | None:
+        """Get a RegistrationDocument by its ID."""
+        return self.session.query(RegistrationDocument).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[RegistrationDocument]:
+        """Get all RegistrationDocuments."""
+        return self.session.query(RegistrationDocument).all()
+
+    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationDocument | None:
+        """Get a document for a page by its content hash, or None."""
+        return (
+            self.session
+            .query(RegistrationDocument)
+            .filter_by(registration_page_id=registration_page_id, sha256=sha256)
+            .first()
+        )
+
+    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationDocument]:
+        """Get all documents for a registration page, oldest first."""
+        return (
+            self.session
+            .query(RegistrationDocument)
+            .filter_by(registration_page_id=registration_page_id)
+            .order_by(orm.registration_documents.c.created_at)
+            .all()
+        )
+
+    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+        """Count documents for a registration page."""
+        return self.session.query(RegistrationDocument).filter_by(registration_page_id=registration_page_id).count()
+
+    def delete(self, item: RegistrationDocument) -> None:
+        """Delete a RegistrationDocument from the repository."""
         self.session.delete(item)
 
 

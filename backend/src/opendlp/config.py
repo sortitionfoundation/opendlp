@@ -291,11 +291,26 @@ def get_max_image_upload_bytes() -> int:
     return get_max_image_upload_mb() * 1024 * 1024
 
 
+def get_max_pdf_upload_mb() -> int:
+    """Maximum allowed size for an uploaded registration PDF, in megabytes.
+
+    Default 5 MB (real documents are under 1 MB; this is generous headroom).
+    Bounded to [1, 25]. Environment variable: ``MAX_PDF_UPLOAD_MB``.
+    """
+    return _clamped_int_env("MAX_PDF_UPLOAD_MB", 5, 1, 25)
+
+
+def get_max_pdf_upload_bytes() -> int:
+    """Convenience: ``get_max_pdf_upload_mb()`` expressed in bytes."""
+    return get_max_pdf_upload_mb() * 1024 * 1024
+
+
 # Register every per-upload-type limit here so get_max_content_length() stays
 # correct automatically. Add a new entry whenever a new upload type is introduced.
 _UPLOAD_SIZE_CONTRIBUTORS: list[Callable[[], int]] = [
     get_max_csv_upload_bytes,
     get_max_image_upload_bytes,
+    get_max_pdf_upload_bytes,
     get_registration_form_html_max_bytes,
     get_registration_thank_you_html_max_bytes,
 ]
@@ -327,6 +342,15 @@ def get_max_images_per_registration_page() -> int:
     ``MAX_IMAGES_PER_REGISTRATION_PAGE``.
     """
     return _clamped_int_env("MAX_IMAGES_PER_REGISTRATION_PAGE", 10, 1, 50)
+
+
+def get_max_documents_per_registration_page() -> int:
+    """Maximum number of PDF documents stored per registration page.
+
+    Default 5. Bounded to [1, 20]. Environment variable:
+    ``MAX_DOCUMENTS_PER_REGISTRATION_PAGE``.
+    """
+    return _clamped_int_env("MAX_DOCUMENTS_PER_REGISTRATION_PAGE", 5, 1, 20)
 
 
 def _get_monitor_uuid_env(env_key: str) -> "uuid.UUID | None":
