@@ -588,6 +588,13 @@ def wizard_next_button_disabled(page: Page):
     expect(page.get_by_role("button", name="Next →")).to_be_disabled()
 
 
+@then("the stepper navigation should be disabled")
+def stepper_navigation_disabled(page: Page):
+    """While editing, the stepper renders aria-disabled spans instead of links."""
+    expect(page.locator("a.stepper-link")).to_have_count(0)
+    expect(page.locator('span.stepper-link[aria-disabled="true"]')).to_have_count(3)
+
+
 @when("I click the Cancel button in the editor header")
 def click_editor_cancel(page: Page):
     """Cancel renders as a link-button in the editor card header."""

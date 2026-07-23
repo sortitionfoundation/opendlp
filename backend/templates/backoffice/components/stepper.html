@@ -2,7 +2,7 @@
 ABOUTME: Stepper component macro — numbered step navigation with tabs or wizard semantics
 ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="step"
 #}
-{% macro stepper(items=[], aria_label="", id="", mode="tabs", preserve_scroll=false) %}
+{% macro stepper(items=[], aria_label="", id="", mode="tabs", preserve_scroll=false, disabled=false) %}
     {#
     Numbered step navigation with two semantic modes.
 
@@ -31,6 +31,12 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
                      (registered in `static/js/alpine-scroll-manager.js`, loaded by
                      `backoffice/base.html`). Silently no-ops if used from a base
                      template that doesn't load that script.
+    disabled: disable the WHOLE stepper (default false). Works in both modes: every
+              step renders as a non-focusable span with aria-disabled="true" instead
+              of a link, so there is nothing to click or tab to. Use when the page is
+              in a state where navigating away must be locked — e.g. while an edit is
+              in progress — typically together with disabling any other navigation
+              controls on the page.
 
     Panel convention (same as tabs macro):
         <div id="{{ id }}-panel-{{ key }}" role="tabpanel"
@@ -62,7 +68,7 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
                 {% set panel_id = id ~ "-panel-" ~ item_key %}
                 {% set is_active = item.active or item.state == "active" %}
                 {% set state = item.state | default("active" if is_active else "inactive") %}
-                {% set is_disabled = item.disabled and is_wizard %}
+                {% set is_disabled = disabled or (item.disabled and is_wizard) %}
                 {% set step_role = "step" if is_wizard else "tab" %}
 
                 {# Pass-through attributes for anything not consumed above.

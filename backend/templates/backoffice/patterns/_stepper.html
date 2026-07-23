@@ -88,6 +88,39 @@ ABOUTME: Documents states (active/inactive/done/error), URL contract, and panel 
         {% endcall %}
     {% endcall %}
 
+    {# ===== whole stepper disabled ===== #}
+    {% call card(title="Disabling the whole stepper", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Pass disabled=true to lock every step in either mode: steps render as non-focusable spans with aria-disabled='true', so there is nothing to click or tab to. Use it when navigating away must be blocked — e.g. while an edit is in progress — together with disabling the page's other navigation controls (see the registration wizard, which pairs it with the disabled footer Back/Next in edit mode).") }}
+            </p>
+
+            <div class="mb-6">
+                {{ stepper(
+                id="showcase-disabled",
+                items=[
+                {"key": "one", "label": _("Registration page"), "href": "?tab=stepper&mode=disabled&step=one", "state": "done"},
+                {"key": "two", "label": _("Auto-reply email"), "href": "?tab=stepper&mode=disabled&step=two", "active": true},
+                {"key": "three", "label": _("Preview and publish"), "href": "?tab=stepper&mode=disabled&step=three"}
+                ],
+                aria_label=_("Example stepper (disabled)"),
+                mode="tabs",
+                disabled=true
+                ) }}
+            </div>
+
+            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Code") }}</h4>
+            <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto"
+                 style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">{% raw %}{{ stepper(
+    id="reg-steps",
+    items=[...],
+    aria_label="Registration setup steps",
+    mode="tabs",
+    disabled=edit_mode
+) }}{% endraw %}</pre>
+        {% endcall %}
+    {% endcall %}
+
     {# ===== State reference ===== #}
     {% call card(title="States", composed=true) %}
         {% call card_body() %}
@@ -142,7 +175,7 @@ ABOUTME: Documents states (active/inactive/done/error), URL contract, and panel 
         {% call card_body() %}
             <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Signature") }}</h4>
             <pre class="text-body-sm font-mono p-3 rounded-lg overflow-x-auto mb-4"
-                 style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">stepper(items=[], aria_label="", id="", mode="tabs", preserve_scroll=false)</pre>
+                 style="background-color: var(--color-subtle-background-panels); color: var(--color-body-text);">stepper(items=[], aria_label="", id="", mode="tabs", preserve_scroll=false, disabled=false)</pre>
 
             <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Item keys") }}</h4>
             <ul class="text-body-sm font-mono mb-4" style="color: var(--color-body-text);">
@@ -151,7 +184,13 @@ ABOUTME: Documents states (active/inactive/done/error), URL contract, and panel 
                 <li>href: str ✅</li>
                 <li>state: "active" | "inactive" | "done" | "error" ❌ ({{ _("derived from `active` if omitted") }})</li>
                 <li>active: bool ❌ ({{ _("shortcut for state='active'") }})</li>
-                <li>disabled: bool ❌ ({{ _("only meaningful in wizard mode") }})</li>
+                <li>disabled: bool ❌ ({{ _("per-item lock, only meaningful in wizard mode") }})</li>
+            </ul>
+
+            <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Macro-level flags") }}</h4>
+            <ul class="text-body-sm font-mono mb-4" style="color: var(--color-body-text);">
+                <li>disabled: bool ❌ ({{ _("locks the WHOLE stepper in either mode — steps render as aria-disabled spans") }})</li>
+                <li>preserve_scroll: bool ❌ ({{ _("keep scroll position across step navigation") }})</li>
             </ul>
 
             <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Panel convention (same as tabs macro)") }}</h4>
