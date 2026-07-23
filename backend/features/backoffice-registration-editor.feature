@@ -29,6 +29,7 @@ Feature: Backoffice registration HTML editor
     And there is an assembly called "Locked Nav Assembly" with a registration page
     When I visit the registration form editor for "Locked Nav Assembly"
     Then the wizard Next button should be disabled
+    And the stepper navigation should be disabled
 
   Scenario: Cancelling without changes returns straight to the read-only view
     Given I am logged in as an admin user

@@ -111,6 +111,22 @@ class TestEditModeRendersExpectedHtml:
         assert f"/backoffice/assembly/{assembly_id}/registration" in anchor
         assert "edit=1" not in anchor
 
+    def test_edit_mode_disables_the_stepper_navigation(self, logged_in_admin, fake_store, assembly_id):
+        """While editing, the stepper renders aria-disabled spans instead of links."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        view_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+        edit_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1").get_data(
+            as_text=True
+        )
+
+        def stepper_markup(body: str) -> str:
+            return body.split('class="stepper"', 1)[1].split("</ol>", 1)[0]
+
+        assert "<a href" in stepper_markup(view_body)
+        assert "<a href" not in stepper_markup(edit_body)
+        assert stepper_markup(edit_body).count('aria-disabled="true"') == 3
+
     def test_view_mode_hides_assets_panel_and_edit_mode_shows_it(self, logged_in_admin, fake_store, assembly_id):
         """The Assets panel is an editing tool, so it only renders in edit mode."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)

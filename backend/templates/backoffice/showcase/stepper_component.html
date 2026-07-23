@@ -8,7 +8,7 @@ ABOUTME: Pure visual showcase — no route wiring, no scroll preservation
 {% macro stepper_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Stepper Component") }}
-        {{ showcase_description("Numbered step navigation with two semantic modes. Tabs mode uses tablist ARIA and lets any step be reached; wizard mode marks the active step with aria-current='step' and can lock later steps until earlier ones are done. Per-step state: active, inactive, done, or error.") }}
+        {{ showcase_description("Numbered step navigation with two semantic modes. Tabs mode uses tablist ARIA and lets any step be reached; wizard mode marks the active step with aria-current='step' and can lock later steps until earlier ones are done. Per-step state: active, inactive, done, or error. disabled=true locks the whole stepper in either mode.") }}
 
         {% call showcase_example('{% from "backoffice/components/stepper.html" import stepper %}
 
@@ -51,6 +51,26 @@ ABOUTME: Pure visual showcase — no route wiring, no scroll preservation
                     aria_label="Example stepper - wizard mode",
                     mode="wizard"
                     ) }}
+                </div>
+
+                {# Whole stepper disabled #}
+                <div class="flex flex-col gap-2">
+                    <span class="text-label-md" style="color: var(--color-secondary-text);">disabled=true — whole stepper locked (e.g. while an edit is in progress)</span>
+                    {{ stepper(
+                    id="showcase-stepper-disabled",
+                    items=[
+                    {"key": "form", "label": "Registration page", "href": "#", "state": "done"},
+                    {"key": "email", "label": "Auto-reply email", "href": "#", "active": true},
+                    {"key": "preview", "label": "Preview and publish", "href": "#"}
+                    ],
+                    aria_label="Example stepper - disabled",
+                    mode="tabs",
+                    disabled=true
+                    ) }}
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                        Every step renders as a non-focusable span with aria-disabled="true" — nothing to click or tab to.
+                        Pair it with disabling the page's other navigation (e.g. the wizard footer's Back/Next).
+                    </p>
                 </div>
 
                 {# State reference #}
