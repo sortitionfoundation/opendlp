@@ -352,8 +352,8 @@ class TestLifecycleFooterControls:
 
         assert 'value="publish"' not in body
         assert 'value="unpublish"' in body
-        assert "Unpublish</button>" in body
-        assert "Close registration</button>" in body
+        assert "Unpublish</span></button>" in body
+        assert "Close registration</span></button>" in body
         # Close goes through the confirmation dialog (terminal action, no reopen).
         assert "Close registration?" in body
 
