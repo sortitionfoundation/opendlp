@@ -12,5 +12,13 @@ ABOUTME: Renders exactly like the public form but blocks submission (interaction
         document.addEventListener('submit', function (event) {
             event.preventDefault();
         }, true);
+        // Links are neutralised too: navigating the iframe away (author-HTML links,
+        // footer links) would hit pages whose frame-ancestors/X-Frame-Options block
+        // framing, leaving the preview pane blank until a full page reload.
+        document.addEventListener('click', function (event) {
+            if (event.target.closest('a')) {
+                event.preventDefault();
+            }
+        }, true);
     </script>
 {% endblock %}

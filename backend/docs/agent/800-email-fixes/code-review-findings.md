@@ -21,9 +21,9 @@ Ranked by severity; items 1–3 share one root cause and one fix design.
 - [x] 2. Save now ignores the posted `template_id` entirely and operates only on the page's assigned template — the cross-assembly overwrite path no longer exists
 - [x] 3. Self-heal re-assignment and the `templates[0]` fallback removed from the save path
 - [x] 4. `_dispatch_email_action` rejects unknown/legacy actions (`enable`/`disable`) with a warning flash and no changes
-- [ ] 5. Emit `aria-selected` on the active tab in the stepper's disabled span branch
-- [ ] 6. Neutralise link navigation inside the form preview iframe (block anchor clicks like submits, or `sandbox` the iframe)
-- [ ] 7. Fix the unterminated toast `<div>` in `patterns.html`
+- [x] 5. The stepper's disabled span branch now emits `aria-selected` in tabs mode (regression test in `test_stepper_macro.py`)
+- [x] 6. The preview iframe now blocks anchor clicks in the capture phase, mirroring the submit blocker
+- [x] 7. The unterminated toast `<div>` in `patterns.html` is closed (the two sibling toasts were already correct)
 - [x] 8. `preview_registration_form`'s catch-all now uses `logger.exception`
 - [x] 9. Shared `_create_and_assign_default_template` helper extracted (create action + page seeding both use it)
 - [x] 10. `preview_registration_form` (and the email dispatch) now use `get_registration_page`, dropping the discarded HTML-source reads

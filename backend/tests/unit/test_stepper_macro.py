@@ -83,6 +83,14 @@ class TestStepperAriaByMode:
         )
         assert 'aria-disabled="true"' in html
 
+    def test_fully_disabled_tabs_still_mark_the_selected_tab(self):
+        # A tablist must always have a selected tab, even while the whole stepper
+        # is locked (edit mode): the visible panel's aria-labelledby points at it.
+        html = _render(f'{{{{ stepper(id="s", aria_label="Steps", mode="tabs", disabled=true, {_TABS_ITEMS}) }}}}')
+        assert 'aria-disabled="true"' in html
+        assert 'aria-selected="true"' in html
+        assert 'aria-selected="false"' in html
+
 
 class TestStepperExtraAttrsEscaping:
     """Pass-through attribute values must be HTML-escaped, because the macro joins

@@ -88,7 +88,7 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
                               role="{{ step_role }}"
                               id="{{ tab_id }}"
                               aria-disabled="true"
-                              {% if not is_wizard %}aria-controls="{{ panel_id }}" tabindex="-1"{% endif %}
+                              {% if not is_wizard %}aria-controls="{{ panel_id }}" aria-selected="{{ 'true' if is_active else 'false' }}" tabindex="-1"{% endif %}
                               {{ extra_attrs | join(" ") | safe }}>
                             <span class="stepper-number" aria-hidden="true">
                                 {% if state == "done" %}
