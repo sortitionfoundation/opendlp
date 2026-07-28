@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the backoffice registration view's read-only / edit-mode toggle
 # ABOUTME: Drives the real Flask route + services over a FakeUnitOfWork via a logged-in client
 
+import uuid
 from unittest.mock import patch
 
 import pytest
@@ -309,6 +310,22 @@ class TestFormPreviewRoute:
 
         assert response.status_code == 404
 
+    def test_preview_404_for_unknown_assembly(self, logged_in_admin):
+        response = logged_in_admin.get(f"/backoffice/assembly/{uuid.uuid4()}/registration/form-preview")
+
+        assert response.status_code == 404
+
+    def test_preview_500_when_rendering_fails(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice_registration.render_registration_form",
+            side_effect=RuntimeError("boom"),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.status_code == 500
+
     def test_preview_403_for_non_member(self, logged_in_user, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
 
@@ -393,3 +410,21 @@ class TestLifecycleFooterControls:
         with FakeUnitOfWork(store=fake_store) as uow:
             stored = uow.registration_pages.get(page.id)
         assert stored.status == RegistrationPageStatus.CLOSED
+
+    def test_unknown_action_is_a_plain_save_landing_on_the_form_step(self, logged_in_admin, fake_store, assembly_id):
+        # An action outside the save/lifecycle sets carries no HTML and triggers no
+        # transition: it falls through to the plain-save path and lands read-only
+        # on the form step (no edit=1), leaving the page untouched.
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/save",
+            data={"action": "bogus"},
+        )
+
+        assert response.status_code == 302
+        assert "section=form" in response.location
+        assert "edit=1" not in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+        assert stored.status == RegistrationPageStatus.PUBLISHED

@@ -289,10 +289,10 @@ def register_after_request_handlers(app: Flask) -> None:
         # for the backoffice to embed them (registration form preview).
         if request.endpoint in SAME_ORIGIN_FRAMEABLE_ENDPOINTS:
             response.headers["X-Frame-Options"] = "SAMEORIGIN"
-            if "Content-Security-Policy" in response.headers:
-                response.headers["Content-Security-Policy"] = response.headers["Content-Security-Policy"].replace(
-                    "frame-ancestors 'none'", "frame-ancestors 'self'"
-                )
+            # set_headers() above always emits the CSP, so the header is present.
+            response.headers["Content-Security-Policy"] = response.headers["Content-Security-Policy"].replace(
+                "frame-ancestors 'none'", "frame-ancestors 'self'"
+            )
 
         # Replace nonce placeholder with actual nonce for this request
         nonce = g.get("csp_nonce", "")

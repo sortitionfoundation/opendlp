@@ -231,7 +231,10 @@ preview = true
 source = ["src", "tests"]
 plugins = ["covdefaults"]
 # The dev blueprint is not even registered in production configs, so we can ignore it.
-omit = ["src/opendlp/entrypoints/blueprints/dev.py"]
+# The BDD suite is omitted because the coverage-measured runs use --ignore tests/bdd
+# (BDD tests run separately, without coverage), so its files would always be
+# reported as 0%-covered dead weight.
+omit = ["src/opendlp/entrypoints/blueprints/dev.py", "tests/bdd/*"]
 sigterm = true
 
 [tool.coverage.report]
