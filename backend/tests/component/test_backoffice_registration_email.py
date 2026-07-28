@@ -178,28 +178,27 @@ class TestSaveAction:
         saved = _get_template(fake_store, template.id)
         assert saved.subject == "Updated subject"
 
-    def test_save_uses_posted_template_id_when_none_assigned(self, logged_in_admin, fake_store, assembly_id):
-        # Template exists for the assembly but was never assigned (legacy state from
-        # the old enable/disable switch). A posted template_id targets it directly,
-        # and saving self-heals the assignment — the auto-reply is always-on.
-        template = _seed_template(fake_store, assembly_id)
-        _seed_page(fake_store, assembly_id, auto_reply_template_id=None)
+    def test_save_ignores_posted_template_id(self, logged_in_admin, fake_store, assembly_id):
+        # Save always targets the page's assigned template. A posted template_id is
+        # never trusted — honouring it would let a request update a template that
+        # belongs to a different assembly.
+        assigned = _seed_template(fake_store, assembly_id)
+        other = _seed_template(fake_store, assembly_id, name="Other", subject="Other subject")
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=assigned.id)
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/email/save",
             data={
                 "action": "save",
-                "template_id": str(template.id),
-                "template_subject": "Subject via form-supplied id",
-                "template_body_html": "<p>Body via form-supplied id</p>",
+                "template_id": str(other.id),
+                "template_subject": "Updated subject",
+                "template_body_html": "<p>Updated body</p>",
             },
         )
 
         assert response.status_code == 302
-        saved = _get_template(fake_store, template.id)
-        assert saved.subject == "Subject via form-supplied id"
-        page = _get_page(fake_store, assembly_id)
-        assert page.auto_reply_email_template_id == template.id
+        assert _get_template(fake_store, assigned.id).subject == "Updated subject"
+        assert _get_template(fake_store, other.id).subject == "Other subject"
 
     def test_save_with_no_template_flashes_warning(self, logged_in_admin, fake_store, assembly_id):
         # Page exists but no email template exists yet — save is a no-op with a hint.
@@ -223,10 +222,10 @@ class TestAlwaysOnAutoReply:
     """The auto-reply cannot be switched off: no enable/disable actions, and the
     checkbox renders as a checked, disabled indicator."""
 
-    def test_save_self_heals_unassigned_legacy_template(self, logged_in_admin, fake_store, assembly_id):
-        # Legacy state from the old switch: template exists but is unassigned, and
-        # nothing posts a template_id. Save falls back to the assembly's template
-        # and assigns it, so the always-on promise becomes true again.
+    def test_save_does_not_assign_an_unassigned_template(self, logged_in_admin, fake_store, assembly_id):
+        # An unassigned template can only mean a partially-failed create (the data
+        # migration backfilled everything else). Save must not quietly repair it —
+        # it redirects with the set-one-up-first hint and changes nothing.
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=None)
 
@@ -234,16 +233,34 @@ class TestAlwaysOnAutoReply:
             f"/backoffice/assembly/{assembly_id}/registration/email/save",
             data={
                 "action": "save",
-                "template_subject": "Healed subject",
-                "template_body_html": "<p>Healed body</p>",
+                "template_subject": "Should not be saved",
+                "template_body_html": "<p>Should not be saved</p>",
             },
         )
 
         assert response.status_code == 302
-        saved = _get_template(fake_store, template.id)
-        assert saved.subject == "Healed subject"
-        page = _get_page(fake_store, assembly_id)
-        assert page.auto_reply_email_template_id == template.id
+        assert "section=email" in response.location
+        assert _get_template(fake_store, template.id).subject != "Should not be saved"
+        assert _get_page(fake_store, assembly_id).auto_reply_email_template_id is None
+
+    def test_legacy_toggle_actions_are_rejected_without_changes(self, logged_in_admin, fake_store, assembly_id):
+        # The removed enable/disable actions (or any unknown action) must not fall
+        # through to the save handler — they redirect back with nothing changed.
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        for action in ("disable", "enable"):
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly_id}/registration/email/save",
+                data={"action": action, "template_id": str(template.id)},
+            )
+
+            assert response.status_code == 302
+            assert "section=email" in response.location
+            assert _get_page(fake_store, assembly_id).auto_reply_email_template_id == template.id
+            saved = _get_template(fake_store, template.id)
+            assert saved.subject == template.subject
+            assert saved.body_html == template.body_html
 
     def test_checkbox_renders_checked_and_disabled_with_no_toggle_form(self, logged_in_admin, fake_store, assembly_id):
         template = _seed_template(fake_store, assembly_id)
