@@ -132,10 +132,12 @@ class TestFloatingAlertsMacro:
         assert "Please review settings" in html
 
     def test_floating_alerts_has_fixed_positioning(self) -> None:
+        """Alerts float at the top-center of the viewport."""
         html = _render_floating_alerts_with_flash([("info", "Test")])
         assert "fixed" in html
-        assert "bottom-6" in html
-        assert "right-6" in html
+        assert "top-6" in html
+        assert "left-1/2" in html
+        assert "-translate-x-1/2" in html
 
     def test_floating_alerts_has_z_index(self) -> None:
         html = _render_floating_alerts_with_flash([("info", "Test")])

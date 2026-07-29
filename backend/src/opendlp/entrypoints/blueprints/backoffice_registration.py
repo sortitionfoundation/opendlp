@@ -55,8 +55,10 @@ from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page_with_slugs,
     generate_starter_form_html,
+    get_registration_page,
     get_registration_page_with_source,
     publish_registration_page,
+    render_registration_form,
     reopen_registration_page,
     unpublish_registration_page,
     update_registration_page_html,
@@ -161,9 +163,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             active_section = "form"
 
         # Auto-reply email data — the template (if assigned) plus readiness problems.
-        email_template, auto_reply_enabled, email_readiness_problems = _load_auto_reply_context(
-            registration_page, assembly_id
-        )
+        email_template, email_readiness_problems = _load_auto_reply_context(registration_page, assembly_id)
 
         return render_template(
             "backoffice/assembly_registration.html",
@@ -187,7 +187,6 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             edit_mode=edit_mode,
             active_section=active_section,
             email_template=email_template,
-            auto_reply_enabled=auto_reply_enabled,
             email_readiness_problems=email_readiness_problems,
         ), 200
     except InsufficientPermissions as e:
@@ -238,6 +237,18 @@ def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uu
 
 
 _SAVE_ACTIONS = frozenset({"save", "save_and_next"})
+_LIFECYCLE_ACTIONS = frozenset({"publish", "unpublish", "close", "reopen"})
+
+
+def _post_action_section(action: str) -> str:
+    """Where to land after a successful action: save_and_next advances to the email
+    step, lifecycle actions return to the preview step (where their buttons live),
+    and plain save returns to the form step."""
+    if action == "save_and_next":
+        return "email"
+    if action in _LIFECYCLE_ACTIONS:
+        return "preview"
+    return "form"
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/save", methods=["POST"])
@@ -249,18 +260,19 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
       - save            → update HTML; land back in read-only on the form step.
       - save_and_next   → update HTML; advance to the auto-reply email step.
       - publish         → transition TEST → PUBLISHED. No HTML update.
-      - unpublish / close / reopen — deprecated lifecycle transitions kept for
-                          backwards compatibility with older POSTs; the UI no
-                          longer offers them.
+      - unpublish       → transition PUBLISHED → TEST (back to test mode).
+      - close           → transition to CLOSED. Terminal from the UI's point of
+                          view: reopen exists only for backwards compatibility
+                          with older POSTs and is not offered anywhere.
     """
     action = request.form.get("action", "save")
     # On failure of a save action, land back in edit mode of the form step so the
-    # user can fix and retry. Non-save actions (publish/etc) come from the read-only
-    # preview step, so failure just lands them back on the preview step.
+    # user can fix and retry. Lifecycle actions come from the read-only preview
+    # step, so failure just lands them back on the preview step.
     error_kwargs: dict[str, Any] = {"assembly_id": assembly_id, "section": "form"}
     if action in _SAVE_ACTIONS:
         error_kwargs["edit"] = "1"
-    elif action == "publish":
+    elif action in _LIFECYCLE_ACTIONS:
         error_kwargs["section"] = "preview"
     error_redirect_url = url_for("backoffice_registration.view_assembly_registration", **error_kwargs)
     try:
@@ -280,8 +292,7 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         flash_message = _handle_registration_action(action, current_user.id, assembly_id)
         flash(flash_message, "success")
-        # save_and_next advances to the email step; everything else lands back on the form step.
-        next_section = "email" if action == "save_and_next" else "form"
+        next_section = _post_action_section(action)
         return redirect_preserving_scroll(
             url_for(
                 "backoffice_registration.view_assembly_registration",
@@ -328,25 +339,23 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect_preserving_scroll(error_redirect_url)
 
 
-def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> tuple[Any, bool, list[dict[str, str]]]:
+def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> tuple[Any, list[dict[str, str]]]:
     """Load the auto-reply template and readiness problems for the view route.
 
     Prefers the template currently assigned to the page. When nothing is assigned
-    (either because the switch is off, or the template was auto-created and not
-    yet turned on) falls back to the first template stored for the assembly, so
-    the editor still shows the pre-created copy for the manager to work on.
+    (a legacy state from before the auto-reply became always-on) falls back to the
+    first template stored for the assembly, so the editor still shows the
+    pre-created copy for the manager to work on.
     """
     email_template = None
-    auto_reply_enabled = False
     email_readiness_problems: list[dict[str, str]] = []
     if registration_page is None:
-        return email_template, auto_reply_enabled, email_readiness_problems
+        return email_template, email_readiness_problems
 
     template_id = registration_page.auto_reply_email_template_id
     if template_id is not None:
         try:
             email_template = get_email_template(bootstrap.get_flask_uow(), current_user.id, template_id)
-            auto_reply_enabled = True
         except EmailTemplateNotFoundError:
             logger.debug(
                 "auto_reply_template_load_failed",
@@ -381,7 +390,7 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
 
     problems = auto_reply_readiness_problems(bootstrap.get_flask_uow(), assembly_id)
     email_readiness_problems = [{"severity": p.severity.value, "message": p.message} for p in problems]
-    return email_template, auto_reply_enabled, email_readiness_problems
+    return email_template, email_readiness_problems
 
 
 def _default_email_template_content() -> dict[str, str]:
@@ -411,8 +420,12 @@ def _email_section_url(assembly_id: uuid.UUID, edit: bool = False) -> str:
     return url_for("backoffice_registration.view_assembly_registration", **kwargs)
 
 
-def _handle_email_action_create(assembly_id: uuid.UUID) -> str:
-    """Create a stub auto-reply template, assign it, and return the redirect URL (edit mode)."""
+def _create_and_assign_default_template(assembly_id: uuid.UUID) -> None:
+    """Create the default auto-reply template and assign it to the assembly's page.
+
+    The auto-reply is always-on: a created template is an assigned template, and
+    this helper is the single place that enforces that invariant.
+    """
     defaults = _default_email_template_content()
     template = create_email_template(
         bootstrap.get_flask_uow(),
@@ -423,29 +436,22 @@ def _handle_email_action_create(assembly_id: uuid.UUID) -> str:
         body_html=defaults["body_html"],
     )
     assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, template.id)
+
+
+def _handle_email_action_create(assembly_id: uuid.UUID) -> str:
+    """Create a stub auto-reply template, assign it, and return the redirect URL (edit mode)."""
+    _create_and_assign_default_template(assembly_id)
     flash(_("Auto-reply email created. Edit it below and click Save."), "success")
     return _email_section_url(assembly_id, edit=True)
 
 
-def _handle_email_action_enable(assembly_id: uuid.UUID, current_template_id: uuid.UUID | None) -> str:
-    if current_template_id is None:
-        flash(_("Please set up the auto-reply email first."), "warning")
-        return _email_section_url(assembly_id)
-    assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, current_template_id)
-    flash(_("Auto-reply enabled. Respondents will now receive this email after registering."), "success")
-    return _email_section_url(assembly_id)
-
-
-def _handle_email_action_disable(assembly_id: uuid.UUID) -> str:
-    assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, None)
-    flash(_("Auto-reply disabled. Respondents will no longer receive this email."), "success")
-    return _email_section_url(assembly_id)
-
-
 def _handle_email_action_save(
-    assembly_id: uuid.UUID, current_template_id: uuid.UUID | None, *, advance: bool = False
+    assembly_id: uuid.UUID,
+    template_id: uuid.UUID | None,
+    *,
+    advance: bool = False,
 ) -> str:
-    if current_template_id is None:
+    if template_id is None:
         flash(_("There is no auto-reply email to save yet — set one up first."), "warning")
         return _email_section_url(assembly_id)
     # Name is intentionally not overwritten here — the UI doesn't expose it yet,
@@ -454,7 +460,7 @@ def _handle_email_action_save(
     update_email_template(
         bootstrap.get_flask_uow(),
         current_user.id,
-        current_template_id,
+        template_id,
         subject=request.form.get("template_subject", "").strip(),
         body_html=request.form.get("template_body_html", ""),
     )
@@ -474,39 +480,39 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID) -> str:
     Raises the service-layer exceptions the caller handles centrally.
     """
     get_assembly_nav_context(bootstrap.get_flask_uow, current_user.id, assembly_id, "")
-    result = get_registration_page_with_source(bootstrap.get_flask_uow(), current_user.id, assembly_id)
-    if result is None:
+    page = get_registration_page(bootstrap.get_flask_uow(), current_user.id, assembly_id)
+    if page is None:
         raise RegistrationPageNotFoundError(f"No registration page for assembly {assembly_id}")
-
-    # For enable/save we prefer the id that came in the form (from the switch or editor form) —
-    # this lets the switch turn on a template that isn't yet assigned. Fall back to what's
-    # currently assigned on the page for enable, and require it for save.
-    posted_template_id = request.form.get("template_id", "").strip()
-    posted_id = uuid.UUID(posted_template_id) if posted_template_id else None
-    current_template_id = result[0].auto_reply_email_template_id
 
     if action == "create":
         return _handle_email_action_create(assembly_id)
-    if action == "enable":
-        return _handle_email_action_enable(assembly_id, posted_id or current_template_id)
-    if action == "disable":
-        return _handle_email_action_disable(assembly_id)
-    return _handle_email_action_save(assembly_id, posted_id or current_template_id, advance=(action == "save_and_next"))
+    if action not in ("save", "save_and_next"):
+        flash(_("Unknown action — nothing was changed."), "warning")
+        return _email_section_url(assembly_id)
+    # Save always targets the page's assigned template. The form does not choose a
+    # template, so a posted template_id is deliberately ignored — trusting it would
+    # let a request update a template belonging to a different assembly.
+    return _handle_email_action_save(
+        assembly_id,
+        page.auto_reply_email_template_id,
+        advance=(action == "save_and_next"),
+    )
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/email/save", methods=["POST"])
 @login_required
 def save_assembly_registration_email(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Create, update, enable or disable the auto-reply email template.
+    """Create or update the auto-reply email template.
 
     Action-based POST endpoint:
 
     - create   → create a template with default copy and assign it as the auto-reply.
                  Lands the user in edit mode so they can immediately customise it.
-    - save     → update name / subject / body_html on the existing template.
-    - enable   → assign the template as the page's auto-reply (switch on).
-    - disable  → unassign the template (switch off). The template row is kept
-                 so re-enabling later is one click.
+    - save     → update subject / body_html on the page's assigned template.
+
+    There is deliberately no enable/disable: the product currently always sends the
+    auto-reply. If a real need to switch it off emerges, that gets a first-class
+    service-layer method — not the old assign/unassign-as-a-toggle trick.
     """
     action = request.form.get("action", "save")
     try:
@@ -542,19 +548,11 @@ def _create_default_auto_reply_template(assembly_id: uuid.UUID) -> None:
     """Best-effort: seed a default auto-reply email template for a new page.
 
     Not fatal — if this fails (validation, race, etc.) we log and let the manager
-    hit the "Set up auto-reply" fallback in the UI. Deliberately leaves the
-    template unassigned so the auto-reply switch defaults to OFF.
+    hit the "Set up auto-reply" fallback in the UI. The template is assigned
+    straight away: the auto-reply is always-on, so a page with a template sends it.
     """
     try:
-        defaults = _default_email_template_content()
-        create_email_template(
-            bootstrap.get_flask_uow(),
-            current_user.id,
-            assembly_id,
-            name=defaults["name"],
-            subject=defaults["subject"],
-            body_html=defaults["body_html"],
-        )
+        _create_and_assign_default_template(assembly_id)
     except Exception as e:
         # Non-fatal: log with traceback per code_quality_rules for catch-all blocks.
         logger.exception(
@@ -610,6 +608,48 @@ def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.error("Generate skeleton error for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify({"error": _("An error occurred while generating the form skeleton")}), 500
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/form-preview")
+@login_required
+def preview_registration_form(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Read-only render of the saved registration form, embedded in the preview step.
+
+    Renders the last saved HTML through the same pipeline as the public route, so
+    organisers see exactly what visitors will see without opening the public URL.
+    Submission is neutralised twice over: the empty form action posts back to this
+    GET-only route (405), and the preview template's script blocks submit events so
+    interactions (dropdowns etc.) remain testable without ever leaving the page.
+    The security form elements (CSRF/timing/honeypot) are deliberately omitted —
+    they only exist to protect real submissions. The endpoint is exempted from the
+    global frame-ancestors 'none' policy (see SAME_ORIGIN_FRAMEABLE_ENDPOINTS) so
+    the backoffice can iframe it same-origin.
+    """
+    try:
+        uow = bootstrap.get_flask_uow()
+        page = get_registration_page(uow, current_user.id, assembly_id)
+        if page is None:
+            abort(404)
+        rendered_form = render_registration_form(
+            uow,
+            page,
+            csrf_form_element="<!-- preview: submission disabled, security fields omitted -->",
+            form_action="",
+        )
+        return render_template(
+            "register/form_preview.html",
+            rendered_form=rendered_form,
+            is_test=page.status == RegistrationPageStatus.TEST,
+        )
+    except HTTPException:
+        raise
+    except InsufficientPermissions:
+        abort(403)
+    except NotFoundError:
+        abort(404)
+    except Exception:
+        logger.exception("Registration form preview error", assembly_id=str(assembly_id))
+        abort(500)
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/qr-code.png")

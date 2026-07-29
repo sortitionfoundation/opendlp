@@ -13,7 +13,11 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
-from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
+from opendlp.service_layer.registration_page_service import (
+    create_registration_page_with_slugs,
+    publish_registration_page,
+    update_registration_page_html,
+)
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
 
@@ -433,6 +437,205 @@ def saved_registration_html_contains(page: Page, text: str):
     """After saving we land on the read-only form view, whose editor shows the persisted HTML."""
     editor = page.locator("textarea[name='html_content'] + .cm-editor")
     expect(editor).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+def _create_assembly_with_saved_form(title: str, admin_user, session_factory):
+    """Create an assembly whose registration page has saved, publishable form HTML."""
+    assembly = create_assembly(
+        uow=SqlAlchemyUnitOfWork(session_factory),
+        title=title,
+        created_by_user_id=admin_user.id,
+    )
+    _assembly_name_id_cache.add_existing(title, assembly)
+    create_registration_page_with_slugs(
+        uow=SqlAlchemyUnitOfWork(session_factory),
+        user_id=admin_user.id,
+        assembly_id=assembly.id,
+    )
+    update_registration_page_html(
+        uow=SqlAlchemyUnitOfWork(session_factory),
+        user_id=admin_user.id,
+        assembly_id=assembly.id,
+        form_html=(
+            '<form action="{{ form_action }}" method="post">'
+            "{{ csrf_form_element }}"
+            '<label for="colour">Favourite colour</label>'
+            '<select id="colour" name="colour"><option>Red</option><option>Blue</option></select>'
+            '<button type="submit">Register</button>'
+            "</form>"
+        ),
+    )
+    return assembly
+
+
+@given(parsers.parse('there is an assembly called "{title}" with a saved registration form'))
+def create_test_assembly_with_saved_form(title: str, admin_user, test_database):
+    """Create an assembly whose registration page already has saved, previewable form HTML."""
+    _create_assembly_with_saved_form(title, admin_user, test_database)
+
+
+@given(parsers.parse('there is an assembly called "{title}" with a published registration form'))
+def create_test_assembly_with_published_form(title: str, admin_user, test_database):
+    """Create an assembly whose saved registration form has been published."""
+    assembly = _create_assembly_with_saved_form(title, admin_user, test_database)
+    publish_registration_page(
+        uow=SqlAlchemyUnitOfWork(test_database),
+        user_id=admin_user.id,
+        assembly_id=assembly.id,
+    )
+
+
+@when("I click the Unpublish button")
+def click_unpublish(page: Page):
+    page.get_by_role("button", name="Unpublish", exact=True).click()
+
+
+@when("I click the Close registration button")
+def click_close_registration(page: Page):
+    """The footer's Close opener — outside the dialog it is the only button with this name."""
+    page.get_by_role("button", name="Close registration", exact=True).click()
+
+
+@then("I should see the close registration confirmation")
+def see_close_confirmation(page: Page):
+    expect(page.locator('[aria-labelledby="close-registration-modal-title"]')).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I choose to keep the registration open")
+def choose_keep_open(page: Page):
+    page.get_by_role("button", name="Keep it open").click()
+
+
+@then("the close registration confirmation should be closed")
+def close_confirmation_closed(page: Page):
+    """The dialog is inside a template x-if, so closing removes it from the DOM."""
+    expect(page.locator('[aria-labelledby="close-registration-modal-title"]')).to_have_count(0)
+
+
+@when("I confirm closing the registration")
+def confirm_close_registration(page: Page):
+    """The destructive submit inside the dialog (same label as the opener)."""
+    dialog = page.locator('[aria-labelledby="close-registration-modal-title"]')
+    dialog.get_by_role("button", name="Close registration", exact=True).click()
+
+
+@then("the registration should be shown as closed")
+def registration_shown_as_closed(page: Page):
+    expect(page.get_by_role("alert").filter(has_text="Registration closed")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the registration should be shown as in test mode")
+def registration_shown_as_test_mode(page: Page):
+    expect(page.get_by_role("alert").filter(has_text="Test mode")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I visit the registration preview step for "{title}"'))
+def visit_registration_preview_step(page: Page, title: str, test_database):
+    """Open the preview-and-publish step of the registration wizard."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=preview")
+
+
+@then("I should see the embedded registration form preview")
+def see_embedded_form_preview(page: Page):
+    """The preview step iframes the saved form, rendered through the public pipeline."""
+    frame = page.frame_locator('iframe[title="Registration form preview"]')
+    expect(frame.locator("form")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("submitting the embedded preview form does not leave the page")
+def submitting_preview_form_does_nothing(page: Page):
+    """The preview form is interactive but its submission is blocked."""
+    frame = page.frame_locator('iframe[title="Registration form preview"]')
+    # Interactions work: pick a dropdown option before trying to submit.
+    frame.locator('select[name="colour"]').select_option("Blue")
+    frame.locator('form button[type="submit"]').click()
+    # The iframe still shows the form (no navigation, no thank-you page)...
+    expect(frame.locator("form")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # ...and the backoffice page itself has not navigated away.
+    assert "section=preview" in page.url
+
+
+@when(parsers.parse('I visit the read-only registration form view for "{title}"'))
+def visit_registration_form_view(page: Page, title: str, test_database):
+    """Open the registration form step in its default read-only mode."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form")
+
+
+@when("I scroll down the page")
+def scroll_down_the_page(page: Page):
+    page.evaluate("window.scrollTo(0, 400)")
+    page.wait_for_function("window.scrollY > 0")
+
+
+@when("I click the Edit button in the editor header")
+def click_editor_edit(page: Page):
+    """Edit renders as a link-button in the editor card header."""
+    page.get_by_role("button", name="Edit", exact=True).click()
+
+
+@then("the editor should be in edit mode with the page still scrolled down")
+def edit_mode_with_scroll_preserved(page: Page):
+    """x-scroll-preserve-links carries the scroll position across the Edit reload."""
+    page.wait_for_url(lambda url: "edit=1" in url, timeout=PLAYWRIGHT_TIMEOUT)
+    page.wait_for_function("window.scrollY > 0", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the wizard Next button should be disabled")
+def wizard_next_button_disabled(page: Page):
+    """While editing, the sticky footer's navigation is locked."""
+    expect(page.get_by_role("button", name="Next →")).to_be_disabled()
+
+
+@then("the stepper navigation should be disabled")
+def stepper_navigation_disabled(page: Page):
+    """While editing, the stepper renders aria-disabled spans instead of links."""
+    expect(page.locator("a.stepper-link")).to_have_count(0)
+    expect(page.locator('span.stepper-link[aria-disabled="true"]')).to_have_count(3)
+
+
+@when("I click the Cancel button in the editor header")
+def click_editor_cancel(page: Page):
+    """Cancel renders as a link-button in the editor card header."""
+    page.get_by_role("button", name="Cancel", exact=True).click()
+
+
+@then("I should see the discard changes confirmation")
+def see_discard_confirmation(page: Page):
+    """Cancelling with unsaved changes opens the discard-confirmation dialog."""
+    expect(page.locator('[aria-labelledby="leave-modal-title"]')).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I choose to keep editing")
+def choose_keep_editing(page: Page):
+    page.get_by_role("button", name="Keep editing").click()
+
+
+@then("the discard changes confirmation should be closed")
+def discard_confirmation_closed(page: Page):
+    """The dialog is inside a template x-if, so closing removes it from the DOM."""
+    expect(page.locator('[aria-labelledby="leave-modal-title"]')).to_have_count(0)
+
+
+@when("I choose to discard my changes")
+def choose_discard_changes(page: Page):
+    page.get_by_role("button", name="Discard changes").click()
+
+
+@then("I should be on the read-only registration form view")
+def on_read_only_form_view(page: Page):
+    """Leaving edit mode lands on the view URL (no edit=1) with a non-editable editor."""
+    page.wait_for_url(lambda url: "edit=1" not in url, timeout=PLAYWRIGHT_TIMEOUT)
+    content = page.locator("textarea[name='html_content'] + .cm-editor .cm-content")
+    expect(content).to_have_attribute("contenteditable", "false", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the saved registration HTML should not contain "{text}"'))
+def saved_registration_html_not_contains(page: Page, text: str):
+    """Discarded edits must not be persisted."""
+    editor = page.locator("textarea[name='html_content'] + .cm-editor")
+    expect(editor).not_to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when("I open the form skeleton preview")

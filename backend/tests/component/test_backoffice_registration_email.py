@@ -178,25 +178,27 @@ class TestSaveAction:
         saved = _get_template(fake_store, template.id)
         assert saved.subject == "Updated subject"
 
-    def test_save_uses_posted_template_id_when_none_assigned(self, logged_in_admin, fake_store, assembly_id):
-        # Template exists for the assembly but auto-reply is off. The editor form
-        # posts template_id so save/enable work on the currently-displayed template.
-        template = _seed_template(fake_store, assembly_id)
-        _seed_page(fake_store, assembly_id, auto_reply_template_id=None)
+    def test_save_ignores_posted_template_id(self, logged_in_admin, fake_store, assembly_id):
+        # Save always targets the page's assigned template. A posted template_id is
+        # never trusted — honouring it would let a request update a template that
+        # belongs to a different assembly.
+        assigned = _seed_template(fake_store, assembly_id)
+        other = _seed_template(fake_store, assembly_id, name="Other", subject="Other subject")
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=assigned.id)
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/email/save",
             data={
                 "action": "save",
-                "template_id": str(template.id),
-                "template_subject": "Subject via form-supplied id",
-                "template_body_html": "<p>Body via form-supplied id</p>",
+                "template_id": str(other.id),
+                "template_subject": "Updated subject",
+                "template_body_html": "<p>Updated body</p>",
             },
         )
 
         assert response.status_code == 302
-        saved = _get_template(fake_store, template.id)
-        assert saved.subject == "Subject via form-supplied id"
+        assert _get_template(fake_store, assigned.id).subject == "Updated subject"
+        assert _get_template(fake_store, other.id).subject == "Other subject"
 
     def test_save_with_no_template_flashes_warning(self, logged_in_admin, fake_store, assembly_id):
         # Page exists but no email template exists yet — save is a no-op with a hint.
@@ -216,50 +218,62 @@ class TestSaveAction:
         assert _list_templates(fake_store, assembly_id) == []
 
 
-class TestEnableDisableActions:
-    """The switch above the editor posts action=enable/disable to flip the assignment FK."""
+class TestAlwaysOnAutoReply:
+    """The auto-reply cannot be switched off: no enable/disable actions, and the
+    checkbox renders as a checked, disabled indicator."""
 
-    def test_enable_assigns_the_posted_template(self, logged_in_admin, fake_store, assembly_id):
+    def test_save_does_not_assign_an_unassigned_template(self, logged_in_admin, fake_store, assembly_id):
+        # An unassigned template can only mean a partially-failed create (the data
+        # migration backfilled everything else). Save must not quietly repair it —
+        # it redirects with the set-one-up-first hint and changes nothing.
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=None)
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{assembly_id}/registration/email/save",
-            data={"action": "enable", "template_id": str(template.id)},
+            data={
+                "action": "save",
+                "template_subject": "Should not be saved",
+                "template_body_html": "<p>Should not be saved</p>",
+            },
         )
 
         assert response.status_code == 302
         assert "section=email" in response.location
-        page = _get_page(fake_store, assembly_id)
-        assert page.auto_reply_email_template_id == template.id
+        assert _get_template(fake_store, template.id).subject != "Should not be saved"
+        assert _get_page(fake_store, assembly_id).auto_reply_email_template_id is None
 
-    def test_enable_without_template_id_or_assignment_flashes_warning(self, logged_in_admin, fake_store, assembly_id):
-        _seed_page(fake_store, assembly_id, auto_reply_template_id=None)
-
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/email/save",
-            data={"action": "enable"},
-        )
-
-        assert response.status_code == 302
-        page = _get_page(fake_store, assembly_id)
-        # Nothing to enable, nothing gets assigned.
-        assert page.auto_reply_email_template_id is None
-
-    def test_disable_unassigns_current_template(self, logged_in_admin, fake_store, assembly_id):
+    def test_legacy_toggle_actions_are_rejected_without_changes(self, logged_in_admin, fake_store, assembly_id):
+        # The removed enable/disable actions (or any unknown action) must not fall
+        # through to the save handler — they redirect back with nothing changed.
         template = _seed_template(fake_store, assembly_id)
         _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
 
-        response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/email/save",
-            data={"action": "disable"},
-        )
+        for action in ("disable", "enable"):
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly_id}/registration/email/save",
+                data={"action": action, "template_id": str(template.id)},
+            )
 
-        assert response.status_code == 302
-        page = _get_page(fake_store, assembly_id)
-        assert page.auto_reply_email_template_id is None
-        # The template itself is kept so re-enabling later is one click.
-        assert _get_template(fake_store, template.id) is not None
+            assert response.status_code == 302
+            assert "section=email" in response.location
+            assert _get_page(fake_store, assembly_id).auto_reply_email_template_id == template.id
+            saved = _get_template(fake_store, template.id)
+            assert saved.subject == template.subject
+            assert saved.body_html == template.body_html
+
+    def test_checkbox_renders_checked_and_disabled_with_no_toggle_form(self, logged_in_admin, fake_store, assembly_id):
+        template = _seed_template(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, auto_reply_template_id=template.id)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?section=email")
+
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert 'id="auto-reply-toggle"' not in html
+        checkbox = html.split('name="auto_reply_enabled"', 1)[1].split(">", 1)[0]
+        assert "checked" in checkbox
+        assert "disabled" in checkbox
 
 
 class TestErrorHandling:
@@ -328,16 +342,15 @@ class TestErrorHandling:
 class TestLoadAutoReplyContext:
     """The view route falls back to list_email_templates()[0] when nothing is assigned."""
 
-    def test_returns_assigned_template_and_enabled_true(self, app, fake_store, admin_user, existing_assembly):
+    def test_returns_assigned_template(self, app, fake_store, admin_user, existing_assembly):
         template = _seed_template(fake_store, existing_assembly.id)
         _seed_page(fake_store, existing_assembly.id, auto_reply_template_id=template.id)
         page = _get_page(fake_store, existing_assembly.id)
 
         with app.test_request_context(), _patch_current_user(admin_user.id):
-            loaded, enabled, problems = be_reg._load_auto_reply_context(page, existing_assembly.id)
+            loaded, problems = be_reg._load_auto_reply_context(page, existing_assembly.id)
 
         assert loaded.id == template.id
-        assert enabled is True
         assert isinstance(problems, list)
 
     def test_falls_back_to_first_template_when_none_assigned(self, app, fake_store, admin_user, existing_assembly):
@@ -346,16 +359,14 @@ class TestLoadAutoReplyContext:
         page = _get_page(fake_store, existing_assembly.id)
 
         with app.test_request_context(), _patch_current_user(admin_user.id):
-            loaded, enabled, problems = be_reg._load_auto_reply_context(page, existing_assembly.id)
+            loaded, problems = be_reg._load_auto_reply_context(page, existing_assembly.id)
 
         assert loaded.id == template.id
-        assert enabled is False
         assert isinstance(problems, list)
 
     def test_returns_none_when_no_registration_page(self, fake_store, existing_assembly):
-        loaded, enabled, problems = be_reg._load_auto_reply_context(None, existing_assembly.id)
+        loaded, problems = be_reg._load_auto_reply_context(None, existing_assembly.id)
         assert loaded is None
-        assert enabled is False
         assert problems == []
 
     def test_falls_back_to_first_template_when_assigned_template_lookup_fails(
@@ -376,10 +387,9 @@ class TestLoadAutoReplyContext:
                 side_effect=EmailTemplateNotFoundError("gone"),
             ),
         ):
-            loaded, enabled, _problems = be_reg._load_auto_reply_context(page, existing_assembly.id)
+            loaded, _problems = be_reg._load_auto_reply_context(page, existing_assembly.id)
 
         assert loaded.id == fallback.id
-        assert enabled is False
 
 
 class TestCreateDefaultAutoReplyTemplate:
@@ -410,6 +420,6 @@ class TestPageCreationSeedsDefaultTemplate:
         assert response.status_code == 302
         templates = _list_templates(fake_store, assembly_id)
         assert len(templates) == 1
-        # Not assigned — the switch starts OFF; the manager can review before enabling.
+        # Assigned straight away — the auto-reply is always-on once a template exists.
         page = _get_page(fake_store, assembly_id)
-        assert page.auto_reply_email_template_id is None
+        assert page.auto_reply_email_template_id == templates[0].id

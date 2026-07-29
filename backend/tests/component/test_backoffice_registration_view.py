@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the backoffice registration view's read-only / edit-mode toggle
 # ABOUTME: Drives the real Flask route + services over a FakeUnitOfWork via a logged-in client
 
+import uuid
 from unittest.mock import patch
 
 import pytest
@@ -92,7 +93,7 @@ class TestEditModeRendersExpectedHtml:
         assert f"/backoffice/assembly/{assembly_id}/registration?section=email" in body
         assert "Cancel</a>" not in body
 
-    def test_test_status_edit_mode_shows_save_and_next_buttons(self, logged_in_admin, fake_store, assembly_id):
+    def test_test_status_edit_mode_shows_header_save_controls(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
@@ -102,12 +103,42 @@ class TestEditModeRendersExpectedHtml:
         assert "readonly" not in _extract_textarea(body)
         assert "Cancel</span></a>" in body
         assert "Save</span></button>" in body
-        assert "Save and next →</span></button>" in body
+        # Save-and-next is gone: the footer is navigation only, and it locks while editing
+        assert "Save and next" not in body
+        assert "Editing in progress" in body
         # Cancel returns to read-only on the form step
         cancel_block = body.split("Cancel</span></a>", 1)[0]
         anchor = cancel_block.rsplit("<a", 1)[1]
         assert f"/backoffice/assembly/{assembly_id}/registration" in anchor
         assert "edit=1" not in anchor
+
+    def test_edit_mode_disables_the_stepper_navigation(self, logged_in_admin, fake_store, assembly_id):
+        """While editing, the stepper renders aria-disabled spans instead of links."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        view_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+        edit_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1").get_data(
+            as_text=True
+        )
+
+        def stepper_markup(body: str) -> str:
+            return body.split('class="stepper"', 1)[1].split("</ol>", 1)[0]
+
+        assert "<a href" in stepper_markup(view_body)
+        assert "<a href" not in stepper_markup(edit_body)
+        assert stepper_markup(edit_body).count('aria-disabled="true"') == 3
+
+    def test_view_mode_hides_assets_panel_and_edit_mode_shows_it(self, logged_in_admin, fake_store, assembly_id):
+        """The Assets panel is an editing tool, so it only renders in edit mode."""
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        view_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+        edit_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1").get_data(
+            as_text=True
+        )
+
+        assert ">Assets</h2>" not in view_body
+        assert ">Assets</h2>" in edit_body
 
     def test_published_status_edit_mode_uses_save_and_republish_label(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
@@ -236,3 +267,164 @@ class TestCodeEditorEnhancement:
 
         assert response.status_code == 200
         assert "backoffice/js/dist/html-editor.js" in response.get_data(as_text=True)
+
+
+_PREVIEWABLE_FORM = (
+    '<form action="{{ form_action }}" method="post">'
+    "{{ csrf_form_element }}"
+    '<label for="fn">First name</label><input id="fn" name="first_name" />'
+    '<button type="submit">Register</button>'
+    "</form>"
+)
+
+
+class TestFormPreviewRoute:
+    """The embedded read-only preview of the saved registration form (preview step)."""
+
+    def test_preview_renders_saved_form_with_submission_disabled(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        # The saved form renders through the public pipeline...
+        assert 'name="first_name"' in body
+        assert ">Register</button>" in body
+        # ...but submission is neutralised: empty action, blocking script, no security fields
+        assert 'action=""' in body
+        assert "preview: submission disabled" in body
+        assert 'name="csrf_token"' not in body
+        assert "_opendlp_ttoken_" not in body
+
+    def test_preview_is_framable_by_same_origin_only(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.headers.get("X-Frame-Options") == "SAMEORIGIN"
+        assert "frame-ancestors 'self'" in response.headers.get("Content-Security-Policy", "")
+
+    def test_preview_404_without_registration_page(self, logged_in_admin, assembly_id):
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.status_code == 404
+
+    def test_preview_404_for_unknown_assembly(self, logged_in_admin):
+        response = logged_in_admin.get(f"/backoffice/assembly/{uuid.uuid4()}/registration/form-preview")
+
+        assert response.status_code == 404
+
+    def test_preview_500_when_rendering_fails(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        with patch(
+            "opendlp.entrypoints.blueprints.backoffice_registration.render_registration_form",
+            side_effect=RuntimeError("boom"),
+        ):
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.status_code == 500
+
+    def test_preview_403_for_non_member(self, logged_in_user, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        response = logged_in_user.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+
+        assert response.status_code == 403
+
+    def test_preview_section_embeds_the_preview_iframe(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?section=preview")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "<iframe" in body
+        assert f"/backoffice/assembly/{assembly_id}/registration/form-preview" in body
+
+
+class TestLifecycleFooterControls:
+    """The preview step's footer offers the lifecycle actions for the current status:
+    TEST → Publish; PUBLISHED → Unpublish + Close registration; CLOSED → nothing."""
+
+    def _preview_body(self, logged_in_admin, assembly_id) -> str:
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?section=preview")
+        assert response.status_code == 200
+        return response.get_data(as_text=True)
+
+    def test_test_status_offers_publish_only(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        body = self._preview_body(logged_in_admin, assembly_id)
+
+        assert 'value="publish"' in body
+        assert 'value="unpublish"' not in body
+        assert "Close registration" not in body
+
+    def test_published_status_offers_unpublish_and_close(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
+
+        body = self._preview_body(logged_in_admin, assembly_id)
+
+        assert 'value="publish"' not in body
+        assert 'value="unpublish"' in body
+        assert "Unpublish</span></button>" in body
+        assert "Close registration</span></button>" in body
+        # Close goes through the confirmation dialog (terminal action, no reopen).
+        assert "Close registration?" in body
+
+    def test_closed_status_offers_no_lifecycle_actions(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
+
+        body = self._preview_body(logged_in_admin, assembly_id)
+
+        assert 'value="publish"' not in body
+        assert 'value="unpublish"' not in body
+        assert "Close registration" not in body
+
+    def test_unpublish_returns_page_to_test_and_lands_on_preview(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/save",
+            data={"action": "unpublish"},
+        )
+
+        assert response.status_code == 302
+        assert "section=preview" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+        assert stored.status == RegistrationPageStatus.TEST
+
+    def test_close_closes_the_page_and_lands_on_preview(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/save",
+            data={"action": "close"},
+        )
+
+        assert response.status_code == 302
+        assert "section=preview" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+        assert stored.status == RegistrationPageStatus.CLOSED
+
+    def test_unknown_action_is_a_plain_save_landing_on_the_form_step(self, logged_in_admin, fake_store, assembly_id):
+        # An action outside the save/lifecycle sets carries no HTML and triggers no
+        # transition: it falls through to the plain-save path and lands read-only
+        # on the form step (no edit=1), leaving the page untouched.
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/save",
+            data={"action": "bogus"},
+        )
+
+        assert response.status_code == 302
+        assert "section=form" in response.location
+        assert "edit=1" not in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+        assert stored.status == RegistrationPageStatus.PUBLISHED
