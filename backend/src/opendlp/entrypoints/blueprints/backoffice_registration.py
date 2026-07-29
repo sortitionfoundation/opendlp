@@ -11,7 +11,13 @@ from flask_login import current_user, login_required
 from werkzeug.exceptions import HTTPException
 
 from opendlp import bootstrap
-from opendlp.config import get_max_image_upload_mb
+from opendlp.config import get_max_image_upload_mb, get_max_pdf_upload_mb
+from opendlp.domain.registration_document import (
+    PDF_FILE_EXTENSION,
+    DocumentValidationError,
+    RegistrationDocument,
+    generate_document_html,
+)
 from opendlp.domain.registration_image import (
     ALLOWED_INPUT_FORMATS,
     IMAGE_FILE_EXTENSION,
@@ -24,6 +30,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageNotReady,
     RegistrationPageStatus,
 )
+from opendlp.domain.uploads import human_size
 from opendlp.entrypoints.blueprints.registration import registration_url, short_url
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
@@ -36,15 +43,23 @@ from opendlp.service_layer.email_template_service import (
     update_email_template,
 )
 from opendlp.service_layer.exceptions import (
+    DocumentQuotaExceeded,
     EmailTemplateInvalid,
     EmailTemplateNotFoundError,
     ImageQuotaExceeded,
     InsufficientPermissions,
     NotFoundError,
+    RegistrationDocumentNotFoundError,
     RegistrationImageNotFoundError,
     RegistrationPageNotFoundError,
 )
 from opendlp.service_layer.qr_codes import generate_qr_code_base64, generate_qr_code_png
+from opendlp.service_layer.registration_document_service import (
+    add_registration_document,
+    delete_registration_document,
+    list_registration_documents,
+    set_registration_document_label,
+)
 from opendlp.service_layer.registration_image_service import (
     add_registration_image,
     delete_registration_image,
@@ -107,6 +122,41 @@ def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
     }
 
 
+def _document_to_dict(document: RegistrationDocument, url_slug: str) -> dict[str, Any]:
+    """Serialise a PDF document for the Assets panel.
+
+    ``public_url`` is the public ``/register/<slug>/documents/<sha>.pdf`` route. If the
+    page has no slug yet (newly created), we return a placeholder so the front-end
+    can still render the row.
+    """
+    file_name = f"{document.sha256}.{PDF_FILE_EXTENSION}"
+    public_url = (
+        url_for("registration.serve_registration_document", url_slug=url_slug, document_name=file_name)
+        if url_slug
+        else ""
+    )
+    if document.label and document.label.strip():
+        display_name = document.label.strip()
+    elif document.original_filename:
+        display_name = document.original_filename
+    else:
+        display_name = f"{document.sha256[:8]}.{PDF_FILE_EXTENSION}"
+    snippet_text = f"{display_name} (PDF, {human_size(document.byte_size)})"
+    return {
+        "id": str(document.id),
+        "label": document.label,
+        "original_filename": document.original_filename,
+        "file_name": file_name,
+        "display_name": display_name,
+        "public_url": public_url,
+        "a_snippet": generate_document_html(public_url, snippet_text) if public_url else "",
+        "byte_size": document.byte_size,
+        "aria_label_details": _("Details for %(name)s", name=display_name),
+        "aria_label_copy_snippet": _("Copy download link snippet for %(name)s", name=display_name),
+        "aria_label_delete": _("Delete %(name)s", name=display_name),
+    }
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration")
 @login_required
 def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -146,12 +196,15 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 registration_short_url = short_url(registration_page.short_url_slug)
                 qr_code_data_url = generate_qr_code_base64(registration_short_url)
 
-        # Load registration images for the Assets panel
+        # Load registration images and PDF documents for the Assets panel
         images: list[dict[str, Any]] = []
+        documents: list[dict[str, Any]] = []
         if has_registration_page and registration_page:
             # Reuse the UnitOfWork from the page lookup above.
             stored_images = list_registration_images(uow, current_user.id, assembly_id)
             images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
+            stored_documents = list_registration_documents(uow, current_user.id, assembly_id)
+            documents = [_document_to_dict(document, registration_page.url_slug) for document in stored_documents]
 
         # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
         # have no save path so we always keep them read-only regardless of the param.
@@ -182,7 +235,9 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             thank_you_html=thank_you_html,
             has_registration_page=has_registration_page,
             images=images,
+            documents=documents,
             max_image_upload_mb=get_max_image_upload_mb(),
+            max_pdf_upload_mb=get_max_pdf_upload_mb(),
             allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
             edit_mode=edit_mode,
             active_section=active_section,
@@ -814,5 +869,106 @@ def delete_assembly_registration_image(assembly_id: uuid.UUID, image_id: uuid.UU
     except Exception as e:
         logger.error("Delete image error", assembly_id=str(assembly_id), image_id=str(image_id), error=str(e))
         return jsonify({"error": _("An error occurred while deleting the image")}), 500
+
+    return "", 204
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/documents", methods=["POST"])
+@login_required
+def upload_registration_document(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Accept a multipart PDF upload and return the stored document metadata as JSON.
+
+    The Assets panel calls this from the registration tab so uploads don't disturb
+    the HTML editor's unsaved state — no full-page reload is required.
+    """
+    upload = request.files.get("document")
+    if upload is None or not upload.filename:
+        return jsonify({"error": _("No file was selected")}), 400
+
+    try:
+        raw = upload.read()
+    except Exception as e:
+        logger.warning("Failed to read uploaded document for assembly", assembly_id=str(assembly_id), error=str(e))
+        return jsonify({"error": _("Failed to read the uploaded file")}), 400
+
+    label = (request.form.get("label") or "").strip()
+
+    try:
+        document = add_registration_document(
+            bootstrap.get_flask_uow(),
+            current_user.id,
+            assembly_id,
+            raw,
+            original_filename=upload.filename or "",
+            label=label,
+        )
+    except DocumentValidationError as e:
+        return jsonify({"error": e.message, "reason": e.reason}), 400
+    except DocumentQuotaExceeded as e:
+        return jsonify({"error": str(e)}), 400
+    except RegistrationPageNotFoundError:
+        return jsonify({"error": _("Please create a registration page first from the Details tab.")}), 400
+    except InsufficientPermissions:
+        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+    except NotFoundError:
+        return jsonify({"error": _("Assembly not found")}), 404
+    except Exception as e:
+        logger.exception("Document upload error for assembly", assembly_id=str(assembly_id), error=str(e))
+        return jsonify({"error": _("An error occurred while uploading the document")}), 500
+
+    return jsonify({"document": _document_to_dict(document, _resolve_page_url_slug(assembly_id))}), 201
+
+
+@backoffice_registration_bp.route(
+    "/assembly/<uuid:assembly_id>/registration/documents/<uuid:document_id>", methods=["PATCH"]
+)
+@login_required
+def update_assembly_registration_document(assembly_id: uuid.UUID, document_id: uuid.UUID) -> ResponseReturnValue:
+    """Update a document's label. Returns the updated document metadata as JSON."""
+    data = request.get_json(silent=True) or {}
+    label = (data.get("label") or "").strip()
+    if not label:
+        return jsonify({"error": _("Label is required")}), 400
+
+    try:
+        uow = bootstrap.get_flask_uow()
+        document = set_registration_document_label(uow, current_user.id, assembly_id, document_id, label=label)
+    except RegistrationDocumentNotFoundError:
+        return jsonify({"error": _("Document not found")}), 404
+    except RegistrationPageNotFoundError:
+        return jsonify({"error": _("Registration page not found")}), 404
+    except InsufficientPermissions:
+        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+    except NotFoundError:
+        return jsonify({"error": _("Assembly not found")}), 404
+    except Exception as e:
+        logger.error(
+            "Update document label error", assembly_id=str(assembly_id), document_id=str(document_id), error=str(e)
+        )
+        return jsonify({"error": _("An error occurred while updating the document")}), 500
+
+    return jsonify({"document": _document_to_dict(document, _resolve_page_url_slug(assembly_id))}), 200
+
+
+@backoffice_registration_bp.route(
+    "/assembly/<uuid:assembly_id>/registration/documents/<uuid:document_id>", methods=["DELETE"]
+)
+@login_required
+def delete_assembly_registration_document(assembly_id: uuid.UUID, document_id: uuid.UUID) -> ResponseReturnValue:
+    """Delete a registration document. Returns 204 on success."""
+    try:
+        uow = bootstrap.get_flask_uow()
+        delete_registration_document(uow, current_user.id, assembly_id, document_id)
+    except RegistrationDocumentNotFoundError:
+        return jsonify({"error": _("Document not found")}), 404
+    except RegistrationPageNotFoundError:
+        return jsonify({"error": _("Registration page not found")}), 404
+    except InsufficientPermissions:
+        return jsonify({"error": _("You don't have permission to modify this assembly")}), 403
+    except NotFoundError:
+        return jsonify({"error": _("Assembly not found")}), 404
+    except Exception as e:
+        logger.error("Delete document error", assembly_id=str(assembly_id), document_id=str(document_id), error=str(e))
+        return jsonify({"error": _("An error occurred while deleting the document")}), 500
 
     return "", 204
