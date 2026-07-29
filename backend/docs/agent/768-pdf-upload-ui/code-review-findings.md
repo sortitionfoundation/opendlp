@@ -26,13 +26,20 @@ blank labels on PATCH — the dev tab's snippet renders as ` (PDF, 123 KB)` with
 text while the product UI shows the filename. Suggest aligning `_snippet_text` to the same
 fallback chain. File: `src/opendlp/service_layer/registration_document_service.py:153`.
 
-### 2. Route tests omit the permission and quota branches (test coverage)
+### 2. Route tests omitted the error branches (test coverage) — RESOLVED
 
-`test_backoffice_registration_documents.py` covers auth redirects, upload happy path,
-label default, non-PDF rejection, missing file, PATCH, and DELETE (204/404), but not the
-403 (non-manager role) or `DocumentQuotaExceeded` → 400 branches. The image route tests
-have the same gap, so this is inherited parity rather than a regression — worth closing
-for both in one follow-up if desired.
+This finding originally understated the problem as "inherited parity, optional follow-up".
+In fact `codecov/patch` failed on the PR at 84.5% with **34 uncovered new lines** — all of
+them error-handling branches of the three new routes (upload read-failure/quota/no-page/
+403/404/500; PATCH and DELETE 404/403/500 variants). Parity with the image routes' gaps
+did not help, because the patch check measures only the diff's new lines.
+
+**Resolved 2026-07-29**: 15 error-branch tests added (`TestUploadErrorBranches` plus PATCH/
+DELETE branch tests) using a non-manager user for 403s, a monkeypatched document quota for
+the 400, assemblies without a registration page for those 404s, and monkeypatched service
+raises for the 500 handlers. Full component-suite coverage now shows **no uncovered lines
+in any code added by this branch**; the file's remaining uncovered lines (image/email error
+branches) are inherited from main.
 
 ### 3. Native `confirm()` for list-row deletion (UX consistency, inherited)
 

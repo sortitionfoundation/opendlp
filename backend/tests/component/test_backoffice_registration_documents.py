@@ -5,6 +5,8 @@ import uuid
 from io import BytesIO
 
 import pytest
+from flask import has_request_context
+from werkzeug.datastructures import FileStorage
 
 from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.entrypoints.blueprints.backoffice_registration import _document_to_dict
@@ -180,6 +182,81 @@ class TestUploadRoute:
         assert response.status_code == 400
 
 
+class TestUploadErrorBranches:
+    def test_upload_read_failure_returns_400(self, logged_in_admin, existing_assembly, registration_page, monkeypatch):
+        def _read(self, *args, **kwargs):
+            # The test client also uses FileStorage.read while encoding the multipart
+            # body — only fail server-side, inside the request context.
+            if has_request_context():
+                raise OSError("stream broke")
+            return self.stream.read(*args, **kwargs)
+
+        # FileStorage has no ``read`` class attribute (it proxies to the stream via
+        # __getattr__), so create one — instance lookup finds it before __getattr__.
+        monkeypatch.setattr(FileStorage, "read", _read, raising=False)
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
+            content_type="multipart/form-data",
+        )
+        assert response.status_code == 400
+        assert "read" in response.get_json()["error"].lower()
+
+    def test_upload_quota_exceeded_returns_400(
+        self, logged_in_admin, existing_assembly, registration_page, monkeypatch
+    ):
+        monkeypatch.setattr(
+            "opendlp.service_layer.registration_document_service.get_max_documents_per_registration_page",
+            lambda: 0,
+        )
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
+            content_type="multipart/form-data",
+        )
+        assert response.status_code == 400
+        assert "maximum" in response.get_json()["error"].lower()
+
+    def test_upload_without_registration_page_returns_400(self, logged_in_admin, existing_assembly):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
+            content_type="multipart/form-data",
+        )
+        assert response.status_code == 400
+        assert "registration page" in response.get_json()["error"].lower()
+
+    def test_upload_forbidden_for_regular_user_returns_403(self, logged_in_user, existing_assembly, registration_page):
+        response = logged_in_user.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
+            content_type="multipart/form-data",
+        )
+        assert response.status_code == 403
+
+    def test_upload_unknown_assembly_returns_404(self, logged_in_admin):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{uuid.uuid4()}/registration/documents",
+            data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
+            content_type="multipart/form-data",
+        )
+        assert response.status_code == 404
+
+    def test_upload_unexpected_error_returns_500(
+        self, logged_in_admin, existing_assembly, registration_page, monkeypatch
+    ):
+        def _raise(*args, **kwargs):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.backoffice_registration.add_registration_document", _raise)
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
+            data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
+            content_type="multipart/form-data",
+        )
+        assert response.status_code == 500
+
+
 class TestPatchRoute:
     def test_patch_updates_label_and_returns_document(
         self, logged_in_admin, fake_store, existing_assembly, registration_page
@@ -211,6 +288,59 @@ class TestPatchRoute:
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.registration_documents.get(document.id).label == "Original"
 
+    def test_patch_unknown_document_returns_404(self, logged_in_admin, existing_assembly, registration_page):
+        response = logged_in_admin.patch(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
+            json={"label": "Renamed"},
+        )
+        assert response.status_code == 404
+        assert "document" in response.get_json()["error"].lower()
+
+    def test_patch_without_registration_page_returns_404(self, logged_in_admin, existing_assembly):
+        response = logged_in_admin.patch(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
+            json={"label": "Renamed"},
+        )
+        assert response.status_code == 404
+        assert "registration page" in response.get_json()["error"].lower()
+
+    def test_patch_forbidden_for_regular_user_returns_403(
+        self, logged_in_user, fake_store, existing_assembly, registration_page
+    ):
+        document = _seed_document(fake_store, registration_page, label="Original")
+        response = logged_in_user.patch(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+            json={"label": "Renamed"},
+        )
+        assert response.status_code == 403
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_documents.get(document.id).label == "Original"
+
+    def test_patch_unknown_assembly_returns_404(self, logged_in_admin):
+        response = logged_in_admin.patch(
+            f"/backoffice/assembly/{uuid.uuid4()}/registration/documents/{uuid.uuid4()}",
+            json={"label": "Renamed"},
+        )
+        assert response.status_code == 404
+
+    def test_patch_unexpected_error_returns_500(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page, monkeypatch
+    ):
+        document = _seed_document(fake_store, registration_page)
+
+        def _raise(*args, **kwargs):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(
+            "opendlp.entrypoints.blueprints.backoffice_registration.set_registration_document_label", _raise
+        )
+        response = logged_in_admin.patch(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+            json={"label": "Renamed"},
+        )
+        assert response.status_code == 500
+
 
 class TestDeleteRoute:
     def test_delete_returns_204_and_removes_document(
@@ -231,3 +361,42 @@ class TestDeleteRoute:
             f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
         )
         assert response.status_code == 404
+
+    def test_delete_without_registration_page_returns_404(self, logged_in_admin, existing_assembly):
+        response = logged_in_admin.delete(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
+        )
+        assert response.status_code == 404
+        assert "registration page" in response.get_json()["error"].lower()
+
+    def test_delete_forbidden_for_regular_user_returns_403(
+        self, logged_in_user, fake_store, existing_assembly, registration_page
+    ):
+        document = _seed_document(fake_store, registration_page)
+        response = logged_in_user.delete(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+        )
+        assert response.status_code == 403
+        assert len(_stored_documents(fake_store, registration_page)) == 1
+
+    def test_delete_unknown_assembly_returns_404(self, logged_in_admin):
+        response = logged_in_admin.delete(
+            f"/backoffice/assembly/{uuid.uuid4()}/registration/documents/{uuid.uuid4()}",
+        )
+        assert response.status_code == 404
+
+    def test_delete_unexpected_error_returns_500(
+        self, logged_in_admin, fake_store, existing_assembly, registration_page, monkeypatch
+    ):
+        document = _seed_document(fake_store, registration_page)
+
+        def _raise(*args, **kwargs):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(
+            "opendlp.entrypoints.blueprints.backoffice_registration.delete_registration_document", _raise
+        )
+        response = logged_in_admin.delete(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{document.id}",
+        )
+        assert response.status_code == 500
