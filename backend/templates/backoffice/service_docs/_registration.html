@@ -12,7 +12,7 @@
                     {# TEST State #}
                     <div class="text-center">
                         <div class="px-6 py-3 rounded-lg font-semibold"
-                             style="background-color: var(--color-warning-100); border: 2px solid var(--color-warning-500); color: var(--color-warning-700);">
+                             style="background-color: var(--color-warning-100); border: 2px solid var(--color-warning-400); color: var(--color-warning-600);">
                             TEST
                         </div>
                         <p class="text-body-sm mt-2" style="color: var(--color-secondary-text); max-width: 120px;">
@@ -24,7 +24,7 @@
                     <div class="flex flex-col items-center">
                         <span class="text-body-sm mb-1" style="color: var(--color-success-600);">publish()</span>
                         <svg class="w-12 h-6" viewBox="0 0 48 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M0 12h40M40 12l-8-6M40 12l-8 6" stroke="var(--color-success-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M0 12h40M40 12l-8-6M40 12l-8 6" stroke="var(--color-success-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span class="text-body-sm mt-1" style="color: var(--color-info-600);">← unpublish()</span>
                     </div>
@@ -32,7 +32,7 @@
                     {# PUBLISHED State #}
                     <div class="text-center">
                         <div class="px-6 py-3 rounded-lg font-semibold"
-                             style="background-color: var(--color-success-100); border: 2px solid var(--color-success-500); color: var(--color-success-700);">
+                             style="background-color: var(--color-success-100); border: 2px solid var(--color-success-400); color: var(--color-success-600);">
                             PUBLISHED
                         </div>
                         <p class="text-body-sm mt-2" style="color: var(--color-secondary-text); max-width: 120px;">
@@ -77,7 +77,7 @@
                     <tbody>
                         <tr>
                             <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-700);">TEST</span>
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">TEST</span>
                             </td>
                             <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅ True</td>
                             <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Form renders with test banner</td>
@@ -85,7 +85,7 @@
                         </tr>
                         <tr>
                             <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-success-100); color: var(--color-success-700);">PUBLISHED</span>
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-success-100); color: var(--color-success-600);">PUBLISHED</span>
                             </td>
                             <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">✅ True</td>
                             <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">Form renders normally (live)</td>
@@ -117,7 +117,7 @@
                     <tbody>
                         <tr>
                             <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-700);">TEST</span>
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-warning-100); color: var(--color-warning-600);">TEST</span>
                             </td>
                             <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
                                 <span class="px-2 py-1 rounded mr-1" style="background-color: var(--color-button-secondary-bg); border: 1px solid var(--color-borders-dividers);">Save</span>
@@ -127,7 +127,7 @@
                         </tr>
                         <tr>
                             <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-success-100); color: var(--color-success-700);">PUBLISHED</span>
+                                <span class="px-2 py-0.5 rounded" style="background-color: var(--color-success-100); color: var(--color-success-600);">PUBLISHED</span>
                             </td>
                             <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
                                 <span class="px-2 py-1 rounded mr-1" style="background-color: var(--color-button-secondary-bg); border: 1px solid var(--color-borders-dividers);">Unpublish</span>
@@ -172,7 +172,7 @@
                     <tbody>
                         <tr>
                             <td class="px-3 py-2 text-code" style="border-bottom: 1px solid var(--color-borders-dividers);">
-                                <code style="background-color: var(--color-info-100); color: var(--color-info-700); padding: 2px 6px; border-radius: 4px;">&#123;&#123; csrf_form_element &#125;&#125;</code>
+                                <code style="background-color: var(--color-info-100); color: var(--color-info-600); padding: 2px 6px; border-radius: 4px;">&#123;&#123; csrf_form_element &#125;&#125;</code>
                             </td>
                             <td class="px-3 py-2" style="border-bottom: 1px solid var(--color-borders-dividers);">
                                 Hidden input for CSRF protection. <strong>Required</strong> inside your &lt;form&gt; tag.
@@ -180,7 +180,7 @@
                         </tr>
                         <tr>
                             <td class="px-3 py-2 text-code">
-                                <code style="background-color: var(--color-info-100); color: var(--color-info-700); padding: 2px 6px; border-radius: 4px;">&#123;&#123; form_action &#125;&#125;</code>
+                                <code style="background-color: var(--color-info-100); color: var(--color-info-600); padding: 2px 6px; border-radius: 4px;">&#123;&#123; form_action &#125;&#125;</code>
                             </td>
                             <td class="px-3 py-2">
                                 Form submission URL. Use in <code>action="&#123;&#123; form_action &#125;&#125;"</code>. <strong>Required</strong>.
@@ -331,7 +331,7 @@
                 &lt;/form&gt;</pre>
 
             <div class="p-3 rounded" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
-                <p class="text-body-sm" style="color: var(--color-info-700);">
+                <p class="text-body-sm" style="color: var(--color-info-600);">
                     <strong>Note:</strong> On initial page load (GET request), all helpers return empty values. They are populated with submitted data only after a POST with validation errors.
                 </p>
             </div>
@@ -1439,7 +1439,7 @@
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Status Logic") }}</h4>
                 <div class="p-3 rounded" style="background-color: var(--color-info-100); border: 1px solid var(--color-info-400);">
-                    <ul class="list-disc list-inside text-body-sm" style="color: var(--color-info-700);">
+                    <ul class="list-disc list-inside text-body-sm" style="color: var(--color-info-600);">
                         <li><strong>is_test=false</strong> → Creates respondent with <code>POOL</code> status (real submission)</li>
                         <li><strong>is_test=true</strong> → Creates respondent with <code>TEST_SUBMISSION</code> status (quarantined from selection)</li>
                     </ul>

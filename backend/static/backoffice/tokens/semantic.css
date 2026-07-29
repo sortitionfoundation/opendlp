@@ -35,6 +35,15 @@
     --color-headings: var(--color-neutral-700);
     --color-navigation-bars: var(--color-neutral-800);
     --color-dark-mode-base: var(--color-neutral-900);
+    --color-table-row-alt: var(--color-neutral-50);
+
+    /* ========================================
+     LINK COLOURS
+     Tailwind preflight sets a { color: inherit }, so links must opt in.
+     ======================================== */
+
+    --color-links: var(--color-primary-action);
+    --color-link-text: var(--color-primary-action);
 
     /* ========================================
      FOCUS RING
@@ -99,4 +108,14 @@
     --color-info-100: #E8F1FA;
     --color-info-400: #3A7BD5;
     --color-info-600: #2B5FA6;
+
+    /* Purpose-named aliases onto the 100/400/600 scale */
+    --color-success-background: var(--color-success-100);
+    --color-success-text: var(--color-success-600);
+    --color-warning-background: var(--color-warning-100);
+    --color-warning-text: var(--color-warning-600);
+    --color-error-background: var(--color-error-100);
+    --color-error-text: var(--color-error-600);
+    --color-info-background: var(--color-info-100);
+    --color-info-text: var(--color-info-600);
 }
