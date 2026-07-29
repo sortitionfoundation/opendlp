@@ -244,7 +244,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                 </tr>
                                 {% if not field.is_fixed and field.field_type.value in choice_type_values %}
                                     <tr>
-                                        <td colspan="7" class="py-2 pl-8" style="background: var(--color-table-row-alt, #f5f5f5);">
+                                        <td colspan="7" class="py-2 pl-8" style="background: var(--color-table-row-alt);">
                                             <div class="text-label-md mb-2">{{ _("Options for %(label)s", label=field.label) }}</div>
                                             {% if field.options %}
                                                 <ul class="mb-2">
