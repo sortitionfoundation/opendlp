@@ -84,3 +84,4 @@ jobs:
           path: |
             test-results/
             screenshots/
+          retention-days: 7
