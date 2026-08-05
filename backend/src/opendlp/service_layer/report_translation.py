@@ -44,10 +44,9 @@ def _translate_element_to_html(element: RunLineLevel | RunTable | RunError, incl
     """Translate a single RunReport element to HTML."""
     if isinstance(element, RunLineLevel):
         return _translate_line_to_html(element, include_logged)
-    elif isinstance(element, RunTable):
+    if isinstance(element, RunTable):
         return _translate_table_to_html(element)
-    else:
-        return _translate_error_to_html(element)
+    return _translate_error_to_html(element)
 
 
 def _translate_line_to_html(line_level: RunLineLevel, include_logged: bool) -> str | None:

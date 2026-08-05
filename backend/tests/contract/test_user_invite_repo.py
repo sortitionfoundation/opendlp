@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.value_objects import GlobalRole
-from tests.contract.conftest import ContractBackend
+
+if TYPE_CHECKING:
+    from tests.contract.conftest import ContractBackend
 
 
 def _make_invite(

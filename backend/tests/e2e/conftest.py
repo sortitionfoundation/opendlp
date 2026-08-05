@@ -22,8 +22,7 @@ def app(temp_env_vars, worker_db_url, test_redis_client):
     )
     reset_celery_app()  # ensure the celery app is reset and picks up
     start_mappers()  # Initialize SQLAlchemy mappings
-    app = create_app("testing_postgres")
-    return app
+    return create_app("testing_postgres")
 
 
 @pytest.fixture

@@ -25,7 +25,6 @@ scenarios("../../features/replacement-selection.feature")
 @given("a user is logged in as an admin")
 def user_logged_in_as_admin(admin_logged_in_page):
     """Background step: ensure admin user is logged in."""
-    pass
 
 
 @given("an assembly with gsheet configured", target_fixture="test_assembly")

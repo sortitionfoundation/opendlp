@@ -47,4 +47,3 @@ def downgrade() -> None:
     """Irreversible data migration: the pre-backfill NULLs are not recorded, so
     there is nothing to restore — and the always-on rule makes the old state
     invalid anyway."""
-    pass

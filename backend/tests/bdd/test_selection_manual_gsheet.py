@@ -25,14 +25,12 @@ scenarios("../../features/selection.feature")
 def _():
     """people are registered."""
     # For this version, the registrants details are in the GSheet
-    pass
 
 
 @given("the assembly is set up", target_fixture="assembly_to_select")
 def _(assembly_creator):
     """the assembly is set up for "manual gsheet setup"."""
-    assembly = assembly_creator("Assembly to select", number_to_select=22)
-    return assembly
+    return assembly_creator("Assembly to select", number_to_select=22)
 
 
 @when("I open the Assembly")

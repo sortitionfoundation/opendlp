@@ -3,12 +3,10 @@ ABOUTME: Provides concrete database operations using SQLAlchemy sessions"""
 
 from __future__ import annotations
 
-import uuid
-from collections.abc import Iterable
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import and_, delete, func, or_, select, update
-from sqlalchemy.orm import Session
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
@@ -62,6 +60,12 @@ from opendlp.service_layer.repositories import (
     UserInviteRepository,
     UserRepository,
 )
+
+if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Iterable
+
+    from sqlalchemy.orm import Session
 
 
 class SqlAlchemyRepository:
@@ -198,12 +202,10 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
 
         # Order by email match on first fragment (prioritized), then by email alphabetically
         first_fragment_pattern = f"%{search_fragments[0]}%"
-        results = query.order_by(
+        return query.order_by(
             orm.users.c.email.ilike(first_fragment_pattern).desc(),
             orm.users.c.email,
         ).all()
-
-        return results
 
     def get_active_users(self) -> Iterable[User]:
         """Get all active users."""

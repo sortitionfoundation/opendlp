@@ -174,7 +174,7 @@ class TestCsvSelectionRun:
         assert str(mock_task_id) in response.location
         mock_start.assert_called_once()
         # Verify test_selection=False was passed
-        call_kwargs = mock_start.call_args[1] if mock_start.call_args[1] else {}
+        call_kwargs = mock_start.call_args[1] or {}
         assert call_kwargs.get("test_selection", False) is False
 
     @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_select_task")
@@ -194,7 +194,7 @@ class TestCsvSelectionRun:
         assert response.status_code == 302
         mock_start.assert_called_once()
         # Verify test_selection=True was passed
-        call_kwargs = mock_start.call_args[1] if mock_start.call_args[1] else {}
+        call_kwargs = mock_start.call_args[1] or {}
         assert call_kwargs.get("test_selection", False) is True
 
     @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_select_task")

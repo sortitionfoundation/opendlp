@@ -1,7 +1,7 @@
 """ABOUTME: Unit tests for the dashboard feature-flag wiring.
 ABOUTME: Covers default_dashboard_endpoint(), old_dashboard_route_enabled(), and footer rendering."""
 
-import os
+from pathlib import Path
 
 import pytest
 from flask import Blueprint, Flask, render_template_string
@@ -68,7 +68,7 @@ class TestFooterOldDashboardLink:
     def _render_footer(self) -> str:
         reload_flags()
 
-        templates_dir = os.path.join(os.path.dirname(__file__), "..", "..", "templates")
+        templates_dir = Path(__file__).parents[2] / "templates"
         app = Flask(__name__, template_folder=templates_dir)
         app.config["TESTING"] = True
         app.context_processor(inject_feature_flags)

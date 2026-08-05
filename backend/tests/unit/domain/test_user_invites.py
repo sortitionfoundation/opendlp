@@ -63,9 +63,9 @@ class TestUserInvite:
         invite_id = uuid.uuid4()
         created_by = uuid.uuid4()
         used_by = uuid.uuid4()
-        created_time = datetime(2023, 1, 1, 10, 0, 0)
-        expires_time = datetime(2023, 1, 8, 10, 0, 0)
-        used_time = datetime(2023, 1, 2, 15, 30, 0)
+        created_time = datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)
+        expires_time = datetime(2023, 1, 8, 10, 0, 0, tzinfo=UTC)
+        used_time = datetime(2023, 1, 2, 15, 30, 0, tzinfo=UTC)
 
         invite = UserInvite(
             invite_id=invite_id,

@@ -4,7 +4,7 @@ ABOUTME: Coordinates repository operations within database transactions"""
 from __future__ import annotations
 
 import abc
-from types import TracebackType
+from typing import TYPE_CHECKING, Self
 
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -31,29 +31,33 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserInviteRepository,
     SqlAlchemyUserRepository,
 )
-from opendlp.service_layer.repositories import (
-    AssemblyGSheetRepository,
-    AssemblyRepository,
-    AssemblyRespondentGSheetRepository,
-    EmailConfirmationTokenRepository,
-    EmailTemplateRepository,
-    PasswordResetTokenRepository,
-    RegistrationDocumentRepository,
-    RegistrationImageRepository,
-    RegistrationPageHtmlRepository,
-    RegistrationPageRepository,
-    RespondentEmailSendRecordRepository,
-    RespondentFieldDefinitionRepository,
-    RespondentRepository,
-    SelectionRunRecordRepository,
-    TargetCategoryRepository,
-    TotpVerificationAttemptRepository,
-    TwoFactorAuditLogRepository,
-    UserAssemblyRoleRepository,
-    UserBackupCodeRepository,
-    UserInviteRepository,
-    UserRepository,
-)
+
+if TYPE_CHECKING:
+    from types import TracebackType
+
+    from opendlp.service_layer.repositories import (
+        AssemblyGSheetRepository,
+        AssemblyRepository,
+        AssemblyRespondentGSheetRepository,
+        EmailConfirmationTokenRepository,
+        EmailTemplateRepository,
+        PasswordResetTokenRepository,
+        RegistrationDocumentRepository,
+        RegistrationImageRepository,
+        RegistrationPageHtmlRepository,
+        RegistrationPageRepository,
+        RespondentEmailSendRecordRepository,
+        RespondentFieldDefinitionRepository,
+        RespondentRepository,
+        SelectionRunRecordRepository,
+        TargetCategoryRepository,
+        TotpVerificationAttemptRepository,
+        TwoFactorAuditLogRepository,
+        UserAssemblyRoleRepository,
+        UserBackupCodeRepository,
+        UserInviteRepository,
+        UserRepository,
+    )
 
 
 class AbstractUnitOfWork(abc.ABC):
@@ -81,7 +85,7 @@ class AbstractUnitOfWork(abc.ABC):
     email_templates: EmailTemplateRepository
     respondent_email_send_records: RespondentEmailSendRecordRepository
 
-    def __enter__(self) -> AbstractUnitOfWork:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
@@ -141,7 +145,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         assert isinstance(self._session, Session)
         return self._session
 
-    def __enter__(self) -> SqlAlchemyUnitOfWork:
+    def __enter__(self) -> Self:
         # Initialize repositories with the session
         self.users = SqlAlchemyUserRepository(self.session)
         self.assemblies = SqlAlchemyAssemblyRepository(self.session)
@@ -216,5 +220,3 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
 class UnitOfWorkError(Exception):
     """Exception raised when Unit of Work operations fail."""
-
-    pass

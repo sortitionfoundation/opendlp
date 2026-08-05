@@ -88,8 +88,7 @@ def create_assembly(
 
         uow.assemblies.add(assembly)
         uow.commit()
-        detached_assembly = assembly.create_detached_copy()
-        return detached_assembly
+        return assembly.create_detached_copy()
 
 
 def update_assembly(
@@ -306,7 +305,7 @@ def add_assembly_gsheet(
         sel_settings = assembly.selection_settings or SelectionSettings(assembly_id=assembly_id)
         sel_settings.update_from_str_kwargs(**sel_kwargs)
         if team in VALID_TEAMS:
-            _apply_team_defaults(sel_settings, cast(Teams, team))
+            _apply_team_defaults(sel_settings, cast("Teams", team))
         assembly.selection_settings = sel_settings
 
         uow.commit()
@@ -371,7 +370,7 @@ def update_assembly_gsheet(
         sel_settings = assembly.selection_settings or SelectionSettings(assembly_id=assembly_id)
         sel_settings.update_from_str_kwargs(**sel_kwargs)
         if team in VALID_TEAMS:
-            _apply_team_defaults(sel_settings, cast(Teams, team))
+            _apply_team_defaults(sel_settings, cast("Teams", team))
         assembly.selection_settings = sel_settings
 
         uow.commit()
@@ -517,7 +516,7 @@ def get_or_create_selection_settings(
             assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
             uow.commit()
 
-        return cast(SelectionSettings, assembly.selection_settings).create_detached_copy()
+        return cast("SelectionSettings", assembly.selection_settings).create_detached_copy()
 
 
 def update_selection_settings(
@@ -545,7 +544,7 @@ def update_selection_settings(
         if assembly.selection_settings is None:
             assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
 
-        sel_settings = cast(SelectionSettings, assembly.selection_settings)
+        sel_settings = cast("SelectionSettings", assembly.selection_settings)
         for key, value in settings.items():
             if hasattr(sel_settings, key):
                 setattr(sel_settings, key, value)
@@ -730,7 +729,7 @@ def update_target_category(
                 required_role="assembly-manager, global-organiser or admin",
             )
 
-        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
         if not category or category.assembly_id != assembly_id:
             raise NotFoundError(f"Target category {category_id} not found")
 
@@ -764,7 +763,7 @@ def delete_target_category(
                 required_role="assembly-manager, global-organiser or admin",
             )
 
-        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
         if not category or category.assembly_id != assembly_id:
             raise NotFoundError(f"Target category {category_id} not found")
 
@@ -797,7 +796,7 @@ def add_target_value(
                 required_role="assembly-manager, global-organiser or admin",
             )
 
-        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
         if not category or category.assembly_id != assembly_id:
             raise NotFoundError(f"Target category {category_id} not found")
 
@@ -835,7 +834,7 @@ def update_target_value(
                 required_role="assembly-manager, global-organiser or admin",
             )
 
-        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
         if not category or category.assembly_id != assembly_id:
             raise NotFoundError(f"Target category {category_id} not found")
 
@@ -884,7 +883,7 @@ def delete_target_value(
                 required_role="assembly-manager, global-organiser or admin",
             )
 
-        category = cast(TargetCategory | None, uow.target_categories.get(category_id))
+        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
         if not category or category.assembly_id != assembly_id:
             raise NotFoundError(f"Target category {category_id} not found")
 
@@ -958,7 +957,7 @@ def get_or_create_csv_config(
             assembly.csv = AssemblyCSV(assembly_id=assembly_id)
             uow.commit()
 
-        csv_config = cast(AssemblyCSV, assembly.csv)
+        csv_config = cast("AssemblyCSV", assembly.csv)
         return csv_config.create_detached_copy()
 
 
@@ -989,7 +988,7 @@ def update_csv_config(
             assembly.csv = AssemblyCSV(assembly_id=assembly_id)
 
         # Update settings
-        csv_config = cast(AssemblyCSV, assembly.csv)
+        csv_config = cast("AssemblyCSV", assembly.csv)
         for key, value in settings.items():
             if hasattr(csv_config, key):
                 setattr(csv_config, key, value)

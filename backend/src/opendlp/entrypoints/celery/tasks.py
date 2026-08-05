@@ -36,10 +36,14 @@ from opendlp.service_layer.error_translation import translate_sortition_error, t
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.translations import gettext as _
 
+logger = logging.getLogger()
+
 
 @setup_logging.connect
 def config_loggers(*args: Any, **kwargs: Any) -> None:
+    global logger
     opendlp.logging.logging_setup(config.get_log_level())
+    logger = logging.getLogger()
 
 
 class SelectionRunRecordHandler(logging.Handler):
@@ -60,10 +64,12 @@ class SelectionRunRecordHandler(logging.Handler):
 
 
 def _set_up_celery_logging(task_id: uuid.UUID, session_factory: sessionmaker | None = None) -> None:
+    global logger
     # get log messages written back as we go
     handler = SelectionRunRecordHandler(task_id, session_factory=session_factory)
     handler.setLevel(logging.DEBUG)
     override_logging_handlers([handler], [handler])
+    logger = logging.getLogger()
 
 
 def _on_task_failure(self: Task | None, exc: Exception, task_id: str, args: tuple, kwargs: dict, einfo: Any) -> None:
@@ -84,7 +90,7 @@ def _on_task_failure(self: Task | None, exc: Exception, task_id: str, args: tupl
     # Extract our task_id from kwargs (the SelectionRunRecord task_id)
     our_task_id = kwargs.get("task_id")
     if not our_task_id:
-        logging.error(f"Task {task_id} failed but no task_id in kwargs")
+        logger.error(f"Task {task_id} failed but no task_id in kwargs")
         return
 
     session_factory = kwargs.get("session_factory")
@@ -95,7 +101,7 @@ def _on_task_failure(self: Task | None, exc: Exception, task_id: str, args: tupl
     if einfo:
         technical_msg += f"\n{einfo}"
 
-    logging.error(
+    logger.error(
         f"Celery task failure callback: our_task_id={our_task_id}, celery_task_id={task_id}, exception={technical_msg}"
     )
 
@@ -113,7 +119,7 @@ def _on_task_failure(self: Task | None, exc: Exception, task_id: str, args: tupl
                 flag_modified(record, "log_messages")
                 uow.commit()
     except Exception as update_exc:
-        logging.error(f"Failed to update task record in failure callback: {update_exc}")
+        logger.error(f"Failed to update task record in failure callback: {update_exc}")
 
 
 def _update_selection_record(
@@ -873,7 +879,7 @@ def cleanup_old_password_reset_tokens(days_old: int = 30) -> int:
     """
     uow = bootstrap()
     count = password_reset_service.cleanup_expired_tokens(uow, days_old=days_old)
-    logging.info(f"Cleaned up {count} old password reset tokens (older than {days_old} days)")
+    logger.info(f"Cleaned up {count} old password reset tokens (older than {days_old} days)")
     return count
 
 
@@ -993,13 +999,13 @@ def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[
     marked_failed = 0
     errors = 0
 
-    logging.info("Starting cleanup_orphaned_tasks periodic job")
+    logger.info("Starting cleanup_orphaned_tasks periodic job")
 
     try:
         with bootstrap(session_factory=session_factory) as uow:
             # Get all unfinished tasks (PENDING or RUNNING)
             unfinished_tasks = uow.selection_run_records.get_all_unfinished()
-            logging.info(f"Found {len(unfinished_tasks)} unfinished task(s) to check")
+            logger.info(f"Found {len(unfinished_tasks)} unfinished task(s) to check")
 
             for record in unfinished_tasks:
                 try:
@@ -1017,24 +1023,21 @@ def cleanup_orphaned_tasks(session_factory: sessionmaker | None = None) -> dict[
                     # If status changed to FAILED, increment counter
                     if updated_record and status_before != updated_record.status and updated_record.is_failed:
                         marked_failed += 1
-                        logging.info(
+                        logger.info(
                             f"Marked orphaned task as FAILED: task_id={record.task_id}, "
                             f"celery_task_id={record.celery_task_id}"
                         )
 
                 except Exception as exc:
                     errors += 1
-                    logging.error(
-                        f"Error checking task health for task_id={record.task_id}: {exc}",
-                        exc_info=True,
-                    )
+                    logger.exception(f"Error checking task health for task_id={record.task_id}: {exc}")
 
     except Exception as exc:
         errors += 1
-        logging.error(f"Error in cleanup_orphaned_tasks: {exc}", exc_info=True)
+        logger.exception(f"Error in cleanup_orphaned_tasks: {exc}")
 
     result = {"checked": checked, "marked_failed": marked_failed, "errors": errors}
-    logging.info(f"Cleanup completed: {result}")
+    logger.info(f"Cleanup completed: {result}")
     return result
 
 
@@ -1046,7 +1049,7 @@ def monitor_selection_periodic(session_factory: sessionmaker | None = None) -> d
     with bootstrap(session_factory=session_factory) as uow:
         result = run_monitoring_selection(uow)
 
-    logging.info(
+    logger.info(
         "monitor selection completed: success=%s, message=%s",
         result.success,
         result.message,
@@ -1076,5 +1079,5 @@ def prune_monitor_run_records(
             assembly_id, keep_successful=keep_successful, keep_failed=keep_failed
         )
         uow.commit()
-    logging.info(f"prune_monitor_run_records: deleted {deleted} record(s)")
+    logger.info(f"prune_monitor_run_records: deleted {deleted} record(s)")
     return deleted

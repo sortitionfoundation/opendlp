@@ -3,6 +3,7 @@ ABOUTME: Provides gettext functions that work both in Flask context and standalo
 
 import os
 from gettext import GNUTranslations
+from pathlib import Path
 from typing import Any
 
 from flask import current_app, has_app_context
@@ -67,9 +68,9 @@ def load_translations(locale_dir: str) -> None:
 
     # Try to load translations for all supported locales
     for locale in config.LANGUAGES:
-        locale_path = os.path.join(locale_dir, locale, "LC_MESSAGES", "messages.mo")
-        if os.path.exists(locale_path):
-            with open(locale_path, "rb") as fp:
+        locale_path = Path(locale_dir) / locale / "LC_MESSAGES" / "messages.mo"
+        if locale_path.exists():
+            with locale_path.open("rb") as fp:
                 _translations[locale] = GNUTranslations(fp)
 
 

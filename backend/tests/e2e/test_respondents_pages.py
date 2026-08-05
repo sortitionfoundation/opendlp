@@ -20,8 +20,7 @@ VALID_RESPONDENTS_CSV = (
 def _import_many_respondents(postgres_session_factory, admin_user, assembly_id, count=60):
     """Helper to import many respondents for pagination testing."""
     rows = ["external_id,email,consent,eligible"]
-    for i in range(count):
-        rows.append(f"R{i:04d},user{i}@example.com,true,true")
+    rows.extend(f"R{i:04d},user{i}@example.com,true,true" for i in range(count))
     csv_content = "\n".join(rows)
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:

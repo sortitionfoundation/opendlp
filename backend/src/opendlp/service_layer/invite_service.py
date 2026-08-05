@@ -157,8 +157,7 @@ def list_invites(
 
         if include_expired:
             return list(uow.user_invites.all())
-        else:
-            return list(uow.user_invites.get_valid_invites())
+        return list(uow.user_invites.get_valid_invites())
 
 
 def revoke_invite(

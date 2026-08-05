@@ -351,11 +351,11 @@ class RegistrationPageHtml:
         except TemplateSyntaxError as e:
             return [f"The form HTML has a template syntax error on line {e.lineno}: {e.message}"]
         referenced = meta.find_undeclared_variables(parsed)
-        problems: list[str] = []
-        for token in REQUIRED_TOKENS:
-            if token not in referenced:
-                problems.append(f"The form HTML is missing the {{{{ {token} }}}} placeholder")
-        return problems
+        return [
+            f"The form HTML is missing the {{{{ {token} }}}} placeholder"
+            for token in REQUIRED_TOKENS
+            if token not in referenced
+        ]
 
     def create_detached_copy(self) -> "RegistrationPageHtml":
         """Create a detached copy for use outside SQLAlchemy sessions."""

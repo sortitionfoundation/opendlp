@@ -82,7 +82,7 @@ def backoffice_context(browser, test_server):
     context.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def page(backoffice_context):
     """Override page fixture to use backoffice_context (no Celery)."""
     page = backoffice_context.new_page()

@@ -35,15 +35,14 @@ def translate_sortition_error(error: Exception) -> str:
     """
     if isinstance(error, ParseTableMultiError):
         return _translate_parse_table_multi_error(error)
-    elif isinstance(error, SelectionMultilineError):
+    if isinstance(error, SelectionMultilineError):
         # SelectionMultilineError messages are pre-formatted with multiple lines
         # They are not structured for per-line translation, so return as-is
         return str(error)
-    elif isinstance(error, SortitionBaseError):
+    if isinstance(error, SortitionBaseError):
         return _translate_simple_error(error)
-    else:
-        # Not a sortition error, return as-is
-        return str(error)
+    # Not a sortition error, return as-is
+    return str(error)
 
 
 def translate_sortition_error_to_html(error: Exception) -> str:
@@ -61,14 +60,13 @@ def translate_sortition_error_to_html(error: Exception) -> str:
     """
     if isinstance(error, ParseTableMultiError):
         return _translate_parse_table_multi_error_to_html(error)
-    elif isinstance(error, SelectionMultilineError):
+    if isinstance(error, SelectionMultilineError):
         # SelectionMultilineError has its own to_html() method
         return error.to_html()
-    elif isinstance(error, SortitionBaseError):
+    if isinstance(error, SortitionBaseError):
         return _translate_simple_error(error)
-    else:
-        # Not a sortition error, return as-is
-        return str(error)
+    # Not a sortition error, return as-is
+    return str(error)
 
 
 def _translate_simple_error(error: SortitionBaseError) -> str:
@@ -76,8 +74,7 @@ def _translate_simple_error(error: SortitionBaseError) -> str:
     if hasattr(error, "error_code") and error.error_code:
         # Translate using the error code and parameters
         try:
-            translated_msg = _(ERROR_MESSAGES[error.error_code]) % error.error_params
-            return translated_msg
+            return _(ERROR_MESSAGES[error.error_code]) % error.error_params
         except (KeyError, TypeError, ValueError):
             # Fallback if translation fails
             return str(error)

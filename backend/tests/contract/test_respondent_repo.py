@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.respondents import Respondent, RespondentComment
 from opendlp.domain.value_objects import RespondentAction, RespondentStatus, SelectionRunStatus, SelectionTaskType
-from tests.contract.conftest import ContractBackend
+
+if TYPE_CHECKING:
+    from tests.contract.conftest import ContractBackend
 
 
 def _make_respondent(

@@ -33,7 +33,7 @@ def test_list_invites_page_accessible_to_admin(logged_in_admin: FlaskClient):
     assert b"Invite Management" in response.data
 
 
-@pytest.mark.time_machine(datetime(2025, 1, 1))
+@pytest.mark.time_machine(datetime(2025, 1, 1, tzinfo=UTC))
 def test_create_invite_success(client: FlaskClient, admin_user: User, postgres_session_factory):
     """Successfully creating an invite persists it to the database."""
     login_as_admin(client, admin_user)
@@ -57,7 +57,7 @@ def test_create_invite_success(client: FlaskClient, admin_user: User, postgres_s
         assert invites[0].global_role == GlobalRole.USER
 
 
-@pytest.mark.time_machine(datetime(2025, 1, 1))
+@pytest.mark.time_machine(datetime(2025, 1, 1, tzinfo=UTC))
 def test_create_invite_with_email(
     client: FlaskClient, admin_user: User, postgres_session_factory, capture_json_handler
 ):

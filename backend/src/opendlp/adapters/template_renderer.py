@@ -23,7 +23,6 @@ class TemplateRenderer(ABC):
         Returns:
             Rendered template as a string
         """
-        pass
 
 
 class FlaskTemplateRenderer(TemplateRenderer):

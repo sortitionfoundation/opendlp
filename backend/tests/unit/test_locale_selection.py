@@ -22,11 +22,11 @@ class TestGetLocaleBrowserDetection:
         with app.test_request_context(headers=[("Accept-Language", "en")]):
             assert get_locale() == "en"
 
-    def test_en_gb_becomes_en_GB(self, app: Flask) -> None:
+    def test_en_gb_has_case_corrected(self, app: Flask) -> None:
         with app.test_request_context(headers=[("Accept-Language", "en-GB")]):
             assert get_locale() == "en_GB"
 
-    def test_en_us_becomes_en_US(self, app: Flask) -> None:
+    def test_en_us_has_case_corrected(self, app: Flask) -> None:
         with app.test_request_context(headers=[("Accept-Language", "en-US")]):
             assert get_locale() == "en_US"
 

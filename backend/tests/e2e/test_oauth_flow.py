@@ -30,8 +30,7 @@ def app(temp_env_vars, worker_db_url):
         OAUTH_MICROSOFT_CLIENT_SECRET="test-ms-client-secret-oauth",  # pragma: allowlist secret
     )
     start_mappers()  # Initialize SQLAlchemy mappings
-    app = create_app("testing_postgres")
-    return app
+    return create_app("testing_postgres")
 
 
 @pytest.fixture

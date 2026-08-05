@@ -212,10 +212,9 @@ def confirm_email_with_token(
         if not token.is_valid():
             if token.is_expired():
                 raise InvalidConfirmationToken("Token has expired")
-            elif token.is_used():
+            if token.is_used():
                 raise InvalidConfirmationToken("Token has already been used")
-            else:
-                raise InvalidConfirmationToken("Token is invalid")
+            raise InvalidConfirmationToken("Token is invalid")
 
         # Get user
         user = uow.users.get(token.user_id)

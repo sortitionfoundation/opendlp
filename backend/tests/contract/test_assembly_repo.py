@@ -4,11 +4,13 @@ ABOUTME: Each test runs against both fake and SQL backends to verify identical b
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from opendlp.domain.assembly import Assembly
 from opendlp.domain.value_objects import AssemblyStatus
 from tests.contract.conftest import ContractBackend, make_assembly
+
+if TYPE_CHECKING:
+    from opendlp.domain.assembly import Assembly
 
 
 def _add_assembly(backend: ContractBackend, **kwargs: Any) -> Assembly:

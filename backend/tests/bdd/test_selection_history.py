@@ -25,7 +25,6 @@ scenarios("../../features/selection-history.feature")
 def user_logged_in_as_admin(admin_logged_in_page):
     """Background step: ensure admin user is logged in."""
     # The admin_logged_in_page fixture handles the login
-    pass
 
 
 @given("an assembly with gsheet configured but no selection runs", target_fixture="test_assembly")

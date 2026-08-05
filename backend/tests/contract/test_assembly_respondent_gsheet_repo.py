@@ -4,10 +4,12 @@ ABOUTME: Each test runs against both fake and SQL backends to verify identical b
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
-from tests.contract.conftest import ContractBackend
+
+if TYPE_CHECKING:
+    from tests.contract.conftest import ContractBackend
 
 TEST_GSHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
 

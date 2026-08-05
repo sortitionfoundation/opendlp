@@ -4,16 +4,19 @@ ABOUTME: Computes target / pool / selected breakdowns per target category"""
 from __future__ import annotations
 
 import csv
-import uuid
 from dataclasses import dataclass, field
 from io import StringIO
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from opendlp.adapters.url_generator import URLGenerator
 from opendlp.domain.respondents import Respondent, normalise_field_name
 from opendlp.domain.value_objects import RespondentStatus
-from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
+
+if TYPE_CHECKING:
+    import uuid
+
+    from opendlp.adapters.url_generator import URLGenerator
+    from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
 class SelectionReportError(Exception):

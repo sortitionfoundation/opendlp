@@ -86,7 +86,7 @@ def check_microsoft_oauth_expiry() -> tuple[int | None, str]:
 
     try:
         # Parse the expiry date (format: YYYY-MM-DD)
-        expiry_date = datetime.strptime(expiry_str, "%Y-%m-%d").date()
+        expiry_date = datetime.strptime(expiry_str, "%Y-%m-%d").replace(tzinfo=UTC).date()
         today = datetime.now(UTC).date()
 
         # Calculate days remaining

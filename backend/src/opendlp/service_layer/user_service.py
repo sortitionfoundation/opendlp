@@ -259,8 +259,7 @@ def validate_invite(uow: AbstractUnitOfWork, invite_code: str) -> GlobalRole:
     if not invite.is_valid():
         if invite.used_by:
             raise InvalidInvite(invite_code, "Invite code already used")
-        else:
-            raise InvalidInvite(invite_code, "Invite code expired")
+        raise InvalidInvite(invite_code, "Invite code expired")
 
     return invite.global_role
 
@@ -1030,7 +1029,7 @@ def send_assembly_role_assigned_email(
         context = {
             "user_name": user.display_name if user.first_name or user.last_name else None,
             "assembly_title": assembly.title,
-            "assembly_question": assembly.question if assembly.question else None,
+            "assembly_question": assembly.question or None,
             "assembly_url": assembly_url,
             "role": role.name,
             "role_name": role_name,

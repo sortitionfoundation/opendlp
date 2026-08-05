@@ -5,7 +5,7 @@ import base64
 import binascii
 import uuid
 from collections.abc import Callable
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import structlog
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
@@ -15,7 +15,6 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.domain.registration_document import PDF_FILE_EXTENSION, DocumentValidationError, RegistrationDocument
 from opendlp.domain.registration_image import IMAGE_FILE_EXTENSION, ImageValidationError, RegistrationImage
-from opendlp.domain.registration_page import RegistrationPageHtml
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldType,
@@ -96,6 +95,9 @@ from opendlp.service_layer.respondent_service import (
 )
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
+
+if TYPE_CHECKING:
+    from opendlp.domain.registration_page import RegistrationPageHtml
 
 
 def _is_safe_redirect_url(url: str) -> bool:
@@ -393,7 +395,7 @@ def _handle_get_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
 def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle update_csv_config service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
-    settings = {k: v for k, v in params.items() if k not in ("assembly_id",)}
+    settings = {k: v for k, v in params.items() if k != "assembly_id"}
 
     with uow:
         try:
@@ -587,7 +589,7 @@ def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str,
                 }
             reg_page, html_source = result
             # Cast to RegistrationPageHtml since HtmlSource protocol doesn't expose id/form_html
-            html = cast(RegistrationPageHtml, html_source)
+            html = cast("RegistrationPageHtml", html_source)
             return {
                 "status": "success",
                 "registration_page": {

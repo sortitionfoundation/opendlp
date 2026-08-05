@@ -4,13 +4,11 @@ ABOUTME: Provides a parameterized backend abstraction so each test suite runs wi
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
-from sqlalchemy.orm import Session
 
 from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyGSheetRepository,
@@ -70,6 +68,11 @@ from tests.fakes import (
     FakeUserInviteRepository,
     FakeUserRepository,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sqlalchemy.orm import Session
 
 # ---------------------------------------------------------------------------
 # Helpers to generate unique domain objects

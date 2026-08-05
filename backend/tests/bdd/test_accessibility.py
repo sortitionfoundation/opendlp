@@ -50,7 +50,6 @@ def page_with_user_search(admin_logged_in_page: Page, existing_assembly) -> Page
 @given("a user is logged in as an admin")
 def user_logged_in_as_admin(admin_logged_in_page: Page):
     """Background step: ensure admin user is logged in."""
-    pass
 
 
 # =============================================================================
@@ -248,7 +247,6 @@ def tabs_have_focus_preserve(page_with_tabs: Page):
 def user_on_page_with_tabs(page_with_tabs: Page):
     """Ensure user is on page with tabs."""
     # The fixture handles navigation
-    pass
 
 
 # =============================================================================
@@ -456,7 +454,6 @@ def toggle_buttons_have_aria_pressed(admin_logged_in_page: Page):
 @given("the user is on the assembly members page")
 def user_on_assembly_members_page(page_with_user_search: Page):
     """Ensure user is on assembly members page with search dropdown."""
-    pass
 
 
 @then('the page should have a search dropdown with role="combobox"')

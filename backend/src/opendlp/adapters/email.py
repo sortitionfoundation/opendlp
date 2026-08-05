@@ -41,7 +41,6 @@ class EmailAdapter(ABC):
         Returns:
             True if email sent successfully, False otherwise
         """
-        pass
 
     @staticmethod
     def _parse_address(addr: str | tuple[str, str]) -> tuple[str, str]:

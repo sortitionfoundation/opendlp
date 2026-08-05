@@ -830,7 +830,7 @@ class TestSelectionRunRecordORM:
 
         # Create SelectionRunRecord
         task_id = uuid.uuid4()
-        completed_time = datetime.now()
+        completed_time = datetime.now(UTC)
         selection_record = SelectionRunRecord(
             assembly_id=assembly.id,
             task_id=task_id,
@@ -866,7 +866,7 @@ class TestSelectionRunRecordORM:
 
         # Create SelectionRunRecord
         task_id = uuid.uuid4()
-        completed_time = datetime.now()
+        completed_time = datetime.now(UTC)
         run_report = RunReport()
         run_report.add_line("Some line of text")
         run_report.add_table(["key", "val"], [["key1", 10], ["key2", 20.5], ["key3", "thirty"]])

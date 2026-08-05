@@ -130,16 +130,13 @@ class OpenDLPDataAdapter(AbstractDataSource):
     def write_selected(self, selected: list[list[str]], report: RunReport) -> None:
         """Write selected people - stub for now (will update respondent status in future)."""
         # Note: We don't add a message here as custom codes aren't supported
-        pass
 
     def write_remaining(self, remaining: list[list[str]], report: RunReport) -> None:
         """Write remaining people - stub for now."""
         # Note: We don't add a message here as custom codes aren't supported
-        pass
 
     def highlight_dupes(self, dupes: list[int]) -> None:
         """Highlight duplicates - not applicable for database."""
-        pass
 
     def customise_features_parse_error(
         self, error: ParseTableMultiError, headers: Sequence[str]

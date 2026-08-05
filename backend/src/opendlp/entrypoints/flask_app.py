@@ -3,6 +3,7 @@ ABOUTME: Creates and configures Flask app instance with all necessary extensions
 
 import secrets
 import uuid
+from typing import TYPE_CHECKING
 
 import structlog
 from flask import Config, Flask, Response, g, render_template, request
@@ -14,9 +15,11 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 import opendlp.logging
 from opendlp import bootstrap, config
-from opendlp.adapters.tabular_export import AbstractGSheetExportTarget
 from opendlp.entrypoints.context_processors import inject_feature_flags, inject_template_globals
 from opendlp.entrypoints.extensions import init_extensions
+
+if TYPE_CHECKING:
+    from opendlp.adapters.tabular_export import AbstractGSheetExportTarget
 
 
 def generate_csp_nonce() -> str:

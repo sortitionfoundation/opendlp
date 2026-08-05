@@ -5,14 +5,17 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime, timedelta
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
-from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.value_objects import AssemblyStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+
+if TYPE_CHECKING:
+    from flask.testing import FlaskClient
 
 
 def _seed_record(

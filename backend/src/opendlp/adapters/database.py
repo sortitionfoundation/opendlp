@@ -33,8 +33,6 @@ from opendlp.domain import (
 class DatabaseError(Exception):
     """Base exception for database-related errors."""
 
-    pass
-
 
 def create_session_factory(database_url: str = "", echo: bool = False) -> sessionmaker:
     """Create a SQLAlchemy session factory with proper configuration."""

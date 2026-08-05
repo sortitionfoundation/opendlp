@@ -4,29 +4,32 @@ ABOUTME: Defines repository contracts to abstract database operations from busin
 from __future__ import annotations
 
 import abc
-import uuid
-from collections.abc import Iterable
-from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
-from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
-from opendlp.domain.email_confirmation import EmailConfirmationToken
-from opendlp.domain.email_send_record import RespondentEmailSendRecord
-from opendlp.domain.email_template import EmailTemplate
-from opendlp.domain.password_reset import PasswordResetToken
-from opendlp.domain.registration_document import RegistrationDocument
-from opendlp.domain.registration_image import RegistrationImage
-from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
-from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
-from opendlp.domain.respondents import Respondent
-from opendlp.domain.targets import TargetCategory
-from opendlp.domain.totp_attempts import TotpVerificationAttempt
-from opendlp.domain.two_factor_audit import TwoFactorAuditLog
-from opendlp.domain.user_backup_codes import UserBackupCode
-from opendlp.domain.user_invites import UserInvite
-from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyStatus, RespondentStatus, SelectionTaskType
+
+if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Iterable
+    from datetime import datetime
+
+    from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
+    from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
+    from opendlp.domain.email_confirmation import EmailConfirmationToken
+    from opendlp.domain.email_send_record import RespondentEmailSendRecord
+    from opendlp.domain.email_template import EmailTemplate
+    from opendlp.domain.password_reset import PasswordResetToken
+    from opendlp.domain.registration_document import RegistrationDocument
+    from opendlp.domain.registration_image import RegistrationImage
+    from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
+    from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
+    from opendlp.domain.respondents import Respondent
+    from opendlp.domain.targets import TargetCategory
+    from opendlp.domain.totp_attempts import TotpVerificationAttempt
+    from opendlp.domain.two_factor_audit import TwoFactorAuditLog
+    from opendlp.domain.user_backup_codes import UserBackupCode
+    from opendlp.domain.user_invites import UserInvite
+    from opendlp.domain.users import User, UserAssemblyRole
 
 
 class AbstractRepository(abc.ABC):

@@ -111,8 +111,7 @@ class RunReportJSON(TypeDecorator):
             # Unstructure the RunReport to a dict and convert to JSON string
             unstructured = value.serialize()
             return json.dumps(unstructured)
-        else:
-            raise TypeError(f"Expected RunReport or None, got {type(value)}")
+        raise TypeError(f"Expected RunReport or None, got {type(value)}")
 
     def process_result_value(self, value: Any, dialect: Dialect) -> RunReport | None:
         """Convert JSON string back to RunReport object."""

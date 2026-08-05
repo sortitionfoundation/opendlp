@@ -25,7 +25,6 @@ scenarios("../../features/scroll-preservation.feature")
 def user_logged_in_as_admin(admin_logged_in_page):
     """Background step: ensure admin user is logged in."""
     # The admin_logged_in_page fixture handles the login
-    pass
 
 
 @given("the user is on a page with paginated content")
@@ -160,7 +159,6 @@ def user_clicks_link(logged_in_page):
 def page_reloaded(logged_in_page):
     """Verify page has reloaded (implicit - already waited for networkidle)."""
     # This is implicit - if we got here, the page loaded successfully
-    pass
 
 
 @then(parsers.parse("the scroll position should be restored to approximately {pixels:d} pixels"))

@@ -110,7 +110,7 @@ class TestCreateUser:
         assert "test@example.com" in str(exc_info.value)
 
     @pytest.mark.parametrize(
-        "password,msg",
+        ("password", "msg"),
         [
             ("weak", "must contain at least 10 characters"),
             ("123412341234", "password is entirely numeric"),

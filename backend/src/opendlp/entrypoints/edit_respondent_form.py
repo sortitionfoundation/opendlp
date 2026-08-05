@@ -3,7 +3,7 @@ ABOUTME: Fields are constructed per-request from the per-assembly field schema."
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, RadioField, SelectField, StringField, TextAreaField
@@ -16,10 +16,12 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldDefinition,
 )
-from opendlp.domain.respondents import Respondent
 from opendlp.entrypoints.forms import DomainEmailValidator
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
+
+if TYPE_CHECKING:
+    from opendlp.domain.respondents import Respondent
 
 ATTR_FIELD_PREFIX = "attr_"
 FIXED_FIELD_NAMES = {"email", "eligible", "can_attend", "consent", "stay_on_db"}

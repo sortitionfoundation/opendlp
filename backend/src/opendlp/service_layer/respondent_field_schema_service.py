@@ -4,10 +4,10 @@ ABOUTME: Read, populate, edit, and initialise field schemas."""
 from __future__ import annotations
 
 import csv as csv_module
-import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from io import StringIO
+from typing import TYPE_CHECKING
 
 from opendlp.config import to_bool
 from opendlp.domain.respondent_field_schema import _UNSET as _UNSET_OPTIONS
@@ -34,8 +34,12 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
-from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import lazy_gettext as _l
+
+if TYPE_CHECKING:
+    import uuid
+
+    from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 _MAX_RADIO_OPTIONS = 6
 

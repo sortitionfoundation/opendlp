@@ -171,10 +171,9 @@ def reset_password_with_token(
         if not token.is_valid():
             if token.is_expired():
                 raise InvalidResetToken("Token has expired")
-            elif token.is_used():
+            if token.is_used():
                 raise InvalidResetToken("Token has already been used")
-            else:
-                raise InvalidResetToken("Token is invalid")
+            raise InvalidResetToken("Token is invalid")
 
         # Get user
         user = uow.users.get(token.user_id)

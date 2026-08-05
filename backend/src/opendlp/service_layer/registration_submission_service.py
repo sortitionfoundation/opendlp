@@ -45,13 +45,9 @@ class RegistrationSubmissionResult:
 class RegistrationClosedError(Exception):
     """Raised when submitting to a closed registration page."""
 
-    pass
-
 
 class RegistrationNotFoundError(Exception):
     """Raised when the registration page doesn't exist or has no slug."""
-
-    pass
 
 
 def _generate_external_id() -> str:

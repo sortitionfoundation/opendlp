@@ -119,7 +119,7 @@ class TestTranslateParseTableMultiError:
                 error_params={"feature_column_name": "gender", "feature_name": "Gender"},
             ),
         ]
-        error = ParseTableMultiError(errors=cast(list[ParseTableErrorMsg | ParseTableMultiValueErrorMsg], sub_errors))
+        error = ParseTableMultiError(errors=cast("list[ParseTableErrorMsg | ParseTableMultiValueErrorMsg]", sub_errors))
 
         with patch("opendlp.service_layer.error_translation._") as mock_gettext:
 
@@ -210,7 +210,7 @@ class TestTranslateParseTableMultiError:
                 error_params={},
             ),
         ]
-        error = ParseTableMultiError(errors=cast(list[ParseTableErrorMsg | ParseTableMultiValueErrorMsg], sub_errors))
+        error = ParseTableMultiError(errors=cast("list[ParseTableErrorMsg | ParseTableMultiValueErrorMsg]", sub_errors))
 
         with patch("opendlp.service_layer.error_translation._") as mock_gettext:
 

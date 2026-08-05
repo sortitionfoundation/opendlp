@@ -177,7 +177,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         has_registration_page = result is not None
         registration_page = result[0] if result else None
         if result:
-            html = cast(RegistrationPageHtml, result[1])
+            html = cast("RegistrationPageHtml", result[1])
             html_content = html.form_html
             thank_you_html = result[0].thank_you_html
             registration_status = result[0].status.value  # "TEST", "PUBLISHED", or "CLOSED"

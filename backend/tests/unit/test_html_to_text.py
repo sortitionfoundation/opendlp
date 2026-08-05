@@ -7,7 +7,7 @@ from opendlp.domain.html_to_text import html_to_text
 
 
 @pytest.mark.parametrize(
-    "html,expected",
+    ("html", "expected"),
     [
         ("plain text", "plain text"),
         ("<p>Hello</p><p>World</p>", "Hello\n\nWorld"),

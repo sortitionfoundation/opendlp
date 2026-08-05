@@ -779,17 +779,14 @@ def get_manage_old_tabs_status(result: RunResult) -> ManageOldTabsStatus:
     assert result.run_record is not None
     if result.run_record.is_failed:
         return ManageOldTabsStatus(ManageOldTabsState.ERROR)
-    elif result.run_record.task_type == SelectionTaskType.LIST_OLD_TABS:
+    if result.run_record.task_type == SelectionTaskType.LIST_OLD_TABS:
         if result.run_record.has_finished:
             return ManageOldTabsStatus(ManageOldTabsState.LIST_COMPLETED)
-        else:
-            return ManageOldTabsStatus(ManageOldTabsState.LIST_RUNNING)
-    else:
-        assert result.run_record.task_type == SelectionTaskType.DELETE_OLD_TABS
-        if result.run_record.has_finished:
-            return ManageOldTabsStatus(ManageOldTabsState.DELETE_COMPLETED)
-        else:
-            return ManageOldTabsStatus(ManageOldTabsState.DELETE_RUNNING)
+        return ManageOldTabsStatus(ManageOldTabsState.LIST_RUNNING)
+    assert result.run_record.task_type == SelectionTaskType.DELETE_OLD_TABS
+    if result.run_record.has_finished:
+        return ManageOldTabsStatus(ManageOldTabsState.DELETE_COMPLETED)
+    return ManageOldTabsStatus(ManageOldTabsState.DELETE_RUNNING)
 
 
 # Task types corresponding to the Initial Selection card's buttons on the selection page
@@ -836,10 +833,9 @@ def _extract_exception_info(celery_result: AsyncResult) -> str:
     try:
         if celery_result.info and isinstance(celery_result.info, Exception):
             return str(celery_result.info)
-        elif celery_result.info and isinstance(celery_result.info, dict):
+        if celery_result.info and isinstance(celery_result.info, dict):
             return str(celery_result.info.get("exc_message", "No exception message"))
-        else:
-            return "No exception info available"
+        return "No exception info available"
     except Exception:
         return "Could not extract exception info"
 

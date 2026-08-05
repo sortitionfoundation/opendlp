@@ -24,7 +24,6 @@ class URLGenerator(ABC):
         Returns:
             Generated URL as a string
         """
-        pass
 
 
 class FlaskURLGenerator(URLGenerator):

@@ -1399,29 +1399,28 @@ def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturn
             return redirect(
                 url_for("gsheets_legacy.select_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
             )
-        elif task_type in (
+        if task_type in (
             SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
             SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
         ):
             return redirect(
                 url_for("gsheets_legacy.replace_assembly_gsheet_with_run", assembly_id=assembly_id, run_id=run_id)
             )
-        elif task_type in (SelectionTaskType.LIST_OLD_TABS, SelectionTaskType.DELETE_OLD_TABS):
+        if task_type in (SelectionTaskType.LIST_OLD_TABS, SelectionTaskType.DELETE_OLD_TABS):
             return redirect(
                 url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
             )
-        elif task_type in (SelectionTaskType.SELECT_FROM_DB, SelectionTaskType.TEST_SELECT_FROM_DB):
+        if task_type in (SelectionTaskType.SELECT_FROM_DB, SelectionTaskType.TEST_SELECT_FROM_DB):
             return redirect(
                 url_for("db_selection_legacy.view_db_selection_with_run", assembly_id=assembly_id, run_id=run_id)
             )
-        else:
-            logger.error(
-                "Unknown task type for run",
-                task_type=task_type,
-                run_id=str(run_id),
-            )
-            flash(_("Unknown task type"), "error")
-            return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
+        logger.error(
+            "Unknown task type for run",
+            task_type=task_type,
+            run_id=str(run_id),
+        )
+        flash(_("Unknown task type"), "error")
+        return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
 
     except NotFoundError as e:
         logger.warning(

@@ -14,13 +14,9 @@ from opendlp.translations import lazy_gettext as _l
 class TwoFactorSetupError(Exception):
     """Raised when 2FA setup fails."""
 
-    pass
-
 
 class TwoFactorVerificationError(Exception):
     """Raised when 2FA verification fails."""
-
-    pass
 
 
 def setup_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> tuple[str, str, list[str]]:

@@ -144,11 +144,7 @@ class FakeUserRepository(FakeRepository, UserRepository):
 
     def get_users_for_assembly(self, assembly_id: uuid.UUID) -> Iterable[User]:
         """Get all users who have roles in the given assembly."""
-        users_with_roles = []
-        for user in self._items:
-            if any(role.assembly_id == assembly_id for role in user.assembly_roles):
-                users_with_roles.append(user)
-        return users_with_roles
+        return [user for user in self._items if any(role.assembly_id == assembly_id for role in user.assembly_roles)]
 
     def get_users_not_in_assembly(self, assembly_id: uuid.UUID) -> Iterable[User]:
         """Get all users who do NOT have any role in the given assembly."""

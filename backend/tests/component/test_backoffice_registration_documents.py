@@ -36,8 +36,7 @@ def _document(*, label: str = "Info pack", sha256: str = "a" * 64, original_file
 @pytest.fixture
 def registration_page(fake_store, admin_user, existing_assembly):
     with FakeUnitOfWork(store=fake_store) as uow:
-        page = create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
-    return page
+        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
 
 
 def _seed_document(fake_store, page, *, label: str = "Info pack", marker: bytes = b"body") -> RegistrationDocument:

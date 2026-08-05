@@ -131,7 +131,7 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly_id=assembly_id,
             csv_content=csv_content,
             replace_existing=form.replace_existing.data or False,
-            id_column=id_column if id_column else None,
+            id_column=id_column or None,
         )
 
         uow2 = bootstrap.get_flask_uow()

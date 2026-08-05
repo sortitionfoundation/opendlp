@@ -53,7 +53,6 @@ def _():
     """Check that confirmation email was sent (this would check logs in real implementation)."""
     # In a real implementation, this would check email logs or mock
     # For now, we trust the service layer tests verified email sending
-    pass
 
 
 @then("the user should not be logged in")
@@ -205,7 +204,6 @@ def _():
     """Verify no confirmation email sent for OAuth users."""
     # OAuth users don't get confirmation emails
     # This would check email logs/mocks in a real implementation
-    pass
 
 
 @when("the user requests to resend confirmation")
@@ -220,7 +218,6 @@ def _(page: Page):
 def _():
     """Verify new confirmation email was sent."""
     # Would check email logs/mocks in real implementation
-    pass
 
 
 @given("the confirmation token has expired", target_fixture="expired_token_user")
@@ -239,9 +236,7 @@ def _(test_database: sessionmaker, unconfirmed_user: dict):
         token_to_expire.created_at = past_time
         token_to_expire.expires_at = past_time + timedelta(hours=24)
         uow.commit()
-        expired_token = token_to_expire.create_detached_copy()
-
-    return expired_token
+        return token_to_expire.create_detached_copy()
 
 
 @when("the user clicks the expired confirmation link")

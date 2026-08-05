@@ -3,7 +3,7 @@ ABOUTME: Uses GOV.UK Design System components for consistent government service 
 
 from collections.abc import Callable
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField, FileRequired
@@ -21,12 +21,14 @@ from wtforms.validators import DataRequired, EqualTo, InputRequired, Length, Opt
 
 from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.selection_settings import OTHER_TEAM
-from opendlp.domain.users import User
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.validators import validate_email as domain_validate_email
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
+
+if TYPE_CHECKING:
+    from opendlp.domain.users import User
 
 
 def coerce_for_enum(enum: type[Enum]) -> Callable:

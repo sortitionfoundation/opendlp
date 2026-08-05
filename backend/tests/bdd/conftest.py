@@ -124,7 +124,7 @@ def csv_test_data_dir(tmp_path_factory) -> Generator[Path, None, None]:
     """
     data_dir = tmp_path_factory.mktemp("selection_data")
     _reset_csv_files(data_dir)
-    yield data_dir
+    return data_dir
 
 
 @pytest.fixture
@@ -278,7 +278,7 @@ def admin_user(test_database):
     uow = SqlAlchemyUnitOfWork(session_factory)
 
     # Create admin user
-    admin, _token = create_user(
+    _admin, _token = create_user(
         uow=uow,
         email=ADMIN_EMAIL,
         password=ADMIN_PASSWORD,
@@ -293,9 +293,7 @@ def admin_user(test_database):
         user = uow.users.get_by_email(ADMIN_EMAIL)
         user.confirm_email()
         uow.commit()
-        admin = user.create_detached_copy()
-
-    return admin
+        return user.create_detached_copy()
 
 
 @pytest.fixture(scope="session")
@@ -305,7 +303,7 @@ def normal_user(test_database):
     uow = SqlAlchemyUnitOfWork(session_factory)
 
     # Create normal user
-    user, _token = create_user(
+    _user, _token = create_user(
         uow=uow,
         email=NORMAL_EMAIL,
         password=NORMAL_PASSWORD,
@@ -320,9 +318,7 @@ def normal_user(test_database):
         fetched_user = uow.users.get_by_email(NORMAL_EMAIL)
         fetched_user.confirm_email()
         uow.commit()
-        user = fetched_user.create_detached_copy()
-
-    return user
+        return fetched_user.create_detached_copy()
 
 
 @pytest.fixture
@@ -332,10 +328,9 @@ def assembly_creator(test_database, admin_user):
     def _create_assembly(title: str, question: str = "", number_to_select: int = 10) -> Assembly:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        assembly = create_assembly(
+        return create_assembly(
             uow=uow, title=title, created_by_user_id=admin_user.id, question=question, number_to_select=number_to_select
         )
-        return assembly
 
     return _create_assembly
 
@@ -408,7 +403,7 @@ def context(browser, test_server, test_celery_worker):
     context.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def page(context):
     """Fresh page for each test"""
     page = context.new_page()

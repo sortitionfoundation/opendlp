@@ -12,15 +12,20 @@ from dataclasses import dataclass
 from datetime import timedelta
 from functools import cache
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import sortition_algorithms.settings
-from cachelib.base import BaseCache
 from cachelib.file import FileSystemCache
 from cachelib.simple import SimpleCache
 from dotenv import load_dotenv
 from redis import Redis
 
+if TYPE_CHECKING:
+    from cachelib.base import BaseCache
+
 load_dotenv()
+
+logger = logging.getLogger()
 
 
 class InvalidConfig(Exception):
@@ -204,11 +209,11 @@ def get_task_timeout_hours() -> int:
     try:
         timeout = int(timeout_str)
         if timeout <= 0:
-            logging.warning(f"TASK_TIMEOUT_HOURS must be positive, got '{timeout_str}'. Using default 24 hours.")
+            logger.warning(f"TASK_TIMEOUT_HOURS must be positive, got '{timeout_str}'. Using default 24 hours.")
             return 24
         return timeout
     except ValueError:
-        logging.warning(f"Invalid TASK_TIMEOUT_HOURS value '{timeout_str}'. Using default 24 hours.")
+        logger.warning(f"Invalid TASK_TIMEOUT_HOURS value '{timeout_str}'. Using default 24 hours.")
         return 24
 
 
@@ -265,14 +270,14 @@ def _clamped_int_env(env_key: str, default: int, minimum: int, maximum: int) -> 
     try:
         value = int(raw)
     except ValueError:
-        logging.warning(f"Invalid {env_key} value '{raw}'. Using default {default}.")
+        logger.warning(f"Invalid {env_key} value '{raw}'. Using default {default}.")
         return default
 
     if value < minimum:
-        logging.warning(f"{env_key}={value} is below the minimum ({minimum}). Using {minimum}.")
+        logger.warning(f"{env_key}={value} is below the minimum ({minimum}). Using {minimum}.")
         return minimum
     if value > maximum:
-        logging.warning(f"{env_key}={value} is above the hard ceiling ({maximum}). Using {maximum}.")
+        logger.warning(f"{env_key}={value} is above the hard ceiling ({maximum}). Using {maximum}.")
         return maximum
     return value
 
@@ -360,7 +365,7 @@ def _get_monitor_uuid_env(env_key: str) -> "uuid.UUID | None":
     try:
         return uuid.UUID(value)
     except ValueError:
-        logging.warning(f"Invalid {env_key} value '{value}'. Monitoring will be disabled.")
+        logger.warning(f"Invalid {env_key} value '{value}'. Monitoring will be disabled.")
         return None
 
 
@@ -397,13 +402,11 @@ def get_monitor_health_max_age_minutes() -> int:
     try:
         parsed = int(value)
         if parsed <= 0:
-            logging.warning(
-                f"MONITOR_HEALTH_MAX_AGE_MINUTES must be positive, got '{value}'. Using default 45 minutes."
-            )
+            logger.warning(f"MONITOR_HEALTH_MAX_AGE_MINUTES must be positive, got '{value}'. Using default 45 minutes.")
             return 45
         return parsed
     except ValueError:
-        logging.warning(f"Invalid MONITOR_HEALTH_MAX_AGE_MINUTES value '{value}'. Using default 45 minutes.")
+        logger.warning(f"Invalid MONITOR_HEALTH_MAX_AGE_MINUTES value '{value}'. Using default 45 minutes.")
         return 45
 
 
@@ -504,7 +507,7 @@ class FlaskBaseConfig:
         languages_env = os.environ.get("SUPPORTED_LANGUAGES", "en,es,fr,de")
         languages = [lang.strip() for lang in languages_env.split(",") if lang.strip()]
         # Ensure we always have at least English as a fallback
-        return languages if languages else ["en"]
+        return languages or ["en"]
 
     def get_supported_languages(self) -> list[tuple[str, str]]:
         """Get list of supported languages as (code, name) tuples."""
@@ -716,7 +719,7 @@ def get_solver_backend() -> str:
     env_value = os.environ.get("SOLVER_BACKEND", "").strip().lower()
     if env_value:
         if env_value not in sortition_algorithms.settings.SOLVER_BACKENDS:
-            logging.warning(
+            logger.warning(
                 f"Invalid SOLVER_BACKEND value '{env_value}'. Must be one of "
                 f"({','.join(sortition_algorithms.settings.SOLVER_BACKENDS)}). Using platform default."
             )

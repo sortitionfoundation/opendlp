@@ -4,9 +4,12 @@ ABOUTME: Each test runs against both fake and SQL backends to verify identical b
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from opendlp.domain.user_backup_codes import UserBackupCode
-from tests.contract.conftest import ContractBackend
+
+if TYPE_CHECKING:
+    from tests.contract.conftest import ContractBackend
 
 
 def _make_code(backend: ContractBackend, user_id: uuid.UUID, code_hash: str = "") -> UserBackupCode:

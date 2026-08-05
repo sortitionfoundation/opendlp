@@ -220,8 +220,8 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         uow=uow,
                         user_id=current_user.id,
                         assembly_id=assembly_id,
-                        url_slug=url_slug if url_slug else None,
-                        short_url_slug=short_url_slug if short_url_slug else None,
+                        url_slug=url_slug or None,
+                        short_url_slug=short_url_slug or None,
                     )
 
                 flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")

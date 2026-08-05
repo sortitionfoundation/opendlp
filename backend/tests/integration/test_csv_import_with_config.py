@@ -44,14 +44,13 @@ class TestCSVImportWithConfig:
     def test_assembly(self, postgres_session_factory, admin_user):
         """Create a test assembly"""
         with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
-            assembly = create_assembly(
+            return create_assembly(
                 uow=uow,
                 title="CSV Test Assembly",
                 created_by_user_id=admin_user.id,
                 question="Test question?",
                 number_to_select=10,
             )
-            return assembly
 
     def test_import_with_default_id_column(self, postgres_session_factory, admin_user, test_assembly):
         """Test CSV import uses first column when no id_column specified"""

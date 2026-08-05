@@ -4,12 +4,15 @@ ABOUTME: Holds the raw CSV between the upload-begin and upload-confirm-diff step
 from __future__ import annotations
 
 import json
-import uuid
 from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING
 
 from redis import Redis
 
 from opendlp.config import RedisCfg
+
+if TYPE_CHECKING:
+    import uuid
 
 _KEY_PREFIX = "csv_import_pending:"
 # TTL for a stashed upload — generous enough that an organiser can read the

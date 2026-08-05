@@ -159,15 +159,17 @@ def import_respondents_from_rows(  # noqa: C901
         if id_column not in headers:
             raise InvalidSelection(f"CSV must have '{id_column}' column")
 
-        errors = []
+        errors: list[str] = []
 
         # Internal export-only columns are recognised and skipped so that a
         # previously-exported file re-imports cleanly (they would otherwise
         # collide with reserved Respondent field names). Report each once.
         skip_normalised = {normalise_field_name(c) for c in _INTERNAL_IMPORT_SKIP_COLUMNS}
-        for header in headers:
-            if header != id_column and normalise_field_name(header) in skip_normalised:
-                errors.append(f"Ignored internal column not imported: {header}")
+        errors.extend(
+            f"Ignored internal column not imported: {header}"
+            for header in headers
+            if header != id_column and normalise_field_name(header) in skip_normalised
+        )
 
         # Replace existing if requested
         if replace_existing:

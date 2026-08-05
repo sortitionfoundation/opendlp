@@ -70,8 +70,7 @@ def published_registration_page(postgres_session_factory, admin_user) -> Registr
 
     # Publish the page
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        page = publish_registration_page(uow, admin_user.id, assembly_id)
-        return page
+        return publish_registration_page(uow, admin_user.id, assembly_id)
 
 
 @pytest.fixture

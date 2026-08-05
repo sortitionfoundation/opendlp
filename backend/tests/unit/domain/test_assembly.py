@@ -3,7 +3,7 @@ ABOUTME: Tests assembly creation, validation, status changes, and updates"""
 
 import time
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
@@ -46,7 +46,7 @@ class TestAssembly:
     def test_create_assembly_with_custom_values(self):
         future_date = date.today() + timedelta(days=30)
         assembly_id = uuid.uuid4()
-        created_time = datetime(2023, 1, 1, 10, 0, 0)
+        created_time = datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC)
 
         assembly = Assembly(
             assembly_id=assembly_id,

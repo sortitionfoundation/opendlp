@@ -53,7 +53,7 @@ class TestSqlAlchemyUnitOfWork:
         mock_session_factory = MagicMock(spec=sessionmaker)
         mock_session_factory.return_value = mock_session
 
-        with pytest.raises(ValueError), SqlAlchemyUnitOfWork(mock_session_factory) as uow:
+        with pytest.raises(ValueError), SqlAlchemyUnitOfWork(mock_session_factory) as uow:  # noqa: PT012
             assert uow.session is mock_session
             raise ValueError("Test exception")
 

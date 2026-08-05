@@ -4,16 +4,14 @@ ABOUTME: Wraps start_gsheet_select_task in a polled wrapper used by health check
 from __future__ import annotations
 
 import time
-import uuid
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import structlog
 from flask import url_for
 
 from opendlp import config
-from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -26,7 +24,13 @@ from opendlp.service_layer.sortition import (
     start_gsheet_manage_tabs_task,
     start_gsheet_select_task,
 )
-from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+
+if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Callable
+
+    from opendlp.domain.assembly import SelectionRunRecord
+    from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 logger = structlog.get_logger(__name__)
 

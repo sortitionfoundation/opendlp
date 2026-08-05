@@ -64,8 +64,7 @@ def published_registration_page(postgres_session_factory, admin_user) -> Registr
         update_registration_page_html(uow, admin_user.id, assembly_id, MINIMAL_FORM_HTML)
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        page = publish_registration_page(uow, admin_user.id, assembly_id)
-        return page
+        return publish_registration_page(uow, admin_user.id, assembly_id)
 
 
 class TestBotProtectionSmoke:

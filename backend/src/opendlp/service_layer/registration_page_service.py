@@ -71,8 +71,7 @@ def _slugify(text: str) -> str:
     # Collapse multiple hyphens
     text = re.sub(r"-+", "-", text)
     # Strip leading/trailing hyphens
-    text = text.strip("-")
-    return text
+    return text.strip("-")
 
 
 def generate_url_slug_from_name(name: str, max_length: int = 25) -> str:

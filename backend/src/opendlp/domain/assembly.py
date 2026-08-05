@@ -281,8 +281,7 @@ class SelectionRunRecord:
 
     def create_detached_copy(self) -> "SelectionRunRecord":
         """Create a detached copy of this assembly gsheet for use outside SQLAlchemy sessions"""
-        detached_run_record = SelectionRunRecord(**asdict(self))
-        return detached_run_record
+        return SelectionRunRecord(**asdict(self))
 
     @property
     def is_pending(self) -> bool:

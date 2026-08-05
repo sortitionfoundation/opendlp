@@ -77,7 +77,7 @@ def get_service_account_email() -> str:
     if not auth_json_file.is_file():
         return "UNKNOWN"
     # we need this to not fail, so we just swallow all exceptions
-    with contextlib.suppress(Exception), open(auth_json_file) as file:
+    with contextlib.suppress(Exception), Path.open(auth_json_file) as file:
         credentials = json.load(file)
         client_email = credentials["client_email"]
         assert isinstance(client_email, str)

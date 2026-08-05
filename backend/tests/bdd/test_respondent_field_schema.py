@@ -64,7 +64,7 @@ def assembly_with_csv_respondents(title: str, assembly_creator, admin_user, test
 def admin_signed_in(admin_logged_in_page: Page) -> None:
     """The ``admin_logged_in_page`` fixture handles the sign-in."""
     # Nothing to do — the fixture performs the login.
-    return None
+    return
 
 
 # ---------------------------------------------------------------------------

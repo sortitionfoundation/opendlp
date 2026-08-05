@@ -86,7 +86,7 @@ class UserInvite:
 
     def create_detached_copy(self) -> "UserInvite":
         """Create a detached copy of this user for use outside SQLAlchemy sessions"""
-        detached_user_invite = UserInvite(
+        return UserInvite(
             global_role=self.global_role,
             created_by=self.created_by,
             invite_id=self.id,
@@ -97,4 +97,3 @@ class UserInvite:
             used_at=self.used_at,
             email=self.email,
         )
-        return detached_user_invite

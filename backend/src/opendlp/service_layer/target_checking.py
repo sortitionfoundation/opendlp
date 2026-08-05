@@ -93,7 +93,7 @@ def _annotations_from_parse_errors(
         if isinstance(sub_error, ParseTableMultiValueErrorMsg):
             field_name = ", ".join(sub_error.keys) if sub_error.keys else None
         else:
-            field_name = sub_error.key if sub_error.key else None
+            field_name = sub_error.key or None
 
         _add_annotation(
             annotations,

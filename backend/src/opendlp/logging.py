@@ -137,7 +137,7 @@ class GunicornLogger:  # pragma: no cover
         self._error_logger.debug(msg, *args, **kwargs)
 
     def exception(self, msg: object, *args: object, **kwargs: object) -> None:
-        self._error_logger.exception(msg, *args, **kwargs)
+        self._error_logger.error(msg, *args, **kwargs)
 
     def log(self, lvl: int, msg: object, *args: object, **kwargs: object) -> None:
         self._error_logger.log(lvl, msg, *args, **kwargs)

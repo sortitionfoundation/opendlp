@@ -56,7 +56,7 @@ class TestToBool:
         ("  true  ", True),  # Test whitespace handling
     ]
 
-    @pytest.mark.parametrize("bool_str,expected", test_values)
+    @pytest.mark.parametrize(("bool_str", "expected"), test_values)
     def test_to_bool(self, bool_str: str, expected: bool):
         assert to_bool(bool_str) == expected
 
@@ -176,7 +176,7 @@ class TestGetConfig:
         assert not isinstance(config, FlaskProductionConfig)
 
     @pytest.mark.parametrize(
-        "name,klass",
+        ("name", "klass"),
         [
             ("testing", FlaskTestConfig),
             ("testing_postgres", FlaskTestConfig),

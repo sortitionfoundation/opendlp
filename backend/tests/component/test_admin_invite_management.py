@@ -78,7 +78,7 @@ class TestCreateInvite:
         response = logged_in_user.get("/admin/invites/create")
         assert response.status_code == 403
 
-    @pytest.mark.time_machine(datetime(2025, 1, 1))
+    @pytest.mark.time_machine(datetime(2025, 1, 1, tzinfo=UTC))
     def test_create_invite_with_admin_role(self, logged_in_admin: FlaskClient, fake_store):
         """Creating an invite with admin role uses the requested role and expiry."""
         response = logged_in_admin.post(
@@ -94,7 +94,7 @@ class TestCreateInvite:
             assert invites[0].expires_at.date() == date(2025, 1, 2)
             assert invites[0].global_role == GlobalRole.ADMIN
 
-    @pytest.mark.time_machine(datetime(2025, 1, 1))
+    @pytest.mark.time_machine(datetime(2025, 1, 1, tzinfo=UTC))
     def test_create_invite_with_default_expiry(self, logged_in_admin: FlaskClient, fake_store):
         """Creating an invite without an expiry uses the default."""
         response = logged_in_admin.post(

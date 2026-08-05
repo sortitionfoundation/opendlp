@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from opendlp.domain.registration_page import (
     RegistrationPage,
@@ -13,7 +13,9 @@ from opendlp.domain.registration_page import (
     RegistrationPageActivity,
     RegistrationPageStatus,
 )
-from tests.contract.conftest import ContractBackend
+
+if TYPE_CHECKING:
+    from tests.contract.conftest import ContractBackend
 
 
 def _add_page(backend: ContractBackend, assembly_id: uuid.UUID | None = None, **kwargs: Any) -> RegistrationPage:

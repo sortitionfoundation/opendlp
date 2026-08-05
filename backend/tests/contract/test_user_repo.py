@@ -4,11 +4,13 @@ ABOUTME: Each test runs against both fake and SQL backends to verify identical b
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from tests.contract.conftest import ContractBackend, make_user
+
+if TYPE_CHECKING:
+    from opendlp.domain.users import User
 
 
 def _add_user(backend: ContractBackend, **kwargs: Any) -> User:
