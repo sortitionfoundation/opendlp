@@ -39,13 +39,15 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
             ) }}
 
             {% block page_header %}{% endblock %}
+
+            {# Flash messages, anchored just below the sticky chrome so the header
+               never covers them and they stay in view while scrolling. #}
+            {{ floating_alerts() }}
         </header>
 
         <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full">
             {% block page_content %}{% endblock %}
         </main>
-
-        {{ floating_alerts() }}
 
         {{ footer() }}
     </div>

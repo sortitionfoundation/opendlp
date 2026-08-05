@@ -9,20 +9,21 @@ ABOUTME: Provides accessible notifications that don't require scrolling to top
     Renders Flask flash messages in a fixed-position container at the top-center.
 
     Features:
-    - Fixed position at the top-center of the viewport
-    - z-30: Below modals (z-40/z-50) but above page content
+    - Absolutely positioned just below the sticky header, horizontally centred
+    - z-40: above the sticky header (its positioned ancestor), below modals (z-50)
     - aria-live="polite": Screen readers announce new alerts
     - All alerts are dismissible
 
     Usage:
         {{ floating_alerts() }}
 
-    Place this after </main> but inside the page container.
+    Render this inside the sticky <header> (a positioned ancestor) so it anchors
+    just below the chrome and is never covered by it.
     #}
     {% set messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         <div id="floating-alerts"
-             class="fixed top-6 left-1/2 -translate-x-1/2 z-30 flex flex-col gap-3 w-full max-w-md px-4"
+             class="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-40 flex flex-col gap-3 w-full max-w-md px-4"
              aria-live="polite">
             {% for category, message in messages %}
                 {% if category == "success" %}
