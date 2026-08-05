@@ -943,7 +943,7 @@ requires-dist = [
     { name = "celery", specifier = ">=5.5.3" },
     { name = "click", specifier = ">=8.2.1" },
     { name = "cryptography", specifier = ">=46.0.0" },
-    { name = "django", specifier = ">=5.2.5" },
+    { name = "django", specifier = ">=6.0.7" },
     { name = "flask", specifier = ">=3.1.1" },
     { name = "flask-babel", specifier = ">=4.0.0" },
     { name = "flask-login", specifier = ">=0.6.3" },
