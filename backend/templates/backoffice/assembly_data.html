@@ -54,10 +54,6 @@ ABOUTME: Displays data source selection and data management for assemblies
     {% elif data_source == "csv" %}
         {{ render_csv_content() }}
     {% endif %}
-    {# Actions #}
-    <section class="flex gap-4">
-        {{ button(_("Back to Dashboard") , href=url_for('backoffice.dashboard'), variant="outline") }}
-    </section>
 {% endblock %}
 {# Google Spreadsheet content macro #}
 {% macro render_gsheet_content() %}

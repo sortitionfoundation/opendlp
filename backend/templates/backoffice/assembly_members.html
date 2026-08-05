@@ -136,9 +136,4 @@ ABOUTME: Displays team members table with add/remove functionality for admins
             {% endcall %}
         </section>
     {% endif %}
-
-    {# Actions #}
-    <section class="flex gap-4">
-        {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
-    </section>
 {% endblock %}
