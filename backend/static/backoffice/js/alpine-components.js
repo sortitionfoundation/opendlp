@@ -763,4 +763,58 @@ document.addEventListener("alpine:init", function () {
             },
         };
     });
+
+    /**
+     * Auto-dismissing alert component
+     *
+     * Hides itself after `duration` ms (0 = never auto-dismiss). The countdown
+     * pauses while the pointer is over the alert and resumes on leave, so users
+     * can read or act on it. Registered as a component because the CSP Alpine
+     * build forbids inline setTimeout in x-* expressions (mirrors buttonLoadingDemo).
+     *
+     * Usage:
+     *   <div x-data="autoDismissAlert({ duration: 4000 })" x-show="show" x-transition
+     *        @mouseenter="pause()" @mouseleave="resume()">
+     *     ...
+     *     <button @click="show = false">Close</button>
+     *   </div>
+     */
+    Alpine.data("autoDismissAlert", function (options) {
+        var duration = (options && options.duration) || 0;
+        return {
+            show: true,
+            remaining: duration,
+            timer: null,
+            startedAt: 0,
+
+            init: function () {
+                if (duration > 0) {
+                    this.startTimer();
+                }
+            },
+
+            startTimer: function () {
+                var self = this;
+                self.startedAt = Date.now();
+                self.timer = setTimeout(function () {
+                    self.show = false;
+                    self.timer = null;
+                }, self.remaining);
+            },
+
+            pause: function () {
+                if (this.timer) {
+                    clearTimeout(this.timer);
+                    this.timer = null;
+                    this.remaining -= Date.now() - this.startedAt;
+                }
+            },
+
+            resume: function () {
+                if (duration > 0 && !this.timer && this.remaining > 0) {
+                    this.startTimer();
+                }
+            },
+        };
+    });
 });

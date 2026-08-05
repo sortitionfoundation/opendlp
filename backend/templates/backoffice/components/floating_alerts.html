@@ -9,32 +9,28 @@ ABOUTME: Provides accessible notifications that don't require scrolling to top
     Renders Flask flash messages in a fixed-position container at the top-center.
 
     Features:
-    - Absolutely positioned just below the sticky header, horizontally centred
-    - z-40: above the sticky header (its positioned ancestor), below modals (z-50)
+    - Fixed top-centre overlay, a little below the top of the viewport
+    - z-[45]: above the sticky header (z-40), below modal dialogs (z-50)
+    - Auto-dismiss by severity: success 4s, info 6s, warning 10s; errors stay
+      until closed. The countdown pauses while the pointer is over an alert.
     - aria-live="polite": Screen readers announce new alerts
     - All alerts are dismissible
 
     Usage:
         {{ floating_alerts() }}
 
-    Render this inside the sticky <header> (a positioned ancestor) so it anchors
-    just below the chrome and is never covered by it.
+    Render this at the page root (e.g. after </main> in base_page.html).
     #}
     {% set messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
+        {# Auto-dismiss durations (ms) by variant; 0 = stays until closed. #}
+        {% set _auto_dismiss_ms = {"success": 4000, "info": 6000, "warning": 10000, "error": 0} %}
         <div id="floating-alerts"
-             class="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-40 flex flex-col gap-3 w-full max-w-md px-4"
+             class="fixed top-6 left-1/2 -translate-x-1/2 z-[45] flex flex-col gap-3 w-full max-w-md px-4"
              aria-live="polite">
             {% for category, message in messages %}
-                {% if category == "success" %}
-                    {{ alert(message, variant="success", dismissible=true, floating=true) }}
-                {% elif category == "error" %}
-                    {{ alert(message, variant="error", dismissible=true, floating=true) }}
-                {% elif category == "warning" %}
-                    {{ alert(message, variant="warning", dismissible=true, floating=true) }}
-                {% else %}
-                    {{ alert(message, variant="info", dismissible=true, floating=true) }}
-                {% endif %}
+                {% set _variant = category if category in ["success", "error", "warning", "info"] else "info" %}
+                {{ alert(message, variant=_variant, dismissible=true, floating=true, auto_dismiss_ms=_auto_dismiss_ms.get(_variant, 0)) }}
             {% endfor %}
         </div>
     {% endif %}

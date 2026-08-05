@@ -132,17 +132,36 @@ class TestFloatingAlertsMacro:
         assert "Please review settings" in html
 
     def test_floating_alerts_has_fixed_positioning(self) -> None:
-        """Alerts are anchored just below the sticky header, horizontally centred."""
+        """Alerts float at the top-centre of the viewport."""
         html = _render_floating_alerts_with_flash([("info", "Test")])
-        assert "absolute" in html
-        assert "top-full" in html
+        assert "fixed" in html
+        assert "top-6" in html
         assert "left-1/2" in html
         assert "-translate-x-1/2" in html
 
     def test_floating_alerts_has_z_index(self) -> None:
         html = _render_floating_alerts_with_flash([("info", "Test")])
-        # Above the sticky header (z-40), below modals (z-50).
-        assert "z-40" in html
+        # Above the sticky header (z-40), below modal dialogs (z-50).
+        assert "z-[45]" in html
+
+    def test_success_alert_auto_dismisses(self) -> None:
+        """Success flashes auto-dismiss after a few seconds, pausing on hover."""
+        html = _render_floating_alerts_with_flash([("success", "Saved")])
+        assert "autoDismissAlert" in html
+        assert "4000" in html
+        assert "pause()" in html
+        assert "resume()" in html
+
+    def test_warning_alert_auto_dismisses_more_slowly(self) -> None:
+        html = _render_floating_alerts_with_flash([("warning", "Careful")])
+        assert "autoDismissAlert" in html
+        assert "10000" in html
+
+    def test_error_alert_stays_until_closed(self) -> None:
+        """Error flashes never auto-dismiss."""
+        html = _render_floating_alerts_with_flash([("error", "Boom")])
+        assert "autoDismissAlert" not in html
+        assert 'x-data="{ show: true }"' in html
 
     def test_floating_alerts_are_dismissible(self) -> None:
         """All floating alerts should be dismissible."""
