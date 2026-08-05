@@ -1,0 +1,79 @@
+{#
+ABOUTME: Account menu component - avatar trigger opening a dropdown of account links
+ABOUTME: Reuses the .menu / .menu-item atoms and the Alpine open/close pattern
+#}
+{% from "backoffice/components/avatar.html" import avatar %}
+
+{% macro account_menu(items=None, initials="", label="", id="account-menu") %}
+    {#
+    Account dropdown for the top navigation bar. The trigger is a user avatar plus
+    a chevron; clicking it reveals a right-anchored menu of account links.
+
+    Args:
+        items: List of dicts. Each item is either:
+            { "divider": true }  -> a horizontal separator, or
+            { "label": str, "href": str, "icon": html (16x16 svg),
+              "isVisible": bool (optional, default true),
+              ...any extra keys (e.g. "target", "rel") passed through to the <a> }
+        initials: Short initials shown in the avatar (e.g. "AS").
+        label: Accessible name for the trigger (e.g. the user's display name).
+        id: Id prefix for the toggle/menu (default "account-menu").
+
+    Accessibility:
+        - Trigger uses aria-haspopup="menu" and aria-expanded bound to open state.
+        - Menu uses role="menu" with role="menuitem" links; dividers use role="separator".
+        - Keyboard: Escape closes the menu; click outside closes it.
+    #}
+    {% set items = items or [] %}
+    {% set menu_id = id ~ "-menu" %}
+    {% set toggle_id = id ~ "-toggle" %}
+
+    <div class="relative inline-flex" x-data="{ open: false }" @keydown.escape.window="open = false">
+        <button type="button"
+                id="{{ toggle_id }}"
+                class="inline-flex items-center gap-1 rounded-full p-0.5 transition-opacity hover:opacity-80"
+                style="color: var(--color-body-text); background: transparent; border: none; cursor: pointer;"
+                @click="open = !open"
+                @click.outside="open = false"
+                aria-haspopup="menu"
+                x-bind:aria-expanded="open ? 'true' : 'false'"
+                aria-controls="{{ menu_id }}"
+                aria-label="{{ label if label else _('Account menu') }}">
+            {{ avatar(initials=initials) }}
+            <span class="inline-flex items-center justify-center w-4 h-4 shrink-0" aria-hidden="true">
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </span>
+        </button>
+
+        <div x-show="open"
+             x-cloak
+             id="{{ menu_id }}"
+             role="menu"
+             aria-labelledby="{{ toggle_id }}"
+             class="menu menu--right"
+             style="min-width: 14rem; z-index: 50;">
+            {% for item in items %}
+                {% if item.isVisible is not defined or item.isVisible %}
+                    {% if item.divider %}
+                        <div role="separator" class="my-1" style="border-top: 1px solid var(--color-borders-dividers);"></div>
+                    {% else %}
+                        <a href="{{ item.href }}"
+                           role="menuitem"
+                           class="menu-item"
+                           @click="open = false"
+                           {% for key, value in item.items() if key not in ['label', 'href', 'icon', 'isVisible', 'divider'] %} {{ key }}="{{ value }}"{% endfor %}>
+                            <span class="flex items-center gap-2">
+                                {% if item.icon %}
+                                    <span class="inline-flex items-center justify-center w-4 h-4 shrink-0" aria-hidden="true" style="color: var(--color-secondary-text);">{{ item.icon | safe }}</span>
+                                {% endif %}
+                                <span style="white-space: nowrap;">{{ item.label }}</span>
+                            </span>
+                        </a>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+{% endmacro %}

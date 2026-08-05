@@ -3,7 +3,6 @@ ABOUTME: Backoffice edit assembly page
 ABOUTME: Uses assembly_form macro for editing assembly details
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/assembly_form.html" import assembly_form %}
 
@@ -53,16 +52,6 @@ Args:
 {% endmacro %}
 
 {% block title %}{{ _("Edit Assembly") }} - {{ assembly.title }}{% endblock %}
-
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Edit")}
-        ]) }}
-    </div>
-{% endblock %}
 
 {% block page_content %}
     {# Page Heading #}

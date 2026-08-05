@@ -40,15 +40,6 @@ Feature: Backoffice Dashboard
     Then I should see the assembly selection page
     And I should see "Selection Test Assembly" as the page heading
 
-  Scenario: Selection tab displays breadcrumbs
-    Given I am logged in as an admin user
-    And there is an assembly called "Selection Test Assembly"
-    When I visit the assembly selection page for "Selection Test Assembly"
-    Then I should see the breadcrumbs
-    And the breadcrumbs should contain "Dashboard"
-    And the breadcrumbs should contain "Selection Test Assembly"
-    And the breadcrumbs should contain "Selection"
-
   Scenario: Selection tab shows warning when no gsheet configured
     Given I am logged in as an admin user
     And there is an assembly called "Selection No GSheet Assembly"

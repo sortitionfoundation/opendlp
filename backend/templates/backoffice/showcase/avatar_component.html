@@ -1,0 +1,30 @@
+{#
+ABOUTME: Showcase section for the avatar component
+ABOUTME: Displays the circular initials badge in its three sizes
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/avatar.html" import avatar %}
+
+{% macro avatar_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Avatar") }}
+        {{ showcase_description("Circular badge showing a user's initials. Used as the account menu trigger. Sizes: sm (24px), md (32px), lg (40px).") }}
+
+        {% call showcase_example('{% from "backoffice/components/avatar.html" import avatar %}
+
+            {{ avatar(initials="AS", size="sm") }}
+            {{ avatar(initials="AS", size="md", label="Ada Smith") }}
+            {{ avatar(initials="AS", size="lg") }}') %}
+            <div class="flex items-center gap-4">
+                {{ avatar(initials="AS", size="sm") }}
+                {{ avatar(initials="AS", size="md", label="Ada Smith") }}
+                {{ avatar(initials="AS", size="lg") }}
+            </div>
+        {% endcall %}
+
+        {{ showcase_tokens([
+        "--color-navigation-bars",
+        "--color-neutral-50"
+        ]) }}
+    {% endcall %}
+{% endmacro %}

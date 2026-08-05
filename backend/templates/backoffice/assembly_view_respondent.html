@@ -3,23 +3,22 @@ ABOUTME: Backoffice view-single-respondent page
 ABOUTME: Renders a grouped detail page driven by RespondentFieldDefinition schema
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom %}
 {% from "backoffice/components/input.html" import input, textarea, radio_group %}
 {% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/respondent_status_form.html" import respondent_status_form %}
 {% set respondent_name = respondent.display_name(assembly.name_fields) %}
 {% block title %}{{ respondent_name }} - {{ assembly.title }}{% endblock %}
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
-        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
-        {"label": respondent_name}
-        ]) }}
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 pb-2 w-full">
+        {{ page_header(
+        title=respondent_name,
+        back_href=url_for('respondents.view_assembly_respondents', assembly_id=assembly.id),
+        back_label=_("Back to respondents"),
+        actions=(button(_("Edit"), href=url_for('respondents.edit_respondent', assembly_id=assembly.id, respondent_id=respondent.id), variant="primary") if (can_edit and respondent.selection_status.value != "DELETED") else "")
+        ) }}
     </div>
 {% endblock %}
 {% set is_deleted = respondent.selection_status.value == "DELETED" %}
@@ -89,13 +88,6 @@ becomes a disabled input/textarea so the page reads as a read-only form.
     {% endif %}
 {% endmacro %}
 {% block page_content %}
-    <div class="flex items-start justify-between gap-4 mb-2">
-        <h1 class="text-display-lg" style="color: var(--color-headings);">{{ respondent_name }}</h1>
-        {% if can_edit and not is_deleted %}
-            {{ button(_("Edit") , href=url_for('respondents.edit_respondent', assembly_id=assembly.id, respondent_id=respondent.id), variant="primary") }}
-        {% endif %}
-    </div>
-    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ _("Respondent details") }}</p>
     {% if is_deleted and delete_comment %}
         <div class="mb-6 p-4 border border-red-300 bg-red-50 rounded"
              style="color: var(--color-headings)">

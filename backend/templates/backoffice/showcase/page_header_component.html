@@ -1,0 +1,36 @@
+{#
+ABOUTME: Showcase section for the page header component
+ABOUTME: Displays the back-arrow + title header that replaces breadcrumbs on detail pages
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/page_header.html" import page_header %}
+
+{% macro page_header_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Page Header") }}
+        {{ showcase_description("Compact detail-page header: an optional back arrow plus the page title. Replaces the breadcrumb on assembly pages and sits above the tab bar (both are sticky in the app layout).") }}
+
+        {% call showcase_example('{% from "backoffice/components/page_header.html" import page_header %}
+
+            {{ page_header(
+            title="Climate Assembly",
+            back_href="/backoffice",
+            back_label="Back to dashboard"
+            ) }}') %}
+            <div class="space-y-6">
+                {{ page_header(
+                title="Climate Assembly",
+                back_href="#",
+                back_label="Back to dashboard"
+                ) }}
+                {{ page_header(title="Page without a back arrow") }}
+            </div>
+        {% endcall %}
+
+        {{ showcase_tokens([
+        "--color-headings",
+        "--color-primary-action",
+        ".text-display-sm"
+        ]) }}
+    {% endcall %}
+{% endmacro %}

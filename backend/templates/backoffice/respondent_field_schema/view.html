@@ -3,32 +3,30 @@ ABOUTME: Backoffice page for viewing and editing the respondent field schema
 ABOUTME: Grouped field list with per-field label edit, move up/down, and delete actions
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% block title %}{{ _("Fields") }} - {{ assembly.title }}{% endblock %}
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
-        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Fields")}
-        ]) }}
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
+        {{ page_header(
+        title=assembly.title,
+        back_href=url_for('backoffice.dashboard'),
+        back_label=_("Back to dashboard")
+        ) }}
+        <div class="mt-4">
+            {{ assembly_tabs(assembly=assembly,
+            active_tab="fields",
+            data_source=data_source|default("") ,
+            gsheet=gsheet|default(none),
+            targets_enabled=targets_enabled|default(false),
+            respondents_enabled=respondents_enabled|default(false),
+            selection_enabled=selection_enabled|default(false)
+            ) }}
+        </div>
     </div>
 {% endblock %}
 {% block page_content %}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
-    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
-        {{ _("Group, order, and label the fields that describe your respondents. These settings drive how respondent details are displayed and will seed the registration form when it is created.") }}
-    </p>
-    {{ assembly_tabs(assembly=assembly,
-    active_tab="fields",
-    data_source=data_source|default("") ,
-    gsheet=gsheet|default(none),
-    targets_enabled=targets_enabled|default(false),
-    respondents_enabled=respondents_enabled|default(false),
-    selection_enabled=selection_enabled|default(false)
-    ) }}
     {% if data_source == "gsheet" and gsheet %}
         {# Google Sheet source - fields come from the spreadsheet columns, not from this UI. #}
         <section class="mb-8">

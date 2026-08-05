@@ -563,10 +563,25 @@ def visit_registration_form_view(page: Page, title: str, test_database):
     page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form")
 
 
+def _wait_until_scrolled(page: Page, timeout_ms: int = 5000) -> None:
+    """Poll window.scrollY (via CDP evaluate) until it is greater than 0.
+
+    We deliberately avoid page.wait_for_function here: its string predicate is
+    compiled with eval in the page's own context, which our strict-dynamic CSP
+    (no 'unsafe-eval') rejects. page.evaluate runs in Playwright's utility world,
+    so it is not subject to the page CSP.
+    """
+    for _ in range(max(1, timeout_ms // 100)):
+        if page.evaluate("window.scrollY") > 0:
+            return
+        page.wait_for_timeout(100)
+    raise AssertionError("window did not scroll (scrollY stayed 0)")
+
+
 @when("I scroll down the page")
 def scroll_down_the_page(page: Page):
     page.evaluate("window.scrollTo(0, 400)")
-    page.wait_for_function("window.scrollY > 0")
+    _wait_until_scrolled(page)
 
 
 @when("I click the Edit button in the editor header")
@@ -579,7 +594,7 @@ def click_editor_edit(page: Page):
 def edit_mode_with_scroll_preserved(page: Page):
     """x-scroll-preserve-links carries the scroll position across the Edit reload."""
     page.wait_for_url(lambda url: "edit=1" in url, timeout=PLAYWRIGHT_TIMEOUT)
-    page.wait_for_function("window.scrollY > 0", timeout=PLAYWRIGHT_TIMEOUT)
+    _wait_until_scrolled(page, timeout_ms=PLAYWRIGHT_TIMEOUT)
 
 
 @then("the wizard Next button should be disabled")
@@ -788,20 +803,6 @@ def see_page_heading(page: Page, title: str):
     """Verify the page heading contains the expected title."""
     heading = page.locator("h1")
     expect(heading).to_contain_text(title)
-
-
-@then("I should see the breadcrumbs")
-def see_breadcrumbs(page: Page):
-    """Verify the breadcrumbs navigation is visible."""
-    breadcrumbs = page.locator("nav[aria-label='Breadcrumb']")
-    expect(breadcrumbs).to_be_visible()
-
-
-@then(parsers.parse('the breadcrumbs should contain "{text}"'))
-def breadcrumbs_contain_text(page: Page, text: str):
-    """Verify the breadcrumbs contain specific text."""
-    breadcrumbs = page.locator("nav[aria-label='Breadcrumb']")
-    expect(breadcrumbs).to_contain_text(text)
 
 
 @then("I should see the assembly question section")

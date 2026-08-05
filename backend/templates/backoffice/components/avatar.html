@@ -1,0 +1,29 @@
+{#
+ABOUTME: Avatar component macro - circular badge showing a user's initials
+ABOUTME: Used as the account menu trigger in the top navigation bar
+#}
+{% macro avatar(initials="", size="md", label="") %}
+    {#
+    Circular initials badge. Purely presentational unless a label is supplied.
+
+    Args:
+        initials: Short text to display (1-2 characters, e.g. "AS").
+        size: "sm" (24px) | "md" (32px) | "lg" (40px). Default "md".
+        label: Accessible name. When set, the badge is exposed as role="img"
+            with this aria-label; when empty it is aria-hidden (the surrounding
+            control is expected to provide the accessible name).
+
+    Usage:
+        {{ avatar(initials="AS", label="Ada Smith") }}
+        {{ avatar(initials="AS", size="sm") }}
+    #}
+    {% set _sizes = {
+    "sm": {"dim": "1.5rem", "font": "0.6875rem"},
+    "md": {"dim": "2rem", "font": "0.8125rem"},
+    "lg": {"dim": "2.5rem", "font": "1rem"}
+    } %}
+    {% set _s = _sizes.get(size, _sizes["md"]) %}
+    <span class="inline-flex items-center justify-center rounded-full shrink-0 font-medium leading-none select-none"
+          style="width: {{ _s.dim }}; height: {{ _s.dim }}; font-size: {{ _s.font }}; background-color: var(--color-navigation-bars); color: var(--color-neutral-50); letter-spacing: 0.2px;"
+          {% if label %}role="img" aria-label="{{ label }}"{% else %}aria-hidden="true"{% endif %}>{{ initials }}</span>
+{% endmacro %}

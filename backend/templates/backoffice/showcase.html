@@ -14,6 +14,9 @@
 {% from "backoffice/showcase/card_component.html" import card_section %}
 {% from "backoffice/showcase/section_component.html" import section_section %}
 {% from "backoffice/showcase/navigation_component.html" import navigation_section %}
+{% from "backoffice/showcase/avatar_component.html" import avatar_section %}
+{% from "backoffice/showcase/account_menu_component.html" import account_menu_section %}
+{% from "backoffice/showcase/page_header_component.html" import page_header_section %}
 {% from "backoffice/showcase/breadcrumb_component.html" import breadcrumb_section %}
 {% from "backoffice/showcase/tabs_component.html" import tabs_section %}
 {% from "backoffice/showcase/stepper_component.html" import stepper_section %}
@@ -97,6 +100,9 @@
                 <option value="components:table">Table</option>
                 <option value="components:pagination">Pagination</option>
                 <option value="components:navigation">Navigation</option>
+                <option value="components:avatar">Avatar</option>
+                <option value="components:account-menu">Account Menu</option>
+                <option value="components:page-header">Page Header</option>
                 <option value="components:breadcrumb">Breadcrumb</option>
                 <option value="components:tabs">Tabs</option>
                 <option value="components:stepper">Stepper</option>
@@ -134,6 +140,9 @@
             <div id="table" data-tab="components" style="scroll-margin-top: 6rem;">{{ table_section() }}</div>
             <div id="pagination" data-tab="components" style="scroll-margin-top: 6rem;">{{ pagination_section() }}</div>
             <div id="navigation" data-tab="components" style="scroll-margin-top: 6rem;">{{ navigation_section() }}</div>
+            <div id="avatar" data-tab="components" style="scroll-margin-top: 6rem;">{{ avatar_section() }}</div>
+            <div id="account-menu" data-tab="components" style="scroll-margin-top: 6rem;">{{ account_menu_section() }}</div>
+            <div id="page-header" data-tab="components" style="scroll-margin-top: 6rem;">{{ page_header_section() }}</div>
             <div id="breadcrumb" data-tab="components" style="scroll-margin-top: 6rem;">{{ breadcrumb_section() }}</div>
             <div id="tabs" data-tab="components" style="scroll-margin-top: 6rem;">{{ tabs_section() }}</div>
             <div id="stepper" data-tab="components" style="scroll-margin-top: 6rem;">{{ stepper_section() }}</div>

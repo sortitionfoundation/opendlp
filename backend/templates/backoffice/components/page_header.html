@@ -1,0 +1,35 @@
+{#
+ABOUTME: Page header component - back arrow + page title, replacing the breadcrumb
+ABOUTME: Used at the top of detail pages (e.g. assembly pages) above the tab bar
+#}
+{% from "backoffice/components/_nav_icons.html" import icon_arrow_back %}
+
+{% macro page_header(title="", back_href="", back_label="", actions="") %}
+    {#
+    Compact page header: an optional back arrow, the page title, and an optional
+    trailing actions slot. Deliberately has no status chip (out of scope for 680).
+
+    Args:
+        title: The page title (rendered as the page <h1>).
+        back_href: If set, renders a back arrow link to this URL.
+        back_label: Accessible label for the back arrow (default "Back").
+        actions: Optional raw HTML rendered right-aligned (e.g. an action button).
+
+    Accessibility:
+        - The back arrow is a real link with an aria-label (icon-only control).
+    #}
+    <div class="flex items-center gap-4">
+        {% if back_href %}
+            <a href="{{ back_href }}"
+               class="inline-flex items-center justify-center shrink-0 rounded-md p-1 transition-opacity hover:opacity-80"
+               style="color: var(--color-primary-action);"
+               aria-label="{{ back_label if back_label else _('Back') }}">
+                {{ icon_arrow_back(classes="w-6 h-6") }}
+            </a>
+        {% endif %}
+        <h1 class="text-display-sm" style="color: var(--color-headings);">{{ title }}</h1>
+        {% if actions %}
+            <div class="ml-auto flex items-center gap-2">{{ actions | safe }}</div>
+        {% endif %}
+    </div>
+{% endmacro %}

@@ -11,15 +11,6 @@ Feature: Backoffice Assembly Team Members
     Then I should see the assembly members page
     And I should see "Team Members" as a section heading
 
-  Scenario: Assembly members page displays breadcrumbs
-    Given I am logged in as an admin user
-    And there is an assembly called "Climate Assembly"
-    When I visit the assembly members page for "Climate Assembly"
-    Then I should see the breadcrumbs
-    And the breadcrumbs should contain "Dashboard"
-    And the breadcrumbs should contain "Climate Assembly"
-    And the breadcrumbs should contain "Team Members"
-
   Scenario: Admin can see add user form on members page
     Given I am logged in as an admin user
     And there is an assembly called "Climate Assembly"

@@ -106,16 +106,6 @@ Feature: Component Accessibility
     And inactive tabs should have tabindex="-1"
 
   # =============================================================================
-  # Breadcrumb Accessibility Tests
-  # =============================================================================
-
-  Scenario: Breadcrumb has correct semantic structure
-    Given the user is on the assembly details page
-    Then the breadcrumb should have a nav element with aria-label
-    And the breadcrumb items should be in an ordered list
-    And the current page breadcrumb should have aria-current="page"
-
-  # =============================================================================
   # Button Accessibility Tests
   # =============================================================================
 

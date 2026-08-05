@@ -469,6 +469,8 @@ class FlaskBaseConfig:
         self.HELP_SITE_COOKIES: str = os.environ.get(
             "HELP_SITE_COOKIES", "https://docs.sortitionlab.org/data-and-legal/cookies/"
         )
+        # Knowledge hub (not live yet) - target of the top-bar help icon
+        self.KNOWLEDGE_HUB_URL: str = os.environ.get("KNOWLEDGE_HUB_URL", "https://democraticlottery.org/knowledge-hub")
 
         # Login rate limiting
         self.LOGIN_RATE_LIMIT_PER_EMAIL: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_EMAIL", "5"))

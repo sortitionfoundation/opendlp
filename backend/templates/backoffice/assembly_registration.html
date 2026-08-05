@@ -3,7 +3,7 @@ ABOUTME: Backoffice registration form configuration page
 ABOUTME: Allows assembly managers to configure RSVP/registration forms with custom HTML
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import checkbox, input, switch, textarea %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
@@ -13,34 +13,29 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
 
 {% block title %}{{ assembly.title }} - Registration{% endblock %}
 
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Registration")}
-        ]) }}
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
+        {{ page_header(
+        title=assembly.title,
+        back_href=url_for('backoffice.dashboard'),
+        back_label=_("Back to dashboard")
+        ) }}
+        <div class="mt-4">
+            {{ assembly_tabs(
+            assembly=assembly,
+            active_tab="registration",
+            data_source=data_source|default(""),
+            gsheet=gsheet|default(none),
+            targets_enabled=targets_enabled|default(false),
+            respondents_enabled=respondents_enabled|default(false),
+            selection_enabled=selection_enabled|default(false)
+            ) }}
+        </div>
     </div>
 {% endblock %}
 
 {% block page_content %}
     <div x-data="registrationPageController()">
-        {# Page Heading #}
-        <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
-        <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
-            {{ _("Registration Form Configuration") }}
-        </p>
-
-        {{ assembly_tabs(
-        assembly=assembly,
-        active_tab="registration",
-        data_source=data_source|default(""),
-        gsheet=gsheet|default(none),
-        targets_enabled=targets_enabled|default(false),
-        respondents_enabled=respondents_enabled|default(false),
-        selection_enabled=selection_enabled|default(false)
-        ) }}
-
         {% if not has_registration_page %}
             {# Warning panel when no registration page exists #}
             <div class="rounded-lg p-6 mb-6" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">

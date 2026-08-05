@@ -355,43 +355,6 @@ def inactive_tabs_tabindex(page_with_tabs: Page):
 
 
 # =============================================================================
-# Given/Then Steps - Breadcrumb
-# =============================================================================
-
-
-@given("the user is on the assembly details page")
-def user_on_assembly_details(logged_in_page: Page, existing_assembly):
-    """Navigate to assembly details page."""
-    page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
-    page.wait_for_load_state("networkidle")
-
-
-@then("the breadcrumb should have a nav element with aria-label")
-def breadcrumb_has_nav_aria(logged_in_page: Page):
-    """Verify breadcrumb has nav with aria-label."""
-    page = logged_in_page
-    nav = page.locator('nav[aria-label*="Breadcrumb"], nav[aria-label*="breadcrumb"]')
-    expect(nav).to_be_visible()
-
-
-@then("the breadcrumb items should be in an ordered list")
-def breadcrumb_has_ordered_list(logged_in_page: Page):
-    """Verify breadcrumb uses ol element."""
-    page = logged_in_page
-    ol = page.locator('nav[aria-label*="Breadcrumb"] ol, nav[aria-label*="breadcrumb"] ol')
-    expect(ol).to_be_visible()
-
-
-@then('the current page breadcrumb should have aria-current="page"')
-def breadcrumb_has_aria_current(logged_in_page: Page):
-    """Verify current breadcrumb has aria-current=page."""
-    page = logged_in_page
-    current = page.locator('[aria-current="page"]')
-    expect(current).to_be_visible()
-
-
-# =============================================================================
 # Given/Then Steps - Button Accessibility
 # =============================================================================
 
