@@ -515,7 +515,17 @@ belonging to an assembly with no page at all are dropped.
   fallback for one release. Same for documents. Update `docs/configuration.md` and
   `env.example`.
 
-### 4.4 Phase 4 — Respondent provenance and the auto-reply
+### 4.4 Phase 4 — Respondent provenance and the auto-reply ✅ DONE
+
+`send_registration_auto_reply` takes only the respondent now, not a
+`registration_page_id` alongside it — the respondent carries its own page, and a
+second parameter would just be an opportunity for a caller to pass a
+contradictory one.
+
+The wrong-template red went in first and did fail against the assembly-based
+lookup, exactly as predicted. The old "skips when the assembly has no page" test
+became "skips when the respondent came from elsewhere", which is the same
+protection expressed against the new shape.
 
 **RED first:**
 
