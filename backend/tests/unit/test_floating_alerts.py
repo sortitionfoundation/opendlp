@@ -139,10 +139,12 @@ class TestFloatingAlertsMacro:
         assert "left-1/2" in html
         assert "-translate-x-1/2" in html
 
-    def test_floating_alerts_has_z_index(self) -> None:
+    def test_floating_alerts_uses_layering_id(self) -> None:
+        """Layering (z-index 45) is set in main.css via the #floating-alerts id
+        (above the sticky header z-40, below modal dialogs z-50), so the container
+        must carry that id."""
         html = _render_floating_alerts_with_flash([("info", "Test")])
-        # Above the sticky header (z-40), below modal dialogs (z-50).
-        assert "z-[45]" in html
+        assert 'id="floating-alerts"' in html
 
     def test_success_alert_auto_dismisses(self) -> None:
         """Success flashes auto-dismiss after a few seconds, pausing on hover."""

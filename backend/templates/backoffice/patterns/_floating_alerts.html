@@ -91,7 +91,7 @@ ABOUTME: Partial template included by patterns.html
             <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-warning-600);">⚠️ {{ _("Key Points") }}</h4>
                 <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
-                    <li><strong>z-[45]</strong> — {{ _("Above the sticky header (z-40), below modal dialogs (z-50)") }}</li>
+                    <li><strong>{{ _("Layering") }}</strong> — {{ _("z-index 45 (set in main.css, documented next to the modal z-indexes) — above the sticky header (z-40), below modal dialogs (z-50)") }}</li>
                     <li><strong>{{ _("Auto-dismiss") }}</strong> — {{ _("success 4s, info 6s, warning 10s; errors stay until closed. Hover pauses the countdown.") }}</li>
                     <li><strong>aria-live=\"polite\"</strong> — {{ _("Screen readers announce new alerts without interrupting") }}</li>
                     <li><strong>{{ _("Dismissible") }}</strong> — {{ _("All floating alerts have a close button") }}</li>

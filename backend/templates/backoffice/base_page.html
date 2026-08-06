@@ -45,8 +45,9 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
             {% block page_content %}{% endblock %}
         </main>
 
-        {# Flash messages: fixed top-centre overlay at z-[45], above the sticky
-           header (z-40) and below modal dialogs (z-50). #}
+        {# Flash messages: fixed top-centre overlay. Its z-index (#floating-alerts,
+           45) is defined and documented in main.css — above the sticky header
+           (z-40), below modal dialogs (z-50). #}
         {{ floating_alerts() }}
 
         {{ footer() }}

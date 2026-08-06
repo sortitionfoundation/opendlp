@@ -20,9 +20,12 @@ ABOUTME: Reuses the .menu / .menu-item atoms and the Alpine open/close pattern
         id: Id prefix for the toggle/menu (default "account-menu").
 
     Accessibility:
-        - Trigger uses aria-haspopup="menu" and aria-expanded bound to open state.
-        - Menu uses role="menu" with role="menuitem" links; dividers use role="separator".
-        - Keyboard: Escape closes the menu; click outside closes it.
+        - Disclosure pattern: the trigger button exposes aria-expanded (bound to
+          the open state) and aria-controls pointing at the revealed panel. The
+          items are ordinary navigation links, so no menu/menuitem roles are used
+          — that pattern would promise arrow-key navigation this component does
+          not implement.
+        - Keyboard: Tab moves through the links; Escape closes; click outside closes.
     #}
     {% set items = items or [] %}
     {% set menu_id = id ~ "-menu" %}
@@ -35,7 +38,6 @@ ABOUTME: Reuses the .menu / .menu-item atoms and the Alpine open/close pattern
                 style="color: var(--color-body-text); background: transparent; border: none; cursor: pointer;"
                 @click="open = !open"
                 @click.outside="open = false"
-                aria-haspopup="menu"
                 x-bind:aria-expanded="open ? 'true' : 'false'"
                 aria-controls="{{ menu_id }}"
                 aria-label="{{ label if label else _('Account menu') }}">
@@ -50,17 +52,14 @@ ABOUTME: Reuses the .menu / .menu-item atoms and the Alpine open/close pattern
         <div x-show="open"
              x-cloak
              id="{{ menu_id }}"
-             role="menu"
-             aria-labelledby="{{ toggle_id }}"
              class="menu menu--right"
              style="min-width: 14rem; z-index: 50;">
             {% for item in items %}
                 {% if item.isVisible is not defined or item.isVisible %}
                     {% if item.divider %}
-                        <div role="separator" class="my-1" style="border-top: 1px solid var(--color-borders-dividers);"></div>
+                        <div aria-hidden="true" class="my-1" style="border-top: 1px solid var(--color-borders-dividers);"></div>
                     {% else %}
                         <a href="{{ item.href }}"
-                           role="menuitem"
                            class="menu-item"
                            @click="open = false"
                            {% for key, value in item.items() if key not in ['label', 'href', 'icon', 'isVisible', 'divider'] %} {{ key }}="{{ value }}"{% endfor %}>

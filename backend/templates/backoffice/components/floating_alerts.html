@@ -10,7 +10,8 @@ ABOUTME: Provides accessible notifications that don't require scrolling to top
 
     Features:
     - Fixed top-centre overlay, a little below the top of the viewport
-    - z-[45]: above the sticky header (z-40), below modal dialogs (z-50)
+    - Layering: the #floating-alerts z-index (45) is set in main.css, documented
+      next to the modal z-indexes — above the sticky header (z-40), below dialogs (z-50)
     - Auto-dismiss by severity: success 4s, info 6s, warning 10s; errors stay
       until closed. The countdown pauses while the pointer is over an alert.
     - aria-live="polite": Screen readers announce new alerts
@@ -26,7 +27,7 @@ ABOUTME: Provides accessible notifications that don't require scrolling to top
         {# Auto-dismiss durations (ms) by variant; 0 = stays until closed. #}
         {% set _auto_dismiss_ms = {"success": 4000, "info": 6000, "warning": 10000, "error": 0} %}
         <div id="floating-alerts"
-             class="fixed top-6 left-1/2 -translate-x-1/2 z-[45] flex flex-col gap-3 w-full max-w-md px-4"
+             class="fixed top-6 left-1/2 -translate-x-1/2 flex flex-col gap-3 w-full max-w-md px-4"
              aria-live="polite">
             {% for category, message in messages %}
                 {% set _variant = category if category in ["success", "error", "warning", "info"] else "info" %}

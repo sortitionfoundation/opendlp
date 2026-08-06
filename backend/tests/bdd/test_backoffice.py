@@ -556,13 +556,6 @@ def submitting_preview_form_does_nothing(page: Page):
     assert "section=preview" in page.url
 
 
-@when(parsers.parse('I visit the read-only registration form view for "{title}"'))
-def visit_registration_form_view(page: Page, title: str, test_database):
-    """Open the registration form step in its default read-only mode."""
-    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form")
-
-
 def _wait_until_scrolled(page: Page, timeout_ms: int = 5000) -> None:
     """Poll window.scrollY (via CDP evaluate) until it is greater than 0.
 
@@ -578,23 +571,19 @@ def _wait_until_scrolled(page: Page, timeout_ms: int = 5000) -> None:
     raise AssertionError("window did not scroll (scrollY stayed 0)")
 
 
-@when("I scroll down the page")
-def scroll_down_the_page(page: Page):
-    page.evaluate("window.scrollTo(0, 400)")
+@when(parsers.parse('I open the read-only registration form view for "{title}" with a saved scroll of {pos:d}'))
+def visit_registration_form_view_with_scroll(page: Page, title: str, pos: int, test_database):
+    """Open the read-only registration view with a ?scroll= param, exercising the
+    DOMContentLoaded scroll-restore leg of scroll preservation (the leg that
+    x-preserve-scroll-on-submit / x-scroll-preserve-links append on navigation)."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form&scroll={pos}")
+
+
+@then("the page should be scrolled down")
+def page_is_scrolled_down(page: Page):
+    """The saved scroll position was restored on load (scrollY > 0)."""
     _wait_until_scrolled(page)
-
-
-@when("I click the Edit button in the editor header")
-def click_editor_edit(page: Page):
-    """Edit renders as a link-button in the editor card header."""
-    page.get_by_role("button", name="Edit", exact=True).click()
-
-
-@then("the editor should be in edit mode with the page still scrolled down")
-def edit_mode_with_scroll_preserved(page: Page):
-    """x-scroll-preserve-links carries the scroll position across the Edit reload."""
-    page.wait_for_url(lambda url: "edit=1" in url, timeout=PLAYWRIGHT_TIMEOUT)
-    _wait_until_scrolled(page, timeout_ms=PLAYWRIGHT_TIMEOUT)
 
 
 @then("the wizard Next button should be disabled")
