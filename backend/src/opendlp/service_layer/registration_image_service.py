@@ -6,7 +6,7 @@ from collections.abc import Callable
 
 from opendlp.config import (
     get_max_image_upload_bytes,
-    get_max_images_per_registration_page,
+    get_max_images_per_assembly,
     get_registration_image_max_edge_px,
 )
 from opendlp.domain.assembly import Assembly
@@ -66,7 +66,6 @@ def add_registration_image(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="add registration image", required_role=_MANAGE_ROLE)
-        page = _load_page(uow, assembly_id)
 
         processed = process_image(
             raw,
@@ -75,27 +74,25 @@ def add_registration_image(
         )
         # Content-addressed dedup: identical bytes on a page collapse to one row.
         # The original filename is kept; the caller's alt always wins on re-upload.
-        existing = uow.registration_images.get_by_page_and_sha(page.id, processed.sha256)
+        existing = uow.registration_images.get_by_assembly_and_sha(assembly_id, processed.sha256)
         if existing is not None:
             if existing.alt != alt:
                 existing.alt = alt
-                page.record_edit(user.id, "Updated a registration image caption")
                 uow.commit()
             return existing.create_detached_copy()
 
-        limit = get_max_images_per_registration_page()
-        if uow.registration_images.count_by_page_id(page.id) >= limit:
+        limit = get_max_images_per_assembly()
+        if uow.registration_images.count_by_assembly_id(assembly_id) >= limit:
             raise ImageQuotaExceeded(limit)
 
         image = RegistrationImage.from_processed(
-            page.id,
+            assembly_id,
             processed,
             created_by=user.id,
             alt=alt,
             original_filename=sanitise_original_filename(original_filename),
         )
         uow.registration_images.add(image)
-        page.record_edit(user.id, "Added a registration image")
         uow.commit()
         return image.create_detached_copy()
 
@@ -107,10 +104,7 @@ def list_registration_images(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_view_assembly(user, assembly):
             raise InsufficientPermissions(action="view registration images", required_role=_VIEW_ROLE)
-        page = page_for_assembly(uow, assembly_id)
-        if not page:
-            return []
-        return [image.create_detached_copy() for image in uow.registration_images.list_by_page_id(page.id)]
+        return [image.create_detached_copy() for image in uow.registration_images.list_by_assembly_id(assembly_id)]
 
 
 def delete_registration_image(
@@ -120,12 +114,10 @@ def delete_registration_image(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="delete registration image", required_role=_MANAGE_ROLE)
-        page = _load_page(uow, assembly_id)
         image = uow.registration_images.get(image_id)
-        if image is None or image.registration_page_id != page.id:
+        if image is None or image.assembly_id != assembly_id:
             raise RegistrationImageNotFoundError(f"Image {image_id} not found for this registration page")
         uow.registration_images.delete(image)
-        page.record_edit(user.id, "Deleted a registration image")
         uow.commit()
 
 
@@ -136,12 +128,10 @@ def set_registration_image_alt(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="edit registration image", required_role=_MANAGE_ROLE)
-        page = _load_page(uow, assembly_id)
         image: RegistrationImage | None = uow.registration_images.get(image_id)
-        if image is None or image.registration_page_id != page.id:
+        if image is None or image.assembly_id != assembly_id:
             raise RegistrationImageNotFoundError(f"Image {image_id} not found for this registration page")
         image.alt = alt
-        page.record_edit(user.id, "Updated a registration image caption")
         uow.commit()
         return image.create_detached_copy()
 
@@ -164,5 +154,5 @@ def get_registration_image_for_serving(
         page = uow.registration_pages.get_by_url_slug(url_slug)
         if page is None or not page.is_publicly_loadable():
             return None
-        image = uow.registration_images.get_by_page_and_sha(page.id, sha256)
+        image = uow.registration_images.get_by_assembly_and_sha(page.assembly_id, sha256)
         return image.create_detached_copy() if image else None

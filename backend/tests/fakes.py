@@ -402,21 +402,21 @@ class FakeRegistrationPageHtmlRepository(FakeRepository, RegistrationPageHtmlRep
 class FakeRegistrationImageRepository(FakeRepository, RegistrationImageRepository):
     """Fake implementation of RegistrationImageRepository."""
 
-    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationImage | None:
+    def get_by_assembly_and_sha(self, assembly_id: uuid.UUID, sha256: str) -> RegistrationImage | None:
         """Get an image for a page by its content hash, or None."""
         for item in self._items:
-            if item.registration_page_id == registration_page_id and item.sha256 == sha256:
+            if item.assembly_id == assembly_id and item.sha256 == sha256:
                 return item
         return None
 
-    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationImage]:
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationImage]:
         """Get all images for a registration page, oldest first."""
-        items = [item for item in self._items if item.registration_page_id == registration_page_id]
+        items = [item for item in self._items if item.assembly_id == assembly_id]
         return sorted(items, key=lambda item: item.created_at)
 
-    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         """Count images for a registration page."""
-        return sum(1 for item in self._items if item.registration_page_id == registration_page_id)
+        return sum(1 for item in self._items if item.assembly_id == assembly_id)
 
     def delete(self, item: RegistrationImage) -> None:
         """Delete a RegistrationImage from the repository."""
@@ -427,21 +427,21 @@ class FakeRegistrationImageRepository(FakeRepository, RegistrationImageRepositor
 class FakeRegistrationDocumentRepository(FakeRepository, RegistrationDocumentRepository):
     """Fake implementation of RegistrationDocumentRepository."""
 
-    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationDocument | None:
+    def get_by_assembly_and_sha(self, assembly_id: uuid.UUID, sha256: str) -> RegistrationDocument | None:
         """Get a document for a page by its content hash, or None."""
         for item in self._items:
-            if item.registration_page_id == registration_page_id and item.sha256 == sha256:
+            if item.assembly_id == assembly_id and item.sha256 == sha256:
                 return item
         return None
 
-    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationDocument]:
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationDocument]:
         """Get all documents for a registration page, oldest first."""
-        items = [item for item in self._items if item.registration_page_id == registration_page_id]
+        items = [item for item in self._items if item.assembly_id == assembly_id]
         return sorted(items, key=lambda item: item.created_at)
 
-    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         """Count documents for a registration page."""
-        return sum(1 for item in self._items if item.registration_page_id == registration_page_id)
+        return sum(1 for item in self._items if item.assembly_id == assembly_id)
 
     def delete(self, item: RegistrationDocument) -> None:
         """Delete a RegistrationDocument from the repository."""

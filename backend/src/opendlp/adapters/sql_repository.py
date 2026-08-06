@@ -569,28 +569,23 @@ class SqlAlchemyRegistrationImageRepository(SqlAlchemyRepository, RegistrationIm
         """Get all RegistrationImages."""
         return self.session.query(RegistrationImage).all()
 
-    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationImage | None:
+    def get_by_assembly_and_sha(self, assembly_id: uuid.UUID, sha256: str) -> RegistrationImage | None:
         """Get an image for a page by its content hash, or None."""
-        return (
-            self.session
-            .query(RegistrationImage)
-            .filter_by(registration_page_id=registration_page_id, sha256=sha256)
-            .first()
-        )
+        return self.session.query(RegistrationImage).filter_by(assembly_id=assembly_id, sha256=sha256).first()
 
-    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationImage]:
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationImage]:
         """Get all images for a registration page, oldest first."""
         return (
             self.session
             .query(RegistrationImage)
-            .filter_by(registration_page_id=registration_page_id)
+            .filter_by(assembly_id=assembly_id)
             .order_by(orm.registration_images.c.created_at)
             .all()
         )
 
-    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         """Count images for a registration page."""
-        return self.session.query(RegistrationImage).filter_by(registration_page_id=registration_page_id).count()
+        return self.session.query(RegistrationImage).filter_by(assembly_id=assembly_id).count()
 
     def delete(self, item: RegistrationImage) -> None:
         """Delete a RegistrationImage from the repository."""
@@ -612,28 +607,23 @@ class SqlAlchemyRegistrationDocumentRepository(SqlAlchemyRepository, Registratio
         """Get all RegistrationDocuments."""
         return self.session.query(RegistrationDocument).all()
 
-    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationDocument | None:
+    def get_by_assembly_and_sha(self, assembly_id: uuid.UUID, sha256: str) -> RegistrationDocument | None:
         """Get a document for a page by its content hash, or None."""
-        return (
-            self.session
-            .query(RegistrationDocument)
-            .filter_by(registration_page_id=registration_page_id, sha256=sha256)
-            .first()
-        )
+        return self.session.query(RegistrationDocument).filter_by(assembly_id=assembly_id, sha256=sha256).first()
 
-    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationDocument]:
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationDocument]:
         """Get all documents for a registration page, oldest first."""
         return (
             self.session
             .query(RegistrationDocument)
-            .filter_by(registration_page_id=registration_page_id)
+            .filter_by(assembly_id=assembly_id)
             .order_by(orm.registration_documents.c.created_at)
             .all()
         )
 
-    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         """Count documents for a registration page."""
-        return self.session.query(RegistrationDocument).filter_by(registration_page_id=registration_page_id).count()
+        return self.session.query(RegistrationDocument).filter_by(assembly_id=assembly_id).count()
 
     def delete(self, item: RegistrationDocument) -> None:
         """Delete a RegistrationDocument from the repository."""

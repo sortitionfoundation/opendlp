@@ -133,24 +133,22 @@ def make_registration_page(assembly_id: uuid.UUID | None = None, **kwargs: Any) 
     return RegistrationPage(assembly_id=assembly_id, **kwargs)
 
 
-def make_registration_image(registration_page_id: uuid.UUID, sha256: str = "", **kwargs: Any) -> RegistrationImage:
+def make_registration_image(assembly_id: uuid.UUID, sha256: str = "", **kwargs: Any) -> RegistrationImage:
     """Create a RegistrationImage domain object with sensible defaults."""
     if not sha256:
         sha256 = uuid.uuid4().hex + uuid.uuid4().hex[:32]
     defaults: dict[str, Any] = {"byte_size": 8, "width": 10, "height": 10, "data": b"pngbytes"}
     defaults.update(kwargs)
-    return RegistrationImage(registration_page_id=registration_page_id, sha256=sha256, **defaults)
+    return RegistrationImage(assembly_id=assembly_id, sha256=sha256, **defaults)
 
 
-def make_registration_document(
-    registration_page_id: uuid.UUID, sha256: str = "", **kwargs: Any
-) -> RegistrationDocument:
+def make_registration_document(assembly_id: uuid.UUID, sha256: str = "", **kwargs: Any) -> RegistrationDocument:
     """Create a RegistrationDocument domain object with sensible defaults."""
     if not sha256:
         sha256 = uuid.uuid4().hex + uuid.uuid4().hex[:32]
     defaults: dict[str, Any] = {"byte_size": 13, "data": b"%PDF-1.7 body"}
     defaults.update(kwargs)
-    return RegistrationDocument(registration_page_id=registration_page_id, sha256=sha256, **defaults)
+    return RegistrationDocument(assembly_id=assembly_id, sha256=sha256, **defaults)
 
 
 def make_respondent(assembly_id: uuid.UUID | None = None, **kwargs: Any) -> Respondent:
@@ -233,22 +231,18 @@ class ContractBackend:
         self.commit()
         return page
 
-    def make_registration_image(
-        self, registration_page_id: uuid.UUID | None = None, **kwargs: Any
-    ) -> RegistrationImage:
-        if registration_page_id is None:
-            registration_page_id = self.make_registration_page().id
-        image = make_registration_image(registration_page_id=registration_page_id, **kwargs)
+    def make_registration_image(self, assembly_id: uuid.UUID | None = None, **kwargs: Any) -> RegistrationImage:
+        if assembly_id is None:
+            assembly_id = self.make_assembly().id
+        image = make_registration_image(assembly_id=assembly_id, **kwargs)
         self.repo.add(image)
         self.commit()
         return image
 
-    def make_registration_document(
-        self, registration_page_id: uuid.UUID | None = None, **kwargs: Any
-    ) -> RegistrationDocument:
-        if registration_page_id is None:
-            registration_page_id = self.make_registration_page().id
-        document = make_registration_document(registration_page_id=registration_page_id, **kwargs)
+    def make_registration_document(self, assembly_id: uuid.UUID | None = None, **kwargs: Any) -> RegistrationDocument:
+        if assembly_id is None:
+            assembly_id = self.make_assembly().id
+        document = make_registration_document(assembly_id=assembly_id, **kwargs)
         self.repo.add(document)
         self.commit()
         return document

@@ -918,7 +918,7 @@ def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
 def _serialise_image(image: RegistrationImage) -> dict[str, Any]:
     return {
         "id": str(image.id),
-        "registration_page_id": str(image.registration_page_id),
+        "assembly_id": str(image.assembly_id),
         "byte_size": image.byte_size,
         "width": image.width,
         "height": image.height,
@@ -1086,7 +1086,7 @@ def _handle_get_registration_image_for_serving(uow: Any, params: dict[str, Any])
 def _serialise_document(document: RegistrationDocument) -> dict[str, Any]:
     return {
         "id": str(document.id),
-        "registration_page_id": str(document.registration_page_id),
+        "assembly_id": str(document.assembly_id),
         "byte_size": document.byte_size,
         "sha256": document.sha256,
         "label": document.label,
