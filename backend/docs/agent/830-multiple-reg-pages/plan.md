@@ -469,7 +469,16 @@ defaults. That's a change to `_create_default_auto_reply_template`'s caller in
 `backoffice_registration.py`, guarded by a test that a second created page starts
 with no template rather than a fresh default.
 
-### 4.3 Phase 3 — Assets: assembly-scoping
+### 4.3 Phase 3 — Assets: assembly-scoping ✅ DONE
+
+One behaviour change fell out that the plan had not anticipated: **uploading an
+asset no longer requires the assembly to have a registration page.** That
+precondition only existed because the asset hung off a page. Three component
+tests asserted the old 400/404; they now assert the upload succeeds.
+
+The downgrade is lossy by nature and says so: an assembly-scoped asset has no
+single owning page, so it backfills to the assembly's oldest page, and assets
+belonging to an assembly with no page at all are dropped.
 
 **RED first:**
 
