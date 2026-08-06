@@ -384,7 +384,27 @@ add `language` with server default `''`; add `respondents.registration_page_id`.
 Verify by running the suite against a migrated DB, not just an
 `metadata.create_all()` one.
 
-### 4.2 Phase 2 — Service layer: page-id addressing
+### 4.2 Phase 2 — Service layer: page-id addressing ✅ DONE
+
+Three refinements made while the tests were driving it:
+
+1. **Permission errors are split by visibility.** The plan said every
+   unmanageable page should look missing. That is right for a stranger, but a
+   *viewer* of the assembly already knows it exists, and telling them "not found"
+   when they lack manage rights is a lie that costs them a support ticket. So:
+   cannot view → `RegistrationPageNotFoundError`; can view but not manage →
+   `InsufficientPermissions`. Enumeration is still impossible for outsiders.
+2. **The slug suffix is conditional.** Always appending it made the common
+   single-page case ugly (`dublin-citizens-assembly-registration-page`). Final
+   rule: a language code is always appended; without one, an assembly's *first*
+   page takes the bare slug and only later pages get a name suffix. A clash with
+   a *different* assembly still uses the numeric fallback, because that
+   assembly's page names mean nothing in this one's URL.
+3. **The delete guard on respondents moved to Phase 4**, with the FK it needs.
+
+Blueprints resolve "the assembly's page" at the route boundary for now, so the
+existing single-page UI keeps working. **Phase 6 replaces that with a real page
+id from the URL.**
 
 **RED first:** for each converted function, a unit test in
 `tests/unit/test_registration_page_service.py` calling it with a **page id** —
