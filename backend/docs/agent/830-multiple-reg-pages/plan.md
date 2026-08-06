@@ -1,9 +1,11 @@
 # Multiple registration pages per assembly — plan
 
 **Issue:** 830
-**Branch (proposed):** `830-multiple-reg-pages`
+**Branch:** `830-multiple-reg-pages`
 **Date:** 2026-08-06
-**Status:** DRAFT — awaiting answers to the questions in §2
+**Status:** All decisions recorded (§2). Backend phases 1–5 and 7 are fully
+specified and ready to build. Phase 6 (backoffice UI) is **blocked** on Q6/Q7 only,
+which Chewie is taking to the team — no other open questions.
 
 ---
 
@@ -13,13 +15,15 @@
 
 An assembly should be able to have **more than one registration page**, so that organisers can:
 
-- run **A/B tests** of different page designs / copy, and
-- offer the **same assembly in different languages**.
+- run **A/B tests** of different page designs / copy (typically driven by different
+  printed invite materials, each carrying its own URL and QR code), and
+- offer the **same assembly in different languages** — up to 20+ pages for
+  EU-wide jobs, all feeding a single pool of respondents.
 
 ### What exists today
 
 The model is `Assembly (1) —— (0..1) RegistrationPage`, and the "at most one" is
-enforced in three places:
+enforced in four places:
 
 | Layer | Where | What enforces one-per-assembly |
 |---|---|---|
@@ -51,169 +55,95 @@ scoping, respondent provenance, and the auto-reply lookup.
 
 ---
 
-## 2. Questions for Chewie
+## 2. Decisions
 
-> Please answer inline — add your answer under each question and I'll fold it into
-> the plan. Where I have a recommendation it's marked **Rec:**.
+### 2.1 Settled
 
-### Q1 — Does the app do the A/B *split*, or do you just want two URLs? ⚠️ BIGGEST QUESTION
+| # | Question | Decision |
+|---|---|---|
+| Q1 | Does the app split A/B traffic? | **No — independent URLs.** Each variant gets its own URL and QR code, printed on different invite materials. A future single-URL splitter would be a separate redirect-only page; explicitly out of scope. |
+| Q2 | Are images/PDFs shared across pages? | **Yes — move assets to assembly scope.** Logos are the same for every variant; re-uploading per variant is unacceptable friction. |
+| Q3 | Record which page a respondent came through? | **Yes** — nullable `registration_page_id` FK on `respondents`. Reporting scope: **submission count per page on the list view**; leave real analytics for later. |
+| Q4 | Can variants differ in which fields they ask? | **No.** Field schema stays assembly-scoped. Variants differ in layout, copy, styling and language only. |
+| Q5 | `language` column on a page? | **Yes**, optional, default `""`, used as a label in this work. **No** `Accept-Language` auto-redirect — separate story. |
+| Q8 | Deleting a page? | **Allowed only while never-published and with no respondents.** Otherwise offer `close`. |
+| Q9 | Cap on pages per assembly? | **No cap.** 20+ happens (EU-wide jobs), but is rare — under 5% of assemblies will exceed 3 pages. Support it; don't optimise the UI for it. |
+| Q10 | Auto-reply template on duplicate? | **Deep-copy the template**, so each variant gets its own editable copy ready to translate. Seed a default template only for an assembly's *first* page. |
+| Q11 | Bulk state change over mixed states? | **Best-effort with a report.** Move every page that can move, skip the rest, and tell the organiser exactly what happened and why. Never all-or-nothing. |
 
-Two very different products:
+Consequences of Q1 worth stating plainly: **no new cookie, no change to
+`docs/personal-data.md`.** The A/B measurement is the `registration_page_id` on
+the respondent row, which is server-side and carries no device identifier.
 
-**(a) Two independent URLs.** You get `/register/climate-a` and
-`/register/climate-b`, print different QR codes on different flyers / put them in
-different emails, and compare the numbers afterwards. The app never decides which
-page a visitor sees.
+**New requirement (from Chewie's comment on Phase 6):** the UI needs controls to
+move **all** of an assembly's registration pages between states (test / publish /
+close) in one action. Semantics settled by Q11; design in §3.4.
 
-**(b) The app splits traffic.** One entry URL, and OpenDLP randomly assigns each
-visitor to variant A or B and keeps them there on refresh/resubmit.
+### 2.2 Deferred — Chewie is discussing with the team
 
-(b) costs a lot more: an "entry point / campaign" concept above the pages, sticky
-assignment, and — the killer — **sticky assignment needs a cookie or a
-device-identifying signal**. `docs/personal-data.md` is explicit that OpenDLP's
-"no cookie banner" conclusion rests on having exactly two consent-exempt cookies,
-and that adding any cookie may invalidate it. An A/B assignment cookie is a
-*measurement* cookie, which is the classic non-exempt category — it would likely
-put a cookie banner on the public registration pages. A URL-parameter or
-alternating-server-side scheme avoids the cookie but breaks on refresh/back-button
-and skews the numbers.
+These block **Phase 6 only**. Every backend phase is agnostic to the outcome:
+both UI shapes need page-id-addressed services, so Phases 1–5 and 7 can be built
+and merged before these land.
 
-**Rec: (a).** It delivers both stated use cases (A/B and languages), needs no
-cookie, and doesn't touch the personal-data posture. If you want (b) later it can
-be built on top of (a) — but it should be its own piece of work with its own
-personal-data review.
+**Q6 — backoffice URL / UI shape.**
+(a) a list page at `/assembly/<id>/registration` plus a per-page editor at
+`/assembly/<id>/registration/<page_id>`, versus (b) keep one URL with a
+page-picker and `?page=<uuid>`.
 
-**Answer:**
+> **Note:** I briefly argued that 20+ pages made (a)'s list view need sorting and
+> filtering. Chewie's follow-up settles it — under 5% of assemblies exceed 3 pages,
+> and the 20-page case is allowed to be a bit awkward. So design the list for 2–3
+> rows: a plain table, no filtering, no grouping. It just has to stay *usable*
+> rather than pleasant at 20, which a plain table is. That also keeps (b)'s
+> dropdown viable, so the choice between (a) and (b) is back to being about URL
+> shape and bookmarkability, not scale.
+>
+> The one thing that does change with page count is the **bulk state controls**
+> (§3.4) — those matter most precisely when there are 20 pages to close.
 
-### Q2 — Should assets (images, PDFs) be shared across an assembly's pages?
+**Q7 — does the Assembly Details tab show a "primary" page?**
 
-Today `registration_images` and `registration_documents` are keyed by
-`registration_page_id`, and public serving is
-`/register/<url_slug>/assets/<sha>.png` → resolve slug → page → look up image
-*on that page*. So with multiple pages, an image uploaded to the English page is
-a 404 from the Spanish page's URL, and the organiser has to upload the logo twice.
+> **Note:** my original recommendation was (a) "just list them all", on the grounds
+> that listing 2–3 pages is fine. Chewie's 5% figure confirms 2–3 is the normal
+> case, so **(a) stands** — I withdraw the intermediate worry that 20 pages made it
+> untenable. All it needs is a graceful cap: list them all, and if there are more
+> than ~5, show the first few plus "and N more" linking to the registration tab.
+> That costs nothing and needs no `is_primary` column. Choosing `is_primary` later
+> is one small migration, so there is still no penalty for deferring — do not add
+> the column speculatively.
 
-- **(a) Keep page-scoped.** No migration on those tables. Every variant needs its
-  own upload; snippet URLs differ per page; duplicate bytes stored per page.
-- **(b) Move to assembly-scoped** (`assembly_id` FK, unique on
-  `(assembly_id, sha256)`). Upload once, use from any variant. Serving keeps the
-  same public URL shape but resolves `slug -> page -> assembly -> image`. Needs a
-  data migration (backfill `assembly_id` from the page) and index changes.
+### 2.3 Q11 in detail — bulk state changes are best-effort
 
-**Rec: (b).** Language variants and A/B variants will almost always share the same
-logo and the same "what is a citizens' assembly" PDF. Making an organiser upload
-the same file per variant is exactly the friction this feature is supposed to
-remove. The migration is mechanical (every existing page is the only page of its
-assembly, so the backfill is unambiguous). It also keeps GDPR sweep surface flat —
-one place per assembly rather than one per variant.
+Worth recording *why*, because the implementation has to resist the temptation to
+simplify it back into all-or-nothing.
 
-**Answer:**
+An assembly's pages will routinely sit at different points: some TEST, some
+PUBLISHED, one half-built with no URL slug. Two of the three transitions are also
+**not single operations** — reaching PUBLISHED means `publish()` from TEST but
+`reopen()` from CLOSED, and both run the readiness check, which a half-built page
+will fail. So a mixed set is the normal case, not an edge case.
 
-### Q3 — Do we record which page each respondent registered through?
+Best-effort means: move every page that can move, skip the rest, and report
+per page — *"4 published, 1 already published, 1 not published: the Welsh page has
+no URL slug."* One unfinished draft must never block the other nineteen from going
+live on launch day.
 
-For A/B testing this is the *point* — without it you can't compare conversion.
-`respondents` currently has `source_type = REGISTRATION_FORM` but no pointer to
-the page.
+The guard rails are unaffected: no page skips its state machine, no page publishes
+while failing readiness, and each moved page records its own activity entry noting
+it was part of a bulk action.
 
-**Rec: yes** — add a nullable `registration_page_id` FK on `respondents`
-(`ON DELETE SET NULL`, so deleting a variant doesn't destroy respondent rows).
-Nullable because CSV/GSheet/manual respondents have no page. It's a UUID, not PII,
-so it changes nothing for erasure.
+Two consequences that follow directly, and are easy to get wrong:
 
-Follow-up: **how much reporting is in scope?** Options, cheapest first:
-1. Just store it (a later story builds reporting).
-2. Store it + show a per-page submission count on the registration page list.
-3. Store it + a proper comparison view (counts, over time, completion).
-
-**Rec: 2** — the count is a one-line query and makes the list page genuinely
-useful; leave real analytics for later.
-
-**Answer:**
-
-### Q4 — Can variants differ in *which fields* they ask?
-
-Field definitions (`respondent_field_definitions`) are assembly-scoped, and
-`submit_registration` validates every submission against the assembly's schema.
-So today, variants can differ in **layout, copy, styling and language**, but not
-in the set of fields — and specifically, a variant that omits a
-`YES_REQUIRED` field will fail validation for every visitor.
-
-**Rec: keep it that way.** Same data, different presentation. It keeps the
-respondent table coherent and keeps selection working. If you want per-variant
-field sets, say so — it's a substantially bigger job (per-page field overrides,
-and selection has to cope with respondents missing attributes).
-
-**Answer:**
-
-### Q5 — Should a page carry a `language` code?
-
-For the translation use case a `language` column (e.g. `en`, `es`, `cy`) would
-let us label pages meaningfully and, later, cross-link variants ("Ver en español")
-or honour `Accept-Language`.
-
-**Rec: add the column now** (optional, default `""`), use it only as a label in
-this piece of work. It's cheap to add and expensive to retrofit. **Do not** build
-`Accept-Language` auto-redirect now — that's a behaviour change on public URLs
-that deserves its own think.
-
-**Answer:**
-
-### Q6 — What should the backoffice URL / UI shape be?
-
-Today: `/assembly/<id>/registration` renders a 3-step stepper (form → auto-reply
-email → preview and publish) for the one page. The template is ~1950 lines.
-
-- **(a) A list page, then a per-page editor.**
-  `/assembly/<id>/registration` becomes a list of the assembly's pages (name,
-  language, slug, status, submission count, actions). The existing stepper moves
-  to `/assembly/<id>/registration/<page_id>` essentially unchanged.
-- **(b) Keep one URL, add a page-picker dropdown** at the top of the existing
-  page, with `?page=<uuid>`.
-
-**Rec: (a).** The stepper template barely changes (it just gains `page` in its
-url_for calls), the list is a new small template, and "which page am I editing"
-is unambiguous in the URL — which matters when someone bookmarks or shares a link
-to a variant. (b) makes every existing route implicitly stateful.
-
-**Answer:**
-
-### Q7 — Is there a "primary" page?
-
-The Assembly **Details** tab currently shows *the* registration URL + QR code.
-With N pages it has to show something else.
-
-- **(a) List them all** (name, URL, QR link) — no primary concept, no extra column.
-- **(b) Add `is_primary`** and show that one, with "and 2 others".
-
-**Rec: (a).** A primary flag is a rule you then have to maintain (what happens
-when the primary is closed? deleted?) for very little gain. Listing 2–3 pages on
-the Details tab is fine.
-
-**Answer:**
-
-### Q8 — Deleting a registration page
-
-There's no delete today (a page is created once and lives forever). With
-variants, organisers will create a test variant and want it gone.
-
-**Rec:** allow delete **only while the page has never been published**
-(`has_ever_been_published() == False`) **and has no respondents**. Once published,
-its slug is in the world and its submissions are in the pool — offer `close`
-instead. This mirrors the existing slug-freeze reasoning.
-
-**Answer:**
-
-### Q9 — Anything to say about how many pages? Any cap?
-
-**Rec:** no hard cap in the domain; the practical limit is the image/document
-quotas which are already per-page (and become per-assembly if Q2 = (b)). Happy to
-add a soft cap if you'd rather.
-
-**Answer:**
+- **The flash message must be a real summary**, naming the pages that didn't move
+  and why. A generic "Done" would be actively harmful here: the organiser would
+  believe registration is fully open when one language is still dark.
+- **No wrapping transaction rollback on partial failure.** The successes commit.
+  That is the point of best-effort, and it means the service function must not
+  raise on the first page that can't move.
 
 ---
 
-## 3. Proposed design (assuming the recommended answers)
+## 3. Design
 
 ### 3.1 Shape
 
@@ -229,29 +159,101 @@ Assembly (1) ──── (0..N) RegistrationPage
                             ├── activity                                   (per page)
                             └─(1)── RegistrationPageHtml (form_html)       (per page)
 
-Assembly (1) ──── (0..N) RegistrationImage      MOVED from page to assembly (Q2b)
-Assembly (1) ──── (0..N) RegistrationDocument   MOVED from page to assembly (Q2b)
+Assembly (1) ──── (0..N) RegistrationImage      MOVED from page to assembly (Q2)
+Assembly (1) ──── (0..N) RegistrationDocument   MOVED from page to assembly (Q2)
 Assembly (1) ──── (0..N) RespondentFieldDefinition   unchanged, shared by all pages
 Assembly (1) ──── (0..N) EmailTemplate               unchanged; assignment is per page
 
 Respondent.registration_page_id  NEW, nullable — which page it came in through
 ```
 
-Several pages of one assembly may be `PUBLISHED` at the same time — that is the
-whole point, and no code currently assumes otherwise once the lookups are fixed.
+Many pages of one assembly may be `PUBLISHED` at the same time — that is the
+whole point, and no code assumes otherwise once the lookups are fixed.
 
 ### 3.2 Naming and slugs
 
 - `name` is required and unique within the assembly (a human handle for the
   editor UI; never shown publicly).
 - Slug auto-generation changes from `slugify(assembly.title)` to
-  `slugify(assembly.title + "-" + page.name)`, still passed through
-  `generate_unique_url_slug` for the `-2`, `-3` fallback. So the Spanish variant
-  of "Climate Assembly" defaults to `climate-assembly-espanol` rather than
-  `climate-assembly-2`.
+  `slugify(assembly.title) + "-" + suffix`, still passed through
+  `generate_unique_url_slug` for the `-2`, `-3` fallback.
+- **The suffix should be the `language` code when set, falling back to the
+  slugified `name`.** `_slugify` strips everything outside `[a-z0-9-]`, so
+  non-ASCII page names mangle badly — "Español" → `espaol`, "Čeština" → `etina`.
+  With 20+ EU language variants that is not a corner case, it is the normal
+  path. `climate-assembly-cs` beats `climate-assembly-etina`.
 - Slug freeze rules are unchanged and remain per page.
 
-### 3.3 What stays exactly as it is
+### 3.3 How many pages to design for
+
+**Design for 2–3 pages. Support 20 without falling over.** Under 5% of assemblies
+will exceed three registration pages, so the 20-page EU case is allowed to be a
+bit awkward in the UI — it must work, not delight.
+
+Concretely, that means:
+
+- **No** sorting, filtering or grouping controls on the page list. A plain table.
+- **No** pagination anywhere. Twenty rows on one page is fine.
+- **Do** use a single grouped query for the submission counts —
+  `count_by_registration_page(assembly_id) -> dict[UUID, int]` — rather than a
+  per-page count in a loop. Not for performance at three pages; because it is the
+  same amount of code either way, and the loop version is the kind of N+1 that
+  quietly survives into a report screen later.
+- **Do** make duplicate prominent. Not because 20 pages demand it, but because
+  even the 2–3 page case is almost always "the same page again, tweaked" — an A/B
+  variant or a translation. It is the natural creation path for this feature.
+- Bulk state controls (§3.4) are the one thing that genuinely earns its keep at
+  high page counts, and they're cheap at low ones too.
+
+### 3.4 Bulk lifecycle controls
+
+Organisers need to move **all** of an assembly's registration pages between
+states in one action (Chewie's requirement): everything live on launch day,
+everything closed when registration ends.
+
+Three bulk actions, mirroring the per-page ones:
+
+| Bulk action | Per-page effect | Notes |
+|---|---|---|
+| Publish all | `publish()` from TEST, `reopen()` from CLOSED | both run the readiness check |
+| Unpublish all | `unpublish()` from PUBLISHED | back to TEST |
+| Close all | `close()` from PUBLISHED | |
+
+Design constraints:
+
+- **The domain state machine is not bypassed.** A bulk action is a loop over
+  per-page domain calls, not a bulk `UPDATE`. A page that can't make the
+  transition is skipped, never forced.
+- **Readiness still applies.** Publishing a page with no URL slug fails for that
+  page exactly as it does today.
+- **Each page records its own activity entry**, with text marking it as part of a
+  bulk action, so the audit trail stays per-page and doesn't lie about how the
+  change was made.
+- **Best-effort, never all-or-nothing** (Q11). The service function returns a
+  per-page outcome and does not raise when a page can't move. Successes commit.
+
+The return type is the load-bearing bit — get it right and the route and template
+are trivial:
+
+```python
+class BulkStatusOutcome(Enum):
+    MOVED = "MOVED"        # transitioned
+    SKIPPED = "SKIPPED"    # already in the target state, or not in a source state for it
+    FAILED = "FAILED"      # tried and refused — readiness problems
+
+@dataclass(frozen=True)
+class BulkStatusResult:
+    page_id: uuid.UUID
+    page_name: str          # so the caller can name it without a second lookup
+    outcome: BulkStatusOutcome
+    problems: list[str]     # readiness problems when FAILED, else empty
+```
+
+`page_name` is carried deliberately: the flash message has to name the pages that
+didn't move, and making the route re-fetch them to build that sentence is how the
+summary quietly degrades into "Done".
+
+### 3.5 What stays exactly as it is
 
 - The public route contract: `/register/<url_slug>`, `/r/<short>`,
   `/register/<slug>/thank-you`, `/registration-closed`.
@@ -265,67 +267,132 @@ whole point, and no code currently assumes otherwise once the lookups are fixed.
 
 ---
 
-## 4. Implementation phases
+## 4. Implementation — red/green TDD
 
-Each phase should be independently testable and leave `just test` and `just check`
-green. Phases 1–5 are backend and can land before any UI change; the app keeps
-working with exactly one page per assembly throughout.
+### 4.0 How we work
 
-### Phase 1 — Domain and data layer
+**Every phase is a sequence of red/green cycles. No production line is written
+before a test that fails because it is missing.**
 
-**Domain** (`domain/registration_page.py`)
+The cycle, per behaviour:
+
+1. **RED** — write one test for the next smallest behaviour. Run it. **Watch it
+   fail, and read the failure.** A test that passes first time, or fails with the
+   wrong error (import error where you expected an assertion error), is not yet a
+   red — fix the test until it fails for the reason you intend.
+2. **GREEN** — write the least production code that makes it pass. Run the test.
+   Not the whole suite; just the test and its file.
+3. **REFACTOR** — tidy with the test green. Re-run.
+4. Repeat. Run the phase's full test file at each cycle's end, and
+   `just check` before the phase's final commit.
+
+Discipline notes for this particular job:
+
+- **Commit at green**, one commit per cycle or small group of cycles. That keeps
+  the failing-first history visible in review.
+- **Refactors of existing code get a characterisation test first.** Phase 2 and
+  Phase 6 are mostly signature changes to code that already works — for those the
+  red is "existing behaviour, expressed through the new signature, fails because
+  the new signature doesn't exist yet". Do not change a signature and then fix the
+  tests it broke; write the new-signature test first, watch it fail, then change
+  the signature.
+- **Never run two test invocations concurrently** (CLAUDE.md) — the non-BDD and
+  BDD suites share a database. Use `just test`, or
+  `just test-nobdd && just test-bdd-headless`.
+- Pipe long runs to a file rather than filling the terminal.
+
+Everything ships in one release (per Chewie's comment on risk 1), so phase order
+is about keeping the tree green, not about what a partial deploy would do.
+
+**One material simplification:** no one has used registration pages in production
+yet. So the migrations below need to be *correct*, but they carry no real data —
+no anxious backfill, no retroactive-attribution problem, and no risk that the
+asset re-scoping hits an assembly that already has two pages.
+
+### 4.1 Phase 1 — Domain and data layer
+
+**RED first:**
+
+- `tests/unit/test_registration_page_service.py` (or a new
+  `test_registration_page_domain.py`): constructing a `RegistrationPage` without a
+  `name` raises; `name` and `language` round-trip through `create_detached_copy()`;
+  `can_be_deleted()` is False once a `PUBLISH` activity exists.
+- `tests/contract/test_registration_page_repo.py`: **the key red** — add two pages
+  to one assembly and assert `list_by_assembly_id` returns both in `created_at`
+  order. This fails today at the DB level on the unique constraint, which is
+  exactly the constraint we are removing.
+
+**Then GREEN:**
+
+*Domain* (`domain/registration_page.py`)
 
 - Add `name: str` (required, non-empty, validated in `__init__`) and
-  `language: str = ""` to `RegistrationPage.__init__`, `create_detached_copy()`,
-  and add `rename()` / `set_language()` mutators that touch `updated_at`.
+  `language: str = ""` to `RegistrationPage.__init__` and `create_detached_copy()`;
+  add `rename()` / `set_language()` mutators that touch `updated_at`.
 - Add `can_be_deleted()` → `not has_ever_been_published()` (the respondent check
   lives in the service, which has repository access).
-- Update the module docstring comment in `domain/assembly.py:72-75` which says
-  "An assembly may have a RegistrationPage".
+- Update the comment in `domain/assembly.py:72-75` which says "An assembly may
+  have a RegistrationPage".
 
-**ORM** (`adapters/orm.py`)
+*ORM* (`adapters/orm.py`)
 
 - `registration_pages.assembly_id`: drop `unique=True`, add `index=True`.
 - Add `name` (`String(100)`, not null) and `language` (`String(20)`, not null,
-  default `""`) columns.
+  default `""`).
 - Add `Index("ix_registration_pages_assembly_name", "assembly_id", "name", unique=True)`.
 - Add `registration_page_id` to `respondents` (nullable UUID FK,
   `ondelete="SET NULL"`, indexed).
 
-**Repositories** (`service_layer/repositories.py`, `adapters/sql_repository.py`)
+*Repositories* (`service_layer/repositories.py`, `adapters/sql_repository.py`)
 
 - Replace `get_by_assembly_id() -> RegistrationPage | None` with
   `list_by_assembly_id() -> list[RegistrationPage]` (ordered by `created_at`).
-- Keep a `get_by_assembly_id_and_name()` if useful for slug generation; otherwise
-  don't keep a "the one page" accessor at all — its existence is what invites
-  single-page assumptions back in.
-- Remember: filter/order with ORM table columns (`orm.registration_pages.c.…`),
-  not domain attributes, per CLAUDE.md.
+- Do **not** keep a "the one page" accessor — its existence is what invites the
+  single-page assumption back in.
+- Filter/order with ORM table columns (`orm.registration_pages.c.…`), not domain
+  attributes, per CLAUDE.md.
 
-**Migration**
+*Migration*
 
 ```
 uv run alembic revision --autogenerate -m "allow multiple registration pages per assembly"
 ```
 
-then hand-edit to add the backfill:
+then hand-edit: drop the unique constraint on `assembly_id`; add `name` nullable →
+`UPDATE registration_pages SET name = 'Registration page'` → alter to not null;
+add `language` with server default `''`; add `respondents.registration_page_id`.
+Verify by running the suite against a migrated DB, not just an
+`metadata.create_all()` one.
 
-- drop the unique constraint on `registration_pages.assembly_id`
-- add `name` nullable → `UPDATE registration_pages SET name = 'Registration page'`
-  → alter to not null (or backfill from the assembly title — decide when writing)
-- add `language` with server default `''`
-- add `respondents.registration_page_id` (nullable, no backfill needed:
-  existing registration-form respondents predate variants and we can't reliably
-  attribute them — leaving NULL is honest)
+### 4.2 Phase 2 — Service layer: page-id addressing
 
-**Tests:** `tests/contract/test_registration_page_repo.py` gains
-`list_by_assembly_id` coverage including "two pages, both returned, ordered";
-unit tests for the new domain fields and `can_be_deleted()`.
+**RED first:** for each converted function, a unit test in
+`tests/unit/test_registration_page_service.py` calling it with a **page id** —
+red because the parameter doesn't exist yet. Then the two genuinely new
+behaviours, which are the interesting reds:
 
-### Phase 2 — Service layer: page-id addressing
+- `duplicate_registration_page` copies form HTML and thank-you HTML into a new
+  page that is TEST, has fresh unique slugs, and carries a `CREATE` activity entry
+  naming its source.
+- **Q10's red, and the sharpest one in this phase:** duplicate a page, edit the
+  *copy's* auto-reply template, and assert the *original's* template content is
+  unchanged. That fails against a shared assignment and passes only against a real
+  deep copy. Also: the duplicate's `auto_reply_email_template_id` differs from its
+  source's.
+- `delete_registration_page` refuses a published page, refuses a page with
+  respondents, and succeeds otherwise.
+- Bulk, and the red that pins Q11 down: over an assembly with a TEST page, a
+  PUBLISHED page and a slugless page, `publish_all` returns MOVED / SKIPPED /
+  FAILED respectively, **does not raise**, and — the part that would break under an
+  all-or-nothing implementation — the TEST page is *still PUBLISHED after the call
+  returns*, despite a sibling having failed. Assert the commit, not just the
+  return value. Each moved page carries its own activity entry.
+- Security red: a `page_id` belonging to an assembly the user cannot manage raises
+  `RegistrationPageNotFoundError` — **identical** to a nonexistent id, so existence
+  doesn't leak across assemblies.
 
-`service_layer/registration_page_service.py` — the bulk of the change. Every
-function currently shaped `(uow, user_id, assembly_id, …)` splits into one of:
+**Then GREEN.** `service_layer/registration_page_service.py` is the bulk of the
+change:
 
 | Current | Becomes |
 |---|---|
@@ -340,87 +407,132 @@ function currently shaped `(uow, user_id, assembly_id, …)` splits into one of:
 | `find_registration_page_by_*_slug` | unchanged |
 | `render_registration_form` / `render_thank_you_html` | unchanged (already take a page) |
 
-The page-id functions need a permission helper that goes
-`page_id -> page.assembly_id -> assembly -> can_manage_assembly(user, assembly)`
-and raises `RegistrationPageNotFoundError` for a bad id — note this must not leak
-existence across assemblies, so "page belongs to an assembly you can't manage"
-should look the same as "no such page".
-
-New:
+Plus a shared permission helper `page_id -> page.assembly_id -> assembly ->
+can_manage_assembly(user, assembly)`, and these new functions:
 
 - `duplicate_registration_page(uow, user_id, source_page_id, name, language)` —
-  copies `form_html`, `thank_you_html` and the auto-reply template *assignment*
-  into a fresh TEST page with fresh generated slugs and a `CREATE` activity entry
-  saying what it was copied from. This is the feature that makes variants and
-  translations actually pleasant, and it is cheap.
-- `delete_registration_page(uow, user_id, page_id)` — refuses if
-  `has_ever_been_published()` or if any respondent references it.
+  copies form HTML, thank-you HTML, and (per **Q10 = deep copy**) creates a *new*
+  `EmailTemplate` row from the source's auto-reply content, assigning it to the new
+  page. The two pages must share no mutable state.
+- `delete_registration_page(uow, user_id, page_id)`.
+- `publish_all` / `unpublish_all` / `close_all(uow, user_id, assembly_id)` —
+  each loops the assembly's pages calling the existing per-page domain methods,
+  dispatching on current status (§3.4), and returns `list[BulkStatusResult]`.
+  Best-effort per Q11: a page that refuses is recorded as FAILED with its
+  readiness problems and the loop continues. **The function must not raise on a
+  refused page**, and the successes commit — that is the behaviour the red below
+  pins down.
 
-### Phase 3 — Assets: assembly-scoping (if Q2 = b)
+Also in this phase: **only seed a default auto-reply template for an assembly's
+first page** (Q10), so duplicating doesn't manufacture N identical English
+defaults. That's a change to `_create_default_auto_reply_template`'s caller in
+`backoffice_registration.py`, guarded by a test that a second created page starts
+with no template rather than a fresh default.
 
-- `orm.py`: `registration_images.registration_page_id` → `assembly_id`;
-  same for `registration_documents`. Unique index becomes
-  `(assembly_id, sha256)`.
-- Migration backfills `assembly_id` from
-  `registration_pages.assembly_id` via the existing FK, then drops the old column.
+### 4.3 Phase 3 — Assets: assembly-scoping
+
+**RED first:**
+
+- `tests/contract/test_registration_image_repo.py` (and the document twin):
+  `list_by_assembly_id` returns images stored against the assembly; the unique
+  index is `(assembly_id, sha256)` so the same bytes dedupe once per assembly, not
+  once per page.
+- `tests/component/test_registration_image_serve.py`: **the behavioural red that
+  justifies the whole phase** — upload an image, then fetch it through a *second*
+  page's slug in the same assembly and expect 200. Today that is a 404.
+- A negative to pin the boundary: fetching it through a slug belonging to a
+  *different* assembly is 404.
+
+**Then GREEN:**
+
+- `orm.py`: `registration_images.registration_page_id` → `assembly_id`; same for
+  `registration_documents`. Unique index becomes `(assembly_id, sha256)`.
+- Migration backfills `assembly_id` from `registration_pages.assembly_id` via the
+  existing FK, then drops the old column.
 - `domain/registration_image.py` / `registration_document.py`: rename the field,
   update `from_processed` and `create_detached_copy`.
 - Repositories: `get_by_page_and_sha` → `get_by_assembly_and_sha`,
   `list_by_page_id` → `list_by_assembly_id`, ditto `count_by_*`.
-- `registration_image_service.get_registration_image_for_serving(uow, url_slug, name)`:
-  keep the signature; internally resolve `slug -> page`, check
-  `page.is_publicly_loadable()`, then look the image up **by
-  `page.assembly_id`**. So any live page of the assembly can serve any of the
-  assembly's images, which is what shared assets means.
-- The `page.record_edit(...)` calls in the image/document services currently
-  attribute asset changes to the single page's activity log. With assembly-scoped
-  assets there is no single page to attribute to — drop those `record_edit` calls
-  (asset changes are not page edits any more). Worth noting in the story: it is a
-  small loss of audit detail. If we care, an assembly-level activity log is a
-  separate story.
-- Quotas (`get_max_images_per_registration_page`) become per assembly — rename the
-  config accessor and env var, or keep the name and document the change. Prefer
-  renaming: `REGISTRATION_MAX_IMAGES_PER_ASSEMBLY`, keeping the old env var
-  readable as a fallback for one release.
+- `get_registration_image_for_serving(uow, url_slug, name)`: keep the signature;
+  internally resolve `slug -> page`, check `page.is_publicly_loadable()`, then look
+  the image up by `page.assembly_id`.
+- Drop the `page.record_edit(...)` calls in the image/document services — with
+  assembly-scoped assets there is no single page to attribute an asset change to.
+  A small, deliberate loss of audit detail; an assembly-level activity log would be
+  its own story.
+- **Rename the quota config** (confirmed by Chewie):
+  `get_max_images_per_registration_page` → `get_max_images_per_assembly`, env var
+  `REGISTRATION_MAX_IMAGES_PER_ASSEMBLY`, keeping the old env var readable as a
+  fallback for one release. Same for documents. Update `docs/configuration.md` and
+  `env.example`.
 
-### Phase 4 — Respondent provenance and the auto-reply
+### 4.4 Phase 4 — Respondent provenance and the auto-reply
+
+**RED first:**
+
+- `tests/unit/test_registration_submission_service.py`: a submission through a page
+  produces a `Respondent` whose `registration_page_id` is that page's id.
+- `tests/integration/test_registration_auto_reply_integration.py`: **the sharpest
+  red in the whole plan** — an assembly with two pages, each with a *different*
+  auto-reply template; submit through page B and assert the email sent is B's, not
+  A's. This currently cannot even be expressed (one page per assembly), and once it
+  can be, `send_registration_auto_reply(assembly_id)` fails it by picking
+  arbitrarily. Write this before touching `email_send_service`.
+- `tests/contract/test_respondent_repo.py`: `registration_page_id` round-trips, and
+  deleting a page sets it to NULL rather than cascading.
+
+**Then GREEN:**
 
 - `domain/respondents.py`: `Respondent.__init__` gains
-  `registration_page_id: uuid.UUID | None = None`; add it to `__slots__`-ish
-  attribute list at line 84ff and to `create_detached_copy()`.
+  `registration_page_id: uuid.UUID | None = None`; add it to the attribute list at
+  line 84ff and to `create_detached_copy()`.
 - `registration_submission_service._create_and_save_respondent` gains the page id;
-  `submit_registration` already has the `page` in hand, so it just passes
-  `page.id` through. `submit_registration_by_assembly_id` (dev/service-docs)
-  passes `None`.
-- **`email_send_service.send_registration_auto_reply` must change.** It currently
-  does `uow.registration_pages.get_by_assembly_id(assembly_id)` to find the
-  template — with N pages that's ambiguous and would send the wrong language's
-  auto-reply. Change its signature to take `registration_page_id` (the caller,
-  `registration.py:_send_registration_auto_reply`, has the respondent, which now
-  carries it). If the respondent has no page id, skip (no auto-reply for
-  CSV-imported respondents, which is already effectively true).
-- `email_template_service.assign_auto_reply_template(…, assembly_id, template_id)`
-  → takes `page_id`. `auto_reply_readiness_problems` stays assembly-scoped
-  (it checks reply-to address etc.).
+  `submit_registration` already holds the `page`, so it passes `page.id` through.
+  `submit_registration_by_assembly_id` (dev/service-docs) passes `None`.
+- `email_send_service.send_registration_auto_reply` takes `registration_page_id`
+  instead of resolving from `assembly_id`. If the respondent has no page id, skip.
+- `email_template_service.assign_auto_reply_template(…, page_id, template_id)`.
+  `auto_reply_readiness_problems` stays assembly-scoped (it checks reply-to etc.).
+- Repository: a grouped `count_by_registration_page(assembly_id) ->
+  dict[UUID, int]` (§3.3 — one query, not N) plus the single-page count the delete
+  guard needs.
 
-Repository addition: `respondents.count_by_registration_page_id(page_id)` for
-the list-page submission counts (Q3 rec 2) and the delete guard.
+### 4.5 Phase 5 — Public routes
 
-### Phase 5 — Public routes
+Almost no production code; this phase is mostly tests confirming that the
+slug-scoped routes already do the right thing with N pages.
 
-Almost nothing. Verify and cover with tests:
+**RED first** (in `tests/component/test_registration_routes.py` and
+`tests/integration/test_registration_submission_integration.py`):
 
-- Two published pages of one assembly both resolve and both submit into the same
-  pool, tagged with different `registration_page_id`s.
-- A TEST variant alongside a PUBLISHED variant: the TEST one still produces
-  `TEST_SUBMISSION` respondents.
-- Asset URLs work from either page's slug (Phase 3).
-- The `after_request` noindex header is blueprint-wide, so it already covers all
-  variants.
+- Two PUBLISHED pages of one assembly both render, and submissions through each
+  land in the same pool tagged with different `registration_page_id`s.
+- A TEST variant alongside a PUBLISHED variant still produces
+  `TEST_SUBMISSION` respondents, and the published one still produces `POOL`.
+- Each page's thank-you page and short URL resolve to *its own* content, not a
+  sibling's.
 
-### Phase 6 — Backoffice: list page + per-page editor
+**GREEN:** expect little or nothing to change here. If a test passes on first
+write, that is a signal the behaviour was already covered — replace it with one
+that actually distinguishes the variants rather than deleting the coverage.
 
-Routes in `entrypoints/blueprints/backoffice_registration.py`:
+### 4.6 Phase 6 — Backoffice: list page + per-page editor ⛔ BLOCKED on Q6/Q7
+
+Do not start until the team decides. The sketch below assumes Q6=(a); if they pick
+(b) the routes change but the service layer underneath does not.
+
+**RED first:** component tests in
+`tests/component/test_backoffice_registration_view.py` and
+`…_actions.py` — the list route renders N pages with statuses and counts; create /
+duplicate / delete each behave and refuse correctly; a per-page editor route 404s
+on a page id from another assembly. Plus the bulk route: posting `close` with a
+mix of PUBLISHED and TEST pages closes only the published ones and flashes a
+summary that **names the pages that didn't move** — assert on the page name
+appearing in the flash, not just on a 302, or the summary will quietly rot into
+"Done". These are route-level reds; write them against the intended URLs before
+the routes exist.
+
+**Then GREEN.** Routes in `entrypoints/blueprints/backoffice_registration.py`:
 
 ```
 GET  /assembly/<assembly_id>/registration                      → list of pages (NEW)
@@ -432,122 +544,116 @@ POST /assembly/<assembly_id>/registration/<page_id>/save
 GET  /assembly/<assembly_id>/registration/<page_id>/form-preview
 GET  /assembly/<assembly_id>/registration/<page_id>/qr-code.png
 POST /assembly/<assembly_id>/registration/<page_id>/email/save
+POST /assembly/<assembly_id>/registration/bulk-status              → publish/unpublish/close all (NEW)
      …/images…, …/documents…  → stay assembly-scoped (Phase 3), no page_id
 ```
 
 Keeping `assembly_id` in the path alongside `page_id` is redundant but keeps the
 breadcrumb/nav code and the permission helper unchanged, and lets us 404 cleanly
-on a page/assembly mismatch. Worth doing.
+on a page/assembly mismatch.
 
 Templates:
 
-- New `templates/backoffice/assembly_registration_list.html` — a table of pages
-  (name, language, slug, status tag, submission count, Edit / Duplicate /
-  Delete), plus "Add a page" and "Duplicate" entry points. Follow
-  `docs/agent/govuk_components.md` and the accessibility guide; status uses the
-  existing status-tag component.
-- `assembly_registration.html` (1950 lines) stays as the per-page editor. The
-  change is mechanical: every `url_for(..., assembly_id=assembly.id)` in it gains
+- New `templates/backoffice/assembly_registration_list.html` — a plain table
+  (name, language, slug, status tag, submission count, Edit / Duplicate / Delete),
+  plus "Add a page" and the bulk status controls. **No filtering, sorting,
+  grouping or pagination** (§3.3). Follow `docs/agent/govuk_components.md` and the
+  accessibility guide; status uses the existing status-tag component.
+- The bulk controls need a confirmation step — "close all" over 20 live pages is
+  not an undo-able click — and the outcome summary from §3.4 rendered as a flash
+  message, not swallowed into a generic "done".
+- `assembly_registration.html` (1950 lines) stays as the per-page editor. The change
+  is mechanical: every `url_for(..., assembly_id=assembly.id)` gains
   `page_id=registration_page.id`, and the breadcrumb gains a "Registration pages"
-  level. The Assets subsections lose their page association in copy ("images for
-  this assembly" rather than "for this page") if Q2 = (b).
-- `assembly_details.html:107-170`: the single-page block becomes a loop over
-  `registration_pages`, and the "create" CTA stays but says "Add a registration
-  page".
+  level. The Assets subsections' copy changes to "images for this assembly".
+- `assembly_details.html:107-170`: depends on **Q7**.
 
 Alpine.js: the assets panels use `x-model` flat-property and no-string-argument
 constraints (`templates/backoffice/patterns.html`) — the list page's delete
 confirmation must follow the same CSP-safe patterns. No new inline JS.
 
-### Phase 7 — Dev / service-docs, docs, i18n
+**E2E and BDD land with this phase**, since both drive the UI:
+
+- `tests/e2e/test_backoffice_registration.py`: create assembly → add English page →
+  duplicate as Spanish → publish both → submit to each → both respondents present
+  and attributed to the right page.
+- `features/backoffice-registration-editor.feature` gains scenarios for the
+  multi-page journey, including "close all registration pages at once". Write the
+  Gherkin first — it is the natural red for the organiser journey.
+
+### 4.7 Phase 7 — Dev / service-docs, docs, i18n
+
+**RED first:** `tests/component/` coverage that the dev service-docs handlers
+return page-aware results for an assembly with two pages — the existing handlers
+silently pick one today.
+
+**Then GREEN:**
 
 - `entrypoints/blueprints/dev.py` — `_handle_create_registration_page`,
-  `_handle_get_registration_page`, and the two direct
-  `registration_pages.get_by_assembly_id` calls at lines 1030 and 1196 need
-  page-aware equivalents.
-- `entrypoints/blueprints/backoffice.py:134,194` — assembly details and edit both
-  call `get_registration_page_with_source(…, assembly_id)`; switch to
+  `_handle_get_registration_page`, and the direct
+  `registration_pages.get_by_assembly_id` calls at lines 1030 and 1196.
+- `entrypoints/blueprints/backoffice.py:134,194` — switch to
   `list_registration_pages`.
-- Docs: update `docs/personal-data.md` if Q1 = (b) (it won't be if we take the
-  recommendation), `docs/configuration.md` for any renamed quota env var, and
-  `CLAUDE.md`'s core-entities list.
-- `just translate-regen` after all new user-facing strings are in.
+- Docs: `docs/configuration.md` for the renamed quota env vars, `CLAUDE.md`'s
+  core-entities list. `docs/personal-data.md` needs **no** change (Q1 = independent
+  URLs, no new cookie) — but say so in the PR so the reviewer doesn't have to
+  re-derive it.
+- `just translate-regen` once all new user-facing strings are in.
 - `tests/conftest.py::_delete_all_test_data` and
-  `tests/bdd/conftest.py::delete_all_except_standard_users` — no new tables, but
-  the delete order for images/documents changes if they move to assembly scope
-  (they'd then be siblings of `registration_pages`, not children).
+  `tests/bdd/conftest.py::delete_all_except_standard_users`: no new tables, but
+  images/documents become siblings of `registration_pages` rather than children, so
+  the delete order changes.
 - Regenerate `../.secrets.baseline` if test line numbers shift.
 
-### Phase 8 — Tests
+### 4.8 Test tier coverage map
 
-Per the no-exceptions policy, all three levels plus the existing contract/BDD
-tiers:
+The no-exceptions policy needs every tier represented. Where each lands:
 
-**Unit** (`tests/unit/test_registration_page_service.py` and new files)
-- name required / unique-per-assembly, language optional
-- `duplicate_registration_page` copies HTML, thank-you and template assignment,
-  generates fresh slugs, starts in TEST
-- `delete_registration_page` refuses when published, refuses when respondents
-  exist, succeeds otherwise
-- page-id permission helper: cross-assembly page id behaves as not-found
-- slug generation from assembly title + page name
+| Tier | Phases | Nothing new needed? |
+|---|---|---|
+| Unit | 1, 2, 4 | — |
+| Contract (repo) | 1, 3, 4 | — |
+| Integration | 4, 5 | — |
+| Component (route) | 3, 5, 6, 7 | — |
+| E2E | 6 | — |
+| BDD | 6 | — |
 
-**Contract** (`tests/contract/test_registration_page_repo.py`)
-- `list_by_assembly_id` with 0 / 1 / 3 pages, ordering
-- two pages of the same assembly can both be PUBLISHED
-- respondent `registration_page_id` round-trips; `ON DELETE SET NULL` behaviour
-
-**Integration** (`tests/integration/`)
-- submit through variant A and variant B of one assembly → two respondents in the
-  same pool with different `registration_page_id`
-- auto-reply picks the *submitting page's* template, not another variant's
-  (this is the regression the change to `send_registration_auto_reply` prevents —
-  test it explicitly)
-
-**Component** (`tests/component/`)
-- list route renders N pages with correct statuses and counts
-- create / duplicate / delete routes: happy path, permission denial, guard rails
-- per-page editor routes 404 on a page id from another assembly
-
-**E2E** (`tests/e2e/`)
-- full journey: create assembly → add English page → duplicate as Spanish →
-  publish both → submit to each → both respondents present and attributed
-
-**BDD** (`tests/bdd/`)
-- a feature for the organiser-facing journey, matching the existing registration
-  feature style
-
-Run order per CLAUDE.md: never concurrently — `just test`, or
-`just test-nobdd && just test-bdd-headless`.
+Phases 1–5 and 7 can go green without Phase 6, but **E2E and BDD coverage for this
+feature does not exist until Phase 6 lands**. Since everything ships together that
+is fine — but it means the branch is not releasable before Phase 6, regardless of
+how green the backend is.
 
 ---
 
 ## 5. Risks and things I'd watch
 
-1. **The auto-reply lookup is the sharpest edge.** Until Phase 4 lands,
-   `send_registration_auto_reply(assembly_id)` will pick an arbitrary page's
-   template. If Phases 1–2 ship before Phase 4, a Spanish registrant can get an
-   English auto-reply. Either ship 1–4 together or keep the DB constraint until
-   Phase 4 is done.
-2. **`assembly_registration.html` is 1950 lines** and threads `assembly.id`
-   through dozens of `url_for` calls. The change is mechanical but wide; it's the
-   most likely place for a missed link. Worth a grep-based sweep plus the
-   component tests above.
-3. **Slug freeze across variants.** Nothing changes structurally, but organisers
-   will now hit "I published variant B by accident and can't rename its slug" more
-   often. The delete-while-unpublished rule (Q8) is the escape hatch; make sure
-   the UI says so.
-4. **Asset migration is one-way.** Phase 3's backfill is unambiguous today
-   (one page per assembly) but becomes ambiguous the moment a second page exists.
-   So Phase 3 must land *before* anyone creates a second page in production —
-   i.e. before Phase 6 ships the UI, and ideally in the same release as Phase 1.
-5. **Respondent attribution is not retroactive.** Existing registration-form
-   respondents get `registration_page_id = NULL`. Any per-page count will
-   under-report for assemblies that were live before this lands. Say so in the UI
-   rather than pretending the number is complete.
-6. **`external_id` prefix.** Submissions get `reg-<hex>`; consider whether A/B
-   analysis wants the variant encoded there too. **Rec: no** — the FK is the
-   right place, and `external_id` is user-visible in exports.
+1. **The auto-reply picking the wrong page's template.** Everything ships together
+   (per Chewie), so there's no partial-deploy window — but within the branch, keep
+   Phase 4's integration test red-first so the wrong-template bug can never land
+   quietly. This is the one behaviour where a bug reaches a member of the public in
+   the wrong language.
+2. **`assembly_registration.html` is 1950 lines** and threads `assembly.id` through
+   dozens of `url_for` calls. Mechanical but wide, and the most likely place for a
+   missed link. Grep-sweep plus the Phase 6 component tests.
+3. **Slug freeze across variants.** Structurally unchanged, but organisers will now
+   hit "I published variant B by accident and can't rename its slug" far more often
+   with 20 pages than with one. The delete-while-unpublished rule (Q8) is the escape
+   hatch; make sure the UI says so.
+4. **Asset migration.** The Phase 3 backfill is only unambiguous while every
+   assembly has at most one page. Nothing is in production, so the real constraint
+   is just ordering *within* the branch: Phase 3 before anyone can create a second
+   page through the UI (Phase 6).
+5. **Bulk actions are the destructive ones.** "Close all" over 20 live pages is a
+   single click that takes an assembly's entire registration offline, and there is
+   no bulk undo (reopening runs the readiness check per page). Confirmation step,
+   clear summary of what moved, and per-page activity entries so the audit trail
+   can reconstruct it.
+6. **Don't over-build for 20 pages.** The 5% figure means effort spent on
+   filtering, sorting and pagination is effort wasted on the 95%. The one place
+   page count genuinely bites is bulk state changes, which are now in scope.
+7. **`external_id` prefix.** Submissions get `reg-<hex>`; A/B analysis does *not*
+   need the variant encoded there — the FK is the right place, and `external_id` is
+   user-visible in exports.
 
 ---
 
@@ -555,14 +661,15 @@ Run order per CLAUDE.md: never concurrently — `just test`, or
 
 | Phase | Size | Notes |
 |---|---|---|
-| 1 Domain + data + migration | M | mechanical, but the migration needs care |
-| 2 Service layer | L | ~15 function signatures, plus duplicate/delete |
-| 3 Asset re-scoping | M | only if Q2 = (b) |
-| 4 Respondent provenance + auto-reply | M | small code, important correctness |
-| 5 Public routes | S | mostly tests |
-| 6 Backoffice UI | L | one new template, one wide mechanical edit |
+| 1 Domain + data + migration | M | mechanical; migration needs care but no live data |
+| 2 Service layer | L | ~15 signatures, plus duplicate (with template deep-copy), delete, and three bulk actions |
+| 3 Asset re-scoping | M | two tables, config rename, doc updates |
+| 4 Respondent provenance + auto-reply | M | small code, highest-consequence correctness |
+| 5 Public routes | S | almost entirely tests |
+| 6 Backoffice UI | L | blocked; new list view + bulk controls + one wide mechanical edit; carries E2E + BDD |
 | 7 Dev/docs/i18n | S | |
-| 8 Tests | L | spread across all phases, not a separate block |
 
-Phases 1, 2, 4 and 5 are the minimum viable "two URLs work". 3 and 6 are what
-make it usable.
+Tests are inside each phase, not a phase of their own.
+
+Phases 1–5 and 7 are buildable today and deliver a working multi-page backend.
+Phase 6 is what makes it usable, and is gated on Q6/Q7.
