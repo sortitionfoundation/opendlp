@@ -32,6 +32,13 @@ Run all git commands from the main repo (`/Users/macintosh/Sites/opendlp`).
    ```bash
    git worktree add -b <branch> ../opendlp-worktree-<branch>
    ```
+   If the user asks for the branch to be based on main (or another ref) instead, pass that ref as the last argument, e.g. `git worktree add -b <branch> ../opendlp-worktree-<branch> origin/main`.
+
+   **Upstream fix:** when the start point is a remote-tracking ref like `origin/main`, git auto-sets it as the new branch's upstream, which would make pull/push target the wrong remote branch. Clear it:
+   ```bash
+   git -C ../opendlp-worktree-<branch> branch --unset-upstream
+   ```
+   (Not needed when branching from HEAD — no upstream gets set — and the first `git push -u origin <branch>` will then wire up the correct one.)
 
 5. **Verify and report.** Run `git worktree list` to confirm, then tell the user:
    - the absolute path of the new worktree,
