@@ -766,20 +766,64 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
                                     {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form.") }}
                                 </p>
-                                <textarea readonly
-                                          data-code-editor
-                                          aria-label="{{ _('Form skeleton preview') }}"
-                                          x-ref="skeletonTextarea"
-                                          x-text="skeletonHtml"
-                                          class="w-full rounded-lg p-4"
-                                          rows="18"
-                                          style="font-family: var(--font-mono);
-                                                 font-size: 0.875rem;
-                                                 line-height: 1.5;
-                                                 background-color: var(--color-subtle-background-panels);
-                                                 border: 1px solid var(--color-borders-dividers);
-                                                 color: var(--color-body-text);
-                                                 resize: none;"></textarea>
+                                {# Plain/GOV.UK toggle. Hand-rolled rather than the button() macro: the
+                                   macro's variant classes are fixed at Jinja render time, but which
+                                   button is "active" here can only be known at runtime. #}
+                                <div class="flex gap-2 mb-4" role="group" aria-label="{{ _('Form skeleton style') }}">
+                                    <button type="button"
+                                            class="btn"
+                                            :class="skeletonView === 'plain' ? 'btn--primary' : 'btn--tertiary'"
+                                            :aria-pressed="skeletonView === 'plain' ? 'true' : 'false'"
+                                            @click="showPlainSkeleton()">{{ _("Plain HTML") }}</button>
+                                    <button type="button"
+                                            class="btn"
+                                            :class="skeletonView === 'styled' ? 'btn--primary' : 'btn--tertiary'"
+                                            :aria-pressed="skeletonView === 'styled' ? 'true' : 'false'"
+                                            @click="showStyledSkeleton()">{{ _("GOV.UK styled") }}</button>
+                                </div>
+                                {# Two separate x-if'd textareas, not one x-text-bound textarea switched by
+                                   x-show: html-editor.js mounts a CodeMirror view over the textarea once,
+                                   reading its value at mount time only, so changing x-text on an
+                                   already-mounted textarea would not update the visible editor. x-if
+                                   destroys and recreates the element on toggle, so it remounts fresh.
+                                   Each textarea is wrapped in its own div: CodeMirror inserts its editor
+                                   DOM as a sibling of the textarea via plain insertBefore(), outside
+                                   Alpine's tracking, so without the wrapper x-if would remove only the
+                                   textarea it created and leave the CodeMirror instance orphaned. #}
+                                <template x-if="skeletonView === 'plain'">
+                                    <div>
+                                        <textarea readonly
+                                                  data-code-editor
+                                                  aria-label="{{ _('Form skeleton preview') }}"
+                                                  x-text="skeletonHtmlPlain"
+                                                  class="w-full rounded-lg p-4"
+                                                  rows="18"
+                                                  style="font-family: var(--font-mono);
+                                                         font-size: 0.875rem;
+                                                         line-height: 1.5;
+                                                         background-color: var(--color-subtle-background-panels);
+                                                         border: 1px solid var(--color-borders-dividers);
+                                                         color: var(--color-body-text);
+                                                         resize: none;"></textarea>
+                                    </div>
+                                </template>
+                                <template x-if="skeletonView === 'styled'">
+                                    <div>
+                                        <textarea readonly
+                                                  data-code-editor
+                                                  aria-label="{{ _('Form skeleton preview (GOV.UK styled)') }}"
+                                                  x-text="skeletonHtmlStyled"
+                                                  class="w-full rounded-lg p-4"
+                                                  rows="18"
+                                                  style="font-family: var(--font-mono);
+                                                         font-size: 0.875rem;
+                                                         line-height: 1.5;
+                                                         background-color: var(--color-subtle-background-panels);
+                                                         border: 1px solid var(--color-borders-dividers);
+                                                         color: var(--color-body-text);
+                                                         resize: none;"></textarea>
+                                    </div>
+                                </template>
                             </div>
                         {# Footer #}
                             <div class="px-6 py-3 flex gap-2 justify-end"
@@ -1378,7 +1422,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                 Alpine.data('registrationPageController', () => ({
                     skeletonLoading: false,
                     skeletonModalOpen: false,
-                    skeletonHtml: '',
+                    skeletonHtmlPlain: '',
+                    skeletonHtmlStyled: '',
+                    skeletonView: 'plain',
                     toastVisible: false,
                     toastMessage: '',
                     toastType: 'success',
@@ -1523,7 +1569,9 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                                 if (data.error) {
                                     this.showToast(data.error, 'error');
                                 } else {
-                                    this.skeletonHtml = data.html;
+                                    this.skeletonHtmlPlain = data.html;
+                                    this.skeletonHtmlStyled = data.html_govuk;
+                                    this.skeletonView = 'plain';
                                     this.skeletonModalOpen = true;
                                 }
                             })
@@ -1537,8 +1585,17 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                         this.skeletonModalOpen = false;
                     },
 
+                    showPlainSkeleton() {
+                        this.skeletonView = 'plain';
+                    },
+
+                    showStyledSkeleton() {
+                        this.skeletonView = 'styled';
+                    },
+
                     copySkeletonToClipboard() {
-                        navigator.clipboard.writeText(this.skeletonHtml)
+                        const html = this.skeletonView === 'plain' ? this.skeletonHtmlPlain : this.skeletonHtmlStyled;
+                        navigator.clipboard.writeText(html)
                             .then(() => {
                                 this.showToast('{{ _("Copied to clipboard") }}', 'success');
                             })

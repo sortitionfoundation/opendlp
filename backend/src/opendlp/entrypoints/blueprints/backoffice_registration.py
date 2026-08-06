@@ -69,7 +69,7 @@ from opendlp.service_layer.registration_image_service import (
 from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page_with_slugs,
-    generate_starter_form_html,
+    generate_starter_form_html_variants,
     get_registration_page,
     get_registration_page_with_source,
     publish_registration_page,
@@ -654,8 +654,8 @@ def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Generate starter HTML form skeleton based on assembly's field definitions."""
     try:
         uow = bootstrap.get_flask_uow()
-        html = generate_starter_form_html(uow, current_user.id, assembly_id)
-        return jsonify({"html": html})
+        variants = generate_starter_form_html_variants(uow, current_user.id, assembly_id)
+        return jsonify({"html": variants.plain, "html_govuk": variants.govuk})
     except InsufficientPermissions:
         return jsonify({"error": _("You don't have permission to access this assembly")}), 403
     except NotFoundError:
