@@ -309,7 +309,27 @@ yet. So the migrations below need to be *correct*, but they carry no real data �
 no anxious backfill, no retroactive-attribution problem, and no risk that the
 asset re-scoping hits an assembly that already has two pages.
 
-### 4.1 Phase 1 — Domain and data layer
+### 4.1 Phase 1 — Domain and data layer ✅ DONE
+
+Two judgement calls made during implementation, both deviating from the sketch
+below:
+
+1. **`name` is not validated as non-empty in `__init__`.** The plan said it would
+   be. Doing that would have forced a name onto 78 existing construction sites,
+   43 of them in one test file, none of which care about names. Instead `name`
+   defaults to `""` and the unique index is **partial** (`WHERE name != ''`) —
+   exactly how `url_slug` and `short_url_slug` already behave in this table. The
+   invariant still holds where it matters: Phase 2's service layer requires a
+   non-empty name on every creation path, and services are the only way a page
+   gets made in production.
+2. **`respondents.registration_page_id` moved to Phase 4.** The plan put the
+   column here, but its red — "the FK round-trips, and deleting a page nulls it"
+   — lives in Phase 4. Adding schema in Phase 1 that nothing reads until Phase 4
+   would be a column with no failing test behind it.
+
+A transitional `page_for_assembly(uow, assembly_id)` helper keeps the existing
+assembly-addressed callers working while the repository API changes underneath
+them. **Phase 2 deletes it.**
 
 **RED first:**
 
