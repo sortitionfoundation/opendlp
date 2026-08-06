@@ -232,6 +232,10 @@ HELP_SITE_DATA_AGREEMENT=https://docs.sortitionlab.org/data-and-legal/data-agree
 # registration form. Must accurately list the cookies we set - see
 # docs/personal-data.md, which is the canonical source of that list.
 HELP_SITE_COOKIES=https://docs.sortitionlab.org/data-and-legal/cookies/
+
+# Knowledge hub, the target of the top-bar help icon. Not live yet - the URL is
+# a placeholder until the hub is published.
+KNOWLEDGE_HUB_URL=https://democraticlottery.org/knowledge-hub
 ```
 
 ### Session and cookie lifetimes

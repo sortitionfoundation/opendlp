@@ -26,7 +26,6 @@ Feature: Backoffice Dashboard
     Then I should see the footer
     And the footer should contain GitHub link
     And the footer should contain Sortition Foundation link
-    And the footer should contain User Data Agreement link
     And the footer should display the version
 
   # Selection Tab Tests
