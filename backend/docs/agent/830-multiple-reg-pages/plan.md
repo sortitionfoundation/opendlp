@@ -3,9 +3,15 @@
 **Issue:** 830
 **Branch:** `830-multiple-reg-pages`
 **Date:** 2026-08-06
-**Status:** All decisions recorded (§2). Backend phases 1–5 and 7 are fully
-specified and ready to build. Phase 6 (backoffice UI) is **blocked** on Q6/Q7 only,
-which Chewie is taking to the team — no other open questions.
+**Status:** All decisions recorded (§2). **Phases 1–5 are built and merged** —
+the backend supports many registration pages per assembly, with duplication,
+deletion, bulk status changes, shared assets and per-page attribution. Phase 6
+(backoffice UI) is **blocked** on Q6/Q7, which Chewie is taking to the team.
+Phase 7 (dev handlers, docs, i18n) is not started.
+
+Until Phase 6 lands the backoffice still shows one page per assembly: the routes
+resolve the assembly's oldest page and pass its id to the now page-addressed
+services. Nothing in the UI can yet create a second page.
 
 ---
 
@@ -556,7 +562,18 @@ protection expressed against the new shape.
   dict[UUID, int]` (§3.3 — one query, not N) plus the single-page count the delete
   guard needs.
 
-### 4.5 Phase 5 — Public routes
+### 4.5 Phase 5 — Public routes ✅ DONE
+
+As predicted, no production code changed: the slug-scoped routes already did the
+right thing once Phases 1–4 landed. Every test passed on first write, so each was
+**mutation-checked** rather than trusted — breaking attribution fails two of
+them, and collapsing the per-page status check fails a third. They bite.
+
+Note for whoever runs the BDD suite next: `just test-bdd-headless` depends on
+`build-all-css`, which does **not** build the JavaScript bundles. Without a
+`npm install && npm run build:js` the CodeMirror editor never mounts and five
+backoffice scenarios fail for reasons that have nothing to do with the code under
+test. Worth folding `build-js` into `build-all-css`, but that is its own change.
 
 Almost no production code; this phase is mostly tests confirming that the
 slug-scoped routes already do the right thing with N pages.
