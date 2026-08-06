@@ -71,7 +71,7 @@ ABOUTME: Partial template included by patterns.html
                     <button type="submit"
                             class="px-4 py-2 rounded-lg text-button-md transition-colors"
                             style="background-color: var(--color-error-100); color: var(--color-error-600); border: 1px solid var(--color-error-400);">
-                        ✕ {{ _("Error Alert") }}
+                        ! {{ _("Error Alert") }}
                     </button>
                 </form>
                 <form action="{{ url_for('dev.flash_test') }}" method="post" class="inline">
