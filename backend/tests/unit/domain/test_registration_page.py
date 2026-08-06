@@ -21,6 +21,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageStatus,
     RenderContext,
     generate_starter_form_html,
+    generate_starter_form_html_govuk,
 )
 from opendlp.domain.respondent_field_schema import (
     GROUP_LABELS,
@@ -1214,3 +1215,287 @@ class TestGenerateStarterFormHtml:
         contact_pos = html.find(str(GROUP_LABELS[RespondentFieldGroup.NAME_AND_CONTACT]))
         about_pos = html.find(str(GROUP_LABELS[RespondentFieldGroup.ABOUT_YOU]))
         assert eligibility_pos < contact_pos < about_pos
+
+
+class TestGenerateStarterFormHtmlGovuk:
+    def test_empty_schema_minimal_form(self):
+        html = generate_starter_form_html_govuk([])
+
+        assert '<form action="{{ form_action }}" method="post">' in html
+        assert "{{ csrf_form_element }}" in html
+        assert "{{ form_errors() }}" in html
+        assert '<button type="submit" class="govuk-button" data-module="govuk-button">Register</button>' in html
+        assert html.rstrip().endswith("</div>\n</div>")
+
+    def test_wraps_form_in_two_thirds_grid_column(self):
+        html = generate_starter_form_html_govuk([])
+
+        assert '<div class="govuk-grid-row">' in html
+        assert 'class="govuk-grid-column-two-thirds"' in html
+        assert '<h1 class="govuk-heading-xl">{{ assembly_title }}</h1>' in html
+        assert '<p class="govuk-body">{{ assembly_question }}</p>' in html
+
+    def test_no_inline_style_block(self):
+        # The CSS needed for this markup lives in the main SCSS build, not
+        # inline in the generated form HTML.
+        html = generate_starter_form_html_govuk([])
+
+        assert "<style>" not in html
+
+    def test_text_field_renders_govuk_input_in_form_group(self):
+        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<div class="govuk-form-group">' in html
+        assert '<label class="govuk-label" for="first_name">First name</label>' in html
+        assert (
+            '<input class="govuk-input" type="text" id="first_name" name="first_name" '
+            "value=\"{{ value('first_name') }}\">"
+        ) in html
+        assert "{{ field_errors('first_name') }}" in html
+
+    def test_email_field_renders_govuk_email_input(self):
+        fields = [_field("email", RespondentFieldGroup.NAME_AND_CONTACT, 0, field_type=FieldType.EMAIL)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert (
+            '<input class="govuk-input" type="email" id="email" name="email" value="{{ value(\'email\') }}">'
+        ) in html
+
+    def test_integer_field_renders_govuk_number_input_with_no_width_modifier(self):
+        fields = [_field("age", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.INTEGER)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert ('<input class="govuk-input" type="number" id="age" name="age" value="{{ value(\'age\') }}">') in html
+        assert "govuk-input--width" not in html
+
+    def test_longtext_field_renders_govuk_textarea(self):
+        fields = [_field("about", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.LONGTEXT)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert ('<textarea class="govuk-textarea" id="about" name="about">{{ value(\'about\') }}</textarea>') in html
+        assert "{{ field_errors('about') }}" in html
+
+    def test_bool_field_renders_single_govuk_checkbox(self):
+        fields = [_field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, field_type=FieldType.BOOL)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<div class="govuk-checkboxes" data-module="govuk-checkboxes">' in html
+        assert '<div class="govuk-checkboxes__item">' in html
+        assert (
+            '<input class="govuk-checkboxes__input" type="checkbox" id="eligible" name="eligible" value="yes" '
+            "{{ checked('eligible', 'yes') }}>"
+        ) in html
+        assert '<label class="govuk-label govuk-checkboxes__label" for="eligible">Eligible</label>' in html
+        assert 'type="radio"' not in html
+
+    def test_bool_or_none_field_renders_single_checkbox_not_three_options(self):
+        fields = [_field("can_attend", RespondentFieldGroup.ELIGIBILITY, 0, is_fixed=True)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert html.count('name="can_attend"') == 1
+        assert "Not set" not in html
+
+    def test_choice_radio_renders_govuk_radios_with_unique_ids(self):
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<fieldset class="govuk-fieldset" role="group">' in html
+        assert '<legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Gender</legend>' in html
+        assert '<div class="govuk-radios" data-module="govuk-radios">' in html
+        assert (
+            '<input class="govuk-radios__input" type="radio" id="gender" name="gender" value="Female" '
+            "{{ checked('gender', 'Female') }}>"
+        ) in html
+        assert '<label class="govuk-label govuk-radios__label" for="gender">Female</label>' in html
+        assert (
+            '<input class="govuk-radios__input" type="radio" id="gender-2" name="gender" value="Male" '
+            "{{ checked('gender', 'Male') }}>"
+        ) in html
+        assert '<label class="govuk-label govuk-radios__label" for="gender-2">Male</label>' in html
+        assert html.find('value="Female"') < html.find('value="Male"')
+        assert "{{ field_errors('gender') }}" in html
+
+    def test_choice_dropdown_not_required_includes_govuk_placeholder(self):
+        fields = [
+            _field(
+                "geo",
+                RespondentFieldGroup.ADDRESS,
+                0,
+                field_type=FieldType.CHOICE_DROPDOWN,
+                options=[ChoiceOption(value="North"), ChoiceOption(value="South")],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<select class="govuk-select" id="geo" name="geo">' in html
+        assert '<option value="" disabled hidden selected>Please select...</option>' in html
+        assert ("<option value=\"North\" {{ selected('geo', 'North') }}>North</option>") in html
+        assert ("<option value=\"South\" {{ selected('geo', 'South') }}>South</option>") in html
+        assert "{{ field_errors('geo') }}" in html
+        assert "govuk-select govuk-!-width-full" not in html
+
+    def test_required_dropdown_omits_placeholder_and_marks_required(self):
+        fields = [
+            _field(
+                "geo",
+                RespondentFieldGroup.ADDRESS,
+                0,
+                field_type=FieldType.CHOICE_DROPDOWN,
+                options=[ChoiceOption(value="North")],
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<select class="govuk-select" id="geo" name="geo" required>' in html
+        assert "Please select..." not in html
+
+    def test_html_escapes_label_and_option_value(self):
+        fields = [
+            _field(
+                "company",
+                RespondentFieldGroup.OTHER,
+                0,
+                label="AT&T",
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="<Yes>")],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert "AT&amp;T" in html
+        assert "AT&T<" not in html
+        assert "&lt;Yes&gt;" in html
+        assert " {{ checked('company', '<Yes>') }}" in html
+
+    def test_single_quote_in_option_value_is_escaped_in_jinja_literal(self):
+        fields = [
+            _field(
+                "name_prefix",
+                RespondentFieldGroup.NAME_AND_CONTACT,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="O'Brien")],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert "checked('name_prefix', 'O\\'Brien')" in html
+
+    def test_groups_emitted_in_display_order_with_govuk_heading_class(self):
+        fields = [
+            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0),
+            _field("eligible", RespondentFieldGroup.ELIGIBILITY, 0, field_type=FieldType.BOOL),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        eligibility_label = str(GROUP_LABELS[RespondentFieldGroup.ELIGIBILITY])
+        contact_label = str(GROUP_LABELS[RespondentFieldGroup.NAME_AND_CONTACT])
+        assert f'<h2 class="govuk-heading-l">{eligibility_label}</h2>' in html
+        assert html.find(f'<h2 class="govuk-heading-l">{eligibility_label}</h2>') < html.find(
+            f'<h2 class="govuk-heading-l">{contact_label}</h2>'
+        )
+
+    def test_sort_order_within_group(self):
+        fields = [
+            _field("second", RespondentFieldGroup.NAME_AND_CONTACT, 20),
+            _field("first", RespondentFieldGroup.NAME_AND_CONTACT, 10),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert html.find('name="first"') < html.find('name="second"')
+
+    def test_empty_groups_suppressed(self):
+        fields = [_field("note", RespondentFieldGroup.OTHER, 0)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert str(GROUP_LABELS[RespondentFieldGroup.ELIGIBILITY]) not in html
+        assert str(GROUP_LABELS[RespondentFieldGroup.OTHER]) in html
+
+    def test_no_field_is_omitted(self):
+        fields = [
+            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0),
+            _field(
+                "internal_note",
+                RespondentFieldGroup.OTHER,
+                0,
+                on_registration_page=FieldOnRegistrationPage.NO,
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert 'name="first_name"' in html
+        assert 'name="internal_note"' not in html
+
+    def test_required_attribute_on_required_text_field(self):
+        fields = [
+            _field(
+                "email",
+                RespondentFieldGroup.NAME_AND_CONTACT,
+                0,
+                field_type=FieldType.EMAIL,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert (
+            '<input class="govuk-input" type="email" id="email" name="email" value="{{ value(\'email\') }}" required>'
+        ) in html
+
+    def test_required_attribute_on_required_checkbox(self):
+        fields = [
+            _field(
+                "consent",
+                RespondentFieldGroup.CONSENT,
+                0,
+                field_type=FieldType.BOOL_OR_NONE,
+                is_fixed=True,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert "{{ checked('consent', 'yes') }} required>" in html
+
+    def test_one_field_per_row_no_grid_columns_inside_form_group(self):
+        # Fields are not known to relate to each other ahead of time, so
+        # unlike a hand-authored form we never place two of them side by
+        # side in a govuk-grid-row.
+        fields = [
+            _field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0),
+            _field("last_name", RespondentFieldGroup.NAME_AND_CONTACT, 10),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert "govuk-grid-column-one-half" not in html
+        assert "govuk-grid-column-one-third" not in html
+
+    def test_render_round_trip_substitutes_tokens(self):
+        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        starter = generate_starter_form_html_govuk(fields)
+        rendered = RegistrationPageHtml(
+            registration_page_id=uuid.uuid4(),
+            form_html=starter,
+        ).render(RenderContext(csrf_form_element="<csrf>", form_action="/r/submit"))
+
+        assert "<csrf>" in rendered
+        assert '<form action="/r/submit"' in rendered
+        assert "{{ form_action }}" not in rendered
+        assert "{{ csrf_form_element }}" not in rendered
+
+    def test_generated_html_passes_readiness_check(self):
+        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        starter = generate_starter_form_html_govuk(fields)
+        html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=starter)
+
+        assert html.readiness_problems() == []
