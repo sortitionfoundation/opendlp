@@ -35,7 +35,7 @@ class TestBackofficeAssemblyDetails:
         data attributes, not an inline navigator.clipboard expression — the
         latter fails silently under the CSP-safe Alpine build (`@alpinejs/csp`)."""
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
         assert response.status_code == 200
@@ -50,7 +50,7 @@ class TestBackofficeAssemblyDetails:
     ):
         """GET .../registration/qr-code.png returns a PNG attachment for the short URL."""
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/qr-code.png")
         assert response.status_code == 200

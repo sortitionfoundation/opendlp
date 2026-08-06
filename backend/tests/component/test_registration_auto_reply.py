@@ -31,6 +31,14 @@ from opendlp.service_layer.registration_page_service import (
 from opendlp.service_layer.user_service import create_user
 from tests.fakes import FakeStore, FakeUnitOfWork
 
+
+def _page_id(uow, assembly_id):  # type: ignore[no-untyped-def]
+    """The id of the assembly's single registration page."""
+    page = page_for_assembly(uow, assembly_id)
+    assert page is not None
+    return page.id
+
+
 MINIMAL_FORM_HTML = """
 <form method="post" action="{{ form_action }}">
     {{ csrf_form_element }}
@@ -141,9 +149,9 @@ def _build_page_with_auto_reply(
     )
 
     with FakeUnitOfWork(store=fake_store) as uow:
-        create_registration_page_with_slugs(uow, admin_id, assembly_id)
+        create_registration_page_with_slugs(uow, admin_id, assembly_id, name="Registration page")
     with FakeUnitOfWork(store=fake_store) as uow:
-        update_registration_page_html(uow, admin_id, assembly_id, MINIMAL_FORM_HTML)
+        update_registration_page_html(uow, admin_id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
 
     if with_template:
         template = create_email_template(
@@ -158,7 +166,7 @@ def _build_page_with_auto_reply(
 
     if publish:
         with FakeUnitOfWork(store=fake_store) as uow:
-            return publish_registration_page(uow, admin_id, assembly_id)
+            return publish_registration_page(uow, admin_id, _page_id(uow, assembly_id))
     with FakeUnitOfWork(store=fake_store) as uow:
         page = page_for_assembly(uow, assembly_id)
         return page.create_detached_copy()

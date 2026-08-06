@@ -13,11 +13,20 @@ from opendlp.feature_flags import reload_flags
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
+    page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token, route_url
+
+
+def _page_id(uow, assembly_id):  # type: ignore[no-untyped-def]
+    """The id of the assembly's single registration page."""
+    page = page_for_assembly(uow, assembly_id)
+    assert page is not None
+    return page.id
+
 
 # A minimal valid form HTML that includes the required placeholders
 MINIMAL_FORM_HTML = """
@@ -62,15 +71,15 @@ def published_registration_page(postgres_session_factory, admin_user) -> Registr
 
     # Create a registration page with auto-generated slugs
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
+        create_registration_page_with_slugs(uow, admin_user.id, assembly_id, name="Registration page")
 
     # Update the form HTML with a valid form
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        update_registration_page_html(uow, admin_user.id, assembly_id, MINIMAL_FORM_HTML)
+        update_registration_page_html(uow, admin_user.id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
 
     # Publish the page
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        return publish_registration_page(uow, admin_user.id, assembly_id)
+        return publish_registration_page(uow, admin_user.id, _page_id(uow, assembly_id))
 
 
 @pytest.fixture
@@ -89,11 +98,11 @@ def test_mode_registration_page(postgres_session_factory, admin_user) -> Registr
 
     # Create a registration page with auto-generated slugs
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        page = create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
+        page = create_registration_page_with_slugs(uow, admin_user.id, assembly_id, name="Registration page")
 
     # Update the form HTML with a valid form
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        update_registration_page_html(uow, admin_user.id, assembly_id, MINIMAL_FORM_HTML)
+        update_registration_page_html(uow, admin_user.id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
 
     # Page is in TEST status by default, just return it
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -144,13 +153,13 @@ def nonce_probe_registration_page(postgres_session_factory, admin_user) -> Regis
         assembly_id = assembly.id
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
+        create_registration_page_with_slugs(uow, admin_user.id, assembly_id, name="Registration page")
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        update_registration_page_html(uow, admin_user.id, assembly_id, NONCE_PROBE_FORM_HTML)
+        update_registration_page_html(uow, admin_user.id, _page_id(uow, assembly_id), NONCE_PROBE_FORM_HTML)
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        return publish_registration_page(uow, admin_user.id, assembly_id)
+        return publish_registration_page(uow, admin_user.id, _page_id(uow, assembly_id))
 
 
 class TestCspNonceNotLeakedToAuthorHtml:

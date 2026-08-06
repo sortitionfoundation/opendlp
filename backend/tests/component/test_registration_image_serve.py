@@ -15,10 +15,19 @@ from opendlp.service_layer.registration_image_service import add_registration_im
 from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page_with_slugs,
+    page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
 )
 from tests.fakes import FakeStore, FakeUnitOfWork
+
+
+def _page_id(uow, assembly_id):  # type: ignore[no-untyped-def]
+    """The id of the assembly's single registration page."""
+    page = page_for_assembly(uow, assembly_id)
+    assert page is not None
+    return page.id
+
 
 MINIMAL_FORM_HTML = "<form method='post' action='{{ form_action }}'>{{ csrf_form_element }}</form>"
 
@@ -46,18 +55,18 @@ def _seed_page_with_image(store: FakeStore, admin: User, *, status: str = "publi
         assembly_id = assembly.id
 
     with FakeUnitOfWork(store=store) as uow:
-        page = create_registration_page_with_slugs(uow, admin.id, assembly_id)
+        page = create_registration_page_with_slugs(uow, admin.id, assembly_id, name="Registration page")
         url_slug = page.url_slug
 
     with FakeUnitOfWork(store=store) as uow:
-        update_registration_page_html(uow, admin.id, assembly_id, MINIMAL_FORM_HTML)
+        update_registration_page_html(uow, admin.id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
 
     if status in ("published", "closed"):
         with FakeUnitOfWork(store=store) as uow:
-            publish_registration_page(uow, admin.id, assembly_id)
+            publish_registration_page(uow, admin.id, _page_id(uow, assembly_id))
     if status == "closed":
         with FakeUnitOfWork(store=store) as uow:
-            close_registration_page(uow, admin.id, assembly_id)
+            close_registration_page(uow, admin.id, _page_id(uow, assembly_id))
 
     with FakeUnitOfWork(store=store) as uow:
         image = add_registration_image(uow, admin.id, assembly_id, _png())

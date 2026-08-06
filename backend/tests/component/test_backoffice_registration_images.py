@@ -41,7 +41,7 @@ def _image(*, alt: str = "Logo", sha256: str = "a" * 64, original_filename: str 
 @pytest.fixture
 def registration_page(fake_store, admin_user, existing_assembly):
     with FakeUnitOfWork(store=fake_store) as uow:
-        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
 
 
 def _seed_image(fake_store, page, *, alt: str = "Logo", color=(255, 0, 0)) -> RegistrationImage:

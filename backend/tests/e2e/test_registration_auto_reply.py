@@ -20,11 +20,20 @@ from opendlp.service_layer.assembly_service import create_assembly, update_assem
 from opendlp.service_layer.email_template_service import assign_auto_reply_template, create_email_template
 from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
+    page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token, route_url
+
+
+def _page_id(uow, assembly_id):  # type: ignore[no-untyped-def]
+    """The id of the assembly's single registration page."""
+    page = page_for_assembly(uow, assembly_id)
+    assert page is not None
+    return page.id
+
 
 MINIMAL_FORM_HTML = """
 <form method="post" action="{{ form_action }}">
@@ -89,9 +98,9 @@ def _build_published_page_with_auto_reply(session_factory, admin_id) -> Registra
     )
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
-        create_registration_page_with_slugs(uow, admin_id, assembly_id)
+        create_registration_page_with_slugs(uow, admin_id, assembly_id, name="Registration page")
     with SqlAlchemyUnitOfWork(session_factory) as uow:
-        update_registration_page_html(uow, admin_id, assembly_id, MINIMAL_FORM_HTML)
+        update_registration_page_html(uow, admin_id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
 
     template = create_email_template(
         SqlAlchemyUnitOfWork(session_factory),
@@ -104,7 +113,7 @@ def _build_published_page_with_auto_reply(session_factory, admin_id) -> Registra
     assign_auto_reply_template(SqlAlchemyUnitOfWork(session_factory), admin_id, assembly_id, template.id)
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
-        return publish_registration_page(uow, admin_id, assembly_id)
+        return publish_registration_page(uow, admin_id, _page_id(uow, assembly_id))
 
 
 def test_live_submission_writes_sent_record(client: FlaskClient, admin_user, postgres_session_factory) -> None:
