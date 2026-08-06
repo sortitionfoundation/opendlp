@@ -40,7 +40,13 @@ Run all git commands from the main repo (`/Users/macintosh/Sites/opendlp`).
    ```
    (Not needed when branching from HEAD — no upstream gets set — and the first `git push -u origin <branch>` will then wire up the correct one.)
 
-5. **Verify and report.** Run `git worktree list` to confirm, then tell the user:
+5. **Copy local config.** Untracked files are NOT carried over into a new worktree. In opendlp the env file lives at `backend/.env` — copy it automatically:
+   ```bash
+   cp /Users/macintosh/Sites/opendlp/backend/.env ../opendlp-worktree-<branch>/backend/.env
+   ```
+   (Skip silently if the main checkout has no `backend/.env`.)
+
+6. **Verify and report.** Run `git worktree list` to confirm, then tell the user:
    - the absolute path of the new worktree,
    - which branch it's on and whether it tracks a remote branch or is brand new (and from which commit it was branched),
-   - a reminder that untracked files like `.env`/local config are NOT carried over into a new worktree — offer to copy them from the main checkout if the project needs them to run.
+   - that `backend/.env` was copied over (or that none existed to copy).
