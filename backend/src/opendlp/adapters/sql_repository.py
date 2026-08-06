@@ -503,9 +503,15 @@ class SqlAlchemyRegistrationPageRepository(SqlAlchemyRepository, RegistrationPag
         """Get all RegistrationPages."""
         return self.session.query(RegistrationPage).all()
 
-    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> RegistrationPage | None:
-        """Get the registration page for an assembly, or None if it has none."""
-        return self.session.query(RegistrationPage).filter_by(assembly_id=assembly_id).first()
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationPage]:
+        """Get every registration page for an assembly, oldest first."""
+        return (
+            self.session
+            .query(RegistrationPage)
+            .filter_by(assembly_id=assembly_id)
+            .order_by(orm.registration_pages.c.created_at)
+            .all()
+        )
 
     def get_by_url_slug(self, url_slug: str) -> RegistrationPage | None:
         """Get a registration page by its url_slug. Empty input returns None."""

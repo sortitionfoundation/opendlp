@@ -25,6 +25,7 @@ from opendlp.entrypoints.blueprints.dev import (
     _handle_update_email_template,
     _serialise_email_template,
 )
+from opendlp.service_layer.registration_page_service import page_for_assembly
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -246,7 +247,7 @@ class TestHandleAssignAutoReplyTemplate:
         assert result["status"] == "success"
         assert result["auto_reply_email_template_id"] == str(template.id)
         with _uow(fake_store) as uow:
-            page = uow.registration_pages.get_by_assembly_id(existing_assembly.id)
+            page = page_for_assembly(uow, existing_assembly.id)
         assert page.auto_reply_email_template_id == template.id
 
     def test_clear_unassigns_the_template(self, fake_store, existing_assembly, as_admin):
@@ -260,7 +261,7 @@ class TestHandleAssignAutoReplyTemplate:
         assert result["status"] == "success"
         assert result["auto_reply_email_template_id"] is None
         with _uow(fake_store) as uow:
-            page = uow.registration_pages.get_by_assembly_id(existing_assembly.id)
+            page = page_for_assembly(uow, existing_assembly.id)
         assert page.auto_reply_email_template_id is None
 
     def test_no_page_returns_error(self, fake_store, existing_assembly, as_admin):

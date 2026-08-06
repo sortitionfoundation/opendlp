@@ -75,6 +75,7 @@ from opendlp.service_layer.registration_page_service import (
     create_registration_page,
     generate_starter_form_html,
     get_registration_page_with_source,
+    page_for_assembly,
     publish_registration_page,
     reopen_registration_page,
     unpublish_registration_page,
@@ -1027,7 +1028,7 @@ def _handle_list_image_snippets(uow: Any, params: dict[str, Any]) -> dict[str, A
 
     page_repo_uow = bootstrap.get_flask_uow()
     with page_repo_uow:
-        page = page_repo_uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(page_repo_uow, assembly_id)
     url_slug = page.url_slug if page else ""
 
     def url_for_image(image: RegistrationImage) -> str:
@@ -1193,7 +1194,7 @@ def _handle_list_document_snippets(uow: Any, params: dict[str, Any]) -> dict[str
 
     page_repo_uow = bootstrap.get_flask_uow()
     with page_repo_uow:
-        page = page_repo_uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(page_repo_uow, assembly_id)
     url_slug = page.url_slug if page else ""
 
     def url_for_document(document: RegistrationDocument) -> str:

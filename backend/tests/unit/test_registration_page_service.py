@@ -30,6 +30,7 @@ from opendlp.service_layer.exceptions import (
     SlugError,
     UserNotFoundError,
 )
+from opendlp.service_layer.registration_page_service import page_for_assembly
 from tests.fakes import FakeUnitOfWork
 
 READY_HTML = "<form>{{ csrf_form_element }} {{ form_action }}</form>"
@@ -79,7 +80,7 @@ class TestCreateRegistrationPage:
 
         assert page.assembly_id == assembly.id
         assert page.source_type is RegistrationPageSource.HTML
-        assert uow.registration_pages.get_by_assembly_id(assembly.id) is not None
+        assert page_for_assembly(uow, assembly.id) is not None
         assert uow.registration_page_html_sources.get_by_page_id(page.id) is not None
         assert uow.committed
 
@@ -412,7 +413,7 @@ class TestUpdateRegistrationPageHtml:
         service.create_registration_page(uow, admin.id, assembly.id)
 
         service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
-        page = uow.registration_pages.get_by_assembly_id(assembly.id)
+        page = page_for_assembly(uow, assembly.id)
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert len(edits) == 1
         assert "form HTML" in edits[0].text
@@ -424,7 +425,7 @@ class TestUpdateRegistrationPageHtml:
         service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
 
         service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
-        page = uow.registration_pages.get_by_assembly_id(assembly.id)
+        page = page_for_assembly(uow, assembly.id)
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert len(edits) == 1
 
@@ -696,7 +697,7 @@ class TestRenderRegistrationForm:
             "<h1>{{ assembly_title }}</h1>"
             '<input name="name" value="{{ value(\'name\') }}"></form>',
         )
-        page = uow.registration_pages.get_by_assembly_id(assembly.id)
+        page = page_for_assembly(uow, assembly.id)
 
         rendered = service.render_registration_form(
             uow,
@@ -724,7 +725,7 @@ class TestRenderRegistrationForm:
             assembly.id,
             '<form action="{{ form_action }}">{{ csrf_form_element }}<script nonce="{{ csp_nonce }}">x</script></form>',
         )
-        page = uow.registration_pages.get_by_assembly_id(assembly.id)
+        page = page_for_assembly(uow, assembly.id)
 
         with pytest.raises(UndefinedError):
             service.render_registration_form(uow, page, csrf_form_element="<csrf>", form_action="/r/submit")

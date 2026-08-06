@@ -21,6 +21,7 @@ from .exceptions import (
     UserNotFoundError,
 )
 from .permissions import can_manage_assembly, can_view_assembly
+from .registration_page_service import page_for_assembly
 from .unit_of_work import AbstractUnitOfWork
 
 _MANAGE_ROLE = "assembly-manager, global-organiser or admin"
@@ -40,7 +41,7 @@ def _load_user_and_assembly(
 
 
 def _load_page(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> RegistrationPage:
-    page = uow.registration_pages.get_by_assembly_id(assembly_id)
+    page = page_for_assembly(uow, assembly_id)
     if not page:
         raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
     return page
@@ -98,7 +99,7 @@ def list_registration_documents(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_view_assembly(user, assembly):
             raise InsufficientPermissions(action="view registration documents", required_role=_VIEW_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if not page:
             return []
         return [document.create_detached_copy() for document in uow.registration_documents.list_by_page_id(page.id)]

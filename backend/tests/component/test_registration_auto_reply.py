@@ -24,6 +24,7 @@ from opendlp.service_layer.assembly_service import create_assembly, update_assem
 from opendlp.service_layer.email_template_service import assign_auto_reply_template, create_email_template
 from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
+    page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
 )
@@ -159,7 +160,7 @@ def _build_page_with_auto_reply(
         with FakeUnitOfWork(store=fake_store) as uow:
             return publish_registration_page(uow, admin_id, assembly_id)
     with FakeUnitOfWork(store=fake_store) as uow:
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         return page.create_detached_copy()
 
 

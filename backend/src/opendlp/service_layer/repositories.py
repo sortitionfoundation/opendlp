@@ -569,8 +569,8 @@ class RegistrationPageRepository(AbstractRepository):
     """Repository interface for RegistrationPage domain objects."""
 
     @abc.abstractmethod
-    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> RegistrationPage | None:
-        """Get the registration page for an assembly, or None if it has none."""
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationPage]:
+        """Get every registration page for an assembly, oldest first."""
         raise NotImplementedError
 
     @abc.abstractmethod

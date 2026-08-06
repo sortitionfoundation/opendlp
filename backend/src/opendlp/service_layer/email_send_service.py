@@ -12,6 +12,7 @@ from opendlp.domain.email_send_record import EmailSendOutcome, RespondentEmailSe
 from opendlp.domain.email_template import EmailTemplate
 from opendlp.domain.respondents import Respondent
 
+from .registration_page_service import page_for_assembly
 from .unit_of_work import AbstractUnitOfWork
 
 logger = structlog.get_logger(__name__)
@@ -92,7 +93,7 @@ def send_registration_auto_reply(
     page misconfiguration) and writes no record.
     """
     with uow:
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if page is None or page.auto_reply_email_template_id is None:
             return None
         if not respondent.email:

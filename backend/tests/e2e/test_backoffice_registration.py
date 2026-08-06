@@ -4,6 +4,7 @@ ABOUTME: Covers creating a registration page and fetching the starter HTML skele
 from flask.testing import FlaskClient
 
 from opendlp.domain.users import User
+from opendlp.service_layer.registration_page_service import page_for_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
@@ -25,7 +26,7 @@ def test_create_assembly_registration_page_success(
     assert response.status_code == 302
     assert f"/backoffice/assembly/{existing_assembly.id}" in response.location
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        page = uow.registration_pages.get_by_assembly_id(existing_assembly.id)
+        page = page_for_assembly(uow, existing_assembly.id)
         assert page is not None
         assert page.url_slug
 

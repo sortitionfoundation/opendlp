@@ -597,7 +597,7 @@ respondent_field_definitions = Table(
     Index("ix_respondent_field_definitions_assembly_group_order", "assembly_id", "field_group", "sort_order"),
 )
 
-# Registration pages table — one optional registration page per assembly.
+# Registration pages table — an assembly may have many, for A/B variants and languages.
 registration_pages = Table(
     "registration_pages",
     metadata,
@@ -607,8 +607,10 @@ registration_pages = Table(
         PostgresUUID(as_uuid=True),
         ForeignKey("assemblies.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
+        index=True,
     ),
+    Column("name", String(100), nullable=False, server_default=""),
+    Column("language", String(20), nullable=False, server_default=""),
     Column("url_slug", String(100), nullable=False, default=""),
     Column("short_url_slug", String(30), nullable=False, default=""),
     Column(
@@ -629,7 +631,14 @@ registration_pages = Table(
     ),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
-    # Partial unique indexes — only enforce uniqueness when the slug is set.
+    # Partial unique indexes — only enforce uniqueness when the value is set.
+    Index(
+        "ix_registration_pages_assembly_name_unique",
+        "assembly_id",
+        "name",
+        unique=True,
+        postgresql_where=text("name != ''"),
+    ),
     Index(
         "ix_registration_pages_url_slug_unique",
         "url_slug",

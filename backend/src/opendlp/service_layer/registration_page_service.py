@@ -43,6 +43,12 @@ def _load_user_and_assembly(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembl
     return user, assembly
 
 
+def page_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> RegistrationPage | None:
+    """The assembly's oldest registration page, or None when it has none."""
+    pages = uow.registration_pages.list_by_assembly_id(assembly_id)
+    return pages[0] if pages else None
+
+
 def _load_html_source(uow: AbstractUnitOfWork, page: RegistrationPage) -> RegistrationPageHtml:
     source = uow.registration_page_html_sources.get_by_page_id(page.id)
     if source is None:
@@ -159,7 +165,7 @@ def create_registration_page(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="create registration page", required_role=_MANAGE_ROLE)
-        if uow.registration_pages.get_by_assembly_id(assembly_id):
+        if page_for_assembly(uow, assembly_id):
             raise ValueError(f"Assembly {assembly_id} already has a registration page")
 
         page = RegistrationPage(
@@ -191,7 +197,7 @@ def create_registration_page_with_slugs(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="create registration page", required_role=_MANAGE_ROLE)
-        if uow.registration_pages.get_by_assembly_id(assembly_id):
+        if page_for_assembly(uow, assembly_id):
             raise ValueError(f"Assembly {assembly_id} already has a registration page")
 
         # Generate unique slugs
@@ -221,7 +227,7 @@ def get_registration_page(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_view_assembly(user, assembly):
             raise InsufficientPermissions(action="view registration page", required_role=_VIEW_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         return page.create_detached_copy() if page else None
 
 
@@ -233,7 +239,7 @@ def get_registration_page_with_source(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_view_assembly(user, assembly):
             raise InsufficientPermissions(action="view registration page", required_role=_VIEW_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if not page:
             return None
         source = _load_html_source(uow, page)
@@ -288,7 +294,7 @@ def update_registration_page(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="update registration page", required_role=_MANAGE_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
@@ -327,7 +333,7 @@ def update_thank_you_html(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="update registration page", required_role=_MANAGE_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
@@ -347,7 +353,7 @@ def update_registration_page_html(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="update registration page", required_role=_MANAGE_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
@@ -368,7 +374,7 @@ def publish_registration_page(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="publish registration page", required_role=_MANAGE_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
@@ -385,7 +391,7 @@ def unpublish_registration_page(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="unpublish registration page", required_role=_MANAGE_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
@@ -402,7 +408,7 @@ def close_registration_page(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="close registration page", required_role=_MANAGE_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 
@@ -419,7 +425,7 @@ def reopen_registration_page(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="reopen registration page", required_role=_MANAGE_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if not page:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
 

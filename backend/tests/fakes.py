@@ -354,12 +354,10 @@ class FakeAssemblyRespondentGSheetRepository(FakeRepository, AssemblyRespondentG
 class FakeRegistrationPageRepository(FakeRepository, RegistrationPageRepository):
     """Fake implementation of RegistrationPageRepository."""
 
-    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> RegistrationPage | None:
-        """Get the registration page for an assembly, or None if it has none."""
-        for item in self._items:
-            if item.assembly_id == assembly_id:
-                return item
-        return None
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationPage]:
+        """Get every registration page for an assembly, oldest first."""
+        pages = [item for item in self._items if item.assembly_id == assembly_id]
+        return sorted(pages, key=lambda page: page.created_at)
 
     def get_by_url_slug(self, url_slug: str) -> RegistrationPage | None:
         """Get a registration page by its url_slug. Empty input returns None."""

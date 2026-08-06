@@ -209,6 +209,10 @@ class ContractBackend:
         """Fetch a field definition from storage without any instance-cache effects."""
         raise NotImplementedError
 
+    def fresh_get_registration_page(self, page_id: uuid.UUID) -> RegistrationPage | None:
+        """Fetch a registration page from storage without any instance-cache effects."""
+        raise NotImplementedError
+
     def make_user(self, **kwargs: Any) -> User:
         user = make_user(**kwargs)
         self.persist(user)
@@ -278,6 +282,9 @@ class FakeContractBackend(ContractBackend):
     def fresh_get_field_definition(self, field_id: uuid.UUID) -> Any:
         return self.repo.get(field_id)
 
+    def fresh_get_registration_page(self, page_id: uuid.UUID) -> RegistrationPage | None:
+        return self.repo.get(page_id)  # type: ignore[no-any-return]
+
 
 class SqlContractBackend(ContractBackend):
     """Backend using real SqlAlchemy repositories with a Postgres session."""
@@ -301,6 +308,16 @@ class SqlContractBackend(ContractBackend):
         assert self._session_factory is not None, "session_factory required for fresh reads"
         with self._session_factory() as fresh_session:
             return SqlAlchemyRespondentFieldDefinitionRepository(fresh_session).get(field_id)
+
+    def fresh_get_registration_page(self, page_id: uuid.UUID) -> RegistrationPage | None:
+        """Detach everything first so the page is rebuilt from its database row.
+
+        expire_all() is not enough: it refreshes mapped columns but leaves
+        unmapped Python attributes in place, so a field that was never mapped
+        would appear to round-trip.
+        """
+        self._session.expunge_all()
+        return SqlAlchemyRegistrationPageRepository(self._session).get(page_id)
 
 
 # ---------------------------------------------------------------------------

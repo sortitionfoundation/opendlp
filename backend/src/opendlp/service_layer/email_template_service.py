@@ -21,6 +21,7 @@ from .exceptions import (
     UserNotFoundError,
 )
 from .permissions import can_manage_assembly, can_view_assembly
+from .registration_page_service import page_for_assembly
 from .unit_of_work import AbstractUnitOfWork
 
 logger = structlog.get_logger(__name__)
@@ -189,7 +190,7 @@ def assign_auto_reply_template(
         user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
         if not can_manage_assembly(user, assembly):
             raise InsufficientPermissions(action="assign auto-reply template", required_role=_MANAGE_ROLE)
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         if page is None:
             raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
         if template_id is not None:
