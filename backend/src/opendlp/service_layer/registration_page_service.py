@@ -18,6 +18,7 @@ from opendlp.domain.registration_page import (
     RenderContext,
 )
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
+from opendlp.domain.registration_page import generate_starter_form_html_govuk as _build_starter_html_govuk
 
 from .exceptions import (
     AssemblyNotFoundError,
@@ -539,3 +540,21 @@ def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, asse
             raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
         fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
         return _build_starter_html(list(fields))
+
+
+@dataclass(frozen=True)
+class StarterFormHtmlVariants:
+    plain: str
+    govuk: str
+
+
+def generate_starter_form_html_variants(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
+) -> StarterFormHtmlVariants:
+    """Generate both the unstyled and GOV.UK-styled starter HTML forms from the assembly's respondent field schema."""
+    with uow:
+        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+        if not can_manage_assembly(user, assembly):
+            raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
+        fields = list(uow.respondent_field_definitions.list_by_assembly(assembly_id))
+        return StarterFormHtmlVariants(plain=_build_starter_html(fields), govuk=_build_starter_html_govuk(fields))

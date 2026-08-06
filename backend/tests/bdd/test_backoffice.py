@@ -659,6 +659,29 @@ def skeleton_shown_in_read_only_editor(page: Page):
     expect(editor).to_contain_text("Register")
 
 
+@when("I switch the form skeleton to the GOV.UK styled view")
+def switch_skeleton_to_styled_view(page: Page):
+    page.get_by_role("button", name="GOV.UK styled").click()
+
+
+@when("I switch the form skeleton to the plain HTML view")
+def switch_skeleton_to_plain_view(page: Page):
+    page.get_by_role("button", name="Plain HTML").click()
+
+
+@then("the form skeleton should show GOV.UK styled markup")
+def skeleton_shows_govuk_styled_markup(page: Page):
+    """The GOV.UK view wraps fields in govuk-* component classes the plain view never emits."""
+    editor = page.locator('[aria-labelledby="skeleton-modal-title"] .cm-editor')
+    expect(editor).to_contain_text("govuk-button", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the form skeleton should show plain markup")
+def skeleton_shows_plain_markup(page: Page):
+    editor = page.locator('[aria-labelledby="skeleton-modal-title"] .cm-editor')
+    expect(editor).not_to_contain_text("govuk-button", timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when("I try to access the backoffice dashboard")
 def try_access_backoffice_dashboard(page: Page):
     """Attempt to access the backoffice dashboard."""
