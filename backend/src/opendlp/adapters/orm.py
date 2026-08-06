@@ -551,6 +551,13 @@ respondents = Table(
     Column("can_attend", Boolean, nullable=True),
     Column("email", String(255), nullable=False, default="", index=True),
     Column("source_type", EnumAsString(RespondentSourceType, 50), nullable=False),
+    Column(
+        "registration_page_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("registration_pages.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    ),
     Column("attributes", JSON, nullable=False, default=dict),
     Column("comments", RespondentCommentListJSON, nullable=False, default=list),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),

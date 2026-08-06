@@ -704,6 +704,15 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
             results = [r for r in results if r.eligible is not False and r.can_attend is not False]
         return results
 
+    def count_by_registration_page(self, assembly_id: uuid.UUID) -> dict[uuid.UUID, int]:
+        """Count respondents per registration page for an assembly."""
+        counts: dict[uuid.UUID, int] = {}
+        for item in self._items:
+            if item.assembly_id != assembly_id or item.registration_page_id is None:
+                continue
+            counts[item.registration_page_id] = counts.get(item.registration_page_id, 0) + 1
+        return counts
+
     def get_by_assembly_id_statuses(
         self,
         assembly_id: uuid.UUID,

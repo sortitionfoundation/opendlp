@@ -1138,6 +1138,21 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
 
         return query.order_by(orm.respondents.c.created_at.desc()).all()
 
+    def count_by_registration_page(self, assembly_id: uuid.UUID) -> dict[uuid.UUID, int]:
+        """Count respondents per registration page for an assembly, in one query."""
+        rows = (
+            self.session
+            .query(
+                orm.respondents.c.registration_page_id,
+                func.count(orm.respondents.c.id),
+            )
+            .filter(orm.respondents.c.assembly_id == assembly_id)
+            .filter(orm.respondents.c.registration_page_id.isnot(None))
+            .group_by(orm.respondents.c.registration_page_id)
+            .all()
+        )
+        return dict(rows)
+
     def get_by_assembly_id_statuses(
         self,
         assembly_id: uuid.UUID,

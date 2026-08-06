@@ -355,15 +355,18 @@ def _copy_auto_reply_template(uow: AbstractUnitOfWork, source: RegistrationPage,
 
 
 def delete_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID) -> None:
-    """Delete a page that was never published and has no respondents.
+    """Delete a page that was never published and has no registrations.
 
     A published page keeps its row so the slugs on invites and QR codes still
-    resolve; close it instead.
+    resolve; close it instead. A page in TEST can still have collected test
+    submissions, which are equally worth keeping the row for.
     """
     with uow:
         _user, page = _load_manageable_page(uow, user_id, page_id)
         if not page.can_be_deleted():
             raise ValueError("A registration page that has been published cannot be deleted; close it instead")
+        if uow.respondents.count_by_registration_page(page.assembly_id).get(page.id):
+            raise ValueError("This registration page has registrations, so it cannot be deleted")
 
         source = uow.registration_page_html_sources.get_by_page_id(page.id)
         if source is not None:

@@ -433,6 +433,11 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def count_by_registration_page(self, assembly_id: uuid.UUID) -> dict[uuid.UUID, int]:
+        """Count respondents per registration page for an assembly, in one query."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_by_assembly_id_statuses(
         self,
         assembly_id: uuid.UUID,

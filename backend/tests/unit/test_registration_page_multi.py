@@ -11,6 +11,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageAction,
     RegistrationPageStatus,
 )
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import registration_page_service as service
@@ -479,3 +480,38 @@ class TestBulkStatusChanges:
 
         with pytest.raises(InsufficientPermissions):
             service.publish_all_registration_pages(uow, viewer.id, assembly.id)
+
+    def test_refuses_a_page_that_has_registrations(self):
+        """Test submissions land against a TEST page, so even an unpublished page can have them."""
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="Draft")
+        uow.respondents.add(
+            Respondent(
+                assembly_id=assembly.id,
+                external_id="reg-abc",
+                email="ada@example.com",
+                registration_page_id=page.id,
+            )
+        )
+
+        with pytest.raises(ValueError, match="registrations"):
+            service.delete_registration_page(uow, admin.id, page.id)
+
+    def test_registrations_on_a_sibling_page_do_not_block_deletion(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        keep = service.create_registration_page(uow, admin.id, assembly.id, name="Keep")
+        drop = service.create_registration_page(uow, admin.id, assembly.id, name="Drop")
+        uow.respondents.add(
+            Respondent(
+                assembly_id=assembly.id,
+                external_id="reg-abc",
+                email="ada@example.com",
+                registration_page_id=keep.id,
+            )
+        )
+
+        service.delete_registration_page(uow, admin.id, drop.id)
+
+        assert [p.id for p in service.list_registration_pages(uow, admin.id, assembly.id)] == [keep.id]

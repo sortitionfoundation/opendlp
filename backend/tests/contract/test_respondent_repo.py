@@ -625,3 +625,46 @@ class TestGetByAssemblyIdStatuses:
         )
 
         assert [r.external_id for r in result] == ["R-sel", "R-conf"]
+
+
+def _attributed_respondent(backend: ContractBackend, assembly_id: uuid.UUID, page_id: uuid.UUID | None) -> Respondent:
+    respondent = Respondent(
+        assembly_id=assembly_id,
+        external_id=f"EXT-{uuid.uuid4().hex[:8]}",
+        registration_page_id=page_id,
+    )
+    backend.repo.add(respondent)
+    backend.commit()
+    return respondent
+
+
+class TestRegistrationPageAttribution:
+    def test_registration_page_id_round_trips(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        page = respondent_backend.make_registration_page(assembly_id=assembly.id)
+        respondent = _attributed_respondent(respondent_backend, assembly.id, page.id)
+
+        retrieved = respondent_backend.fresh_get_respondent(respondent.id)
+        assert retrieved is not None
+        assert retrieved.registration_page_id == page.id
+
+    def test_defaults_to_none_for_respondents_from_elsewhere(self, respondent_backend: ContractBackend):
+        """CSV, GSheet and manual respondents never came through a registration page."""
+        assembly = respondent_backend.make_assembly()
+        respondent = _attributed_respondent(respondent_backend, assembly.id, None)
+
+        retrieved = respondent_backend.fresh_get_respondent(respondent.id)
+        assert retrieved is not None
+        assert retrieved.registration_page_id is None
+
+    def test_counts_are_grouped_by_page(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        first = respondent_backend.make_registration_page(assembly_id=assembly.id, name="English")
+        second = respondent_backend.make_registration_page(assembly_id=assembly.id, name="Espanol")
+        _attributed_respondent(respondent_backend, assembly.id, first.id)
+        _attributed_respondent(respondent_backend, assembly.id, first.id)
+        _attributed_respondent(respondent_backend, assembly.id, second.id)
+        _attributed_respondent(respondent_backend, assembly.id, None)
+
+        counts = respondent_backend.repo.count_by_registration_page(assembly.id)
+        assert counts == {first.id: 2, second.id: 1}

@@ -79,9 +79,7 @@ def test_live_submission_sends_auto_reply_and_records_it() -> None:
     )
     assert result.is_valid
 
-    record = send_registration_auto_reply(
-        uow, adapter, respondent=result.respondent, assembly_id=result.respondent.assembly_id
-    )
+    record = send_registration_auto_reply(uow, adapter, respondent=result.respondent)
 
     assert record is not None
     assert record.outcome is EmailSendOutcome.SENT
@@ -107,7 +105,7 @@ def test_autoescapes_untrusted_respondent_name() -> None:
         form_data={"email": "ada@example.com", "consent": "yes", "first_name": "<script>bad()</script>"},
     )
 
-    send_registration_auto_reply(uow, adapter, respondent=result.respondent, assembly_id=result.respondent.assembly_id)
+    send_registration_auto_reply(uow, adapter, respondent=result.respondent)
 
     html_body = adapter.send_email.call_args.kwargs["html_body"]
     assert "<script>bad()</script>" not in html_body
@@ -123,9 +121,7 @@ def test_console_adapter_send_succeeds_end_to_end() -> None:
         form_data={"email": "ada@example.com", "consent": "yes", "first_name": "Ada"},
     )
 
-    record = send_registration_auto_reply(
-        uow, ConsoleEmailAdapter(), respondent=result.respondent, assembly_id=result.respondent.assembly_id
-    )
+    record = send_registration_auto_reply(uow, ConsoleEmailAdapter(), respondent=result.respondent)
 
     assert record is not None
     assert record.outcome is EmailSendOutcome.SENT
@@ -142,9 +138,7 @@ def test_test_submission_sends_auto_reply() -> None:
         form_data={"email": "ada@example.com", "consent": "yes", "first_name": "Ada"},
     )
 
-    record = send_registration_auto_reply(
-        uow, adapter, respondent=result.respondent, assembly_id=result.respondent.assembly_id
-    )
+    record = send_registration_auto_reply(uow, adapter, respondent=result.respondent)
 
     assert record is not None
     assert record.outcome is EmailSendOutcome.SENT
