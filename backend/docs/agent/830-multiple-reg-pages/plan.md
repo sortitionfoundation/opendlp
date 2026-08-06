@@ -569,12 +569,6 @@ right thing once Phases 1–4 landed. Every test passed on first write, so each 
 **mutation-checked** rather than trusted — breaking attribution fails two of
 them, and collapsing the per-page status check fails a third. They bite.
 
-Note for whoever runs the BDD suite next: `just test-bdd-headless` depends on
-`build-all-css`, which does **not** build the JavaScript bundles. Without a
-`npm install && npm run build:js` the CodeMirror editor never mounts and five
-backoffice scenarios fail for reasons that have nothing to do with the code under
-test. Worth folding `build-js` into `build-all-css`, but that is its own change.
-
 Almost no production code; this phase is mostly tests confirming that the
 slug-scoped routes already do the right thing with N pages.
 
