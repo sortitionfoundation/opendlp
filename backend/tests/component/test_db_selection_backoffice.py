@@ -151,6 +151,37 @@ class TestCsvSelectionCheckData:
         assert response.status_code == 200
         assert b"Missing target category" in response.data
 
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.check_db_selection_data")
+    def test_check_csv_data_multiline_error_has_no_html_tags(
+        self, mock_check, logged_in_admin, assembly_with_csv_config
+    ):
+        """Multi-line validation errors are plain text with newlines, never <br /> tags (issue in PR #195)."""
+        assembly = assembly_with_csv_config
+        mock_check.return_value = CheckDataResult(
+            success=False,
+            errors=[
+                (
+                    "Maximum for feature age_bracket (0) is less than number to select (23)\n"
+                    "Maximum for feature gender (0) is less than number to select (23)"
+                )
+            ],
+            features_report_html="",
+            people_report_html="",
+            num_features=0,
+            num_people=0,
+        )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/selection/db/check",
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"age_bracket" in response.data
+        assert b"gender" in response.data
+        # The literal tag would be escaped by Jinja and show as text in the alert
+        assert b"&lt;br" not in response.data
+
     def test_check_csv_data_requires_settings_confirmed(self, logged_in_admin, assembly_with_csv_config_unconfirmed):
         """Check data requires settings to be confirmed first."""
         assembly = assembly_with_csv_config_unconfirmed

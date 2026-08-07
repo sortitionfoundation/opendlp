@@ -145,8 +145,8 @@
                 <h2 class="govuk-error-summary__title">{{ _("Data Check Failed") }}</h2>
                 <div class="govuk-error-summary__body">
                     <ul class="govuk-list govuk-error-summary__list">
-                        {% for error_html in check_result.errors %}
-                            <li>{{ error_html | safe }}</li>
+                        {% for error in check_result.errors %}
+                            <li style="white-space: pre-line;">{{ error }}</li>
                         {% endfor %}
                     </ul>
                 </div>
