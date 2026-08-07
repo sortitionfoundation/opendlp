@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-06 14:15+0200\n"
+"POT-Creation-Date: 2026-08-07 12:54+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -18,46 +18,46 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: src/opendlp/domain/assembly.py:318
+#: src/opendlp/domain/assembly.py:317
 #, fuzzy
 msgid "Reading spreadsheet…"
 msgstr "Google táblázat módosítása"
 
-#: src/opendlp/domain/assembly.py:319
+#: src/opendlp/domain/assembly.py:318
 #: templates/backoffice/patterns/_progress.html:157
 msgid "Writing results back to spreadsheet…"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:320
+#: src/opendlp/domain/assembly.py:319
 #, python-format
 msgid "Running selection attempt %(current)s of %(total)s"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:321
+#: src/opendlp/domain/assembly.py:320
 #, python-format
 msgid "Finding diverse committees (%(current)s of %(total)s rounds)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:322
+#: src/opendlp/domain/assembly.py:321
 #, python-format
 msgid "Optimising for maximin fairness (iteration %(current)s)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:323
+#: src/opendlp/domain/assembly.py:322
 #, python-format
 msgid "Optimising for Nash fairness (iteration %(current)s)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:324
+#: src/opendlp/domain/assembly.py:323
 #, python-format
 msgid "Optimising for leximin fairness (%(current)s of %(total)s fixed)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:325
+#: src/opendlp/domain/assembly.py:324
 msgid "Running diversimax optimisation"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:328
+#: src/opendlp/domain/assembly.py:327
 msgid "Processing…"
 msgstr ""
 
@@ -164,8 +164,8 @@ msgstr ""
 msgid "Please sign in to access this page."
 msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 
-#: src/opendlp/entrypoints/edit_respondent_form.py:41
-#: src/opendlp/entrypoints/edit_respondent_form.py:45
+#: src/opendlp/entrypoints/edit_respondent_form.py:43
+#: src/opendlp/entrypoints/edit_respondent_form.py:47
 #: templates/backoffice/assembly_edit_respondent.html:59
 #: templates/backoffice/assembly_edit_respondent.html:67
 #: templates/backoffice/assembly_view_respondent.html:58
@@ -180,8 +180,8 @@ msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 msgid "Yes"
 msgstr ""
 
-#: src/opendlp/entrypoints/edit_respondent_form.py:41
-#: src/opendlp/entrypoints/edit_respondent_form.py:45
+#: src/opendlp/entrypoints/edit_respondent_form.py:43
+#: src/opendlp/entrypoints/edit_respondent_form.py:47
 #: templates/backoffice/assembly_edit_respondent.html:59
 #: templates/backoffice/assembly_edit_respondent.html:67
 #: templates/backoffice/assembly_view_respondent.html:58
@@ -195,7 +195,7 @@ msgstr ""
 msgid "No"
 msgstr ""
 
-#: src/opendlp/entrypoints/edit_respondent_form.py:45
+#: src/opendlp/entrypoints/edit_respondent_form.py:47
 #: templates/backoffice/assembly_edit_respondent.html:67
 #: templates/backoffice/assembly_view_respondent.html:67
 #: templates/backoffice/assembly_view_respondent.html:164
@@ -205,290 +205,290 @@ msgstr ""
 msgid "Not set"
 msgstr ""
 
-#: src/opendlp/entrypoints/edit_respondent_form.py:78
+#: src/opendlp/entrypoints/edit_respondent_form.py:80
 #, python-format
 msgid "The current value for '%(label)s' is not in the options list: %(value)s."
 msgstr ""
 
-#: src/opendlp/entrypoints/edit_respondent_form.py:85
+#: src/opendlp/entrypoints/edit_respondent_form.py:87
 #: templates/backoffice/assembly_edit_respondent.html:72
 #: templates/backoffice/assembly_edit_respondent.html:88
 msgid "— none —"
 msgstr ""
 
-#: src/opendlp/entrypoints/edit_respondent_form.py:173
+#: src/opendlp/entrypoints/edit_respondent_form.py:175
 #: templates/backoffice/assembly_edit_respondent.html:125
 #, fuzzy
 msgid "Change note"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:53
+#: src/opendlp/entrypoints/forms.py:55
 msgid "Empty email address"
 msgstr "Email cím hiányzik"
 
-#: src/opendlp/entrypoints/forms.py:57
+#: src/opendlp/entrypoints/forms.py:59
 msgid "Invalid email address"
 msgstr "Érvénytelen email cím"
 
-#: src/opendlp/entrypoints/forms.py:65
+#: src/opendlp/entrypoints/forms.py:67
 #, fuzzy
 msgid "This email address is already registered."
 msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
 
-#: src/opendlp/entrypoints/forms.py:86
+#: src/opendlp/entrypoints/forms.py:88
 msgid "Number cannot be negative"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:97 src/opendlp/entrypoints/forms.py:133
-#: src/opendlp/entrypoints/forms.py:173 src/opendlp/entrypoints/forms.py:184
+#: src/opendlp/entrypoints/forms.py:99 src/opendlp/entrypoints/forms.py:135
+#: src/opendlp/entrypoints/forms.py:175 src/opendlp/entrypoints/forms.py:186
 #: templates/profile/view.html:10
 msgid "Email address"
 msgstr "Email cím"
 
-#: src/opendlp/entrypoints/forms.py:101 src/opendlp/entrypoints/forms.py:139
-#: src/opendlp/entrypoints/forms.py:501 templates/admin/user_view.html:75
+#: src/opendlp/entrypoints/forms.py:103 src/opendlp/entrypoints/forms.py:141
+#: src/opendlp/entrypoints/forms.py:503 templates/admin/user_view.html:75
 #: templates/profile/view.html:37
 msgid "Password"
 msgstr "Jelszó"
 
-#: src/opendlp/entrypoints/forms.py:106
+#: src/opendlp/entrypoints/forms.py:108
 msgid "Keep me signed in for 7 days (sets a cookie on this device)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:113 src/opendlp/entrypoints/forms.py:515
+#: src/opendlp/entrypoints/forms.py:115 src/opendlp/entrypoints/forms.py:517
 #: templates/admin/invite_view.html:22
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
-#: src/opendlp/entrypoints/forms.py:115 src/opendlp/entrypoints/forms.py:517
+#: src/opendlp/entrypoints/forms.py:117 src/opendlp/entrypoints/forms.py:519
 #, fuzzy
 msgid "Enter your invitation code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/forms.py:119 src/opendlp/entrypoints/forms.py:383
-#: src/opendlp/entrypoints/forms.py:461 templates/admin/user_view.html:28
+#: src/opendlp/entrypoints/forms.py:121 src/opendlp/entrypoints/forms.py:385
+#: src/opendlp/entrypoints/forms.py:463 templates/admin/user_view.html:28
 #: templates/profile/view.html:16
 msgid "First Name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:121
+#: src/opendlp/entrypoints/forms.py:123
 msgid "Optional - your first name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:126 src/opendlp/entrypoints/forms.py:390
-#: src/opendlp/entrypoints/forms.py:468 templates/admin/user_view.html:38
+#: src/opendlp/entrypoints/forms.py:128 src/opendlp/entrypoints/forms.py:392
+#: src/opendlp/entrypoints/forms.py:470 templates/admin/user_view.html:38
 #: templates/profile/view.html:22
 msgid "Last Name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:128
+#: src/opendlp/entrypoints/forms.py:130
 msgid "Optional - your last name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:143 src/opendlp/entrypoints/forms.py:505
+#: src/opendlp/entrypoints/forms.py:145 src/opendlp/entrypoints/forms.py:507
 #, fuzzy
 msgid "Confirm Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:144 src/opendlp/entrypoints/forms.py:200
-#: src/opendlp/entrypoints/forms.py:492 src/opendlp/entrypoints/forms.py:506
+#: src/opendlp/entrypoints/forms.py:146 src/opendlp/entrypoints/forms.py:202
+#: src/opendlp/entrypoints/forms.py:494 src/opendlp/entrypoints/forms.py:508
 #, fuzzy
 msgid "Passwords must match"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:149 src/opendlp/entrypoints/forms.py:521
+#: src/opendlp/entrypoints/forms.py:151 src/opendlp/entrypoints/forms.py:523
 #, fuzzy
 msgid "Accept Data Agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:150 src/opendlp/entrypoints/forms.py:522
+#: src/opendlp/entrypoints/forms.py:152 src/opendlp/entrypoints/forms.py:524
 #, fuzzy
 msgid "You must accept the data agreement to register"
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
 "megállapodásunkat."
 
-#: src/opendlp/entrypoints/forms.py:151 src/opendlp/entrypoints/forms.py:523
+#: src/opendlp/entrypoints/forms.py:153 src/opendlp/entrypoints/forms.py:525
 #, fuzzy
 msgid "I agree to the data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: src/opendlp/entrypoints/forms.py:162 src/opendlp/entrypoints/forms.py:534
+#: src/opendlp/entrypoints/forms.py:164 src/opendlp/entrypoints/forms.py:536
 msgid "Invalid or expired invite code."
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/forms.py:175
+#: src/opendlp/entrypoints/forms.py:177
 #, fuzzy
 msgid "Enter your email address to receive a password reset link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
-#: src/opendlp/entrypoints/forms.py:186
+#: src/opendlp/entrypoints/forms.py:188
 #, fuzzy
 msgid "Enter your email address and we will send you a new confirmation link"
 msgstr "Add meg az e-mail címed, hogy megkapd a jelszó-visszaállító linket"
 
-#: src/opendlp/entrypoints/forms.py:195 src/opendlp/entrypoints/forms.py:485
+#: src/opendlp/entrypoints/forms.py:197 src/opendlp/entrypoints/forms.py:487
 #, fuzzy
 msgid "New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:199 src/opendlp/entrypoints/forms.py:491
+#: src/opendlp/entrypoints/forms.py:201 src/opendlp/entrypoints/forms.py:493
 #, fuzzy
 msgid "Confirm New Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:209
+#: src/opendlp/entrypoints/forms.py:211
 #, fuzzy
 msgid "Assembly Title"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/entrypoints/forms.py:211
+#: src/opendlp/entrypoints/forms.py:213
 #, fuzzy
 msgid "Enter the title for this assembly"
 msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/forms.py:215
+#: src/opendlp/entrypoints/forms.py:217
 #: templates/backoffice/assembly_details.html:40
 #: templates/main/view_assembly_details.html:6
 msgid "Assembly Question"
 msgstr "A gyűlés fő témája"
 
-#: src/opendlp/entrypoints/forms.py:217
+#: src/opendlp/entrypoints/forms.py:219
 msgid "Optional - the key question this assembly will address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:222
+#: src/opendlp/entrypoints/forms.py:224
 #: templates/backoffice/assembly_details.html:64
 #: templates/main/view_assembly_details.html:20
 msgid "First Assembly Date"
 msgstr "Első gyűlés időpontja"
 
-#: src/opendlp/entrypoints/forms.py:224
+#: src/opendlp/entrypoints/forms.py:226
 msgid "Optional - when the first assembly meeting will take place"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:228
+#: src/opendlp/entrypoints/forms.py:230
 #: templates/backoffice/assembly_details.html:73
 #: templates/main/view_assembly_details.html:27
 msgid "Number to Select"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/entrypoints/forms.py:230
+#: src/opendlp/entrypoints/forms.py:232
 msgid "The number of participants to select for this assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:247
+#: src/opendlp/entrypoints/forms.py:249
 #, fuzzy
 msgid "Google Spreadsheet URL"
 msgstr "Google Táblázat teljes linkje"
 
-#: src/opendlp/entrypoints/forms.py:249
+#: src/opendlp/entrypoints/forms.py:251
 msgid "Full URL of the Google Spreadsheet containing respondent data"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:268
+#: src/opendlp/entrypoints/forms.py:270
 msgid ""
 "You must specify address columns when 'Check Same Address' is enabled. "
 "Please enter column names or disable 'Check Same Address'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:279 src/opendlp/entrypoints/forms.py:295
+#: src/opendlp/entrypoints/forms.py:281 src/opendlp/entrypoints/forms.py:297
 #, fuzzy
 msgid "Respondents Tab Name"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/forms.py:281
+#: src/opendlp/entrypoints/forms.py:283
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:287 src/opendlp/entrypoints/forms.py:303
+#: src/opendlp/entrypoints/forms.py:289 src/opendlp/entrypoints/forms.py:305
 #, fuzzy
 msgid "Targets Tab Name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:289
+#: src/opendlp/entrypoints/forms.py:291
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "initial Selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:297
+#: src/opendlp/entrypoints/forms.py:299
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - "
 "for Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:305
+#: src/opendlp/entrypoints/forms.py:307
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "Replacements"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:310
+#: src/opendlp/entrypoints/forms.py:312
 msgid "Already Selected Tab Name"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:312
+#: src/opendlp/entrypoints/forms.py:314
 msgid "Name of the tab containing already selected people (used for Replacements)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:317 src/opendlp/entrypoints/forms.py:627
+#: src/opendlp/entrypoints/forms.py:319 src/opendlp/entrypoints/forms.py:629
 #: templates/backoffice/assembly_data.html:170
 #: templates/backoffice/assembly_data.html:427
 #: templates/gsheets/components/view_config.html:48
 msgid "Check Same Address"
 msgstr "Címegyezés ellenőrzése"
 
-#: src/opendlp/entrypoints/forms.py:318
+#: src/opendlp/entrypoints/forms.py:320
 msgid "Enable checking for participants with the same address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:323
+#: src/opendlp/entrypoints/forms.py:325
 #: templates/backoffice/assembly_data.html:176
 #: templates/gsheets/components/view_config.html:54
 msgid "Generate Remaining Tab"
 msgstr "Fennmaradó résztvevők lap generálása"
 
-#: src/opendlp/entrypoints/forms.py:324
+#: src/opendlp/entrypoints/forms.py:326
 msgid "Create a tab with remaining participants after selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:329
+#: src/opendlp/entrypoints/forms.py:331
 #: templates/backoffice/assembly_data.html:186
 #, fuzzy
 msgid "Team Configuration"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
-#: src/opendlp/entrypoints/forms.py:331
+#: src/opendlp/entrypoints/forms.py:333
 #: templates/backoffice/assembly_data.html:188
 msgid "UK Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:332
+#: src/opendlp/entrypoints/forms.py:334
 #: templates/backoffice/assembly_data.html:189
 msgid "EU Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:333
+#: src/opendlp/entrypoints/forms.py:335
 #: templates/backoffice/assembly_data.html:190
 msgid "Australia Team"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:334
+#: src/opendlp/entrypoints/forms.py:336
 #: templates/backoffice/assembly_data.html:191
 #, fuzzy
 msgid "Custom configuration"
 msgstr "Beállítások mentése"
 
-#: src/opendlp/entrypoints/forms.py:339
+#: src/opendlp/entrypoints/forms.py:341
 msgid ""
 "Select the team configuration to use for default settings for ID Column, "
 "Address Columns and Columns To Keep."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:344 src/opendlp/entrypoints/forms.py:615
+#: src/opendlp/entrypoints/forms.py:346 src/opendlp/entrypoints/forms.py:617
 #: templates/backoffice/assembly_data.html:204
 #: templates/backoffice/assembly_data.html:234
 #: templates/backoffice/assembly_data.html:392
@@ -497,130 +497,130 @@ msgstr ""
 msgid "ID Column"
 msgstr "ID (azonosító) oszlop"
 
-#: src/opendlp/entrypoints/forms.py:348
+#: src/opendlp/entrypoints/forms.py:350
 msgid ""
 "Name of column containing unique identifiers for respondents. Note will "
 "be overridden if the Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:353
+#: src/opendlp/entrypoints/forms.py:355
 #: templates/backoffice/assembly_data.html:212
 #: templates/backoffice/assembly_data.html:240
 #: templates/gsheets/components/view_config.html:66
 msgid "Address Columns"
 msgstr "Cím oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:356
+#: src/opendlp/entrypoints/forms.py:358
 msgid ""
 "Comma-separated list of column names used for checking same address "
 "(e.g., primary_address1, zip_royal_mail). Note will be overridden if the "
 "Team Configuration is not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:362
+#: src/opendlp/entrypoints/forms.py:364
 #: templates/backoffice/assembly_data.html:220
 #: templates/backoffice/assembly_data.html:246
 #: templates/gsheets/components/view_config.html:72
 msgid "Columns to Keep"
 msgstr "Megtartandó oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:365
+#: src/opendlp/entrypoints/forms.py:367
 msgid ""
 "Comma-separated list of column names to keep in output (e.g., first_name,"
 " last_name, email). Note will be overridden if the Team Configuration is "
 "not 'Custom'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:385
+#: src/opendlp/entrypoints/forms.py:387
 #, fuzzy
 msgid "User's first name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:392
+#: src/opendlp/entrypoints/forms.py:394
 #, fuzzy
 msgid "User's last name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:397 templates/admin/user_view.html:48
+#: src/opendlp/entrypoints/forms.py:399 templates/admin/user_view.html:48
 #, fuzzy
 msgid "Global Role"
 msgstr "Szereped/jogosultságod"
 
-#: src/opendlp/entrypoints/forms.py:401
+#: src/opendlp/entrypoints/forms.py:403
 msgid "User's global role determines their permissions across the system"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:405
+#: src/opendlp/entrypoints/forms.py:407
 #, fuzzy
 msgid "Active Account"
 msgstr "Hozzon létre fiókot"
 
-#: src/opendlp/entrypoints/forms.py:406
+#: src/opendlp/entrypoints/forms.py:408
 msgid "Inactive users cannot log in to the system"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:415
+#: src/opendlp/entrypoints/forms.py:417
 msgid "Role for New User"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:419
+#: src/opendlp/entrypoints/forms.py:421
 msgid "The role that will be granted to the user who uses this invite"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:424
+#: src/opendlp/entrypoints/forms.py:426
 #, fuzzy
 msgid "Email Address (Optional)"
 msgstr "Email cím"
 
-#: src/opendlp/entrypoints/forms.py:426
+#: src/opendlp/entrypoints/forms.py:428
 msgid "Optional - if provided, the invite will be emailed to this address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:431
+#: src/opendlp/entrypoints/forms.py:433
 msgid "Expires In (Hours)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:433
+#: src/opendlp/entrypoints/forms.py:435
 msgid ""
 "Optional - number of hours until the invite expires (default: 168 hours /"
 " 7 days)"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:442
+#: src/opendlp/entrypoints/forms.py:444
 #, fuzzy
 msgid "User Email"
 msgstr "Hiba részletei"
 
-#: src/opendlp/entrypoints/forms.py:444
+#: src/opendlp/entrypoints/forms.py:446
 #, fuzzy
 msgid "Select a user to add to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/forms.py:448
+#: src/opendlp/entrypoints/forms.py:450
 #, fuzzy
 msgid "Assembly Role"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/entrypoints/forms.py:452
+#: src/opendlp/entrypoints/forms.py:454
 msgid "Select the role this user will have on the assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:463
+#: src/opendlp/entrypoints/forms.py:465
 #, fuzzy
 msgid "Your first name"
 msgstr "Keresztnév"
 
-#: src/opendlp/entrypoints/forms.py:470
+#: src/opendlp/entrypoints/forms.py:472
 #, fuzzy
 msgid "Your last name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:479
+#: src/opendlp/entrypoints/forms.py:481
 #, fuzzy
 msgid "Current Password"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/forms.py:545 src/opendlp/entrypoints/forms.py:597
+#: src/opendlp/entrypoints/forms.py:547 src/opendlp/entrypoints/forms.py:599
 #: templates/backoffice/assembly_data.html:334
 #: templates/backoffice/assembly_data.html:386
 #: templates/backoffice/assembly_targets.html:188
@@ -628,28 +628,28 @@ msgstr "Új jelszó"
 msgid "CSV File"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:547 src/opendlp/entrypoints/forms.py:599
+#: src/opendlp/entrypoints/forms.py:549 src/opendlp/entrypoints/forms.py:601
 msgid "Please select a CSV file to upload"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:548 src/opendlp/entrypoints/forms.py:600
+#: src/opendlp/entrypoints/forms.py:550 src/opendlp/entrypoints/forms.py:602
 msgid "Only CSV files are allowed"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:550
+#: src/opendlp/entrypoints/forms.py:552
 msgid "Select a CSV file containing target categories"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:558 src/opendlp/entrypoints/forms.py:568
+#: src/opendlp/entrypoints/forms.py:560 src/opendlp/entrypoints/forms.py:570
 #, fuzzy
 msgid "Category Name"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/forms.py:560
+#: src/opendlp/entrypoints/forms.py:562
 msgid "e.g. Gender, Age, Ethnicity"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:577
+#: src/opendlp/entrypoints/forms.py:579
 #: templates/backoffice/targets/category_block.html:96
 #: templates/targets/components/category_block.html:69
 #: templates/targets/components/category_block.html:136
@@ -657,12 +657,12 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:579
+#: src/opendlp/entrypoints/forms.py:581
 msgid "e.g. Male, Female, 16-29"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:583
-#: src/opendlp/service_layer/selection_report.py:220
+#: src/opendlp/entrypoints/forms.py:585
+#: src/opendlp/service_layer/selection_report.py:223
 #: templates/backoffice/targets/category_block.html:98
 #: templates/targets/components/category_block.html:70
 #: templates/targets/components/category_block.html:147
@@ -670,8 +670,8 @@ msgstr ""
 msgid "Min"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:588
-#: src/opendlp/service_layer/selection_report.py:221
+#: src/opendlp/entrypoints/forms.py:590
+#: src/opendlp/service_layer/selection_report.py:224
 #: templates/backoffice/targets/category_block.html:100
 #: templates/targets/components/category_block.html:71
 #: templates/targets/components/category_block.html:158
@@ -679,58 +679,58 @@ msgstr ""
 msgid "Max"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:602
+#: src/opendlp/entrypoints/forms.py:604
 msgid "Select a CSV file containing respondent data"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:606
+#: src/opendlp/entrypoints/forms.py:608
 msgid "Replace all existing respondents"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:608
+#: src/opendlp/entrypoints/forms.py:610
 msgid ""
 "Warning: this will delete all existing respondents for this assembly "
 "before importing. Uncheck to add to existing respondents."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:618
+#: src/opendlp/entrypoints/forms.py:620
 #: templates/backoffice/assembly_data.html:395
 msgid ""
 "Name of column containing unique identifiers. If blank, the first column "
 "in the CSV will be used."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:629
+#: src/opendlp/entrypoints/forms.py:631
 msgid "Prevent selecting multiple participants from the same address"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:633
+#: src/opendlp/entrypoints/forms.py:635
 #: templates/backoffice/assembly_data.html:456
 #, fuzzy
 msgid "Address Attributes"
 msgstr "Cím oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:635
+#: src/opendlp/entrypoints/forms.py:637
 msgid "Comma-separated respondent attribute names used for address matching"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:639
+#: src/opendlp/entrypoints/forms.py:641
 #: templates/backoffice/assembly_data.html:465
 #, fuzzy
 msgid "Attributes to Keep"
 msgstr "Megtartandó oszlopok"
 
-#: src/opendlp/entrypoints/forms.py:641
+#: src/opendlp/entrypoints/forms.py:643
 msgid "Comma-separated respondent attribute names to include in CSV output"
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:660
+#: src/opendlp/entrypoints/forms.py:662
 msgid ""
 "You must specify address attributes when 'Check Same Address' is enabled."
 " Please enter attribute names or disable 'Check Same Address'."
 msgstr ""
 
-#: src/opendlp/entrypoints/forms.py:677 src/opendlp/entrypoints/forms.py:686
+#: src/opendlp/entrypoints/forms.py:679 src/opendlp/entrypoints/forms.py:688
 #, python-format
 msgid "Unrecognised attribute names: %(names)s"
 msgstr ""
@@ -755,13 +755,13 @@ msgstr "Hiba történt a gyűlés frissítése közben"
 #: src/opendlp/entrypoints/blueprints/admin.py:207
 #: src/opendlp/entrypoints/blueprints/admin.py:247
 #: src/opendlp/entrypoints/blueprints/admin.py:295
-#: src/opendlp/service_layer/two_factor_service.py:48
-#: src/opendlp/service_layer/two_factor_service.py:94
-#: src/opendlp/service_layer/two_factor_service.py:152
-#: src/opendlp/service_layer/two_factor_service.py:203
-#: src/opendlp/service_layer/two_factor_service.py:251
-#: src/opendlp/service_layer/two_factor_service.py:296
-#: src/opendlp/service_layer/two_factor_service.py:321
+#: src/opendlp/service_layer/two_factor_service.py:44
+#: src/opendlp/service_layer/two_factor_service.py:90
+#: src/opendlp/service_layer/two_factor_service.py:148
+#: src/opendlp/service_layer/two_factor_service.py:199
+#: src/opendlp/service_layer/two_factor_service.py:247
+#: src/opendlp/service_layer/two_factor_service.py:292
+#: src/opendlp/service_layer/two_factor_service.py:317
 #, fuzzy
 msgid "User not found"
 msgstr "Az oldal nem elérhető"
@@ -1064,7 +1064,7 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:722
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1046
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1116
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1442
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1441
 #: src/opendlp/entrypoints/blueprints/main.py:91
 #: src/opendlp/entrypoints/blueprints/main.py:146
 #: src/opendlp/entrypoints/blueprints/main.py:195
@@ -1118,7 +1118,7 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:713
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1037
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1107
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1433
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1432
 #: src/opendlp/entrypoints/blueprints/main.py:81
 #: src/opendlp/entrypoints/blueprints/main.py:137
 #: src/opendlp/entrypoints/blueprints/main.py:186
@@ -1430,8 +1430,8 @@ msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:797
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:832
-#: templates/backoffice/assembly_registration.html:1583
-#: templates/backoffice/assembly_registration.html:1722
+#: templates/backoffice/assembly_registration.html:1790
+#: templates/backoffice/assembly_registration.html:1929
 msgid "Alt text is required for accessibility"
 msgstr ""
 
@@ -1470,7 +1470,7 @@ msgid "An error occurred while uploading the document"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:931
-#: templates/backoffice/assembly_registration.html:1901
+#: templates/backoffice/assembly_registration.html:2108
 msgid "Label is required"
 msgstr ""
 
@@ -1676,28 +1676,28 @@ msgstr "További beállítások"
 msgid "An unexpected error occurred"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:129
-#: src/opendlp/entrypoints/blueprints/dev.py:149
-#: src/opendlp/entrypoints/blueprints/dev.py:1452
-#: src/opendlp/entrypoints/blueprints/dev.py:1487
+#: src/opendlp/entrypoints/blueprints/dev.py:131
+#: src/opendlp/entrypoints/blueprints/dev.py:151
+#: src/opendlp/entrypoints/blueprints/dev.py:1454
+#: src/opendlp/entrypoints/blueprints/dev.py:1489
 #, fuzzy
 msgid "You don't have permission to access developer tools"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1495
+#: src/opendlp/entrypoints/blueprints/dev.py:1497
 msgid "Success! Your changes have been saved."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1496
+#: src/opendlp/entrypoints/blueprints/dev.py:1498
 msgid "Warning: Please review the data before continuing."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1497
+#: src/opendlp/entrypoints/blueprints/dev.py:1499
 #, fuzzy
 msgid "Error: Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1498
+#: src/opendlp/entrypoints/blueprints/dev.py:1500
 msgid "Info: A new feature is available."
 msgstr ""
 
@@ -1890,7 +1890,7 @@ msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 msgid "Task run not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1423
+#: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1422
 msgid "Unknown task type"
 msgstr ""
 
@@ -2269,7 +2269,7 @@ msgid "You don't have permission to export respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:441
-#: src/opendlp/service_layer/selection_report.py:209
+#: src/opendlp/service_layer/selection_report.py:212
 #, fuzzy
 msgid "All respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
@@ -2287,7 +2287,7 @@ msgid "Pool"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:444
-#: src/opendlp/service_layer/selection_report.py:211
+#: src/opendlp/service_layer/selection_report.py:214
 #: templates/backoffice/assembly_respondents.html:105
 #: templates/backoffice/assembly_view_respondent.html:226
 #: templates/backoffice/components/table.html:206
@@ -2584,16 +2584,16 @@ msgstr "Feladat állapota"
 msgid "An unexpected error occurred while checking targets"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/celery/tasks.py:109
-#: src/opendlp/service_layer/sortition.py:875
+#: src/opendlp/entrypoints/celery/tasks.py:115
+#: src/opendlp/service_layer/sortition.py:871
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:193
+#: src/opendlp/entrypoints/celery/tasks.py:199
 msgid "Starting Google Sheets load task"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:213
+#: src/opendlp/entrypoints/celery/tasks.py:219
 #, python-format
 msgid ""
 "The file '%(file_name)s' has the format '%(common_name)s', rather than "
@@ -2601,200 +2601,200 @@ msgid ""
 "Save as Google Sheets, then use that new file."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:233
+#: src/opendlp/entrypoints/celery/tasks.py:239
 #, python-format
 msgid "Loading spreadsheet with title: %(title)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:234
+#: src/opendlp/entrypoints/celery/tasks.py:240
 #, python-format
 msgid "Loading targets from tab: %(tab_name)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:255
+#: src/opendlp/entrypoints/celery/tasks.py:261
 #, python-format
 msgid ""
 "Found %(num_features)s categories for targets with a total of "
 "%(num_values)s values."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:260
-#: src/opendlp/entrypoints/celery/tasks.py:600
+#: src/opendlp/entrypoints/celery/tasks.py:266
+#: src/opendlp/entrypoints/celery/tasks.py:606
 #, python-format
 msgid ""
 "Minimum selection for targets is %(min_select)s, maximum is "
 "%(max_select)s."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:264
+#: src/opendlp/entrypoints/celery/tasks.py:270
 #, python-format
 msgid "Loading people from tab: %(tab_name)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:279
+#: src/opendlp/entrypoints/celery/tasks.py:285
 #, python-format
 msgid "Loaded %(count)s people."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:289
+#: src/opendlp/entrypoints/celery/tasks.py:295
 #, python-format
 msgid "Loading already selected from tab: %(tab_name)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:306
+#: src/opendlp/entrypoints/celery/tasks.py:312
 #, python-format
 msgid "Loaded %(count)s already selected people."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:315
+#: src/opendlp/entrypoints/celery/tasks.py:321
 #, fuzzy
 msgid "Google Sheets load completed successfully."
 msgstr "Google táblázat beállításai sikeresen frissítve"
 
-#: src/opendlp/entrypoints/celery/tasks.py:344
-#: src/opendlp/entrypoints/celery/tasks.py:940
+#: src/opendlp/entrypoints/celery/tasks.py:350
+#: src/opendlp/entrypoints/celery/tasks.py:946
 #, python-format
 msgid ""
 "Failed to load gsheet due to permissions issues. Check the spreadsheet is"
 " shared with %(email)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:358
+#: src/opendlp/entrypoints/celery/tasks.py:364
 #, fuzzy, python-format
 msgid "Failed to load gsheet: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:392
+#: src/opendlp/entrypoints/celery/tasks.py:398
 msgid ": TEST only, do not use for real selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:397
+#: src/opendlp/entrypoints/celery/tasks.py:403
 #, python-format
 msgid "Starting selection algorithm for %(number)s people%(suffix)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:410
+#: src/opendlp/entrypoints/celery/tasks.py:416
 #, python-format
 msgid ""
 "Running stratified selection with %(people_count)s people and "
 "%(features_count)s features%(suffix)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:436
+#: src/opendlp/entrypoints/celery/tasks.py:442
 #, python-format
 msgid "Selection completed successfully. Selected %(count)s panel(s).%(suffix)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:453
+#: src/opendlp/entrypoints/celery/tasks.py:459
 msgid "Selection algorithm could not find panels meeting the specified criteria"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:457
+#: src/opendlp/entrypoints/celery/tasks.py:463
 msgid "Selection algorithm failed to find suitable panels"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:466
+#: src/opendlp/entrypoints/celery/tasks.py:472
 #, fuzzy, python-format
 msgid "Selection task failed: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:499
+#: src/opendlp/entrypoints/celery/tasks.py:505
 msgid "About to write selected and remaining tabs"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:524
+#: src/opendlp/entrypoints/celery/tasks.py:530
 #, python-format
 msgid ""
 "In the remaining tab there are %(count)s people who share an address with"
 " someone else selected or remaining. They are highlighted in orange."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:536
+#: src/opendlp/entrypoints/celery/tasks.py:542
 #, python-format
 msgid ""
 "Successfully written %(selected_count)s selected and %(remaining_count)s "
 "remaining to spreadsheet."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:547
+#: src/opendlp/entrypoints/celery/tasks.py:553
 #, python-format
 msgid "Writing results failed: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:577
+#: src/opendlp/entrypoints/celery/tasks.py:583
 msgid "Starting database data load"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:595
+#: src/opendlp/entrypoints/celery/tasks.py:601
 #, python-format
 msgid "Found %(num_features)s categories with %(num_values)s values."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:604
+#: src/opendlp/entrypoints/celery/tasks.py:610
 #, fuzzy
 msgid "Loading respondents from database"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/celery/tasks.py:614
+#: src/opendlp/entrypoints/celery/tasks.py:620
 #, python-format
 msgid "Loaded %(count)s respondents."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:621
+#: src/opendlp/entrypoints/celery/tasks.py:627
 #, fuzzy
 msgid "Database load completed successfully."
 msgstr "Google táblázat beállításai sikeresen frissítve"
 
-#: src/opendlp/entrypoints/celery/tasks.py:644
+#: src/opendlp/entrypoints/celery/tasks.py:650
 #, fuzzy, python-format
 msgid "Failed to load data from database: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:670
+#: src/opendlp/entrypoints/celery/tasks.py:676
 msgid "Writing selection results to database"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:691
+#: src/opendlp/entrypoints/celery/tasks.py:697
 #, python-format
 msgid ""
 "Successfully selected %(selected_count)s people. %(remaining_count)s "
 "remain in pool."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:703
+#: src/opendlp/entrypoints/celery/tasks.py:709
 #, python-format
 msgid "Writing results to database failed: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:905
+#: src/opendlp/entrypoints/celery/tasks.py:911
 msgid "listing"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:905
+#: src/opendlp/entrypoints/celery/tasks.py:911
 #, fuzzy
 msgid "deleting"
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/celery/tasks.py:909
+#: src/opendlp/entrypoints/celery/tasks.py:915
 #, python-format
 msgid "Starting task to %(action)s old output tabs"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:919
+#: src/opendlp/entrypoints/celery/tasks.py:925
 msgid "No old output tabs found"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:921
+#: src/opendlp/entrypoints/celery/tasks.py:927
 #, python-format
 msgid "Found %(count)s old output tab(s) that can be deleted"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:923
+#: src/opendlp/entrypoints/celery/tasks.py:929
 #, python-format
 msgid "Successfully deleted %(count)s old output tab(s)"
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:955
+#: src/opendlp/entrypoints/celery/tasks.py:961
 #, fuzzy, python-format
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
@@ -2819,11 +2819,11 @@ msgid ""
 "who leave it blank will not receive the auto-reply."
 msgstr ""
 
-#: src/opendlp/service_layer/error_translation.py:105
+#: src/opendlp/service_layer/error_translation.py:102
 msgid "parse_error_multi_column"
 msgstr ""
 
-#: src/opendlp/service_layer/error_translation.py:111
+#: src/opendlp/service_layer/error_translation.py:108
 msgid "parse_error_single_column"
 msgstr ""
 
@@ -2992,47 +2992,47 @@ msgstr "Vissza a regisztrációhoz"
 msgid "Invalid respondent status filter: %(value)s"
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:249
+#: src/opendlp/service_layer/respondent_field_schema_service.py:253
 #, fuzzy
 msgid "Field key cannot be empty"
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:254
+#: src/opendlp/service_layer/respondent_field_schema_service.py:258
 #, python-format
 msgid "Field '%(key)s' already exists in this assembly"
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:310
+#: src/opendlp/service_layer/respondent_field_schema_service.py:314
 #, fuzzy
 msgid "You can't change the type or options of a fixed field"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:421
+#: src/opendlp/service_layer/respondent_field_schema_service.py:425
 msgid "Options can only be set on choice fields"
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:424
-#: src/opendlp/service_layer/respondent_field_schema_service.py:455
+#: src/opendlp/service_layer/respondent_field_schema_service.py:428
+#: src/opendlp/service_layer/respondent_field_schema_service.py:459
 #, fuzzy
 msgid "Option value cannot be blank"
 msgstr "Kiválasztás"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:427
-#: src/opendlp/service_layer/respondent_field_schema_service.py:460
+#: src/opendlp/service_layer/respondent_field_schema_service.py:431
+#: src/opendlp/service_layer/respondent_field_schema_service.py:464
 #, fuzzy, python-format
 msgid "Option '%(value)s' already exists"
 msgstr "A felhasználó már létezik"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:488
+#: src/opendlp/service_layer/respondent_field_schema_service.py:492
 msgid "A choice field must keep at least one option"
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:541
+#: src/opendlp/service_layer/respondent_field_schema_service.py:545
 #, python-format
 msgid "Fixed field '%(key)s' cannot be deleted"
 msgstr ""
 
-#: src/opendlp/service_layer/selection_report.py:193
+#: src/opendlp/service_layer/selection_report.py:196
 #: templates/backoffice/patterns/_dropdown.html:148
 #: templates/backoffice/service_docs.html:31
 #: templates/backoffice/service_docs/_config.html:64
@@ -3051,46 +3051,46 @@ msgstr ""
 msgid "Assembly"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/service_layer/selection_report.py:194
+#: src/opendlp/service_layer/selection_report.py:197
 #, fuzzy
 msgid "Selection URL"
 msgstr "Kiválasztás"
 
-#: src/opendlp/service_layer/selection_report.py:195
+#: src/opendlp/service_layer/selection_report.py:198
 #, fuzzy
 msgid "Number selected"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/service_layer/selection_report.py:196
+#: src/opendlp/service_layer/selection_report.py:199
 #, fuzzy
 msgid "Number of people available to select from"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/service_layer/selection_report.py:197
+#: src/opendlp/service_layer/selection_report.py:200
 #, fuzzy
 msgid "Number of people who have had their details deleted"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/service_layer/selection_report.py:198
+#: src/opendlp/service_layer/selection_report.py:201
 msgid ""
 "Note: counts are affected by edits and deletions after the selection was "
 "run."
 msgstr ""
 
-#: src/opendlp/service_layer/selection_report.py:205
+#: src/opendlp/service_layer/selection_report.py:208
 #, fuzzy
 msgid "Target"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/service_layer/selection_report.py:218
-#: src/opendlp/service_layer/selection_report.py:222
-#: src/opendlp/service_layer/selection_report.py:224
+#: src/opendlp/service_layer/selection_report.py:221
+#: src/opendlp/service_layer/selection_report.py:225
+#: src/opendlp/service_layer/selection_report.py:227
 msgid "%"
 msgstr ""
 
-#: src/opendlp/service_layer/selection_report.py:219
-#: src/opendlp/service_layer/selection_report.py:223
-#: src/opendlp/service_layer/selection_report.py:225
+#: src/opendlp/service_layer/selection_report.py:222
+#: src/opendlp/service_layer/selection_report.py:226
+#: src/opendlp/service_layer/selection_report.py:228
 msgid "#"
 msgstr ""
 
@@ -3114,16 +3114,16 @@ msgstr ""
 msgid "Task cancelled by %(user_name)s"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:944
+#: src/opendlp/service_layer/sortition.py:940
 msgid "Task exceeded timeout"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:971
+#: src/opendlp/service_layer/sortition.py:967
 msgid "Task failed to start"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:983
-#: src/opendlp/service_layer/sortition.py:994
+#: src/opendlp/service_layer/sortition.py:979
+#: src/opendlp/service_layer/sortition.py:990
 msgid "Task stopped unexpectedly"
 msgstr ""
 
@@ -3166,34 +3166,34 @@ msgstr ""
 msgid "Suggested maximum: %(value)s (currently %(current)s)"
 msgstr ""
 
-#: src/opendlp/service_layer/two_factor_service.py:51
-#: src/opendlp/service_layer/two_factor_service.py:97
+#: src/opendlp/service_layer/two_factor_service.py:47
+#: src/opendlp/service_layer/two_factor_service.py:93
 msgid "Cannot enable 2FA for OAuth users"
 msgstr ""
 
-#: src/opendlp/service_layer/two_factor_service.py:54
+#: src/opendlp/service_layer/two_factor_service.py:50
 msgid "2FA is already enabled for this user"
 msgstr ""
 
-#: src/opendlp/service_layer/two_factor_service.py:101
-#: src/opendlp/service_layer/two_factor_service.py:160
-#: src/opendlp/service_layer/two_factor_service.py:211
+#: src/opendlp/service_layer/two_factor_service.py:97
+#: src/opendlp/service_layer/two_factor_service.py:156
+#: src/opendlp/service_layer/two_factor_service.py:207
 #, fuzzy
 msgid "Invalid authentication code"
 msgstr "Érvénytelen meghívókód"
 
-#: src/opendlp/service_layer/two_factor_service.py:155
-#: src/opendlp/service_layer/two_factor_service.py:206
-#: src/opendlp/service_layer/two_factor_service.py:258
+#: src/opendlp/service_layer/two_factor_service.py:151
+#: src/opendlp/service_layer/two_factor_service.py:202
+#: src/opendlp/service_layer/two_factor_service.py:254
 msgid "2FA is not enabled for this user"
 msgstr ""
 
-#: src/opendlp/service_layer/two_factor_service.py:255
+#: src/opendlp/service_layer/two_factor_service.py:251
 #, fuzzy
 msgid "Admin user not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/service_layer/two_factor_service.py:261
+#: src/opendlp/service_layer/two_factor_service.py:257
 msgid "Cannot disable 2FA for OAuth users (they don't use 2FA)"
 msgstr ""
 
@@ -3247,7 +3247,7 @@ msgstr ""
 msgid "My Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/backoffice/base_page.html:37 templates/base.html:79
+#: templates/backoffice/base_page.html:39 templates/base.html:79
 msgid "Sign out"
 msgstr "Kilépés"
 
@@ -3288,7 +3288,7 @@ msgstr "Sikerült"
 msgid "Important"
 msgstr "Fontos"
 
-#: templates/backoffice/base_page.html:35 templates/base.html:176
+#: templates/backoffice/base_page.html:37 templates/base.html:176
 #: templates/base_public.html:40
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
@@ -3384,12 +3384,12 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/backoffice/assembly_data.html:503
 #: templates/backoffice/assembly_edit_respondent.html:134
 #: templates/backoffice/assembly_form.html:96
-#: templates/backoffice/assembly_registration.html:155
-#: templates/backoffice/assembly_registration.html:471
-#: templates/backoffice/assembly_registration.html:877
-#: templates/backoffice/assembly_registration.html:1038
-#: templates/backoffice/assembly_registration.html:1127
-#: templates/backoffice/assembly_registration.html:1266
+#: templates/backoffice/assembly_registration.html:157
+#: templates/backoffice/assembly_registration.html:523
+#: templates/backoffice/assembly_registration.html:996
+#: templates/backoffice/assembly_registration.html:1188
+#: templates/backoffice/assembly_registration.html:1291
+#: templates/backoffice/assembly_registration.html:1462
 #: templates/backoffice/assembly_view_respondent.html:302
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:87
@@ -3432,7 +3432,7 @@ msgstr ""
 
 #: templates/admin/invite_view.html:34
 #: templates/backoffice/assembly_details.html:108
-#: templates/backoffice/assembly_registration.html:643
+#: templates/backoffice/assembly_registration.html:688
 #: templates/backoffice/edit_assembly.html:89
 #, fuzzy
 msgid "Registration URL"
@@ -3768,8 +3768,8 @@ msgid "Edit User"
 msgstr "Módosítsa a számot."
 
 #: templates/admin/user_edit.html:20 templates/admin/users.html:163
-#: templates/backoffice/assembly_registration.html:158
-#: templates/backoffice/assembly_registration.html:474
+#: templates/backoffice/assembly_registration.html:160
+#: templates/backoffice/assembly_registration.html:526
 #: templates/backoffice/assembly_respondents.html:143
 #: templates/backoffice/assembly_selection.html:78
 #: templates/backoffice/assembly_selection.html:291
@@ -4248,7 +4248,7 @@ msgstr ""
 #: templates/backoffice/assembly_data.html:17
 #: templates/backoffice/assembly_details.html:19
 #: templates/backoffice/assembly_members.html:20
-#: templates/backoffice/assembly_registration.html:21
+#: templates/backoffice/assembly_registration.html:18
 #: templates/backoffice/assembly_respondents.html:21
 #: templates/backoffice/assembly_selection.html:18
 #: templates/backoffice/assembly_targets.html:19
@@ -4537,10 +4537,10 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:339
 #: templates/backoffice/assembly_data.html:397
-#: templates/backoffice/assembly_registration.html:208
-#: templates/backoffice/assembly_registration.html:287
-#: templates/backoffice/assembly_registration.html:878
-#: templates/backoffice/assembly_registration.html:1128
+#: templates/backoffice/assembly_registration.html:223
+#: templates/backoffice/assembly_registration.html:320
+#: templates/backoffice/assembly_registration.html:997
+#: templates/backoffice/assembly_registration.html:1292
 msgid "Upload"
 msgstr ""
 
@@ -4648,46 +4648,46 @@ msgid "Registration Page Details"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/assembly_details.html:109
-#: templates/backoffice/assembly_registration.html:644
+#: templates/backoffice/assembly_registration.html:689
 msgid "The URL for your registration form"
 msgstr ""
 
 #: templates/backoffice/assembly_details.html:116
-#: templates/backoffice/assembly_registration.html:651
+#: templates/backoffice/assembly_registration.html:693
 msgid "Short URL"
 msgstr ""
 
 #: templates/backoffice/assembly_details.html:117
-#: templates/backoffice/assembly_registration.html:652
+#: templates/backoffice/assembly_registration.html:694
 #: templates/backoffice/edit_assembly.html:101
 msgid "A shorter URL for QR codes and paper invitations"
 msgstr ""
 
 #: templates/backoffice/assembly_details.html:125
-#: templates/backoffice/assembly_registration.html:661
+#: templates/backoffice/assembly_registration.html:702
 #, fuzzy
 msgid "QR Code"
 msgstr "Meghívó kód"
 
 #: templates/backoffice/assembly_details.html:127
-#: templates/backoffice/assembly_registration.html:663
+#: templates/backoffice/assembly_registration.html:704
 msgid "Use this QR code on paper invitations"
 msgstr ""
 
 #: templates/backoffice/assembly_details.html:134
-#: templates/backoffice/assembly_registration.html:669
+#: templates/backoffice/assembly_registration.html:711
 #, fuzzy
 msgid "QR code for registration page"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/assembly_details.html:147
-#: templates/backoffice/assembly_registration.html:681
+#: templates/backoffice/assembly_registration.html:729
 #, fuzzy
 msgid "Download QR Code"
 msgstr "Táblázat lapfülei"
 
 #: templates/backoffice/assembly_details.html:150
-#: templates/backoffice/assembly_registration.html:684
+#: templates/backoffice/assembly_registration.html:731
 msgid "PNG format, 400x400 pixels"
 msgstr ""
 
@@ -4793,75 +4793,75 @@ msgstr ""
 msgid "Registration page not created"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_registration.html:51
+#: templates/backoffice/assembly_registration.html:50
 msgid ""
 "Before you can configure the registration form, you need to create a "
 "registration page from the Details tab."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:54
+#: templates/backoffice/assembly_registration.html:52
 #, fuzzy
 msgid "Go to Details tab"
 msgstr "További beállítások"
 
-#: templates/backoffice/assembly_registration.html:70
+#: templates/backoffice/assembly_registration.html:66
 #: templates/backoffice/patterns/_stepper.html:28
 #: templates/backoffice/patterns/_stepper.html:102
 #, fuzzy
 msgid "Registration page"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_registration.html:71
-#: templates/backoffice/assembly_registration.html:415
+#: templates/backoffice/assembly_registration.html:67
+#: templates/backoffice/assembly_registration.html:468
 #: templates/backoffice/patterns/_stepper.html:29
 #: templates/backoffice/patterns/_stepper.html:103
 #, fuzzy
 msgid "Auto-reply email"
 msgstr "Hiba részletei"
 
-#: templates/backoffice/assembly_registration.html:72
+#: templates/backoffice/assembly_registration.html:68
 #: templates/backoffice/patterns/_stepper.html:30
 #: templates/backoffice/patterns/_stepper.html:104
 #, fuzzy
 msgid "Preview and publish"
 msgstr "Módosítások mentése"
 
-#: templates/backoffice/assembly_registration.html:74
+#: templates/backoffice/assembly_registration.html:70
 #, fuzzy
 msgid "Registration setup steps"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_registration.html:87
+#: templates/backoffice/assembly_registration.html:82
 #, fuzzy
 msgid "Test mode"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:88
+#: templates/backoffice/assembly_registration.html:83
 msgid ""
 "Submissions are recorded as test entries and don't enter the selection "
 "pool. Publish the registration when you're ready to go live."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:96
+#: templates/backoffice/assembly_registration.html:92
 #, fuzzy
 msgid "Registration closed"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_registration.html:97
+#: templates/backoffice/assembly_registration.html:93
 msgid "Visitors who follow the form URL are redirected to the closed page."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:105
+#: templates/backoffice/assembly_registration.html:103
 msgid "Published"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:123
+#: templates/backoffice/assembly_registration.html:120
 #, fuzzy
 msgid "Save and Republish"
 msgstr "Módosítások mentése"
 
-#: templates/backoffice/assembly_registration.html:123
-#: templates/backoffice/assembly_registration.html:472
+#: templates/backoffice/assembly_registration.html:120
+#: templates/backoffice/assembly_registration.html:524
 #: templates/backoffice/components/edit_number_to_select_modal.html:41
 #: templates/backoffice/respondent_field_schema/view.html:228
 #: templates/backoffice/respondent_field_schema/view.html:269
@@ -4874,225 +4874,225 @@ msgstr "Módosítások mentése"
 msgid "Save"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:135
+#: templates/backoffice/assembly_registration.html:134
 #, fuzzy
 msgid "Registration Form HTML"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_registration.html:149
+#: templates/backoffice/assembly_registration.html:152
 msgid "Show Form Skeleton"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:165
+#: templates/backoffice/assembly_registration.html:166
 msgid ""
 "Paste your HTML form code below. The only required placeholders are {{ "
 "form_action }} for the form's action attribute and {{ csrf_form_element "
 "}} for CSRF protection."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:198
+#: templates/backoffice/assembly_registration.html:209
 #, fuzzy
 msgid "Assets"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:206
+#: templates/backoffice/assembly_registration.html:222
 #: templates/backoffice/service_docs.html:38
 #, fuzzy
 msgid "Images"
 msgstr "Jelentések a folyamatról"
 
-#: templates/backoffice/assembly_registration.html:222
+#: templates/backoffice/assembly_registration.html:243
 #, python-format
 msgid "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:229
+#: templates/backoffice/assembly_registration.html:250
 #, fuzzy
 msgid "No images uploaded yet."
 msgstr "Feladat állapota"
 
-#: templates/backoffice/assembly_registration.html:285
+#: templates/backoffice/assembly_registration.html:319
 #: templates/backoffice/service_docs.html:39
 #, fuzzy
 msgid "Documents"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/backoffice/assembly_registration.html:301
-#: templates/backoffice/assembly_registration.html:1083
+#: templates/backoffice/assembly_registration.html:340
+#: templates/backoffice/assembly_registration.html:1237
 #, python-format
 msgid "PDF files only. Maximum file size: %(max)s MB per document."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:308
+#: templates/backoffice/assembly_registration.html:347
 #, fuzzy
 msgid "No documents uploaded yet."
 msgstr "Feladat állapota"
 
-#: templates/backoffice/assembly_registration.html:374
-#: templates/backoffice/assembly_registration.html:584
+#: templates/backoffice/assembly_registration.html:428
+#: templates/backoffice/assembly_registration.html:633
 msgid "Editing in progress — save or cancel to continue"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:376
-#: templates/backoffice/assembly_registration.html:378
+#: templates/backoffice/assembly_registration.html:430
 #: templates/backoffice/assembly_registration.html:432
-#: templates/backoffice/assembly_registration.html:587
-#: templates/backoffice/assembly_registration.html:590
+#: templates/backoffice/assembly_registration.html:486
+#: templates/backoffice/assembly_registration.html:636
+#: templates/backoffice/assembly_registration.html:639
 #, fuzzy
 msgid "Next →"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:404
+#: templates/backoffice/assembly_registration.html:458
 #, fuzzy
 msgid "Auto-reply cannot be sent"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:404
+#: templates/backoffice/assembly_registration.html:458
 msgid "Heads up"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:418
+#: templates/backoffice/assembly_registration.html:470
 msgid ""
 "Automatically send a confirmation email to people after they register. "
 "Templates support variables like the respondent's first name and the "
 "assembly title."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:423
+#: templates/backoffice/assembly_registration.html:478
 msgid "Set up auto-reply email"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:431
-#: templates/backoffice/assembly_registration.html:582
-#: templates/backoffice/assembly_registration.html:589
-#: templates/backoffice/assembly_registration.html:704
+#: templates/backoffice/assembly_registration.html:485
+#: templates/backoffice/assembly_registration.html:629
+#: templates/backoffice/assembly_registration.html:638
+#: templates/backoffice/assembly_registration.html:749
 msgid "← Back"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:454
+#: templates/backoffice/assembly_registration.html:509
 msgid "Auto-reply email template"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:466
+#: templates/backoffice/assembly_registration.html:519
 msgid "Send auto-reply email"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:487
+#: templates/backoffice/assembly_registration.html:535
 msgid "Email subject"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:489
+#: templates/backoffice/assembly_registration.html:537
 msgid "Jinja variables allowed, e.g. {{ assembly.title }}."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:499
+#: templates/backoffice/assembly_registration.html:544
 msgid "HTML body"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:501
+#: templates/backoffice/assembly_registration.html:546
 msgid ""
 "Jinja + HTML. A plain-text version is generated automatically for email "
 "clients that need it."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:522
+#: templates/backoffice/assembly_registration.html:564
 #, fuzzy
 msgid "Available variables"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/backoffice/assembly_registration.html:525
+#: templates/backoffice/assembly_registration.html:566
 msgid ""
 "Click a variable to select it, then copy and paste into the subject or "
 "body. Missing values render as an empty string."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:528
+#: templates/backoffice/assembly_registration.html:569
 #, fuzzy
 msgid "Assembly title"
 msgstr "Közösségi gyűlés"
 
-#: templates/backoffice/assembly_registration.html:529
+#: templates/backoffice/assembly_registration.html:570
 #, fuzzy
 msgid "Assembly question"
 msgstr "A gyűlés fő témája"
 
-#: templates/backoffice/assembly_registration.html:530
+#: templates/backoffice/assembly_registration.html:571
 #, fuzzy
 msgid "First assembly date (ISO)"
 msgstr "Első gyűlés időpontja"
 
-#: templates/backoffice/assembly_registration.html:531
+#: templates/backoffice/assembly_registration.html:572
 #, fuzzy
 msgid "Respondent first name"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/assembly_registration.html:532
+#: templates/backoffice/assembly_registration.html:573
 msgid "First name, or 'Friend' as a fallback"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:533
+#: templates/backoffice/assembly_registration.html:574
 #, fuzzy
 msgid "Respondent full name"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/assembly_registration.html:534
+#: templates/backoffice/assembly_registration.html:575
 #, fuzzy
 msgid "Respondent email address"
 msgstr "Email cím hiányzik"
 
-#: templates/backoffice/assembly_registration.html:557
+#: templates/backoffice/assembly_registration.html:599
 msgid "Variable copied to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:561
+#: templates/backoffice/assembly_registration.html:604
 #, python-format
 msgid "Copy %(label)s variable"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:610
+#: templates/backoffice/assembly_registration.html:658
 msgid "Form preview"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:613
+#: templates/backoffice/assembly_registration.html:660
 msgid ""
 "This is the last saved version of your registration form, shown exactly "
 "as visitors will see it. You can try the fields and dropdowns, but the "
 "form cannot be submitted from here."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:622
+#: templates/backoffice/assembly_registration.html:668
 #, fuzzy
 msgid "Registration form preview"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_registration.html:636
+#: templates/backoffice/assembly_registration.html:684
 msgid "Share your form"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:712
+#: templates/backoffice/assembly_registration.html:757
 msgid "Publish"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:721
+#: templates/backoffice/assembly_registration.html:766
 msgid "Unpublish"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:723
-#: templates/backoffice/assembly_registration.html:1309
+#: templates/backoffice/assembly_registration.html:768
+#: templates/backoffice/assembly_registration.html:1505
 #, fuzzy
 msgid "Close registration"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_registration.html:752
+#: templates/backoffice/assembly_registration.html:798
 #, fuzzy
 msgid "Form Skeleton"
 msgstr "Rétegzett kiválasztás"
 
-#: templates/backoffice/assembly_registration.html:758
-#: templates/backoffice/assembly_registration.html:821
-#: templates/backoffice/assembly_registration.html:912
-#: templates/backoffice/assembly_registration.html:1074
-#: templates/backoffice/assembly_registration.html:1162
+#: templates/backoffice/assembly_registration.html:803
+#: templates/backoffice/assembly_registration.html:924
+#: templates/backoffice/assembly_registration.html:1031
+#: templates/backoffice/assembly_registration.html:1224
+#: templates/backoffice/assembly_registration.html:1326
 #: templates/backoffice/components/db_selection_progress_modal.html:117
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
 #: templates/backoffice/components/modal.html:106
@@ -5103,330 +5103,356 @@ msgstr "Rétegzett kiválasztás"
 msgid "Close"
 msgstr "Menü bezárása"
 
-#: templates/backoffice/assembly_registration.html:767
+#: templates/backoffice/assembly_registration.html:816
 msgid ""
 "This skeleton is generated from your assembly's field definitions. Copy "
-"all or select specific parts to paste into your form."
+"all or select specific parts to paste into your form. Then edit to add "
+"extra HTML as required."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:771
+#: templates/backoffice/assembly_registration.html:819
+#, python-format
+msgid ""
+"The Plain HTML version is the minimal version, for you to enhance. The "
+"GOV.UK styled version uses the %(link_start)sGOV.UK Design "
+"System%(link_end)s - which has high web accessibility."
+msgstr ""
+
+#: templates/backoffice/assembly_registration.html:830
+#, fuzzy
+msgid "Form skeleton style"
+msgstr "Rétegzett kiválasztás"
+
+#: templates/backoffice/assembly_registration.html:835
+msgid "Plain HTML"
+msgstr ""
+
+#: templates/backoffice/assembly_registration.html:840
+msgid "GOV.UK styled"
+msgstr ""
+
+#: templates/backoffice/assembly_registration.html:855
 msgid "Form skeleton preview"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:787
+#: templates/backoffice/assembly_registration.html:872
+msgid "Form skeleton preview (GOV.UK styled)"
+msgstr ""
+
+#: templates/backoffice/assembly_registration.html:890
 msgid "Copy All"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:814
+#: templates/backoffice/assembly_registration.html:918
 #, fuzzy
 msgid "Upload image"
 msgstr "Kész"
 
-#: templates/backoffice/assembly_registration.html:830
+#: templates/backoffice/assembly_registration.html:937
 #, python-format
 msgid ""
 "Supported formats: %(formats)s. Maximum file size: %(max)s MB per image. "
 "Files are downscaled and re-encoded to PNG on upload."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:836
+#: templates/backoffice/assembly_registration.html:943
 msgid "Image file"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:852
-#: templates/backoffice/assembly_registration.html:1011
+#: templates/backoffice/assembly_registration.html:964
+#: templates/backoffice/assembly_registration.html:1155
 #, fuzzy
 msgid "Alt text"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:864
-#: templates/backoffice/assembly_registration.html:1023
+#: templates/backoffice/assembly_registration.html:977
+#: templates/backoffice/assembly_registration.html:1168
 msgid ""
 "Describes the image for screen-reader users and is used as the file's "
 "display name in the asset list."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:905
+#: templates/backoffice/assembly_registration.html:1025
 #, fuzzy
 msgid "Image details"
 msgstr "Meghívó kód"
 
-#: templates/backoffice/assembly_registration.html:931
+#: templates/backoffice/assembly_registration.html:1056
 msgid "No preview"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:938
-#: templates/backoffice/assembly_registration.html:1175
+#: templates/backoffice/assembly_registration.html:1064
+#: templates/backoffice/assembly_registration.html:1345
 msgid "Original filename"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:943
+#: templates/backoffice/assembly_registration.html:1072
 #, fuzzy
 msgid "Dimensions"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/backoffice/assembly_registration.html:948
+#: templates/backoffice/assembly_registration.html:1077
 msgid "px"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:951
-#: templates/backoffice/assembly_registration.html:1180
+#: templates/backoffice/assembly_registration.html:1080
+#: templates/backoffice/assembly_registration.html:1353
 msgid "File size"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:959
-#: templates/backoffice/assembly_registration.html:1187
+#: templates/backoffice/assembly_registration.html:1090
+#: templates/backoffice/assembly_registration.html:1362
 #, fuzzy
 msgid "File name"
 msgstr "Keresztnév"
 
-#: templates/backoffice/assembly_registration.html:972
-#: templates/backoffice/assembly_registration.html:1200
+#: templates/backoffice/assembly_registration.html:1103
+#: templates/backoffice/assembly_registration.html:1375
 msgid "File name copied to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:976
-#: templates/backoffice/assembly_registration.html:1204
+#: templates/backoffice/assembly_registration.html:1108
+#: templates/backoffice/assembly_registration.html:1380
 #, fuzzy
 msgid "Copy file name"
 msgstr "Keresztnév"
 
-#: templates/backoffice/assembly_registration.html:987
+#: templates/backoffice/assembly_registration.html:1124
 #, fuzzy
 msgid "Image snippet"
 msgstr "Jelentések a folyamatról"
 
-#: templates/backoffice/assembly_registration.html:1001
+#: templates/backoffice/assembly_registration.html:1139
 msgid "Copy image snippet"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1036
+#: templates/backoffice/assembly_registration.html:1186
 #, fuzzy
 msgid "Delete image"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:1039
+#: templates/backoffice/assembly_registration.html:1189
 #, fuzzy
 msgid "Save alt"
 msgstr "Elkezdve"
 
-#: templates/backoffice/assembly_registration.html:1067
+#: templates/backoffice/assembly_registration.html:1218
 #, fuzzy
 msgid "Upload document"
 msgstr "Kész"
 
-#: templates/backoffice/assembly_registration.html:1089
+#: templates/backoffice/assembly_registration.html:1243
 #, fuzzy
 msgid "PDF file"
 msgstr "Kész"
 
-#: templates/backoffice/assembly_registration.html:1105
-#: templates/backoffice/assembly_registration.html:1239
+#: templates/backoffice/assembly_registration.html:1263
+#: templates/backoffice/assembly_registration.html:1429
 #: templates/backoffice/patterns/_progress.html:125
 #: templates/backoffice/respondent_field_schema/view.html:132
 #: templates/backoffice/respondent_field_schema/view.html:358
 msgid "Label"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1114
+#: templates/backoffice/assembly_registration.html:1272
 msgid ""
 "Shown to registrants as the download link text and used as the file's "
 "display name in the asset list. Defaults to the file name."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1155
+#: templates/backoffice/assembly_registration.html:1320
 #, fuzzy
 msgid "Document details"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/backoffice/assembly_registration.html:1215
+#: templates/backoffice/assembly_registration.html:1397
 #, fuzzy
 msgid "Download link snippet"
 msgstr "Táblázat lapfülei"
 
-#: templates/backoffice/assembly_registration.html:1229
+#: templates/backoffice/assembly_registration.html:1413
 msgid "Copy download link snippet"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1251
+#: templates/backoffice/assembly_registration.html:1442
 msgid ""
 "Shown to registrants as the download link text and used as the file's "
 "display name in the asset list."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1264
+#: templates/backoffice/assembly_registration.html:1460
 #, fuzzy
 msgid "Delete document"
 msgstr "Hozzon létre fiókot"
 
-#: templates/backoffice/assembly_registration.html:1267
+#: templates/backoffice/assembly_registration.html:1463
 #, fuzzy
 msgid "Save label"
 msgstr "Elkezdve"
 
-#: templates/backoffice/assembly_registration.html:1297
+#: templates/backoffice/assembly_registration.html:1494
 #, fuzzy
 msgid "Close registration?"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_registration.html:1300
+#: templates/backoffice/assembly_registration.html:1496
 msgid ""
 "This permanently stops new registrations. Visitors who follow the form "
 "link will see the 'registration closed' page, and the form cannot be "
 "reopened."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1311
+#: templates/backoffice/assembly_registration.html:1507
 #, fuzzy
 msgid "Keep it open"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/backoffice/assembly_registration.html:1343
+#: templates/backoffice/assembly_registration.html:1540
 #, fuzzy
 msgid "Discard changes?"
 msgstr "Módosítások mentése"
 
-#: templates/backoffice/assembly_registration.html:1346
+#: templates/backoffice/assembly_registration.html:1542
 msgid ""
 "You have unsaved changes. If you leave this page, your changes will be "
 "lost."
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1349
+#: templates/backoffice/assembly_registration.html:1545
 #, fuzzy
 msgid "Discard changes"
 msgstr "Módosítások mentése"
 
-#: templates/backoffice/assembly_registration.html:1350
+#: templates/backoffice/assembly_registration.html:1546
 #, fuzzy
 msgid "Keep editing"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/backoffice/assembly_registration.html:1532
+#: templates/backoffice/assembly_registration.html:1730
 #, fuzzy
 msgid "An error occurred while fetching the form skeleton"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: templates/backoffice/assembly_registration.html:1543
-#: templates/backoffice/assembly_registration.html:1668
+#: templates/backoffice/assembly_registration.html:1750
+#: templates/backoffice/assembly_registration.html:1875
 #: templates/backoffice/components/url_display.html:37
 msgid "Copied to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1546
-#: templates/backoffice/assembly_registration.html:1656
-#: templates/backoffice/assembly_registration.html:1669
-#: templates/backoffice/assembly_registration.html:1848
+#: templates/backoffice/assembly_registration.html:1753
+#: templates/backoffice/assembly_registration.html:1863
+#: templates/backoffice/assembly_registration.html:1876
+#: templates/backoffice/assembly_registration.html:2055
 msgid "Failed to copy to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1601
-#: templates/backoffice/assembly_registration.html:1793
+#: templates/backoffice/assembly_registration.html:1808
+#: templates/backoffice/assembly_registration.html:2000
 #, fuzzy
 msgid "Upload failed"
 msgstr "Kész"
 
-#: templates/backoffice/assembly_registration.html:1612
+#: templates/backoffice/assembly_registration.html:1819
 #, fuzzy
 msgid "Image uploaded"
 msgstr "Új jelszó"
 
-#: templates/backoffice/assembly_registration.html:1615
+#: templates/backoffice/assembly_registration.html:1822
 #, fuzzy
 msgid "Network error while uploading the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:1624
+#: templates/backoffice/assembly_registration.html:1831
 #, fuzzy
 msgid "Delete this image?"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:1635
-#: templates/backoffice/assembly_registration.html:1701
+#: templates/backoffice/assembly_registration.html:1842
+#: templates/backoffice/assembly_registration.html:1908
 msgid "Failed to delete image"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1639
-#: templates/backoffice/assembly_registration.html:1708
+#: templates/backoffice/assembly_registration.html:1846
+#: templates/backoffice/assembly_registration.html:1915
 #, fuzzy
 msgid "Image deleted"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/assembly_registration.html:1642
-#: templates/backoffice/assembly_registration.html:1711
+#: templates/backoffice/assembly_registration.html:1849
+#: templates/backoffice/assembly_registration.html:1918
 #, fuzzy
 msgid "Network error while deleting the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:1651
-#: templates/backoffice/assembly_registration.html:1843
+#: templates/backoffice/assembly_registration.html:1858
+#: templates/backoffice/assembly_registration.html:2050
 msgid "No public URL available yet"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1655
-#: templates/backoffice/assembly_registration.html:1847
+#: templates/backoffice/assembly_registration.html:1862
+#: templates/backoffice/assembly_registration.html:2054
 msgid "Snippet copied to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1738
+#: templates/backoffice/assembly_registration.html:1945
 #, fuzzy
 msgid "Failed to update image"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:1746
+#: templates/backoffice/assembly_registration.html:1953
 #, fuzzy
 msgid "Image updated"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:1749
+#: templates/backoffice/assembly_registration.html:1956
 #, fuzzy
 msgid "Network error while updating the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:1804
+#: templates/backoffice/assembly_registration.html:2011
 #, fuzzy
 msgid "Document uploaded"
 msgstr "Új jelszó"
 
-#: templates/backoffice/assembly_registration.html:1807
+#: templates/backoffice/assembly_registration.html:2014
 #, fuzzy
 msgid "Network error while uploading the document"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:1816
+#: templates/backoffice/assembly_registration.html:2023
 #, fuzzy
 msgid "Delete this document?"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:1827
-#: templates/backoffice/assembly_registration.html:1880
+#: templates/backoffice/assembly_registration.html:2034
+#: templates/backoffice/assembly_registration.html:2087
 #, fuzzy
 msgid "Failed to delete document"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:1831
-#: templates/backoffice/assembly_registration.html:1887
+#: templates/backoffice/assembly_registration.html:2038
+#: templates/backoffice/assembly_registration.html:2094
 #, fuzzy
 msgid "Document deleted"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/assembly_registration.html:1834
-#: templates/backoffice/assembly_registration.html:1890
+#: templates/backoffice/assembly_registration.html:2041
+#: templates/backoffice/assembly_registration.html:2097
 #, fuzzy
 msgid "Network error while deleting the document"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:1917
+#: templates/backoffice/assembly_registration.html:2124
 #, fuzzy
 msgid "Failed to update document"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:1925
+#: templates/backoffice/assembly_registration.html:2132
 #, fuzzy
 msgid "Document updated"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:1928
+#: templates/backoffice/assembly_registration.html:2135
 #, fuzzy
 msgid "Network error while updating the document"
 msgstr "Hiba történt a gyűlés frissítése közben"
@@ -6021,16 +6047,16 @@ msgstr "Új jelszó"
 msgid "Back to Respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/base_page.html:28
+#: templates/backoffice/base_page.html:30
 msgid "Help (knowledge hub)"
 msgstr ""
 
-#: templates/backoffice/base_page.html:32
+#: templates/backoffice/base_page.html:34
 #, fuzzy
 msgid "My account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/backoffice/base_page.html:33
+#: templates/backoffice/base_page.html:35
 msgid "Switch to site admin"
 msgstr ""
 
@@ -14184,4 +14210,11 @@ msgstr ""
 #~ "settings drive how respondent details "
 #~ "are displayed and will seed the "
 #~ "registration form when it is created."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "This skeleton is generated from your "
+#~ "assembly's field definitions. Copy all "
+#~ "or select specific parts to paste "
+#~ "into your form."
 #~ msgstr ""
