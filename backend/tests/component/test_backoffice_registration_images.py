@@ -26,7 +26,7 @@ def _png(color=(255, 0, 0)) -> bytes:
 
 def _image(*, alt: str = "Logo", sha256: str = "a" * 64, original_filename: str = "") -> RegistrationImage:
     return RegistrationImage(
-        registration_page_id=uuid.uuid4(),
+        assembly_id=uuid.uuid4(),
         byte_size=123,
         width=100,
         height=80,
@@ -41,12 +41,12 @@ def _image(*, alt: str = "Logo", sha256: str = "a" * 64, original_filename: str 
 @pytest.fixture
 def registration_page(fake_store, admin_user, existing_assembly):
     with FakeUnitOfWork(store=fake_store) as uow:
-        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
 
 
 def _seed_image(fake_store, page, *, alt: str = "Logo", color=(255, 0, 0)) -> RegistrationImage:
     processed = process_image(_png(color), max_bytes=_MAX_BYTES, max_edge_px=_MAX_EDGE)
-    image = RegistrationImage.from_processed(page.id, processed, alt=alt)
+    image = RegistrationImage.from_processed(page.assembly_id, processed, alt=alt)
     with FakeUnitOfWork(store=fake_store) as uow:
         uow.registration_images.add(image)
         uow.commit()
@@ -55,7 +55,7 @@ def _seed_image(fake_store, page, *, alt: str = "Logo", color=(255, 0, 0)) -> Re
 
 def _stored_images(fake_store, page) -> list[RegistrationImage]:
     with FakeUnitOfWork(store=fake_store) as uow:
-        return uow.registration_images.list_by_page_id(page.id)
+        return uow.registration_images.list_by_assembly_id(page.assembly_id)
 
 
 class TestImageToDict:

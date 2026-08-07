@@ -12,11 +12,20 @@ from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.registration_document_service import add_registration_document
 from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
+    page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import route_url
+
+
+def _page_id(uow, assembly_id):  # type: ignore[no-untyped-def]
+    """The id of the assembly's single registration page."""
+    page = page_for_assembly(uow, assembly_id)
+    assert page is not None
+    return page.id
+
 
 MINIMAL_FORM_HTML = "<form method='post' action='{{ form_action }}'>{{ csrf_form_element }}</form>"
 
@@ -43,14 +52,14 @@ def _seed_published_page_with_document(session_factory, admin_user) -> tuple[str
         assembly_id = assembly.id
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
-        page = create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
+        page = create_registration_page_with_slugs(uow, admin_user.id, assembly_id, name="Registration page")
         url_slug = page.url_slug
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
-        update_registration_page_html(uow, admin_user.id, assembly_id, MINIMAL_FORM_HTML)
+        update_registration_page_html(uow, admin_user.id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
-        publish_registration_page(uow, admin_user.id, assembly_id)
+        publish_registration_page(uow, admin_user.id, _page_id(uow, assembly_id))
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         document = add_registration_document(uow, admin_user.id, assembly_id, _pdf(), original_filename="info pack.pdf")

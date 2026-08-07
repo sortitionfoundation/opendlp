@@ -340,22 +340,30 @@ def get_registration_image_max_edge_px() -> int:
     return _clamped_int_env("REGISTRATION_IMAGE_MAX_EDGE_PX", 2048, 256, 4096)
 
 
-def get_max_images_per_registration_page() -> int:
-    """Maximum number of images stored per registration page.
+def get_max_images_per_assembly() -> int:
+    """Maximum number of registration images stored per assembly.
 
-    Default 10. Bounded to [1, 50]. Environment variable:
-    ``MAX_IMAGES_PER_REGISTRATION_PAGE``.
+    Images are shared by all of an assembly's registration pages. Default 10.
+    Bounded to [1, 50]. Environment variable: ``MAX_IMAGES_PER_ASSEMBLY``, with
+    ``MAX_IMAGES_PER_REGISTRATION_PAGE`` still honoured for one release.
     """
-    return _clamped_int_env("MAX_IMAGES_PER_REGISTRATION_PAGE", 10, 1, 50)
+    if not os.environ.get("MAX_IMAGES_PER_ASSEMBLY", "") and os.environ.get("MAX_IMAGES_PER_REGISTRATION_PAGE", ""):
+        return _clamped_int_env("MAX_IMAGES_PER_REGISTRATION_PAGE", 10, 1, 50)
+    return _clamped_int_env("MAX_IMAGES_PER_ASSEMBLY", 10, 1, 50)
 
 
-def get_max_documents_per_registration_page() -> int:
-    """Maximum number of PDF documents stored per registration page.
+def get_max_documents_per_assembly() -> int:
+    """Maximum number of registration PDFs stored per assembly.
 
-    Default 5. Bounded to [1, 20]. Environment variable:
-    ``MAX_DOCUMENTS_PER_REGISTRATION_PAGE``.
+    Documents are shared by all of an assembly's registration pages. Default 5.
+    Bounded to [1, 20]. Environment variable: ``MAX_DOCUMENTS_PER_ASSEMBLY``,
+    with ``MAX_DOCUMENTS_PER_REGISTRATION_PAGE`` still honoured for one release.
     """
-    return _clamped_int_env("MAX_DOCUMENTS_PER_REGISTRATION_PAGE", 5, 1, 20)
+    if not os.environ.get("MAX_DOCUMENTS_PER_ASSEMBLY", "") and os.environ.get(
+        "MAX_DOCUMENTS_PER_REGISTRATION_PAGE", ""
+    ):
+        return _clamped_int_env("MAX_DOCUMENTS_PER_REGISTRATION_PAGE", 5, 1, 20)
+    return _clamped_int_env("MAX_DOCUMENTS_PER_ASSEMBLY", 5, 1, 20)
 
 
 def _get_monitor_uuid_env(env_key: str) -> "uuid.UUID | None":

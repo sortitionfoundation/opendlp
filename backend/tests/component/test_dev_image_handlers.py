@@ -57,7 +57,7 @@ def _seed_page(store: FakeStore, *, url_slug: str = "my-slug") -> RegistrationPa
 
 def _seed_image(store: FakeStore, page: RegistrationPage, color=(255, 0, 0)) -> RegistrationImage:
     processed = process_image(_png(color), max_bytes=_MAX_BYTES, max_edge_px=_MAX_EDGE)
-    image = RegistrationImage.from_processed(page.id, processed)
+    image = RegistrationImage.from_processed(page.assembly_id, processed)
     with FakeUnitOfWork(store=store) as uow:
         uow.registration_images.add(image)
         uow.commit()
@@ -103,7 +103,7 @@ def _uow(fake_store) -> FakeUnitOfWork:
 class TestSerialiseImage:
     def test_emits_expected_fields(self):
         image = RegistrationImage(
-            registration_page_id=uuid.uuid4(),
+            assembly_id=uuid.uuid4(),
             byte_size=321,
             width=200,
             height=150,
@@ -141,7 +141,7 @@ class TestHandleAddRegistrationImage:
         assert result["image"]["alt"] == "Decoded"
         assert result["image"]["original_filename"] == "logo.png"
         with _uow(fake_store) as uow:
-            stored = uow.registration_images.list_by_page_id(page.id)
+            stored = uow.registration_images.list_by_assembly_id(page.assembly_id)
         assert len(stored) == 1
         assert stored[0].alt == "Decoded"
 
@@ -158,7 +158,7 @@ class TestHandleAddRegistrationImage:
 
         assert result["status"] == "success"
         with _uow(fake_store) as uow:
-            assert len(uow.registration_images.list_by_page_id(page.id)) == 1
+            assert len(uow.registration_images.list_by_assembly_id(page.assembly_id)) == 1
 
     def test_invalid_base64_returns_error(self, fake_store, page, as_admin):
         result = _handle_add_registration_image(
@@ -195,7 +195,7 @@ class TestHandleDeleteRegistrationImage:
 
         assert result == {"status": "success", "deleted_image_id": str(image.id)}
         with _uow(fake_store) as uow:
-            assert uow.registration_images.list_by_page_id(page.id) == []
+            assert uow.registration_images.list_by_assembly_id(page.assembly_id) == []
 
 
 class TestHandleSetRegistrationImageAlt:

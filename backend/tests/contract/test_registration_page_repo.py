@@ -4,7 +4,7 @@ ABOUTME: Each test runs against both fake and SQL backends to verify identical b
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from opendlp.domain.registration_page import (
@@ -73,17 +73,86 @@ class TestAddAndGet:
         assert entry.text == "initial publish"
 
 
-class TestGetByAssemblyId:
-    def test_finds_by_assembly_id(self, registration_page_backend: ContractBackend):
+class TestListByAssemblyId:
+    def test_finds_the_only_page(self, registration_page_backend: ContractBackend):
         assembly = registration_page_backend.make_assembly()
         page = _add_page(registration_page_backend, assembly_id=assembly.id)
 
-        retrieved = registration_page_backend.repo.get_by_assembly_id(assembly.id)
-        assert retrieved is not None
-        assert retrieved.id == page.id
+        pages = registration_page_backend.repo.list_by_assembly_id(assembly.id)
+        assert [p.id for p in pages] == [page.id]
 
-    def test_returns_none_when_assembly_has_no_page(self, registration_page_backend: ContractBackend):
-        assert registration_page_backend.repo.get_by_assembly_id(uuid.uuid4()) is None
+    def test_returns_empty_when_assembly_has_no_pages(self, registration_page_backend: ContractBackend):
+        assert registration_page_backend.repo.list_by_assembly_id(uuid.uuid4()) == []
+
+    def test_returns_every_page_of_the_assembly_in_created_order(self, registration_page_backend: ContractBackend):
+        """An assembly may have many registration pages - A/B variants and translations."""
+        assembly = registration_page_backend.make_assembly()
+        now = datetime.now(UTC)
+        first = _add_page(
+            registration_page_backend,
+            assembly_id=assembly.id,
+            name="English",
+            created_at=now - timedelta(hours=2),
+        )
+        second = _add_page(
+            registration_page_backend,
+            assembly_id=assembly.id,
+            name="Español",
+            created_at=now - timedelta(hours=1),
+        )
+        third = _add_page(
+            registration_page_backend,
+            assembly_id=assembly.id,
+            name="Cymraeg",
+            created_at=now,
+        )
+
+        pages = registration_page_backend.repo.list_by_assembly_id(assembly.id)
+        assert [p.id for p in pages] == [first.id, second.id, third.id]
+
+    def test_excludes_pages_of_other_assemblies(self, registration_page_backend: ContractBackend):
+        assembly = registration_page_backend.make_assembly()
+        other = registration_page_backend.make_assembly()
+        mine = _add_page(registration_page_backend, assembly_id=assembly.id, name="Mine")
+        _add_page(registration_page_backend, assembly_id=other.id, name="Theirs")
+
+        pages = registration_page_backend.repo.list_by_assembly_id(assembly.id)
+        assert [p.id for p in pages] == [mine.id]
+
+    def test_many_pages_may_be_published_at_once(self, registration_page_backend: ContractBackend):
+        """Every language variant of an assembly is live simultaneously."""
+        assembly = registration_page_backend.make_assembly()
+        for index in range(3):
+            _add_page(
+                registration_page_backend,
+                assembly_id=assembly.id,
+                name=f"Variant {index}",
+                url_slug=f"variant-{index}",
+                status=RegistrationPageStatus.PUBLISHED,
+            )
+
+        pages = registration_page_backend.repo.list_by_assembly_id(assembly.id)
+        assert len(pages) == 3
+        assert all(p.status is RegistrationPageStatus.PUBLISHED for p in pages)
+
+
+class TestNameAndLanguage:
+    def test_name_and_language_round_trip(self, registration_page_backend: ContractBackend):
+        """Read back past the identity map so this proves storage, not object identity."""
+        page = _add_page(registration_page_backend, name="Español", language="es")
+
+        retrieved = registration_page_backend.fresh_get_registration_page(page.id)
+        assert retrieved is not None
+        assert retrieved.name == "Español"
+        assert retrieved.language == "es"
+
+    def test_name_and_language_default_to_empty(self, registration_page_backend: ContractBackend):
+        page = _add_page(registration_page_backend)
+
+        retrieved = registration_page_backend.fresh_get_registration_page(page.id)
+        assert retrieved is not None
+        assert retrieved.name == ""
+        assert retrieved.language == ""
 
 
 class TestGetByUrlSlug:

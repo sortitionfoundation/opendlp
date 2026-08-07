@@ -38,11 +38,11 @@ class TestModuleConstants:
 
 class TestRegistrationDocument:
     def test_from_validated_copies_fields(self):
-        page_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
         author = uuid.uuid4()
-        doc = RegistrationDocument.from_validated(page_id, _validated(), created_by=author)
+        doc = RegistrationDocument.from_validated(assembly_id, _validated(), created_by=author)
 
-        assert doc.registration_page_id == page_id
+        assert doc.assembly_id == assembly_id
         assert doc.created_by == author
         assert doc.data == b"%PDF-1.7 body"
         assert doc.sha256 == "abc123"
