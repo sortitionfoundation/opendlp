@@ -22,6 +22,8 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
            stay pinned while page content scrolls beneath them. The header uses the
            page background so the sticky page-header slot is opaque. #}
         <header class="sticky top-0 z-40" style="background-color: var(--color-bg-secondary);">
+            {# "My account" and "Switch to site admin" are old-design pages; their
+               target="new" opens both in one shared tab rather than stacking tabs. #}
             {{ navigation(
             logo_href=url_for('backoffice.dashboard'),
             help_href=knowledge_hub_url,
@@ -29,8 +31,8 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
             account_initials=account_initials,
             account_label=current_user.display_name,
             account_items=[
-            {"label": _("My account"), "href": url_for('profile.view'), "icon": icon_user()},
-            {"label": _("Switch to site admin"), "href": url_for('admin.index'), "icon": icon_switch(), "target": "_blank", "rel": "noopener", "isVisible": _is_site_admin},
+            {"label": _("My account"), "href": url_for('profile.view'), "icon": icon_user(), "target": "new"},
+            {"label": _("Switch to site admin"), "href": url_for('admin.index'), "icon": icon_switch(), "target": "new", "isVisible": _is_site_admin},
             {"divider": true, "isVisible": _is_site_admin},
             {"label": _("User Data Agreement"), "href": help_site_data_agreement, "icon": icon_data_agreement(), "target": "_blank", "rel": "noopener"},
             {"divider": true},
