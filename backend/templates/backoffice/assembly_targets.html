@@ -3,7 +3,7 @@ ABOUTME: Backoffice assembly targets page with full editing capabilities
 ABOUTME: Displays target categories, values, respondent data, CSV import, and validation
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
@@ -11,33 +11,28 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
 
 {% block title %}{{ _("Targets") }} - {{ assembly.title }}{% endblock %}
 
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Targets")}
-        ]) }}
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
+        {{ page_header(
+        title=assembly.title,
+        back_href=url_for('backoffice.dashboard'),
+        back_label=_("Back to dashboard")
+        ) }}
+        <div class="mt-4">
+            {{ assembly_tabs(
+            assembly=assembly,
+            active_tab="targets",
+            data_source=data_source,
+            gsheet=gsheet,
+            targets_enabled=targets_enabled,
+            respondents_enabled=respondents_enabled,
+            selection_enabled=selection_enabled|default(false)
+            ) }}
+        </div>
     </div>
 {% endblock %}
 
 {% block page_content %}
-    {# Page Heading #}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
-    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
-        {{ _("Configure selection targets for this assembly") }}
-    </p>
-
-    {{ assembly_tabs(
-    assembly=assembly,
-    active_tab="targets",
-    data_source=data_source,
-    gsheet=gsheet,
-    targets_enabled=targets_enabled,
-    respondents_enabled=respondents_enabled,
-    selection_enabled=selection_enabled|default(false)
-    ) }}
-
     {% if data_source == "gsheet" and gsheet %}
         {# Google Sheet source - show info about where targets are configured #}
         <section class="mb-8">
@@ -199,9 +194,4 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
         </section>
 
     {% endif %}
-
-    {# Actions #}
-    <section class="mt-8 flex gap-4">
-        {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="secondary") }}
-    </section>
 {% endblock %}

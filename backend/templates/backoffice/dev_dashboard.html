@@ -4,18 +4,8 @@ ABOUTME: Links to service docs, frontend patterns, and component showcase
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/card.html" import link_card %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 
 {% block title %}{{ _("Developer Tools") }}{% endblock %}
-
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": _("Developer Tools")}
-        ]) }}
-    </div>
-{% endblock %}
 
 {% block page_content %}
     <h1 style="color: var(--color-headings);" class="text-display-lg mb-2">

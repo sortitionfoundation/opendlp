@@ -64,13 +64,17 @@ Feature: Backoffice registration HTML editor
     And I confirm closing the registration
     Then the registration should be shown as closed
 
-  Scenario: Entering edit mode preserves the scroll position
+  # Scroll preservation: forms/links append ?scroll=<y> on navigation
+  # (x-preserve-scroll-on-submit / x-scroll-preserve-links) and the page restores
+  # it on load. This exercises the restore leg deterministically. It replaces an
+  # older "enter edit mode preserves scroll" scenario, whose premise the 680
+  # redesign invalidated (the Edit control is now top-anchored under the sticky
+  # header, so scrolling down then clicking it legitimately returns to the top).
+  Scenario: A saved scroll position is restored on load
     Given I am logged in as an admin user
-    And there is an assembly called "Scroll Edit Assembly" with a registration page
-    When I visit the read-only registration form view for "Scroll Edit Assembly"
-    And I scroll down the page
-    And I click the Edit button in the editor header
-    Then the editor should be in edit mode with the page still scrolled down
+    And there is an assembly called "Scroll Restore Assembly" with a registration page
+    When I open the read-only registration form view for "Scroll Restore Assembly" with a saved scroll of 400
+    Then the page should be scrolled down
 
   Scenario: Cancelling with unsaved changes asks for confirmation
     Given I am logged in as an admin user

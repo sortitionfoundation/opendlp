@@ -13,14 +13,6 @@ Feature: Backoffice Assembly Management
     Then I should see the assembly details page
     And I should see "Climate Assembly" as the page heading
 
-  Scenario: Assembly details page displays breadcrumbs
-    Given I am logged in as an admin user
-    And there is an assembly called "Climate Assembly"
-    When I visit the assembly details page for "Climate Assembly"
-    Then I should see the breadcrumbs
-    And the breadcrumbs should contain "Dashboard"
-    And the breadcrumbs should contain "Climate Assembly"
-
   Scenario: Assembly details page displays assembly information
     Given I am logged in as an admin user
     And there is an assembly called "Climate Assembly" with question "How should we address climate change?"
@@ -47,15 +39,6 @@ Feature: Backoffice Assembly Management
     And I click the "Edit Assembly" button
     Then I should see the edit assembly page
     And I should see "Edit Assembly" as the page heading
-
-  Scenario: Edit assembly page displays breadcrumbs
-    Given I am logged in as an admin user
-    And there is an assembly called "Climate Assembly"
-    When I visit the edit assembly page for "Climate Assembly"
-    Then I should see the breadcrumbs
-    And the breadcrumbs should contain "Dashboard"
-    And the breadcrumbs should contain "Climate Assembly"
-    And the breadcrumbs should contain "Edit"
 
   Scenario: Edit assembly page displays form fields
     Given I am logged in as an admin user
@@ -98,13 +81,6 @@ Feature: Backoffice Assembly Management
     And I click the "Create New Assembly" button
     Then I should see the create assembly page
     And I should see "Create Assembly" as the page heading
-
-  Scenario: Create assembly page displays breadcrumbs
-    Given I am logged in as an admin user
-    When I visit the create assembly page
-    Then I should see the breadcrumbs
-    And the breadcrumbs should contain "Dashboard"
-    And the breadcrumbs should contain "Create Assembly"
 
   Scenario: Create assembly page displays form fields
     Given I am logged in as an admin user

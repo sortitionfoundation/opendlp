@@ -556,30 +556,34 @@ def submitting_preview_form_does_nothing(page: Page):
     assert "section=preview" in page.url
 
 
-@when(parsers.parse('I visit the read-only registration form view for "{title}"'))
-def visit_registration_form_view(page: Page, title: str, test_database):
-    """Open the registration form step in its default read-only mode."""
+def _wait_until_scrolled(page: Page, timeout_ms: int = 5000) -> None:
+    """Poll window.scrollY (via CDP evaluate) until it is greater than 0.
+
+    We deliberately avoid page.wait_for_function here: its string predicate is
+    compiled with eval in the page's own context, which our strict-dynamic CSP
+    (no 'unsafe-eval') rejects. page.evaluate runs in Playwright's utility world,
+    so it is not subject to the page CSP.
+    """
+    for _ in range(max(1, timeout_ms // 100)):
+        if page.evaluate("window.scrollY") > 0:
+            return
+        page.wait_for_timeout(100)
+    raise AssertionError("window did not scroll (scrollY stayed 0)")
+
+
+@when(parsers.parse('I open the read-only registration form view for "{title}" with a saved scroll of {pos:d}'))
+def visit_registration_form_view_with_scroll(page: Page, title: str, pos: int, test_database):
+    """Open the read-only registration view with a ?scroll= param, exercising the
+    DOMContentLoaded scroll-restore leg of scroll preservation (the leg that
+    x-preserve-scroll-on-submit / x-scroll-preserve-links append on navigation)."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form")
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form&scroll={pos}")
 
 
-@when("I scroll down the page")
-def scroll_down_the_page(page: Page):
-    page.evaluate("window.scrollTo(0, 400)")
-    page.wait_for_function("window.scrollY > 0")
-
-
-@when("I click the Edit button in the editor header")
-def click_editor_edit(page: Page):
-    """Edit renders as a link-button in the editor card header."""
-    page.get_by_role("button", name="Edit", exact=True).click()
-
-
-@then("the editor should be in edit mode with the page still scrolled down")
-def edit_mode_with_scroll_preserved(page: Page):
-    """x-scroll-preserve-links carries the scroll position across the Edit reload."""
-    page.wait_for_url(lambda url: "edit=1" in url, timeout=PLAYWRIGHT_TIMEOUT)
-    page.wait_for_function("window.scrollY > 0", timeout=PLAYWRIGHT_TIMEOUT)
+@then("the page should be scrolled down")
+def page_is_scrolled_down(page: Page):
+    """The saved scroll position was restored on load (scrollY > 0)."""
+    _wait_until_scrolled(page)
 
 
 @then("the wizard Next button should be disabled")
@@ -723,16 +727,6 @@ def footer_has_sortition_link(page: Page):
     expect(sf_link).to_have_attribute("target", "_blank")
 
 
-@then("the footer should contain User Data Agreement link")
-def footer_has_user_data_agreement_link(page: Page):
-    """Verify the footer contains a User Data Agreement link pointing at the external help site."""
-    footer = page.locator("footer")
-    uda_link = footer.locator("a", has_text="User Data Agreement")
-    expect(uda_link).to_be_visible()
-    expect(uda_link).to_have_attribute("href", re.compile(r"^https?://.*data-agreement"))
-    expect(uda_link).to_have_attribute("target", "_blank")
-
-
 @then("the footer should display the version")
 def footer_has_version(page: Page):
     """Verify the footer displays the OpenDLP version."""
@@ -788,20 +782,6 @@ def see_page_heading(page: Page, title: str):
     """Verify the page heading contains the expected title."""
     heading = page.locator("h1")
     expect(heading).to_contain_text(title)
-
-
-@then("I should see the breadcrumbs")
-def see_breadcrumbs(page: Page):
-    """Verify the breadcrumbs navigation is visible."""
-    breadcrumbs = page.locator("nav[aria-label='Breadcrumb']")
-    expect(breadcrumbs).to_be_visible()
-
-
-@then(parsers.parse('the breadcrumbs should contain "{text}"'))
-def breadcrumbs_contain_text(page: Page, text: str):
-    """Verify the breadcrumbs contain specific text."""
-    breadcrumbs = page.locator("nav[aria-label='Breadcrumb']")
-    expect(breadcrumbs).to_contain_text(text)
 
 
 @then("I should see the assembly question section")

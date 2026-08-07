@@ -1,36 +1,55 @@
 {#
 ABOUTME: Base page template for backoffice with standard layout elements
-ABOUTME: Provides navigation, flash messages, breadcrumbs slot, content slot, and footer
+ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot, and footer
 #}
 {% extends "backoffice/base.html" %}
 {% from "backoffice/components/navigation.html" import navigation %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/floating_alerts.html" import floating_alerts %}
 {% from "backoffice/components/footer.html" import footer with context %}
+{% from "backoffice/components/_nav_icons.html" import icon_user, icon_switch, icon_data_agreement, icon_logout %}
 
 {% block body %}
+    {# Avatar initials: first+last initial, falling back to the email's first letter.
+       Derived at render time only — never logged (see docs/personal-data.md). #}
+    {% set _first = current_user.first_name[0] if current_user.first_name else '' %}
+    {% set _last = current_user.last_name[0] if current_user.last_name else '' %}
+    {% set account_initials = (_first ~ _last) | upper %}
+    {% if not account_initials %}{% set account_initials = current_user.email[0] | upper %}{% endif %}
+    {% set _is_site_admin = current_user.global_role.value in ['admin', 'global-organiser'] %}
+
     <div class="min-h-screen flex flex-col">
-        {{ navigation(
-        logo_href=url_for('backoffice.dashboard'),
-        nav_items=[
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": _("Site Admin"), "href": url_for('admin.index'), "isVisible": current_user.global_role.value in ['admin', 'global-organiser']},
-        {"label": _("Sortition Lab"), "href": "https://www.sortitionfoundation.org/lab", "target": "_blank"},
-        {"label": _("Help"), "href": help_site_home, "target": "_blank"}
-        ],
-        account_items=[
-        {"label": _("My Account"), "href": url_for('profile.view')}
-        ],
-        cta_text=_("Sign out"),
-        cta_href=url_for('auth.logout')
-        ) }}
+        {# Sticky chrome: the top bar and (where present) the page header + tabs
+           stay pinned while page content scrolls beneath them. The header uses the
+           page background so the sticky page-header slot is opaque. #}
+        <header class="sticky top-0 z-40" style="background-color: var(--color-bg-secondary);">
+            {# "My account" and "Switch to site admin" are old-design pages; their
+               target="new" opens both in one shared tab rather than stacking tabs. #}
+            {{ navigation(
+            logo_href=url_for('backoffice.dashboard'),
+            help_href=knowledge_hub_url,
+            help_label=_("Help (knowledge hub)"),
+            account_initials=account_initials,
+            account_label=current_user.display_name,
+            account_items=[
+            {"label": _("My account"), "href": url_for('profile.view'), "icon": icon_user(), "target": "new"},
+            {"label": _("Switch to site admin"), "href": url_for('admin.index'), "icon": icon_switch(), "target": "new", "isVisible": _is_site_admin},
+            {"divider": true, "isVisible": _is_site_admin},
+            {"label": _("User Data Agreement"), "href": help_site_data_agreement, "icon": icon_data_agreement(), "target": "_blank", "rel": "noopener"},
+            {"divider": true},
+            {"label": _("Sign out"), "href": url_for('auth.logout'), "icon": icon_logout()}
+            ]
+            ) }}
+
+            {% block page_header %}{% endblock %}
+        </header>
 
         <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full">
-            {% block breadcrumb_section %}{% endblock %}
-
             {% block page_content %}{% endblock %}
         </main>
 
+        {# Flash messages: fixed top-centre overlay. Its z-index (#floating-alerts,
+           45) is defined and documented in main.css — above the sticky header
+           (z-40), below modal dialogs (z-50). #}
         {{ floating_alerts() }}
 
         {{ footer() }}

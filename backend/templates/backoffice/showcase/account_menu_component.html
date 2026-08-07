@@ -1,24 +1,22 @@
 {#
-ABOUTME: Showcase section for navigation component
-ABOUTME: Displays the top bar with logo, help icon, and account dropdown
+ABOUTME: Showcase section for the account menu component
+ABOUTME: Displays the avatar-triggered account dropdown with icon rows and dividers
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
-{% from "backoffice/components/navigation.html" import navigation %}
+{% from "backoffice/components/account_menu.html" import account_menu %}
 {% from "backoffice/components/_nav_icons.html" import icon_user, icon_switch, icon_data_agreement, icon_logout %}
 
-{% macro navigation_section() %}
+{% macro account_menu_section() %}
     {% call showcase_section() %}
-        {{ showcase_title("Navigation Component") }}
-        {{ showcase_description("Top navigation bar: logo on the left; a help icon (links to the knowledge hub) and an account dropdown on the right. Account actions live inside the dropdown.") }}
+        {{ showcase_title("Account Menu") }}
+        {{ showcase_description("Avatar + chevron trigger opening a dropdown of account links. Items support leading icons, dividers, role gating (isVisible) and new-tab attributes. Escape or click-outside closes it.") }}
 
-        {% call showcase_example('{% from "backoffice/components/navigation.html" import navigation %}
+        {% call showcase_example('{% from "backoffice/components/account_menu.html" import account_menu %}
 
-            {{ navigation(
-            logo_href="/backoffice",
-            help_href="https://democraticlottery.org/knowledge-hub",
-            account_initials="AS",
-            account_label="Ada Smith",
-            account_items=[
+            {{ account_menu(
+            initials="AS",
+            label="Ada Smith",
+            items=[
             {"label": "My account", "href": "/account", "icon": icon_user()},
             {"label": "Switch to site admin", "href": "/admin", "icon": icon_switch(), "target": "_blank", "rel": "noopener"},
             {"divider": true},
@@ -27,13 +25,11 @@ ABOUTME: Displays the top bar with logo, help icon, and account dropdown
             {"label": "Sign out", "href": "/logout", "icon": icon_logout()}
             ]
             ) }}') %}
-            <div class="rounded-lg overflow-hidden shadow-md" style="border: 1px solid var(--color-borders-dividers);">
-                {{ navigation(
-                logo_href="#",
-                help_href="#",
-                account_initials="AS",
-                account_label="Ada Smith",
-                account_items=[
+            <div class="flex justify-end p-4" style="min-height: 18rem;">
+                {{ account_menu(
+                initials="AS",
+                label="Ada Smith",
+                items=[
                 {"label": "My account", "href": "#", "icon": icon_user()},
                 {"label": "Switch to site admin", "href": "#", "icon": icon_switch(), "target": "_blank", "rel": "noopener"},
                 {"divider": true},
@@ -49,7 +45,7 @@ ABOUTME: Displays the top bar with logo, help icon, and account dropdown
         "--color-tables-cards",
         "--color-borders-dividers",
         "--color-body-text",
-        "--color-navigation-bars",
+        "--color-secondary-text",
         ".menu",
         ".menu-item"
         ]) }}

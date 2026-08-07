@@ -3,21 +3,11 @@ ABOUTME: Interactive service layer documentation page for CSV upload services
 ABOUTME: Provides testing console with code references, sample data, and execution
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/card.html" import card, card_body, card_footer %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/tabs.html" import tabs %}
 {% block title %}{{ _("Service Layer Documentation") }}{% endblock %}
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
-        {"label": _("Developer Tools"), "href": url_for('dev.dev_dashboard')},
-        {"label": _("Service Docs")}
-        ]) }}
-    </div>
-{% endblock %}
 {% block page_content %}
     {# Main Alpine.js controller for the entire page #}
     <div x-data="serviceDocsController()" x-cloak>

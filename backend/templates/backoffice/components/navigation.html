@@ -22,29 +22,41 @@ ABOUTME: Horizontal navigation bar with logo, nav links, and account actions
     </svg>
 {% endmacro %}
 
-{% macro navigation(logo_href="#", nav_items=[], account_items=[], cta_text="", cta_href="#") %}
-    <section class="w-full px-8" style="background-color: var(--color-tables-cards);">
-        <div class="container flex flex-col flex-wrap items-center justify-between py-5 mx-auto md:flex-row max-w-screen-2xl">
-            <div class="relative flex flex-col md:flex-row">
-                <a href="{{ logo_href }}" class="flex items-center mb-5 lg:w-auto lg:items-center lg:justify-center md:mb-0">
-                    {{ sortition_logo() }}
-                </a>
-                {% if nav_items %}
-                    <nav class="flex flex-wrap items-center mb-5 text-base md:mb-0 md:pl-8 md:ml-8 md:border-l" style="border-color: var(--color-borders-dividers);">
-                        {% for item in nav_items %}
-                            {% if item.isVisible is not defined or item.isVisible %}
-                                <a href="{{ item.href }}"{% for key, value in item.items() if key not in ['label', 'href', 'isVisible'] %} {{ key }}="{{ value }}"{% endfor %} class="mr-5 text-body-md transition duration-150 ease-in-out hover:opacity-80" style="color: var(--color-body-text);">{{ item.label }}</a>
-                            {% endif %}
-                        {% endfor %}
-                    </nav>
+{% from "backoffice/components/_nav_icons.html" import icon_question_circle %}
+{% from "backoffice/components/account_menu.html" import account_menu %}
+
+{% macro navigation(logo_href="#", help_href="", help_label="", account_items=None, account_initials="", account_label="") %}
+    {#
+    Top navigation bar: logo on the left; a help icon and an account dropdown on
+    the right. The old centre nav links and the standalone "Sign out" CTA have
+    been retired — account actions now live inside the account menu.
+
+    Args:
+        logo_href: Where the logo links to (typically the dashboard).
+        help_href: URL for the help icon (opens in a new tab). Hidden if empty.
+        help_label: Accessible label for the help icon (default "Help").
+        account_items: List of account-menu item dicts (see account_menu macro).
+        account_initials: Initials shown in the account avatar (e.g. "AS").
+        account_label: Accessible name for the account trigger (display name).
+    #}
+    <section class="w-full px-8" style="background-color: var(--color-tables-cards); border-bottom: 1px solid var(--color-borders-dividers);">
+        <div class="flex items-center justify-between gap-4 py-3 mx-auto max-w-screen-2xl">
+            <a href="{{ logo_href }}" class="flex items-center shrink-0 transition-opacity hover:opacity-80">
+                {{ sortition_logo() }}
+            </a>
+            <div class="inline-flex items-center gap-4">
+                {% if help_href %}
+                    <a href="{{ help_href }}"
+                       target="_blank"
+                       rel="noopener"
+                       class="inline-flex items-center justify-center w-9 h-9 rounded-md transition-opacity hover:opacity-80"
+                       style="color: var(--color-body-text);"
+                       aria-label="{{ help_label if help_label else _('Help') }}">
+                        {{ icon_question_circle(classes="w-6 h-6") }}
+                    </a>
                 {% endif %}
-            </div>
-            <div class="inline-flex items-center ml-5 space-x-6 lg:justify-end">
-                {% for item in account_items %}
-                    <a href="{{ item.href }}" class="text-body-md transition duration-150 ease-in-out hover:opacity-80" style="color: var(--color-body-text);">{{ item.label }}</a>
-                {% endfor %}
-                {% if cta_text %}
-                    <a href="{{ cta_href }}" class="inline-flex items-center justify-center px-4 py-2 text-button-lg rounded-md shadow-sm transition duration-150 ease-in-out hover:opacity-90" style="background-color: var(--color-primary-action); color: var(--color-page-background);">{{ cta_text }}</a>
+                {% if account_items %}
+                    {{ account_menu(items=account_items, initials=account_initials, label=account_label) }}
                 {% endif %}
             </div>
         </div>

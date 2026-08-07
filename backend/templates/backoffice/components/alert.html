@@ -3,7 +3,7 @@ ABOUTME: Alert/flash message component macro for backoffice design system
 ABOUTME: Supports success, warning, error, info variants with semantic styling
 #}
 
-{% macro alert(message="", variant="info", dismissible=false, id="", use_caller=false, floating=false) %}
+{% macro alert(message="", variant="info", dismissible=false, id="", use_caller=false, floating=false, auto_dismiss_ms=0) %}
     {#
     Alert component for displaying messages/notifications.
 
@@ -14,6 +14,8 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
         id: Optional id attribute
         use_caller: Boolean to use caller block for HTML content (default: false)
         floating: Boolean to remove bottom margin (for floating alerts container)
+        auto_dismiss_ms: When > 0 (and dismissible), the alert hides itself after
+            this many milliseconds, pausing while hovered. 0 = stays until closed.
 
     Usage:
         alert("Changes saved successfully", variant="success")
@@ -59,7 +61,7 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
 
     <div
         {% if id %}id="{{ id }}"{% endif %}
-        {% if dismissible %}x-data="{ show: true }" x-show="show" x-transition{% endif %}
+        {% if dismissible %}{% if auto_dismiss_ms and auto_dismiss_ms > 0 %}x-data="autoDismissAlert({ duration: {{ auto_dismiss_ms }} })" @mouseenter="pause()" @mouseleave="resume()"{% else %}x-data="{ show: true }"{% endif %} x-show="show" x-transition{% endif %}
         class="{{ 'mb-6 ' if not floating else '' }}rounded-lg p-4 flex items-center gap-3"
         style="background-color: {{ styles.bg }}; border: 1px solid {{ styles.border }};"
         role="alert"

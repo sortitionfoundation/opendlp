@@ -3,21 +3,9 @@ ABOUTME: Confirmation page for a CSV upload that would change the respondent fie
 ABOUTME: Lists added / absent columns and id-column changes; user confirms or cancels
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/button.html" import button %}
 
 {% block title %}{{ _("Confirm upload") }} - {{ assembly.title }}{% endblock %}
-
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Data"), "href": url_for('backoffice.view_assembly_data', assembly_id=assembly.id, source='csv')},
-        {"label": _("Confirm upload")}
-        ]) }}
-    </div>
-{% endblock %}
 
 {% block page_content %}
     <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Confirm CSV upload") }}</h1>
