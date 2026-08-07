@@ -507,6 +507,31 @@ class TestBackofficeCsvUpload:
             "error so the user can see it. Found: " + repr(details_tags)
         )
 
+    def test_targets_csv_multiline_error_renders_line_breaks(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """Multi-line import errors must sit in a pre-line element.
+
+        The parse failure for bad headers is one message with embedded
+        newlines ("Did not find required column name ..." per column); without
+        white-space: pre-line the browser collapses them to spaces.
+        """
+        csv_content = "wrong,headers,here\nfoo,bar,baz"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
+            data={"csv_file": (BytesIO(csv_content.encode()), "bad.csv")},
+            content_type="multipart/form-data",
+            follow_redirects=False,
+        )
+
+        html = response.data.decode()
+        error_items = re.findall(r"<li\b[^>]*>[^<]*CSV import failed", html)
+        assert error_items, "Expected the import error inside an <li> in the error summary"
+        assert all("pre-line" in tag for tag in error_items), (
+            "Error <li> must have white-space: pre-line so newlines render as line breaks. Found: " + repr(error_items)
+        )
+
 
 class TestBackofficeCsvDelete:
     """Test CSV delete functionality in backoffice."""

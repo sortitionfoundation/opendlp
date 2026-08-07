@@ -177,7 +177,10 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
                             <ul class="list-disc pl-5">
                                 {% for field_name, errors in form.errors.items() %}
                                     {% for error in errors %}
-                                        <li class="text-body-md" style="color: var(--color-error-600);">{{ error }}</li>
+                                        {# pre-line renders the newlines in multi-line errors (e.g. CSV parse failures) #}
+                                        <li class="text-body-md"
+                                            style="color: var(--color-error-600);
+                                                   white-space: pre-line">{{ error }}</li>
                                     {% endfor %}
                                 {% endfor %}
                             </ul>
