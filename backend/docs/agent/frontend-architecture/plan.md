@@ -168,7 +168,23 @@ This is more machinery than "just Vitest," but it's the piece that actually answ
 
 ---
 
-## 5. JS file organisation and tooling
+## 5. JS file organisation and tooling — ✅ TOOLING DONE (Phase 1b)
+
+The tooling half is implemented; the file reorganisation (`components/`, `lib/`, `init/`) happens with the §9 migrations, not before there is anything to put in them.
+
+**Implemented:** Vitest (jsdom) under `just test-js`, which `test-html`/`test-xml`/`test-nobdd` depend on; ESLint (flat config, `eslint.config.mjs`) and Prettier as `- repo: local` prek hooks in both pre-commit configs; `djjs` scoped to `^backend/templates/`. Configs are `.mjs` because `package.json` has no `"type": "module"` and `tailwind.config.js` is CommonJS, so a `.js` config would be loaded as CJS.
+
+**Decisions taken where the plan left room:**
+
+- **Test placement: `tests/js/`, not colocated.** The plan said scaffold colocated pending the team discussion, but colocated collides with the hard constraint it also names — everything under `static/` is web-served, so `static/js/foo.test.js` would be publicly fetchable unless Flask's static handling learned to exclude it. `tests/js/` sidesteps that and matches where every other test in the repo lives. **Still reversible** — it is the `include` glob in `vitest.config.mjs` — but colocating would first need the static-serving exclusion built.
+- **Classic scripts are tested as they ship.** Files under `static/js/` are loaded as plain `<script src>` and cannot use `export` without changing how they load. `tests/js/support/load-global-script.js` evaluates one and returns the named declarations, so `url-utils.js` is now covered (25 tests) without touching how it is served.
+- **Prek hooks use `language: system` + `npm --prefix backend run …` with `pass_filenames: false`.** Verified working with prek 0.4.12, so the wrapper-script fallback wasn't needed.
+- **`no-unused-vars` is configured with `caughtErrors: "none"` for `static/**`.** Several handlers swallow an exception deliberately; whether that is justified is a review question (and CLAUDE.md already requires a comment), not something the linter can judge.
+
+**Findings — two real bugs the linter surfaced on its first run.** Neither is fixed, because Phase 1b is explicitly tooling-only:
+
+1. **`urlSetParam` is defined twice, with different behaviour.** `static/js/url-utils.js:31` and `static/backoffice/js/alpine-components.js:19` both declare a global of that name, and `templates/backoffice/base.html` loads both — so on every backoffice page the second silently overwrites the first. They are not equivalent: the url-utils version has a try/catch fallback and returns an empty input unchanged, the backoffice version resolves against `window.location.origin` and would throw on an empty URL. Whichever page you are on, half the callers are getting an implementation they were not written against. This is exactly the mess §9's move to `lib/` modules exists to end, and it should be resolved there rather than by picking a winner now.
+2. **`../.pre-commit-config-ci.yaml` was already missing the `no-strftime-in-templates` hook** — a pre-existing drift between the two configs, predating this work, which means that rule has never been enforced in CI. The header comment warned this would happen. Left alone as an unrelated fix; worth a separate one-line commit.
 
 Following §5 of `vanilla-alpine-json.md` directly:
 
@@ -249,7 +265,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `st
 
 1. **Phase 0 — decisions.** Mostly done (§11). Three items still with the team; none of them block Phase 1.
 2. **Phase 1a — vendoring. ✅ DONE.** Vendor Alpine/htmx/govuk-frontend (§2), including the `build` npm script + `just build-all` + `.gitignore` wiring and the fresh-checkout/Docker acceptance check. Update `docs/frontend_security.md` and `docs/frontend_build.md`. Self-contained and shippable on its own.
-3. **Phase 1b — JS tooling.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and add a trivial first test to prove the CI wiring end to end. Depends on the deferred test-placement answer only for the final `include` glob — scaffold with the colocated default and adjust if the team says otherwise.
+3. **Phase 1b — JS tooling. ✅ DONE.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and a first test proving the wiring end to end. Landed with `tests/js/` rather than colocated — see §5 for why, and it remains a one-line change.
 4. **Phase 1c — error-handling convention.** Add `user_msg()` to the exception hierarchy (generic-string default) and switch the two `str(e)` call sites in `backoffice_registration.py` (own commit). Then add the `_dev_error()` helper to `dev.py` and narrow the five handlers onto it (§3). Write the convention up in the docs (§6) and add the checks to `sf-code-review` (§7).
 5. **Phase 2 — drift-prevention machinery.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
 6. **Phase 3 — pilot migration.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup.
