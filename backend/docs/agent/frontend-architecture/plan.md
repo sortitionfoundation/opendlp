@@ -1,11 +1,15 @@
 # Frontend interactivity: implementation plan
 
-**Status:** reviewed by Chewie — most decisions made, a few deferred pending a team discussion. Still not implemented.
+**Status:** Phases 1a, 1b and 1c are implemented (§2, §5, §3, §6, §7). Phase 2 onwards is not started; three questions are still with the team.
 **Decision this implements:** [vanilla-alpine-json.md](vanilla-alpine-json.md) — vanilla JS + Alpine.js (CSP build) + JSON routes, organised into real files, tested, for internal/backoffice interactivity. Public pages stay server-rendered, no-JS-required.
 
-This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 now records what was decided and what is still parked pending a team discussion. **Nothing in here has been executed.** Where I found something broken or inconsistent while reviewing the code for this plan, I've noted it under "Findings" rather than fixing it, since that wasn't the task.
+This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 records what was decided and what is still parked pending a team discussion.
 
-**Blocked on team discussion (do not start these):** the dev-blueprint question (§8), Vitest test-file placement (§5), and whether anything in `service_docs.html`/`dev.py` is load-bearing (§10 Phase 5). Everything else is cleared to proceed.
+**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
+
+**Not started:** Phase 2 onwards — the API-fixture machinery (§4) and the inline-script migrations (§9).
+
+**Blocked on team discussion (do not start these):** the dev-blueprint question (§8), Vitest test-file placement (§5 — implemented as `tests/js/`, reversible), and whether anything in `service_docs.html`/`dev.py` is load-bearing (§10 Phase 5).
 
 ---
 
@@ -99,9 +103,22 @@ Approved. All three architecture docs agree on this independent of which approac
 
 ---
 
-## 3. JSON error-handling convention
+## 3. JSON error-handling convention — ✅ DONE (Phase 1c)
 
-Write this down as an explicit rule in `docs/frontend_security.md` (or a new `docs/agent/json_api_conventions.md` — see §6) and fix the one place it's currently violated.
+Written up as `docs/agent/json_api_conventions.md`, summarised in `docs/frontend_security.md` and `AGENTS.md`, and applied.
+
+**Implemented:**
+
+- `OpenDLPError.user_msg()` returns a generic translated string; a new `CuratedMessage` mixin makes it return `str(self)`, and 13 exception classes opt in (`UserAlreadyExists`, `InvalidCredentials`, `InvalidInvite`, `InsufficientPermissions`, `InvalidResetToken`, `EmailNotConfirmed`, `InvalidConfirmationToken`, `RateLimitExceeded`, `EmailTemplateInvalid`, `ImageQuotaExceeded`, `DocumentQuotaExceeded`, `OAuthError` — and `OAuthStateError` by inheritance). A mixin rather than 13 hand-written methods, so opting in is one word on the class line and visible at a glance.
+- Deliberately **not** opted in: `PasswordTooWeak`, `InvalidSelection`, and the whole `NotFoundError` tree. Their messages carry ids and internal detail (`f"Registration page {page.id} has no HTML source"`) or, for `InvalidSelection`, are sometimes `str(e)` from the sortition library. This is the distinction doing real work.
+- `RegistrationPageNotReady` defines `user_msg()` directly — the domain must not import the service layer, so it implements the protocol without the mixin, and callers duck-type on the method.
+- The two `str(e)` call sites in `backoffice_registration.py` now use `.user_msg()`.
+- `_dev_error(exc)` added to `dev.py` as a module-local helper, per §11 row 11. It duck-types on `user_msg` and falls back to the generic message, so an unexpected `ValueError` can't leak either.
+- The five handlers narrowed to `except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError)`, each now logging via `structlog` before returning. `_handle_submit_registration` lost its `except` entirely: that service reports validation problems in its result rather than raising, so it had nothing specific to catch and anything it does raise is genuinely unexpected.
+- Tests: `tests/unit/test_exception_user_msg.py` (28) pins down which exceptions expose their message and that the uncurated ones don't; `tests/component/test_dev_registration_page_handlers.py` (17) covers all five previously untested handlers, including that an unexpected `RuntimeError` still propagates to the route handler rather than being swallowed.
+- `just translate-regen` run for the two new strings.
+
+**Deviation worth noting:** the plan said this "wants its own commit" separate from the `dev.py` changes. It landed as one commit — the `dev.py` handlers are the only consumer of `_dev_error`, and `_dev_error` only makes sense given `user_msg()`, so splitting would have left a commit that adds a helper nothing calls.
 
 **The rule:**
 
@@ -199,7 +216,10 @@ Following §5 of `vanilla-alpine-json.md` directly:
 
 ---
 
-## 6. Documentation updates
+## 6. Documentation updates — ✅ DONE for phases 1a–1c
+
+Everything below is done except the parts that describe work not yet started (§4's API fixtures, which land in Phase 2). `docs/agent/frontend_js_testing.md` and `docs/agent/json_api_conventions.md` both exist; `AGENTS.md` gained a "JSON responses" section under Development Patterns, the `just test-js` command, and index entries for both new docs.
+
 
 - **`docs/frontend_security.md`**: replace the CDN Alpine/htmx snippets with vendored-script examples (§2); add the JSON error-handling convention (§3) either inline or as a link to a new doc.
 - **`docs/frontend_build.md`**: document the vendor copy step (§2) alongside the existing three tools; note Vitest/eslint as a fourth and fifth tool once approved (§5).
@@ -212,9 +232,11 @@ Note for future sessions: several docs in this repo say "CLAUDE.md" when they me
 
 ---
 
-## 7. `sf-code-review` skill updates
+## 7. `sf-code-review` skill updates — ✅ DONE (Phase 1c)
 
-Add to `.claude/skills/sf-code-review/SKILL.md`'s "Things to Check" list, once the conventions exist:
+Six checks added to `.claude/skills/sf-code-review/SKILL.md`'s "Things to Check" list, covering the items below plus the `CuratedMessage` opt-in and the both-places build wiring from §2.
+
+Original list, for reference:
 
 - If JS files changed under `static/js/` or `static/backoffice/js/`: is logic in `Alpine.data()` components, not inline in templates? Does it have a Vitest test if it contains non-trivial logic (debounce, state transitions, URL building)?
 - If a JSON-returning route changed shape: was the JSON Schema updated, and did the fixture regenerate (no stale fixture diff)? Flag a hand-typed literal API response in a `.test.js` file as a defect in itself, per the drift-prevention invariant.
@@ -266,7 +288,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `st
 1. **Phase 0 — decisions.** Mostly done (§11). Three items still with the team; none of them block Phase 1.
 2. **Phase 1a — vendoring. ✅ DONE.** Vendor Alpine/htmx/govuk-frontend (§2), including the `build` npm script + `just build-all` + `.gitignore` wiring and the fresh-checkout/Docker acceptance check. Update `docs/frontend_security.md` and `docs/frontend_build.md`. Self-contained and shippable on its own.
 3. **Phase 1b — JS tooling. ✅ DONE.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and a first test proving the wiring end to end. Landed with `tests/js/` rather than colocated — see §5 for why, and it remains a one-line change.
-4. **Phase 1c — error-handling convention.** Add `user_msg()` to the exception hierarchy (generic-string default) and switch the two `str(e)` call sites in `backoffice_registration.py` (own commit). Then add the `_dev_error()` helper to `dev.py` and narrow the five handlers onto it (§3). Write the convention up in the docs (§6) and add the checks to `sf-code-review` (§7).
+4. **Phase 1c — error-handling convention. ✅ DONE.** `user_msg()` on the exception hierarchy with a generic default, the `CuratedMessage` opt-in mixin, both `backoffice_registration.py` call sites switched, `_dev_error()` in `dev.py` with the five handlers narrowed onto it (§3), the convention documented (§6) and the checks added to `sf-code-review` (§7).
 5. **Phase 2 — drift-prevention machinery.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
 6. **Phase 3 — pilot migration.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup.
 7. **Phase 4 — production migration.** `assembly_registration.html` image/alt-text manager.
