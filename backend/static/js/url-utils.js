@@ -1,6 +1,8 @@
 // ABOUTME: Reusable utilities for URL query parameter manipulation
 // ABOUTME: Provides functions to add, set, remove, and build URL parameters safely
 
+/* exported urlSetParam, urlRemoveParam, urlGetParam, urlHasParam, urlSetParams, urlBuild */
+
 /**
  * URL Parameter Utilities
  *

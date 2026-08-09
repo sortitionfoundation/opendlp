@@ -69,6 +69,10 @@ just test-nobdd
 # which is
 uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
 
+# Run the JavaScript unit tests only (vitest, no browser - seconds)
+just test-js
+# the `just test` targets depend on this, so it runs first and fails fast
+
 # Watch tests on file changes
 just watch-tests
 
@@ -272,7 +276,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Postfix Email Configuration](docs/postfix_configuration.md) - SMTP relay setup for production
 - [Google Service Account Setup](docs/google_service_account.md) - Google Sheets integration credentials
 - [Frontend Security Guidelines](docs/frontend_security.md) - CSP compliance, JavaScript/Alpine.js/CSS patterns
-- [Frontend Build Pipeline](docs/frontend_build.md) - Sass/Tailwind/esbuild asset build and `just` targets
+- [Frontend Build Pipeline](docs/frontend_build.md) - Sass/Tailwind/esbuild/vendor asset build and `just` targets
 - [Project Specification](docs/spec.md) - Original project specification
 
 ### Agent-Specific Documentation
@@ -286,6 +290,7 @@ The `docs/agent/` folder contains documentation for AI agents. See [docs/agent/A
 - [Frontend Design System](docs/agent/frontend_design_system.md) - GOV.UK styling and build pipeline
 - [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
 - [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
+- [Frontend JS Testing](docs/agent/frontend_js_testing.md) - Vitest, ESLint/Prettier, and where JS tests live
 - [Migration Notes](docs/agent/migration_notes.md) - Bootstrap to GOV.UK conversion guide
 
 **IMPORTANT - Before creating or modifying UI components:**

@@ -33,6 +33,11 @@ def test_user_has_admin_role():
 
 **Purpose:** Verify that fake (in-memory) and SQL repository implementations behave identically for every repository method.
 
+> "Contract test" means only this in OpenDLP — fake-versus-SQL repository parity. It is not a
+> general term for any test that pins down an interface. The separate problem of keeping JSON
+> responses in step with the JavaScript that consumes them is handled by **API fixtures**, not
+> by anything in this directory.
+
 **Characteristics:**
 
 - Every test runs twice: once against the fake backend, once against the real SQL backend
@@ -309,9 +314,22 @@ just install-dev
 >
 > This ensures we explicitly test permission boundaries rather than accidentally bypassing them.
 
+## JavaScript Tests (`tests/js/`)
+
+First-party JavaScript is unit tested with Vitest in a jsdom environment. It is a separate
+runner from pytest, but not a separate workflow: `just test-js` runs it directly, and the
+`just test` targets depend on it, so it runs first and fails fast.
+
+See [agent/frontend_js_testing.md](agent/frontend_js_testing.md) for conventions — where
+tests live, how to test the classic global scripts under `static/js/`, and what ESLint does
+and does not cover.
+
 ## Running Tests
 
 ```bash
+# Run the JavaScript unit tests only (seconds)
+just test-js
+
 # Run non-BDD tests in parallel (default target)
 just test-nobdd  # uses pytest-xdist -n auto
 

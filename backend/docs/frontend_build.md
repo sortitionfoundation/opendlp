@@ -35,6 +35,19 @@ supply chain; it also means the tags need no SRI hash, since there is no third p
 Upgrading one of these libraries is therefore an `npm add` and a rebuild — there is no version
 number embedded in a template to keep in sync.
 
+## Testing and linting JavaScript
+
+npm also owns the JS test and lint tooling, which builds nothing but shares the same
+`node_modules`:
+
+| Tool     | npm script     | Reached through                 |
+| -------- | -------------- | ------------------------------- |
+| Vitest   | `test`         | `just test-js`, `just test`     |
+| ESLint   | `lint`         | `just check`, via a prek hook   |
+| Prettier | `format`       | `just check`, via a prek hook   |
+
+See [agent/frontend_js_testing.md](agent/frontend_js_testing.md) for the conventions.
+
 ## Built assets are never committed
 
 Every built artifact above is **gitignored** (the `dist/` rule, `static/css/application.css`, and

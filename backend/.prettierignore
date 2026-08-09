@@ -1,0 +1,10 @@
+node_modules/
+static/js/vendor/
+static/**/dist/
+static/css/
+htmlcov/
+.venv/
+
+# not part of the project - local context only
+thirdparty/
+scratchpad/

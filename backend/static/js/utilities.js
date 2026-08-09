@@ -1,6 +1,8 @@
 // ABOUTME: JavaScript utilities for form confirmations, clipboard, downloads, and print
 // ABOUTME: Provides event-driven handlers for common UI interactions without inline handlers
 
+/* global urlSetParam */
+
 // Handle select elements that navigate on change via data-navigate-base-url
 // Optionally preserves scroll position with data-navigate-preserve-scroll attribute
 // Note: Requires url-utils.js to be loaded before this file
@@ -171,8 +173,8 @@ function showInlineCopyFeedback(button) {
       if (closeBtn) {
         closeBtn.onclick = canClose
           ? function () {
-            window.location.href = closeUrl;
-          }
+              window.location.href = closeUrl;
+            }
           : null;
       }
 
@@ -181,8 +183,8 @@ function showInlineCopyFeedback(button) {
       if (backdrop) {
         backdrop.onclick = canClose
           ? function () {
-            window.location.href = closeUrl;
-          }
+              window.location.href = closeUrl;
+            }
           : null;
       }
     });

@@ -9,8 +9,13 @@ set dotenv-load
 # Test the code with pytest (HTML report)
 default: test-nobdd
 
+# Run the JavaScript unit tests (vitest, no browser - seconds, not minutes)
+test-js:
+  @echo "🚀 Testing JavaScript: Running vitest"
+  @npm run test
+
 # Test the code with pytest, headless BDD, HTML report (includes BDD subprocess coverage)
-test-html: build-all
+test-html: test-js build-all
   #!/usr/bin/env bash
   set -uo pipefail
   rm -f .coverage .coverage.bdd-*
@@ -24,7 +29,7 @@ test-html: build-all
   exit $PYTEST_EXIT
 
 # Test the code with pytest, headless BDD, XML report (includes BDD subprocess coverage)
-test-xml: build-all
+test-xml: test-js build-all
   #!/usr/bin/env bash
   set -uo pipefail
   rm -f .coverage .coverage.bdd-*
@@ -40,7 +45,7 @@ test-xml: build-all
 # Test the code with pytest, headless BDD, HTML report
 test: test-html
 
-test-nobdd:
+test-nobdd: test-js
   @echo "🚀 Testing code: Running pytest"
   uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
 

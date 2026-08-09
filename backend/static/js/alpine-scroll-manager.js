@@ -16,6 +16,8 @@
  * Note: Requires url-utils.js to be loaded before this file
  */
 
+/* global urlSetParam */
+
 // =============================================================================
 // Part 1: Global Scroll Restoration (runs before Alpine initializes)
 // =============================================================================

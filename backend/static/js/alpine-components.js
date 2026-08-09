@@ -3,7 +3,7 @@
 
 // Alpine.js component for conditional team fields in Google Sheets forms
 document.addEventListener("alpine:init", () => {
-    Alpine.data("teamSelector", (initialTeam) => ({
-        selectedTeam: initialTeam || "other",
-    }));
+  Alpine.data("teamSelector", (initialTeam) => ({
+    selectedTeam: initialTeam || "other",
+  }));
 });
