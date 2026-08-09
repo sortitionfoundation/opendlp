@@ -75,6 +75,14 @@ class RegistrationPageNotReady(Exception):
         self.problems = problems
         super().__init__("; ".join(problems))
 
+    def user_msg(self) -> str:
+        """The readiness problems, which are written to be read by an organiser.
+
+        Matches the service layer's CuratedMessage protocol. It cannot use that
+        mixin because the domain does not import from the service layer.
+        """
+        return str(self)
+
 
 @dataclass(frozen=True)
 class RegistrationPageActivity:

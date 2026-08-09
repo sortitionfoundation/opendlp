@@ -15,6 +15,7 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.domain.registration_document import PDF_FILE_EXTENSION, DocumentValidationError, RegistrationDocument
 from opendlp.domain.registration_image import IMAGE_FILE_EXTENSION, ImageValidationError, RegistrationImage
+from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldType,
@@ -112,6 +113,23 @@ def _is_safe_redirect_url(url: str) -> bool:
 dev_bp = Blueprint("dev", __name__)
 
 logger = structlog.get_logger(__name__)
+
+
+def _dev_error(exc: Exception) -> str:
+    """Error text for a dev-only JSON response: what is safe to show, plus where the rest is.
+
+    The full exception and traceback go to the Flask console via structlog, but
+    the developer is looking at the page, not the terminal - so say where to look
+    rather than leaving them at a dead end.
+
+    Deliberately duck-typed on ``user_msg``: it covers the service layer's
+    OpenDLPError tree and domain exceptions like RegistrationPageNotReady that
+    implement the same protocol without sharing a base class. Anything else -
+    a bare ValueError, say - falls back to the generic message, so no caller has
+    to reason about whether a given exception's str() is safe to show.
+    """
+    safe_message = exc.user_msg() if hasattr(exc, "user_msg") else _("Something went wrong. Please try again.")
+    return f"{safe_message} {_('(check the Flask console log for full error details)')}"
 
 
 # =============================================================================
@@ -712,13 +730,9 @@ def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[
                     "status": reg_page.status.value if reg_page.status else None,
                 },
             }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            # Catch RegistrationPageNotReady or other validation errors
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+        except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError) as e:
+            logger.warning("Registration page lifecycle call failed", error=str(e))
+            return {"status": "error", "error": _dev_error(e), "error_type": type(e).__name__}
 
 
 def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -739,12 +753,9 @@ def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dic
                     "status": reg_page.status.value if reg_page.status else None,
                 },
             }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+        except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError) as e:
+            logger.warning("Registration page lifecycle call failed", error=str(e))
+            return {"status": "error", "error": _dev_error(e), "error_type": type(e).__name__}
 
 
 def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -765,12 +776,9 @@ def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[st
                     "status": reg_page.status.value if reg_page.status else None,
                 },
             }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+        except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError) as e:
+            logger.warning("Registration page lifecycle call failed", error=str(e))
+            return {"status": "error", "error": _dev_error(e), "error_type": type(e).__name__}
 
 
 def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -791,12 +799,9 @@ def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
                     "status": reg_page.status.value if reg_page.status else None,
                 },
             }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+        except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError) as e:
+            logger.warning("Registration page lifecycle call failed", error=str(e))
+            return {"status": "error", "error": _dev_error(e), "error_type": type(e).__name__}
 
 
 def _handle_submit_registration(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -805,30 +810,30 @@ def _handle_submit_registration(uow: Any, params: dict[str, Any]) -> dict[str, A
     form_data = params.get("form_data", {})
     is_test = params.get("is_test", False)
 
+    # No except clause: this service reports validation problems in its result
+    # rather than raising, so anything it does raise is genuinely unexpected and
+    # belongs to the logs-and-generic-message handler in service_docs_execute.
     with uow:
-        try:
-            result = submit_registration_by_assembly_id(
-                uow=uow,
-                assembly_id=assembly_id,
-                form_data=form_data,
-                is_test=is_test,
-            )
-            return {
-                "status": "success" if result.is_valid else "validation_error",
-                "respondent": {
-                    "id": str(result.respondent.id),
-                    "external_id": result.respondent.external_id,
-                    "selection_status": result.respondent.selection_status.value,
-                    "attributes": result.respondent.attributes,
-                }
-                if result.respondent
-                else None,
-                "is_test": result.is_test,
-                "field_errors": result.field_errors,
-                "form_errors": result.form_errors,
+        result = submit_registration_by_assembly_id(
+            uow=uow,
+            assembly_id=assembly_id,
+            form_data=form_data,
+            is_test=is_test,
+        )
+        return {
+            "status": "success" if result.is_valid else "validation_error",
+            "respondent": {
+                "id": str(result.respondent.id),
+                "external_id": result.respondent.external_id,
+                "selection_status": result.respondent.selection_status.value,
+                "attributes": result.respondent.attributes,
             }
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+            if result.respondent
+            else None,
+            "is_test": result.is_test,
+            "field_errors": result.field_errors,
+            "form_errors": result.form_errors,
+        }
 
 
 def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:

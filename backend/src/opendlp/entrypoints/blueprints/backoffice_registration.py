@@ -808,7 +808,7 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except ImageValidationError as e:
         return jsonify({"error": e.message, "reason": e.reason}), 400
     except ImageQuotaExceeded as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": e.user_msg()}), 400
     except RegistrationPageNotFoundError:
         return jsonify({"error": _("Please create a registration page first from the Details tab.")}), 400
     except InsufficientPermissions:
@@ -905,7 +905,7 @@ def upload_registration_document(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except DocumentValidationError as e:
         return jsonify({"error": e.message, "reason": e.reason}), 400
     except DocumentQuotaExceeded as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": e.user_msg()}), 400
     except RegistrationPageNotFoundError:
         return jsonify({"error": _("Please create a registration page first from the Details tab.")}), 400
     except InsufficientPermissions:

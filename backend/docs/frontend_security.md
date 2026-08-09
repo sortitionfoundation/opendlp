@@ -156,6 +156,15 @@ document.addEventListener("alpine:init", () => {
 </div>
 ```
 
+## JSON responses
+
+Routes that return JSON to our own JavaScript follow a small set of rules — the response
+envelope, and how error strings are chosen so an exception's internal detail cannot reach the
+browser. See [agent/json_api_conventions.md](agent/json_api_conventions.md).
+
+The short version: **a JSON response body never contains `str(e)`.** It carries a literal
+`_("...")` you wrote, or `exc.user_msg()`.
+
 ## Styling
 
 ### CSS/SCSS (Preferred)

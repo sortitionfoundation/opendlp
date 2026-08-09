@@ -235,6 +235,19 @@ This approach maintains the separation between domain objects (plain Python) and
 - Role-based access control throughout
 - **Frontend:** Follow [Frontend Security Guidelines](docs/frontend_security.md) for CSP compliance
 
+### JSON responses
+
+- A JSON response body **never** contains `str(e)`. It carries either a literal
+  `_("...")` you wrote, or `exc.user_msg()` on an exception that opts in to
+  exposing its message via the `CuratedMessage` mixin.
+- `OpenDLPError.user_msg()` defaults to a generic message, not `str(self)` — an
+  exception message may carry internal detail, so the default assumes it does.
+- Catch narrowly; let unexpected exceptions reach the route's outer handler,
+  which logs the real error and returns a generic message.
+- `error=str(e)` in a **log** call is correct and wanted — the rule is about
+  response bodies.
+- See [docs/agent/json_api_conventions.md](docs/agent/json_api_conventions.md).
+
 ### Logging (PII / secrets)
 
 - Use `structlog.get_logger(__name__)` for all logging (services, adapters, and
@@ -291,6 +304,7 @@ The `docs/agent/` folder contains documentation for AI agents. See [docs/agent/A
 - [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
 - [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
 - [Frontend JS Testing](docs/agent/frontend_js_testing.md) - Vitest, ESLint/Prettier, and where JS tests live
+- [JSON API Conventions](docs/agent/json_api_conventions.md) - Response shape, and why a JSON body never contains `str(e)`
 - [Migration Notes](docs/agent/migration_notes.md) - Bootstrap to GOV.UK conversion guide
 
 **IMPORTANT - Before creating or modifying UI components:**
