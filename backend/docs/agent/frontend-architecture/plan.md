@@ -66,9 +66,17 @@ prettier and the existing `djjs` hook (djHTML's JS indenter) both reformat `.js`
 
 ---
 
-## 2. Vendor Alpine, htmx, and govuk-frontend off jsdelivr
+## 2. Vendor Alpine, htmx, and govuk-frontend off jsdelivr — ✅ DONE (Phase 1a)
 
 Approved. All three architecture docs agree on this independent of which approach won, and Chewie has confirmed the govuk-frontend version bump that falls out of it (see §11).
+
+**Implemented.** Deviations from the plan below, all minor:
+
+- `govuk-frontend` ships no minified bundle in the npm package — only `dist/govuk/all.bundle.js`. That is what we copy, so the vendored govuk-frontend is unminified where the CDN copy was minified (104 KB vs the CDN's smaller `.min.js`). Alpine and htmx both ship minified builds and we use those.
+- The old CDN tags carried `integrity=`/`crossorigin=` attributes; the vendored tags drop them, since SRI pins a third party we no longer have.
+- The jsdelivr entries in the CSP `script_src`/`style_src`/`font_src` allowlists (`flask_app.py:219-222`) were **left alone**, as §2.5 said they could be — they are inert under `strict-dynamic` and `style_src`/`font_src` were not in scope here.
+- Added `TestVendoredScripts` to `tests/unit/test_csp_nonce.py`: no CDN URL appears in a rendered page, the Alpine/htmx tags point at `static/js/vendor/`, and each vendored file is served. This is the regression net for the `sf-code-review` check in §7.
+- `docs/agent/frontend_design_system.md` also carried a stale CDN `<script>` example and was updated alongside the two docs §2.6 lists.
 
 **Plan:**
 
@@ -240,7 +248,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `st
 ## 10. Proposed phase sequencing
 
 1. **Phase 0 — decisions.** Mostly done (§11). Three items still with the team; none of them block Phase 1.
-2. **Phase 1a — vendoring.** Vendor Alpine/htmx/govuk-frontend (§2), including the `build` npm script + `just build-all` + `.gitignore` wiring and the fresh-checkout/Docker acceptance check. Update `docs/frontend_security.md` and `docs/frontend_build.md`. Self-contained and shippable on its own.
+2. **Phase 1a — vendoring. ✅ DONE.** Vendor Alpine/htmx/govuk-frontend (§2), including the `build` npm script + `just build-all` + `.gitignore` wiring and the fresh-checkout/Docker acceptance check. Update `docs/frontend_security.md` and `docs/frontend_build.md`. Self-contained and shippable on its own.
 3. **Phase 1b — JS tooling.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and add a trivial first test to prove the CI wiring end to end. Depends on the deferred test-placement answer only for the final `include` glob — scaffold with the colocated default and adjust if the team says otherwise.
 4. **Phase 1c — error-handling convention.** Add `user_msg()` to the exception hierarchy (generic-string default) and switch the two `str(e)` call sites in `backoffice_registration.py` (own commit). Then add the `_dev_error()` helper to `dev.py` and narrow the five handlers onto it (§3). Write the convention up in the docs (§6) and add the checks to `sf-code-review` (§7).
 5. **Phase 2 — drift-prevention machinery.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
