@@ -1,22 +1,44 @@
 # Frontend Build Pipeline
 
 OpenDLP's frontend assets are built from source by npm before the app can serve them. There is no
-single all-in-one bundler; instead three focused tools each own one kind of asset. All of them are
+single all-in-one bundler; instead a few focused tools each own one kind of asset. All of them are
 driven through `package.json` scripts and wrapped in `just` targets.
 
-## The three tools
+## The build steps
 
 | Tool           | Source                              | Output (built)                          | npm script          |
 | -------------- | ----------------------------------- | --------------------------------------- | ------------------- |
 | Dart Sass      | `src/scss/`                         | `static/css/application.css`            | `build:sass`        |
 | Tailwind CSS   | `static/backoffice/src/main.css`    | `static/backoffice/dist/main.css`       | `build:backoffice`  |
 | esbuild        | `static/backoffice/js/src/`         | `static/backoffice/js/dist/`            | `build:js`          |
+| vendor copy    | `node_modules/`                     | `static/js/vendor/`                     | `build:vendor`      |
 
-`npm run build` runs all three. Each tool also has a `watch:*` script for rebuilding on change.
+`npm run build` runs all of them. The first three also have a `watch:*` script for rebuilding on
+change; the vendor copy has none, because its sources only change when a dependency is upgraded.
+
+## Third-party JavaScript is vendored, not loaded from a CDN
+
+Alpine (CSP build), htmx and govuk-frontend are npm dependencies. `build:vendor` copies their
+prebuilt bundles out of `node_modules/` into `static/js/vendor/`:
+
+| npm package        | Copied from                                    | Served as                        |
+| ------------------ | ---------------------------------------------- | -------------------------------- |
+| `@alpinejs/csp`    | `dist/cdn.min.js`                              | `js/vendor/alpine-csp.js`        |
+| `htmx.org`         | `dist/htmx.min.js`                             | `js/vendor/htmx.js`              |
+| `govuk-frontend`   | `dist/govuk/all.bundle.js`                     | `js/vendor/govuk-frontend.js`    |
+
+They are already built, so nothing bundles or minifies them — the step is a plain copy. Templates
+load them like any other static file, with a `nonce` and `static_hashes()` cache busting. Serving
+them from `'self'` removes a third-party request from every page load and takes jsdelivr out of our
+supply chain; it also means the tags need no SRI hash, since there is no third party to pin.
+
+Upgrading one of these libraries is therefore an `npm add` and a rebuild — there is no version
+number embedded in a template to keep in sync.
 
 ## Built assets are never committed
 
-Every built artifact above is **gitignored** (the `dist/` rule and `static/css/application.css`).
+Every built artifact above is **gitignored** (the `dist/` rule, `static/css/application.css`, and
+`static/js/vendor/`).
 Built output is regenerated wherever the app is assembled:
 
 - **Local dev:** `just run` runs `just build-all` first; `just install` runs `npm run build`.
@@ -30,14 +52,20 @@ than a merge conflict — if a page looks unstyled or a JS enhancement doesn't r
 ## `just` targets
 
 ```bash
-just build-all        # CSS + JS (npm run build)
+just build-all        # CSS + JS + vendored JS
 just build-all-css    # GOV.UK + backoffice CSS
 just build-css        # GOV.UK CSS only
 just build-backoffice # backoffice Tailwind CSS only
 just build-js         # esbuild JS bundles only
+just build-vendor     # copy vendored third-party JS only
 just watch-css        # or watch-backoffice / watch-js
 just run              # build-all, then run Flask
 ```
+
+A new build step must be wired into **both** entry points to run everywhere: append it to the
+`build` npm script (which is what Docker, CI and `just install` invoke) and give it a `just` recipe
+that `build-all` depends on (which is what `just run` and the test targets invoke). Miss one and the
+asset is silently absent in half the environments.
 
 ## JavaScript: authored ES modules → bundled IIFE
 

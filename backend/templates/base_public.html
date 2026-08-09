@@ -50,9 +50,7 @@
             </div>
         </footer>
         <script nonce="{{ csp_nonce }}"
-                src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"
-                integrity="sha384-gDZkBYDiXRQUvstxmxJ+TbB7CxTGzhmH+ZmBAGzbAEgYb/bglRLXcnh6ZxhaVYLy"{# pragma: allowlist secret #}
-                crossorigin="anonymous"></script>
+                src="{{ url_for('static', filename='js/vendor/govuk-frontend.js', v=static_hashes('js/vendor/govuk-frontend.js')) }}"></script>
         <script nonce="{{ csp_nonce }}">
             document.addEventListener('DOMContentLoaded', function() {
                 if (typeof window.GOVUKFrontend !== 'undefined') {

@@ -194,8 +194,15 @@ watch-js:
   @echo "🚀 Watching and building JavaScript bundles with esbuild"
   @npm run watch:js
 
+# copy vendored third party JavaScript (Alpine, htmx, govuk-frontend) into static/
+build-vendor:
+  @echo "🚀 Copying vendored JavaScript into static/js/vendor"
+  @npm run build:vendor
+  # this will restart flask, if it is running
+  @touch src/opendlp/entrypoints/flask_app.py
+
 # build all frontend assets (CSS + JavaScript)
-build-all: build-all-css build-js
+build-all: build-all-css build-js build-vendor
 
 # run flask locally
 run: build-all flask

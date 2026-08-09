@@ -13,7 +13,7 @@ Our CSP uses `'strict-dynamic'` which provides strong XSS protection:
 
 - All `<script>` tags in HTML **must** have a `nonce="{{ csp_nonce }}"` attribute
 - Scripts loaded by trusted scripts (e.g., dynamically via `createElement`) are automatically trusted
-- Allowlists like `https://cdn.jsdelivr.net` are **ignored** (for backwards compatibility only)
+- Allowlists like `https://cdn.jsdelivr.net` are **ignored** (for backwards compatibility only) — and we no longer load any script from a CDN anyway; third-party libraries are vendored into `static/js/vendor/` (see [frontend_build.md](frontend_build.md))
 
 **Blocked:**
 
@@ -100,12 +100,20 @@ document.addEventListener("submit", function (e) {
 
 **Use the CSP-compatible build:** `@alpinejs/csp`
 
+It is vendored out of `node_modules` into `static/js/vendor/` by `npm run build:vendor`
+and served from our own origin with a nonce — never from a CDN:
+
 ```html
 <script
+  nonce="{{ csp_nonce }}"
   defer
-  src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js"
+  src="{{ url_for('static', filename='js/vendor/alpine-csp.js', v=static_hashes('js/vendor/alpine-csp.js')) }}"
 ></script>
 ```
+
+htmx and govuk-frontend are vendored the same way, as `js/vendor/htmx.js` and
+`js/vendor/govuk-frontend.js`. See [frontend_build.md](frontend_build.md) for how
+the copy step is wired into the build.
 
 ### Supported Alpine.js Features
 

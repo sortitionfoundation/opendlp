@@ -90,8 +90,11 @@ All templates must extend `base.html` which includes:
 ### 3. JavaScript initialization
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"></script>
-<script>
+<script
+  nonce="{{ csp_nonce }}"
+  src="{{ url_for('static', filename='js/vendor/govuk-frontend.js', v=static_hashes('js/vendor/govuk-frontend.js')) }}"
+></script>
+<script nonce="{{ csp_nonce }}">
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof window.GOVUKFrontend !== "undefined") {
       window.GOVUKFrontend.initAll();

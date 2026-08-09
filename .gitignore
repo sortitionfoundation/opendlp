@@ -355,5 +355,8 @@ backend/tests/manual/reports/
 # this file is generated, so we will not commit it
 backend/static/css/application.css
 
+# third party JavaScript copied out of node_modules by `npm run build:vendor`
+backend/static/js/vendor/
+
 # test reports for feedback to LLM
 /backend/tests/reports/
