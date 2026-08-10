@@ -180,6 +180,12 @@ def cli_with_session_factory(postgres_session_factory):
     return _invoke_cli_with_context
 
 
+#: How long a test-database statement waits for a lock before giving up. Long
+#: enough that a slow-but-healthy statement is unaffected, short enough that a
+#: deadlocked run fails while you are still watching it.
+LOCK_TIMEOUT_MS = 30_000
+
+
 def _get_worker_db_name(worker_id: str) -> str:
     """Return a database name unique to each xdist worker."""
     if worker_id == "master":
@@ -251,6 +257,11 @@ def postgres_engine(_worker_database):
         isolation_level="SERIALIZABLE",
         pool_size=2,
         max_overflow=3,
+        # A session leaked by the code under test sits `idle in transaction`
+        # holding row/table locks. Without a timeout, anything needing a
+        # conflicting lock (notably DROP TABLE at teardown) waits forever and
+        # pytest hangs with no output. Fail loudly instead.
+        connect_args={"options": f"-c lock_timeout={LOCK_TIMEOUT_MS}"},
     )
     wait_for_postgres_to_come_up(engine)
 
@@ -260,13 +271,18 @@ def postgres_engine(_worker_database):
 
 
 @pytest.fixture(scope="session")
-def _postgres_tables(postgres_engine):
+def _postgres_tables(postgres_engine, worker_id):
     """Create tables once for the entire test session."""
     orm.metadata.create_all(postgres_engine)
     database.start_mappers()
     yield
     database.clear_mappers()
-    orm.metadata.drop_all(postgres_engine)
+    if worker_id == "master":
+        orm.metadata.drop_all(postgres_engine)
+    # Under xdist each worker owns a whole database that `_worker_database`
+    # drops next, after terminating any backend still connected to it. Dropping
+    # the tables first is redundant, and it blocks on locks that the wholesale
+    # DROP DATABASE does not have to wait for.
 
 
 def _delete_all_test_data(session_factory):
