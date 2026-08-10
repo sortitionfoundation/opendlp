@@ -1,13 +1,13 @@
 # Frontend interactivity: implementation plan
 
-**Status:** Phases 1a, 1b, 1c and 1d are implemented (§2, §5, §3, §6, §7, §8). Phase 2 onwards is not started; one question is still open.
+**Status:** Phases 1a, 1b, 1c, 1d and 2 are implemented (§2, §5, §3, §6, §7, §8). Phase 3 onwards is not started; one question is still open.
 **Decision this implements:** [vanilla-alpine-json.md](vanilla-alpine-json.md) — vanilla JS + Alpine.js (CSP build) + JSON routes, organised into real files, tested, for internal/backoffice interactivity. Public pages stay server-rendered, no-JS-required.
 
 This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 records what was decided and what is still parked pending a team discussion.
 
-**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
+**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), Phase 2 (the JS source relocation to `src/js/`, §5.2), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
 
-**Not started:** Phase 2 onwards — the JS source relocation to `src/js/` (§5.2), the API-fixture machinery (§4) and the inline-script migrations (§9).
+**Not started:** Phase 3 onwards — the API-fixture machinery (§4) and the inline-script migrations (§9).
 
 **Still open (do not start this):** whether anything in `service_docs.html`/`dev.py` is load-bearing (§10 Phase 6).
 
@@ -306,7 +306,43 @@ Zero work, and it is where every other test in the repo lives. Costs the colocat
 
 ---
 
-### 5.2 What option 1 looks like concretely (Phase 2)
+### 5.2 What option 1 looks like concretely — ✅ DONE (Phase 2)
+
+**Implemented.** Deviations from the plan below, all minor:
+
+- **The entry-point list lives in `esbuild.config.mjs`, not in the npm scripts.** esbuild's CLI can
+  alias entry points (`out/path=src/file.js`), but the list has to appear in both `build:js` and
+  `watch:js`, and duplicating six entries across two shell strings is exactly the drift this phase
+  exists to remove. A small node script using esbuild's JS API keeps one `ENTRY_POINTS` map that
+  both modes read, and it is where the watch-mode Flask bounce lives too.
+- **Watch mode bounces Flask via an esbuild `onEnd` plugin.** The concern §5.2 raised was real:
+  `static_hashes()` is `@cache`d, so a rebuild alone leaves a running dev server serving the old
+  cache-busting URL. The plugin touches `flask_app.py` after every successful rebuild, verified end
+  to end.
+- **`build:js` minifies, `watch:js` does not** — carried over from how the two scripts already
+  differed for `html-editor.js`, so the browser shows readable code while you work.
+- **The backoffice bundle was split by component, not moved wholesale.** The 839-line
+  `alpine-components.js` became one file per `Alpine.data()` factory under `components/`, three
+  `init/` modules for the magics and directives, and a thin entry point that only registers them.
+  That is what §5's `components/`/`lib/`/`init/` split asks for, and it is what makes the components
+  importable by a test.
+- **`utilities.js` and `alpine-scroll-manager.js` were split the same way**, into `lib/clipboard.js`
+  and five `init/` modules, leaving both entry points as a few `init*()` calls.
+- **Tests added beyond the move:** 94 Vitest tests in total — `url-utils` (28, including the form
+  action cases the deleted duplicate used to serve), `autocomplete` (28), `tabs-keyboard` (13),
+  `url-select` (9), `auto-dismiss-alert` (9), `modal` (13).
+- **13 BDD scenarios deleted.** `features/accessibility.feature` exercised the `url-utils` helpers by
+  evaluating them as browser globals, which module scope ends. The same behaviour is covered by
+  `url-utils.test.js`, so the scenarios and their step definitions went rather than the module
+  boundary being reopened to keep them. `autocomplete.fetchResults` now returns its promise so a test
+  can await it — the only behaviour change in the phase, and an additive one.
+- **`.prettierignore` and the ESLint ignore list collapsed to `static/`** — with nothing hand-written
+  there, the previous per-directory exclusions (`static/js/vendor/`, `static/**/dist/`,
+  `static/css/`) are one rule. The prek hooks' `files: ^backend/.*\.(js|mjs)$` scoping needed no
+  change; the `format`/`format:check` npm scripts were widened from `**/*.js` to `**/*.{js,mjs}` so
+  they cover the `.mjs` configs the hook already matched.
+
+**Original plan:**
 
 Chosen because it is the only option where "a test file is never web-served" follows from where the
 file is rather than from a rule someone maintains — and the only one that pays for its own cost, by
@@ -402,7 +438,7 @@ Everything below is done except the parts that describe work not yet started (§
 - **`docs/testing.md`**: add a short "JavaScript testing" pointer section linking to the new doc, and clarify that "contract" is reserved for the fake/SQL meaning while "API fixtures" is the JSON-drift thing (§4).
 - **`AGENTS.md`** (not `CLAUDE.md` — `CLAUDE.md` is a symlink to `AGENTS.md`, confirmed by Chewie; edit `AGENTS.md` directly and the symlink follows): add a line under "Development Patterns" pointing at the new JS conventions doc, same as the existing i18n/database-pattern call-outs, so future sessions don't have to rediscover this plan. Also update the two existing `AGENTS.md` references that this work invalidates — the "Testing and Quality" section (Vitest now runs under `just test`) and the JSON error-handling rule (§3's `user_msg()`).
 - **`docs/frontend_build.md`**: also record the `build:vendor` → `build` → Dockerfile/CI chain (§2), since the whole point of that wiring is that it's invisible until it breaks.
-- **Phase 2 doc changes (§5.2), not yet done:** `frontend_build.md` gains the `src/js/` → `static/` entry-point table and `just watch-js` as the thing to run while editing JS; `frontend_js_testing.md` has "Where tests live" rewritten and its classic-global-script section deleted.
+- **Phase 2 doc changes (§5.2) — done:** `frontend_build.md` gained the `src/js/` layout table, the entry-point table and `just watch-js` (with why the Flask bounce matters); `frontend_js_testing.md` had "Where tests live" rewritten and its classic-global-script section replaced with "Testing a component".
 
 Note for future sessions: several docs in this repo say "CLAUDE.md" when they mean the file — the symlink means editing either path works, but new edits should target `AGENTS.md` so the content lives with the real file.
 
@@ -422,9 +458,10 @@ Original list, for reference:
 - Is any new/changed script tag using a CDN URL instead of a vendored copy?
 - Did a new npm build script get added without being wired into the `build` script and `just build-all` (§2)?
 
-To add once Phase 2 lands (§5.2):
+Added when Phase 2 landed (§5.2):
 
-- Is any hand-written JS being added under `static/` instead of `src/js/`? After Phase 2 the rule is absolute: `static/` holds build output and `vendor/` only. A hand-edited file there will be silently overwritten by the next build, and a `.test.js` there would be publicly served.
+- Is any hand-written JS being added under `static/` instead of `src/js/`? The rule is absolute: `static/` holds build output and `vendor/` only. A hand-edited file there will be silently overwritten by the next build, and a `.test.js` there would be publicly served.
+- Was a new esbuild entry point added to `ENTRY_POINTS` in `esbuild.config.mjs`? A new `src/js/` file that no entry point imports is never built and never served.
 
 ---
 
@@ -510,7 +547,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `st
 3. **Phase 1b — JS tooling. ✅ DONE.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and a first test proving the wiring end to end. Landed with `tests/js/` rather than colocated — see §5 for why; Phase 2 moves them.
 4. **Phase 1c — error-handling convention. ✅ DONE.** `user_msg()` on the exception hierarchy with a generic default, the `CuratedMessage` opt-in mixin, both `backoffice_registration.py` call sites switched, `_dev_error()` in `dev.py` with the five handlers narrowed onto it (§3), the convention documented (§6) and the checks added to `sf-code-review` (§7).
 5. **Phase 1d — `dev.py` is not a pattern source. ✅ DONE.** Docstring note in `dev.py`, a line in `AGENTS.md` next to the existing `/backoffice/dev/patterns` call-out, a line in `docs/agent/json_api_conventions.md`, and the explicit carve-out that `patterns.html` remains canonical (§8). Documentation and comments only, no code paths touched.
-6. **Phase 2 — JS source layout (§5.1, shape in §5.2).** Move all hand-written first-party JS — including `html-editor.js` — to `src/js/`, widen the existing esbuild `build:js`/`watch:js` entry-point list to cover it, colocate the Vitest files, retire `load-global-script.js` and the shared-globals convention, and resolve the duplicate `urlSetParam`. Watch mode must work end to end before this phase is called done. Deliberately ahead of the migrations: Phases 4 and 5 are what generate most of the JS, and writing it into the new layout is cheaper than moving it afterwards.
+6. **Phase 2 — JS source layout. ✅ DONE.** (§5.1, shape in §5.2.) Move all hand-written first-party JS — including `html-editor.js` — to `src/js/`, widen the existing esbuild `build:js`/`watch:js` entry-point list to cover it, colocate the Vitest files, retire `load-global-script.js` and the shared-globals convention, and resolve the duplicate `urlSetParam`. Watch mode must work end to end before this phase is called done. Deliberately ahead of the migrations: Phases 4 and 5 are what generate most of the JS, and writing it into the new layout is cheaper than moving it afterwards.
 7. **Phase 3 — drift-prevention machinery.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
 8. **Phase 4 — pilot migration.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup. Also the thing §8 depends on — see there.
 9. **Phase 5 — production migration.** `assembly_registration.html` image/alt-text manager.
