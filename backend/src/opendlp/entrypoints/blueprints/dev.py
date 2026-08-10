@@ -15,7 +15,9 @@ The canonical examples live elsewhere:
   routes in ``backoffice_registration.py`` / ``backoffice.py``.
 - CSP-compatible Alpine patterns: ``templates/backoffice/patterns.html``, served from here
   at ``/backoffice/dev/patterns``. That *page* is a maintained reference and is canonical;
-  this blueprint, which merely serves it, is not.
+  this blueprint, which merely serves it, is not. Its components live in
+  ``src/js/components/patterns-controller.js`` and ``file-upload-demo.js``, bundled by the
+  ``src/js/backoffice/patterns.js`` entry point - the page holds markup and no script body.
 - Component markup and accessibility: ``docs/agent/component_accessibility.md``.
 
 New handlers added here should still follow the conventions, and the ``test_dev_*`` files

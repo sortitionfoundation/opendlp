@@ -33,8 +33,12 @@ Our CSP uses `'strict-dynamic'` which provides strong XSS protection:
 
 **Always prefer external files over inline scripts.**
 
-1. Create file in `static/js/`
-2. Add to `base.html` with **nonce and cache busting**:
+1. Create the source file under `src/js/` — never under `static/`, which holds build
+   output only. Add it to `ENTRY_POINTS` in `esbuild.config.mjs` if it is a new entry
+   point rather than a module an existing one imports. See
+   [frontend_build.md](frontend_build.md).
+2. Add the **built** path to `base.html` (or a page's `{% block head %}`, for a bundle
+   only one page needs) with **nonce and cache busting**:
    ```html
    <script
      nonce="{{ csp_nonce }}"
