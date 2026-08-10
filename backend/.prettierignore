@@ -1,7 +1,6 @@
+# everything under static/ is build output - edit src/js/ instead
+static/
 node_modules/
-static/js/vendor/
-static/**/dist/
-static/css/
 htmlcov/
 .venv/
 

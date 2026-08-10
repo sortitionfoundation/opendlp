@@ -1,8 +1,6 @@
 // ABOUTME: Reusable utilities for URL query parameter manipulation
 // ABOUTME: Provides functions to add, set, remove, and build URL parameters safely
 
-/* exported urlSetParam, urlRemoveParam, urlGetParam, urlHasParam, urlSetParams, urlBuild */
-
 /**
  * URL Parameter Utilities
  *
@@ -28,7 +26,7 @@
  * urlSetParam('/page', 'filter', 'active')
  * // Returns: '/page?filter=active'
  */
-function urlSetParam(url, name, value) {
+export function urlSetParam(url, name, value) {
   if (!url) return url;
 
   // Handle relative URLs by using a dummy base
@@ -70,7 +68,7 @@ function urlSetParam(url, name, value) {
  * urlRemoveParam('/page?tab=1&filter=active', 'filter')
  * // Returns: '/page?tab=1'
  */
-function urlRemoveParam(url, name) {
+export function urlRemoveParam(url, name) {
   if (!url) return url;
 
   var isRelative = !url.startsWith("http://") && !url.startsWith("https://");
@@ -103,7 +101,7 @@ function urlRemoveParam(url, name) {
  * urlGetParam('/page?tab=1&filter=active', 'filter')
  * // Returns: 'active'
  */
-function urlGetParam(url, name) {
+export function urlGetParam(url, name) {
   if (!url) return null;
 
   var isRelative = !url.startsWith("http://") && !url.startsWith("https://");
@@ -126,7 +124,7 @@ function urlGetParam(url, name) {
  * @param {string} name - The parameter name to check for
  * @returns {boolean} True if the parameter exists
  */
-function urlHasParam(url, name) {
+export function urlHasParam(url, name) {
   if (!url) return false;
 
   var isRelative = !url.startsWith("http://") && !url.startsWith("https://");
@@ -154,7 +152,7 @@ function urlHasParam(url, name) {
  * urlSetParams('/page?tab=1', {filter: 'active', page: '2'})
  * // Returns: '/page?tab=1&filter=active&page=2'
  */
-function urlSetParams(url, params) {
+export function urlSetParams(url, params) {
   if (!url) return url;
   if (!params || typeof params !== "object") return url;
 
@@ -179,7 +177,7 @@ function urlSetParams(url, params) {
  * urlBuild('/api/users', {page: '1', sort: 'name'})
  * // Returns: '/api/users?page=1&sort=name'
  */
-function urlBuild(baseUrl, params) {
+export function urlBuild(baseUrl, params) {
   if (!params || typeof params !== "object") return baseUrl;
   return urlSetParams(baseUrl, params);
 }

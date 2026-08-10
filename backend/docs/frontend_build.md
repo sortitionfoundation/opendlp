@@ -10,7 +10,7 @@ driven through `package.json` scripts and wrapped in `just` targets.
 | -------------- | ----------------------------------- | --------------------------------------- | ------------------- |
 | Dart Sass      | `src/scss/`                         | `static/css/application.css`            | `build:sass`        |
 | Tailwind CSS   | `static/backoffice/src/main.css`    | `static/backoffice/dist/main.css`       | `build:backoffice`  |
-| esbuild        | `static/backoffice/js/src/`         | `static/backoffice/js/dist/`            | `build:js`          |
+| esbuild        | `src/js/`                           | `static/js/`, `static/backoffice/js/`   | `build:js`          |
 | vendor copy    | `node_modules/`                     | `static/js/vendor/`                     | `build:vendor`      |
 
 `npm run build` runs all of them. The first three also have a `watch:*` script for rebuilding on
@@ -50,8 +50,8 @@ See [agent/frontend_js_testing.md](agent/frontend_js_testing.md) for the convent
 
 ## Built assets are never committed
 
-Every built artifact above is **gitignored** (the `dist/` rule, `static/css/application.css`, and
-`static/js/vendor/`).
+Every built artifact above is **gitignored** (the `dist/` rule, `static/css/application.css`,
+`static/js/vendor/`, and the bundled `static/js/*.js` / `static/backoffice/js/*.js`).
 Built output is regenerated wherever the app is assembled:
 
 - **Local dev:** `just run` runs `just build-all` first; `just install` runs `npm run build`.
@@ -82,18 +82,56 @@ asset is silently absent in half the environments.
 
 ## JavaScript: authored ES modules → bundled IIFE
 
-First-party JavaScript that pulls in npm packages is authored as ES modules under
-`static/backoffice/js/src/` and bundled by esbuild into a single minified IIFE under
-`static/backoffice/js/dist/` (with a source map). The bundle is loaded like any other script — with
-a `nonce` and `static_hashes()` cache busting — and served from `'self'`, so it needs no SRI and
-adds no third-party CDN dependency. This keeps the strict `'strict-dynamic'` CSP intact (esbuild
-output uses no `eval`/`new Function`).
+**All first-party JavaScript is authored under `src/js/` and nothing under `static/` is
+hand-written.** That rule has no exceptions: a hand-edited file under `static/` is silently
+overwritten by the next build, and a `*.test.js` there would be publicly served, since `static/` is
+web-served in its entirety.
 
-The first consumer is the CodeMirror 6 HTML editor (`html-editor.js`), which progressively enhances
-any `textarea[data-code-editor]` into a syntax-highlighted, auto-indenting editor. Existing plain
-global scripts under `static/js/` and `static/backoffice/js/` continue to be loaded directly and can
-migrate onto the bundler over time.
+`src/js/` is laid out by role:
 
-To add a new bundle: create the entry under `static/backoffice/js/src/`, add matching `build:js` /
-`watch:js` esbuild invocations (or extend the existing ones) in `package.json`, and load the built
-file from `static/backoffice/js/dist/` in the template.
+| Directory            | Holds                                                                |
+| -------------------- | -------------------------------------------------------------------- |
+| `src/js/lib/`        | pure helpers with no Alpine or DOM-wiring dependency (`url-utils.js`) |
+| `src/js/components/` | `Alpine.data()` component factories, one per file                     |
+| `src/js/init/`       | Alpine magics/directives and document-level event wiring              |
+| `src/js/backoffice/` | backoffice-only entry points, including the CodeMirror HTML editor    |
+| `src/js/*.js`        | the entry points loaded on public pages                               |
+
+Vitest files sit next to the code they test (`url-utils.js` / `url-utils.test.js`). A test file is
+never an entry point, so it is never emitted, never copied into the Docker image and never served —
+a property of where the file lives rather than a setting someone has to maintain.
+
+esbuild bundles each entry point into an IIFE with a source map and a
+`// generated from src/js/ - do not edit` banner. Bundles are loaded like any other script — with a
+`nonce` and `static_hashes()` cache busting — and served from `'self'`, so they need no SRI and add
+no third-party CDN dependency. This keeps the strict `'strict-dynamic'` CSP intact (esbuild output
+uses no `eval`/`new Function`). `build:js` minifies; `watch:js` does not, so the browser shows
+readable code while you work.
+
+### Entry points
+
+The entry-point list lives in `esbuild.config.mjs`, keyed by output path:
+
+| Source                                 | Served as                                  |
+| -------------------------------------- | ------------------------------------------ |
+| `src/js/utilities.js`                  | `static/js/utilities.js`                   |
+| `src/js/alpine-components.js`          | `static/js/alpine-components.js`           |
+| `src/js/alpine-scroll-manager.js`      | `static/js/alpine-scroll-manager.js`       |
+| `src/js/htmx-422-swap.js`              | `static/js/htmx-422-swap.js`               |
+| `src/js/backoffice/alpine-components.js` | `static/backoffice/js/alpine-components.js` |
+| `src/js/backoffice/html-editor.js`     | `static/backoffice/js/dist/html-editor.js` |
+
+To add a bundle: write the entry under `src/js/`, add a line to `ENTRY_POINTS` in
+`esbuild.config.mjs`, and load the built path in the template. Both `build:js` and `watch:js` read
+that one list, so there is no second place to update.
+
+### Run `just watch-js` while editing JavaScript
+
+Watch mode rebuilds on every save and then touches
+`src/opendlp/entrypoints/flask_app.py`, which restarts Flask. That restart matters:
+`static_hashes()` is `@cache`d, so without it a running dev server keeps serving the old
+cache-busting URL and the change appears not to have taken effect.
+
+```bash
+just watch-js         # alongside watch-css / watch-backoffice
+```

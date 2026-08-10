@@ -1,11 +1,15 @@
 """ABOUTME: BDD tests for component accessibility (WAI-ARIA compliance)
-ABOUTME: Tests URL utilities, focus preservation, keyboard navigation, and ARIA attributes"""
+ABOUTME: Tests focus preservation, keyboard navigation, and ARIA attributes
 
-import json
+The URL helpers in src/js/lib/url-utils.js used to be exercised here by
+evaluating them as browser globals. They are ES modules now, so they are
+covered by src/js/lib/url-utils.test.js instead - faster, and at the level
+pure functions belong at.
+"""
 
 import pytest
 from playwright.sync_api import Page, expect
-from pytest_bdd import given, parsers, scenarios, then
+from pytest_bdd import given, scenarios, then
 
 scenarios("../../features/accessibility.feature")
 
@@ -13,15 +17,6 @@ scenarios("../../features/accessibility.feature")
 # =============================================================================
 # Fixtures
 # =============================================================================
-
-
-@pytest.fixture
-def page_with_url_utils(logged_in_page: Page, existing_assembly) -> Page:
-    """Navigate to a backoffice page that has url-utils.js loaded."""
-    page = logged_in_page
-    page.goto(f"http://localhost:5002/backoffice/assembly/{existing_assembly.id}")
-    page.wait_for_load_state("networkidle")
-    return page
 
 
 @pytest.fixture
@@ -50,106 +45,6 @@ def page_with_user_search(admin_logged_in_page: Page, existing_assembly) -> Page
 @given("a user is logged in as an admin")
 def user_logged_in_as_admin(admin_logged_in_page: Page):
     """Background step: ensure admin user is logged in."""
-
-
-# =============================================================================
-# Given Steps - URL Utilities
-# =============================================================================
-
-
-@given("a page with url-utils.js loaded")
-def page_with_url_utils_loaded(page_with_url_utils: Page):
-    """Ensure url-utils.js is available on the page."""
-    # Verify the functions exist
-    result = page_with_url_utils.evaluate("typeof urlSetParam === 'function'")
-    assert result, "urlSetParam function should be available"
-
-
-# =============================================================================
-# Then Steps - URL Utilities
-# =============================================================================
-
-
-@then(parsers.parse('urlSetParam("{url}", "{name}", "{value}") should return "{expected}"'))
-def url_set_param_returns(page_with_url_utils: Page, url: str, name: str, value: str, expected: str):
-    """Test urlSetParam returns expected result."""
-    result = page_with_url_utils.evaluate(f"urlSetParam('{url}', '{name}', '{value}')")
-    assert result == expected, f"Expected '{expected}', got '{result}'"
-
-
-@then(parsers.parse('urlRemoveParam("{url}", "{name}") should return "{expected}"'))
-def url_remove_param_returns(page_with_url_utils: Page, url: str, name: str, expected: str):
-    """Test urlRemoveParam returns expected result."""
-    result = page_with_url_utils.evaluate(f"urlRemoveParam('{url}', '{name}')")
-    assert result == expected, f"Expected '{expected}', got '{result}'"
-
-
-@then(parsers.parse('urlGetParam("{url}", "{name}") should return "{expected}"'))
-def url_get_param_returns_string(page_with_url_utils: Page, url: str, name: str, expected: str):
-    """Test urlGetParam returns expected string result."""
-    result = page_with_url_utils.evaluate(f"urlGetParam('{url}', '{name}')")
-    assert result == expected, f"Expected '{expected}', got '{result}'"
-
-
-@then(parsers.parse('urlGetParam("{url}", "{name}") should return null'))
-def url_get_param_returns_null(page_with_url_utils: Page, url: str, name: str):
-    """Test urlGetParam returns null for missing parameter."""
-    result = page_with_url_utils.evaluate(f"urlGetParam('{url}', '{name}')")
-    assert result is None, f"Expected null, got '{result}'"
-
-
-@then(parsers.parse('urlHasParam("{url}", "{name}") should return true'))
-def url_has_param_returns_true(page_with_url_utils: Page, url: str, name: str):
-    """Test urlHasParam returns true."""
-    result = page_with_url_utils.evaluate(f"urlHasParam('{url}', '{name}')")
-    assert result is True, f"Expected true, got {result}"
-
-
-@then(parsers.parse('urlHasParam("{url}", "{name}") should return false'))
-def url_has_param_returns_false(page_with_url_utils: Page, url: str, name: str):
-    """Test urlHasParam returns false."""
-    result = page_with_url_utils.evaluate(f"urlHasParam('{url}', '{name}')")
-    assert result is False, f"Expected false, got {result}"
-
-
-@then(parsers.parse('urlSetParams("{url}", {params}) should contain "{expected}"'))
-def url_set_params_contains(page_with_url_utils: Page, url: str, params: str, expected: str):
-    """Test urlSetParams result contains expected substring."""
-    # Parse params from JSON-like string
-    params_dict = json.loads(params.replace("'", '"'))
-    params_json = json.dumps(params_dict)
-    result = page_with_url_utils.evaluate(f"urlSetParams('{url}', {params_json})")
-    assert expected in result, f"Expected '{expected}' in '{result}'"
-
-
-@then(parsers.parse('urlBuild("{url}", {params}) should contain "{expected}"'))
-def url_build_contains(page_with_url_utils: Page, url: str, params: str, expected: str):
-    """Test urlBuild result contains expected substring."""
-    params_dict = json.loads(params.replace("'", '"'))
-    params_json = json.dumps(params_dict)
-    result = page_with_url_utils.evaluate(f"urlBuild('{url}', {params_json})")
-    assert expected in result, f"Expected '{expected}' in '{result}'"
-
-
-@then(parsers.parse('urlSetParam("{url}", "{name}", "{value}") should contain "{expected}"'))
-def url_set_param_contains(page_with_url_utils: Page, url: str, name: str, value: str, expected: str):
-    """Test urlSetParam result contains expected substring."""
-    result = page_with_url_utils.evaluate(f"urlSetParam('{url}', '{name}', '{value}')")
-    assert expected in result, f"Expected '{expected}' in '{result}'"
-
-
-@then(parsers.parse('urlSetParam("{empty}", "{name}", "{value}") should return "{expected}"'))
-def url_set_param_empty_returns(page_with_url_utils: Page, empty: str, name: str, value: str, expected: str):
-    """Test urlSetParam with empty URL returns empty string."""
-    result = page_with_url_utils.evaluate(f"urlSetParam('{empty}', '{name}', '{value}')")
-    assert result == expected, f"Expected '{expected}', got '{result}'"
-
-
-@then("urlSetParam with empty URL should return empty string")
-def url_set_param_empty_url(page_with_url_utils: Page):
-    """Test urlSetParam with empty URL returns empty string."""
-    result = page_with_url_utils.evaluate("urlSetParam('', 'filter', 'active')")
-    assert result == "", f"Expected empty string, got '{result}'"
 
 
 # =============================================================================

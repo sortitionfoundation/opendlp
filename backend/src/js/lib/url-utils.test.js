@@ -1,25 +1,16 @@
-// ABOUTME: Unit tests for the URL query parameter helpers in static/js/url-utils.js
+// ABOUTME: Unit tests for the URL query parameter helpers in src/js/lib/url-utils.js
 // ABOUTME: Covers relative and absolute URLs, missing parameters and malformed input
 
 import { describe, expect, it } from "vitest";
 
-import { loadGlobalScript } from "./support/load-global-script.js";
-
-const {
+import {
   urlSetParam,
   urlRemoveParam,
   urlGetParam,
   urlHasParam,
   urlSetParams,
   urlBuild,
-} = loadGlobalScript("js/url-utils.js", [
-  "urlSetParam",
-  "urlRemoveParam",
-  "urlGetParam",
-  "urlHasParam",
-  "urlSetParams",
-  "urlBuild",
-]);
+} from "./url-utils.js";
 
 describe("urlSetParam", () => {
   it("appends a parameter to a URL that has none", () => {
@@ -60,6 +51,28 @@ describe("urlSetParam", () => {
 
   it("returns an empty URL unchanged", () => {
     expect(urlSetParam("", "a", "1")).toBe("");
+  });
+});
+
+describe("urlSetParam on form action URLs", () => {
+  // These cases were previously served by a second, divergent urlSetParam in
+  // the backoffice bundle. They are the inputs the scroll-preserving form
+  // helpers actually pass, so they are pinned here against the one survivor.
+
+  it("adds a scroll parameter to a relative action", () => {
+    expect(urlSetParam("/assembly/edit", "scroll", "420")).toBe(
+      "/assembly/edit?scroll=420",
+    );
+  });
+
+  it("adds a scroll parameter to an absolute action", () => {
+    expect(
+      urlSetParam("https://example.org/assembly/edit?tab=1", "scroll", "420"),
+    ).toBe("https://example.org/assembly/edit?tab=1&scroll=420");
+  });
+
+  it("returns an empty action unchanged rather than throwing", () => {
+    expect(urlSetParam("", "scroll", "420")).toBe("");
   });
 });
 

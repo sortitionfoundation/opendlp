@@ -358,5 +358,12 @@ backend/static/css/application.css
 # third party JavaScript copied out of node_modules by `npm run build:vendor`
 backend/static/js/vendor/
 
+# first-party JavaScript bundled out of backend/src/js/ by `npm run build:js`
+# nothing under static/ is hand-written - edit src/js/ instead
+backend/static/js/*.js
+backend/static/js/*.js.map
+backend/static/backoffice/js/*.js
+backend/static/backoffice/js/*.js.map
+
 # test reports for feedback to LLM
 /backend/tests/reports/

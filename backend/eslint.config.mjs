@@ -8,9 +8,8 @@ export default [
   {
     ignores: [
       "node_modules/**",
-      "static/js/vendor/**",
-      "static/**/dist/**",
-      "static/css/**",
+      // everything under static/ is build output - see src/js/
+      "static/**",
       "htmlcov/**",
       ".venv/**",
       // read-only checkouts of other repos, not ours to lint
@@ -20,12 +19,10 @@ export default [
   },
   js.configs.recommended,
   {
-    // Files under static/ are served as classic scripts, not modules: their
-    // top-level declarations are deliberately globals shared between files.
-    files: ["static/**/*.js"],
+    files: ["src/js/**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: "script",
+      sourceType: "module",
       globals: {
         ...globals.browser,
         Alpine: "readonly",
@@ -39,16 +36,8 @@ export default [
     },
   },
   {
-    files: ["static/backoffice/js/src/**/*.js"],
+    files: ["src/js/**/*.test.js"],
     languageOptions: {
-      sourceType: "module",
-    },
-  },
-  {
-    files: ["tests/js/**/*.js"],
-    languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: "module",
       globals: {
         ...globals.node,
       },

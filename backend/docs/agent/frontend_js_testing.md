@@ -8,7 +8,7 @@ page see [frontend_testing.md](frontend_testing.md); for the Python test tiers s
 
 | Tool     | Runs                        | Invoked by                          |
 | -------- | --------------------------- | ----------------------------------- |
-| Vitest   | `tests/js/**/*.test.js`     | `just test-js`, and `just test`     |
+| Vitest   | `src/js/**/*.test.js`       | `just test-js`, and `just test`     |
 | ESLint   | first-party `.js`/`.mjs`    | `just check` (via a prek hook)      |
 | Prettier | first-party `.js`/`.mjs`    | `just check` (via a prek hook)      |
 
@@ -24,31 +24,41 @@ can drift.
 
 ## Where tests live
 
-`tests/js/`, mirroring the Python tests rather than sitting next to the source.
+Next to the code they test, under `src/js/` - `lib/url-utils.js` and `lib/url-utils.test.js`
+are siblings.
 
-The reason is specific to this repo: everything under `static/` is served to the web, so a
-colocated `foo.test.js` would be publicly fetchable unless Flask's static handling learned
-to exclude it. Keeping tests outside `static/` avoids the question entirely.
+That works because no test file is an esbuild entry point, so none is ever emitted into
+`static/`, copied into the Docker image, or served. It is a property of the layout rather
+than a rule someone has to maintain - which matters here, because everything under `static/`
+is served to the web in its entirety.
 
-## Testing a classic global script
+See [../frontend_build.md](../frontend_build.md) for the `lib/` / `components/` / `init/`
+split and the entry-point list.
 
-Most of `static/js/` is loaded as plain `<script src>` - classic scripts whose top-level
-functions are deliberately globals shared between files. They cannot use `export` without
-changing how they are loaded, so `tests/js/support/load-global-script.js` evaluates the file
-and returns the declarations you ask for:
+## Testing a component
+
+Source files are ES modules, so a test just imports them. `Alpine.data()` components are
+plain factory functions returning the component state, which means a test can call the
+factory and drive the returned object directly - no Alpine instance, no DOM mounting:
 
 ```javascript
-import { loadGlobalScript } from "./support/load-global-script.js";
+import { modal } from "./modal.js";
 
-const { urlSetParam } = loadGlobalScript("js/url-utils.js", ["urlSetParam"]);
+const state = modal({ initialOpen: true, canClose: false });
+state.close();
+expect(state.isOpen).toBe(true);
 ```
 
-This tests the file exactly as it ships. New code extracted from templates should instead be
-an `Alpine.data()` component or a module under `lib/`, which can be imported normally.
+The entry points under `src/js/` do the `Alpine.data(...)` registration and nothing else, so
+there is no behaviour hiding in the part that is awkward to test.
 
-Because the globals are shared across files, ESLint needs to be told about them: the file
-that declares them carries `/* exported name1, name2 */`, and files that use them carry
-`/* global name1 */`. Those comments are load-bearing, not decoration.
+Components that touch the DOM get a real one - the Vitest environment is jsdom. Components
+that navigate need `window.location` replaced, since jsdom's is not writable:
+
+```javascript
+delete window.location;
+window.location = { href: "https://example.org/start", reload: vi.fn() };
+```
 
 ## What ESLint does and does not cover
 
@@ -64,7 +74,7 @@ That check stays manual: follow the patterns in `templates/backoffice/patterns.h
 
 ## Adding a test
 
-1. Create `tests/js/<name>.test.js`.
+1. Create `<name>.test.js` next to `<name>.js` under `src/js/`.
 2. Import from Vitest explicitly - `globals` is off, so there is no ambient `describe`/`it`.
 3. Run `just test-js`.
 
