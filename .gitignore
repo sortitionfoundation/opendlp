@@ -352,6 +352,12 @@ backend/scratchpad/
 # manual test reports - visible to LLMs but not version controlled
 backend/tests/manual/reports/
 
+# a lot of /static/ is generated, but note that the following are maintained and need to be tracked by git
+# static/backoffice/fonts/*
+# static/fonts/*
+# static/img/*
+# static/well-known/*
+
 # this file is generated, so we will not commit it
 backend/static/css/application.css
 
@@ -359,7 +365,7 @@ backend/static/css/application.css
 backend/static/js/vendor/
 
 # first-party JavaScript bundled out of backend/src/js/ by `npm run build:js`
-# nothing under static/ is hand-written - edit src/js/ instead
+# nothing under static/js/ is hand-written - edit src/js/ instead
 backend/static/js/*.js
 backend/static/js/*.js.map
 backend/static/backoffice/js/*.js
