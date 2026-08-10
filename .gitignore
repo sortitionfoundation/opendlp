@@ -52,7 +52,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# this is used too often internally - only ignore exact paths with xyz/lib/ - not all directories named lib/
+# lib/
 lib64/
 parts/
 sdist/
