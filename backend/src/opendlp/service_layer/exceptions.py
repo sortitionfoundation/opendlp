@@ -1,6 +1,8 @@
 """ABOUTME: Custom exceptions for service layer operations
 ABOUTME: Defines business logic exceptions with proper error messages and codes"""
 
+from typing import Protocol, runtime_checkable
+
 # Re-exported so service-layer callers import it from the usual exceptions module.
 from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.domain.validators import SlugError
@@ -15,6 +17,7 @@ __all__ = [
     "EmailTemplateInvalid",
     "EmailTemplateNotFoundError",
     "GoogleSheetConfigNotFoundError",
+    "HasCuratedMessage",
     "ImageQuotaExceeded",
     "InsufficientPermissions",
     "InvalidConfirmationToken",
@@ -42,6 +45,23 @@ __all__ = [
 ]
 
 
+@runtime_checkable
+class HasCuratedMessage(Protocol):
+    """Structural type for exceptions that supply their own user-facing message.
+
+    ``curated_msg`` is deliberately a name :class:`OpenDLPError` does not itself
+    define, which is what makes the opt-in independent of base-class order. The
+    method exists in one place only, so there is no resolution for
+    ``class X(ServiceLayerError, CuratedMessage)`` to lose.
+
+    Do not give ``OpenDLPError`` a ``curated_msg()`` of its own. That reinstates
+    the name collision, and then whether a class gets its curated message back
+    depends on which way round its bases happen to be written.
+    """
+
+    def curated_msg(self) -> str: ...
+
+
 class OpenDLPError(Exception):
     """Base exception for all our custom errors."""
 
@@ -55,10 +75,12 @@ class OpenDLPError(Exception):
         internals - and better than raising, which would turn a handled error
         into a 500 with no feedback at all.
 
-        Do not change this to return ``str(self)``: that would silently make every
-        exception in the tree claim to be safe to show, which is the problem this
-        method exists to solve.
+        Do not change the fallback to return ``str(self)``: that would silently
+        make every exception in the tree claim to be safe to show, which is the
+        problem this method exists to solve.
         """
+        if isinstance(self, HasCuratedMessage):
+            return self.curated_msg()
         return _("Something went wrong. Please try again.")
 
 
@@ -68,9 +90,12 @@ class CuratedMessage:
     Mix in only where the message is built for a user to read - translated, and
     free of internal detail. It is what makes "is this safe to show?" answerable
     by looking at the class rather than by reading every call site.
+
+    Supplies the :class:`HasCuratedMessage` hook rather than overriding
+    ``user_msg()``, so it works whichever order the bases are written in.
     """
 
-    def user_msg(self) -> str:
+    def curated_msg(self) -> str:
         return str(self)
 
 

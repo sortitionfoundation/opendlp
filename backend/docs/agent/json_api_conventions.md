@@ -56,10 +56,17 @@ class ImageQuotaExceeded(CuratedMessage, ServiceLayerError):
 
 So "is this safe to show?" is answered by the class, once, rather than at every call site.
 
+The mixin does not override `user_msg()`. It supplies a `curated_msg()` hook that the base
+looks for, a name `OpenDLPError` deliberately does not define, so the opt-in works whichever
+order the bases are written in. Do not give `OpenDLPError` a `curated_msg()` of its own:
+that reinstates the name collision, and `class X(ServiceLayerError, CuratedMessage)` then
+silently falls back to the generic message.
+
 A class that forgets the mixin degrades to a vague message. That is the intended failure
 direction: too little information beats leaking internals, and beats raising, which would
 turn a handled error into a 500 with no feedback at all. Reviewers should check that a new
-user-facing exception opts in.
+user-facing exception opts in — and `tests/unit/test_exception_user_msg.py` fails until every
+`OpenDLPError` subclass is listed as curated or uncurated, so that check cannot be forgotten.
 
 Domain exceptions cannot use the mixin — the domain must not import from the service layer —
 so they define `user_msg()` directly, as `RegistrationPageNotReady` does. Callers duck-type
