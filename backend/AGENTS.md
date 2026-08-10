@@ -246,6 +246,11 @@ This approach maintains the separation between domain objects (plain Python) and
   which logs the real error and returns a generic message.
 - `error=str(e)` in a **log** call is correct and wanted — the rule is about
   response bodies.
+- Changing a response shape means changing three things: the route, its JSON
+  Schema in `src/opendlp/schemas/json_api/`, and the recorded API fixture in
+  `tests/fixtures/json_api/`. Re-record with `UPDATE_API_FIXTURES=1 uv run pytest`
+  and read the diff.
+- Never hand-type an API response in a `.test.js` file — load a fixture.
 - See [docs/agent/json_api_conventions.md](docs/agent/json_api_conventions.md).
 
 ### Logging (PII / secrets)

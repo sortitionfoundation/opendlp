@@ -60,6 +60,21 @@ delete window.location;
 window.location = { href: "https://example.org/start", reload: vi.fn() };
 ```
 
+## Never hand-type an API response
+
+A `.test.js` file must not contain a literal of a JSON API payload. Load a recorded fixture:
+
+```javascript
+import { loadApiFixture } from "../test-support/api-fixtures.js";
+
+const body = loadApiFixture("registration-image-upload", "registration-image");
+```
+
+`loadApiFixture` validates the fixture against the same JSON Schema the Python suite asserts
+against, so a shape change cannot pass on one side and fail silently on the other. See
+[json_api_conventions.md](json_api_conventions.md) for the full mechanism and how to add a
+shape.
+
 ## What ESLint does and does not cover
 
 ESLint checks the quality of `.js` files. It does **not** check CSP-Alpine compliance.

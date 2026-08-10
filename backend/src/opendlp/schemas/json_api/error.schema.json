@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opendlp.sortitionfoundation.org/schemas/json_api/error.schema.json",
+  "title": "JSON error response",
+  "description": "The error envelope every JSON route returns on failure. The message is always a curated, translated string - never str(e) from a caught exception.",
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A translated, user-facing message."
+    },
+    "reason": {
+      "type": "string",
+      "description": "A stable machine-readable code, where the caller needs to branch on the kind of failure rather than show the message."
+    }
+  },
+  "required": [
+    "error"
+  ],
+  "additionalProperties": false
+}

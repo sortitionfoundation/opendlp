@@ -314,15 +314,30 @@ just install-dev
 >
 > This ensures we explicitly test permission boundaries rather than accidentally bypassing them.
 
-## JavaScript Tests (`tests/js/`)
+## JavaScript Tests (`src/js/**/*.test.js`)
 
-First-party JavaScript is unit tested with Vitest in a jsdom environment. It is a separate
-runner from pytest, but not a separate workflow: `just test-js` runs it directly, and the
-`just test` targets depend on it, so it runs first and fails fast.
+First-party JavaScript is unit tested with Vitest in a jsdom environment, in files sitting
+next to the code they test. It is a separate runner from pytest, but not a separate workflow:
+`just test-js` runs it directly, and the `just test` targets depend on it, so it runs first
+and fails fast.
 
 See [agent/frontend_js_testing.md](agent/frontend_js_testing.md) for conventions — where
-tests live, how to test the classic global scripts under `static/js/`, and what ESLint does
-and does not cover.
+tests live, how to test an `Alpine.data()` component, and what ESLint does and does not cover.
+
+## API Fixtures (`tests/fixtures/json_api/`)
+
+**Purpose:** stop a JSON response shape and the JavaScript that consumes it drifting apart.
+
+A recorded response lives in `tests/fixtures/json_api/` and the shape it must satisfy lives in
+`src/opendlp/schemas/json_api/`. `tests/component/test_json_api_fixtures.py` drives the real
+route, validates against the schema and diffs the fixture; the Vitest side imports the fixture
+and validates it against the same schema with ajv. Changing a response shape therefore means
+changing the route, the schema and the fixture, or the build fails.
+
+This is deliberately **not** called a contract test — see the note under Contract Tests above.
+Regenerate with `UPDATE_API_FIXTURES=1 uv run pytest tests/component/test_json_api_fixtures.py`
+and read the diff. Full details in
+[agent/json_api_conventions.md](agent/json_api_conventions.md).
 
 ## Running Tests
 

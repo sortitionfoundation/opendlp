@@ -36,7 +36,8 @@ export default [
     },
   },
   {
-    files: ["src/js/**/*.test.js"],
+    // tests and their support code run under node, not in the browser
+    files: ["src/js/**/*.test.js", "src/js/test-support/**/*.js"],
     languageOptions: {
       globals: {
         ...globals.node,
