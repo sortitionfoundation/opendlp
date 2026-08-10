@@ -1,6 +1,7 @@
 # Clean up UnitOfWork usage
 
-Status: step 1 committed (`8bc870fc`), steps 2-4 not started.
+Status: step 1 committed (`8bc870fc`). Steps 2-4 and the read-only workstream
+not started.
 
 ## The problem
 
@@ -86,10 +87,22 @@ code. Worth a reproducing test before relying on it.
 tasks own the transaction boundary. Service-layer functions never open their own
 context; they assume an open one.
 
-### Why not a re-entrant UnitOfWork (depth counter)
+### Note on the reference architecture
 
-A depth counter was the obvious contained fix - increment on enter, only
-commit/close at depth 0 - and it was rejected as the destination:
+CLAUDE.md cites *Architecture Patterns with Python*, and that book puts
+`with uow:` **in the service layer** - today's majority convention, not the one
+chosen here. The book assumes one service call per request and has no answer for
+routes composing several reads and writes, which is where this codebase is.
+
+This is therefore a deliberate departure from the cited reference. It must be
+written up in CLAUDE.md so it does not get "fixed" back.
+
+## Options considered
+
+### A - re-entrant UnitOfWork (depth counter). Rejected.
+
+Increment on enter, only commit/close at depth 0. The obvious contained fix -
+one class, no call-site churn - and rejected as the *destination*:
 
 - A naive counter is wrong on the exception path, and live code hits it. There
   are `contextlib.suppress(Exception)` blocks wrapped around calls to
@@ -103,15 +116,59 @@ commit/close at depth 0 - and it was rejected as the destination:
 - It legitimises nesting, so transaction boundaries stay implicit and the 60/40
   convention split never gets resolved.
 
-### Note on the reference architecture
+### B - `with uow:` at entrypoints only. Chosen.
 
-CLAUDE.md cites *Architecture Patterns with Python*, and that book puts
-`with uow:` **in the service layer** - today's majority convention, not the one
-chosen here. The book assumes one service call per request and has no answer for
-routes composing several reads and writes, which is where this codebase is.
+Roughly 126 service functions to convert plus 37 call sites to fix. The edits
+are mechanical, local, and individually reviewable. Sized in steps 2-4 below.
 
-This is therefore a deliberate departure from the cited reference. It must be
-written up in CLAUDE.md so it does not get "fixed" back.
+### C - one service call per entrypoint, `with uow:` in the service layer. Rejected.
+
+The *Architecture Patterns with Python* shape: each route makes exactly one
+service call, and that function owns the transaction. Attractive because it
+matches the cited reference and confines transactions to one layer.
+
+Measured across 198 routes (excluding `dev.py`):
+
+| Service calls per route | Routes |
+|---|---|
+| 0 | 29 |
+| 1 | 99 |
+| 2 | 30 |
+| 3 | 20 |
+| 4 | 17 |
+| 5 | 3 |
+
+So ~70 routes compose several service calls and would need a new composed
+function; the 29 with zero drive repositories directly and would need one
+written from scratch. About 99 routes touched, against option B's ~126
+mechanical function edits.
+
+The count understates the cost. `gsheets.py::view_assembly_selection` is the
+worst case - GET, 3 uow blocks, 5 service calls, **156 lines, 31 template
+variables**:
+
+- Collapsing it needs a page-context DTO of ~31 fields.
+- Presentation logic is interleaved with the reads (`data_source`, which tabs
+  are enabled, which modal is open). That either moves into the service layer,
+  where it does not belong, or into a separate presentation helper called after
+  the single service call - correct, but that is *two* new layers.
+- Each read carries its own `try/except` with a different fallback ("no gsheet
+  is fine", "no CSV is fine", "log and carry on for history"). Preserving that
+  behaviour pushes route-level error presentation down into the service layer.
+
+`view_assembly_respondents` (105 lines, 14 template vars) and
+`view_schema` (76 lines, 14) are the same shape, smaller.
+
+Estimated at 3-5x option B's effort with materially higher risk of behaviour
+change.
+
+**The distinction worth keeping:** "one service call per route" is a
+*code-organisation* goal; "who owns the transaction boundary" is a *correctness*
+question. Option C conflates them. Under option B you can still extract a
+page-context function for the 156-line routes - it is simply caller-manages, so
+it is pure refactoring with no transaction semantics at stake. Take that
+tidiness opportunistically where it pays, rather than betting the migration on
+it.
 
 ## Step 1 - stop the hang (DONE, `8bc870fc`)
 
@@ -239,6 +296,61 @@ Watch for two scanner blind spots found the hard way: uses *before* the first
 `with` block in a function, and the `with uow:` header's own `Name` node
 counting as a use.
 
+## Read-only workstream (separable, do after step 2)
+
+Most of this codebase never writes. A read-only path needs no transaction at
+all, and that removes the failure mode structurally rather than guarding
+against it.
+
+| | Count |
+|---|---|
+| GET-only routes (excl. `dev.py`) | 87 |
+| ...that never write, transitively | **64** |
+| ...that do write on a GET | **23** |
+| Service-layer functions | 394 |
+| ...that write | 100 (25%) |
+
+### Why it is worth doing
+
+**It would have prevented the hang outright.** The leaked session held
+`AccessShareLock` *because it sat in an open transaction*. On an AUTOCOMMIT
+read-only connection each `SELECT` takes and releases its lock immediately, so
+the teardown `DROP TABLE` would never have blocked. Three-quarters of the
+service layer is read-only, so the surface is large.
+
+It also makes the nesting bug moot on those paths: an inner block committing the
+outer's partial work does not matter when there is nothing to commit.
+
+### Shape
+
+A `ReadOnlyUnitOfWork` exposing the same repositories over a connection with
+`isolation_level="AUTOCOMMIT"` and PostgreSQL's `default_transaction_read_only`
+set, so an accidental write fails at the database rather than silently
+succeeding. Routes that only read resolve it instead of the read-write
+UnitOfWork.
+
+### Three caveats, all real
+
+1. **23 GET routes currently write**, via `get_or_create_csv_config`,
+   `get_or_create_selection_settings`, `check_and_update_task_health`,
+   `find_or_create_oauth_user` and `link_oauth_to_user`. Non-idempotent GETs are
+   a smell in their own right - lazily creating a settings row on a page view -
+   and each needs excluding or refactoring before its route can go read-only.
+   Full list is reproducible with the write-analysis scanner (appendix).
+2. **It mitigates the hang, not the leak.** An abandoned read-only session still
+   holds a pooled connection until the GC collects it; it just is not holding
+   locks meanwhile. Step 3's guard is still wanted.
+3. **It trades snapshot consistency for lock-freedom.** The engine currently
+   runs `SERIALIZABLE`, so a page doing several reads sees one consistent
+   snapshot. Under AUTOCOMMIT it would not - a page reading respondents and then
+   counting them could see a torn view. Probably acceptable here, but it is a
+   genuine semantic change and must be a deliberate choice, not a side effect.
+
+### Sequencing
+
+After step 2. Introducing a read-only variant while the 60/40 convention split
+is still live means writing it against a moving target.
+
 ## Other cleanups noticed
 
 Not part of the UnitOfWork work, but found while investigating. Each deserves
@@ -359,4 +471,67 @@ def scan(path):
 for path in sorted(pathlib.Path(sys.argv[1]).rglob("*.py")):
     for line, func, name in scan(path):
         print(f"{path}:{line}  {func}()  uses `{name}` outside any `with` block")
+```
+
+### Which service functions write, and which GET routes write
+
+Produces the read-only workstream figures. `writes()` is a heuristic - it looks
+for write-shaped calls on a `uow`/repository - and the transitive closure then
+marks any caller of a writer as a writer. Treat the output as a starting list to
+confirm by hand, not as proof.
+
+```python
+import ast, pathlib, sys
+
+WRITE_METHODS = {"add", "delete", "remove", "update", "save", "commit", "commit_and_reset", "flush"}
+root = pathlib.Path(sys.argv[1])
+
+def writes(func):
+    for n in ast.walk(func):
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr in WRITE_METHODS:
+            target = ast.unparse(n.func)
+            if "uow" in target or "repository" in target or "repositories" in target:
+                return True
+    return False
+
+service_funcs = {}
+for path in root.rglob("*.py"):
+    if "service_layer" not in str(path):
+        continue
+    for node in ast.walk(ast.parse(path.read_text())):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            service_funcs[node.name] = node
+
+writing = {n for n, f in service_funcs.items() if writes(f)}
+for _ in range(5):  # propagate: calling a writer makes you a writer
+    for name, f in service_funcs.items():
+        if name in writing:
+            continue
+        if any(isinstance(n, ast.Call) and ast.unparse(n.func).split(".")[-1] in writing for n in ast.walk(f)):
+            writing.add(name)
+
+print(f"service-layer functions: {len(service_funcs)}, of which write: {len(writing)}")
+
+for path in sorted((root / "entrypoints" / "blueprints").glob("*.py")):
+    if path.name == "dev.py":
+        continue
+    for func in ast.walk(ast.parse(path.read_text())):
+        if not isinstance(func, ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        methods = None
+        for dec in func.decorator_list:
+            if isinstance(dec, ast.Call) and ast.unparse(dec.func).endswith(".route"):
+                methods = ("GET",)
+                for kw in dec.keywords:
+                    if kw.arg == "methods":
+                        methods = tuple(ast.literal_eval(kw.value))
+        if methods != ("GET",):
+            continue
+        callers = {
+            ast.unparse(n.func).split(".")[-1]
+            for n in ast.walk(func)
+            if isinstance(n, ast.Call) and ast.unparse(n.func).split(".")[-1] in writing
+        }
+        if callers:
+            print(f"WRITES-ON-GET  {path.name:32} {func.name:40} via {', '.join(sorted(callers))}")
 ```
