@@ -326,6 +326,8 @@ Check the interactive patterns documentation at `/backoffice/dev/patterns` (dev 
 - `@click` handlers cannot have string arguments (`@click="doThing()"` not `@click="doThing('arg')"`)
 - AJAX requests must include `X-CSRFToken` header
 
+The `patterns.html` page is canonical and maintained as a reference. The dev blueprint that serves it (`src/opendlp/entrypoints/blueprints/dev.py`) is **not** a pattern source - it is a dev-only scratch space held to a lower bar, with partial test coverage by design. Don't copy production code from it; see the note at the top of that file for where the real examples are.
+
 **Active development folders** contain specs for current work (e.g., `547-component-redesign/`).
 
 **Historical specs** are in `docs/agent/history/` - consult these only when you need context about past architectural decisions.

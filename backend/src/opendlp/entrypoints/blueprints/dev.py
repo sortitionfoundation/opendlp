@@ -1,5 +1,26 @@
 """ABOUTME: Developer tools routes for interactive testing and documentation
-ABOUTME: Provides /backoffice/dev/* routes - only registered in non-production environments"""
+ABOUTME: Provides /backoffice/dev/* routes - only registered in non-production environments
+
+NOT A PATTERN SOURCE - do not copy from this file when writing production code.
+
+This blueprint is a low-stakes scratch space for interactive testing. It is dev-only
+(registered when ``not config.is_production()``) and admin-gated, and it is deliberately
+not held to the same bar as production code: test coverage is partial by design and there
+is no parity requirement. Code here may be fine, may be stale, and is not maintained as an
+example either way.
+
+The canonical examples live elsewhere:
+
+- JSON error handling and response shape: ``docs/agent/json_api_conventions.md``, and the
+  routes in ``backoffice_registration.py`` / ``backoffice.py``.
+- CSP-compatible Alpine patterns: ``templates/backoffice/patterns.html``, served from here
+  at ``/backoffice/dev/patterns``. That *page* is a maintained reference and is canonical;
+  this blueprint, which merely serves it, is not.
+- Component markup and accessibility: ``docs/agent/component_accessibility.md``.
+
+New handlers added here should still follow the conventions, and the ``test_dev_*`` files
+under ``tests/component/`` show how to test them where that is cheap.
+"""
 
 import base64
 import binascii

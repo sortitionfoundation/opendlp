@@ -100,3 +100,7 @@ governs what reaches the page.
 
 That helper is local to `dev.py` on purpose. It is not a method on the exception hierarchy,
 because production code would then carry a method it must never call.
+
+None of which makes `dev.py` an example to copy. It is a dev-only scratch space, not held to
+the production bar, and its docstring says so. When you want a JSON route to model yours on,
+use this document and the routes in `backoffice_registration.py` / `backoffice.py`.
