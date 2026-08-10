@@ -1,13 +1,13 @@
 # Frontend interactivity: implementation plan
 
-**Status:** Phases 1a, 1b, 1c, 1d, 2 and 3 are implemented (§2, §5, §3, §4, §6, §7, §8). Phase 4 onwards is not started; one question is still open.
+**Status:** Phases 1a, 1b, 1c, 1d, 2, 3 and 4 are implemented (§2, §5, §3, §4, §6, §7, §8, §9). Phase 5 onwards is not started; one question is still open.
 **Decision this implements:** [vanilla-alpine-json.md](vanilla-alpine-json.md) — vanilla JS + Alpine.js (CSP build) + JSON routes, organised into real files, tested, for internal/backoffice interactivity. Public pages stay server-rendered, no-JS-required.
 
 This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 records what was decided and what is still parked pending a team discussion.
 
-**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), Phase 2 (the JS source relocation to `src/js/`, §5.2), Phase 3 (the API-fixture machinery, §4), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
+**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), Phase 2 (the JS source relocation to `src/js/`, §5.2), Phase 3 (the API-fixture machinery, §4), Phase 4 (the `patterns.html` pilot migration, §9), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
 
-**Not started:** Phase 4 onwards — the inline-script migrations (§9).
+**Not started:** Phase 5 onwards — the `assembly_registration.html` production migration, and the parked `service_docs.html` (§9).
 
 **Still open (do not start this):** whether anything in `service_docs.html`/`dev.py` is load-bearing (§10 Phase 6).
 
@@ -517,6 +517,10 @@ we are telling people "copy from here, not there", where "here" contradicts the 
 meant to demonstrate. Worth doing the annotations anyway — they're true now — but the pairing should
 be deliberate rather than accidental.
 
+**Resolved by Phase 4.** `patterns.html` now carries no script body at all: its components live in
+`src/js/components/` with 40 Vitest tests. The page we point people at no longer contradicts the
+convention it documents, so (b) stands on its own feet.
+
 ### Material behind the decision, kept for the record
 
 - **Not blocked, and already done:** fixing the five leaky handlers (§3). Right either way.
@@ -538,9 +542,39 @@ That is what was chosen, and it matches what the code was already telling us: th
 
 ---
 
-## 9. Migrating the existing inline scripts
+## 9. Migrating the existing inline scripts — ✅ PILOT DONE (Phase 4)
 
-Order agreed by Chewie: `patterns.html` → `assembly_registration.html` → `service_docs.html`. Incremental, per `vanilla-alpine-json.md` §5, smallest/highest-signal first:
+**`patterns.html` is migrated.** 284 lines of inline script became four modules and an entry
+point; the template is 386 lines down to 107, with no script body left at all. Notes:
+
+- **A page-specific entry point, not the shared backoffice bundle.** `patternsController` and
+  `fileUploadDemo` are dev-only demo components, so `src/js/backoffice/patterns.js` is built to
+  `static/backoffice/js/patterns.js` and loaded from the page's own `{% block head %}`. Registering
+  them in `backoffice/alpine-components.js` would have shipped them to every backoffice page —
+  which is, note, what the pre-existing `showcaseNav`/`buttonLoadingDemo`/`progressModalDemo`
+  registrations still do. Worth tidying separately; not in scope here.
+- **The snippets moved to their own module.** ~200 of the 284 lines were code samples built by
+  string concatenation with every Jinja delimiter escaped as `{{ "{%" }}`. In `src/js/components/patterns-snippets.js`
+  they are plain template literals, so they read as the code they are.
+- **The eleven one-line `copyXCode()` methods were kept, not collapsed into `copy(name)`.** The
+  CSP build forbids string arguments in an `@click` expression, so the generic version cannot
+  work — a constraint the page itself documents. The comment on the component says so, since it
+  otherwise reads as gratuitous repetition.
+- **`copyToClipboard` moved from async/await to an explicit promise chain**, so the component
+  is testable without the test having to know about Alpine's reactivity timing. The only other
+  behaviour-adjacent change is that the copy methods now return their promise.
+- **Tests: 40 new Vitest tests** (`patterns-controller.test.js` 27, `file-upload-demo.test.js` 13)
+  and **33 component tests** (`tests/component/test_dev_patterns_page.py`), which is the first
+  coverage this page has ever had. Two of the component tests earn their place specifically:
+  - every tab renders — each is a separate partial, so each is a separate chance to break;
+  - the bundle is **not** `defer`red while Alpine **is**. That is the whole reason a script tag
+    sitting *after* Alpine's in the document still registers its components in time. Reverse
+    either and the page silently loses all its interactivity, with nothing else to catch it.
+- **What is not covered:** the page was not loaded in a real browser — the local Docker services
+  were not running, and starting them was a bigger detour than the ordering test it would have
+  duplicated. Worth one manual look at `/backoffice/dev/patterns` during review.
+
+**Original plan.** Order agreed by Chewie: `patterns.html` → `assembly_registration.html` → `service_docs.html`. Incremental, per `vanilla-alpine-json.md` §5, smallest/highest-signal first:
 
 **Pilot: `patterns.html` (284 lines) first.** Rationale: it's the smallest of the three, and it's _the documented living reference_ — migrating it first means the reference itself demonstrates the new convention instead of contradicting it (right now `docs/frontend_security.md` and CLAUDE.md point people at a page that's 100% inline script). Low product risk since it's dev-only. **§8's decision raises the stakes on this one**: now that `dev.py` is explicitly not a pattern source, `patterns.html` is one of the few things we point at instead, so it has to stop contradicting the convention it documents.
 
@@ -561,7 +595,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `st
 5. **Phase 1d — `dev.py` is not a pattern source. ✅ DONE.** Docstring note in `dev.py`, a line in `AGENTS.md` next to the existing `/backoffice/dev/patterns` call-out, a line in `docs/agent/json_api_conventions.md`, and the explicit carve-out that `patterns.html` remains canonical (§8). Documentation and comments only, no code paths touched.
 6. **Phase 2 — JS source layout. ✅ DONE.** (§5.1, shape in §5.2.) Move all hand-written first-party JS — including `html-editor.js` — to `src/js/`, widen the existing esbuild `build:js`/`watch:js` entry-point list to cover it, colocate the Vitest files, retire `load-global-script.js` and the shared-globals convention, and resolve the duplicate `urlSetParam`. Watch mode must work end to end before this phase is called done. Deliberately ahead of the migrations: Phases 4 and 5 are what generate most of the JS, and writing it into the new layout is cheaper than moving it afterwards.
 7. **Phase 3 — drift-prevention machinery. ✅ DONE.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
-8. **Phase 4 — pilot migration.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup. Also the thing §8 depends on — see there.
+8. **Phase 4 — pilot migration. ✅ DONE.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup. Also the thing §8 depends on — see there.
 9. **Phase 5 — production migration.** `assembly_registration.html` image/alt-text manager.
 10. **Phase 6 — PARKED pending §11 row 9.** `service_docs.html`. §8 is answered, so no `dev.py` test backfill is planned; what's left parked is just whether `service_docs.html` is load-bearing enough to be worth migrating at all.
 
