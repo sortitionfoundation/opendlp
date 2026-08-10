@@ -563,16 +563,18 @@ point; the template is 386 lines down to 107, with no script body left at all. N
 - **`copyToClipboard` moved from async/await to an explicit promise chain**, so the component
   is testable without the test having to know about Alpine's reactivity timing. The only other
   behaviour-adjacent change is that the copy methods now return their promise.
-- **Tests: 40 new Vitest tests** (`patterns-controller.test.js` 27, `file-upload-demo.test.js` 13)
-  and **33 component tests** (`tests/component/test_dev_patterns_page.py`), which is the first
-  coverage this page has ever had. Two of the component tests earn their place specifically:
-  - every tab renders — each is a separate partial, so each is a separate chance to break;
-  - the bundle is **not** `defer`red while Alpine **is**. That is the whole reason a script tag
-    sitting *after* Alpine's in the document still registers its components in time. Reverse
-    either and the page silently loses all its interactivity, with nothing else to catch it.
-- **What is not covered:** the page was not loaded in a real browser — the local Docker services
-  were not running, and starting them was a bigger detour than the ordering test it would have
-  duplicated. Worth one manual look at `/backoffice/dev/patterns` during review.
+- **Tests at all three levels — the first coverage this page has ever had:**
+  - **40 Vitest** (`patterns-controller.test.js` 27, `file-upload-demo.test.js` 13);
+  - **33 component** (`tests/component/test_dev_patterns_page.py`). Two earn their place
+    specifically: every tab renders, since each is a separate partial and so a separate chance to
+    break; and the bundle is **not** `defer`red while Alpine **is** — the whole reason a script tag
+    sitting *after* Alpine's in the document still registers in time. Reverse either and the page
+    silently loses all interactivity, with nothing else to catch it;
+  - **4 BDD** (`features/frontend-patterns.feature`), because only a browser can confirm the bundle
+    really loads and Alpine really picks it up. They assert no inline script body survives, that
+    `x-cloak` is lifted from the `patternsController` root (it is not, if registration missed
+    `alpine:init`), that the file demo accepts a CSV and rejects a `.txt`, and that the copy button
+    raises a toast.
 
 **Original plan.** Order agreed by Chewie: `patterns.html` → `assembly_registration.html` → `service_docs.html`. Incremental, per `vanilla-alpine-json.md` §5, smallest/highest-signal first:
 
@@ -582,7 +584,7 @@ point; the template is 386 lines down to 107, with no script body left at all. N
 
 **Then `service_docs.html` (722 lines)** — dev-only, lowest urgency, and §8's answer pushes it further down: `dev.py` is explicitly not a pattern source, so polishing its UI page buys much less than the other two. It stays parked, but now on the narrower question of whether anything it does is load-bearing for a real workflow (§11 row 9) rather than on §8. The first two are unaffected.
 
-For each: lift inline `<script>` into named `Alpine.data()` components under `static/backoffice/js/components/`, unit-test the extracted logic with Vitest, shrink the template to markup + flat `x-data` wiring, regenerate `static_hashes()`/cache-busting automatically (no registration needed per `frontend_security.md`), backfill/confirm BDD coverage for the flow. No behavioural changes in the same PR as the extraction — that's a second pass, only after tests exist to prove behaviour is unchanged.
+For each: lift inline `<script>` into named `Alpine.data()` components under `src/js/components/`, unit-test the extracted logic with Vitest, shrink the template to markup + flat `x-data` wiring, regenerate `static_hashes()`/cache-busting automatically (no registration needed per `frontend_security.md`), backfill/confirm BDD coverage for the flow. No behavioural changes in the same PR as the extraction — that's a second pass, only after tests exist to prove behaviour is unchanged.
 
 ---
 
