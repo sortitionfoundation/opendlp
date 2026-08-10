@@ -1,15 +1,15 @@
 # Frontend interactivity: implementation plan
 
-**Status:** Phases 1a, 1b and 1c are implemented (§2, §5, §3, §6, §7). Phase 2 onwards is not started; three questions are still with the team.
+**Status:** Phases 1a, 1b and 1c are implemented (§2, §5, §3, §6, §7). Phase 1d onwards is not started; one question is still open.
 **Decision this implements:** [vanilla-alpine-json.md](vanilla-alpine-json.md) — vanilla JS + Alpine.js (CSP build) + JSON routes, organised into real files, tested, for internal/backoffice interactivity. Public pages stay server-rendered, no-JS-required.
 
 This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 records what was decided and what is still parked pending a team discussion.
 
 **Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
 
-**Not started:** Phase 2 onwards — the API-fixture machinery (§4) and the inline-script migrations (§9).
+**Not started:** Phase 1d onwards — the `dev.py` "not a pattern source" annotations (§8), the JS source relocation to `src/js/` (§5.2), the API-fixture machinery (§4) and the inline-script migrations (§9).
 
-**Blocked on team discussion (do not start these):** the dev-blueprint question (§8), Vitest test-file placement (§5 — implemented as `tests/js/`, reversible), and whether anything in `service_docs.html`/`dev.py` is load-bearing (§10 Phase 5).
+**Still open (do not start this):** whether anything in `service_docs.html`/`dev.py` is load-bearing (§10 Phase 6).
 
 ---
 
@@ -193,20 +193,196 @@ The tooling half is implemented; the file reorganisation (`components/`, `lib/`,
 
 **Decisions taken where the plan left room:**
 
-- **Test placement: `tests/js/`, not colocated.** The plan said scaffold colocated pending the team discussion, but colocated collides with the hard constraint it also names — everything under `static/` is web-served, so `static/js/foo.test.js` would be publicly fetchable unless Flask's static handling learned to exclude it. `tests/js/` sidesteps that and matches where every other test in the repo lives. **Still reversible** — it is the `include` glob in `vitest.config.mjs` — but colocating would first need the static-serving exclusion built.
+- **Test placement: `tests/js/` for now.** The plan said scaffold colocated pending the team discussion, but colocated collides with the hard constraint it also names — everything under `static/` is web-served, so `static/js/foo.test.js` would be publicly fetchable. `tests/js/` sidesteps that and matches where every other test in the repo lives. Chewie wants colocation, and **§5.1/§5.2 record the decision on how to get there: move first-party JS to `src/js/` and build it into `static/` with esbuild (Phase 2).** `tests/js/` is the interim position until that lands.
 - **Classic scripts are tested as they ship.** Files under `static/js/` are loaded as plain `<script src>` and cannot use `export` without changing how they load. `tests/js/support/load-global-script.js` evaluates one and returns the named declarations, so `url-utils.js` is now covered (25 tests) without touching how it is served.
 - **Prek hooks use `language: system` + `npm --prefix backend run …` with `pass_filenames: false`.** Verified working with prek 0.4.12, so the wrapper-script fallback wasn't needed.
 - **`no-unused-vars` is configured with `caughtErrors: "none"` for `static/**`.** Several handlers swallow an exception deliberately; whether that is justified is a review question (and CLAUDE.md already requires a comment), not something the linter can judge.
 
+### 5.1 Colocating the Vitest files — DECIDED (option 1, with esbuild)
+
+**Chewie's call: option 1, built with esbuild.** First-party JS moves out of the served tree into
+`src/js/`, esbuild emits the non-test entry points into `static/`, and the Vitest files sit next to
+the code they test. That is Phase 2 in §10; the concrete shape is at the end of this section, and
+the options it was chosen from are kept below as the record.
+
+Chewie wants the tests next to the source. The only thing standing in the way is that first-party
+JS currently lives under `static/`, and `static/` is web-served in its entirety. Worth being precise
+about by what, because it changes what "exclude it" means:
+
+- **WhiteNoise is what actually serves `/static/*`** (`entrypoints/extensions.py:79`), wrapping the
+  WSGI app with `root="static/"`. It scans the tree at startup into a dict of files it will serve.
+- **Flask's own static view is still registered underneath it** (`flask_app.py:56`,
+  `static_folder=config.get_static_path()`), and is what `url_for('static', ...)` builds URLs against.
+- **`Dockerfile:110` does `cp -r /src/static /app/static`** — the whole tree, unfiltered, goes into
+  the image.
+
+So there are three separate places a `.test.js` under `static/` would have to be stopped. That
+asymmetry is what makes the options differ.
+
+Two precedents already in the repo, pulling in opposite directions: `src/scss/` → `static/css/`
+keeps sources outside the served tree, while `static/backoffice/js/src/html-editor.js` keeps them
+inside it (and that source file is, today, publicly fetchable — nobody minds, but it shows the rule
+isn't currently held anywhere).
+
+---
+
+**Option 1 — CHOSEN. Move first-party JS out of the served tree, build it in with esbuild.**
+
+A new `src/js/` alongside the existing `src/scss/`, holding `lib/`, `components/`, `init/` and their
+`*.test.js` siblings. An esbuild step emits the non-test entry points to `static/js/` and
+`static/backoffice/js/`. Test files are never an entry point, so they are never emitted, never
+copied into the image and never served — a property of the layout rather than a setting someone has
+to maintain.
+
+The extra payoff is the reason I'd pick this one rather than just tolerate it. Sources stop being
+classic scripts and become ES modules, which:
+
+- retires `tests/js/support/load-global-script.js` — tests just `import` the thing;
+- fixes the duplicate-`urlSetParam` bug (§5, finding 1) structurally, via module scope, instead of
+  by picking a winner and hoping nobody redeclares it again;
+- retires the `/* exported */` / `/* global */` comment convention documented in
+  `frontend_js_testing.md`, and the `sourceType: "script"` block in `eslint.config.mjs`;
+- makes load order explicit in imports rather than implicit in `<script>` tag order in `base.html`.
+
+Costs, honestly:
+
+- A fourth build step, wired into **both** places per §2 (`build` npm script _and_ a `just` recipe
+  under `build-all`) — plus a `watch:` script, or every one-line JS edit needs a manual rebuild.
+  _(Overtaken by §5.2: `build:js`/`watch:js` already exist and already run esbuild, so this is a
+  widened step rather than a new one — and watch mode is a firm requirement, not an optional extra.)_
+- `static/js/*.js` becomes generated: gitignore it, `git rm` the current files, and put a
+  `--banner:js="// generated from src/js/ - do not edit"` on the output so the next person doesn't
+  edit the build product.
+- Sourcemaps needed for debugging (already how `build:js` works for `html-editor.js`).
+- One entry point per current file keeps every `<script src>` in the templates unchanged. Shared
+  `lib/` code then gets duplicated into each bundle that imports it — irrelevant at this size, but
+  it's the reason not to fan out entry points later.
+- `static/backoffice/js/src/html-editor.js` should probably move to `src/js/` too for consistency.
+  Not required, and it can follow separately.
+
+**Timing matters:** if we do this, do it _before_ the §9 migrations, since those are what produce
+most of the JS. Retrofitting afterwards is the same work plus churn on newly written files.
+
+**Option 1b — rejected. Same move, plain copy instead of esbuild.** Colocation without the module system:
+`src/js/` copied to `static/js/` with `*.test.js` filtered out, in the same spirit as `build:vendor`
+(a `cp` won't express the exclusion, so it'd be an `rsync --exclude` or a few lines of node).
+Cheaper, and it still
+guarantees tests aren't served. But it pays the build-step cost and collects none of the prize —
+still classic scripts, still `load-global-script.js`, still shared globals, still the duplicate
+declaration. Listed for completeness; I wouldn't.
+
+---
+
+**Option 2 — rejected. Leave the JS where it is, teach the serving layer to refuse `*.test.js`.**
+
+Cheapest in effort. But it is two exclusions, not one: prune WhiteNoise's file map after it is
+constructed (there is no documented exclude option — this reaches into its internals), _and_ guard
+Flask's static view underneath. Miss the second and the first is decorative.
+
+Pin it with a test — `GET /static/js/url-utils.test.js` → 404 — which is cheap and genuinely
+protects the invariant. That test is what makes this option defensible at all.
+
+Costs: depends on WhiteNoise internals across upgrades; test files still ship inside the Docker
+image as dead weight, so any future change of static server re-exposes them; and the protection is a
+few lines of config in a file nobody reads, which is the failure mode the test exists to catch.
+
+---
+
+**Option 3 — rejected. Strip test files at packaging time.**
+
+`find /app/static -name '*.test.js' -delete` in the Dockerfile. Protects the container and nothing
+else: `just run` and the CI/BDD runs serve straight from the checkout, so the files stay fetchable
+there. And it's one more packaging path to remember when a second one appears. Only sensible as
+belt-and-braces on top of option 2, not on its own.
+
+---
+
+**Option 4 — keep `tests/js/` (status quo).**
+
+Zero work, and it is where every other test in the repo lives. Costs the colocation, and keeps the
+`load-global-script.js` shim alive.
+
+---
+
+---
+
+### 5.2 What option 1 looks like concretely (Phase 2)
+
+Chosen because it is the only option where "a test file is never web-served" follows from where the
+file is rather than from a rule someone maintains — and the only one that pays for its own cost, by
+taking out the `load-global-script` shim, the shared-globals convention and the
+duplicate-`urlSetParam` bug on the way past.
+
+**It is not a fourth build step after all.** `build:js`/`watch:js` and `just build-js`/`just
+watch-js` already exist and already run esbuild — today over the single `html-editor.js` entry
+point. Phase 2 widens the entry-point list rather than adding a step, so the §2 "wire it into both
+places" hazard doesn't arise: `build:js` is already in the `build` npm script and `just build-js` is
+already in `build-all`. That is a meaningful reduction in risk versus how §5.1 originally costed it.
+
+**Layout.** All hand-written first-party JS moves to `src/js/`, alongside the existing `src/scss/`:
+
+```txt
+src/js/
+    lib/            # pure helpers - url-utils.js and its url-utils.test.js side by side
+    components/     # Alpine.data() components + their .test.js
+    init/           # Alpine directives/magics, alpine:init wiring
+    backoffice/     # backoffice-only equivalents, incl. html-editor.js
+```
+
+Output goes to `static/js/` and `static/backoffice/js/` at the paths the templates already use, so
+**no `<script src>` in any template changes**. `static/js/vendor/` (§2) is untouched — that stays a
+copy step, not an esbuild one.
+
+**Move `html-editor.js` too.** `static/backoffice/js/src/html-editor.js` is the one remaining
+hand-written file that would otherwise stay inside the served tree. Moving it to
+`src/js/backoffice/` buys the invariant worth having: **nothing under `static/` is hand-written, and
+nothing under `src/js/` is served.** One rule, no exceptions to remember, and one esbuild invocation
+instead of two. If a smaller first commit is wanted this can follow immediately afterwards, but it
+should not be dropped — an exception here is what erodes the rule.
+
+**Watch mode is a requirement, not a nice-to-have** (Chewie). Editing a JS file must not mean
+remembering to rebuild:
+
+- `watch:js` widens to the same entry-point list as `build:js`, with esbuild's `--watch`.
+- `just watch-js` already calls it, so it keeps working unchanged.
+- The build recipes end with `touch src/opendlp/entrypoints/flask_app.py` to bounce Flask (and so
+  re-hash `static_hashes()`); check whether watch mode needs an equivalent, since esbuild's
+  `--watch` writes the output file directly and Flask isn't watching `static/`. If a stale
+  `static_hashes()` value survives the rebuild, that is a confusing "my change didn't take" bug and
+  is worth solving in this phase rather than discovering during Phase 4.
+- Document `just watch-js` in `frontend_build.md` as the thing to run while editing JS, next to the
+  existing `watch-css`/`watch-backoffice` entries.
+
+**The rest of the wiring:**
+
+- Add `--sourcemap` (as `build:js` already does) so the browser points at `src/js/`, and
+  `--banner:js="// generated from src/js/ - do not edit"` on the output, so nobody edits the build
+  product.
+- `.gitignore` the generated `static/js/*.js` and `static/backoffice/js/*.js` in the repo-root
+  `.gitignore` next to `static/js/vendor/`, and `git rm` the five files currently tracked under
+  `static/js/` plus `static/backoffice/js/alpine-components.js`.
+- Vitest `include` becomes `src/js/**/*.test.js`; move `tests/js/url-utils.test.js` next to its
+  source and delete `tests/js/support/load-global-script.js` once nothing imports it.
+- ESLint: drop the `sourceType: "script"` block and the `tests/js/**` block, replace with
+  `src/js/**` as modules. The `/* exported */` / `/* global */` comments go with them.
+- Prettier's prek scoping (`^backend/.*\.js$`) already covers `src/js/`; the `exclude:` list gains
+  the newly generated output paths so prettier doesn't reformat build products.
+- Resolve the duplicate `urlSetParam` here (finding 1 below): one `lib/url-utils.js`, imported by
+  both callers, with the try/catch-fallback behaviour and a test pinning it. This is the phase where
+  that bug gets fixed, not §9.
+- Docs: `frontend_build.md` (entry-point table, watch guidance), `frontend_js_testing.md` (rewrite
+  "Where tests live" and delete the classic-global-script section), and the §5 file-organisation
+  bullet below now describes `src/js/` rather than `static/js/`.
+
 **Findings — two real bugs the linter surfaced on its first run.** Neither is fixed, because Phase 1b is explicitly tooling-only:
 
-1. **`urlSetParam` is defined twice, with different behaviour.** `static/js/url-utils.js:31` and `static/backoffice/js/alpine-components.js:19` both declare a global of that name, and `templates/backoffice/base.html` loads both — so on every backoffice page the second silently overwrites the first. They are not equivalent: the url-utils version has a try/catch fallback and returns an empty input unchanged, the backoffice version resolves against `window.location.origin` and would throw on an empty URL. Whichever page you are on, half the callers are getting an implementation they were not written against. This is exactly the mess §9's move to `lib/` modules exists to end, and it should be resolved there rather than by picking a winner now.
+1. **`urlSetParam` is defined twice, with different behaviour.** `static/js/url-utils.js:31` and `static/backoffice/js/alpine-components.js:19` both declare a global of that name, and `templates/backoffice/base.html` loads both — so on every backoffice page the second silently overwrites the first. They are not equivalent: the url-utils version has a try/catch fallback and returns an empty input unchanged, the backoffice version resolves against `window.location.origin` and would throw on an empty URL. Whichever page you are on, half the callers are getting an implementation they were not written against. This is exactly the mess the move to `lib/` modules exists to end, and it gets resolved in Phase 2 (§5.2) rather than by picking a winner now.
 2. **`../.pre-commit-config-ci.yaml` was already missing the `no-strftime-in-templates` hook** — a pre-existing drift between the two configs, predating this work, which means that rule has never been enforced in CI. The header comment warned this would happen. Left alone as an unrelated fix; worth a separate one-line commit.
 
 Following §5 of `vanilla-alpine-json.md` directly:
 
-- `static/js/` (shared) and `static/backoffice/js/` (backoffice) split into `components/` (Alpine.data components), `lib/` (pure helpers — `url-utils.js` is the model), `init/` (Alpine directives/magics/`alpine:init` wiring), and now `vendor/` (§2). ABOUTME headers on every new file per house style.
-- Vitest config: jsdom environment. **Test-file placement (colocated `url-utils.js` + `url-utils.test.js`, vs a mirrored `tests/js/` tree) is deferred — Chewie is discussing it with the team.** Everything else in this section can proceed; the Vitest `include` glob is a one-line change once the answer lands, so this does not block Phase 1. Colocated remains my suggestion (commoner Vitest convention, keeps a component's logic and tests together), but it is genuinely a team-taste call, and note the one hard constraint: whatever the layout, `*.test.js` must be excluded from the Flask static-file serving path and from `static_hashes()`, since anything under `static/` is web-served.
+- The `components/` (Alpine.data components), `lib/` (pure helpers — `url-utils.js` is the model) and `init/` (Alpine directives/magics/`alpine:init` wiring) split still holds, but per §5.2 it lands under `src/js/` rather than `static/js/`, with `static/` holding only build output plus `vendor/` (§2). ABOUTME headers on every new file per house style.
+- Vitest config: jsdom environment. **Test-file placement: colocated under `src/js/`, decided — see §5.1 for the options and §5.2 for the shape.** Shipped as `tests/js/` in the interim. The constraint that drove the decision: `*.test.js` must never be reachable under `static/`, since anything there is web-served.
 - **Where it runs in the `just` pipeline — decided (Chewie): tests under `just test`, linting under `just check`.** Concretely:
   - `npm run test` runs Vitest. Wire it into the `just test` chain — the natural spot is a `just test-js` recipe that `test-html`/`test-nobdd` depend on, or a line in the existing recipes; either way `just test` alone must fail if a JS test fails. It is fast (no browser, no DB) so it should run _first_, before the 10-minute Python suite, so a broken JS test fails in seconds rather than after the full run.
   - Linting goes into `just check` **via prek**, not as a bespoke `just check` line — see §1. `just check` already is, in the main, "run the prek hooks", and putting eslint/prettier there means they also run at commit time for free.
@@ -218,8 +394,7 @@ Following §5 of `vanilla-alpine-json.md` directly:
 
 ## 6. Documentation updates — ✅ DONE for phases 1a–1c
 
-Everything below is done except the parts that describe work not yet started (§4's API fixtures, which land in Phase 2). `docs/agent/frontend_js_testing.md` and `docs/agent/json_api_conventions.md` both exist; `AGENTS.md` gained a "JSON responses" section under Development Patterns, the `just test-js` command, and index entries for both new docs.
-
+Everything below is done except the parts that describe work not yet started (§4's API fixtures, which land in Phase 3). `docs/agent/frontend_js_testing.md` and `docs/agent/json_api_conventions.md` both exist; `AGENTS.md` gained a "JSON responses" section under Development Patterns, the `just test-js` command, and index entries for both new docs.
 
 - **`docs/frontend_security.md`**: replace the CDN Alpine/htmx snippets with vendored-script examples (§2); add the JSON error-handling convention (§3) either inline or as a link to a new doc.
 - **`docs/frontend_build.md`**: document the vendor copy step (§2) alongside the existing three tools; note Vitest/eslint as a fourth and fifth tool once approved (§5).
@@ -227,6 +402,7 @@ Everything below is done except the parts that describe work not yet started (§
 - **`docs/testing.md`**: add a short "JavaScript testing" pointer section linking to the new doc, and clarify that "contract" is reserved for the fake/SQL meaning while "API fixtures" is the JSON-drift thing (§4).
 - **`AGENTS.md`** (not `CLAUDE.md` — `CLAUDE.md` is a symlink to `AGENTS.md`, confirmed by Chewie; edit `AGENTS.md` directly and the symlink follows): add a line under "Development Patterns" pointing at the new JS conventions doc, same as the existing i18n/database-pattern call-outs, so future sessions don't have to rediscover this plan. Also update the two existing `AGENTS.md` references that this work invalidates — the "Testing and Quality" section (Vitest now runs under `just test`) and the JSON error-handling rule (§3's `user_msg()`).
 - **`docs/frontend_build.md`**: also record the `build:vendor` → `build` → Dockerfile/CI chain (§2), since the whole point of that wiring is that it's invisible until it breaks.
+- **Phase 2 doc changes (§5.2), not yet done:** `frontend_build.md` gains the `src/js/` → `static/` entry-point table and `just watch-js` as the thing to run while editing JS; `frontend_js_testing.md` has "Where tests live" rewritten and its classic-global-script section deleted.
 
 Note for future sessions: several docs in this repo say "CLAUDE.md" when they mean the file — the symlink means editing either path works, but new edits should target `AGENTS.md` so the content lives with the real file.
 
@@ -246,26 +422,65 @@ Original list, for reference:
 - Is any new/changed script tag using a CDN URL instead of a vendored copy?
 - Did a new npm build script get added without being wired into the `build` script and `just build-all` (§2)?
 
+To add once Phase 2 lands (§5.2):
+
+- Is any hand-written JS being added under `static/` instead of `src/js/`? After Phase 2 the rule is absolute: `static/` holds build output and `vendor/` only. A hand-edited file there will be silently overwritten by the next build, and a `.test.js` there would be publicly served.
+
 ---
 
-## 8. DEFERRED: should the dev blueprint have tests, and is it a safe pattern to copy?
+## 8. The dev blueprint is NOT a pattern source — DECIDED (option b)
 
-**Status: deferred — Chewie is discussing this with the team. Do not act on this section.** What follows is the material for that discussion, unchanged.
+**Chewie's call: (b) — `dev.py` is not a pattern source.** It is not held to production standards
+and must not be copied from. The canonical examples live elsewhere.
 
-What this blocks, and what it doesn't:
+### What that means concretely
 
-- **Not blocked:** fixing the five leaky handlers (§3). That's a real bug in a real code path under the rule we're about to write down, and it's the right thing to do whichever way §8 lands. It stays in Phase 1.
-- **Not blocked:** the `patterns.html` migration (§9), which was agreed on its own merits.
-- **Blocked:** any broader backfill of `dev.py` test coverage, and any "this is / isn't a pattern source" annotation in `dev.py` or the docs. Phase 5's shape depends on the answer.
+- **Annotate `dev.py` itself.** Extend the module docstring (it already carries the two ABOUTME
+  lines) with a short, blunt note: dev-only, admin-gated, not a pattern source, do not copy verbatim
+  — and point at where the real examples are. A comment at the top of the file is the only place
+  someone about to copy from it is guaranteed to look.
+- **Draw the line inside the blueprint.** `patterns.html` — the page `dev.py` serves — _is_ canonical
+  and stays canonical; `AGENTS.md:323` already points there. The blueprint serving it is not. That
+  distinction has to be explicit or the annotation reads as disowning the patterns page too.
+- **Note it where the docs already discuss `dev.py`:** `docs/agent/json_api_conventions.md` (which
+  already describes `_dev_error()`), and a line in `AGENTS.md` next to the existing
+  `/backoffice/dev/patterns` call-out. Not in `frontend_js_testing.md` as the earlier draft of this
+  section suggested — that doc is about Vitest and has nothing to do with it.
+- **No broad backfill of `dev.py` test coverage.** The existing component tests for the image /
+  document / email / registration-page handlers stay and remain the pattern for new dev handlers
+  where it's cheap, but there's no parity bar to meet and no gap-filling exercise. This is what
+  (b) buys: `dev.py` stays a low-stakes scratch space.
+- **The §3 fixes stand regardless.** The five narrowed handlers and `_dev_error()` were a real bug in
+  a real code path, needed either way — see below.
+
+### The one dependency this creates
+
+(b) only works if the things we point at instead are actually good. `patterns.html` is today the
+worst offender in the repo for inline, untested script (§0) — 284 lines of it — while being the
+page `AGENTS.md` and `docs/frontend_security.md` send people to. **So the `patterns.html` migration
+(§9, Phase 4) is now load-bearing for this decision, not just a convenient pilot.** Until it lands
+we are telling people "copy from here, not there", where "here" contradicts the convention it is
+meant to demonstrate. Worth doing the annotations anyway — they're true now — but the pairing should
+be deliberate rather than accidental.
+
+### Material behind the decision, kept for the record
+
+- **Not blocked, and already done:** fixing the five leaky handlers (§3). Right either way.
+- **Not blocked:** the `patterns.html` migration (§9), agreed on its own merits.
+- **Now unblocked:** the "not a pattern source" annotations above (small — a docstring and two doc
+  lines; see Phase 1d in §10).
+- **Still open, separately:** whether anything in `service_docs.html`/`dev.py` is load-bearing for a
+  real workflow (§11 row 9). That is a different question from "is it a pattern source", and it is
+  what still governs Phase 6.
 
 **What's there today:** `dev.py` is a real, fairly large (1500+ line) blueprint with its own JSON API (`/dev/service-docs/execute`) that exercises most of the service layer, plus the `patterns.html` "living reference" page. It's dev-only (`not config.is_production()`) and admin-gated. Test coverage is partial: image/document/email handlers have component tests; the registration-page-lifecycle handlers and the route itself don't (§0), and that's exactly where the JSON error-handling violation lives (§3) — i.e., the _untested_ corner is also the _unsafe_ corner. That's not a coincidence I'd bet against generalising.
 
-**The question behind the question:** Chewie's framing was "if Claude copies patterns from `dev.py` when writing prod code, how do we make sure it copies the _good_ parts?" Two live options:
+**The question behind the question:** Chewie's framing was "if Claude copies patterns from `dev.py` when writing prod code, how do we make sure it copies the _good_ parts?" Two options were live; (b) won:
 
-- **(a) Bring `dev.py` up to the same bar as production code** — full test coverage, same error-handling discipline, and treat it as a legitimate pattern source. Cost: it's meant to be a low-stakes scratch space for interactive testing; holding it to production standards might blunt that purpose and slow down adding new dev-tool endpoints.
-- **(b) Explicitly mark it as _not_ a pattern source** — a comment/doc note ("dev-only, does not follow production error-handling conventions, do not copy verbatim") at the top of `dev.py` and in `docs/agent/frontend_js_testing.md`, and rely on `patterns.html`/`docs/frontend_security.md`/the new JSON conventions doc as the actual canonical examples instead. Cost: `patterns.html` itself is currently the worst offender for "inline, untested script" (§0) — so this only works if the `patterns.html` migration (§9) happens, and happens early.
+- **(a) Rejected. Bring `dev.py` up to the same bar as production code** — full test coverage, same error-handling discipline, and treat it as a legitimate pattern source. Cost: it's meant to be a low-stakes scratch space for interactive testing; holding it to production standards might blunt that purpose and slow down adding new dev-tool endpoints.
+- **(b) CHOSEN. Explicitly mark it as _not_ a pattern source** — a comment/doc note ("dev-only, does not follow production error-handling conventions, do not copy verbatim") at the top of `dev.py` and in `docs/agent/frontend_js_testing.md` (wrong doc — corrected above), and rely on `patterns.html`/`docs/frontend_security.md`/the new JSON conventions doc as the actual canonical examples instead. Cost: `patterns.html` itself is currently the worst offender for "inline, untested script" (§0) — so this only works if the `patterns.html` migration (§9) happens, and happens early.
 
-My instinct is a mix: (b) as the durable answer — `patterns.html` and the JSON conventions doc are the source of truth, not `dev.py` — plus fixing the five leaky handlers regardless (§3, needed either way since it's a real bug in a real code path even if low-severity), without necessarily chasing full test parity across all of `dev.py`. But this is the team's call, not mine to make unilaterally.
+That is what was chosen, and it matches what the code was already telling us: the untested corner of `dev.py` was also the unsafe corner (§0), which is the shape you get from a file nobody is holding to a standard. Better to say so out loud than to keep half-pretending otherwise.
 
 ---
 
@@ -273,11 +488,11 @@ My instinct is a mix: (b) as the durable answer — `patterns.html` and the JSON
 
 Order agreed by Chewie: `patterns.html` → `assembly_registration.html` → `service_docs.html`. Incremental, per `vanilla-alpine-json.md` §5, smallest/highest-signal first:
 
-**Pilot: `patterns.html` (284 lines) first.** Rationale: it's the smallest of the three, and it's _the documented living reference_ — migrating it first means the reference itself demonstrates the new convention instead of contradicting it (right now `docs/frontend_security.md` and CLAUDE.md point people at a page that's 100% inline script). Low product risk since it's dev-only.
+**Pilot: `patterns.html` (284 lines) first.** Rationale: it's the smallest of the three, and it's _the documented living reference_ — migrating it first means the reference itself demonstrates the new convention instead of contradicting it (right now `docs/frontend_security.md` and CLAUDE.md point people at a page that's 100% inline script). Low product risk since it's dev-only. **§8's decision raises the stakes on this one**: now that `dev.py` is explicitly not a pattern source, `patterns.html` is one of the few things we point at instead, so it has to stop contradicting the convention it documents.
 
 **Then `assembly_registration.html` (567-line inline block)** — the actual production high-value target (`vanilla-alpine-json.md` §2.3 calls out its image manager as the canonical "genuinely stateful" use case). This is the one that most benefits from the drift-prevention machinery in §4 since it's the heaviest JSON-endpoint consumer.
 
-**Then `service_docs.html` (722 lines)** — dev-only, lowest urgency, and its priority partly depends on how §8 gets resolved (if `dev.py` isn't meant to be a pattern source, polishing its UI page is less urgent than the other two). Since §8 is deferred, this one stays parked; the first two are not affected.
+**Then `service_docs.html` (722 lines)** — dev-only, lowest urgency, and §8's answer pushes it further down: `dev.py` is explicitly not a pattern source, so polishing its UI page buys much less than the other two. It stays parked, but now on the narrower question of whether anything it does is load-bearing for a real workflow (§11 row 9) rather than on §8. The first two are unaffected.
 
 For each: lift inline `<script>` into named `Alpine.data()` components under `static/backoffice/js/components/`, unit-test the extracted logic with Vitest, shrink the template to markup + flat `x-data` wiring, regenerate `static_hashes()`/cache-busting automatically (no registration needed per `frontend_security.md`), backfill/confirm BDD coverage for the flow. No behavioural changes in the same PR as the extraction — that's a second pass, only after tests exist to prove behaviour is unchanged.
 
@@ -285,16 +500,18 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `st
 
 ## 10. Proposed phase sequencing
 
-1. **Phase 0 — decisions.** Mostly done (§11). Three items still with the team; none of them block Phase 1.
+1. **Phase 0 — decisions.** Mostly done (§11). One item still open (§11 row 9), and it only affects Phase 6.
 2. **Phase 1a — vendoring. ✅ DONE.** Vendor Alpine/htmx/govuk-frontend (§2), including the `build` npm script + `just build-all` + `.gitignore` wiring and the fresh-checkout/Docker acceptance check. Update `docs/frontend_security.md` and `docs/frontend_build.md`. Self-contained and shippable on its own.
-3. **Phase 1b — JS tooling. ✅ DONE.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and a first test proving the wiring end to end. Landed with `tests/js/` rather than colocated — see §5 for why, and it remains a one-line change.
+3. **Phase 1b — JS tooling. ✅ DONE.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and a first test proving the wiring end to end. Landed with `tests/js/` rather than colocated — see §5 for why; Phase 2 moves them.
 4. **Phase 1c — error-handling convention. ✅ DONE.** `user_msg()` on the exception hierarchy with a generic default, the `CuratedMessage` opt-in mixin, both `backoffice_registration.py` call sites switched, `_dev_error()` in `dev.py` with the five handlers narrowed onto it (§3), the convention documented (§6) and the checks added to `sf-code-review` (§7).
-5. **Phase 2 — drift-prevention machinery.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
-6. **Phase 3 — pilot migration.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup.
-7. **Phase 4 — production migration.** `assembly_registration.html` image/alt-text manager.
-8. **Phase 5 — PARKED pending §8.** `service_docs.html`; any further backfill of `dev.py` test coverage. Not to be started before the team discussion lands.
+5. **Phase 1d — `dev.py` is not a pattern source (§8).** Docstring note in `dev.py`, a line in `AGENTS.md` next to the existing `/backoffice/dev/patterns` call-out, a line in `docs/agent/json_api_conventions.md`, and the explicit carve-out that `patterns.html` remains canonical. Documentation and comments only, no code paths touched — small enough to ride along with another commit, but listed separately so it doesn't get lost.
+6. **Phase 2 — JS source layout (§5.1, shape in §5.2).** Move all hand-written first-party JS — including `html-editor.js` — to `src/js/`, widen the existing esbuild `build:js`/`watch:js` entry-point list to cover it, colocate the Vitest files, retire `load-global-script.js` and the shared-globals convention, and resolve the duplicate `urlSetParam`. Watch mode must work end to end before this phase is called done. Deliberately ahead of the migrations: Phases 4 and 5 are what generate most of the JS, and writing it into the new layout is cheaper than moving it afterwards.
+7. **Phase 3 — drift-prevention machinery.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
+8. **Phase 4 — pilot migration.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup. Also the thing §8 depends on — see there.
+9. **Phase 5 — production migration.** `assembly_registration.html` image/alt-text manager.
+10. **Phase 6 — PARKED pending §11 row 9.** `service_docs.html`. §8 is answered, so no `dev.py` test backfill is planned; what's left parked is just whether `service_docs.html` is load-bearing enough to be worth migrating at all.
 
-Each phase is independently shippable and reversible; nothing here requires a big-bang cutover. Phase 1 is split into three because the three parts touch entirely different files and have different review audiences — bundling them would make the vendoring change (the one with real deploy risk) hard to see.
+Each phase is independently shippable and reversible; nothing here requires a big-bang cutover. Phase 1 is split into four because the parts touch entirely different files and have different review audiences — bundling them would make the vendoring change (the one with real deploy risk) hard to see.
 
 ---
 
@@ -304,23 +521,21 @@ Each phase is independently shippable and reversible; nothing here requires a bi
 | --- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | New dependencies (§1)                                 | **Yes to all six.** Vitest, eslint+prettier, `@alpinejs/csp`+`htmx.org`, `ajv`, and `jsonschema` (separately confirmed once it turned out not to be installed already). eslint/prettier run as **prek hooks**, not a `just check` line. |
 | 2   | Drift prevention (§4)                                 | **Confirmed:** golden fixtures + JSON Schema on both sides. Named **"API fixtures"**. Schema location not raised in review — proceeding with `src/opendlp/schemas/json_api/` (§4.1).                                                    |
-| 3   | Dev blueprint (§8)                                    | **Deferred** — team discussion.                                                                                                                                                                                                         |
+| 3   | Dev blueprint (§8)                                    | **Option (b): `dev.py` is not a pattern source.** Annotate it as such; no test-coverage backfill. `patterns.html` stays canonical, which makes its migration (Phase 4) load-bearing for this answer.                                    |
 | 4   | Fix the five `dev.py` leaks now                       | **Yes**, via option (a): narrow the excepts. Plus two additions from Chewie — `user_msg()` on domain exceptions, and a "check the Flask console log" hint for dev-only errors (§3).                                                     |
-| 5   | Vitest test-file placement                            | **Deferred** — team discussion. Scaffold colocated; one-line change either way.                                                                                                                                                         |
+| 5   | Vitest test-file placement                            | **Colocated, via option 1 with esbuild** (§5.1): first-party JS moves to `src/js/`, esbuild emits to `static/`, tests sit beside their source. Watch mode required. Lands as Phase 2; `tests/js/` until then.                            |
 | 6   | Where Vitest runs                                     | **`just test` for tests, `just check` for linting** — and the linting gets there by living in the prek config, since that's the bulk of what `just check` does.                                                                         |
 | 7   | Pilot order (§9)                                      | **Confirmed:** `patterns.html` → `assembly_registration.html` → `service_docs.html`.                                                                                                                                                    |
 | 8   | govuk-frontend bump                                   | **5.11.1 → 5.14.0 is fine**, fold it into the vendoring change. **govuk-frontend 6.x is explicitly out of scope for this round of work** — it's a much bigger upgrade and needs its own planning.                                       |
-| 9   | Anything load-bearing in `dev.py`/`service_docs.html` | **Deferred** — team discussion. Phase 5 stays parked until answered.                                                                                                                                                                    |
+| 9   | Anything load-bearing in `dev.py`/`service_docs.html` | **Still open.** Distinct from row 3 — "don't copy from it" doesn't tell us whether anyone depends on it. Phase 6 stays parked until answered.                                                                                           |
 | 10  | `user_msg()` default on `OpenDLPError` (§3)           | **Generic translated string**, not `NotImplementedError` — better an unhelpfully vague message than a 500 with no feedback at all. Vagueness is caught by a `sf-code-review` check instead (§7).                                        |
 | 11  | Where the dev-only message lives (§3)                 | **A `_dev_error()` helper local to `dev.py`**, not a `dev_msg()` method on the exception hierarchy — keeps the dev-only concern in the dev-only file, and doesn't give production exceptions a method production must never call.       |
 
 ### Still open
 
-- **§8 — dev blueprint:** pattern source or not, and how much test coverage it earns. Blocks Phase 5 and the "do not copy this" annotations.
-- **§5 — Vitest test-file placement:** colocated or mirrored tree.
-- **§10 Phase 5 — is anything in `service_docs.html`/`dev.py` load-bearing** for a real workflow rather than a dev convenience?
+- **§10 Phase 6 — is anything in `service_docs.html`/`dev.py` load-bearing** for a real workflow rather than a dev convenience?
 
-That's the whole list — the two §3 sub-questions from the previous round are now answered (see the table rows 10 and 11).
+Down from three: §8 is answered (table row 3) and so is §5's placement question (row 5). This is the last one, and it only gates Phase 6.
 
 ### Pre-commit config decisions
 
