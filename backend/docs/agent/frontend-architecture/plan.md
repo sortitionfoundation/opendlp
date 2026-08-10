@@ -1,13 +1,13 @@
 # Frontend interactivity: implementation plan
 
-**Status:** Phases 1a, 1b and 1c are implemented (§2, §5, §3, §6, §7). Phase 1d onwards is not started; one question is still open.
+**Status:** Phases 1a, 1b, 1c and 1d are implemented (§2, §5, §3, §6, §7, §8). Phase 2 onwards is not started; one question is still open.
 **Decision this implements:** [vanilla-alpine-json.md](vanilla-alpine-json.md) — vanilla JS + Alpine.js (CSP build) + JSON routes, organised into real files, tested, for internal/backoffice interactivity. Public pages stay server-rendered, no-JS-required.
 
 This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 records what was decided and what is still parked pending a team discussion.
 
-**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
+**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
 
-**Not started:** Phase 1d onwards — the `dev.py` "not a pattern source" annotations (§8), the JS source relocation to `src/js/` (§5.2), the API-fixture machinery (§4) and the inline-script migrations (§9).
+**Not started:** Phase 2 onwards — the JS source relocation to `src/js/` (§5.2), the API-fixture machinery (§4) and the inline-script migrations (§9).
 
 **Still open (do not start this):** whether anything in `service_docs.html`/`dev.py` is load-bearing (§10 Phase 6).
 
@@ -428,10 +428,15 @@ To add once Phase 2 lands (§5.2):
 
 ---
 
-## 8. The dev blueprint is NOT a pattern source — DECIDED (option b)
+## 8. The dev blueprint is NOT a pattern source — ✅ DONE (Phase 1d)
 
 **Chewie's call: (b) — `dev.py` is not a pattern source.** It is not held to production standards
 and must not be copied from. The canonical examples live elsewhere.
+
+**Implemented,** as the three annotations below, in one commit. No behaviour changes and no test
+changes — the only executable file touched is `dev.py`, and only its module docstring. The docstring
+also points at `docs/agent/component_accessibility.md`, which the plan didn't list but which belongs
+in the same "go here instead" set. Nothing else diverged.
 
 ### What that means concretely
 
@@ -504,7 +509,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `st
 2. **Phase 1a — vendoring. ✅ DONE.** Vendor Alpine/htmx/govuk-frontend (§2), including the `build` npm script + `just build-all` + `.gitignore` wiring and the fresh-checkout/Docker acceptance check. Update `docs/frontend_security.md` and `docs/frontend_build.md`. Self-contained and shippable on its own.
 3. **Phase 1b — JS tooling. ✅ DONE.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and a first test proving the wiring end to end. Landed with `tests/js/` rather than colocated — see §5 for why; Phase 2 moves them.
 4. **Phase 1c — error-handling convention. ✅ DONE.** `user_msg()` on the exception hierarchy with a generic default, the `CuratedMessage` opt-in mixin, both `backoffice_registration.py` call sites switched, `_dev_error()` in `dev.py` with the five handlers narrowed onto it (§3), the convention documented (§6) and the checks added to `sf-code-review` (§7).
-5. **Phase 1d — `dev.py` is not a pattern source (§8).** Docstring note in `dev.py`, a line in `AGENTS.md` next to the existing `/backoffice/dev/patterns` call-out, a line in `docs/agent/json_api_conventions.md`, and the explicit carve-out that `patterns.html` remains canonical. Documentation and comments only, no code paths touched — small enough to ride along with another commit, but listed separately so it doesn't get lost.
+5. **Phase 1d — `dev.py` is not a pattern source. ✅ DONE.** Docstring note in `dev.py`, a line in `AGENTS.md` next to the existing `/backoffice/dev/patterns` call-out, a line in `docs/agent/json_api_conventions.md`, and the explicit carve-out that `patterns.html` remains canonical (§8). Documentation and comments only, no code paths touched.
 6. **Phase 2 — JS source layout (§5.1, shape in §5.2).** Move all hand-written first-party JS — including `html-editor.js` — to `src/js/`, widen the existing esbuild `build:js`/`watch:js` entry-point list to cover it, colocate the Vitest files, retire `load-global-script.js` and the shared-globals convention, and resolve the duplicate `urlSetParam`. Watch mode must work end to end before this phase is called done. Deliberately ahead of the migrations: Phases 4 and 5 are what generate most of the JS, and writing it into the new layout is cheaper than moving it afterwards.
 7. **Phase 3 — drift-prevention machinery.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
 8. **Phase 4 — pilot migration.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup. Also the thing §8 depends on — see there.
