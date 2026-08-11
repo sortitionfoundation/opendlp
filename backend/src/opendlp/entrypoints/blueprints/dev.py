@@ -593,7 +593,7 @@ def _page_id_for_assembly(uow: Any, assembly_id: uuid.UUID) -> uuid.UUID:
     """Resolve the assembly's registration page id for the assembly-addressed handlers."""
     page = page_for_assembly(uow, assembly_id)
     if page is None:
-        raise NotFoundError(f"Assembly {assembly_id} does not have a registration page")
+        raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
     return page.id
 
 

@@ -79,6 +79,7 @@ def assembly_with_registration_page(title: str, admin_user, test_database):
         uow=SqlAlchemyUnitOfWork(test_database),
         user_id=admin_user.id,
         assembly_id=assembly.id,
+        name="Registration page",
     )
     _assembly_ids[title] = str(assembly.id)
 

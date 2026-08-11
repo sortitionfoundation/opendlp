@@ -109,7 +109,7 @@ def _png(color=(255, 0, 0)) -> bytes:
 @pytest.fixture
 def registration_page(fake_store, admin_user, existing_assembly):
     with FakeUnitOfWork(store=fake_store) as uow:
-        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
 
 
 @pytest.fixture
@@ -150,7 +150,7 @@ def every_view_html(logged_in_admin, fake_store, registration_page, existing_ass
 
 def _seed_image(fake_store, page, *, alt: str) -> RegistrationImage:
     processed = process_image(_png(), max_bytes=_MAX_BYTES, max_edge_px=_MAX_EDGE)
-    image = RegistrationImage.from_processed(page.id, processed, alt=alt)
+    image = RegistrationImage.from_processed(page.assembly_id, processed, alt=alt)
     with FakeUnitOfWork(store=fake_store) as uow:
         uow.registration_images.add(image)
         uow.commit()

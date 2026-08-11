@@ -27,7 +27,7 @@ def _pdf(marker: bytes = b"body") -> bytes:
 @pytest.fixture
 def registration_page(fake_store, admin_user, existing_assembly):
     with FakeUnitOfWork(store=fake_store) as uow:
-        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
 
 
 def _replacements(page, body, asset_key: str) -> dict[str, str]:
