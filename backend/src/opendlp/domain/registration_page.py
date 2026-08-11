@@ -183,10 +183,14 @@ class RegistrationPage:
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
         auto_reply_email_template_id: uuid.UUID | None = None,
+        name: str = "",
+        language: str = "",
     ):
         now = datetime.now(UTC)
         self.id = registration_page_id or uuid.uuid4()
         self.assembly_id = assembly_id
+        self.name = name.strip()
+        self.language = language.strip()
         self.url_slug = _validated_slug(url_slug, field="url_slug")
         self.short_url_slug = _validated_slug(short_url_slug, field="short_url_slug")
         self.status = status
@@ -199,6 +203,24 @@ class RegistrationPage:
 
     def has_ever_been_published(self) -> bool:
         return any(a.action == RegistrationPageAction.PUBLISH for a in self.activity)
+
+    def can_be_deleted(self) -> bool:
+        """True if the page may be deleted outright rather than closed.
+
+        Once a page has been published its slug has been in the world - on
+        invites, QR codes and printed materials - so the row must survive to keep
+        those URLs resolving. Callers must additionally check that no respondent
+        registered through the page; that needs repository access.
+        """
+        return not self.has_ever_been_published()
+
+    def rename(self, name: str) -> None:
+        self.name = name.strip()
+        self.updated_at = datetime.now(UTC)
+
+    def set_language(self, language: str) -> None:
+        self.language = language.strip()
+        self.updated_at = datetime.now(UTC)
 
     @property
     def slugs_frozen(self) -> bool:
@@ -301,6 +323,8 @@ class RegistrationPage:
             created_at=self.created_at,
             updated_at=self.updated_at,
             auto_reply_email_template_id=self.auto_reply_email_template_id,
+            name=self.name,
+            language=self.language,
         )
 
     def __eq__(self, other: object) -> bool:

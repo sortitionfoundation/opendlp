@@ -806,6 +806,67 @@ class TestHasEverBeenPublished:
         assert page.has_ever_been_published() is True
 
 
+class TestNameAndLanguage:
+    def test_default_to_empty_strings(self):
+        """A page created without a name or language carries empty strings."""
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        assert page.name == ""
+        assert page.language == ""
+
+    def test_init_keeps_name_and_language(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), name="Español", language="es")
+        assert page.name == "Español"
+        assert page.language == "es"
+
+    def test_rename_changes_name(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), name="Draft")
+        page.rename("Variant A")
+        assert page.name == "Variant A"
+
+    def test_rename_strips_whitespace(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        page.rename("  Variant A  ")
+        assert page.name == "Variant A"
+
+    def test_rename_bumps_updated_at(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        page.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        page.rename("Variant A")
+        assert page.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
+
+    def test_set_language_changes_language(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        page.set_language("cy")
+        assert page.language == "cy"
+
+    def test_set_language_bumps_updated_at(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        page.updated_at = datetime(2000, 1, 1, tzinfo=UTC)
+        page.set_language("cy")
+        assert page.updated_at > datetime(2000, 1, 1, tzinfo=UTC)
+
+
+class TestCanBeDeleted:
+    def test_true_for_a_never_published_page(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        assert page.can_be_deleted() is True
+
+    def test_true_after_edits_only(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        page.record_edit(uuid.uuid4(), "something")
+        assert page.can_be_deleted() is True
+
+    def test_false_once_published(self):
+        page = _published_page()
+        assert page.can_be_deleted() is False
+
+    def test_false_after_publish_then_unpublish(self):
+        """Unpublishing does not undo the fact the slug was once live."""
+        page = _published_page()
+        page.unpublish(author_id=uuid.uuid4())
+        assert page.can_be_deleted() is False
+
+
 class TestSlugsFrozen:
     def test_unfrozen_initially(self):
         page = RegistrationPage(assembly_id=uuid.uuid4())
@@ -890,12 +951,16 @@ class TestCreateDetachedCopyAndIdentity:
             url_slug="a-page",
             short_url_slug="ap",
             thank_you_html="<p>thanks</p>",
+            name="Cymraeg",
+            language="cy",
         )
         page.record_create(uuid.uuid4())
         copy = page.create_detached_copy()
         assert copy is not page
         assert copy == page
         assert copy.assembly_id == page.assembly_id
+        assert copy.name == page.name
+        assert copy.language == page.language
         assert copy.url_slug == page.url_slug
         assert copy.short_url_slug == page.short_url_slug
         assert copy.source_type == page.source_type

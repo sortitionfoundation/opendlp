@@ -143,6 +143,7 @@ def _create_and_save_respondent(
     assembly_id: uuid.UUID,
     cleaned_data: dict[str, Any],
     is_test: bool,
+    registration_page_id: uuid.UUID | None = None,
 ) -> Respondent:
     """Build a Respondent from cleaned form data, persist it, and return a detached copy."""
     respondent_status = RespondentStatus.TEST_SUBMISSION if is_test else RespondentStatus.POOL
@@ -165,6 +166,7 @@ def _create_and_save_respondent(
         attributes=cleaned_data,
         source_type=RespondentSourceType.REGISTRATION_FORM,
         selection_status=respondent_status,
+        registration_page_id=registration_page_id,
     )
 
     comment_text = "Created via registration form"
@@ -238,7 +240,7 @@ def submit_registration(
                 is_test=is_test,
             )
 
-        respondent = _create_and_save_respondent(uow, page.assembly_id, cleaned_data, is_test)
+        respondent = _create_and_save_respondent(uow, page.assembly_id, cleaned_data, is_test, page.id)
 
         return RegistrationSubmissionResult(
             respondent=respondent,

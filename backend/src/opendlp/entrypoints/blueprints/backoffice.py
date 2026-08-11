@@ -41,7 +41,7 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import has_global_admin
 from opendlp.service_layer.qr_codes import generate_qr_code_base64
 from opendlp.service_layer.registration_page_service import (
-    get_registration_page_with_source,
+    list_registration_pages,
     update_registration_page,
 )
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
@@ -131,8 +131,8 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         # Get registration page data from service layer
         uow = bootstrap.get_flask_uow()
-        reg_result = get_registration_page_with_source(uow, current_user.id, assembly_id)
-        registration_page = reg_result[0] if reg_result else None
+        registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
+        registration_page = registration_pages[0] if registration_pages else None
 
         # Build registration URLs and a QR code for the short URL, when configured
         registration_page_url = None
@@ -191,8 +191,8 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         form = EditAssemblyForm(obj=assembly)
 
         # Get registration page data from service layer
-        reg_result = get_registration_page_with_source(uow, current_user.id, assembly_id)
-        registration_page = reg_result[0] if reg_result else None
+        registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
+        registration_page = registration_pages[0] if registration_pages else None
 
         if form.validate_on_submit():
             try:
@@ -219,7 +219,7 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     update_registration_page(
                         uow=uow,
                         user_id=current_user.id,
-                        assembly_id=assembly_id,
+                        page_id=registration_page.id,
                         url_slug=url_slug or None,
                         short_url_slug=short_url_slug or None,
                     )

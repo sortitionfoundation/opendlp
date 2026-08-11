@@ -52,7 +52,9 @@ def _seed_page(store: FakeStore, *, url_slug: str = "my-slug") -> RegistrationPa
 
 def _seed_document(store: FakeStore, page: RegistrationPage, payload: bytes = b"hello") -> RegistrationDocument:
     validated = validate_pdf(_pdf(payload), max_bytes=_MAX_BYTES)
-    document = RegistrationDocument.from_validated(page.id, validated, label="Info pack", original_filename="info.pdf")
+    document = RegistrationDocument.from_validated(
+        page.assembly_id, validated, label="Info pack", original_filename="info.pdf"
+    )
     with FakeUnitOfWork(store=store) as uow:
         uow.registration_documents.add(document)
         uow.commit()
@@ -98,7 +100,7 @@ def _uow(fake_store) -> FakeUnitOfWork:
 class TestSerialiseDocument:
     def test_emits_expected_fields(self):
         document = RegistrationDocument(
-            registration_page_id=uuid.uuid4(),
+            assembly_id=uuid.uuid4(),
             byte_size=321,
             sha256="e" * 64,
             data=b"%PDF-bytes",
@@ -132,7 +134,7 @@ class TestHandleAddRegistrationDocument:
         assert result["document"]["label"] == "Decoded"
         assert result["document"]["original_filename"] == "pack.pdf"
         with _uow(fake_store) as uow:
-            stored = uow.registration_documents.list_by_page_id(page.id)
+            stored = uow.registration_documents.list_by_assembly_id(page.assembly_id)
         assert len(stored) == 1
         assert stored[0].label == "Decoded"
 
@@ -149,7 +151,7 @@ class TestHandleAddRegistrationDocument:
 
         assert result["status"] == "success"
         with _uow(fake_store) as uow:
-            assert len(uow.registration_documents.list_by_page_id(page.id)) == 1
+            assert len(uow.registration_documents.list_by_assembly_id(page.assembly_id)) == 1
 
     def test_invalid_base64_returns_error(self, fake_store, page, as_admin):
         result = _handle_add_registration_document(
@@ -196,7 +198,7 @@ class TestHandleDeleteRegistrationDocument:
 
         assert result == {"status": "success", "deleted_document_id": str(document.id)}
         with _uow(fake_store) as uow:
-            assert uow.registration_documents.list_by_page_id(page.id) == []
+            assert uow.registration_documents.list_by_assembly_id(page.assembly_id) == []
 
 
 class TestHandleSetRegistrationDocumentLabel:

@@ -48,7 +48,7 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
     "bg": "var(--color-error-100)",
     "border": "var(--color-error-400)",
     "text": "var(--color-error-600)",
-    "icon": "✕"
+    "icon": "!"
     },
     "info": {
     "bg": "var(--color-info-100)",
@@ -76,12 +76,12 @@ ABOUTME: Supports success, warning, error, info variants with semantic styling
             {%- if use_caller %}{{ caller() }}{% else %}{{ message }}{% endif -%}
         </p>
 
-        {# Dismiss button #}
+        {# Dismiss button: self-start pins it to the top right in multi-line alerts #}
         {% if dismissible %}
             <button
                 type="button"
                 @click="show = false"
-                class="flex-shrink-0 p-1 rounded hover:opacity-70 focus:outline-none focus:ring-2"
+                class="flex-shrink-0 self-start p-1 rounded hover:opacity-70 focus:outline-none focus:ring-2"
                 style="color: {{ styles.text }}; --tw-ring-color: {{ styles.border }};"
                 aria-label="{{ _('Dismiss') }}"
             >

@@ -23,7 +23,7 @@ def _pdf(marker: bytes = b"body") -> bytes:
 
 def _document(*, label: str = "Info pack", sha256: str = "a" * 64, original_filename: str = "") -> RegistrationDocument:
     return RegistrationDocument(
-        registration_page_id=uuid.uuid4(),
+        assembly_id=uuid.uuid4(),
         byte_size=123,
         sha256=sha256,
         data=_pdf(),
@@ -36,12 +36,12 @@ def _document(*, label: str = "Info pack", sha256: str = "a" * 64, original_file
 @pytest.fixture
 def registration_page(fake_store, admin_user, existing_assembly):
     with FakeUnitOfWork(store=fake_store) as uow:
-        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id)
+        return create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
 
 
 def _seed_document(fake_store, page, *, label: str = "Info pack", marker: bytes = b"body") -> RegistrationDocument:
     validated = validate_pdf(_pdf(marker), max_bytes=_MAX_BYTES)
-    document = RegistrationDocument.from_validated(page.id, validated, label=label)
+    document = RegistrationDocument.from_validated(page.assembly_id, validated, label=label)
     with FakeUnitOfWork(store=fake_store) as uow:
         uow.registration_documents.add(document)
         uow.commit()
@@ -50,7 +50,7 @@ def _seed_document(fake_store, page, *, label: str = "Info pack", marker: bytes 
 
 def _stored_documents(fake_store, page) -> list[RegistrationDocument]:
     with FakeUnitOfWork(store=fake_store) as uow:
-        return uow.registration_documents.list_by_page_id(page.id)
+        return uow.registration_documents.list_by_assembly_id(page.assembly_id)
 
 
 class TestDocumentToDict:
@@ -205,7 +205,7 @@ class TestUploadErrorBranches:
         self, logged_in_admin, existing_assembly, registration_page, monkeypatch
     ):
         monkeypatch.setattr(
-            "opendlp.service_layer.registration_document_service.get_max_documents_per_registration_page",
+            "opendlp.service_layer.registration_document_service.get_max_documents_per_assembly",
             lambda: 0,
         )
         response = logged_in_admin.post(
@@ -216,14 +216,14 @@ class TestUploadErrorBranches:
         assert response.status_code == 400
         assert "maximum" in response.get_json()["error"].lower()
 
-    def test_upload_without_registration_page_returns_400(self, logged_in_admin, existing_assembly):
+    def test_upload_without_registration_page_succeeds(self, logged_in_admin, existing_assembly):
+        """Assets belong to the assembly, so they can be uploaded before any page exists."""
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/registration/documents",
             data={"document": (BytesIO(_pdf()), "info-pack.pdf")},
             content_type="multipart/form-data",
         )
-        assert response.status_code == 400
-        assert "registration page" in response.get_json()["error"].lower()
+        assert response.status_code == 201
 
     def test_upload_forbidden_for_regular_user_returns_403(self, logged_in_user, existing_assembly, registration_page):
         response = logged_in_user.post(
@@ -295,14 +295,6 @@ class TestPatchRoute:
         assert response.status_code == 404
         assert "document" in response.get_json()["error"].lower()
 
-    def test_patch_without_registration_page_returns_404(self, logged_in_admin, existing_assembly):
-        response = logged_in_admin.patch(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
-            json={"label": "Renamed"},
-        )
-        assert response.status_code == 404
-        assert "registration page" in response.get_json()["error"].lower()
-
     def test_patch_forbidden_for_regular_user_returns_403(
         self, logged_in_user, fake_store, existing_assembly, registration_page
     ):
@@ -360,13 +352,6 @@ class TestDeleteRoute:
             f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
         )
         assert response.status_code == 404
-
-    def test_delete_without_registration_page_returns_404(self, logged_in_admin, existing_assembly):
-        response = logged_in_admin.delete(
-            f"/backoffice/assembly/{existing_assembly.id}/registration/documents/{uuid.uuid4()}",
-        )
-        assert response.status_code == 404
-        assert "registration page" in response.get_json()["error"].lower()
 
     def test_delete_forbidden_for_regular_user_returns_403(
         self, logged_in_user, fake_store, existing_assembly, registration_page

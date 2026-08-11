@@ -15,6 +15,7 @@ from opendlp.domain.registration_page import (
 )
 from opendlp.entrypoints.blueprints import backoffice_registration as be_reg
 from opendlp.service_layer.exceptions import EmailTemplateNotFoundError
+from opendlp.service_layer.registration_page_service import page_for_assembly
 from tests.fakes import FakeUnitOfWork
 
 
@@ -52,7 +53,7 @@ def _seed_template(
 
 def _get_page(fake_store, assembly_id) -> RegistrationPage:
     with FakeUnitOfWork(store=fake_store) as uow:
-        return uow.registration_pages.get_by_assembly_id(assembly_id).create_detached_copy()
+        return page_for_assembly(uow, assembly_id).create_detached_copy()
 
 
 def _get_template(fake_store, template_id) -> EmailTemplate | None:
@@ -405,7 +406,7 @@ class TestCreateDefaultAutoReplyTemplate:
         assert response.status_code == 302
         # The page still gets created even though seeding the template failed.
         with FakeUnitOfWork(store=fake_store) as uow:
-            page = uow.registration_pages.get_by_assembly_id(assembly_id)
+            page = page_for_assembly(uow, assembly_id)
         assert page is not None
         # No template got persisted.
         assert _list_templates(fake_store, assembly_id) == []

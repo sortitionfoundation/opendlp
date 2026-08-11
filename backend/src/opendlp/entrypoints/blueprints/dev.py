@@ -99,6 +99,7 @@ from opendlp.service_layer.registration_page_service import (
     create_registration_page,
     generate_starter_form_html,
     get_registration_page_with_source,
+    page_for_assembly,
     publish_registration_page,
     reopen_registration_page,
     unpublish_registration_page,
@@ -588,6 +589,14 @@ def _handle_update_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
             return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
+def _page_id_for_assembly(uow: Any, assembly_id: uuid.UUID) -> uuid.UUID:
+    """Resolve the assembly's registration page id for the assembly-addressed handlers."""
+    page = page_for_assembly(uow, assembly_id)
+    if page is None:
+        raise NotFoundError(f"Assembly {assembly_id} does not have a registration page")
+    return page.id
+
+
 def _handle_create_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle create_registration_page service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
@@ -598,6 +607,8 @@ def _handle_create_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
                 uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
+                name=params.get("name", "Registration page"),
+                language=params.get("language", ""),
             )
             return {
                 "status": "success",
@@ -627,7 +638,7 @@ def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str,
             result = get_registration_page_with_source(
                 uow=uow,
                 user_id=current_user.id,
-                assembly_id=assembly_id,
+                page_id=_page_id_for_assembly(uow, assembly_id),
             )
             if result is None:
                 return {
@@ -670,7 +681,7 @@ def _handle_update_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
             reg_page = update_registration_page(
                 uow=uow,
                 user_id=current_user.id,
-                assembly_id=assembly_id,
+                page_id=_page_id_for_assembly(uow, assembly_id),
                 url_slug=url_slug,
                 short_url_slug=short_url_slug,
             )
@@ -722,7 +733,7 @@ def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> d
             html_source = update_registration_page_html(
                 uow=uow,
                 user_id=current_user.id,
-                assembly_id=assembly_id,
+                page_id=_page_id_for_assembly(uow, assembly_id),
                 form_html=form_html,
             )
             return {
@@ -751,7 +762,7 @@ def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[
             reg_page = publish_registration_page(
                 uow=uow,
                 user_id=current_user.id,
-                assembly_id=assembly_id,
+                page_id=_page_id_for_assembly(uow, assembly_id),
             )
             return {
                 "status": "success",
@@ -774,7 +785,7 @@ def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dic
             reg_page = unpublish_registration_page(
                 uow=uow,
                 user_id=current_user.id,
-                assembly_id=assembly_id,
+                page_id=_page_id_for_assembly(uow, assembly_id),
             )
             return {
                 "status": "success",
@@ -797,7 +808,7 @@ def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[st
             reg_page = close_registration_page(
                 uow=uow,
                 user_id=current_user.id,
-                assembly_id=assembly_id,
+                page_id=_page_id_for_assembly(uow, assembly_id),
             )
             return {
                 "status": "success",
@@ -820,7 +831,7 @@ def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
             reg_page = reopen_registration_page(
                 uow=uow,
                 user_id=current_user.id,
-                assembly_id=assembly_id,
+                page_id=_page_id_for_assembly(uow, assembly_id),
             )
             return {
                 "status": "success",
@@ -942,7 +953,7 @@ def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
 def _serialise_image(image: RegistrationImage) -> dict[str, Any]:
     return {
         "id": str(image.id),
-        "registration_page_id": str(image.registration_page_id),
+        "assembly_id": str(image.assembly_id),
         "byte_size": image.byte_size,
         "width": image.width,
         "height": image.height,
@@ -1062,7 +1073,7 @@ def _handle_list_image_snippets(uow: Any, params: dict[str, Any]) -> dict[str, A
 
     page_repo_uow = bootstrap.get_flask_uow()
     with page_repo_uow:
-        page = page_repo_uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(page_repo_uow, assembly_id)
     url_slug = page.url_slug if page else ""
 
     def url_for_image(image: RegistrationImage) -> str:
@@ -1110,7 +1121,7 @@ def _handle_get_registration_image_for_serving(uow: Any, params: dict[str, Any])
 def _serialise_document(document: RegistrationDocument) -> dict[str, Any]:
     return {
         "id": str(document.id),
-        "registration_page_id": str(document.registration_page_id),
+        "assembly_id": str(document.assembly_id),
         "byte_size": document.byte_size,
         "sha256": document.sha256,
         "label": document.label,
@@ -1228,7 +1239,7 @@ def _handle_list_document_snippets(uow: Any, params: dict[str, Any]) -> dict[str
 
     page_repo_uow = bootstrap.get_flask_uow()
     with page_repo_uow:
-        page = page_repo_uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(page_repo_uow, assembly_id)
     url_slug = page.url_slug if page else ""
 
     def url_for_document(document: RegistrationDocument) -> str:

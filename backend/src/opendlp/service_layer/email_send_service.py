@@ -1,8 +1,6 @@
 """ABOUTME: Service layer for rendering and sending templated emails to respondents
 ABOUTME: Builds the context, sends via the adapter and writes a respondent send record"""
 
-import uuid
-
 import structlog
 
 from opendlp.adapters.email import EmailAdapter
@@ -83,27 +81,32 @@ def send_registration_auto_reply(
     email_adapter: EmailAdapter,
     *,
     respondent: Respondent,
-    assembly_id: uuid.UUID,
 ) -> RespondentEmailSendRecord | None:
-    """Send the registration auto-reply if configured. Returns None (no record) when skipped.
+    """Send the auto-reply of the page the respondent registered through.
 
-    Skips silently when no auto-reply is configured. When an auto-reply *is*
-    configured but the respondent has no email address, logs a warning (a likely
-    page misconfiguration) and writes no record.
+    The template comes from that page, not the assembly: an assembly's variants
+    each carry their own auto-reply, so resolving by assembly could send a
+    registrant the wrong language. Returns None (no record) when skipped -
+    a respondent that came from anywhere but a registration page has no
+    auto-reply to send. When an auto-reply *is* configured but the respondent
+    has no email address, logs a warning (a likely page misconfiguration) and
+    writes no record.
     """
     with uow:
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        if respondent.registration_page_id is None:
+            return None
+        page = uow.registration_pages.get(respondent.registration_page_id)
         if page is None or page.auto_reply_email_template_id is None:
             return None
         if not respondent.email:
             logger.warning(
-                "Auto-reply is configured for assembly %s but respondent %s has no email; skipping send",
-                assembly_id,
+                "Auto-reply is configured for registration page %s but respondent %s has no email; skipping send",
+                page.id,
                 respondent.id,
             )
             return None
         template = uow.email_templates.get(page.auto_reply_email_template_id)
-        assembly = uow.assemblies.get(assembly_id)
+        assembly = uow.assemblies.get(page.assembly_id)
         if template is None or assembly is None:
             return None
         record = _build_and_send(uow, email_adapter, template, assembly, respondent)

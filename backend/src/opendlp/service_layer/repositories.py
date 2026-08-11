@@ -433,6 +433,11 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def count_by_registration_page(self, assembly_id: uuid.UUID) -> dict[uuid.UUID, int]:
+        """Count respondents per registration page for an assembly, in one query."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_by_assembly_id_statuses(
         self,
         assembly_id: uuid.UUID,
@@ -569,8 +574,8 @@ class RegistrationPageRepository(AbstractRepository):
     """Repository interface for RegistrationPage domain objects."""
 
     @abc.abstractmethod
-    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> RegistrationPage | None:
-        """Get the registration page for an assembly, or None if it has none."""
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationPage]:
+        """Get every registration page for an assembly, oldest first."""
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -607,17 +612,17 @@ class RegistrationImageRepository(AbstractRepository):
     """Repository interface for RegistrationImage domain objects."""
 
     @abc.abstractmethod
-    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationImage | None:
+    def get_by_assembly_and_sha(self, assembly_id: uuid.UUID, sha256: str) -> RegistrationImage | None:
         """Get an image for a page by its content hash, or None."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationImage]:
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationImage]:
         """Get all images for a registration page, oldest first."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         """Count images for a registration page."""
         raise NotImplementedError
 
@@ -631,17 +636,17 @@ class RegistrationDocumentRepository(AbstractRepository):
     """Repository interface for RegistrationDocument domain objects."""
 
     @abc.abstractmethod
-    def get_by_page_and_sha(self, registration_page_id: uuid.UUID, sha256: str) -> RegistrationDocument | None:
+    def get_by_assembly_and_sha(self, assembly_id: uuid.UUID, sha256: str) -> RegistrationDocument | None:
         """Get a document for a page by its content hash, or None."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def list_by_page_id(self, registration_page_id: uuid.UUID) -> list[RegistrationDocument]:
+    def list_by_assembly_id(self, assembly_id: uuid.UUID) -> list[RegistrationDocument]:
         """Get all documents for a registration page, oldest first."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def count_by_page_id(self, registration_page_id: uuid.UUID) -> int:
+    def count_by_assembly_id(self, assembly_id: uuid.UUID) -> int:
         """Count documents for a registration page."""
         raise NotImplementedError
 

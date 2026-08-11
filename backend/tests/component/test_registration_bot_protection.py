@@ -23,11 +23,20 @@ from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.exceptions import RateLimitExceeded
 from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
+    page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
 )
 from opendlp.service_layer.user_service import create_user
 from tests.fakes import FakeStore, FakeUnitOfWork
+
+
+def _page_id(uow, assembly_id):  # type: ignore[no-untyped-def]
+    """The id of the assembly's single registration page."""
+    page = page_for_assembly(uow, assembly_id)
+    assert page is not None
+    return page.id
+
 
 MINIMAL_FORM_HTML = """
 <form method="post" action="{{ form_action }}">
@@ -104,11 +113,11 @@ def _make_assembly(fake_store, admin_user: User, title: str) -> uuid.UUID:
 def _seed_published_page(fake_store, admin_user: User, title: str = "Test Assembly") -> RegistrationPage:
     assembly_id = _make_assembly(fake_store, admin_user, title)
     with FakeUnitOfWork(store=fake_store) as uow:
-        create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
+        create_registration_page_with_slugs(uow, admin_user.id, assembly_id, name="Registration page")
     with FakeUnitOfWork(store=fake_store) as uow:
-        update_registration_page_html(uow, admin_user.id, assembly_id, MINIMAL_FORM_HTML)
+        update_registration_page_html(uow, admin_user.id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
     with FakeUnitOfWork(store=fake_store) as uow:
-        return publish_registration_page(uow, admin_user.id, assembly_id)
+        return publish_registration_page(uow, admin_user.id, _page_id(uow, assembly_id))
 
 
 class TestHoneypot:
@@ -414,7 +423,7 @@ class TestSubmissionRecording:
         """A genuine validation failure must not count against the rate limit."""
         assembly_id = _make_assembly(fake_store, admin_user, "Required Field Assembly")
         with FakeUnitOfWork(store=fake_store) as uow:
-            create_registration_page_with_slugs(uow, admin_user.id, assembly_id)
+            create_registration_page_with_slugs(uow, admin_user.id, assembly_id, name="Registration page")
             uow.respondent_field_definitions.bulk_add([
                 RespondentFieldDefinition(
                     assembly_id=assembly_id,
@@ -428,9 +437,9 @@ class TestSubmissionRecording:
             ])
             uow.commit()
         with FakeUnitOfWork(store=fake_store) as uow:
-            update_registration_page_html(uow, admin_user.id, assembly_id, MINIMAL_FORM_HTML)
+            update_registration_page_html(uow, admin_user.id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
         with FakeUnitOfWork(store=fake_store) as uow:
-            page = publish_registration_page(uow, admin_user.id, assembly_id)
+            page = publish_registration_page(uow, admin_user.id, _page_id(uow, assembly_id))
 
         response = client.post(f"/register/{page.url_slug}", data={"name": "Test User"})
 

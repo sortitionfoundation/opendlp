@@ -103,6 +103,39 @@ All templates must extend `base.html` which includes:
 </script>
 ```
 
+## Jinja Macro Composition: `caller` Scope
+
+Composable wrapper macros (dialog atoms, cards, etc.) use `{% call my_macro() %}...{% endcall %}`
+blocks as content slots. Jinja has one sharp edge here: **the special `caller` variable is
+unreachable inside a nested `{% call %}` block.** When a macro body opens a `{% call %}` block,
+Jinja rebinds `caller` for the inner macro, shadowing the outer macro's own caller. Referencing
+`{{ caller() }}` inside the block raises `UndefinedError: No caller defined` at render time —
+there is no compile-time warning, and it broke every modal once (see PR #195 / commit 5d884ea).
+
+```jinja
+{# ❌ BROKEN — caller() inside a {% call %} block cannot see modal's caller #}
+{% macro modal() %}
+    {% call dialog_body() %}{{ caller() }}{% endcall %}
+{% endmacro %}
+
+{# ✅ CORRECT — capture the content first, then pass it into the nested slot #}
+{% macro modal() %}
+    {% set body_content = caller() %}
+    {% call dialog_body() %}{{ body_content }}{% endcall %}
+{% endmacro %}
+```
+
+Rules of thumb:
+
+- Never reference `caller()` inside a `{% call %}` block. Capture it first with
+  `{% set content = caller() %}` — `caller()` returns `Markup`, so autoescaping does not
+  double-escape the captured content.
+- Nesting wrapper macros arbitrarily deep is fine; only the bare `caller` name is affected.
+- A `{% call %}` block containing only static markup (e.g. a close button passed to
+  `dialog_header`) is safe — the problem is exclusively the `caller()` reference.
+- Prefer this capture pattern over inlining the wrapped macro's HTML: inlining duplicates the
+  atom's markup and the copies drift apart when the atom changes.
+
 ## Accessibility Requirements
 
 - All interactive elements must be keyboard accessible

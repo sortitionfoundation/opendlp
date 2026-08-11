@@ -46,7 +46,7 @@ class ProcessedImage:
 class RegistrationImage:
     def __init__(
         self,
-        registration_page_id: uuid.UUID,
+        assembly_id: uuid.UUID,
         byte_size: int,
         width: int,
         height: int,
@@ -59,7 +59,7 @@ class RegistrationImage:
         created_at: datetime | None = None,
     ):
         self.id = image_id or uuid.uuid4()
-        self.registration_page_id = registration_page_id
+        self.assembly_id = assembly_id
         self.byte_size = byte_size
         self.width = width
         self.height = height
@@ -73,14 +73,14 @@ class RegistrationImage:
     @classmethod
     def from_processed(
         cls,
-        registration_page_id: uuid.UUID,
+        assembly_id: uuid.UUID,
         processed: ProcessedImage,
         created_by: uuid.UUID | None = None,
         alt: str = "",
         original_filename: str = "",
     ) -> "RegistrationImage":
         return cls(
-            registration_page_id=registration_page_id,
+            assembly_id=assembly_id,
             byte_size=processed.byte_size,
             width=processed.width,
             height=processed.height,
@@ -93,7 +93,7 @@ class RegistrationImage:
 
     def create_detached_copy(self) -> "RegistrationImage":
         return RegistrationImage(
-            registration_page_id=self.registration_page_id,
+            assembly_id=self.assembly_id,
             byte_size=self.byte_size,
             width=self.width,
             height=self.height,

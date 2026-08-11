@@ -400,6 +400,7 @@ def create_test_assembly_with_registration_page(title: str, admin_user, test_dat
         uow=SqlAlchemyUnitOfWork(session_factory),
         user_id=admin_user.id,
         assembly_id=assembly.id,
+        name="Registration page",
     )
 
 
@@ -440,22 +441,26 @@ def saved_registration_html_contains(page: Page, text: str):
 
 
 def _create_assembly_with_saved_form(title: str, admin_user, session_factory):
-    """Create an assembly whose registration page has saved, publishable form HTML."""
+    """Create an assembly whose registration page has saved, publishable form HTML.
+
+    Returns the registration page, which the callers need to address it by id.
+    """
     assembly = create_assembly(
         uow=SqlAlchemyUnitOfWork(session_factory),
         title=title,
         created_by_user_id=admin_user.id,
     )
     _assembly_name_id_cache.add_existing(title, assembly)
-    create_registration_page_with_slugs(
+    registration_page = create_registration_page_with_slugs(
         uow=SqlAlchemyUnitOfWork(session_factory),
         user_id=admin_user.id,
         assembly_id=assembly.id,
+        name="Registration page",
     )
     update_registration_page_html(
         uow=SqlAlchemyUnitOfWork(session_factory),
         user_id=admin_user.id,
-        assembly_id=assembly.id,
+        page_id=registration_page.id,
         form_html=(
             '<form action="{{ form_action }}" method="post">'
             "{{ csrf_form_element }}"
@@ -465,7 +470,7 @@ def _create_assembly_with_saved_form(title: str, admin_user, session_factory):
             "</form>"
         ),
     )
-    return assembly
+    return registration_page
 
 
 @given(parsers.parse('there is an assembly called "{title}" with a saved registration form'))
@@ -477,11 +482,11 @@ def create_test_assembly_with_saved_form(title: str, admin_user, test_database):
 @given(parsers.parse('there is an assembly called "{title}" with a published registration form'))
 def create_test_assembly_with_published_form(title: str, admin_user, test_database):
     """Create an assembly whose saved registration form has been published."""
-    assembly = _create_assembly_with_saved_form(title, admin_user, test_database)
+    registration_page = _create_assembly_with_saved_form(title, admin_user, test_database)
     publish_registration_page(
         uow=SqlAlchemyUnitOfWork(test_database),
         user_id=admin_user.id,
-        assembly_id=assembly.id,
+        page_id=registration_page.id,
     )
 
 

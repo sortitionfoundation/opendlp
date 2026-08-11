@@ -90,6 +90,7 @@ _RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
         "can_attend",
         "email",
         "source_type",
+        "registration_page_id",
         "created_at",
         "updated_at",
         "comments",
@@ -131,6 +132,7 @@ class Respondent:
         can_attend: bool | None = None,
         email: str = "",
         source_type: RespondentSourceType = RespondentSourceType.MANUAL_ENTRY,
+        registration_page_id: uuid.UUID | None = None,
         attributes: dict[str, Any] | None = None,
         respondent_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
@@ -151,6 +153,7 @@ class Respondent:
         self.can_attend = can_attend
         self.email = email.strip()
         self.source_type = source_type
+        self.registration_page_id = registration_page_id
         self.attributes = attributes or {}
         validate_no_field_name_collisions(self.attributes.keys())
         self.created_at = created_at or datetime.now(UTC)
@@ -373,6 +376,7 @@ class Respondent:
             can_attend=self.can_attend,
             email=self.email,
             source_type=self.source_type,
+            registration_page_id=self.registration_page_id,
             attributes=self.attributes,
             respondent_id=self.id,
             created_at=self.created_at,

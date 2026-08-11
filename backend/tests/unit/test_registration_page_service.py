@@ -30,6 +30,7 @@ from opendlp.service_layer.exceptions import (
     SlugError,
     UserNotFoundError,
 )
+from opendlp.service_layer.registration_page_service import page_for_assembly
 from tests.fakes import FakeUnitOfWork
 
 READY_HTML = "<form>{{ csrf_form_element }} {{ form_action }}</form>"
@@ -57,11 +58,18 @@ def _viewer(uow: FakeUnitOfWork, assembly: Assembly) -> User:
     return user
 
 
+def _page_id(uow: FakeUnitOfWork, assembly: Assembly) -> uuid.UUID:
+    """The id of the assembly's single registration page."""
+    page = page_for_assembly(uow, assembly.id)
+    assert page is not None
+    return page.id
+
+
 def _create_published_page(uow: FakeUnitOfWork, user: User, assembly: Assembly) -> RegistrationPage:
-    service.create_registration_page(uow, user.id, assembly.id)
-    service.update_registration_page_html(uow, user.id, assembly.id, READY_HTML)
-    service.update_registration_page(uow, user.id, assembly.id, url_slug="a-page")
-    return service.publish_registration_page(uow, user.id, assembly.id)
+    service.create_registration_page(uow, user.id, assembly.id, name="Registration page")
+    service.update_registration_page_html(uow, user.id, _page_id(uow, assembly), READY_HTML)
+    service.update_registration_page(uow, user.id, _page_id(uow, assembly), url_slug="a-page")
+    return service.publish_registration_page(uow, user.id, _page_id(uow, assembly))
 
 
 class TestRegistrationPageNotReadyExport:
@@ -75,11 +83,11 @@ class TestCreateRegistrationPage:
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
 
-        page = service.create_registration_page(uow, admin.id, assembly.id)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         assert page.assembly_id == assembly.id
         assert page.source_type is RegistrationPageSource.HTML
-        assert uow.registration_pages.get_by_assembly_id(assembly.id) is not None
+        assert page_for_assembly(uow, assembly.id) is not None
         assert uow.registration_page_html_sources.get_by_page_id(page.id) is not None
         assert uow.committed
 
@@ -87,7 +95,7 @@ class TestCreateRegistrationPage:
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
 
-        page = service.create_registration_page(uow, admin.id, assembly.id)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         assert page.thank_you_html == DEFAULT_THANK_YOU_HTML
         source = uow.registration_page_html_sources.get_by_page_id(page.id)
@@ -98,7 +106,7 @@ class TestCreateRegistrationPage:
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
 
-        page = service.create_registration_page(uow, admin.id, assembly.id)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         assert len(page.activity) == 1
         entry = page.activity[0]
@@ -109,10 +117,10 @@ class TestCreateRegistrationPage:
     def test_create_raises_if_already_exists(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         with pytest.raises(ValueError, match="already has a registration page"):
-            service.create_registration_page(uow, admin.id, assembly.id)
+            service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
     def test_create_requires_manage_permission(self):
         uow = FakeUnitOfWork()
@@ -120,72 +128,74 @@ class TestCreateRegistrationPage:
         viewer = _viewer(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
-            service.create_registration_page(uow, viewer.id, assembly.id)
+            service.create_registration_page(uow, viewer.id, assembly.id, name="Registration page")
 
     def test_create_raises_assembly_not_found(self):
         uow = FakeUnitOfWork()
         admin = _admin(uow)
 
         with pytest.raises(AssemblyNotFoundError):
-            service.create_registration_page(uow, admin.id, uuid.uuid4())
+            service.create_registration_page(uow, admin.id, uuid.uuid4(), name="Registration page")
 
     def test_create_raises_user_not_found(self):
         uow = FakeUnitOfWork()
         assembly = _assembly(uow)
 
         with pytest.raises(UserNotFoundError):
-            service.create_registration_page(uow, uuid.uuid4(), assembly.id)
+            service.create_registration_page(uow, uuid.uuid4(), assembly.id, name="Registration page")
 
 
 class TestGetRegistrationPage:
-    def test_returns_none_when_not_created(self):
+    def test_raises_for_an_unknown_page(self):
         uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
+        admin = _admin(uow)
 
-        assert service.get_registration_page(uow, admin.id, assembly.id) is None
+        with pytest.raises(RegistrationPageNotFoundError):
+            service.get_registration_page(uow, admin.id, uuid.uuid4())
 
     def test_returns_page_when_created(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        created = service.create_registration_page(uow, admin.id, assembly.id)
+        created = service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.get_registration_page(uow, admin.id, assembly.id)
+        page = service.get_registration_page(uow, admin.id, _page_id(uow, assembly))
         assert page is not None
         assert page.id == created.id
 
     def test_viewer_can_read(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         viewer = _viewer(uow, assembly)
 
-        assert service.get_registration_page(uow, viewer.id, assembly.id) is not None
+        assert service.get_registration_page(uow, viewer.id, _page_id(uow, assembly)) is not None
 
     def test_stranger_cannot_read(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         stranger = User(email="s@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(stranger)
 
-        with pytest.raises(InsufficientPermissions):
-            service.get_registration_page(uow, stranger.id, assembly.id)
+        with pytest.raises(RegistrationPageNotFoundError):
+            service.get_registration_page(uow, stranger.id, _page_id(uow, assembly))
 
 
 class TestGetRegistrationPageWithSource:
-    def test_returns_none_when_not_created(self):
+    def test_raises_for_an_unknown_page(self):
         uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
+        admin = _admin(uow)
 
-        assert service.get_registration_page_with_source(uow, admin.id, assembly.id) is None
+        with pytest.raises(RegistrationPageNotFoundError):
+            service.get_registration_page_with_source(uow, admin.id, uuid.uuid4())
 
     def test_returns_page_and_source(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page_html(uow, admin.id, _page_id(uow, assembly), READY_HTML)
 
-        result = service.get_registration_page_with_source(uow, admin.id, assembly.id)
+        result = service.get_registration_page_with_source(uow, admin.id, _page_id(uow, assembly))
         assert result is not None
         page, source = result
         assert page.assembly_id == assembly.id
@@ -196,9 +206,11 @@ class TestUpdateRegistrationPage:
     def test_update_slugs_happy_path(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.update_registration_page(uow, admin.id, assembly.id, url_slug="my-page", short_url_slug="mp")
+        page = service.update_registration_page(
+            uow, admin.id, _page_id(uow, assembly), url_slug="my-page", short_url_slug="mp"
+        )
         assert page.url_slug == "my-page"
         assert page.short_url_slug == "mp"
 
@@ -206,12 +218,12 @@ class TestUpdateRegistrationPage:
         uow = FakeUnitOfWork()
         admin = _admin(uow)
         assembly_a, assembly_b = _assembly(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly_a.id)
-        service.create_registration_page(uow, admin.id, assembly_b.id)
-        service.update_registration_page(uow, admin.id, assembly_a.id, url_slug="taken")
+        service.create_registration_page(uow, admin.id, assembly_a.id, name="Registration page")
+        service.create_registration_page(uow, admin.id, assembly_b.id, name="Registration page")
+        service.update_registration_page(uow, admin.id, _page_id(uow, assembly_a), url_slug="taken")
 
         with pytest.raises(SlugError, match="already in use") as exc:
-            service.update_registration_page(uow, admin.id, assembly_b.id, url_slug="taken")
+            service.update_registration_page(uow, admin.id, _page_id(uow, assembly_b), url_slug="taken")
         assert exc.value.field == "url_slug"
         assert exc.value.reason == "taken"
 
@@ -219,42 +231,42 @@ class TestUpdateRegistrationPage:
         uow = FakeUnitOfWork()
         admin = _admin(uow)
         assembly_a, assembly_b = _assembly(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly_a.id)
-        service.create_registration_page(uow, admin.id, assembly_b.id)
-        service.update_registration_page(uow, admin.id, assembly_a.id, short_url_slug="tk")
+        service.create_registration_page(uow, admin.id, assembly_a.id, name="Registration page")
+        service.create_registration_page(uow, admin.id, assembly_b.id, name="Registration page")
+        service.update_registration_page(uow, admin.id, _page_id(uow, assembly_a), short_url_slug="tk")
 
         with pytest.raises(SlugError, match="already in use") as exc:
-            service.update_registration_page(uow, admin.id, assembly_b.id, short_url_slug="tk")
+            service.update_registration_page(uow, admin.id, _page_id(uow, assembly_b), short_url_slug="tk")
         assert exc.value.field == "short_url_slug"
         assert exc.value.reason == "taken"
 
     def test_update_slug_raises_slug_error_on_reserved_value(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         with pytest.raises(SlugError) as exc:
-            service.update_registration_page(uow, admin.id, assembly.id, url_slug="admin")
+            service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="admin")
         assert exc.value.field == "url_slug"
         assert exc.value.reason == "reserved"
 
     def test_update_slug_raises_slug_error_on_malformed_value(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         with pytest.raises(SlugError) as exc:
-            service.update_registration_page(uow, admin.id, assembly.id, short_url_slug="Bad Slug")
+            service.update_registration_page(uow, admin.id, _page_id(uow, assembly), short_url_slug="Bad Slug")
         assert exc.value.field == "short_url_slug"
         assert exc.value.reason == "malformed"
 
     def test_update_slug_allows_same_page_keeping_its_own_slug(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page(uow, admin.id, assembly.id, url_slug="keep-me")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="keep-me")
 
-        page = service.update_registration_page(uow, admin.id, assembly.id, url_slug="keep-me")
+        page = service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="keep-me")
         assert page.url_slug == "keep-me"
 
     def test_update_slug_rejected_while_published(self):
@@ -263,23 +275,23 @@ class TestUpdateRegistrationPage:
         _create_published_page(uow, admin, assembly)
 
         with pytest.raises(ValueError, match="published or closed"):
-            service.update_registration_page(uow, admin.id, assembly.id, url_slug="new-slug")
+            service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="new-slug")
 
     def test_update_slug_allowed_after_unpublish_back_to_test(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         _create_published_page(uow, admin, assembly)
-        service.unpublish_registration_page(uow, admin.id, assembly.id)
+        service.unpublish_registration_page(uow, admin.id, _page_id(uow, assembly))
 
-        page = service.update_registration_page(uow, admin.id, assembly.id, url_slug="new-slug")
+        page = service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="new-slug")
         assert page.url_slug == "new-slug"
 
     def test_update_slug_appends_edit_with_description(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.update_registration_page(uow, admin.id, assembly.id, url_slug="my-page")
+        page = service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="my-page")
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert len(edits) == 1
         assert "url_slug" in edits[0].text
@@ -289,18 +301,20 @@ class TestUpdateRegistrationPage:
     def test_update_slug_no_op_no_activity(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.update_registration_page(uow, admin.id, assembly.id, url_slug=None)
+        page = service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug=None)
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert edits == []
 
     def test_update_slug_both_changed_one_combined_entry(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.update_registration_page(uow, admin.id, assembly.id, url_slug="my-page", short_url_slug="mp")
+        page = service.update_registration_page(
+            uow, admin.id, _page_id(uow, assembly), url_slug="my-page", short_url_slug="mp"
+        )
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert len(edits) == 1
         assert "url_slug" in edits[0].text
@@ -309,10 +323,10 @@ class TestUpdateRegistrationPage:
     def test_update_slug_cleared_logs_old_value(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page(uow, admin.id, assembly.id, url_slug="my-page")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="my-page")
 
-        page = service.update_registration_page(uow, admin.id, assembly.id, url_slug="")
+        page = service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="")
         last_edit = [a for a in page.activity if a.action is RegistrationPageAction.EDIT][-1]
         assert "Cleared url_slug" in last_edit.text
         assert "'my-page'" in last_edit.text
@@ -320,44 +334,44 @@ class TestUpdateRegistrationPage:
     def test_requires_manage_permission(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         viewer = _viewer(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
-            service.update_registration_page(uow, viewer.id, assembly.id, url_slug="my-page")
+            service.update_registration_page(uow, viewer.id, _page_id(uow, assembly), url_slug="my-page")
 
-    def test_raises_when_page_not_created(self):
+    def test_raises_for_an_unknown_page(self):
         uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
+        admin = _admin(uow)
 
         with pytest.raises(RegistrationPageNotFoundError):
-            service.update_registration_page(uow, admin.id, assembly.id, url_slug="my-page")
+            service.update_registration_page(uow, admin.id, uuid.uuid4(), url_slug="my-page")
 
 
 class TestUpdateThankYouHtml:
     def test_happy_path(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.update_thank_you_html(uow, admin.id, assembly.id, "<p>thanks</p>")
+        page = service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>thanks</p>")
         assert page.thank_you_html == "<p>thanks</p>"
 
     def test_rejects_oversized_html(self, temp_env_vars):
         temp_env_vars(REGISTRATION_THANK_YOU_HTML_MAX_BYTES="1024")
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         with pytest.raises(ValueError, match="at most 1024 bytes"):
-            service.update_thank_you_html(uow, admin.id, assembly.id, "<p>" + "x" * 1100 + "</p>")
+            service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>" + "x" * 1100 + "</p>")
 
     def test_appends_edit_when_changed(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.update_thank_you_html(uow, admin.id, assembly.id, "<p>different</p>")
+        page = service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), "<p>different</p>")
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert len(edits) == 1
         assert "thank-you HTML" in edits[0].text
@@ -365,54 +379,54 @@ class TestUpdateThankYouHtml:
     def test_no_op_no_activity(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        page = service.update_thank_you_html(uow, admin.id, assembly.id, DEFAULT_THANK_YOU_HTML)
+        page = service.update_thank_you_html(uow, admin.id, _page_id(uow, assembly), DEFAULT_THANK_YOU_HTML)
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert edits == []
 
     def test_requires_manage_permission(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         viewer = _viewer(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
-            service.update_thank_you_html(uow, viewer.id, assembly.id, "<p>thanks</p>")
+            service.update_thank_you_html(uow, viewer.id, _page_id(uow, assembly), "<p>thanks</p>")
 
-    def test_raises_when_page_not_created(self):
+    def test_raises_for_an_unknown_page(self):
         uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
+        admin = _admin(uow)
 
         with pytest.raises(RegistrationPageNotFoundError):
-            service.update_thank_you_html(uow, admin.id, assembly.id, "<p>thanks</p>")
+            service.update_thank_you_html(uow, admin.id, uuid.uuid4(), "<p>thanks</p>")
 
 
 class TestUpdateRegistrationPageHtml:
     def test_happy_path(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        source = service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
+        source = service.update_registration_page_html(uow, admin.id, _page_id(uow, assembly), READY_HTML)
         assert source.form_html == READY_HTML
 
     def test_rejects_oversized_html(self, temp_env_vars):
         temp_env_vars(REGISTRATION_FORM_HTML_MAX_BYTES="1024")
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         with pytest.raises(ValueError, match="at most 1024 bytes"):
-            service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML + "x" * 1100)
+            service.update_registration_page_html(uow, admin.id, _page_id(uow, assembly), READY_HTML + "x" * 1100)
 
     def test_appends_edit_when_changed(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
-        service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
-        page = uow.registration_pages.get_by_assembly_id(assembly.id)
+        service.update_registration_page_html(uow, admin.id, _page_id(uow, assembly), READY_HTML)
+        page = page_for_assembly(uow, assembly.id)
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert len(edits) == 1
         assert "form HTML" in edits[0].text
@@ -420,29 +434,29 @@ class TestUpdateRegistrationPageHtml:
     def test_no_op_no_activity(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page_html(uow, admin.id, _page_id(uow, assembly), READY_HTML)
 
-        service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
-        page = uow.registration_pages.get_by_assembly_id(assembly.id)
+        service.update_registration_page_html(uow, admin.id, _page_id(uow, assembly), READY_HTML)
+        page = page_for_assembly(uow, assembly.id)
         edits = [a for a in page.activity if a.action is RegistrationPageAction.EDIT]
         assert len(edits) == 1
 
     def test_requires_manage_permission(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         viewer = _viewer(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
-            service.update_registration_page_html(uow, viewer.id, assembly.id, READY_HTML)
+            service.update_registration_page_html(uow, viewer.id, _page_id(uow, assembly), READY_HTML)
 
-    def test_raises_when_page_not_created(self):
+    def test_raises_for_an_unknown_page(self):
         uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
+        admin = _admin(uow)
 
         with pytest.raises(RegistrationPageNotFoundError):
-            service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
+            service.update_registration_page_html(uow, admin.id, uuid.uuid4(), READY_HTML)
 
 
 class TestPublishAndUnpublish:
@@ -458,20 +472,20 @@ class TestPublishAndUnpublish:
     def test_publish_accepts_optional_text(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page_html(uow, admin.id, assembly.id, READY_HTML)
-        service.update_registration_page(uow, admin.id, assembly.id, url_slug="a-page")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page_html(uow, admin.id, _page_id(uow, assembly), READY_HTML)
+        service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="a-page")
 
-        page = service.publish_registration_page(uow, admin.id, assembly.id, text="going live")
+        page = service.publish_registration_page(uow, admin.id, _page_id(uow, assembly), text="going live")
         assert page.activity[-1].text == "going live"
 
     def test_publish_raises_not_ready_with_problems(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         with pytest.raises(RegistrationPageNotReady) as exc_info:
-            service.publish_registration_page(uow, admin.id, assembly.id)
+            service.publish_registration_page(uow, admin.id, _page_id(uow, assembly))
         assert len(exc_info.value.problems) >= 2
 
     def test_unpublish_happy_path(self):
@@ -479,32 +493,32 @@ class TestPublishAndUnpublish:
         admin, assembly = _admin(uow), _assembly(uow)
         _create_published_page(uow, admin, assembly)
 
-        page = service.unpublish_registration_page(uow, admin.id, assembly.id)
+        page = service.unpublish_registration_page(uow, admin.id, _page_id(uow, assembly))
         assert page.status is RegistrationPageStatus.TEST
         assert page.activity[-1].action is RegistrationPageAction.UNPUBLISH
 
     def test_publish_requires_manage_permission(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         viewer = _viewer(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
-            service.publish_registration_page(uow, viewer.id, assembly.id)
+            service.publish_registration_page(uow, viewer.id, _page_id(uow, assembly))
 
-    def test_publish_raises_when_page_not_created(self):
+    def test_publish_raises_for_an_unknown_page(self):
         uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
+        admin = _admin(uow)
 
         with pytest.raises(RegistrationPageNotFoundError):
-            service.publish_registration_page(uow, admin.id, assembly.id)
+            service.publish_registration_page(uow, admin.id, uuid.uuid4())
 
-    def test_unpublish_raises_when_page_not_created(self):
+    def test_unpublish_raises_for_an_unknown_page(self):
         uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
+        admin = _admin(uow)
 
         with pytest.raises(RegistrationPageNotFoundError):
-            service.unpublish_registration_page(uow, admin.id, assembly.id)
+            service.unpublish_registration_page(uow, admin.id, uuid.uuid4())
 
 
 class TestCloseAndReopen:
@@ -513,7 +527,7 @@ class TestCloseAndReopen:
         admin, assembly = _admin(uow), _assembly(uow)
         _create_published_page(uow, admin, assembly)
 
-        page = service.close_registration_page(uow, admin.id, assembly.id, text="sortition done")
+        page = service.close_registration_page(uow, admin.id, _page_id(uow, assembly), text="sortition done")
         assert page.status is RegistrationPageStatus.CLOSED
         last = page.activity[-1]
         assert last.action is RegistrationPageAction.CLOSE
@@ -523,10 +537,10 @@ class TestCloseAndReopen:
     def test_close_raises_from_test(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         with pytest.raises(ValueError, match="TEST"):
-            service.close_registration_page(uow, admin.id, assembly.id)
+            service.close_registration_page(uow, admin.id, _page_id(uow, assembly))
 
     def test_close_requires_manage_permission(self):
         uow = FakeUnitOfWork()
@@ -535,22 +549,22 @@ class TestCloseAndReopen:
         viewer = _viewer(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
-            service.close_registration_page(uow, viewer.id, assembly.id)
+            service.close_registration_page(uow, viewer.id, _page_id(uow, assembly))
 
-    def test_close_raises_when_page_not_created(self):
+    def test_close_raises_for_an_unknown_page(self):
         uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
+        admin = _admin(uow)
 
         with pytest.raises(RegistrationPageNotFoundError):
-            service.close_registration_page(uow, admin.id, assembly.id)
+            service.close_registration_page(uow, admin.id, uuid.uuid4())
 
     def test_reopen_happy_path(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         _create_published_page(uow, admin, assembly)
-        service.close_registration_page(uow, admin.id, assembly.id)
+        service.close_registration_page(uow, admin.id, _page_id(uow, assembly))
 
-        page = service.reopen_registration_page(uow, admin.id, assembly.id, text="resuming")
+        page = service.reopen_registration_page(uow, admin.id, _page_id(uow, assembly), text="resuming")
         assert page.status is RegistrationPageStatus.PUBLISHED
         last = page.activity[-1]
         assert last.action is RegistrationPageAction.REOPEN
@@ -560,11 +574,11 @@ class TestCloseAndReopen:
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         _create_published_page(uow, admin, assembly)
-        service.close_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page_html(uow, admin.id, assembly.id, "")
+        service.close_registration_page(uow, admin.id, _page_id(uow, assembly))
+        service.update_registration_page_html(uow, admin.id, _page_id(uow, assembly), "")
 
         with pytest.raises(RegistrationPageNotReady):
-            service.reopen_registration_page(uow, admin.id, assembly.id)
+            service.reopen_registration_page(uow, admin.id, _page_id(uow, assembly))
 
     def test_reopen_raises_from_published(self):
         uow = FakeUnitOfWork()
@@ -572,32 +586,32 @@ class TestCloseAndReopen:
         _create_published_page(uow, admin, assembly)
 
         with pytest.raises(ValueError, match="PUBLISHED"):
-            service.reopen_registration_page(uow, admin.id, assembly.id)
+            service.reopen_registration_page(uow, admin.id, _page_id(uow, assembly))
 
     def test_reopen_requires_manage_permission(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         _create_published_page(uow, admin, assembly)
-        service.close_registration_page(uow, admin.id, assembly.id)
+        service.close_registration_page(uow, admin.id, _page_id(uow, assembly))
         viewer = _viewer(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
-            service.reopen_registration_page(uow, viewer.id, assembly.id)
+            service.reopen_registration_page(uow, viewer.id, _page_id(uow, assembly))
 
-    def test_reopen_raises_when_page_not_created(self):
+    def test_reopen_raises_for_an_unknown_page(self):
         uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
+        admin = _admin(uow)
 
         with pytest.raises(RegistrationPageNotFoundError):
-            service.reopen_registration_page(uow, admin.id, assembly.id)
+            service.reopen_registration_page(uow, admin.id, uuid.uuid4())
 
 
 class TestPublicLookup:
     def test_find_by_url_slug_hit(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page(uow, admin.id, assembly.id, url_slug="public-page")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="public-page")
 
         page = service.find_registration_page_by_url_slug(uow, "public-page")
         assert page is not None
@@ -610,15 +624,15 @@ class TestPublicLookup:
     def test_find_by_url_slug_empty_input(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         assert service.find_registration_page_by_url_slug(uow, "") is None
 
     def test_find_by_short_url_slug_hit(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page(uow, admin.id, assembly.id, short_url_slug="pp")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page(uow, admin.id, _page_id(uow, assembly), short_url_slug="pp")
 
         page = service.find_registration_page_by_short_url_slug(uow, "pp")
         assert page is not None
@@ -631,7 +645,7 @@ class TestPublicLookup:
     def test_find_by_short_url_slug_empty_input(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
 
         assert service.find_registration_page_by_short_url_slug(uow, "") is None
 
@@ -687,16 +701,16 @@ class TestRenderRegistrationForm:
     def test_renders_with_assembly_and_form_context(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         service.update_registration_page_html(
             uow,
             admin.id,
-            assembly.id,
+            _page_id(uow, assembly),
             '<form action="{{ form_action }}">{{ csrf_form_element }}'
             "<h1>{{ assembly_title }}</h1>"
             '<input name="name" value="{{ value(\'name\') }}"></form>',
         )
-        page = uow.registration_pages.get_by_assembly_id(assembly.id)
+        page = page_for_assembly(uow, assembly.id)
 
         rendered = service.render_registration_form(
             uow,
@@ -717,14 +731,14 @@ class TestRenderRegistrationForm:
         # the security boundary that stops author HTML whitelisting inline JS.
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
         service.update_registration_page_html(
             uow,
             admin.id,
-            assembly.id,
+            _page_id(uow, assembly),
             '<form action="{{ form_action }}">{{ csrf_form_element }}<script nonce="{{ csp_nonce }}">x</script></form>',
         )
-        page = uow.registration_pages.get_by_assembly_id(assembly.id)
+        page = page_for_assembly(uow, assembly.id)
 
         with pytest.raises(UndefinedError):
             service.render_registration_form(uow, page, csrf_form_element="<csrf>", form_action="/r/submit")
@@ -946,8 +960,8 @@ class TestGenerateUniqueUrlSlug:
     def test_appends_suffix_on_collision(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page(uow, admin.id, assembly.id, url_slug="taken-slug")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug="taken-slug")
 
         slug = service.generate_unique_url_slug(uow, "taken-slug")
         assert slug == "taken-slug-2"
@@ -958,9 +972,9 @@ class TestGenerateUniqueUrlSlug:
         # Create multiple assemblies with sequential slugs
         for i in range(1, 4):
             assembly = _assembly(uow)
-            service.create_registration_page(uow, admin.id, assembly.id)
+            service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
             slug = "popular-name" if i == 1 else f"popular-name-{i}"
-            service.update_registration_page(uow, admin.id, assembly.id, url_slug=slug)
+            service.update_registration_page(uow, admin.id, _page_id(uow, assembly), url_slug=slug)
 
         slug = service.generate_unique_url_slug(uow, "popular-name")
         assert slug == "popular-name-4"
@@ -982,8 +996,8 @@ class TestGenerateUniqueShortUrlSlug:
     def test_retries_on_collision(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page(uow, admin.id, assembly.id)
-        service.update_registration_page(uow, admin.id, assembly.id, short_url_slug="123456")
+        service.create_registration_page(uow, admin.id, assembly.id, name="Registration page")
+        service.update_registration_page(uow, admin.id, _page_id(uow, assembly), short_url_slug="123456")
 
         # Should still be able to generate a unique one
         slug = service.generate_unique_short_url_slug(uow)
@@ -998,7 +1012,7 @@ class TestCreateRegistrationPageWithSlugs:
         assembly = Assembly(title="Dublin Citizens Assembly", question="?", status=AssemblyStatus.ACTIVE)
         uow.assemblies.add(assembly)
 
-        page = service.create_registration_page_with_slugs(uow, admin.id, assembly.id)
+        page = service.create_registration_page_with_slugs(uow, admin.id, assembly.id, name="Registration page")
 
         assert page.url_slug != ""
         assert page.short_url_slug != ""
@@ -1013,23 +1027,23 @@ class TestCreateRegistrationPageWithSlugs:
         # Create first assembly with same-ish name
         assembly1 = Assembly(title="Test Assembly", question="?", status=AssemblyStatus.ACTIVE)
         uow.assemblies.add(assembly1)
-        page1 = service.create_registration_page_with_slugs(uow, admin.id, assembly1.id)
+        page1 = service.create_registration_page_with_slugs(uow, admin.id, assembly1.id, name="Registration page")
 
         # Create second assembly with same name
         assembly2 = Assembly(title="Test Assembly", question="?", status=AssemblyStatus.ACTIVE)
         uow.assemblies.add(assembly2)
-        page2 = service.create_registration_page_with_slugs(uow, admin.id, assembly2.id)
+        page2 = service.create_registration_page_with_slugs(uow, admin.id, assembly2.id, name="Registration page")
 
         assert page1.url_slug == "test-assembly"
         assert page2.url_slug == "test-assembly-2"
 
-    def test_raises_if_page_already_exists(self):
+    def test_rejects_a_duplicate_page_name(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
-        service.create_registration_page_with_slugs(uow, admin.id, assembly.id)
+        service.create_registration_page_with_slugs(uow, admin.id, assembly.id, name="Registration page")
 
         with pytest.raises(ValueError, match="already has a registration page"):
-            service.create_registration_page_with_slugs(uow, admin.id, assembly.id)
+            service.create_registration_page_with_slugs(uow, admin.id, assembly.id, name="Registration page")
 
     def test_requires_manage_permission(self):
         uow = FakeUnitOfWork()
@@ -1037,13 +1051,13 @@ class TestCreateRegistrationPageWithSlugs:
         viewer = _viewer(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
-            service.create_registration_page_with_slugs(uow, viewer.id, assembly.id)
+            service.create_registration_page_with_slugs(uow, viewer.id, assembly.id, name="Registration page")
 
     def test_appends_create_activity(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
 
-        page = service.create_registration_page_with_slugs(uow, admin.id, assembly.id)
+        page = service.create_registration_page_with_slugs(uow, admin.id, assembly.id, name="Registration page")
 
         assert len(page.activity) == 1
         assert page.activity[0].action is RegistrationPageAction.CREATE

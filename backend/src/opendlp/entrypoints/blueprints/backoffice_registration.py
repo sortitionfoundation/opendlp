@@ -26,6 +26,8 @@ from opendlp.domain.registration_image import (
     generate_image_html,
 )
 from opendlp.domain.registration_page import (
+    HtmlSource,
+    RegistrationPage,
     RegistrationPageHtml,
     RegistrationPageNotReady,
     RegistrationPageStatus,
@@ -70,8 +72,8 @@ from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page_with_slugs,
     generate_starter_form_html_variants,
-    get_registration_page,
     get_registration_page_with_source,
+    list_registration_pages,
     publish_registration_page,
     render_registration_form,
     reopen_registration_page,
@@ -83,6 +85,24 @@ from opendlp.translations import gettext as _
 backoffice_registration_bp = Blueprint("backoffice_registration", __name__)
 
 logger = structlog.get_logger(__name__)
+
+
+def _sole_page(uow: Any, assembly_id: uuid.UUID) -> RegistrationPage | None:
+    """The registration page these assembly-scoped routes act on, or None if there is none."""
+    pages = list_registration_pages(uow, current_user.id, assembly_id)
+    return pages[0] if pages else None
+
+
+def _require_page(uow: Any, assembly_id: uuid.UUID) -> RegistrationPage:
+    page = _sole_page(uow, assembly_id)
+    if page is None:
+        raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
+    return page
+
+
+def _page_with_source(uow: Any, assembly_id: uuid.UUID) -> tuple[RegistrationPage, HtmlSource] | None:
+    page = _sole_page(uow, assembly_id)
+    return get_registration_page_with_source(uow, current_user.id, page.id) if page else None
 
 
 def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
@@ -171,7 +191,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         # Get registration page and HTML source from service layer
         uow = bootstrap.get_flask_uow()
-        result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+        result = _page_with_source(uow, assembly_id)
 
         # HTML content
         has_registration_page = result is not None
@@ -271,21 +291,21 @@ def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uu
     """Handle publish/unpublish/close/reopen/save action for registration page. Returns flash message."""
     uow = bootstrap.get_flask_uow()
     if action == "publish":
-        result = get_registration_page_with_source(uow, user_id, assembly_id)
+        result = _page_with_source(uow, assembly_id)
         if result and result[0].status == RegistrationPageStatus.TEST:
-            publish_registration_page(uow, user_id, assembly_id)
+            publish_registration_page(uow, user_id, result[0].id)
             return _("Registration form published successfully")
         return _("Registration form HTML updated successfully")
     if action == "unpublish":
-        unpublish_registration_page(uow, user_id, assembly_id)
+        unpublish_registration_page(uow, user_id, _require_page(uow, assembly_id).id)
         return _("Registration form unpublished")
     if action == "close":
-        close_registration_page(uow, user_id, assembly_id)
+        close_registration_page(uow, user_id, _require_page(uow, assembly_id).id)
         return _("Registration form closed")
     if action == "reopen":
-        reopen_registration_page(uow, user_id, assembly_id)
+        reopen_registration_page(uow, user_id, _require_page(uow, assembly_id).id)
         return _("Registration form reopened")
-    result = get_registration_page_with_source(uow, user_id, assembly_id)
+    result = _page_with_source(uow, assembly_id)
     if result and result[0].status == RegistrationPageStatus.PUBLISHED:
         return _("Registration form saved and republished")
     return _("Registration form saved")
@@ -343,7 +363,9 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # buttons that don't render the editor, so guard against blanking the HTML.
         if "html_content" in request.form:
             uow = bootstrap.get_flask_uow()
-            update_registration_page_html(uow, current_user.id, assembly_id, request.form["html_content"])
+            update_registration_page_html(
+                uow, current_user.id, _require_page(uow, assembly_id).id, request.form["html_content"]
+            )
 
         flash_message = _handle_registration_action(action, current_user.id, assembly_id)
         flash(flash_message, "success")
@@ -535,7 +557,7 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID) -> str:
     Raises the service-layer exceptions the caller handles centrally.
     """
     get_assembly_nav_context(bootstrap.get_flask_uow, current_user.id, assembly_id, "")
-    page = get_registration_page(bootstrap.get_flask_uow(), current_user.id, assembly_id)
+    page = _sole_page(bootstrap.get_flask_uow(), assembly_id)
     if page is None:
         raise RegistrationPageNotFoundError(f"No registration page for assembly {assembly_id}")
 
@@ -624,7 +646,7 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
     """Create a registration page with auto-generated slugs from the assembly name."""
     try:
         uow = bootstrap.get_flask_uow()
-        create_registration_page_with_slugs(uow, current_user.id, assembly_id)
+        create_registration_page_with_slugs(uow, current_user.id, assembly_id, name=_("Registration page"))
         _create_default_auto_reply_template(assembly_id)
         flash(
             _("Registration page created. URLs have been generated automatically and can be edited below."),
@@ -682,7 +704,7 @@ def preview_registration_form(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """
     try:
         uow = bootstrap.get_flask_uow()
-        page = get_registration_page(uow, current_user.id, assembly_id)
+        page = _sole_page(uow, assembly_id)
         if page is None:
             abort(404)
         rendered_form = render_registration_form(
@@ -722,7 +744,7 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
 
         # The QR code encodes the short URL, so a short slug must be configured
         uow = bootstrap.get_flask_uow()
-        result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+        result = _page_with_source(uow, assembly_id)
         registration_page = result[0] if result else None
         if not registration_page or not registration_page.short_url_slug:
             abort(404)
@@ -768,7 +790,7 @@ def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
     decide whether to omit the public URL.
     """
     uow = bootstrap.get_flask_uow()
-    result = get_registration_page_with_source(uow, current_user.id, assembly_id)
+    result = _page_with_source(uow, assembly_id)
     if result is None:
         return ""
     return result[0].url_slug
