@@ -45,6 +45,7 @@ from opendlp.service_layer.exceptions import (
     InvalidSelection,
     NotFoundError,
     RespondentNotFoundError,
+    ServiceLayerError,
 )
 from opendlp.service_layer.permissions import can_edit_respondent, can_manage_assembly
 from opendlp.service_layer.respondent_export_service import (
@@ -612,23 +613,23 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Reuse the same UnitOfWork for the remaining sequential reads.
         gsheet = None
         # No gsheet config exists is expected for new assemblies.
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(ServiceLayerError):
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
         # Get CSV status
         csv_status: CSVUploadStatus | None = None
         # No CSV data is expected for new assemblies.
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
         # The saved respondent-export sheet config (if the organiser has exported
         # to Google Sheets) drives the "Exported to Google Spreadsheet" link.
+        # No export config is expected until the first Google Sheets export, which
+        # the repository reports as None rather than as an error.
         respondent_gsheet = None
-        # No export config is expected until the first Google Sheets export.
-        with contextlib.suppress(Exception):
-            saved = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
-            if saved is not None:
-                respondent_gsheet = saved.create_detached_copy()
+        saved = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
+        if saved is not None:
+            respondent_gsheet = saved.create_detached_copy()
 
         # Determine data source
         data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))

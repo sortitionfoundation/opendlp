@@ -27,7 +27,7 @@ from opendlp.service_layer.assembly_service import (
     remove_assembly_gsheet,
     update_assembly_gsheet,
 )
-from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
+from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_service import count_non_pool_respondents
 from opendlp.service_layer.sortition import (
@@ -225,25 +225,15 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         gsheet = None
         try:
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-        except Exception as gsheet_error:
+        except ServiceLayerError as gsheet_error:
             logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
 
         # Fetch paginated selection history
-        run_history: list = []
-        total_count = 0
-        total_pages = 0
-        try:
-            with uow:
-                run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
-                    assembly_id, page, per_page
-                )
-                total_pages = (total_count + per_page - 1) // per_page
-        except Exception as history_error:
-            logger.error(
-                "Error loading selection history for assembly",
-                assembly_id=str(assembly_id),
-                error=str(history_error),
+        with uow:
+            run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
+                assembly_id, page, per_page
             )
+            total_pages = (total_count + per_page - 1) // per_page
 
         replacement_modal_open = request.args.get("replacement_modal") == "open" or current_replacement is not None
         edit_number_modal_open = request.args.get("edit_number") == "1"
@@ -251,7 +241,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Get CSV status for tab enabled states
         csv_status = None
         # No CSV data is expected for new assemblies.
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
         # Determine data source and tab enabled states
@@ -272,7 +262,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             try:
                 with uow:
                     csv_selected_count = count_non_pool_respondents(uow, assembly_id)
-            except Exception as count_error:
+            except ServiceLayerError as count_error:
                 logger.error("Error counting non-pool respondents", error=str(count_error))
         else:
             data_source = ""
@@ -986,7 +976,7 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
         sel_settings = None
         # selection_settings is optional for the form re-render.
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(ServiceLayerError):
             sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
 
         return render_template(

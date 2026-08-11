@@ -32,6 +32,7 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     NotFoundError,
+    ServiceLayerError,
 )
 from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
@@ -114,10 +115,10 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Reuse the assembly-tabs computed state so the tab bar renders correctly.
         # Both lookups are optional — a fresh assembly has neither.
         gsheet = None
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(ServiceLayerError):
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
         csv_status = None
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
         data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
         targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(

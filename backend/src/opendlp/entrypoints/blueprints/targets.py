@@ -29,7 +29,12 @@ from opendlp.service_layer.assembly_service import (
     update_target_value,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
-from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
+from opendlp.service_layer.exceptions import (
+    InsufficientPermissions,
+    InvalidSelection,
+    NotFoundError,
+    ServiceLayerError,
+)
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
 from opendlp.service_layer.target_checking import check_targets_detailed
@@ -55,16 +60,12 @@ def _is_htmx() -> bool:
 
 
 def _can_manage(assembly_id: uuid.UUID) -> bool:
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            user = uow.users.get(current_user.id)
-            assembly = uow.assemblies.get(assembly_id)
-            if user and assembly:
-                return can_manage_assembly(user, assembly)
-    except Exception:  # noqa: S110
-        # Permission check failure treated as no permission
-        pass
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        user = uow.users.get(current_user.id)
+        assembly = uow.assemblies.get(assembly_id)
+        if user and assembly:
+            return can_manage_assembly(user, assembly)
     return False
 
 
@@ -73,12 +74,12 @@ def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
     uow = bootstrap.get_flask_uow()
     gsheet = None
     # No gsheet config exists is expected for new assemblies.
-    with contextlib.suppress(Exception):
+    with contextlib.suppress(ServiceLayerError):
         gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
     csv_status: CSVUploadStatus | None = None
     # No CSV data is expected for new assemblies.
-    with contextlib.suppress(Exception):
+    with contextlib.suppress(ServiceLayerError):
         csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
     data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
