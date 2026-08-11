@@ -6,6 +6,7 @@ This document provides a visual and textual overview of the Flask backend archit
 
 - [High-Level Architecture](#high-level-architecture)
 - [Blueprint Overview](#blueprint-overview)
+- [The UnitOfWork convention](#the-unitofwork-convention)
 - [Service Layer Overview](#service-layer-overview)
 - [Adapters Layer](#adapters-layer)
 - [Background Tasks](#background-tasks)
@@ -120,6 +121,75 @@ Notes:
 - The `dev` blueprint is only registered when `config.is_production()` is false.
 - Legacy URLs use `/assemblies/<id>/...`; newer backoffice URLs use `/backoffice/assembly/<id>/...` (note the singular `assembly`).
 - `auth_bp` previously mounted at `/`; it now mounts at `/auth`.
+
+---
+
+## The UnitOfWork convention
+
+**Only entrypoints open `with uow:`.** A Flask route, a CLI command or a Celery
+task builds a UnitOfWork and opens exactly one context around the work of that
+request. Everything it calls is handed the `uow` and assumes the context is
+already open; nothing below the entrypoint opens or commits one.
+
+```python
+# Entrypoint: owns the transaction.
+uow = bootstrap.get_flask_uow()
+with uow:
+    assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+    respondents = get_respondents_for_assembly(uow, current_user.id, assembly_id)
+
+return render_template(..., assembly=assembly, respondents=respondents)
+
+
+# Service: assumes the context, never commits.
+def get_assembly_with_permissions(uow, assembly_id, user_id):
+    """...
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    ...
+```
+
+Outside its block a UnitOfWork is inert: `uow.session` and every repository
+raise `UnitOfWorkError`. `scripts/check_uow_convention.py` runs in `just check`
+and fails the build if a function that takes a `uow` opens its own context.
+
+### Why this departs from *Architecture Patterns with Python*
+
+The book's services each open their own `with uow:`, on the assumption that a
+service call is a use case and so is a transaction. In this codebase a request
+is routinely several service calls — load the assembly, load its respondents,
+load the tab state — and the book's rule makes each of those its own
+transaction. That has three consequences:
+
+- **The request is not atomic.** A route that writes twice can leave half its
+  work committed.
+- **The reads disagree.** Each transaction sees a different snapshot, so a page
+  can render a respondent count that never existed.
+- **Nesting commits the wrong work.** With a service opening a context inside a
+  route that already has one, the *inner* exit commits the route's partial work
+  and closes the session. A closed SQLAlchemy session then autobegins a new
+  transaction on next use, so the leaked connection sits `idle in transaction`
+  holding locks — which is how a parallel test run came to deadlock at teardown.
+
+Moving the boundary up to the entrypoint makes the request the unit of work,
+which is what the pattern is for.
+
+### Judgement calls the checker cannot make
+
+- Keep `render_template` and external I/O (a gspread write, an SMTP send)
+  **outside** the block. Holding a transaction across the slow part of a request
+  is how connection pools run dry.
+- A path that only reads still needs the block today, because the repositories
+  are bound there. It does not need to be a read-write transaction; see the
+  read-only workstream in `docs/agent/clean-uow-usage/research.md`.
+- Never let a broad `except Exception` swallow a database error inside a block:
+  the transaction is poisoned and every statement after it fails somewhere
+  unrelated. Catch the domain exceptions.
+- `commit_and_reset()` exists for a block that genuinely contains more than one
+  logical unit of work. It commits everything pending, including the caller's,
+  so reach for it deliberately rather than to make a test pass.
 
 ---
 

@@ -18,7 +18,8 @@ I want you to review the changes on this branch, compared to the main branch. Ge
 
 - Review `docs/agent/code_quality_rules.md` and check how the changes line up with that
 - Review `docs/testing.md` and the tests in this branch
-- Review `docs/architecture` and what changed under `src/opendlp/`
+- Review `docs/architecture.md` and what changed under `src/opendlp/`
+- On transaction boundaries (`just check` already enforces that only entrypoints open `with uow:`, so only the judgement calls are worth reporting): does a block wrap `render_template` or external I/O such as a gspread write or an SMTP send, holding a transaction open across the slow part of a request? Is a broad `except Exception` or `contextlib.suppress(Exception)` swallowing a database error inside a block, leaving the transaction poisoned for everything after it? Is `commit_and_reset()` used to make a test pass rather than because the block genuinely holds two units of work? See "The UnitOfWork convention" in `docs/architecture.md`.
 - Has anything been added to `config.py` (or removed)? Any new feature flags, or have we cleaned up any? If so, are there examples in `env.example` and explanations in `docs/configuration.md`
 - If templates have been added/updated, are we using the Jinja components well? Also review `docs/agent/component_accessibility.md`
 - If templates compose macros with `{% call %}` blocks: `{{ caller() }}` must never appear inside a nested `{% call %}` block — Jinja shadows `caller` there and it fails only at render time ("No caller defined"). Capture first with `{% set content = caller() %}`. See "Jinja Macro Composition: `caller` Scope" in `docs/agent/frontend_design_system.md`.

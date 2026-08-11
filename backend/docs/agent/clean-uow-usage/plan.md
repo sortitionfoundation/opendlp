@@ -43,7 +43,7 @@ because each phase depends on them.
 The one thing that must be atomic is a slice: converting a function, fixing its
 production callers, and migrating its tests all belong in the same commit.
 
-## Phase 0 - groundwork
+## Phase 0 - groundwork - DONE
 
 Four commits, no behaviour change, nothing depends on them being done together.
 
@@ -188,12 +188,12 @@ is one transaction per request. Fine for a dev-only tool.
 `verify_2fa`, which already has three of its own - so this also collapses that
 route's block count.
 
-## Phase 3 - enforce
+## Phase 3 - enforce - DONE
 
 Four commits, in this order. Each is only green because everything before it is
 done.
 
-### 3.1 Make `SqlAlchemyUnitOfWork` strict
+### 3.1 Make `SqlAlchemyUnitOfWork` strict - DONE
 
 - `session` raises if the context is not open.
 - `__exit__` uses `try/finally`, so a failing commit still releases the
@@ -210,18 +210,18 @@ name and loses typo detection across the codebase.
 
 This commit is where the original leak actually dies.
 
-### 3.2 Make `FakeUnitOfWork` strict by default
+### 3.2 Make `FakeUnitOfWork` strict by default - DONE
 
 Flip the default, delete the `strict` flag, and migrate any test still
 constructing a loose fake. This is where the ~585 bare repository accesses must
 all be inside a block or switched to the `fake_<name>` aliases.
 
-### 3.3 Delete the allowlist
+### 3.3 Delete the allowlist - DONE
 
 `known_self_managing.txt` should be empty by now. Delete it and the checker's
 allowlist logic, so the rule is absolute.
 
-### 3.4 Write the convention down
+### 3.4 Write the convention down - DONE
 
 - `docs/architecture.md` - the convention, and why it departs from *Architecture
   Patterns with Python*. This is what the code-review skill's

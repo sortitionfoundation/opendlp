@@ -200,6 +200,19 @@ See [docs/translations.md](docs/translations.md) for translation management work
 
 See [docs/sortition_error_translations.md](docs/sortition_error_translations.md) for translating sortition-algorithms library errors and reports.
 
+### The UnitOfWork convention
+
+**Only entrypoints open `with uow:`.** A Flask route, CLI command or Celery task
+builds the UnitOfWork and opens one context around the work of that request.
+Everything it calls takes the `uow` and assumes the context is open — nothing
+below the entrypoint opens or commits one. Outside its block a UnitOfWork is
+inert: `uow.session` and every repository raise `UnitOfWorkError`.
+
+`just check` fails the build if a function that takes a `uow` opens its own
+context. See [docs/architecture.md](docs/architecture.md#the-unitofwork-convention)
+for why this departs from *Architecture Patterns with Python*, and for the
+judgement calls the checker cannot make.
+
 ### Database Patterns
 
 - Foreign keys are regular UUID columns (not SQLAlchemy relationships in domain)
