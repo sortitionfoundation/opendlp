@@ -100,7 +100,7 @@ phase 3 deletes it.
 Base the checker on the appendix script in research.md, and note its two blind
 spots recorded there.
 
-## Phase 1 - convert the service layer, slice by slice
+## Phase 1 - convert the service layer, slice by slice - DONE
 
 One commit per slice. Order is: pilot first to establish the pattern, then
 `assembly_service.py` because it holds `get_assembly_with_permissions` and
@@ -168,7 +168,7 @@ Giving those the fixture would collapse them into one transaction and leave them
 asserting nothing **while still passing**. Migrate them by hand, keeping the
 explicit second block. When a slice touches one, say so in the commit message.
 
-## Phase 2 - entrypoint helpers
+## Phase 2 - entrypoint helpers - DONE
 
 Two commits. Same rule, applied above the service layer.
 
