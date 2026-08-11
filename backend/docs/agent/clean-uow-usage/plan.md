@@ -59,7 +59,7 @@ Do this **first**. After phase 1 these run inside the caller's transaction, wher
 a swallowed database error leaves the transaction poisoned for every statement
 that follows. Today they are merely hiding errors; later they would corrupt.
 
-### 0.2 Add the `uow` fixtures
+### 0.2 Add the `uow` fixtures - DONE
 
 Add to `tests/conftest.py`:
 
@@ -76,7 +76,7 @@ integration tests that only need one UnitOfWork.
 
 Nothing uses them yet, so this commit is green by construction.
 
-### 0.3 Add `strict` to `FakeUnitOfWork`, defaulting to off
+### 0.3 Add `strict` to `FakeUnitOfWork`, defaulting to off - DONE
 
 `strict=True` makes the fake mirror the real UnitOfWork: `__enter__` marks the
 context open, `__exit__` marks it closed and swaps each repository for a
@@ -86,7 +86,7 @@ the deliberate arrange/inspect seam.
 Default `strict=False`, so every existing test is unaffected. Add unit tests for
 the strict behaviour itself.
 
-### 0.4 Add the convention checker with a shrinking allowlist
+### 0.4 Add the convention checker with a shrinking allowlist - DONE
 
 `scripts/check_uow_convention.py`, wired into `just check`. It fails if a
 function in `service_layer/` opens `with uow:` **and is not listed** in
