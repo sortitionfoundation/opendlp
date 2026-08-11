@@ -215,60 +215,58 @@ def _handle_import_respondents(uow: Any, params: dict[str, Any]) -> dict[str, An
     replace_existing = params.get("replace_existing", False)
     id_column = params.get("id_column") or None
 
-    with uow:
-        try:
-            respondents, errors, resolved_id_column = import_respondents_from_csv(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                csv_content=csv_content,
-                replace_existing=replace_existing,
-                id_column=id_column,
-            )
-            return {
-                "status": "success",
-                "imported_count": len(respondents),
-                "errors": errors,
-                "id_column_used": resolved_id_column,
-                "sample_respondents": [
-                    {
-                        "external_id": r.external_id,
-                        "attributes": r.attributes,
-                        "email": r.email,
-                        "consent": r.consent,
-                        "eligible": r.eligible,
-                        "can_attend": r.can_attend,
-                    }
-                    for r in respondents[:5]  # Show first 5 as sample
-                ],
-            }
-        except InvalidSelection as e:
-            return {"status": "error", "error": str(e), "error_type": "InvalidSelection"}
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        respondents, errors, resolved_id_column = import_respondents_from_csv(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            csv_content=csv_content,
+            replace_existing=replace_existing,
+            id_column=id_column,
+        )
+        return {
+            "status": "success",
+            "imported_count": len(respondents),
+            "errors": errors,
+            "id_column_used": resolved_id_column,
+            "sample_respondents": [
+                {
+                    "external_id": r.external_id,
+                    "attributes": r.attributes,
+                    "email": r.email,
+                    "consent": r.consent,
+                    "eligible": r.eligible,
+                    "can_attend": r.can_attend,
+                }
+                for r in respondents[:5]  # Show first 5 as sample
+            ],
+        }
+    except InvalidSelection as e:
+        return {"status": "error", "error": str(e), "error_type": "InvalidSelection"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_reset_selection_status(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle reset_selection_status service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            count = reset_selection_status(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-            )
-            return {
-                "status": "success",
-                "respondents_reset": count,
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        count = reset_selection_status(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+        )
+        return {
+            "status": "success",
+            "respondents_reset": count,
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_get_respondents(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -277,35 +275,34 @@ def _handle_get_respondents(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     status_str = params.get("status")
     status = RespondentStatus(status_str) if status_str else None
 
-    with uow:
-        try:
-            respondents = get_respondents_for_assembly(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                status=status,
-            )
-            return {
-                "status": "success",
-                "total_count": len(respondents),
-                "respondents": [
-                    {
-                        "external_id": r.external_id,
-                        "attributes": r.attributes,
-                        "selection_status": r.selection_status.value if r.selection_status else None,
-                        "email": r.email,
-                        "consent": r.consent,
-                        "eligible": r.eligible,
-                        "can_attend": r.can_attend,
-                    }
-                    for r in respondents[:20]  # Show first 20 as sample
-                ],
-                "showing": min(20, len(respondents)),
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        respondents = get_respondents_for_assembly(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            status=status,
+        )
+        return {
+            "status": "success",
+            "total_count": len(respondents),
+            "respondents": [
+                {
+                    "external_id": r.external_id,
+                    "attributes": r.attributes,
+                    "selection_status": r.selection_status.value if r.selection_status else None,
+                    "email": r.email,
+                    "consent": r.consent,
+                    "eligible": r.eligible,
+                    "can_attend": r.can_attend,
+                }
+                for r in respondents[:20]  # Show first 20 as sample
+            ],
+            "showing": min(20, len(respondents)),
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_import_targets(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -314,84 +311,82 @@ def _handle_import_targets(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     csv_content = params["csv_content"]
     replace_existing = params.get("replace_existing", True)
 
-    with uow:
-        try:
-            categories = import_targets_from_csv(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                csv_content=csv_content,
-                replace_existing=replace_existing,
-            )
-            return {
-                "status": "success",
-                "categories_count": len(categories),
-                "total_values_count": sum(len(c.values) for c in categories),
-                "categories": [
-                    {
-                        "name": c.name,
-                        "values": [
-                            {
-                                "value": v.value,
-                                "min": v.min,
-                                "max": v.max,
-                                "min_flex": v.min_flex,
-                                "max_flex": v.max_flex,
-                            }
-                            for v in c.values
-                        ],
-                    }
-                    for c in categories
-                ],
-            }
-        except InvalidSelection as e:
-            return {"status": "error", "error": str(e), "error_type": "InvalidSelection"}
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        categories = import_targets_from_csv(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            csv_content=csv_content,
+            replace_existing=replace_existing,
+        )
+        return {
+            "status": "success",
+            "categories_count": len(categories),
+            "total_values_count": sum(len(c.values) for c in categories),
+            "categories": [
+                {
+                    "name": c.name,
+                    "values": [
+                        {
+                            "value": v.value,
+                            "min": v.min,
+                            "max": v.max,
+                            "min_flex": v.min_flex,
+                            "max_flex": v.max_flex,
+                        }
+                        for v in c.values
+                    ],
+                }
+                for c in categories
+            ],
+        }
+    except InvalidSelection as e:
+        return {"status": "error", "error": str(e), "error_type": "InvalidSelection"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_get_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle get_or_create_csv_config service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            csv_config = get_or_create_csv_config(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-            )
-            sel_settings = get_or_create_selection_settings(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-            )
-            return {
-                "status": "success",
-                "config": {
-                    "assembly_csv_id": str(csv_config.assembly_csv_id) if csv_config.assembly_csv_id else None,
-                    "assembly_id": str(csv_config.assembly_id),
-                    "csv_id_column": csv_config.csv_id_column,
-                    "id_column": sel_settings.id_column,
-                    "check_same_address": sel_settings.check_same_address,
-                    "check_same_address_cols": sel_settings.check_same_address_cols,
-                    "columns_to_keep": sel_settings.columns_to_keep,
-                    "selection_algorithm": sel_settings.selection_algorithm,
-                    "settings_confirmed": csv_config.settings_confirmed,
-                    "last_import_filename": csv_config.last_import_filename,
-                    "last_import_timestamp": csv_config.last_import_timestamp.isoformat()
-                    if csv_config.last_import_timestamp
-                    else None,
-                    "created_at": csv_config.created_at.isoformat() if csv_config.created_at else None,
-                    "updated_at": csv_config.updated_at.isoformat() if csv_config.updated_at else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        csv_config = get_or_create_csv_config(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+        )
+        sel_settings = get_or_create_selection_settings(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+        )
+        return {
+            "status": "success",
+            "config": {
+                "assembly_csv_id": str(csv_config.assembly_csv_id) if csv_config.assembly_csv_id else None,
+                "assembly_id": str(csv_config.assembly_id),
+                "csv_id_column": csv_config.csv_id_column,
+                "id_column": sel_settings.id_column,
+                "check_same_address": sel_settings.check_same_address,
+                "check_same_address_cols": sel_settings.check_same_address_cols,
+                "columns_to_keep": sel_settings.columns_to_keep,
+                "selection_algorithm": sel_settings.selection_algorithm,
+                "settings_confirmed": csv_config.settings_confirmed,
+                "last_import_filename": csv_config.last_import_filename,
+                "last_import_timestamp": csv_config.last_import_timestamp.isoformat()
+                if csv_config.last_import_timestamp
+                else None,
+                "created_at": csv_config.created_at.isoformat() if csv_config.created_at else None,
+                "updated_at": csv_config.updated_at.isoformat() if csv_config.updated_at else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -399,61 +394,60 @@ def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any
     assembly_id = uuid.UUID(params["assembly_id"])
     settings = {k: v for k, v in params.items() if k != "assembly_id"}
 
-    with uow:
-        try:
-            # Split settings into CSV-specific and selection settings
-            selection_fields = {
-                "id_column",
-                "check_same_address",
-                "check_same_address_cols",
-                "columns_to_keep",
-                "selection_algorithm",
-            }
-            sel_kwargs = {k: v for k, v in settings.items() if k in selection_fields}
-            csv_kwargs = {k: v for k, v in settings.items() if k not in selection_fields}
+    try:
+        # Split settings into CSV-specific and selection settings
+        selection_fields = {
+            "id_column",
+            "check_same_address",
+            "check_same_address_cols",
+            "columns_to_keep",
+            "selection_algorithm",
+        }
+        sel_kwargs = {k: v for k, v in settings.items() if k in selection_fields}
+        csv_kwargs = {k: v for k, v in settings.items() if k not in selection_fields}
 
-            csv_config = update_csv_config(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                **csv_kwargs,
-            )
-            if sel_kwargs:
-                uow2 = bootstrap.get_flask_uow()
-                with uow2:
-                    sel_settings = update_selection_settings(
-                        uow=uow2,
-                        user_id=current_user.id,
-                        assembly_id=assembly_id,
-                        **sel_kwargs,
-                    )
-            else:
-                uow3 = bootstrap.get_flask_uow()
-                with uow3:
-                    sel_settings = get_or_create_selection_settings(
-                        uow=uow3,
-                        user_id=current_user.id,
-                        assembly_id=assembly_id,
-                    )
-            return {
-                "status": "success",
-                "config": {
-                    "assembly_csv_id": str(csv_config.assembly_csv_id) if csv_config.assembly_csv_id else None,
-                    "assembly_id": str(csv_config.assembly_id),
-                    "csv_id_column": csv_config.csv_id_column,
-                    "id_column": sel_settings.id_column,
-                    "check_same_address": sel_settings.check_same_address,
-                    "check_same_address_cols": sel_settings.check_same_address_cols,
-                    "columns_to_keep": sel_settings.columns_to_keep,
-                    "selection_algorithm": sel_settings.selection_algorithm,
-                    "settings_confirmed": csv_config.settings_confirmed,
-                    "updated_at": csv_config.updated_at.isoformat() if csv_config.updated_at else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        csv_config = update_csv_config(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            **csv_kwargs,
+        )
+        if sel_kwargs:
+            uow2 = bootstrap.get_flask_uow()
+            with uow2:
+                sel_settings = update_selection_settings(
+                    uow=uow2,
+                    user_id=current_user.id,
+                    assembly_id=assembly_id,
+                    **sel_kwargs,
+                )
+        else:
+            uow3 = bootstrap.get_flask_uow()
+            with uow3:
+                sel_settings = get_or_create_selection_settings(
+                    uow=uow3,
+                    user_id=current_user.id,
+                    assembly_id=assembly_id,
+                )
+        return {
+            "status": "success",
+            "config": {
+                "assembly_csv_id": str(csv_config.assembly_csv_id) if csv_config.assembly_csv_id else None,
+                "assembly_id": str(csv_config.assembly_id),
+                "csv_id_column": csv_config.csv_id_column,
+                "id_column": sel_settings.id_column,
+                "check_same_address": sel_settings.check_same_address,
+                "check_same_address_cols": sel_settings.check_same_address_cols,
+                "columns_to_keep": sel_settings.columns_to_keep,
+                "selection_algorithm": sel_settings.selection_algorithm,
+                "settings_confirmed": csv_config.settings_confirmed,
+                "updated_at": csv_config.updated_at.isoformat() if csv_config.updated_at else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_create_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -462,58 +456,56 @@ def _handle_create_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     question = params.get("question", "")
     number_to_select = params.get("number_to_select", 0)
 
-    with uow:
-        try:
-            assembly = create_assembly(
-                uow=uow,
-                created_by_user_id=current_user.id,
-                title=title,
-                question=question,
-                number_to_select=int(number_to_select) if number_to_select else 0,
-            )
-            return {
-                "status": "success",
-                "assembly": {
-                    "id": str(assembly.id),
-                    "title": assembly.title,
-                    "question": assembly.question,
-                    "number_to_select": assembly.number_to_select,
-                    "created_at": assembly.created_at.isoformat() if assembly.created_at else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    try:
+        assembly = create_assembly(
+            uow=uow,
+            created_by_user_id=current_user.id,
+            title=title,
+            question=question,
+            number_to_select=int(number_to_select) if number_to_select else 0,
+        )
+        return {
+            "status": "success",
+            "assembly": {
+                "id": str(assembly.id),
+                "title": assembly.title,
+                "question": assembly.question,
+                "number_to_select": assembly.number_to_select,
+                "created_at": assembly.created_at.isoformat() if assembly.created_at else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
 
 
 def _handle_get_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle get_assembly_with_permissions service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            assembly = get_assembly_with_permissions(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-            )
-            return {
-                "status": "success",
-                "assembly": {
-                    "id": str(assembly.id),
-                    "title": assembly.title,
-                    "question": assembly.question,
-                    "number_to_select": assembly.number_to_select,
-                    "first_assembly_date": assembly.first_assembly_date.isoformat()
-                    if assembly.first_assembly_date
-                    else None,
-                    "created_at": assembly.created_at.isoformat() if assembly.created_at else None,
-                    "updated_at": assembly.updated_at.isoformat() if assembly.updated_at else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        assembly = get_assembly_with_permissions(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+        )
+        return {
+            "status": "success",
+            "assembly": {
+                "id": str(assembly.id),
+                "title": assembly.title,
+                "question": assembly.question,
+                "number_to_select": assembly.number_to_select,
+                "first_assembly_date": assembly.first_assembly_date.isoformat()
+                if assembly.first_assembly_date
+                else None,
+                "created_at": assembly.created_at.isoformat() if assembly.created_at else None,
+                "updated_at": assembly.updated_at.isoformat() if assembly.updated_at else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_update_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -521,28 +513,27 @@ def _handle_update_assembly(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     assembly_id = uuid.UUID(params["assembly_id"])
     updates = {k: v for k, v in params.items() if k != "assembly_id" and v}
 
-    with uow:
-        try:
-            assembly = update_assembly(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                **updates,
-            )
-            return {
-                "status": "success",
-                "assembly": {
-                    "id": str(assembly.id),
-                    "title": assembly.title,
-                    "question": assembly.question,
-                    "number_to_select": assembly.number_to_select,
-                    "updated_at": assembly.updated_at.isoformat() if assembly.updated_at else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        assembly = update_assembly(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            **updates,
+        )
+        return {
+            "status": "success",
+            "assembly": {
+                "id": str(assembly.id),
+                "title": assembly.title,
+                "question": assembly.question,
+                "number_to_select": assembly.number_to_select,
+                "updated_at": assembly.updated_at.isoformat() if assembly.updated_at else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _page_id_for_assembly(uow: Any, assembly_id: uuid.UUID) -> uuid.UUID:
@@ -557,73 +548,71 @@ def _handle_create_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
     """Handle create_registration_page service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            reg_page = create_registration_page(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                name=params.get("name", "Registration page"),
-                language=params.get("language", ""),
-            )
-            return {
-                "status": "success",
-                "registration_page": {
-                    "id": str(reg_page.id),
-                    "assembly_id": str(reg_page.assembly_id),
-                    "url_slug": reg_page.url_slug,
-                    "short_url_slug": reg_page.short_url_slug,
-                    "status": reg_page.status.value if reg_page.status else None,
-                    "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except ValueError as e:
-            return {"status": "error", "error": str(e), "error_type": "ValueError"}
+    try:
+        reg_page = create_registration_page(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            name=params.get("name", "Registration page"),
+            language=params.get("language", ""),
+        )
+        return {
+            "status": "success",
+            "registration_page": {
+                "id": str(reg_page.id),
+                "assembly_id": str(reg_page.assembly_id),
+                "url_slug": reg_page.url_slug,
+                "short_url_slug": reg_page.short_url_slug,
+                "status": reg_page.status.value if reg_page.status else None,
+                "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    except ValueError as e:
+        return {"status": "error", "error": str(e), "error_type": "ValueError"}
 
 
 def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle get_registration_page_with_source service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            result = get_registration_page_with_source(
-                uow=uow,
-                user_id=current_user.id,
-                page_id=_page_id_for_assembly(uow, assembly_id),
-            )
-            if result is None:
-                return {
-                    "status": "success",
-                    "registration_page": None,
-                    "html_source": None,
-                }
-            reg_page, html_source = result
-            # Cast to RegistrationPageHtml since HtmlSource protocol doesn't expose id/form_html
-            html = cast("RegistrationPageHtml", html_source)
+    try:
+        result = get_registration_page_with_source(
+            uow=uow,
+            user_id=current_user.id,
+            page_id=_page_id_for_assembly(uow, assembly_id),
+        )
+        if result is None:
             return {
                 "status": "success",
-                "registration_page": {
-                    "id": str(reg_page.id),
-                    "assembly_id": str(reg_page.assembly_id),
-                    "url_slug": reg_page.url_slug,
-                    "short_url_slug": reg_page.short_url_slug,
-                    "status": reg_page.status.value if reg_page.status else None,
-                    "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
-                },
-                "html_source": {
-                    "id": str(html.id),
-                    "form_html_preview": html.form_html[:200] + "..." if len(html.form_html) > 200 else html.form_html,
-                },
+                "registration_page": None,
+                "html_source": None,
             }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+        reg_page, html_source = result
+        # Cast to RegistrationPageHtml since HtmlSource protocol doesn't expose id/form_html
+        html = cast("RegistrationPageHtml", html_source)
+        return {
+            "status": "success",
+            "registration_page": {
+                "id": str(reg_page.id),
+                "assembly_id": str(reg_page.assembly_id),
+                "url_slug": reg_page.url_slug,
+                "short_url_slug": reg_page.short_url_slug,
+                "status": reg_page.status.value if reg_page.status else None,
+                "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
+            },
+            "html_source": {
+                "id": str(html.id),
+                "form_html_preview": html.form_html[:200] + "..." if len(html.form_html) > 200 else html.form_html,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_update_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -632,51 +621,49 @@ def _handle_update_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
     url_slug = params.get("url_slug")
     short_url_slug = params.get("short_url_slug")
 
-    with uow:
-        try:
-            reg_page = update_registration_page(
-                uow=uow,
-                user_id=current_user.id,
-                page_id=_page_id_for_assembly(uow, assembly_id),
-                url_slug=url_slug,
-                short_url_slug=short_url_slug,
-            )
-            return {
-                "status": "success",
-                "registration_page": {
-                    "id": str(reg_page.id),
-                    "url_slug": reg_page.url_slug,
-                    "short_url_slug": reg_page.short_url_slug,
-                    "updated_at": reg_page.updated_at.isoformat() if reg_page.updated_at else None,
-                },
-            }
-        except SlugError as e:
-            return {"status": "error", "error": str(e), "error_type": "SlugError", "field": e.field}
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        reg_page = update_registration_page(
+            uow=uow,
+            user_id=current_user.id,
+            page_id=_page_id_for_assembly(uow, assembly_id),
+            url_slug=url_slug,
+            short_url_slug=short_url_slug,
+        )
+        return {
+            "status": "success",
+            "registration_page": {
+                "id": str(reg_page.id),
+                "url_slug": reg_page.url_slug,
+                "short_url_slug": reg_page.short_url_slug,
+                "updated_at": reg_page.updated_at.isoformat() if reg_page.updated_at else None,
+            },
+        }
+    except SlugError as e:
+        return {"status": "error", "error": str(e), "error_type": "SlugError", "field": e.field}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_generate_starter_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle generate_starter_form_html service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            html = generate_starter_form_html(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-            )
-            return {
-                "status": "success",
-                "html": html,
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        html = generate_starter_form_html(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+        )
+        return {
+            "status": "success",
+            "html": html,
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -684,134 +671,129 @@ def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> d
     assembly_id = uuid.UUID(params["assembly_id"])
     form_html = params.get("form_html", "")
 
-    with uow:
-        try:
-            html_source = update_registration_page_html(
-                uow=uow,
-                user_id=current_user.id,
-                page_id=_page_id_for_assembly(uow, assembly_id),
-                form_html=form_html,
-            )
-            return {
-                "status": "success",
-                "html_source": {
-                    "id": str(html_source.id),
-                    "form_html_preview": html_source.form_html[:200] + "..."
-                    if len(html_source.form_html) > 200
-                    else html_source.form_html,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except ValueError as e:
-            return {"status": "error", "error": str(e), "error_type": "ValueError"}
+    try:
+        html_source = update_registration_page_html(
+            uow=uow,
+            user_id=current_user.id,
+            page_id=_page_id_for_assembly(uow, assembly_id),
+            form_html=form_html,
+        )
+        return {
+            "status": "success",
+            "html_source": {
+                "id": str(html_source.id),
+                "form_html_preview": html_source.form_html[:200] + "..."
+                if len(html_source.form_html) > 200
+                else html_source.form_html,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    except ValueError as e:
+        return {"status": "error", "error": str(e), "error_type": "ValueError"}
 
 
 def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle publish_registration_page service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            reg_page = publish_registration_page(
-                uow=uow,
-                user_id=current_user.id,
-                page_id=_page_id_for_assembly(uow, assembly_id),
-            )
-            return {
-                "status": "success",
-                "registration_page": {
-                    "id": str(reg_page.id),
-                    "status": reg_page.status.value if reg_page.status else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            # Catch RegistrationPageNotReady or other validation errors
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+    try:
+        reg_page = publish_registration_page(
+            uow=uow,
+            user_id=current_user.id,
+            page_id=_page_id_for_assembly(uow, assembly_id),
+        )
+        return {
+            "status": "success",
+            "registration_page": {
+                "id": str(reg_page.id),
+                "status": reg_page.status.value if reg_page.status else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    except Exception as e:
+        # Catch RegistrationPageNotReady or other validation errors
+        return {"status": "error", "error": str(e), "error_type": type(e).__name__}
 
 
 def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle unpublish_registration_page service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            reg_page = unpublish_registration_page(
-                uow=uow,
-                user_id=current_user.id,
-                page_id=_page_id_for_assembly(uow, assembly_id),
-            )
-            return {
-                "status": "success",
-                "registration_page": {
-                    "id": str(reg_page.id),
-                    "status": reg_page.status.value if reg_page.status else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+    try:
+        reg_page = unpublish_registration_page(
+            uow=uow,
+            user_id=current_user.id,
+            page_id=_page_id_for_assembly(uow, assembly_id),
+        )
+        return {
+            "status": "success",
+            "registration_page": {
+                "id": str(reg_page.id),
+                "status": reg_page.status.value if reg_page.status else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "error_type": type(e).__name__}
 
 
 def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle close_registration_page service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            reg_page = close_registration_page(
-                uow=uow,
-                user_id=current_user.id,
-                page_id=_page_id_for_assembly(uow, assembly_id),
-            )
-            return {
-                "status": "success",
-                "registration_page": {
-                    "id": str(reg_page.id),
-                    "status": reg_page.status.value if reg_page.status else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+    try:
+        reg_page = close_registration_page(
+            uow=uow,
+            user_id=current_user.id,
+            page_id=_page_id_for_assembly(uow, assembly_id),
+        )
+        return {
+            "status": "success",
+            "registration_page": {
+                "id": str(reg_page.id),
+                "status": reg_page.status.value if reg_page.status else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "error_type": type(e).__name__}
 
 
 def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle reopen_registration_page service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
 
-    with uow:
-        try:
-            reg_page = reopen_registration_page(
-                uow=uow,
-                user_id=current_user.id,
-                page_id=_page_id_for_assembly(uow, assembly_id),
-            )
-            return {
-                "status": "success",
-                "registration_page": {
-                    "id": str(reg_page.id),
-                    "status": reg_page.status.value if reg_page.status else None,
-                },
-            }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+    try:
+        reg_page = reopen_registration_page(
+            uow=uow,
+            user_id=current_user.id,
+            page_id=_page_id_for_assembly(uow, assembly_id),
+        )
+        return {
+            "status": "success",
+            "registration_page": {
+                "id": str(reg_page.id),
+                "status": reg_page.status.value if reg_page.status else None,
+            },
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "error_type": type(e).__name__}
 
 
 def _handle_submit_registration(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -820,30 +802,29 @@ def _handle_submit_registration(uow: Any, params: dict[str, Any]) -> dict[str, A
     form_data = params.get("form_data", {})
     is_test = params.get("is_test", False)
 
-    with uow:
-        try:
-            result = submit_registration_by_assembly_id(
-                uow=uow,
-                assembly_id=assembly_id,
-                form_data=form_data,
-                is_test=is_test,
-            )
-            return {
-                "status": "success" if result.is_valid else "validation_error",
-                "respondent": {
-                    "id": str(result.respondent.id),
-                    "external_id": result.respondent.external_id,
-                    "selection_status": result.respondent.selection_status.value,
-                    "attributes": result.respondent.attributes,
-                }
-                if result.respondent
-                else None,
-                "is_test": result.is_test,
-                "field_errors": result.field_errors,
-                "form_errors": result.form_errors,
+    try:
+        result = submit_registration_by_assembly_id(
+            uow=uow,
+            assembly_id=assembly_id,
+            form_data=form_data,
+            is_test=is_test,
+        )
+        return {
+            "status": "success" if result.is_valid else "validation_error",
+            "respondent": {
+                "id": str(result.respondent.id),
+                "external_id": result.respondent.external_id,
+                "selection_status": result.respondent.selection_status.value,
+                "attributes": result.respondent.attributes,
             }
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+            if result.respondent
+            else None,
+            "is_test": result.is_test,
+            "field_errors": result.field_errors,
+            "form_errors": result.form_errors,
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e), "error_type": type(e).__name__}
 
 
 def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -887,36 +868,35 @@ def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
                 "error_type": "ValidationError",
             }
 
-    with uow:
-        try:
-            field = add_field(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                field_key=field_key,
-                label=label,
-                group=group,
-                field_type=field_type,
-                options=options,
-            )
-            return {
-                "status": "success",
-                "field": {
-                    "id": str(field.id),
-                    "field_key": field.field_key,
-                    "label": field.label,
-                    "group": field.group.value,
-                    "field_type": field.field_type.value,
-                    "sort_order": field.sort_order,
-                    "options": [{"value": o.value, "help_text": o.help_text} for o in (field.options or [])],
-                },
-            }
-        except FieldDefinitionConflictError as e:
-            return {"status": "error", "error": str(e), "error_type": "FieldDefinitionConflictError"}
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    try:
+        field = add_field(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            field_key=field_key,
+            label=label,
+            group=group,
+            field_type=field_type,
+            options=options,
+        )
+        return {
+            "status": "success",
+            "field": {
+                "id": str(field.id),
+                "field_key": field.field_key,
+                "label": field.label,
+                "group": field.group.value,
+                "field_type": field.field_type.value,
+                "sort_order": field.sort_order,
+                "options": [{"value": o.value, "help_text": o.help_text} for o in (field.options or [])],
+            },
+        }
+    except FieldDefinitionConflictError as e:
+        return {"status": "error", "error": str(e), "error_type": "FieldDefinitionConflictError"}
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
 
 
 def _serialise_image(image: RegistrationImage) -> dict[str, Any]:

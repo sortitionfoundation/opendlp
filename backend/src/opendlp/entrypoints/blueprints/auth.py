@@ -179,31 +179,33 @@ def _verify_2fa_code_for_user(uow: AbstractUnitOfWork, user_id: uuid.UUID, verif
     """Verify 2FA code (TOTP or backup code) for a user.
 
     Returns (success, is_backup_code).
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Try TOTP code first
     success = False
     is_backup_code = False
 
-    with uow:
-        user = uow.users.get(user_id)
-        if user and user.totp_secret_encrypted:
-            decrypted_secret = totp_service.decrypt_totp_secret(user.totp_secret_encrypted, user_id)
-            if totp_service.verify_totp_code(decrypted_secret, verification_code):
-                success = True
-                totp_service.record_totp_attempt(uow, user_id, success=True)
+    user = uow.users.get(user_id)
+    if user and user.totp_secret_encrypted:
+        decrypted_secret = totp_service.decrypt_totp_secret(user.totp_secret_encrypted, user_id)
+        if totp_service.verify_totp_code(decrypted_secret, verification_code):
+            success = True
+            totp_service.record_totp_attempt(uow, user_id, success=True)
 
     # If TOTP failed, try backup code
-    if not success:
-        with uow:
-            if totp_service.verify_backup_code(uow, user_id, verification_code):
-                success = True
-                is_backup_code = True
+    if not success and totp_service.verify_backup_code(uow, user_id, verification_code):
+        success = True
+        is_backup_code = True
 
     return (success, is_backup_code)
 
 
 def _complete_2fa_login(uow: AbstractUnitOfWork, user_id: uuid.UUID, is_backup_code: bool) -> ResponseReturnValue:
-    """Complete 2FA login and redirect to appropriate page."""
+    """Complete 2FA login and redirect to appropriate page.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     # Clear session and get login details
     remember_me = session.pop("pending_2fa_remember_me", False)
     next_page = session.pop("pending_2fa_next", None)
@@ -211,14 +213,12 @@ def _complete_2fa_login(uow: AbstractUnitOfWork, user_id: uuid.UUID, is_backup_c
     session.pop("pending_2fa_timestamp", None)
 
     # Get fresh user object for login
-    with uow:
-        user = uow.users.get(user_id)
-        login_user(user, remember=remember_me)
+    user = uow.users.get(user_id)
+    login_user(user, remember=remember_me)
 
     # Show backup code warning if used
     if is_backup_code:
-        with uow:
-            remaining = totp_service.count_remaining_backup_codes(uow, user_id)
+        remaining = totp_service.count_remaining_backup_codes(uow, user_id)
         flash(
             _(
                 "Backup code used successfully. You have %(remaining)s backup codes remaining.",
@@ -253,48 +253,46 @@ def verify_2fa() -> ResponseReturnValue:
         try:
             uow = bootstrap.get_flask_uow()
 
-            # Check rate limit
+            # One transaction for the whole verification: the rate-limit read, the
+            # attempt record it produces and the login must not disagree with each other.
             with uow:
                 is_allowed, attempts_remaining = totp_service.check_totp_rate_limit(uow, pending_user_id)
 
-            if not is_allowed:
-                flash(
-                    _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
-                    "error",
-                )
-                return render_template("auth/verify_2fa.html", rate_limited=True)
+                if not is_allowed:
+                    flash(
+                        _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
+                        "error",
+                    )
+                    return render_template("auth/verify_2fa.html", rate_limited=True)
 
-            # Get user
-            with uow:
                 user = uow.users.get(pending_user_id)
                 if not user or not user.totp_enabled:
                     flash(_("Two-factor authentication is not enabled for this account."), "error")
                     return redirect(url_for("auth.login"))
 
-            # Verify code (TOTP or backup code)
-            with uow:
                 success, is_backup_code = _verify_2fa_code_for_user(uow, pending_user_id, verification_code)
 
-            # Handle failed verification
-            if not success:
-                with uow:
+                # Handle failed verification
+                if not success:
                     totp_service.record_totp_attempt(uow, pending_user_id, success=False)
                     _rate_limit_allowed, attempts_remaining = totp_service.check_totp_rate_limit(uow, pending_user_id)
 
-                if attempts_remaining > 0:
-                    flash(
-                        _("Invalid verification code. %(attempts)s attempts remaining.", attempts=attempts_remaining),
-                        "error",
-                    )
-                else:
-                    flash(
-                        _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
-                        "error",
-                    )
-                return render_template("auth/verify_2fa.html")
+                    if attempts_remaining > 0:
+                        flash(
+                            _(
+                                "Invalid verification code. %(attempts)s attempts remaining.",
+                                attempts=attempts_remaining,
+                            ),
+                            "error",
+                        )
+                    else:
+                        flash(
+                            _("Too many failed attempts. Please try again in 15 minutes or use a backup code."),
+                            "error",
+                        )
+                    return render_template("auth/verify_2fa.html")
 
-            # Success! Complete login
-            with uow:
+                # Success! Complete login
                 return _complete_2fa_login(uow, pending_user_id, is_backup_code)
 
         except TwoFactorVerificationError as e:
