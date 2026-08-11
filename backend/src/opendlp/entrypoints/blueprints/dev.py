@@ -213,7 +213,14 @@ def service_docs() -> ResponseReturnValue:
     uow = bootstrap.get_flask_uow()
     assemblies = get_user_assemblies(uow, current_user.id)
 
-    return render_template("backoffice/service_docs.html", assemblies=assemblies, active_tab=active_tab), 200
+    # SERVICE_RESPONSE_KEYS is defined below, next to the handler table it mirrors; the
+    # page needs it to know which response panel each service's result belongs in.
+    return render_template(
+        "backoffice/service_docs.html",
+        assemblies=assemblies,
+        active_tab=active_tab,
+        service_response_keys=SERVICE_RESPONSE_KEYS,
+    ), 200
 
 
 @dev_bp.route("/dev/service-docs/execute", methods=["POST"])
@@ -1451,6 +1458,53 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "delete_email_template": _handle_delete_email_template,
     "assign_auto_reply_template": _handle_assign_auto_reply_template,
     "auto_reply_readiness_problems": _handle_auto_reply_readiness_problems,
+}
+
+
+# Service name -> the short key the service docs page keys its loading flag and response
+# panel by. Public, and here rather than in the page's JavaScript, because it is a view of
+# the table above: keeping the two in one file is what lets a test assert they cover the
+# same services. Rendered into the page's JSON data block by service_docs().
+SERVICE_RESPONSE_KEYS: dict[str, str] = {
+    "import_respondents_from_csv": "import_respondents",
+    "reset_selection_status": "reset_status",
+    "get_respondents_for_assembly": "get_respondents",
+    "import_targets_from_csv": "import_targets",
+    "get_or_create_csv_config": "get_csv_config",
+    "update_csv_config": "update_csv_config",
+    "create_assembly": "create_assembly",
+    "get_assembly_with_permissions": "get_assembly",
+    "update_assembly": "update_assembly",
+    "create_registration_page": "create_registration_page",
+    "get_registration_page_with_source": "get_registration_page",
+    "update_registration_page": "update_registration_page",
+    "update_registration_page_html": "update_registration_html",
+    "generate_starter_form_html": "generate_starter_html",
+    "publish_registration_page": "publish_registration",
+    "unpublish_registration_page": "unpublish_registration",
+    "close_registration_page": "close_registration",
+    "reopen_registration_page": "reopen_registration",
+    "submit_registration": "submit_registration",
+    "add_field": "add_field",
+    "add_registration_image": "add_image",
+    "list_registration_images": "list_images",
+    "delete_registration_image": "delete_image",
+    "set_registration_image_alt": "set_image_alt",
+    "list_image_snippets": "list_snippets",
+    "get_registration_image_for_serving": "serve_image",
+    "add_registration_document": "add_document",
+    "list_registration_documents": "list_documents",
+    "delete_registration_document": "delete_document",
+    "set_registration_document_label": "set_document_label",
+    "list_document_snippets": "list_document_snippets",
+    "get_registration_document_for_serving": "serve_document",
+    "create_email_template": "create_email_template",
+    "list_email_templates": "list_email_templates",
+    "get_email_template": "get_email_template",
+    "update_email_template": "update_email_template",
+    "delete_email_template": "delete_email_template",
+    "assign_auto_reply_template": "assign_auto_reply_template",
+    "auto_reply_readiness_problems": "auto_reply_readiness",
 }
 
 
