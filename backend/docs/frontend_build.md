@@ -120,10 +120,55 @@ The entry-point list lives in `esbuild.config.mjs`, keyed by output path:
 | `src/js/htmx-422-swap.js`              | `static/js/htmx-422-swap.js`               |
 | `src/js/backoffice/alpine-components.js` | `static/backoffice/js/alpine-components.js` |
 | `src/js/backoffice/html-editor.js`     | `static/backoffice/js/dist/html-editor.js` |
+| `src/js/backoffice/patterns.js`        | `static/backoffice/js/patterns.js`         |
+| `src/js/backoffice/registration-page.js` | `static/backoffice/js/registration-page.js` |
 
 To add a bundle: write the entry under `src/js/`, add a line to `ENTRY_POINTS` in
 `esbuild.config.mjs`, and load the built path in the template. Both `build:js` and `watch:js` read
 that one list, so there is no second place to update.
+
+The last two are **page-specific** entry points, loaded from their own page's `{% block head %}`
+rather than from the shared backoffice bundle, so their components do not ship to every backoffice
+page. Reach for one when a component belongs to a single page.
+
+### Passing server data to a bundle
+
+A bundled component cannot be rendered through Jinja, so anything only the server knows —
+`url_for` routes, the CSRF token, translated strings, seeded data — has to be handed across
+explicitly. Two ways, and the choice is about size and trust:
+
+**A few short, trusted values: an `x-data` argument.**
+
+```html
+<div x-data="urlSelect({ baseUrl: '{{ url_for('backoffice.view_assembly_data', assembly_id=assembly.id) }}' })">
+```
+
+**Anything larger, or anything a user wrote: a JSON data block**, read with `readJsonScript()`
+from `src/js/lib/json-script.js`. `templates/backoffice/assembly_registration.html` is the worked
+example.
+
+```html
+{% set page_data = {"csrfToken": csrf_token(), "images": images, "messages": {...}} %}
+<script type="application/json" id="registration-page-data" nonce="{{ csp_nonce }}">{{ page_data|tojson }}</script>
+```
+
+```javascript
+Alpine.data("registrationPageController", function () {
+  return registrationPageController(readJsonScript("registration-page-data"));
+});
+```
+
+Why the block wins once user input is involved: an organiser writes the image alt text, so a quote
+or a `</script>` in a display name would otherwise break the page. `|tojson` escapes `<`, `>`, `&`
+and `'`, once, for every value — rather than each one being trusted not to need it. It also keeps
+the reading of the configuration in the entry point, leaving the component a plain function of its
+options and so testable without a DOM.
+
+Note that `type="application/json"` is not executable, so it is not a CSP inline-script violation
+and does not undo the "no inline script" rule.
+
+**Translated strings must come from the template**, whichever way you choose. `babel.cfg` extracts
+from `**.py` and `templates/**.html` only, so a string written in a `.js` file is never translated.
 
 ### Run `just watch-js` while editing JavaScript
 

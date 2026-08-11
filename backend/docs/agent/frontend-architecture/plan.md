@@ -1,13 +1,13 @@
 # Frontend interactivity: implementation plan
 
-**Status:** Phases 1a, 1b, 1c, 1d, 2, 3 and 4 are implemented (§2, §5, §3, §4, §6, §7, §8, §9). Phase 5 onwards is not started; one question is still open.
+**Status:** Phases 1a, 1b, 1c, 1d, 2, 3, 4 and 5 are implemented (§2, §5, §3, §4, §6, §7, §8, §9). Phase 6 is parked; one question is still open.
 **Decision this implements:** [vanilla-alpine-json.md](vanilla-alpine-json.md) — vanilla JS + Alpine.js (CSP build) + JSON routes, organised into real files, tested, for internal/backoffice interactivity. Public pages stay server-rendered, no-JS-required.
 
 This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 records what was decided and what is still parked pending a team discussion.
 
-**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), Phase 2 (the JS source relocation to `src/js/`, §5.2), Phase 3 (the API-fixture machinery, §4), Phase 4 (the `patterns.html` pilot migration, §9), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
+**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), Phase 2 (the JS source relocation to `src/js/`, §5.2), Phase 3 (the API-fixture machinery, §4), Phase 4 (the `patterns.html` pilot migration, §9), Phase 5 (the `assembly_registration.html` production migration, §9), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
 
-**Not started:** Phase 5 onwards — the `assembly_registration.html` production migration, and the parked `service_docs.html` (§9).
+**Not started:** Phase 6 — the parked `service_docs.html` (§9).
 
 **Still open (do not start this):** whether anything in `service_docs.html`/`dev.py` is load-bearing (§10 Phase 6).
 
@@ -452,6 +452,8 @@ Everything below is done, including §4's API fixtures (Phase 3). `docs/agent/fr
 - **`docs/frontend_build.md`**: also record the `build:vendor` → `build` → Dockerfile/CI chain (§2), since the whole point of that wiring is that it's invisible until it breaks.
 - **Phase 2 doc changes (§5.2) — done:** `frontend_build.md` gained the `src/js/` layout table, the entry-point table and `just watch-js` (with why the Flask bounce matters); `frontend_js_testing.md` had "Where tests live" rewritten and its classic-global-script section replaced with "Testing a component".
 
+- **Phase 5 doc changes (§9) — done:** `frontend_build.md` gained the two page-specific entry points and a "Passing server data to a bundle" section — the `x-data` argument versus JSON data block choice, why user-written text forces the block, and the babel constraint that keeps translated strings in the template. Two matching checks were added to `sf-code-review` (§7).
+
 Note for future sessions: several docs in this repo say "CLAUDE.md" when they mean the file — the symlink means editing either path works, but new edits should target `AGENTS.md` so the content lives with the real file.
 
 ---
@@ -469,6 +471,14 @@ Original list, for reference:
 - Does a new exception class intended for user-facing messages override `user_msg()`?
 - Is any new/changed script tag using a CDN URL instead of a vendored copy?
 - Did a new npm build script get added without being wired into the `build` script and `just build-all` (§2)?
+
+Added when Phase 5 landed (§9):
+
+- Is server-side data reaching a bundled component through an `x-data` attribute when it holds
+  user-written text, or more than a couple of short values? It should be a JSON data block read
+  with `readJsonScript()`.
+- Is a user-facing string being written in a `.js` file? `babel.cfg` extracts from `**.py` and
+  `templates/**.html` only, so it can never be translated.
 
 Added when Phase 2 landed (§5.2):
 
@@ -542,7 +552,7 @@ That is what was chosen, and it matches what the code was already telling us: th
 
 ---
 
-## 9. Migrating the existing inline scripts — ✅ PILOT DONE (Phase 4)
+## 9. Migrating the existing inline scripts — ✅ PILOT DONE (Phase 4), ✅ PRODUCTION DONE (Phase 5)
 
 **`patterns.html` is migrated.** 284 lines of inline script became four modules and an entry
 point; the template is 386 lines down to 107, with no script body left at all. Notes:
@@ -576,6 +586,48 @@ point; the template is 386 lines down to 107, with no script body left at all. N
     `alpine:init`), that the file demo accepts a CSV and rejects a `.txt`, and that the copy button
     raises a toast.
 
+**`assembly_registration.html` is migrated (Phase 5).** The 580-line inline block became five
+slice factories under `src/js/components/`, composed by `registrationPageController` and registered
+by a `src/js/backoffice/registration-page.js` entry point; the template is 2152 lines down to 1629
+with no script body left. Notes:
+
+- **A JSON data block, not an `x-data` argument.** The configuration is 26 translated strings, five
+  `url_for` routes, the CSRF token and two seeded asset lists — too much for an attribute, and
+  unsafe there besides: an organiser writes the image alt text, so a quote or a `</script>` in a
+  display name would break the page. A `<script type="application/json">` rendered with `|tojson`
+  does the escaping once, for every value, and a component test pins that with an alt text that
+  tries to close the tag. `readJsonScript()` in `src/js/lib/json-script.js` reads it, in the entry
+  point rather than the component, so the component stays a plain function of its options. This is
+  the first use of the pattern; it is written up in `docs/frontend_build.md`.
+- **Translated strings have to stay in the template.** `babel.cfg` extracts from `**.py` and
+  `templates/**.html` only, so a string moved into a `.js` file would silently stop being
+  translated. That is what makes the `messages` half of the data block necessary rather than
+  merely convenient.
+- **Slices, merged flat.** The CSP Alpine build needs real property names for `x-model`, so
+  `imageAlt` and `documentLabel` have to exist on the component. Each slice returns a flat object
+  and the controller `Object.assign`s them; `showToast` comes from the toast slice and the others
+  call it once merged. The image and document slices stay parallel rather than being generated from
+  a shared prefixed factory, which would make every name in the template ungreppable.
+- **Four shared helpers came out of it**, each with tests: `formatBytes`, `readJsonScript`, the
+  CSRF-carrying `postFormData`/`patchJson`/`deleteResource` (the six near-identical fetch chains
+  differed only in what they did with the result), and `urlWithId`, which names the existing
+  sentinel-UUID URL contract.
+- **Two quirks pinned rather than fixed**, so the extraction stayed reviewable: an earlier toast's
+  timer cuts a later one short, and a document label is optional on upload but required in the
+  details form. Both are noted in the tests that pin them. Worth a follow-up; not this change.
+- **Tests at all three levels:** 78 Vitest across the slices and the composition (the image and
+  document tests load the recorded API fixtures from Phase 3, which is what that machinery was
+  built for); 79 component tests, which list every Alpine binding exhaustively across all three
+  sections in every state — Alpine does not report an unknown property, so a rename made in
+  `src/js/` and not in the template just silently stops working — plus the not-deferred-while-
+  Alpine-is check and no-executable-inline-script; and 6 BDD scenarios covering upload, alt edit
+  and delete in a browser, each also asserting the page did not navigate. Pointing the script tag
+  at the wrong bundle fails all six, which is the check that the net is real.
+- **The existing 69 backoffice BDD scenarios pass unchanged**, which is the evidence for "no
+  behaviour change". The template-grepping assertions in
+  `tests/component/test_backoffice_registration_images.py` went with the inline script they were
+  reading.
+
 **Original plan.** Order agreed by Chewie: `patterns.html` → `assembly_registration.html` → `service_docs.html`. Incremental, per `vanilla-alpine-json.md` §5, smallest/highest-signal first:
 
 **Pilot: `patterns.html` (284 lines) first.** Rationale: it's the smallest of the three, and it's _the documented living reference_ — migrating it first means the reference itself demonstrates the new convention instead of contradicting it (right now `docs/frontend_security.md` and CLAUDE.md point people at a page that's 100% inline script). Low product risk since it's dev-only. **§8's decision raises the stakes on this one**: now that `dev.py` is explicitly not a pattern source, `patterns.html` is one of the few things we point at instead, so it has to stop contradicting the convention it documents.
@@ -598,7 +650,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `sr
 6. **Phase 2 — JS source layout. ✅ DONE.** (§5.1, shape in §5.2.) Move all hand-written first-party JS — including `html-editor.js` — to `src/js/`, widen the existing esbuild `build:js`/`watch:js` entry-point list to cover it, colocate the Vitest files, retire `load-global-script.js` and the shared-globals convention, and resolve the duplicate `urlSetParam`. Watch mode must work end to end before this phase is called done. Deliberately ahead of the migrations: Phases 4 and 5 are what generate most of the JS, and writing it into the new layout is cheaper than moving it afterwards.
 7. **Phase 3 — drift-prevention machinery. ✅ DONE.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
 8. **Phase 4 — pilot migration. ✅ DONE.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup. Also the thing §8 depends on — see there.
-9. **Phase 5 — production migration.** `assembly_registration.html` image/alt-text manager.
+9. **Phase 5 — production migration. ✅ DONE.** `assembly_registration.html` image/alt-text manager, and the PDF document panel and edit guard alongside it (§9). Introduces the JSON data block as the way a bundled component receives server-side configuration, documented in `docs/frontend_build.md`.
 10. **Phase 6 — PARKED pending §11 row 9.** `service_docs.html`. §8 is answered, so no `dev.py` test backfill is planned; what's left parked is just whether `service_docs.html` is load-bearing enough to be worth migrating at all.
 
 Each phase is independently shippable and reversible; nothing here requires a big-bang cutover. Phase 1 is split into four because the parts touch entirely different files and have different review audiences — bundling them would make the vendoring change (the one with real deploy risk) hard to see.
