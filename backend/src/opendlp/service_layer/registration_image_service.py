@@ -62,78 +62,71 @@ def add_registration_image(
     alt: str = "",
     original_filename: str = "",
 ) -> RegistrationImage:
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="add registration image", required_role=_MANAGE_ROLE)
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="add registration image", required_role=_MANAGE_ROLE)
 
-        processed = process_image(
-            raw,
-            max_bytes=get_max_image_upload_bytes(),
-            max_edge_px=get_registration_image_max_edge_px(),
-        )
-        # Content-addressed dedup: identical bytes on a page collapse to one row.
-        # The original filename is kept; the caller's alt always wins on re-upload.
-        existing = uow.registration_images.get_by_assembly_and_sha(assembly_id, processed.sha256)
-        if existing is not None:
-            if existing.alt != alt:
-                existing.alt = alt
-                uow.commit()
-            return existing.create_detached_copy()
+    processed = process_image(
+        raw,
+        max_bytes=get_max_image_upload_bytes(),
+        max_edge_px=get_registration_image_max_edge_px(),
+    )
+    # Content-addressed dedup: identical bytes on a page collapse to one row.
+    # The original filename is kept; the caller's alt always wins on re-upload.
+    existing = uow.registration_images.get_by_assembly_and_sha(assembly_id, processed.sha256)
+    if existing is not None:
+        if existing.alt != alt:
+            existing.alt = alt
+            uow.commit()
+        return existing.create_detached_copy()
 
-        limit = get_max_images_per_assembly()
-        if uow.registration_images.count_by_assembly_id(assembly_id) >= limit:
-            raise ImageQuotaExceeded(limit)
+    limit = get_max_images_per_assembly()
+    if uow.registration_images.count_by_assembly_id(assembly_id) >= limit:
+        raise ImageQuotaExceeded(limit)
 
-        image = RegistrationImage.from_processed(
-            assembly_id,
-            processed,
-            created_by=user.id,
-            alt=alt,
-            original_filename=sanitise_original_filename(original_filename),
-        )
-        uow.registration_images.add(image)
-        uow.commit()
-        return image.create_detached_copy()
+    image = RegistrationImage.from_processed(
+        assembly_id,
+        processed,
+        created_by=user.id,
+        alt=alt,
+        original_filename=sanitise_original_filename(original_filename),
+    )
+    uow.registration_images.add(image)
+    return image.create_detached_copy()
 
 
 def list_registration_images(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> list[RegistrationImage]:
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(action="view registration images", required_role=_VIEW_ROLE)
-        return [image.create_detached_copy() for image in uow.registration_images.list_by_assembly_id(assembly_id)]
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(action="view registration images", required_role=_VIEW_ROLE)
+    return [image.create_detached_copy() for image in uow.registration_images.list_by_assembly_id(assembly_id)]
 
 
 def delete_registration_image(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, image_id: uuid.UUID
 ) -> None:
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="delete registration image", required_role=_MANAGE_ROLE)
-        image = uow.registration_images.get(image_id)
-        if image is None or image.assembly_id != assembly_id:
-            raise RegistrationImageNotFoundError(f"Image {image_id} not found for this registration page")
-        uow.registration_images.delete(image)
-        uow.commit()
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="delete registration image", required_role=_MANAGE_ROLE)
+    image = uow.registration_images.get(image_id)
+    if image is None or image.assembly_id != assembly_id:
+        raise RegistrationImageNotFoundError(f"Image {image_id} not found for this registration page")
+    uow.registration_images.delete(image)
 
 
 def set_registration_image_alt(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, image_id: uuid.UUID, alt: str
 ) -> RegistrationImage:
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="edit registration image", required_role=_MANAGE_ROLE)
-        image: RegistrationImage | None = uow.registration_images.get(image_id)
-        if image is None or image.assembly_id != assembly_id:
-            raise RegistrationImageNotFoundError(f"Image {image_id} not found for this registration page")
-        image.alt = alt
-        uow.commit()
-        return image.create_detached_copy()
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="edit registration image", required_role=_MANAGE_ROLE)
+    image: RegistrationImage | None = uow.registration_images.get(image_id)
+    if image is None or image.assembly_id != assembly_id:
+        raise RegistrationImageNotFoundError(f"Image {image_id} not found for this registration page")
+    image.alt = alt
+    return image.create_detached_copy()
 
 
 def list_image_snippets(
@@ -150,9 +143,8 @@ def get_registration_image_for_serving(
     uow: AbstractUnitOfWork, url_slug: str, image_name: str
 ) -> RegistrationImage | None:
     sha256 = image_name.rsplit(".", 1)[0]
-    with uow:
-        page = uow.registration_pages.get_by_url_slug(url_slug)
-        if page is None or not page.is_publicly_loadable():
-            return None
-        image = uow.registration_images.get_by_assembly_and_sha(page.assembly_id, sha256)
-        return image.create_detached_copy() if image else None
+    page = uow.registration_pages.get_by_url_slug(url_slug)
+    if page is None or not page.is_publicly_loadable():
+        return None
+    image = uow.registration_images.get_by_assembly_and_sha(page.assembly_id, sha256)
+    return image.create_detached_copy() if image else None

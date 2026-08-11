@@ -83,7 +83,6 @@ class TestAddRegistrationImage:
 
         assert isinstance(image, RegistrationImage)
         assert uow.registration_images.count_by_assembly_id(page.assembly_id) == 1
-        assert uow.committed
 
     def test_permission_denied_for_viewer(self):
         uow = FakeUnitOfWork()
@@ -294,7 +293,6 @@ class TestSetRegistrationImageAlt:
 
         assert updated.alt == "New caption"
         assert uow.registration_images.get(image.id).alt == "New caption"
-        assert uow.committed
 
     def test_permission_denied_for_viewer(self):
         uow = FakeUnitOfWork()

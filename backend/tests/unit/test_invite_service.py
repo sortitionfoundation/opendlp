@@ -33,7 +33,6 @@ class TestGenerateInvite:
         assert len(invite.code) > 0
         assert invite.expires_at > datetime.now(UTC)
         assert len(uow.user_invites.all()) == 1
-        assert uow.committed
 
     def test_generate_invite_success_global_organiser(self):
         """Test successful invite generation by global organiser."""
@@ -51,7 +50,6 @@ class TestGenerateInvite:
 
         assert invite.global_role == GlobalRole.GLOBAL_ORGANISER
         assert invite.created_by == organiser_user.id
-        assert uow.committed
 
     def test_generate_invite_insufficient_permissions(self):
         """Test invite generation fails for regular user."""
@@ -119,7 +117,6 @@ class TestGenerateBatchInvites:
         # Check all codes are unique
         codes = {invite.code for invite in invites}
         assert len(codes) == 5
-        assert uow.committed
 
     def test_generate_batch_invites_with_email(self):
         """Test that generate_batch_invites accepts email and stores it on all invites."""
@@ -233,7 +230,6 @@ class TestRevokeInvite:
         assert revoked_invite.used_by == admin_user.id
         assert revoked_invite.used_at is not None
         assert not revoked_invite.is_valid()
-        assert uow.committed
 
     def test_revoke_invite_insufficient_permissions(self):
         """Test invite revocation fails for regular user."""
@@ -311,7 +307,6 @@ class TestCleanupExpiredInvites:
 
         # Should have deleted only the expired unused invite
         assert count == 1
-        assert uow.committed
 
         # Verify the expired unused invite was deleted
         remaining_invites = list(uow.user_invites.all())

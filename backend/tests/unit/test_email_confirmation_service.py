@@ -251,7 +251,6 @@ class TestConfirmEmailWithToken:
 
         assert result is not None
         assert result.email_confirmed_at is not None
-        assert uow.committed is True
 
     def test_marks_token_as_used(self, uow, unconfirmed_user):
         """Should mark token as used after confirmation."""
@@ -305,7 +304,6 @@ class TestResendConfirmationEmail:
             )
 
             assert result is True
-            assert uow.committed is True
             mock_send.assert_called_once()
 
         # Check token was created

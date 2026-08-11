@@ -67,7 +67,7 @@ class TestRequestPasswordReset:
         result = password_reset_service.request_password_reset(uow, active_user.email)
 
         assert result is True
-        assert uow.committed is True
+        assert list(uow.password_reset_tokens.get_active_tokens_for_user(active_user.id))
 
         # Check token was created
         tokens = list(uow.password_reset_tokens.all())
@@ -215,7 +215,6 @@ class TestResetPasswordWithToken:
         assert result.id == active_user.id
         assert active_user.password_hash == "new_hashed_password"  # pragma: allowlist secret
         assert token.is_used()
-        assert uow.committed
 
     @patch("opendlp.service_layer.password_reset_service.validate_password_strength")
     def test_rejects_weak_password(self, mock_validate, uow, active_user):
@@ -343,7 +342,6 @@ class TestCleanupExpiredTokens:
         count = password_reset_service.cleanup_expired_tokens(uow, days_old=30)
 
         assert count == 1
-        assert uow.committed
 
         # Check recent token still exists
         assert uow.password_reset_tokens.get(recent_token.id) is not None

@@ -184,6 +184,8 @@ def check_monitor_selection(uow: AbstractUnitOfWork) -> MonitorSelectionStatus:
     """Check the monitor assembly's most recent selection and cleanup runs.
 
     See ``MonitorSelectionStatus`` for the meaning of the returned values.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     assembly_id = config.get_monitor_assembly_id()
     if assembly_id is None:
@@ -264,6 +266,8 @@ def _poll_until_finished(
     """Poll until the record is finished or wrapper times out.
 
     Returns (record, elapsed_seconds, timed_out).
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     half_budget_hit = False
     while True:
@@ -341,6 +345,8 @@ def run_monitoring_selection(
 
     Production callers (CLI, beat) call without overriding the injected
     dependencies; tests substitute fakes for the boundary calls.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     assembly_id = config.get_monitor_assembly_id()
     user_id = config.get_monitor_user_id()
@@ -432,6 +438,8 @@ def get_latest_monitor_run(
 
     Defaults to SELECT_GSHEET because that is the heartbeat. Pass
     DELETE_OLD_TABS to inspect the latest cleanup pass.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     assembly_id = config.get_monitor_assembly_id()
     if assembly_id is None:

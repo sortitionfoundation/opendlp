@@ -76,9 +76,10 @@ def auto_reply_readiness_problems(uow: AbstractUnitOfWork, assembly_id: uuid.UUI
 
     Returns an ERROR when no email is collected (the auto-reply can never send), a
     WARNING when email is optional, and an empty list when email is required.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        return _auto_reply_readiness_problems(uow, assembly_id)
+    return _auto_reply_readiness_problems(uow, assembly_id)
 
 
 def _load_user_and_assembly(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID):  # type: ignore[no-untyped-def]
@@ -116,16 +117,17 @@ def create_email_template(
     subject: str,
     body_html: str,
 ) -> EmailTemplate:
-    """Create an email template for an assembly. Raises EmailTemplateInvalid on bad input."""
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="create email template", required_role=_MANAGE_ROLE)
-        template = EmailTemplate(assembly_id=assembly_id, name=name, subject=subject, body_html=body_html)
-        _validate(template)
-        uow.email_templates.add(template)
-        uow.commit()
-        return template.create_detached_copy()
+    """Create an email template for an assembly. Raises EmailTemplateInvalid on bad input.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="create email template", required_role=_MANAGE_ROLE)
+    template = EmailTemplate(assembly_id=assembly_id, name=name, subject=subject, body_html=body_html)
+    _validate(template)
+    uow.email_templates.add(template)
+    return template.create_detached_copy()
 
 
 def update_email_template(
@@ -137,46 +139,52 @@ def update_email_template(
     subject: str | None = None,
     body_html: str | None = None,
 ) -> EmailTemplate:
-    """Update an email template. Raises EmailTemplateInvalid on bad input."""
-    with uow:
-        template = _load_template(uow, template_id)
-        user, assembly = _load_user_and_assembly(uow, user_id, template.assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="update email template", required_role=_MANAGE_ROLE)
-        template.update(name=name, subject=subject, body_html=body_html)
-        _validate(template)
-        uow.commit()
-        return template.create_detached_copy()
+    """Update an email template. Raises EmailTemplateInvalid on bad input.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    template = _load_template(uow, template_id)
+    user, assembly = _load_user_and_assembly(uow, user_id, template.assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="update email template", required_role=_MANAGE_ROLE)
+    template.update(name=name, subject=subject, body_html=body_html)
+    _validate(template)
+    return template.create_detached_copy()
 
 
 def get_email_template(uow: AbstractUnitOfWork, user_id: uuid.UUID, template_id: uuid.UUID) -> EmailTemplate:
-    """Get an email template if the user may view its assembly."""
-    with uow:
-        template = _load_template(uow, template_id)
-        user, assembly = _load_user_and_assembly(uow, user_id, template.assembly_id)
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(action="view email template", required_role=_VIEW_ROLE)
-        return template.create_detached_copy()
+    """Get an email template if the user may view its assembly.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    template = _load_template(uow, template_id)
+    user, assembly = _load_user_and_assembly(uow, user_id, template.assembly_id)
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(action="view email template", required_role=_VIEW_ROLE)
+    return template.create_detached_copy()
 
 
 def list_email_templates(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> list[EmailTemplate]:
-    """List the email templates for an assembly the user may view."""
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(action="view email templates", required_role=_VIEW_ROLE)
-        return [t.create_detached_copy() for t in uow.email_templates.list_by_assembly(assembly_id)]
+    """List the email templates for an assembly the user may view.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(action="view email templates", required_role=_VIEW_ROLE)
+    return [t.create_detached_copy() for t in uow.email_templates.list_by_assembly(assembly_id)]
 
 
 def delete_email_template(uow: AbstractUnitOfWork, user_id: uuid.UUID, template_id: uuid.UUID) -> None:
-    """Delete an email template. The registration-page FK is cleared by ON DELETE SET NULL."""
-    with uow:
-        template = _load_template(uow, template_id)
-        user, assembly = _load_user_and_assembly(uow, user_id, template.assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="delete email template", required_role=_MANAGE_ROLE)
-        uow.email_templates.delete(template)
-        uow.commit()
+    """Delete an email template. The registration-page FK is cleared by ON DELETE SET NULL.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    template = _load_template(uow, template_id)
+    user, assembly = _load_user_and_assembly(uow, user_id, template.assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="delete email template", required_role=_MANAGE_ROLE)
+    uow.email_templates.delete(template)
 
 
 def assign_auto_reply_template(
@@ -185,26 +193,27 @@ def assign_auto_reply_template(
     assembly_id: uuid.UUID,
     template_id: uuid.UUID | None,
 ) -> None:
-    """Set (or clear, with None) the registration page's auto-reply template."""
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="assign auto-reply template", required_role=_MANAGE_ROLE)
-        page = page_for_assembly(uow, assembly_id)
-        if page is None:
-            raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
-        if template_id is not None:
-            template = uow.email_templates.get(template_id)
-            if template is None or template.assembly_id != assembly_id:
-                raise EmailTemplateNotFoundError(f"Email template {template_id} not found for this assembly")
-            # Advisory only - never block configuring the auto-reply. The eventual
-            # config UI surfaces these via auto_reply_readiness_problems().
-            for problem in _auto_reply_readiness_problems(uow, assembly_id):
-                logger.warning(
-                    "Auto-reply readiness (%s) for assembly %s: %s",
-                    problem.severity.value,
-                    assembly_id,
-                    problem.message,
-                )
-        page.set_auto_reply_template(template_id)
-        uow.commit()
+    """Set (or clear, with None) the registration page's auto-reply template.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="assign auto-reply template", required_role=_MANAGE_ROLE)
+    page = page_for_assembly(uow, assembly_id)
+    if page is None:
+        raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
+    if template_id is not None:
+        template = uow.email_templates.get(template_id)
+        if template is None or template.assembly_id != assembly_id:
+            raise EmailTemplateNotFoundError(f"Email template {template_id} not found for this assembly")
+        # Advisory only - never block configuring the auto-reply. The eventual
+        # config UI surfaces these via auto_reply_readiness_problems().
+        for problem in _auto_reply_readiness_problems(uow, assembly_id):
+            logger.warning(
+                "Auto-reply readiness (%s) for assembly %s: %s",
+                problem.severity.value,
+                assembly_id,
+                problem.message,
+            )
+    page.set_auto_reply_template(template_id)

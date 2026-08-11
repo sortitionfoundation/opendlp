@@ -34,34 +34,33 @@ def generate_invite(
     Raises:
         UserNotFoundError: If user not found
         InsufficientPermissions: If user cannot create invites
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(created_by_user_id)
-        if not user:
-            raise UserNotFoundError(f"User {created_by_user_id} not found")
+    user = uow.users.get(created_by_user_id)
+    if not user:
+        raise UserNotFoundError(f"User {created_by_user_id} not found")
 
-        # Check permissions - only global organisers and admins can create invites
-        if not has_global_organiser(user):
-            raise InsufficientPermissions(action="generate invite", required_role="global-organiser or admin")
+    # Check permissions - only global organisers and admins can create invites
+    if not has_global_organiser(user):
+        raise InsufficientPermissions(action="generate invite", required_role="global-organiser or admin")
 
-        # Generate unique invite code
+    # Generate unique invite code
+    code = generate_invite_code()
+    while uow.user_invites.get_by_code(code):
         code = generate_invite_code()
-        while uow.user_invites.get_by_code(code):
-            code = generate_invite_code()
 
-        # Create the invite
-        invite = UserInvite(
-            code=code,
-            global_role=global_role,
-            created_by=created_by_user_id,
-            expires_at=datetime.now(UTC) + timedelta(hours=expires_in_hours),
-            email=email,
-        )
+    # Create the invite
+    invite = UserInvite(
+        code=code,
+        global_role=global_role,
+        created_by=created_by_user_id,
+        expires_at=datetime.now(UTC) + timedelta(hours=expires_in_hours),
+        email=email,
+    )
 
-        uow.user_invites.add(invite)
-        detached_invite = invite.create_detached_copy()
-        uow.commit()
-        return detached_invite
+    uow.user_invites.add(invite)
+    return invite.create_detached_copy()
 
 
 def generate_batch_invites(
@@ -89,41 +88,41 @@ def generate_batch_invites(
         UserNotFoundError: If user not found
         ValueError: If count invalid
         InsufficientPermissions: If user cannot create invites
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     if count <= 0 or count > 100:  # Reasonable limit
         raise ValueError("Count must be between 1 and 100")
 
-    with uow:
-        user = uow.users.get(created_by_user_id)
-        if not user:
-            raise UserNotFoundError(f"User {created_by_user_id} not found")
+    user = uow.users.get(created_by_user_id)
+    if not user:
+        raise UserNotFoundError(f"User {created_by_user_id} not found")
 
-        # Check permissions
-        if not has_global_organiser(user):
-            raise InsufficientPermissions(action="generate batch invites", required_role="global-organiser or admin")
+    # Check permissions
+    if not has_global_organiser(user):
+        raise InsufficientPermissions(action="generate batch invites", required_role="global-organiser or admin")
 
-        invites = []
-        expires_at = datetime.now(UTC) + timedelta(hours=expires_in_hours)
+    invites = []
+    expires_at = datetime.now(UTC) + timedelta(hours=expires_in_hours)
 
-        for _ in range(count):
-            # Generate unique invite code
+    for _ in range(count):
+        # Generate unique invite code
+        code = generate_invite_code()
+        while uow.user_invites.get_by_code(code):
             code = generate_invite_code()
-            while uow.user_invites.get_by_code(code):
-                code = generate_invite_code()
 
-            invite = UserInvite(
-                code=code,
-                global_role=global_role,
-                created_by=created_by_user_id,
-                expires_at=expires_at,
-                email=email,
-            )
+        invite = UserInvite(
+            code=code,
+            global_role=global_role,
+            created_by=created_by_user_id,
+            expires_at=expires_at,
+            email=email,
+        )
 
-            uow.user_invites.add(invite)
-            invites.append(invite.create_detached_copy())
+        uow.user_invites.add(invite)
+        invites.append(invite.create_detached_copy())
 
-        uow.commit()
-        return invites
+    return invites
 
 
 def list_invites(
@@ -145,19 +144,20 @@ def list_invites(
     Raises:
         UserNotFoundError: If user not found
         InsufficientPermissions: If user cannot view invites
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        # Check permissions
-        if not has_global_organiser(user):
-            raise InsufficientPermissions(action="list invites", required_role="global-organiser or admin")
+    # Check permissions
+    if not has_global_organiser(user):
+        raise InsufficientPermissions(action="list invites", required_role="global-organiser or admin")
 
-        if include_expired:
-            return list(uow.user_invites.all())
-        return list(uow.user_invites.get_valid_invites())
+    if include_expired:
+        return list(uow.user_invites.all())
+    return list(uow.user_invites.get_valid_invites())
 
 
 def revoke_invite(
@@ -180,27 +180,27 @@ def revoke_invite(
         UserNotFoundError: If user not found
         InviteNotFoundError: If invite not found
         InsufficientPermissions: If user cannot revoke invites
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        invite = uow.user_invites.get(invite_id)
-        if not invite:
-            raise InviteNotFoundError(f"Invite {invite_id} not found")
+    invite = uow.user_invites.get(invite_id)
+    if not invite:
+        raise InviteNotFoundError(f"Invite {invite_id} not found")
 
-        # Check permissions
-        if not has_global_organiser(user):
-            raise InsufficientPermissions(action="revoke invite", required_role="global-organiser or admin")
+    # Check permissions
+    if not has_global_organiser(user):
+        raise InsufficientPermissions(action="revoke invite", required_role="global-organiser or admin")
 
-        # Mark invite as used (effectively revoking it)
-        invite.use(user_id)
+    # Mark invite as used (effectively revoking it)
+    invite.use(user_id)
 
-        uow.commit()
-        # Explicit typing to satisfy mypy
-        revoked_invite: UserInvite = invite.create_detached_copy()
-        return revoked_invite
+    # Explicit typing to satisfy mypy
+    revoked_invite: UserInvite = invite.create_detached_copy()
+    return revoked_invite
 
 
 def get_invite_details(
@@ -223,23 +223,24 @@ def get_invite_details(
         UserNotFoundError: If user not found
         InviteNotFoundError: If invite not found
         InsufficientPermissions: If user cannot view invite details
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        # Check permissions
-        if not has_global_organiser(user):
-            raise InsufficientPermissions(action="view invite details", required_role="global-organiser or admin")
+    # Check permissions
+    if not has_global_organiser(user):
+        raise InsufficientPermissions(action="view invite details", required_role="global-organiser or admin")
 
-        invite = uow.user_invites.get(invite_id)
-        if not invite:
-            raise InviteNotFoundError(f"Invite {invite_id} not found")
+    invite = uow.user_invites.get(invite_id)
+    if not invite:
+        raise InviteNotFoundError(f"Invite {invite_id} not found")
 
-        # Explicit typing to satisfy mypy
-        invite_details: UserInvite = invite.create_detached_copy()
-        return invite_details
+    # Explicit typing to satisfy mypy
+    invite_details: UserInvite = invite.create_detached_copy()
+    return invite_details
 
 
 def cleanup_expired_invites(uow: AbstractUnitOfWork) -> int:
@@ -251,22 +252,22 @@ def cleanup_expired_invites(uow: AbstractUnitOfWork) -> int:
 
     Returns:
         Number of invites cleaned up
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        invites = list(uow.user_invites.all())
-        expired_count = 0
+    invites = list(uow.user_invites.all())
+    expired_count = 0
 
-        now = datetime.now(UTC)
-        for invite in invites:
-            if invite.expires_at < now and not invite.used_by:
-                # Remove unused expired invites
-                # Note: In practice, you might want to keep them for audit purposes
-                # and just mark them differently, but for simplicity we'll remove them
-                uow.user_invites.delete(invite)
-                expired_count += 1
+    now = datetime.now(UTC)
+    for invite in invites:
+        if invite.expires_at < now and not invite.used_by:
+            # Remove unused expired invites
+            # Note: In practice, you might want to keep them for audit purposes
+            # and just mark them differently, but for simplicity we'll remove them
+            uow.user_invites.delete(invite)
+            expired_count += 1
 
-        uow.commit()
-        return expired_count
+    return expired_count
 
 
 def get_invite_statistics(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict[str, float]:
@@ -283,30 +284,31 @@ def get_invite_statistics(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict[s
     Raises:
         UserNotFoundError: If user not found
         InsufficientPermissions: If user cannot view statistics
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        # Check permissions
-        if not has_global_organiser(user):
-            raise InsufficientPermissions(action="view invite statistics", required_role="global-organiser or admin")
+    # Check permissions
+    if not has_global_organiser(user):
+        raise InsufficientPermissions(action="view invite statistics", required_role="global-organiser or admin")
 
-        invites = list(uow.user_invites.all())
-        now = datetime.now(UTC)
+    invites = list(uow.user_invites.all())
+    now = datetime.now(UTC)
 
-        total_invites = len(invites)
-        used_invites = len([i for i in invites if i.used_by])
-        expired_invites = len([i for i in invites if i.expires_at < now])
-        active_invites = len([i for i in invites if i.is_valid()])
+    total_invites = len(invites)
+    used_invites = len([i for i in invites if i.used_by])
+    expired_invites = len([i for i in invites if i.expires_at < now])
+    active_invites = len([i for i in invites if i.is_valid()])
 
-        conversion_rate = (used_invites / total_invites * 100) if total_invites > 0 else 0
+    conversion_rate = (used_invites / total_invites * 100) if total_invites > 0 else 0
 
-        return {
-            "total_invites": total_invites,
-            "used_invites": used_invites,
-            "expired_invites": expired_invites,
-            "active_invites": active_invites,
-            "conversion_rate": round(conversion_rate, 2),
-        }
+    return {
+        "total_invites": total_invites,
+        "used_invites": used_invites,
+        "expired_invites": expired_invites,
+        "active_invites": active_invites,
+        "conversion_rate": round(conversion_rate, 2),
+    }

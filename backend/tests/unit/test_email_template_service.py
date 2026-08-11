@@ -74,7 +74,6 @@ class TestCreate:
         assert template.assembly_id == assembly.id
         assert template.name == "Auto-reply"
         assert uow.email_templates.get(template.id) is not None
-        assert uow.committed
 
     def test_create_requires_manage_permission(self):
         uow = FakeUnitOfWork()

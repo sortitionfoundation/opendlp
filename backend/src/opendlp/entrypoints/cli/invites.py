@@ -210,7 +210,8 @@ def cleanup_expired(ctx: click.Context, confirm: bool) -> None:
                 return
 
         # Use the service layer function to actually clean up
-        cleaned_count = invite_service.cleanup_expired_invites(uow)
+        with uow:
+            cleaned_count = invite_service.cleanup_expired_invites(uow)
 
         click.echo(click.style(f"✓ Cleaned up {cleaned_count} expired invite(s).", "green"))
 

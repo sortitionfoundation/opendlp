@@ -78,7 +78,6 @@ class TestAddRegistrationDocument:
 
         assert isinstance(document, RegistrationDocument)
         assert uow.registration_documents.count_by_assembly_id(page.assembly_id) == 1
-        assert uow.committed
 
     def test_permission_denied_for_viewer(self):
         uow = FakeUnitOfWork()
@@ -287,7 +286,6 @@ class TestSetRegistrationDocumentLabel:
 
         assert updated.label == "New label"
         assert uow.registration_documents.get(document.id).label == "New label"
-        assert uow.committed
 
     def test_permission_denied_for_viewer(self):
         uow = FakeUnitOfWork()
