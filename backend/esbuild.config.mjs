@@ -14,6 +14,7 @@ const ENTRY_POINTS = {
   "js/htmx-422-swap": "src/js/htmx-422-swap.js",
   "backoffice/js/alpine-components": "src/js/backoffice/alpine-components.js",
   "backoffice/js/patterns": "src/js/backoffice/patterns.js",
+  "backoffice/js/registration-page": "src/js/backoffice/registration-page.js",
   "backoffice/js/dist/html-editor": "src/js/backoffice/html-editor.js",
 };
 

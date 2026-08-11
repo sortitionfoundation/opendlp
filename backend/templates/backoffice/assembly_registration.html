@@ -1567,586 +1567,65 @@ auto-reply". When multi-template support ships this becomes a visible input. #}
     {% if has_registration_page %}
         <script nonce="{{ csp_nonce }}"
                 src="{{ url_for('static', filename='backoffice/js/dist/html-editor.js', v=static_hashes('backoffice/js/dist/html-editor.js')) }}"></script>
-        <script nonce="{{ csp_nonce }}">
-            document.addEventListener('alpine:init', () => {
-                Alpine.data('registrationPageController', () => ({
-                    skeletonLoading: false,
-                    skeletonModalOpen: false,
-                    skeletonHtmlPlain: '',
-                    skeletonHtmlStyled: '',
-                    skeletonView: 'plain',
-                    toastVisible: false,
-                    toastMessage: '',
-                    toastType: 'success',
+        {# The controller lives in src/js/backoffice/registration-page.js, so it cannot be
+           rendered through Jinja. Everything only the server can supply - url_for routes,
+           the CSRF token, the translated strings, the seeded asset lists - is handed over
+           in this data block. An attribute would not do: a quote in a display name would
+           break the page. The per-item routes are rendered once with a sentinel UUID that
+           urlWithId() swaps for the real id, which keeps the route name a Python-side
+           dependency rather than a URL shape the JavaScript has to guess. #}
+        {% set registration_page_urls = {
+        "skeleton": url_for("backoffice_registration.get_registration_skeleton", assembly_id=assembly.id),
+        "uploadImage": url_for("backoffice_registration.upload_registration_image", assembly_id=assembly.id),
+        "imageItem": url_for("backoffice_registration.update_assembly_registration_image", assembly_id=assembly.id, image_id="00000000-0000-0000-0000-000000000000"),
+        "uploadDocument": url_for("backoffice_registration.upload_registration_document", assembly_id=assembly.id),
+        "documentItem": url_for("backoffice_registration.update_assembly_registration_document", assembly_id=assembly.id, document_id="00000000-0000-0000-0000-000000000000"),
+        } %}
+        {% set registration_page_messages = {
+        "skeletonFetchFailed": _("An error occurred while fetching the form skeleton"),
+        "copied": _("Copied to clipboard"),
+        "copyFailed": _("Failed to copy to clipboard"),
+        "snippetCopied": _("Snippet copied to clipboard"),
+        "noPublicUrl": _("No public URL available yet"),
+        "uploadFailed": _("Upload failed"),
+        "altRequired": _("Alt text is required for accessibility"),
+        "imageUploaded": _("Image uploaded"),
+        "imageUploadNetworkError": _("Network error while uploading the image"),
+        "confirmDeleteImage": _("Delete this image?"),
+        "deleteImageFailed": _("Failed to delete image"),
+        "imageDeleted": _("Image deleted"),
+        "deleteImageNetworkError": _("Network error while deleting the image"),
+        "updateImageFailed": _("Failed to update image"),
+        "imageUpdated": _("Image updated"),
+        "updateImageNetworkError": _("Network error while updating the image"),
+        "labelRequired": _("Label is required"),
+        "documentUploaded": _("Document uploaded"),
+        "documentUploadNetworkError": _("Network error while uploading the document"),
+        "confirmDeleteDocument": _("Delete this document?"),
+        "deleteDocumentFailed": _("Failed to delete document"),
+        "documentDeleted": _("Document deleted"),
+        "deleteDocumentNetworkError": _("Network error while deleting the document"),
+        "updateDocumentFailed": _("Failed to update document"),
+        "documentUpdated": _("Document updated"),
+        "updateDocumentNetworkError": _("Network error while updating the document"),
+        } %}
+        {% set registration_page_data = {
+        "editMode": edit_mode,
+        "csrfToken": csrf_token(),
+        "images": images,
+        "documents": documents,
+        "urls": registration_page_urls,
+        "messages": registration_page_messages,
+        } %}
+        <script type="application/json" id="registration-page-data" nonce="{{ csp_nonce }}">{{ registration_page_data|tojson }}</script>
+    {% endif %}
+{% endblock %}
 
-                    // Unsaved-changes guard. Only edit mode can be dirty: markEditDirty() is wired
-                    // to the editor forms' input/change events (which also catch CodeMirror edits,
-                    // because .cm-content is a contenteditable inside the form and its input events
-                    // bubble). Cancel with unsaved changes goes through the discard modal (the
-                    // stepper and footer navigation are disabled while editing); beforeunload is
-                    // the backstop for browser-level navigation (close tab, reload, back button).
-                    editMode: {{ edit_mode|tojson }},
-                    editDirty: false,
-                    leaveModalOpen: false,
-                    leaveUrl: '',
-                    leaveGuardSuppressed: false,
-
-                    init() {
-                        if (!this.editMode) return;
-                        // The stepper and footer navigation are fully disabled while editing,
-                        // so in-app leave paths funnel through the Cancel button's guardLeave().
-                        window.addEventListener('beforeunload', (event) => {
-                            if (!this.editDirty || this.leaveGuardSuppressed) return;
-                            event.preventDefault();
-                            event.returnValue = '';
-                        });
-                    },
-
-                    markEditDirty() {
-                        this.editDirty = true;
-                    },
-
-                    // Close-registration confirmation (closing is terminal — no reopen).
-                    confirmCloseOpen: false,
-
-                    openConfirmClose() {
-                        this.confirmCloseOpen = true;
-                        this.$nextTick(() => {
-                            if (this.$refs.keepOpenBtn) this.$refs.keepOpenBtn.focus();
-                        });
-                    },
-
-                    cancelConfirmClose() {
-                        this.confirmCloseOpen = false;
-                    },
-
-                    // Called on the editor form's submit so Save never trips the beforeunload guard.
-                    allowLeave() {
-                        this.leaveGuardSuppressed = true;
-                    },
-
-                    // Attached to leave-links (Cancel). Clean state falls through to normal navigation.
-                    guardLeave(event) {
-                        if (!this.editDirty) return;
-                        event.preventDefault();
-                        this.openLeaveModal(event.currentTarget.href);
-                    },
-
-                    openLeaveModal(url) {
-                        this.leaveUrl = url;
-                        this.leaveModalOpen = true;
-                        this.$nextTick(() => {
-                            if (this.$refs.keepEditingBtn) this.$refs.keepEditingBtn.focus();
-                        });
-                    },
-
-                    closeLeaveModal() {
-                        this.leaveModalOpen = false;
-                        this.leaveUrl = '';
-                    },
-
-                    discardAndLeave() {
-                        if (!this.leaveUrl) return;
-                        this.leaveGuardSuppressed = true;
-                        window.location.assign(this.leaveUrl);
-                    },
-
-                    // Assets panel state. `images` is seeded from server-side render and mutated in place
-                    // so the page never reloads — uncommitted edits in the HTML editor survive.
-                    images: {{ images|tojson }},
-                    // URL contract: the upload endpoint is its own POST URL; the per-image
-                    // PATCH/DELETE URL is rendered once via url_for with a sentinel UUID,
-                    // and imageItemUrl() swaps in the real id at call time. This keeps the
-                    // route-name dependency explicit instead of implying the URL hierarchy.
-                    uploadImageUrl: '{{ url_for("backoffice_registration.upload_registration_image", assembly_id=assembly.id) }}',
-                    imageItemUrlTemplate: '{{ url_for("backoffice_registration.update_assembly_registration_image", assembly_id=assembly.id, image_id="00000000-0000-0000-0000-000000000000") }}',
-                    imageItemUrl(id) {
-                        return this.imageItemUrlTemplate.replace(
-                            '00000000-0000-0000-0000-000000000000',
-                            encodeURIComponent(id),
-                        );
-                    },
-                    imageUploadModalOpen: false,
-                    imageUploading: false,
-                    imageFile: null,
-                    imageFileName: '',
-                    imageAlt: '',
-                    imageUploadError: '',
-                    imageBeingDeletedId: '',
-                    // Image details / edit-alt modal
-                    imageDetailsModalOpen: false,
-                    editingImage: null,
-                    editingImageAlt: '',
-                    imageEditing: false,
-                    imageEditError: '',
-
-                    // PDF documents — same contract as images: seeded server-side,
-                    // mutated in place, sentinel-UUID URL template for item routes.
-                    documents: {{ documents|tojson }},
-                    uploadDocumentUrl: '{{ url_for("backoffice_registration.upload_registration_document", assembly_id=assembly.id) }}',
-                    documentItemUrlTemplate: '{{ url_for("backoffice_registration.update_assembly_registration_document", assembly_id=assembly.id, document_id="00000000-0000-0000-0000-000000000000") }}',
-                    documentItemUrl(id) {
-                        return this.documentItemUrlTemplate.replace(
-                            '00000000-0000-0000-0000-000000000000',
-                            encodeURIComponent(id),
-                        );
-                    },
-                    documentUploadModalOpen: false,
-                    documentUploading: false,
-                    documentFile: null,
-                    documentFileName: '',
-                    documentLabel: '',
-                    documentUploadError: '',
-                    documentBeingDeletedId: '',
-                    // Document details / edit-label modal
-                    documentDetailsModalOpen: false,
-                    editingDocument: null,
-                    editingDocumentLabel: '',
-                    documentEditing: false,
-                    documentEditError: '',
-
-                    fetchSkeleton() {
-                        this.skeletonLoading = true;
-                        fetch('{{ url_for("backoffice_registration.get_registration_skeleton", assembly_id=assembly.id) }}', {
-                            method: 'GET',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            }
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                this.skeletonLoading = false;
-                                if (data.error) {
-                                    this.showToast(data.error, 'error');
-                                } else {
-                                    this.skeletonHtmlPlain = data.html;
-                                    this.skeletonHtmlStyled = data.html_govuk;
-                                    this.skeletonView = 'plain';
-                                    this.skeletonModalOpen = true;
-                                }
-                            })
-                            .catch(error => {
-                                this.skeletonLoading = false;
-                                this.showToast('{{ _("An error occurred while fetching the form skeleton") }}', 'error');
-                            });
-                    },
-
-                    closeSkeletonModal() {
-                        this.skeletonModalOpen = false;
-                    },
-
-                    showPlainSkeleton() {
-                        this.skeletonView = 'plain';
-                    },
-
-                    showStyledSkeleton() {
-                        this.skeletonView = 'styled';
-                    },
-
-                    copySkeletonToClipboard() {
-                        const html = this.skeletonView === 'plain' ? this.skeletonHtmlPlain : this.skeletonHtmlStyled;
-                        navigator.clipboard.writeText(html)
-                            .then(() => {
-                                this.showToast('{{ _("Copied to clipboard") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.showToast('{{ _("Failed to copy to clipboard") }}', 'error');
-                            });
-                    },
-
-                    showToast(message, type) {
-                        this.toastMessage = message;
-                        this.toastType = type;
-                        this.toastVisible = true;
-                        setTimeout(() => {
-                            this.toastVisible = false;
-                        }, 3000);
-                    },
-
-                    openImageUploadModal() {
-                        this.imageFile = null;
-                        this.imageFileName = '';
-                        this.imageAlt = '';
-                        this.imageUploadError = '';
-                        this.imageUploadModalOpen = true;
-                    },
-
-                    closeImageUploadModalIfAllowed() {
-                        if (this.imageUploading) return;
-                        this.imageUploadModalOpen = false;
-                    },
-
-                    onImageFileSelected(event) {
-                        const file = event.target.files && event.target.files[0];
-                        this.imageFile = file || null;
-                        this.imageFileName = file ? file.name : '';
-                        this.imageUploadError = '';
-                    },
-
-                    submitImageUpload() {
-                        if (!this.imageFile || this.imageUploading) return;
-                        const alt = this.imageAlt.trim();
-                        if (!alt) {
-                            this.imageUploadError = '{{ _("Alt text is required for accessibility") }}';
-                            return;
-                        }
-                        this.imageUploading = true;
-                        this.imageUploadError = '';
-                        const formData = new FormData();
-                        formData.append('image', this.imageFile);
-                        formData.append('alt', alt);
-                        fetch(this.uploadImageUrl, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            },
-                            body: formData
-                        })
-                            .then(async (response) => {
-                                const data = await response.json().catch(() => ({}));
-                                if (!response.ok) {
-                                    this.imageUploadError = data.error || '{{ _("Upload failed") }}';
-                                    return;
-                                }
-                                // Dedup against existing list (server returns the existing row when bytes match)
-                                const existing = this.images.findIndex(img => img.id === data.image.id);
-                                if (existing >= 0) {
-                                    this.images.splice(existing, 1, data.image);
-                                } else {
-                                    this.images.push(data.image);
-                                }
-                                this.imageUploadModalOpen = false;
-                                this.showToast('{{ _("Image uploaded") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.imageUploadError = '{{ _("Network error while uploading the image") }}';
-                            })
-                            .finally(() => {
-                                this.imageUploading = false;
-                            });
-                    },
-
-                    deleteImage(image) {
-                        if (!image || this.imageBeingDeletedId) return;
-                        if (!confirm('{{ _("Delete this image?") }} ' + (image.display_name || ''))) return;
-                        this.imageBeingDeletedId = image.id;
-                        fetch(this.imageItemUrl(image.id), {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            }
-                        })
-                            .then(async (response) => {
-                                if (!response.ok) {
-                                    const data = await response.json().catch(() => ({}));
-                                    this.showToast(data.error || '{{ _("Failed to delete image") }}', 'error');
-                                    return;
-                                }
-                                this.images = this.images.filter(img => img.id !== image.id);
-                                this.showToast('{{ _("Image deleted") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.showToast('{{ _("Network error while deleting the image") }}', 'error');
-                            })
-                            .finally(() => {
-                                this.imageBeingDeletedId = '';
-                            });
-                    },
-
-                    copyImageSnippet(image) {
-                        if (!image || !image.img_snippet) {
-                            this.showToast('{{ _("No public URL available yet") }}', 'error');
-                            return;
-                        }
-                        navigator.clipboard.writeText(image.img_snippet)
-                            .then(() => this.showToast('{{ _("Snippet copied to clipboard") }}', 'success'))
-                            .catch(() => this.showToast('{{ _("Failed to copy to clipboard") }}', 'error'));
-                    },
-
-                    // Reads the text/message from data-copy-text / data-copy-msg on the triggering element.
-                    // Prefers the data-attribute pattern over passing string literals to @click because the
-                    // CSP-safe Alpine build's expression parser doesn't officially support literal arguments
-                    // in method calls (see CLAUDE.md's Alpine.js constraints).
-                    copyToClipboard($el) {
-                        const text = $el.dataset.copyText;
-                        const msg = $el.dataset.copyMsg;
-                        if (!text) return;
-                        navigator.clipboard.writeText(text)
-                            .then(() => this.showToast(msg || '{{ _("Copied to clipboard") }}', 'success'))
-                            .catch(() => this.showToast('{{ _("Failed to copy to clipboard") }}', 'error'));
-                    },
-
-                    openImageDetailsModal(image) {
-                        if (!image) return;
-                        this.editingImage = image;
-                        this.editingImageAlt = image.alt || '';
-                        this.imageEditError = '';
-                        this.imageDetailsModalOpen = true;
-                    },
-
-                    closeImageDetailsModalIfAllowed() {
-                        if (this.imageEditing) return;
-                        this.imageDetailsModalOpen = false;
-                        this.editingImage = null;
-                        this.editingImageAlt = '';
-                        this.imageEditError = '';
-                    },
-
-                    deleteEditingImage() {
-                        if (!this.editingImage || this.imageEditing || this.imageBeingDeletedId) return;
-                        const image = this.editingImage;
-                        this.imageBeingDeletedId = image.id;
-                        fetch(this.imageItemUrl(image.id), {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            }
-                        })
-                            .then(async (response) => {
-                                if (!response.ok) {
-                                    const data = await response.json().catch(() => ({}));
-                                    this.showToast(data.error || '{{ _("Failed to delete image") }}', 'error');
-                                    return;
-                                }
-                                this.images = this.images.filter(img => img.id !== image.id);
-                                this.imageDetailsModalOpen = false;
-                                this.editingImage = null;
-                                this.editingImageAlt = '';
-                                this.showToast('{{ _("Image deleted") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.showToast('{{ _("Network error while deleting the image") }}', 'error');
-                            })
-                            .finally(() => {
-                                this.imageBeingDeletedId = '';
-                            });
-                    },
-
-                    submitImageEdit() {
-                        if (!this.editingImage || this.imageEditing) return;
-                        const alt = this.editingImageAlt.trim();
-                        if (!alt) {
-                            this.imageEditError = '{{ _("Alt text is required for accessibility") }}';
-                            return;
-                        }
-                        this.imageEditing = true;
-                        this.imageEditError = '';
-                        fetch(this.imageItemUrl(this.editingImage.id), {
-                            method: 'PATCH',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify({ alt: alt })
-                        })
-                            .then(async (response) => {
-                                const data = await response.json().catch(() => ({}));
-                                if (!response.ok) {
-                                    this.imageEditError = data.error || '{{ _("Failed to update image") }}';
-                                    return;
-                                }
-                                const idx = this.images.findIndex(img => img.id === data.image.id);
-                                if (idx >= 0) this.images.splice(idx, 1, data.image);
-                                this.imageDetailsModalOpen = false;
-                                this.editingImage = null;
-                                this.editingImageAlt = '';
-                                this.showToast('{{ _("Image updated") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.imageEditError = '{{ _("Network error while updating the image") }}';
-                            })
-                            .finally(() => {
-                                this.imageEditing = false;
-                            });
-                    },
-
-                    openDocumentUploadModal() {
-                        this.documentFile = null;
-                        this.documentFileName = '';
-                        this.documentLabel = '';
-                        this.documentUploadError = '';
-                        this.documentUploadModalOpen = true;
-                    },
-
-                    closeDocumentUploadModalIfAllowed() {
-                        if (this.documentUploading) return;
-                        this.documentUploadModalOpen = false;
-                    },
-
-                    onDocumentFileSelected(event) {
-                        const file = event.target.files && event.target.files[0];
-                        this.documentFile = file || null;
-                        this.documentFileName = file ? file.name : '';
-                        this.documentUploadError = '';
-                    },
-
-                    submitDocumentUpload() {
-                        if (!this.documentFile || this.documentUploading) return;
-                        this.documentUploading = true;
-                        this.documentUploadError = '';
-                        const formData = new FormData();
-                        formData.append('document', this.documentFile);
-                        formData.append('label', this.documentLabel.trim());
-                        fetch(this.uploadDocumentUrl, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            },
-                            body: formData
-                        })
-                            .then(async (response) => {
-                                const data = await response.json().catch(() => ({}));
-                                if (!response.ok) {
-                                    this.documentUploadError = data.error || '{{ _("Upload failed") }}';
-                                    return;
-                                }
-                                // Dedup against existing list (server returns the existing row when bytes match)
-                                const existing = this.documents.findIndex(doc => doc.id === data.document.id);
-                                if (existing >= 0) {
-                                    this.documents.splice(existing, 1, data.document);
-                                } else {
-                                    this.documents.push(data.document);
-                                }
-                                this.documentUploadModalOpen = false;
-                                this.showToast('{{ _("Document uploaded") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.documentUploadError = '{{ _("Network error while uploading the document") }}';
-                            })
-                            .finally(() => {
-                                this.documentUploading = false;
-                            });
-                    },
-
-                    deleteDocument(doc) {
-                        if (!doc || this.documentBeingDeletedId) return;
-                        if (!confirm('{{ _("Delete this document?") }} ' + (doc.display_name || ''))) return;
-                        this.documentBeingDeletedId = doc.id;
-                        fetch(this.documentItemUrl(doc.id), {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            }
-                        })
-                            .then(async (response) => {
-                                if (!response.ok) {
-                                    const data = await response.json().catch(() => ({}));
-                                    this.showToast(data.error || '{{ _("Failed to delete document") }}', 'error');
-                                    return;
-                                }
-                                this.documents = this.documents.filter(d => d.id !== doc.id);
-                                this.showToast('{{ _("Document deleted") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.showToast('{{ _("Network error while deleting the document") }}', 'error');
-                            })
-                            .finally(() => {
-                                this.documentBeingDeletedId = '';
-                            });
-                    },
-
-                    copyDocumentSnippet(doc) {
-                        if (!doc || !doc.a_snippet) {
-                            this.showToast('{{ _("No public URL available yet") }}', 'error');
-                            return;
-                        }
-                        navigator.clipboard.writeText(doc.a_snippet)
-                            .then(() => this.showToast('{{ _("Snippet copied to clipboard") }}', 'success'))
-                            .catch(() => this.showToast('{{ _("Failed to copy to clipboard") }}', 'error'));
-                    },
-
-                    openDocumentDetailsModal(doc) {
-                        if (!doc) return;
-                        this.editingDocument = doc;
-                        this.editingDocumentLabel = doc.label || '';
-                        this.documentEditError = '';
-                        this.documentDetailsModalOpen = true;
-                    },
-
-                    closeDocumentDetailsModalIfAllowed() {
-                        if (this.documentEditing) return;
-                        this.documentDetailsModalOpen = false;
-                        this.editingDocument = null;
-                        this.editingDocumentLabel = '';
-                        this.documentEditError = '';
-                    },
-
-                    deleteEditingDocument() {
-                        if (!this.editingDocument || this.documentEditing || this.documentBeingDeletedId) return;
-                        const doc = this.editingDocument;
-                        this.documentBeingDeletedId = doc.id;
-                        fetch(this.documentItemUrl(doc.id), {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            }
-                        })
-                            .then(async (response) => {
-                                if (!response.ok) {
-                                    const data = await response.json().catch(() => ({}));
-                                    this.showToast(data.error || '{{ _("Failed to delete document") }}', 'error');
-                                    return;
-                                }
-                                this.documents = this.documents.filter(d => d.id !== doc.id);
-                                this.documentDetailsModalOpen = false;
-                                this.editingDocument = null;
-                                this.editingDocumentLabel = '';
-                                this.showToast('{{ _("Document deleted") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.showToast('{{ _("Network error while deleting the document") }}', 'error');
-                            })
-                            .finally(() => {
-                                this.documentBeingDeletedId = '';
-                            });
-                    },
-
-                    submitDocumentEdit() {
-                        if (!this.editingDocument || this.documentEditing) return;
-                        const label = this.editingDocumentLabel.trim();
-                        if (!label) {
-                            this.documentEditError = '{{ _("Label is required") }}';
-                            return;
-                        }
-                        this.documentEditing = true;
-                        this.documentEditError = '';
-                        fetch(this.documentItemUrl(this.editingDocument.id), {
-                            method: 'PATCH',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify({ label: label })
-                        })
-                            .then(async (response) => {
-                                const data = await response.json().catch(() => ({}));
-                                if (!response.ok) {
-                                    this.documentEditError = data.error || '{{ _("Failed to update document") }}';
-                                    return;
-                                }
-                                const idx = this.documents.findIndex(d => d.id === data.document.id);
-                                if (idx >= 0) this.documents.splice(idx, 1, data.document);
-                                this.documentDetailsModalOpen = false;
-                                this.editingDocument = null;
-                                this.editingDocumentLabel = '';
-                                this.showToast('{{ _("Document updated") }}', 'success');
-                            })
-                            .catch(() => {
-                                this.documentEditError = '{{ _("Network error while updating the document") }}';
-                            })
-                            .finally(() => {
-                                this.documentEditing = false;
-                            });
-                    },
-
-                    formatBytes(bytes) {
-                        if (!Number.isFinite(bytes)) return '';
-                        if (bytes < 1024) return bytes + ' B';
-                        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-                        return (bytes / 1024 / 1024).toFixed(2) + ' MB';
-                    }
-                }));
-            });
-        </script>
+{% block head %}
+    {% if has_registration_page %}
+        {# Not deferred, while Alpine is: that is what lets a script tag register the
+           component before alpine:init fires. #}
+        <script nonce="{{ csp_nonce }}"
+                src="{{ url_for('static', filename='backoffice/js/registration-page.js', v=static_hashes('backoffice/js/registration-page.js')) }}"></script>
     {% endif %}
 {% endblock %}
