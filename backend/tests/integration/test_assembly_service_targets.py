@@ -87,10 +87,9 @@ class TestCreateTargetCategory:
         assert category.sort_order == 0
 
         # Verify it was persisted
-        with uow:
-            retrieved = uow.target_categories.get(category.id)
-            assert retrieved is not None
-            assert retrieved.name == "Gender"
+        retrieved = uow.target_categories.get(category.id)
+        assert retrieved is not None
+        assert retrieved.name == "Gender"
 
     def test_create_category_with_invalid_assembly(self, uow, admin_user: User):
         """Test creating category for non-existent assembly raises error."""
@@ -130,10 +129,9 @@ class TestCreateTargetCategory:
         """Test creating category without permission raises error."""
         # Create non-admin user
         user = User(email="user@test.com", global_role=GlobalRole.USER, password_hash="hash123")
-        with uow:
-            uow.users.add(user)
-            detached_user = user.create_detached_copy()
-            uow.commit()
+        uow.users.add(user)
+        detached_user = user.create_detached_copy()
+        uow.commit()
 
         with pytest.raises(InsufficientPermissions):
             assembly_service.create_target_category(
@@ -168,10 +166,9 @@ class TestGetTargetsForAssembly:
         """Test getting targets without permission raises error."""
         # Create non-admin user with no assembly role
         user = User(email="user@test.com", global_role=GlobalRole.USER, password_hash="hash123")
-        with uow:
-            uow.users.add(user)
-            user_id = user.id
-            uow.commit()
+        uow.users.add(user)
+        user_id = user.id
+        uow.commit()
 
         with pytest.raises(InsufficientPermissions):
             assembly_service.get_targets_for_assembly(uow, user_id, test_assembly.id)
@@ -261,10 +258,9 @@ Age,30-44,5,9"""
         """Test importing without permission raises error."""
         # Create non-admin user
         user = User(email="user@test.com", global_role=GlobalRole.USER, password_hash="hash123")
-        with uow:
-            uow.users.add(user)
-            user_id = user.id
-            uow.commit()
+        uow.users.add(user)
+        user_id = user.id
+        uow.commit()
 
         csv_content = """feature,value,min,max
 Gender,Male,10,15"""

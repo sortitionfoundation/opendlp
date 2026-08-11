@@ -160,6 +160,74 @@ class TestFakeUnitOfWorkCommitAndReset:
         assert sentinel in uow.fake_users._items
 
 
+class TestSqlAlchemyUnitOfWorkStrictness:
+    """Outside its block a UnitOfWork must be inert.
+
+    The original bug: `__exit__` closed the session but left it attached, and a
+    closed SQLAlchemy session silently autobegins a new transaction on next use.
+    Work done through it then belonged to a transaction nobody would commit, and
+    the connection sat `idle in transaction` holding locks.
+    """
+
+    def _uow(self):
+        mock_session = MagicMock(spec=Session)
+        mock_session_factory = MagicMock(spec=sessionmaker)
+        mock_session_factory.return_value = mock_session
+        return SqlAlchemyUnitOfWork(mock_session_factory), mock_session
+
+    def test_session_is_not_available_before_the_block(self):
+        uow, _ = self._uow()
+
+        with pytest.raises(UnitOfWorkError):
+            _ = uow.session
+
+    def test_session_is_not_available_after_the_block(self):
+        uow, _ = self._uow()
+        with uow:
+            pass
+
+        with pytest.raises(UnitOfWorkError):
+            _ = uow.session
+
+    def test_repositories_are_not_available_after_the_block(self):
+        """Repositories hold their own session reference, so guarding `session` is not enough."""
+        uow, _ = self._uow()
+        with uow:
+            pass
+
+        with pytest.raises(UnitOfWorkError, match="users"):
+            uow.users.get(uuid.uuid4())
+
+    def test_a_second_block_asks_the_factory_for_a_second_session(self):
+        """A reused UnitOfWork must build a fresh session, not revive the closed one."""
+        uow, _ = self._uow()
+        with uow:
+            pass
+        with uow:
+            pass
+
+        assert uow.session_factory.call_count == 2
+
+    def test_a_failing_commit_still_releases_the_connection(self):
+        uow, mock_session = self._uow()
+        mock_session.commit.side_effect = RuntimeError("commit failed")
+
+        with pytest.raises(RuntimeError), uow:
+            pass
+
+        mock_session.close.assert_called_once()
+
+    def test_a_failing_commit_still_closes_the_unit_of_work(self):
+        uow, mock_session = self._uow()
+        mock_session.commit.side_effect = RuntimeError("commit failed")
+
+        with pytest.raises(RuntimeError), uow:
+            pass
+
+        with pytest.raises(UnitOfWorkError):
+            _ = uow.session
+
+
 class TestFakeUnitOfWorkStrictMode:
     """A strict fake mirrors the real UnitOfWork: repositories only work inside the block.
 
