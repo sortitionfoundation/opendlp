@@ -30,8 +30,6 @@ email_confirmation_service.py::cleanup_expired_tokens
 email_confirmation_service.py::confirm_email_with_token
 email_confirmation_service.py::resend_confirmation_email
 email_confirmation_service.py::validate_confirmation_token
-email_send_service.py::send_registration_auto_reply
-email_send_service.py::send_templated_email
 email_template_service.py::assign_auto_reply_template
 email_template_service.py::auto_reply_readiness_problems
 email_template_service.py::create_email_template

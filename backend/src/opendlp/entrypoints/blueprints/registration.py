@@ -334,11 +334,9 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
 def _send_registration_auto_reply(respondent) -> None:  # type: ignore[no-untyped-def]
     """Best-effort auto-reply send. Never blocks the redirect to the thank-you page."""
     try:
-        send_registration_auto_reply(
-            bootstrap.get_flask_uow(),
-            bootstrap.get_email_adapter(),
-            respondent=respondent,
-        )
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            send_registration_auto_reply(uow, bootstrap.get_email_adapter(), respondent=respondent)
     except Exception:
         logger.exception("Failed to send registration auto-reply")
 

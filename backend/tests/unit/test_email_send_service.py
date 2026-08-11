@@ -35,8 +35,7 @@ def _respondent(assembly_id: uuid.UUID, email: str = "person@example.com", **kwa
 
 
 class TestSendTemplatedEmail:
-    def test_sends_and_records_success(self):
-        uow = FakeUnitOfWork()
+    def test_sends_and_records_success(self, uow):
         adapter = MagicMock()
         adapter.send_email.return_value = True
         assembly = _assembly(reply_to_name="The Team", reply_to_email="team@example.com")
@@ -53,8 +52,7 @@ class TestSendTemplatedEmail:
         assert record.outcome is EmailSendOutcome.SENT
         assert uow.respondent_email_send_records.get(record.id) is not None
 
-    def test_reply_to_is_bare_email_when_no_name(self):
-        uow = FakeUnitOfWork()
+    def test_reply_to_is_bare_email_when_no_name(self, uow):
         adapter = MagicMock()
         adapter.send_email.return_value = True
         assembly = _assembly(reply_to_email="team@example.com")
@@ -66,8 +64,7 @@ class TestSendTemplatedEmail:
 
         assert adapter.send_email.call_args.kwargs["reply_to"] == "team@example.com"
 
-    def test_reply_to_none_when_unset(self):
-        uow = FakeUnitOfWork()
+    def test_reply_to_none_when_unset(self, uow):
         adapter = MagicMock()
         adapter.send_email.return_value = True
         assembly = _assembly()
@@ -79,8 +76,7 @@ class TestSendTemplatedEmail:
 
         assert adapter.send_email.call_args.kwargs["reply_to"] is None
 
-    def test_records_failure_when_adapter_returns_false(self):
-        uow = FakeUnitOfWork()
+    def test_records_failure_when_adapter_returns_false(self, uow):
         adapter = MagicMock()
         adapter.send_email.return_value = False
         assembly = _assembly()
@@ -92,8 +88,7 @@ class TestSendTemplatedEmail:
 
         assert record.outcome is EmailSendOutcome.FAILED
 
-    def test_records_failure_when_adapter_raises(self):
-        uow = FakeUnitOfWork()
+    def test_records_failure_when_adapter_raises(self, uow):
         adapter = MagicMock()
         adapter.send_email.side_effect = RuntimeError("smtp down")
         assembly = _assembly()
@@ -105,8 +100,7 @@ class TestSendTemplatedEmail:
 
         assert record.outcome is EmailSendOutcome.FAILED
 
-    def test_records_missing_variables(self):
-        uow = FakeUnitOfWork()
+    def test_records_missing_variables(self, uow):
         adapter = MagicMock()
         adapter.send_email.return_value = True
         assembly = _assembly()
@@ -136,8 +130,7 @@ class TestSendRegistrationAutoReply:
         respondent.registration_page_id = page.id
         return respondent
 
-    def test_sends_for_live_submission(self):
-        uow = FakeUnitOfWork()
+    def test_sends_for_live_submission(self, uow):
         adapter = MagicMock()
         adapter.send_email.return_value = True
         respondent = self._setup(uow)
@@ -148,8 +141,7 @@ class TestSendRegistrationAutoReply:
         adapter.send_email.assert_called_once()
         assert uow.respondent_email_send_records.get(record.id) is not None
 
-    def test_skips_when_no_template_configured(self):
-        uow = FakeUnitOfWork()
+    def test_skips_when_no_template_configured(self, uow):
         adapter = MagicMock()
         respondent = self._setup(uow, with_template=False)
 
@@ -158,9 +150,8 @@ class TestSendRegistrationAutoReply:
         assert result is None
         adapter.send_email.assert_not_called()
 
-    def test_skips_when_the_respondent_came_from_elsewhere(self):
+    def test_skips_when_the_respondent_came_from_elsewhere(self, uow):
         """A CSV or manually added respondent has no registration page to reply from."""
-        uow = FakeUnitOfWork()
         adapter = MagicMock()
         assembly = _assembly()
         uow.assemblies.add(assembly)
@@ -171,8 +162,7 @@ class TestSendRegistrationAutoReply:
         assert result is None
         adapter.send_email.assert_not_called()
 
-    def test_skips_and_warns_when_respondent_has_no_email(self, capture_json_handler):
-        uow = FakeUnitOfWork()
+    def test_skips_and_warns_when_respondent_has_no_email(self, uow, capture_json_handler):
         adapter = MagicMock()
         no_email = self._setup(uow, respondent=_respondent(_assembly().id, email=""))
 
@@ -183,8 +173,7 @@ class TestSendRegistrationAutoReply:
         assert uow.respondent_email_send_records.list_by_respondent(no_email.id) == []
         assert "has no email" in capture_json_handler.getvalue()
 
-    def test_no_email_without_template_is_silent(self, capture_json_handler):
-        uow = FakeUnitOfWork()
+    def test_no_email_without_template_is_silent(self, uow, capture_json_handler):
         adapter = MagicMock()
         no_email = self._setup(uow, with_template=False, respondent=_respondent(_assembly().id, email=""))
 
@@ -193,8 +182,7 @@ class TestSendRegistrationAutoReply:
         assert result is None
         assert "has no email" not in capture_json_handler.getvalue()
 
-    def test_sends_for_test_submission(self):
-        uow = FakeUnitOfWork()
+    def test_sends_for_test_submission(self, uow):
         adapter = MagicMock()
         adapter.send_email.return_value = True
         test_respondent = self._setup(
