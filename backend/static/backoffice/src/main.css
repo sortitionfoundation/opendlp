@@ -904,6 +904,19 @@
        Surface and rhythm match Figma node 1601:856 (alert dialog).
        ======================================== */
 
+    /* ========================================
+       Z-INDEX STACK (overlapping fixed / sticky UI). Keep these in sync when
+       changing any one layer:
+         dropdown menus (.menu) ............... 30
+         sticky header (Tailwind z-40) ........ 40
+         modal backdrop (.dialog-backdrop) .... 40
+         floating flash alerts (#floating-alerts) 45  (above header/backdrop, below dialog)
+         modal dialog (.dialog-positioner) .... 50
+       ======================================== */
+    #floating-alerts {
+        z-index: 45;
+    }
+
     .dialog-backdrop {
         position: fixed;
         inset: 0;

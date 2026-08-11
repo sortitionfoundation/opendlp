@@ -833,6 +833,61 @@ class TestGenerateStarterFormHtml:
         assert uow.committed is False
 
 
+class TestGenerateStarterFormHtmlVariants:
+    def test_happy_path_includes_field_names_in_both_variants(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name", sort_order=0)
+
+        variants = service.generate_starter_form_html_variants(uow, admin.id, assembly.id)
+
+        assert 'name="first_name"' in variants.plain
+        assert 'name="first_name"' in variants.govuk
+
+    def test_govuk_variant_uses_govuk_classes_plain_does_not(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+
+        variants = service.generate_starter_form_html_variants(uow, admin.id, assembly.id)
+
+        assert 'class="govuk-input"' in variants.govuk
+        assert 'class="govuk-input"' not in variants.plain
+
+    def test_requires_manage_permission(self):
+        uow = FakeUnitOfWork()
+        _admin(uow)
+        assembly = _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+        viewer = _viewer(uow, assembly)
+
+        with pytest.raises(InsufficientPermissions):
+            service.generate_starter_form_html_variants(uow, viewer.id, assembly.id)
+
+    def test_assembly_not_found(self):
+        uow = FakeUnitOfWork()
+        admin = _admin(uow)
+
+        with pytest.raises(AssemblyNotFoundError):
+            service.generate_starter_form_html_variants(uow, admin.id, uuid.uuid4())
+
+    def test_user_not_found(self):
+        uow = FakeUnitOfWork()
+        assembly = _assembly(uow)
+
+        with pytest.raises(UserNotFoundError):
+            service.generate_starter_form_html_variants(uow, uuid.uuid4(), assembly.id)
+
+    def test_does_not_commit(self):
+        uow = FakeUnitOfWork()
+        admin, assembly = _admin(uow), _assembly(uow)
+        _add_field(uow, assembly.id, "first_name")
+
+        service.generate_starter_form_html_variants(uow, admin.id, assembly.id)
+
+        assert uow.committed is False
+
+
 class TestSlugify:
     def test_simple_text(self):
         assert service._slugify("Hello World") == "hello-world"

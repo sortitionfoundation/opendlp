@@ -3,7 +3,7 @@ ABOUTME: Backoffice assembly details page
 ABOUTME: Displays assembly information with question, metadata, and edit action
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/section.html" import section %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
@@ -11,32 +11,28 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 
 {% block title %}{{ assembly.title }} - Assembly{% endblock %}
 
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": assembly.title}
-        ]) }}
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
+        {{ page_header(
+        title=assembly.title,
+        back_href=url_for('backoffice.dashboard'),
+        back_label=_("Back to dashboard")
+        ) }}
+        <div class="mt-4">
+            {{ assembly_tabs(
+            assembly=assembly,
+            active_tab="details",
+            data_source=data_source|default(""),
+            gsheet=gsheet|default(none),
+            targets_enabled=targets_enabled|default(false),
+            respondents_enabled=respondents_enabled|default(false),
+            selection_enabled=selection_enabled|default(false)
+            ) }}
+        </div>
     </div>
 {% endblock %}
 
 {% block page_content %}
-    {# Page Heading #}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ assembly.title }}</h1>
-    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">
-        {{ _("Assembly Details") }}
-    </p>
-
-    {{ assembly_tabs(
-    assembly=assembly,
-    active_tab="details",
-    data_source=data_source|default(""),
-    gsheet=gsheet|default(none),
-    targets_enabled=targets_enabled|default(false),
-    respondents_enabled=respondents_enabled|default(false),
-    selection_enabled=selection_enabled|default(false)
-    ) }}
-
     {# Assembly Question Section #}
     {% if assembly.question %}
         <div class="mb-8">
@@ -174,7 +170,6 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 
     {# Actions #}
     <section class="flex gap-4">
-        {{ button(_("Back to Dashboard"), href=url_for('backoffice.dashboard'), variant="outline") }}
         {{ button(_("Edit Assembly"), href=url_for('backoffice.edit_assembly', assembly_id=assembly.id), variant="primary") }}
     </section>
 {% endblock %}

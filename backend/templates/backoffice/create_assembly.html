@@ -3,19 +3,9 @@ ABOUTME: Backoffice create assembly page
 ABOUTME: Uses assembly_form macro for creating new assemblies
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/assembly_form.html" import assembly_form %}
 
 {% block title %}{{ _("Create Assembly") }}{% endblock %}
-
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": _("Create Assembly")}
-        ]) }}
-    </div>
-{% endblock %}
 
 {% block page_content %}
     {# Page Heading #}

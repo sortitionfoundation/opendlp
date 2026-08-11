@@ -135,6 +135,7 @@ class HelpSiteUrls(NamedTuple):
     home: str
     data_agreement: str
     cookies: str
+    knowledge_hub: str
 
 
 @cache
@@ -144,6 +145,7 @@ def get_help_site_urls() -> HelpSiteUrls:
         home=flask_config.HELP_SITE_HOME,
         data_agreement=flask_config.HELP_SITE_DATA_AGREEMENT,
         cookies=flask_config.HELP_SITE_COOKIES,
+        knowledge_hub=flask_config.KNOWLEDGE_HUB_URL,
     )
 
 
@@ -177,4 +179,5 @@ def inject_template_globals() -> dict[str, str | Callable]:
         "help_site_home": help_site_urls.home,
         "help_site_data_agreement": help_site_urls.data_agreement,
         "help_site_cookies": help_site_urls.cookies,
+        "knowledge_hub_url": help_site_urls.knowledge_hub,
     }

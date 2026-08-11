@@ -26,7 +26,7 @@ from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import target_categories_to_snapshot
 from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.entrypoints.celery import app, tasks
-from opendlp.service_layer.error_translation import translate_sortition_error_to_html
+from opendlp.service_layer.error_translation import translate_sortition_error
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     GoogleSheetConfigNotFoundError,
@@ -436,7 +436,7 @@ def check_db_selection_data(
     try:
         settings_obj = sel_settings.to_settings()
     except SortitionBaseError as e:
-        check_errors.append(translate_sortition_error_to_html(e))
+        check_errors.append(translate_sortition_error(e))
         return CheckDataResult(
             success=False,
             errors=check_errors,
@@ -453,14 +453,14 @@ def check_db_selection_data(
         features, f_report = select_data.load_features(assembly.number_to_select)
         features_report_html = translate_run_report_to_html(f_report)
     except SortitionBaseError as e:
-        check_errors.append(translate_sortition_error_to_html(e))
+        check_errors.append(translate_sortition_error(e))
 
     if features is not None:
         try:
             people, p_report = select_data.load_people(settings_obj, features)
             people_report_html = translate_run_report_to_html(p_report)
         except SortitionBaseError as e:
-            check_errors.append(translate_sortition_error_to_html(e))
+            check_errors.append(translate_sortition_error(e))
 
     return CheckDataResult(
         success=not check_errors,

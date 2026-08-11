@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from flask import Flask
 from sortition_algorithms import RunReport
-from sortition_algorithms.errors import SortitionBaseError
+from sortition_algorithms.errors import ParseTableErrorMsg, ParseTableMultiError, SortitionBaseError
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
@@ -78,6 +78,27 @@ class TestCheckDbSelectionData:
         assert len(result.errors) == 1
         assert result.num_features == 0
         assert result.num_people == 0
+
+    @patch("opendlp.service_layer.sortition.OpenDLPDataAdapter")
+    @patch("opendlp.service_layer.sortition.adapters.SelectionData")
+    def test_errors_are_plain_text_not_html(self, mock_selection_data_cls, mock_adapter_cls):
+        """Multi-line errors must be joined with newlines, not <br /> tags (issue in PR #195)."""
+        uow, admin_user, assembly = self._setup_uow()
+
+        sub_errors = [
+            ParseTableErrorMsg(row=1, row_name="p1", key="age_bracket", value="0", msg="Error 1"),
+            ParseTableErrorMsg(row=2, row_name="p2", key="gender", value="0", msg="Error 2"),
+        ]
+        mock_select_data = MagicMock()
+        mock_select_data.load_features.side_effect = ParseTableMultiError(errors=sub_errors)
+        mock_selection_data_cls.return_value = mock_select_data
+
+        result = check_db_selection_data(uow=uow, user_id=admin_user.id, assembly_id=assembly.id)
+
+        assert result.success is False
+        assert len(result.errors) == 1
+        assert "<br" not in result.errors[0]
+        assert "\n" in result.errors[0]
 
     @patch("opendlp.service_layer.sortition.OpenDLPDataAdapter")
     @patch("opendlp.service_layer.sortition.adapters.SelectionData")

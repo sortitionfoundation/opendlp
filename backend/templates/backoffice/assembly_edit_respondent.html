@@ -3,7 +3,7 @@ ABOUTME: Backoffice edit-single-respondent page
 ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-note comment
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
+{% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, textarea, select, radio_group, first_error %}
 {% from "backoffice/components/alert.html" import alert %}
@@ -11,21 +11,16 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
 {% from "backoffice/components/respondent_status_form.html" import respondent_status_form %}
 {% set respondent_name = respondent.display_name(assembly.name_fields) %}
 {% block title %}{{ _("Edit respondent") }} - {{ respondent_name }}{% endblock %}
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard") , "href": url_for('backoffice.dashboard')},
-        {"label": assembly.title, "href": url_for('backoffice.view_assembly', assembly_id=assembly.id)},
-        {"label": _("Respondents"), "href": url_for('respondents.view_assembly_respondents', assembly_id=assembly.id)},
-        {"label": respondent_name, "href": url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id)},
-        {"label": _("Edit")}
-        ]) }}
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 pb-2 w-full">
+        {{ page_header(
+        title=respondent_name,
+        back_href=url_for('respondents.view_respondent', assembly_id=assembly.id, respondent_id=respondent.id),
+        back_label=_("Back to respondent")
+        ) }}
     </div>
 {% endblock %}
 {% block page_content %}
-    <h1 class="text-display-lg mb-2" style="color: var(--color-headings);">{{ _("Edit respondent") }}</h1>
-    <p class="text-body-lg mb-6" style="color: var(--color-secondary-text);">{{ respondent_name }}</p>
-
     {# Selection status — its own form, visually separated from the attribute edit form below. #}
     {% call section(classes="mb-8") %}
         {{ respondent_status_form(assembly, respondent, allowed_transitions) }}

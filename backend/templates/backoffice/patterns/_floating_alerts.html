@@ -8,7 +8,7 @@ ABOUTME: Partial template included by patterns.html
         {% call card_body() %}
                         {# Description #}
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Flash messages in the backoffice appear as floating alerts at the bottom-right of the viewport. This ensures users see feedback without scrolling to the top of the page.") }}
+                {{ _("Flash messages in the backoffice appear as floating alerts at the top-centre of the viewport, just below the top. This ensures users see feedback without scrolling. They sit above the sticky header and below modal dialogs.") }}
             </p>
 
                         {# Philosophy #}
@@ -16,7 +16,8 @@ ABOUTME: Partial template included by patterns.html
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-info-600);">{{ _("Design Philosophy") }}</h4>
                 <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
                     <li><strong>{{ _("Visible anywhere") }}:</strong> {{ _("Users don't need to scroll to see feedback messages") }}</li>
-                    <li><strong>{{ _("Non-blocking") }}:</strong> {{ _("Positioned at bottom-right to avoid covering content") }}</li>
+                    <li><strong>{{ _("Non-blocking") }}:</strong> {{ _("A top-centre overlay that clears the sticky header and never covers modal dialogs") }}</li>
+                    <li><strong>{{ _("Self-clearing") }}:</strong> {{ _("Low-severity alerts auto-dismiss so they don't pile up; errors stay until acknowledged") }}</li>
                     <li><strong>{{ _("Dismissible") }}:</strong> {{ _("All floating alerts can be closed by the user") }}</li>
                     <li><strong>{{ _("Accessible") }}:</strong> {{ _("Uses aria-live='polite' for screen reader announcements") }}</li>
                 </ul>
@@ -39,7 +40,7 @@ ABOUTME: Partial template included by patterns.html
         {% call card_body() %}
                         {# Description #}
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Click the buttons below to trigger flash messages. The alerts will appear at the bottom-right of the viewport.") }}
+                {{ _("Click the buttons below to trigger flash messages. The alerts appear at the top-centre and, except for errors, dismiss themselves after a few seconds (hover to pause the countdown).") }}
             </p>
 
                         {# Test Buttons #}
@@ -71,7 +72,7 @@ ABOUTME: Partial template included by patterns.html
                     <button type="submit"
                             class="px-4 py-2 rounded-lg text-button-md transition-colors"
                             style="background-color: var(--color-error-100); color: var(--color-error-600); border: 1px solid var(--color-error-400);">
-                        ✕ {{ _("Error Alert") }}
+                        ! {{ _("Error Alert") }}
                     </button>
                 </form>
                 <form action="{{ url_for('dev.flash_test') }}" method="post" class="inline">
@@ -90,11 +91,60 @@ ABOUTME: Partial template included by patterns.html
             <div class="mb-6 p-4 rounded-lg" style="background-color: var(--color-warning-100); border: 1px solid var(--color-warning-400);">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-warning-600);">⚠️ {{ _("Key Points") }}</h4>
                 <ul class="list-disc list-inside text-body-sm space-y-1" style="color: var(--color-body-text);">
-                    <li><strong>z-30</strong> — {{ _("Below modals (z-40/z-50) but above page content") }}</li>
+                    <li><strong>{{ _("Layering") }}</strong> — {{ _("z-index 45 (set in main.css, documented next to the modal z-indexes) — above the sticky header (z-40), below modal dialogs (z-50)") }}</li>
+                    <li><strong>{{ _("Auto-dismiss") }}</strong> — {{ _("success 4s, info 6s, warning 10s; errors stay until closed. Hover pauses the countdown.") }}</li>
                     <li><strong>aria-live=\"polite\"</strong> — {{ _("Screen readers announce new alerts without interrupting") }}</li>
                     <li><strong>{{ _("Dismissible") }}</strong> — {{ _("All floating alerts have a close button") }}</li>
                     <li><strong>{{ _("No bottom margin") }}</strong> — {{ _("Uses floating=true parameter; gap handled by container") }}</li>
                 </ul>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+                {# Auto-dismiss behaviour #}
+    {% call card(title="Auto-dismiss by severity", composed=true) %}
+        {% call card_body() %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Floating alerts clear themselves based on severity, so transient confirmations don't linger while important errors stay put. Hovering an alert pauses its countdown.") }}
+            </p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-body-sm" style="color: var(--color-body-text);">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                            <th class="text-left py-2 pr-4">{{ _("Variant") }}</th>
+                            <th class="text-left py-2 pr-4">{{ _("Auto-dismiss") }}</th>
+                            <th class="text-left py-2">{{ _("Rationale") }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                            <td class="py-2 pr-4"><strong style="color: var(--color-success-600);">✓ {{ _("Success") }}</strong></td>
+                            <td class="py-2 pr-4">4s</td>
+                            <td class="py-2">{{ _("A confirmation the user rarely needs to re-read") }}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                            <td class="py-2 pr-4"><strong style="color: var(--color-info-600);">ℹ {{ _("Info") }}</strong></td>
+                            <td class="py-2 pr-4">6s</td>
+                            <td class="py-2">{{ _("Contextual, slightly longer to read") }}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--color-borders-dividers);">
+                            <td class="py-2 pr-4"><strong style="color: var(--color-warning-600);">⚠ {{ _("Warning") }}</strong></td>
+                            <td class="py-2 pr-4">10s</td>
+                            <td class="py-2">{{ _("Deserves attention but is not blocking") }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 pr-4"><strong style="color: var(--color-error-600);">✕ {{ _("Error") }}</strong></td>
+                            <td class="py-2 pr-4">{{ _("Never — until closed") }}</td>
+                            <td class="py-2">{{ _("Must be acknowledged by the user") }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 p-4 rounded-lg" style="background-color: var(--color-subtle-background-panels);">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("How it works") }}</h4>
+                <p class="text-body-sm" style="color: var(--color-body-text);">
+                    {{ _("Durations live in floating_alerts.html. The alert() macro takes an auto_dismiss_ms parameter and, when set, uses the autoDismissAlert Alpine component — a CSP-safe setTimeout wrapper that pauses on hover.") }}
+                </p>
             </div>
         {% endcall %}
     {% endcall %}
@@ -141,7 +191,10 @@ def save_item():
 {{ alert("Message", variant="success") }}
 
 {# Floating alert (no bottom margin, used in floating_alerts.html) #}
-{{ alert("Message", variant="success", dismissible=true, floating=true) }}{% endraw %}</pre>
+{{ alert("Message", variant="success", dismissible=true, floating=true) }}
+
+{# Auto-dismiss after 4s (0 = stays until closed); pauses on hover #}
+{{ alert("Saved", variant="success", dismissible=true, floating=true, auto_dismiss_ms=4000) }}{% endraw %}</pre>
             </div>
         {% endcall %}
     {% endcall %}

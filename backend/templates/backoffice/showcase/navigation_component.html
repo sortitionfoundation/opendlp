@@ -1,45 +1,46 @@
 {#
 ABOUTME: Showcase section for navigation component
-ABOUTME: Displays navigation bar with logo, links, and actions
+ABOUTME: Displays the top bar with logo, help icon, and account dropdown
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
 {% from "backoffice/components/navigation.html" import navigation %}
+{% from "backoffice/components/_nav_icons.html" import icon_user, icon_switch, icon_data_agreement, icon_logout %}
 
 {% macro navigation_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Navigation Component") }}
-        {{ showcase_description("Horizontal navigation bar with logo, nav links, and account actions.") }}
+        {{ showcase_description("Top navigation bar: logo on the left; a help icon (links to the knowledge hub) and an account dropdown on the right. Account actions live inside the dropdown.") }}
 
         {% call showcase_example('{% from "backoffice/components/navigation.html" import navigation %}
 
             {{ navigation(
             logo_href="/backoffice",
-            nav_items=[
-            {"label": "Dashboard", "href": "/dashboard"},
-            {"label": "Assemblies", "href": "/assemblies"},
-            {"label": "Users", "href": "/users"},
-            {"label": "Help", "href": "/help"}
-            ],
+            help_href="https://democraticlottery.org/knowledge-hub",
+            account_initials="AS",
+            account_label="Ada Smith",
             account_items=[
-            {"label": "My Account", "href": "/account"}
-            ],
-            cta_text="Sign out",
-            cta_href="/logout"
+            {"label": "My account", "href": "/account", "icon": icon_user()},
+            {"label": "Switch to site admin", "href": "/admin", "icon": icon_switch(), "target": "_blank", "rel": "noopener"},
+            {"divider": true},
+            {"label": "User Data Agreement", "href": "/data-agreement", "icon": icon_data_agreement()},
+            {"divider": true},
+            {"label": "Sign out", "href": "/logout", "icon": icon_logout()}
+            ]
             ) }}') %}
             <div class="rounded-lg overflow-hidden shadow-md" style="border: 1px solid var(--color-borders-dividers);">
                 {{ navigation(
                 logo_href="#",
-                nav_items=[
-                {"label": "Dashboard", "href": "#"},
-                {"label": "Assemblies", "href": "#"},
-                {"label": "Users", "href": "#"},
-                {"label": "Help", "href": "#", "isVisible": false}
-                ],
+                help_href="#",
+                account_initials="AS",
+                account_label="Ada Smith",
                 account_items=[
-                {"label": "My Account", "href": "#"}
-                ],
-                cta_text="Sign out",
-                cta_href="#"
+                {"label": "My account", "href": "#", "icon": icon_user()},
+                {"label": "Switch to site admin", "href": "#", "icon": icon_switch(), "target": "_blank", "rel": "noopener"},
+                {"divider": true},
+                {"label": "User Data Agreement", "href": "#", "icon": icon_data_agreement()},
+                {"divider": true},
+                {"label": "Sign out", "href": "#", "icon": icon_logout()}
+                ]
                 ) }}
             </div>
         {% endcall %}
@@ -47,11 +48,10 @@ ABOUTME: Displays navigation bar with logo, links, and actions
         {{ showcase_tokens([
         "--color-tables-cards",
         "--color-borders-dividers",
-        "--color-headings",
         "--color-body-text",
-        "--color-primary-action",
-        ".text-body-md",
-        ".text-button-lg"
+        "--color-navigation-bars",
+        ".menu",
+        ".menu-item"
         ]) }}
     {% endcall %}
 {% endmacro %}

@@ -754,3 +754,49 @@ body.register-page {
     background-color: #303030;
     opacity: 8%;
 }
+
+// GOV.UK-styled registration form (generate_starter_form_html_govuk)
+//
+// field_errors()/form_errors() (see domain/registration_page.py) always emit
+// fixed <p class="error"> / <ul class="form-errors"> markup — they can't add
+// govuk-* classes — so these rules give that fixed markup the appearance of
+// GOV.UK's own error-message and error-summary components.
+.form-errors {
+    margin: 0 0 govuk-spacing(6);
+    padding: govuk-spacing(4);
+    border: 5px solid $govuk-error-colour;
+    color: $govuk-text-colour;
+    @include govuk-font($size: 19);
+    list-style: none;
+
+    li {
+        margin-bottom: govuk-spacing(2);
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+.error {
+    display: block;
+    clear: both;
+    margin: govuk-spacing(2) 0 0;
+    color: $govuk-error-colour;
+    @include govuk-font($size: 19, $weight: bold);
+}
+
+// Greys the "Please select..." placeholder while it is still the chosen
+// option. A required select holding the empty value is :invalid, so the
+// grey clears as soon as a real option is picked.
+.govuk-select:invalid {
+    color: $govuk-secondary-text-colour;
+}
+
+// Mirrors govuk-form-group--error, which the fixed error markup above
+// cannot toggle directly.
+.govuk-form-group:has(> .error),
+.govuk-form-group:has(> .govuk-checkboxes > .error) {
+    padding-left: govuk-spacing(3);
+    border-left: 5px solid $govuk-error-colour;
+}

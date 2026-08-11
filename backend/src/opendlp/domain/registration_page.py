@@ -514,6 +514,124 @@ def _render_field(field: RespondentFieldDefinition) -> list[str]:
     return _render_input(field, "text", required_attr)
 
 
+def _render_input_govuk(field: RespondentFieldDefinition, input_type: str, required_attr: str) -> list[str]:
+    key = html_lib.escape(field.field_key, quote=True)
+    label = html_lib.escape(field.label)
+    value_expr = _jinja_call("value", field.field_key)
+    return [
+        '<div class="govuk-form-group">',
+        f'<label class="govuk-label" for="{key}">{label}</label>',
+        f'<input class="govuk-input" type="{input_type}" id="{key}" name="{key}" value="{value_expr}"{required_attr}>',
+        _jinja_call("field_errors", field.field_key),
+        "</div>",
+    ]
+
+
+def _render_textarea_govuk(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
+    key = html_lib.escape(field.field_key, quote=True)
+    label = html_lib.escape(field.label)
+    value_expr = _jinja_call("value", field.field_key)
+    return [
+        '<div class="govuk-form-group">',
+        f'<label class="govuk-label" for="{key}">{label}</label>',
+        f'<textarea class="govuk-textarea" id="{key}" name="{key}"{required_attr}>{value_expr}</textarea>',
+        _jinja_call("field_errors", field.field_key),
+        "</div>",
+    ]
+
+
+def _render_checkbox_govuk(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
+    key = html_lib.escape(field.field_key, quote=True)
+    label = html_lib.escape(field.label)
+    checked_expr = _jinja_call("checked", field.field_key, "yes")
+    return [
+        '<div class="govuk-form-group">',
+        '<div class="govuk-checkboxes" data-module="govuk-checkboxes">',
+        '<div class="govuk-checkboxes__item">',
+        (
+            f'<input class="govuk-checkboxes__input" type="checkbox" id="{key}" name="{key}" value="yes" '
+            f"{checked_expr}{required_attr}>"
+        ),
+        f'<label class="govuk-label govuk-checkboxes__label" for="{key}">{label}</label>',
+        "</div>",
+        _jinja_call("field_errors", field.field_key),
+        "</div>",
+        "</div>",
+    ]
+
+
+def _render_choice_radios_govuk(field: RespondentFieldDefinition) -> list[str]:
+    key = html_lib.escape(field.field_key, quote=True)
+    legend = html_lib.escape(field.label)
+    parts = [
+        '<div class="govuk-form-group">',
+        '<fieldset class="govuk-fieldset" role="group">',
+        f'<legend class="govuk-fieldset__legend govuk-fieldset__legend--s">{legend}</legend>',
+        '<div class="govuk-radios" data-module="govuk-radios">',
+    ]
+    for i, opt in enumerate(field.options or [], start=1):
+        item_id = key if i == 1 else f"{key}-{i}"
+        value_attr = html_lib.escape(opt.value, quote=True)
+        text = html_lib.escape(opt.value)
+        checked_expr = _jinja_call("checked", field.field_key, opt.value)
+        parts.append('<div class="govuk-radios__item">')
+        parts.append(
+            f'<input class="govuk-radios__input" type="radio" id="{item_id}" name="{key}" '
+            f'value="{value_attr}" {checked_expr}>'
+        )
+        parts.append(f'<label class="govuk-label govuk-radios__label" for="{item_id}">{text}</label>')
+        parts.append("</div>")
+    parts.append(_jinja_call("field_errors", field.field_key))
+    parts.append("</div>")
+    parts.append("</fieldset>")
+    parts.append("</div>")
+    return parts
+
+
+def _render_choice_dropdown_govuk(field: RespondentFieldDefinition, is_required: bool) -> list[str]:
+    key = html_lib.escape(field.field_key, quote=True)
+    label = html_lib.escape(field.label)
+    required_attr = " required" if is_required else ""
+    parts = [
+        '<div class="govuk-form-group">',
+        f'<label class="govuk-label" for="{key}">{label}</label>',
+        f'<select class="govuk-select" id="{key}" name="{key}"{required_attr}>',
+    ]
+    if not is_required:
+        parts.append('<option value="" disabled hidden selected>Please select...</option>')
+    for opt in field.options or []:
+        value_attr = html_lib.escape(opt.value, quote=True)
+        text = html_lib.escape(opt.value)
+        selected_expr = _jinja_call("selected", field.field_key, opt.value)
+        parts.append(f'<option value="{value_attr}" {selected_expr}>{text}</option>')
+    parts.append("</select>")
+    parts.append(_jinja_call("field_errors", field.field_key))
+    parts.append("</div>")
+    return parts
+
+
+def _render_field_govuk(field: RespondentFieldDefinition) -> list[str]:
+    is_required = field.on_registration_page == FieldOnRegistrationPage.YES_REQUIRED
+    required_attr = " required" if is_required else ""
+    field_type = field.effective_field_type
+
+    if field_type == FieldType.TEXT:
+        return _render_input_govuk(field, "text", required_attr)
+    if field_type == FieldType.EMAIL:
+        return _render_input_govuk(field, "email", required_attr)
+    if field_type == FieldType.INTEGER:
+        return _render_input_govuk(field, "number", required_attr)
+    if field_type == FieldType.LONGTEXT:
+        return _render_textarea_govuk(field, required_attr)
+    if field_type in BOOL_TYPES:
+        return _render_checkbox_govuk(field, required_attr)
+    if field_type == FieldType.CHOICE_RADIO:
+        return _render_choice_radios_govuk(field)
+    if field_type == FieldType.CHOICE_DROPDOWN:
+        return _render_choice_dropdown_govuk(field, is_required)
+    return _render_input_govuk(field, "text", required_attr)
+
+
 def _group_fields(
     fields: list[RespondentFieldDefinition],
 ) -> dict[RespondentFieldGroup, list[RespondentFieldDefinition]]:
@@ -557,4 +675,41 @@ def generate_starter_form_html(fields: list[RespondentFieldDefinition]) -> str:
             parts.extend(_render_field(field_def))
     parts.append('<button type="submit">Register</button>')
     parts.append("</form>")
+    return "\n".join(parts) + "\n"
+
+
+def generate_starter_form_html_govuk(fields: list[RespondentFieldDefinition]) -> str:
+    """Generate a GOV.UK Design System-styled starter HTML form from a respondent field schema.
+
+    Structurally identical to ``generate_starter_form_html`` (same grouping,
+    ordering, omission and required-field rules; see its docstring), but each
+    field is wrapped in GOV.UK component markup (``govuk-input``,
+    ``govuk-checkboxes``, ``govuk-radios``, ``govuk-select``, ...) instead of
+    bare HTML. Fields are always laid out one per row, since the generator
+    has no way to know which fields an author would want side by side. The
+    CSS needed to make the fixed ``field_errors()``/``form_errors()`` markup
+    look right in this styling lives in the main SCSS build, not inline here.
+    """
+    grouped = _group_fields(fields)
+
+    parts: list[str] = [
+        '<div class="govuk-grid-row">',
+        '<div class="govuk-grid-column-two-thirds" style="float: none; margin: 0 auto;">',
+        '<h1 class="govuk-heading-xl">{{ assembly_title }}</h1>',
+        '<p class="govuk-body">{{ assembly_question }}</p>',
+        '<form action="{{ form_action }}" method="post">',
+        "{{ csrf_form_element }}",
+        "{{ form_errors() }}",
+    ]
+    for group in GROUP_DISPLAY_ORDER:
+        bucket = [f for f in grouped.get(group, []) if f.on_registration_page != FieldOnRegistrationPage.NO]
+        if not bucket:
+            continue
+        parts.append(f'<h2 class="govuk-heading-l">{html_lib.escape(str(GROUP_LABELS[group]))}</h2>')
+        for field_def in bucket:
+            parts.extend(_render_field_govuk(field_def))
+    parts.append('<button type="submit" class="govuk-button" data-module="govuk-button">Register</button>')
+    parts.append("</form>")
+    parts.append("</div>")
+    parts.append("</div>")
     return "\n".join(parts) + "\n"

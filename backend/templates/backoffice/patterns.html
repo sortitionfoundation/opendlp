@@ -4,21 +4,10 @@ ABOUTME: Documents Alpine.js patterns, form handling, and AJAX with live example
 #}
 {% extends "backoffice/base_page.html" %}
 
-{% from "backoffice/components/breadcrumbs.html" import breadcrumbs %}
 {% from "backoffice/components/card.html" import card, card_body %}
 {% from "backoffice/components/tabs.html" import tabs %}
 
 {% block title %}{{ _("Frontend Patterns") }}{% endblock %}
-
-{% block breadcrumb_section %}
-    <div class="mb-6">
-        {{ breadcrumbs([
-        {"label": _("Dashboard"), "href": url_for('backoffice.dashboard')},
-        {"label": _("Developer Tools"), "href": url_for('dev.dev_dashboard')},
-        {"label": _("Patterns")}
-        ]) }}
-    </div>
-{% endblock %}
 
 {% block page_content %}
     <div x-data="patternsController()" x-cloak>
