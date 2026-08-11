@@ -72,10 +72,10 @@ RUN mkdir /src
 COPY package.json package-lock.json /src/
 
 WORKDIR /src
-# and the same for the npm dependencies
+# and the same for the npm dependencies - using `npm ci` to fully rely on the package-lock.json
 # Build the sass files fresh
 RUN --mount=type=cache,target=/root/.cache \
-  npm install
+  npm ci
 
 COPY . /src
 
