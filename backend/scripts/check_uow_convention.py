@@ -1,5 +1,5 @@
-"""ABOUTME: Fails the build when a service-layer function opens its own UnitOfWork context
-ABOUTME: Known offenders are listed in an allowlist that shrinks as they are migrated"""
+"""ABOUTME: Fails the build when a function handed a UnitOfWork opens its own context
+ABOUTME: Only entrypoints - the code that builds the UnitOfWork - may open `with uow:`"""
 
 from __future__ import annotations
 
@@ -8,20 +8,14 @@ import ast
 import pathlib
 import sys
 
-#: The convention: only entrypoints open `with uow:`. Everything below the
-#: entrypoint assumes an open context. See docs/agent/clean-uow-usage/plan.md.
-DEFAULT_ROOT = pathlib.Path(__file__).resolve().parent.parent / "src" / "opendlp" / "service_layer"
-DEFAULT_ALLOWLIST = (
-    pathlib.Path(__file__).resolve().parent.parent / "docs" / "agent" / "clean-uow-usage" / "known_self_managing.txt"
-)
-
-#: How many offenders the allowlist was seeded with. The list may only shrink.
-SEEDED_COUNT = 130
+#: The convention: only entrypoints open `with uow:`. Everything handed a
+#: UnitOfWork assumes an open context. See docs/architecture.md.
+DEFAULT_ROOT = pathlib.Path(__file__).resolve().parent.parent / "src" / "opendlp"
 
 # Known blind spots, both of which under-report rather than over-report:
 #  - only a context expression spelled exactly `uow` is recognised, so a
 #    differently named UnitOfWork parameter is missed;
-#  - a function that hands its `uow` to a self-managing callee is not an
+#  - a function that hands its `uow` to a callee that opens a context is not an
 #    offender here, even though the nesting is the same problem.
 
 
@@ -53,33 +47,17 @@ def find_self_managing(root: pathlib.Path) -> set[str]:
     return offenders
 
 
-def load_allowlist(path: pathlib.Path) -> set[str]:
-    if not path.exists():
-        return set()
-    lines = (line.strip() for line in path.read_text().splitlines())
-    return {line for line in lines if line and not line.startswith("#")}
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", nargs="?", default=str(DEFAULT_ROOT), help="directory to scan")
-    parser.add_argument("--allowlist", default=str(DEFAULT_ALLOWLIST), help="file of known offenders")
     args = parser.parse_args(argv)
 
-    allowlist_path = pathlib.Path(args.allowlist)
-    offenders = find_self_managing(pathlib.Path(args.root))
-    allowed = load_allowlist(allowlist_path)
+    offenders = sorted(find_self_managing(pathlib.Path(args.root)))
+    for name in offenders:
+        print(f"{name}: takes a UnitOfWork and opens its own `with uow:`. Let the caller manage the context.")
 
-    added = sorted(offenders - allowed)
-    stale = sorted(allowed - offenders)
-
-    for name in added:
-        print(f"{name}: opens its own `with uow:`. Let the caller manage the context.")
-    for name in stale:
-        print(f"{name}: no longer opens its own context - remove it from {allowlist_path.name}.")
-
-    if added or stale:
-        print(f"\n{len(offenders)} self-managing function(s) remain; {len(allowed)} were expected.")
+    if offenders:
+        print(f"\n{len(offenders)} function(s) open a context they were handed.")
         return 1
     return 0
 

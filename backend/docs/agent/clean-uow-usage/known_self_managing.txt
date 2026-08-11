@@ -1,3 +1,0 @@
-# Service-layer functions that still open their own `with uow:`.
-# The convention is that only entrypoints do. See plan.md - this file is a
-# ratchet: entries may be removed as functions are migrated, never added.

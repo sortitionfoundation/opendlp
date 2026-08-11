@@ -1,15 +1,15 @@
 """ABOUTME: Tests for the UnitOfWork convention checker
-ABOUTME: The checker blocks new self-managing service functions while the known ones are migrated"""
+ABOUTME: The checker fails the build when a function that is handed a UnitOfWork opens its own context"""
 
 import pathlib
 
 import pytest
 
-from scripts.check_uow_convention import DEFAULT_ALLOWLIST, SEEDED_COUNT, find_self_managing, load_allowlist, main
+from scripts.check_uow_convention import DEFAULT_ROOT, find_self_managing, main
 
 SELF_MANAGING = '''
 def do_the_thing(uow, thing_id):
-    """Opens its own context, which is what we are migrating away from."""
+    """Opens its own context, which only an entrypoint may do."""
     with uow:
         uow.things.get(thing_id)
 '''
@@ -19,6 +19,13 @@ def do_the_thing(uow, thing_id):
     """The caller is expected to manage the `uow` context (`with uow: ...`)."""
     return uow.things.get(thing_id)
 '''
+
+ENTRYPOINT = """
+def a_route(thing_id):
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        return do_the_thing(uow, thing_id)
+"""
 
 NO_UOW = """
 def unrelated(thing_id):
@@ -44,68 +51,49 @@ class TestFindSelfManaging:
 
         assert find_self_managing(tmp_path) == set()
 
+    def test_ignores_an_entrypoint_that_makes_its_own_unit_of_work(self, tmp_path):
+        """The rule is about functions handed a UnitOfWork, not ones that build one."""
+        write_module(tmp_path, "blueprints/things.py", ENTRYPOINT)
+
+        assert find_self_managing(tmp_path) == set()
+
     def test_ignores_a_with_block_that_is_not_a_unit_of_work(self, tmp_path):
         write_module(tmp_path, "thing_service.py", NO_UOW)
 
         assert find_self_managing(tmp_path) == set()
 
-    def test_reports_nested_helpers(self, tmp_path):
+    def test_reports_nested_modules(self, tmp_path):
         write_module(tmp_path, "pkg/thing_service.py", SELF_MANAGING)
 
         assert find_self_managing(tmp_path) == {"pkg/thing_service.py::do_the_thing"}
 
 
-class TestLoadAllowlist:
-    def test_skips_comments_and_blank_lines(self, tmp_path):
-        path = tmp_path / "known.txt"
-        path.write_text("# a comment\n\nthing_service.py::do_the_thing\n")
-
-        assert load_allowlist(path) == {"thing_service.py::do_the_thing"}
-
-    def test_a_missing_file_is_an_empty_allowlist(self, tmp_path):
-        assert load_allowlist(tmp_path / "absent.txt") == set()
-
-
 class TestMain:
-    def test_passes_when_every_offender_is_allowlisted(self, tmp_path, capsys):
-        write_module(tmp_path, "thing_service.py", SELF_MANAGING)
-        allowlist = tmp_path / "known.txt"
-        allowlist.write_text("thing_service.py::do_the_thing\n")
-
-        assert main([str(tmp_path), "--allowlist", str(allowlist)]) == 0
-
-    def test_fails_on_a_new_offender(self, tmp_path, capsys):
-        write_module(tmp_path, "thing_service.py", SELF_MANAGING)
-        allowlist = tmp_path / "known.txt"
-        allowlist.write_text("")
-
-        assert main([str(tmp_path), "--allowlist", str(allowlist)]) == 1
-        assert "thing_service.py::do_the_thing" in capsys.readouterr().out
-
-    def test_fails_on_a_stale_allowlist_entry(self, tmp_path, capsys):
-        """The allowlist is a ratchet: a migrated function must be removed from it."""
+    def test_passes_when_nothing_opens_its_own_context(self, tmp_path):
         write_module(tmp_path, "thing_service.py", CALLER_MANAGES)
-        allowlist = tmp_path / "known.txt"
-        allowlist.write_text("thing_service.py::do_the_thing\n")
 
-        assert main([str(tmp_path), "--allowlist", str(allowlist)]) == 1
-        assert "no longer" in capsys.readouterr().out
+        assert main([str(tmp_path)]) == 0
+
+    def test_fails_on_an_offender(self, tmp_path, capsys):
+        write_module(tmp_path, "thing_service.py", SELF_MANAGING)
+
+        assert main([str(tmp_path)]) == 1
+        assert "thing_service.py::do_the_thing" in capsys.readouterr().out
 
 
 class TestTheRealCodebase:
-    """The checked-in allowlist must match the codebase exactly."""
-
     def test_the_repository_passes_its_own_check(self, capsys):
         exit_code = main([])
         captured = capsys.readouterr()
 
         assert exit_code == 0, captured.out
 
-    def test_the_allowlist_shrinks_to_nothing(self):
-        """A reminder that phase 3 deletes this file - and a check it is not growing."""
-        assert len(load_allowlist(DEFAULT_ALLOWLIST)) <= SEEDED_COUNT
+    def test_the_default_scan_covers_the_entrypoints_too(self):
+        """An entrypoint helper handed a UnitOfWork is as much an offender as a service function."""
+        assert (DEFAULT_ROOT / "entrypoints").is_dir()
+        assert (DEFAULT_ROOT / "service_layer").is_dir()
 
 
-@pytest.mark.parametrize("source", [SELF_MANAGING, CALLER_MANAGES, NO_UOW])
+@pytest.mark.parametrize("source", [SELF_MANAGING, CALLER_MANAGES, ENTRYPOINT, NO_UOW])
 def test_every_sample_module_parses(source):
     compile(source, "<sample>", "exec")
