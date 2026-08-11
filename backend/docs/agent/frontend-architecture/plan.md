@@ -1,15 +1,15 @@
 # Frontend interactivity: implementation plan
 
-**Status:** Phases 1a, 1b, 1c, 1d, 2, 3, 4 and 5 are implemented (§2, §5, §3, §4, §6, §7, §8, §9). Phase 6 is in progress; no questions remain open.
+**Status:** Every phase is implemented (§2, §5, §3, §4, §6, §7, §8, §9). No questions remain open. The three big inline script blocks the plan set out to remove are gone; six small ones survive elsewhere, listed in §12 — none of them was in scope, and two of them should stay where they are.
 **Decision this implements:** [vanilla-alpine-json.md](vanilla-alpine-json.md) — vanilla JS + Alpine.js (CSP build) + JSON routes, organised into real files, tested, for internal/backoffice interactivity. Public pages stay server-rendered, no-JS-required.
 
 This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 records what was decided and what is still parked pending a team discussion.
 
 **Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), Phase 2 (the JS source relocation to `src/js/`, §5.2), Phase 3 (the API-fixture machinery, §4), Phase 4 (the `patterns.html` pilot migration, §9), Phase 5 (the `assembly_registration.html` production migration, §9), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
 
-**In progress:** Phase 6 — `service_docs.html` and `dev.py` (§9).
+**Done:** Phase 6 — `service_docs.html` and the `dev.py` service-name map (§9).
 
-**Nothing open.** The last parked question — whether anything in `service_docs.html`/`dev.py` is load-bearing — has been overtaken by Chewie's decision to do Phase 6 anyway (§11 row 9).
+**Nothing open.** The last parked question — whether anything in `service_docs.html`/`dev.py` is load-bearing — was overtaken by Chewie's decision to do Phase 6 anyway (§11 row 9).
 
 ---
 
@@ -638,6 +638,33 @@ with no script body left. Notes:
 
 **Then `service_docs.html` (722 lines)** — dev-only, lowest urgency, and §8's answer pushed it further down: `dev.py` is explicitly not a pattern source, so polishing its UI page buys much less than the other two. It was parked on the narrower question of whether anything it does is load-bearing for a real workflow (§11 row 9).
 
+**✅ DONE (Phase 6).** The 722-line inline block became ten modules under
+`src/js/components/service-docs/` — one per tab, plus a `core.js` they all execute through and a
+`controller.js` that merges them — behind a `src/js/backoffice/service-docs.js` entry point. The
+template is 819 lines down to 114. Notes:
+
+- **A directory under `components/`, not ten loose files.** Ten fragments of one component would
+  drown the list of actual components. `frontend_build.md` records the rule.
+- **The `keyMap` moved to Python** as `dev.py`'s `SERVICE_RESPONSE_KEYS`, rendered into the data
+  block, with a unit test asserting it and `_SERVICE_HANDLERS` cover exactly the same 38 services
+  in both directions. That closes the drift the inline copy allowed: a renamed handler used to
+  leave the page posting a name the server did not know, with no symptom until someone clicked.
+- **`readFileAsBase64` came out into `src/js/lib/`** — the images and documents tabs each had their
+  own copy of the same `FileReader` dance. First of the reuse the extraction was meant to unlock.
+- **The samples read as what they are.** The email samples exist to demonstrate `{{ }}` placeholders
+  and had to be written `{{ '{{' }}` inside a Jinja template. In `samples.js` they are plain
+  template literals. The unused `starter_html` sample was dropped rather than carried over — nothing
+  referenced it.
+- **A dead button, found and fixed.** `_config.html` binds `resetUpdateCsvConfig()`, which the
+  inline script never defined, so that Reset had never worked. Implemented to match its two
+  siblings, restoring the `check_same_address` default rather than blanking it. This is the one
+  behaviour change in the phase, and it is the extraction that made it visible — the component test
+  now parses every `@click` on every tab and fails on a name `src/js/` does not define.
+- **Tests:** 100 Vitest (core, a table covering all 35 execute methods against the properties they
+  read, and the composition); 30 component, including the every-bound-name check above, both
+  directions of service-name parity, and no-executable-inline-script on every tab; 4 BDD driving a
+  real execute round trip through the browser.
+
 **Unparked by Chewie, on grounds that make the parked question moot** (§11 row 9). Two reasons:
 
 1. **Consistency.** With Phase 5 landed this is the last inline `<script>` block in the repo. A single exception to a rule is worse than no rule: it is what someone finds when they go looking for how the codebase does interactivity, and `dev.py`'s docstring saying "not a pattern source" does not travel with a copied snippet.
@@ -662,7 +689,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `sr
 7. **Phase 3 — drift-prevention machinery. ✅ DONE.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
 8. **Phase 4 — pilot migration. ✅ DONE.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup. Also the thing §8 depends on — see there.
 9. **Phase 5 — production migration. ✅ DONE.** `assembly_registration.html` image/alt-text manager, and the PDF document panel and edit guard alongside it (§9). Introduces the JSON data block as the way a bundled component receives server-side configuration, documented in `docs/frontend_build.md`.
-10. **Phase 6 — UNPARKED (§11 row 9).** `service_docs.html` and the `dev.py` service-name map (§9). Migrating it regardless of who depends on it: it holds the last inline `<script>` in the repo, and extracted components are reusable where an inline block never is. §8 is unaffected — no broader `dev.py` test backfill, and it remains not a pattern source.
+10. **Phase 6 — ✅ DONE (§11 row 9).** `service_docs.html` and the `dev.py` service-name map (§9). Migrated regardless of who depends on it: it held the last of the three big inline `<script>` blocks, and extracted components are reusable where an inline block never is. §8 is unaffected — no broader `dev.py` test backfill, and it remains not a pattern source. Six small inline blocks survive elsewhere; see §12.
 
 Each phase is independently shippable and reversible; nothing here requires a big-bang cutover. Phase 1 is split into four because the parts touch entirely different files and have different review audiences — bundling them would make the vendoring change (the one with real deploy risk) hard to see.
 
@@ -698,3 +725,41 @@ Both of the landmines I flagged in the previous round now have answers:
 
 - **`djjs` vs prettier (§1) — resolved.** Scope `djjs` to `templates/` (inline JS only); prettier owns standalone `.js` files. Two implementation details in §1: scoped that way `djjs` matches nothing today (there are no `.js` files under `templates/` — inline `<script>` blocks are handled by the `djhtml` hook, not `djjs`), so it becomes a statement of intent rather than an active hook; and prettier must be scoped to `^backend/.*\.js$` rather than just `static/`, or `backend/tailwind.config.js` ends up formatted by nothing.
 - **`../.pre-commit-config-ci.yaml` stays hand-maintained.** Chewie's call — it changes infrequently, so the duplication is acceptable. The working rule is just: hooks land in both files in the same commit.
+
+---
+
+## 12. The inline scripts that are left
+
+The plan set out to remove three inline `<script>` blocks (§0) and did: `patterns.html` (284
+lines, Phase 4), `assembly_registration.html` (580, Phase 5) and `service_docs.html` (722,
+Phase 6). Six small ones remain, none of them in scope, and it is worth writing down which
+should move and which should not so nobody has to rediscover the reasoning.
+
+| Where                                     | Lines | Verdict                                     |
+| ----------------------------------------- | ----- | ------------------------------------------- |
+| `base.html`, `base_public.html` (×2 each)  | 1, 5  | **Leave.** See below.                        |
+| `main/search_user_results.html`            | 11    | Should move; a partial, so needs a rethink.  |
+| `register/form_preview.html`               | 15    | Should move.                                 |
+
+**The two in each base template should stay inline, and this is not laziness.**
+
+- The one-liner adds `js-enabled` to `<body>`. It is GOV.UK Frontend's own convention, and it
+  has to run *before first paint* or every progressively-enhanced component flashes its no-JS
+  styling first. An external file cannot promise that: it is a separate request, and `defer`
+  or `async` both put it after parsing. This is the case inline script exists for.
+- The five-liner calls `GOVUKFrontend.initAll()` on `DOMContentLoaded`. It could move, and it
+  is the better candidate of the two — but it belongs with whatever eventually owns
+  govuk-frontend initialisation, which is a govuk-frontend 6.x question (§11 row 8) rather
+  than this plan's.
+
+**The other two should move**, and neither is hard:
+
+- `register/form_preview.html` is a self-contained pair of capture-phase listeners with no
+  Jinja in them at all — a straight lift into `src/js/` and a new entry point.
+- `main/search_user_results.html` is the awkward one. It is an **htmx partial**, so its script
+  runs on every swap and re-binds listeners to freshly inserted buttons. Lifting it means
+  either delegating from a stable ancestor (which the enclosing page's bundle can own) or an
+  `htmx:afterSwap` hook. Straightforward, but it is a small design decision rather than a move,
+  which is why it is not folded into Phase 6.
+
+Neither is urgent. Both are worth doing before anyone points at them as precedent.

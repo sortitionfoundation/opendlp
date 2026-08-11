@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-11 09:03+0000\n"
+"POT-Creation-Date: 2026-08-11 10:08+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -1687,26 +1687,26 @@ msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/dev.py:172
 #: src/opendlp/entrypoints/blueprints/dev.py:192
-#: src/opendlp/entrypoints/blueprints/dev.py:1482
-#: src/opendlp/entrypoints/blueprints/dev.py:1517
+#: src/opendlp/entrypoints/blueprints/dev.py:1536
+#: src/opendlp/entrypoints/blueprints/dev.py:1571
 #, fuzzy
 msgid "You don't have permission to access developer tools"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1525
+#: src/opendlp/entrypoints/blueprints/dev.py:1579
 msgid "Success! Your changes have been saved."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1526
+#: src/opendlp/entrypoints/blueprints/dev.py:1580
 msgid "Warning: Please review the data before continuing."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1527
+#: src/opendlp/entrypoints/blueprints/dev.py:1581
 #, fuzzy
 msgid "Error: Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1528
+#: src/opendlp/entrypoints/blueprints/dev.py:1582
 msgid "Info: A new feature is available."
 msgstr ""
 

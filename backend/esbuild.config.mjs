@@ -15,6 +15,7 @@ const ENTRY_POINTS = {
   "backoffice/js/alpine-components": "src/js/backoffice/alpine-components.js",
   "backoffice/js/patterns": "src/js/backoffice/patterns.js",
   "backoffice/js/registration-page": "src/js/backoffice/registration-page.js",
+  "backoffice/js/service-docs": "src/js/backoffice/service-docs.js",
   "backoffice/js/dist/html-editor": "src/js/backoffice/html-editor.js",
 };
 

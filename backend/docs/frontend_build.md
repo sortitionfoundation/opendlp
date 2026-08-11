@@ -122,14 +122,20 @@ The entry-point list lives in `esbuild.config.mjs`, keyed by output path:
 | `src/js/backoffice/html-editor.js`     | `static/backoffice/js/dist/html-editor.js` |
 | `src/js/backoffice/patterns.js`        | `static/backoffice/js/patterns.js`         |
 | `src/js/backoffice/registration-page.js` | `static/backoffice/js/registration-page.js` |
+| `src/js/backoffice/service-docs.js`    | `static/backoffice/js/service-docs.js`     |
 
 To add a bundle: write the entry under `src/js/`, add a line to `ENTRY_POINTS` in
 `esbuild.config.mjs`, and load the built path in the template. Both `build:js` and `watch:js` read
 that one list, so there is no second place to update.
 
-The last two are **page-specific** entry points, loaded from their own page's `{% block head %}`
+The last three are **page-specific** entry points, loaded from their own page's `{% block head %}`
 rather than from the shared backoffice bundle, so their components do not ship to every backoffice
 page. Reach for one when a component belongs to a single page.
+
+A component big enough to want splitting up gets a directory of its own under
+`src/js/components/` — `service-docs/` is one file per tab plus a `core.js` they all call
+through, and a `controller.js` that merges them. Prefer that to ten files loose in
+`components/`, which is meant to read as a list of components rather than of fragments.
 
 ### Passing server data to a bundle
 
