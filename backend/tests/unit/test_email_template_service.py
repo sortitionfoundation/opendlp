@@ -23,6 +23,7 @@ from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     RegistrationPageNotFoundError,
 )
+from opendlp.service_layer.registration_page_service import page_for_assembly
 from tests.fakes import FakeUnitOfWork
 
 
@@ -171,7 +172,7 @@ class TestAssignAutoReply:
 
         service.assign_auto_reply_template(uow, admin.id, assembly.id, template.id)
 
-        assert uow.registration_pages.get_by_assembly_id(assembly.id).auto_reply_email_template_id == template.id
+        assert page_for_assembly(uow, assembly.id).auto_reply_email_template_id == template.id
 
     def test_assign_none_clears_fk(self):
         uow = FakeUnitOfWork()
@@ -182,7 +183,7 @@ class TestAssignAutoReply:
 
         service.assign_auto_reply_template(uow, admin.id, assembly.id, None)
 
-        assert uow.registration_pages.get_by_assembly_id(assembly.id).auto_reply_email_template_id is None
+        assert page_for_assembly(uow, assembly.id).auto_reply_email_template_id is None
 
     def test_assign_requires_existing_page(self):
         uow = FakeUnitOfWork()
@@ -214,7 +215,7 @@ class TestAssignAutoReply:
 
         service.assign_auto_reply_template(uow, admin.id, assembly.id, template.id)
 
-        assert uow.registration_pages.get_by_assembly_id(assembly.id).auto_reply_email_template_id == template.id
+        assert page_for_assembly(uow, assembly.id).auto_reply_email_template_id == template.id
 
 
 class TestAutoReplyReadiness:

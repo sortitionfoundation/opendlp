@@ -30,7 +30,7 @@ class ValidatedDocument:
 class RegistrationDocument:
     def __init__(
         self,
-        registration_page_id: uuid.UUID,
+        assembly_id: uuid.UUID,
         byte_size: int,
         sha256: str,
         data: bytes,
@@ -41,7 +41,7 @@ class RegistrationDocument:
         created_at: datetime | None = None,
     ):
         self.id = document_id or uuid.uuid4()
-        self.registration_page_id = registration_page_id
+        self.assembly_id = assembly_id
         self.byte_size = byte_size
         self.sha256 = sha256
         self.data = data
@@ -53,14 +53,14 @@ class RegistrationDocument:
     @classmethod
     def from_validated(
         cls,
-        registration_page_id: uuid.UUID,
+        assembly_id: uuid.UUID,
         validated: ValidatedDocument,
         created_by: uuid.UUID | None = None,
         original_filename: str = "",
         label: str = "",
     ) -> "RegistrationDocument":
         return cls(
-            registration_page_id=registration_page_id,
+            assembly_id=assembly_id,
             byte_size=validated.byte_size,
             sha256=validated.sha256,
             data=validated.data,
@@ -71,7 +71,7 @@ class RegistrationDocument:
 
     def create_detached_copy(self) -> "RegistrationDocument":
         return RegistrationDocument(
-            registration_page_id=self.registration_page_id,
+            assembly_id=self.assembly_id,
             byte_size=self.byte_size,
             sha256=self.sha256,
             data=self.data,

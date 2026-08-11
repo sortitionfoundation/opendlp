@@ -32,11 +32,11 @@ class TestProcessedImage:
 
 class TestRegistrationImage:
     def test_from_processed_copies_fields(self):
-        page_id = uuid.uuid4()
+        assembly_id = uuid.uuid4()
         author = uuid.uuid4()
-        img = RegistrationImage.from_processed(page_id, _processed(), created_by=author)
+        img = RegistrationImage.from_processed(assembly_id, _processed(), created_by=author)
 
-        assert img.registration_page_id == page_id
+        assert img.assembly_id == assembly_id
         assert img.created_by == author
         assert img.data == b"pngbytes"
         assert img.width == 120

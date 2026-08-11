@@ -14,6 +14,7 @@ from opendlp.domain.respondent_field_schema import (
 )
 from opendlp.feature_flags import reload_flags
 from opendlp.service_layer.assembly_service import create_assembly, update_assembly
+from opendlp.service_layer.registration_page_service import page_for_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -81,7 +82,7 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
     assert response.status_code == 302
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         assert page is not None, "page should have been created"
         seeded = uow.email_templates.list_by_assembly(assembly_id)
         assert len(seeded) == 1, "creation should seed exactly one default template"
@@ -96,7 +97,7 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
     assert "section=email" in response.location
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        page = uow.registration_pages.get_by_assembly_id(assembly_id)
+        page = page_for_assembly(uow, assembly_id)
         html = uow.registration_page_html_sources.get_by_page_id(page.id).create_detached_copy()
     assert "Email" in html.form_html
 
@@ -114,7 +115,7 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
     assert "section=preview" in response.location
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        page = uow.registration_pages.get_by_assembly_id(assembly_id).create_detached_copy()
+        page = page_for_assembly(uow, assembly_id).create_detached_copy()
         template = uow.email_templates.get(page.auto_reply_email_template_id).create_detached_copy()
     assert page.auto_reply_email_template_id == template.id
     assert "Thanks" in template.subject
@@ -128,5 +129,5 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
     assert response.status_code == 302
 
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        page = uow.registration_pages.get_by_assembly_id(assembly_id).create_detached_copy()
+        page = page_for_assembly(uow, assembly_id).create_detached_copy()
     assert page.status == RegistrationPageStatus.PUBLISHED

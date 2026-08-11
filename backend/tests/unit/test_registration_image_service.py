@@ -9,7 +9,7 @@ from PIL import Image
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.registration_image import ImageValidationError, RegistrationImage
-from opendlp.domain.registration_page import RegistrationPage, RegistrationPageAction, RegistrationPageStatus
+from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer import registration_image_service as service
@@ -18,7 +18,6 @@ from opendlp.service_layer.exceptions import (
     ImageQuotaExceeded,
     InsufficientPermissions,
     RegistrationImageNotFoundError,
-    RegistrationPageNotFoundError,
     UserNotFoundError,
 )
 from opendlp.service_layer.image_processing import process_image
@@ -69,13 +68,13 @@ def _page(
 
 def _stored_image(uow: FakeUnitOfWork, page: RegistrationPage, color=(255, 0, 0)) -> RegistrationImage:
     processed = process_image(_png(color), max_bytes=_BIG, max_edge_px=_EDGE)
-    image = RegistrationImage.from_processed(page.id, processed)
+    image = RegistrationImage.from_processed(page.assembly_id, processed)
     uow.registration_images.add(image)
     return image
 
 
 class TestAddRegistrationImage:
-    def test_stores_returns_and_records_activity(self):
+    def test_stores_returns(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
@@ -83,10 +82,8 @@ class TestAddRegistrationImage:
         image = service.add_registration_image(uow, admin.id, assembly.id, _png())
 
         assert isinstance(image, RegistrationImage)
-        assert uow.registration_images.count_by_page_id(page.id) == 1
+        assert uow.registration_images.count_by_assembly_id(page.assembly_id) == 1
         assert uow.committed
-        assert page.activity[-1].action == RegistrationPageAction.EDIT
-        assert page.activity[-1].text == "Added a registration image"
 
     def test_permission_denied_for_viewer(self):
         uow = FakeUnitOfWork()
@@ -96,13 +93,6 @@ class TestAddRegistrationImage:
 
         with pytest.raises(InsufficientPermissions):
             service.add_registration_image(uow, viewer.id, assembly.id, _png())
-
-    def test_no_page_raises(self):
-        uow = FakeUnitOfWork()
-        admin, assembly = _admin(uow), _assembly(uow)
-
-        with pytest.raises(RegistrationPageNotFoundError):
-            service.add_registration_image(uow, admin.id, assembly.id, _png())
 
     def test_unknown_user_raises(self):
         uow = FakeUnitOfWork()
@@ -179,18 +169,16 @@ class TestAddRegistrationImage:
 
         assert second.original_filename == "first.png"
 
-    def test_dedup_returns_existing_without_new_row_or_activity(self):
+    def test_dedup_returns_existing_without_a_new_row(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
 
         first = service.add_registration_image(uow, admin.id, assembly.id, _png())
-        activity_len = len(page.activity)
         second = service.add_registration_image(uow, admin.id, assembly.id, _png())
 
         assert second.id == first.id
-        assert uow.registration_images.count_by_page_id(page.id) == 1
-        assert len(page.activity) == activity_len
+        assert uow.registration_images.count_by_assembly_id(page.assembly_id) == 1
 
     def test_quota_at_limit_raises(self, monkeypatch):
         monkeypatch.setenv("MAX_IMAGES_PER_REGISTRATION_PAGE", "1")
@@ -211,11 +199,11 @@ class TestAddRegistrationImage:
         first = service.add_registration_image(uow, admin.id, assembly.id, _png())
         again = service.add_registration_image(uow, admin.id, assembly.id, _png())
         assert again.id == first.id
-        assert uow.registration_images.count_by_page_id(page.id) == 1
+        assert uow.registration_images.count_by_assembly_id(page.assembly_id) == 1
 
 
 class TestListRegistrationImages:
-    def test_lists_only_that_pages_images(self):
+    def test_lists_only_images_for_this_assembly(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
@@ -242,7 +230,7 @@ class TestListRegistrationImages:
 
 
 class TestDeleteRegistrationImage:
-    def test_deletes_and_records_activity(self):
+    def test_deletes(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
@@ -250,8 +238,7 @@ class TestDeleteRegistrationImage:
 
         service.delete_registration_image(uow, admin.id, assembly.id, image.id)
 
-        assert uow.registration_images.count_by_page_id(page.id) == 0
-        assert page.activity[-1].text == "Deleted a registration image"
+        assert uow.registration_images.count_by_assembly_id(page.assembly_id) == 0
 
     def test_permission_denied_for_viewer(self):
         uow = FakeUnitOfWork()
@@ -297,7 +284,7 @@ class TestListImageSnippets:
 
 
 class TestSetRegistrationImageAlt:
-    def test_updates_alt_and_records_activity(self):
+    def test_updates_alt(self):
         uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
@@ -307,7 +294,6 @@ class TestSetRegistrationImageAlt:
 
         assert updated.alt == "New caption"
         assert uow.registration_images.get(image.id).alt == "New caption"
-        assert page.activity[-1].text == "Updated a registration image caption"
         assert uow.committed
 
     def test_permission_denied_for_viewer(self):

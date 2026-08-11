@@ -15,10 +15,10 @@ from opendlp.config import (
     get_max_content_length,
     get_max_csv_upload_bytes,
     get_max_csv_upload_mb,
-    get_max_documents_per_registration_page,
+    get_max_documents_per_assembly,
     get_max_image_upload_bytes,
     get_max_image_upload_mb,
-    get_max_images_per_registration_page,
+    get_max_images_per_assembly,
     get_max_pdf_upload_bytes,
     get_max_pdf_upload_mb,
     get_monitor_assembly_id,
@@ -445,28 +445,52 @@ class TestGetRegistrationImageMaxEdgePx:
         assert get_registration_image_max_edge_px() == 4096
 
 
-class TestGetMaxImagesPerRegistrationPage:
-    """Test the get_max_images_per_registration_page function."""
+class TestGetMaxImagesPerAssembly:
+    """Test the get_max_images_per_assembly function."""
 
     def test_returns_default_when_not_set(self, clear_env_vars):
-        clear_env_vars("MAX_IMAGES_PER_REGISTRATION_PAGE")
-        assert get_max_images_per_registration_page() == 10
+        clear_env_vars("MAX_IMAGES_PER_ASSEMBLY", "MAX_IMAGES_PER_REGISTRATION_PAGE")
+        assert get_max_images_per_assembly() == 10
 
     def test_returns_set_value(self, temp_env_vars):
-        temp_env_vars(MAX_IMAGES_PER_REGISTRATION_PAGE="3")
-        assert get_max_images_per_registration_page() == 3
+        temp_env_vars(MAX_IMAGES_PER_ASSEMBLY="3")
+        assert get_max_images_per_assembly() == 3
 
-    def test_invalid_string_falls_back_to_default(self, temp_env_vars):
-        temp_env_vars(MAX_IMAGES_PER_REGISTRATION_PAGE="lots")
-        assert get_max_images_per_registration_page() == 10
+    def test_falls_back_to_the_old_variable_name(self, clear_env_vars, temp_env_vars):
+        """Deployments carrying the per-page name keep working for one release."""
+        clear_env_vars("MAX_IMAGES_PER_ASSEMBLY")
+        temp_env_vars(MAX_IMAGES_PER_REGISTRATION_PAGE="7")
+        assert get_max_images_per_assembly() == 7
+
+    def test_new_variable_wins_over_the_old_one(self, temp_env_vars):
+        temp_env_vars(MAX_IMAGES_PER_ASSEMBLY="3", MAX_IMAGES_PER_REGISTRATION_PAGE="7")
+        assert get_max_images_per_assembly() == 3
+
+    def test_invalid_string_falls_back_to_default(self, clear_env_vars, temp_env_vars):
+        clear_env_vars("MAX_IMAGES_PER_REGISTRATION_PAGE")
+        temp_env_vars(MAX_IMAGES_PER_ASSEMBLY="lots")
+        assert get_max_images_per_assembly() == 10
 
     def test_clamps_below_minimum(self, temp_env_vars):
-        temp_env_vars(MAX_IMAGES_PER_REGISTRATION_PAGE="0")
-        assert get_max_images_per_registration_page() == 1
+        temp_env_vars(MAX_IMAGES_PER_ASSEMBLY="0")
+        assert get_max_images_per_assembly() == 1
 
     def test_clamps_above_ceiling(self, temp_env_vars):
-        temp_env_vars(MAX_IMAGES_PER_REGISTRATION_PAGE="500")
-        assert get_max_images_per_registration_page() == 50
+        temp_env_vars(MAX_IMAGES_PER_ASSEMBLY="500")
+        assert get_max_images_per_assembly() == 50
+
+
+class TestGetMaxDocumentsPerAssembly:
+    """Test the get_max_documents_per_assembly function."""
+
+    def test_returns_default_when_not_set(self, clear_env_vars):
+        clear_env_vars("MAX_DOCUMENTS_PER_ASSEMBLY", "MAX_DOCUMENTS_PER_REGISTRATION_PAGE")
+        assert get_max_documents_per_assembly() == 5
+
+    def test_falls_back_to_the_old_variable_name(self, clear_env_vars, temp_env_vars):
+        clear_env_vars("MAX_DOCUMENTS_PER_ASSEMBLY")
+        temp_env_vars(MAX_DOCUMENTS_PER_REGISTRATION_PAGE="3")
+        assert get_max_documents_per_assembly() == 3
 
 
 class TestGetMaxPdfUploadMb:
@@ -502,27 +526,27 @@ class TestGetMaxPdfUploadMb:
 
 
 class TestGetMaxDocumentsPerRegistrationPage:
-    """Test the get_max_documents_per_registration_page function."""
+    """Test the get_max_documents_per_assembly function."""
 
     def test_returns_default_when_not_set(self, clear_env_vars):
         clear_env_vars("MAX_DOCUMENTS_PER_REGISTRATION_PAGE")
-        assert get_max_documents_per_registration_page() == 5
+        assert get_max_documents_per_assembly() == 5
 
     def test_returns_set_value(self, temp_env_vars):
         temp_env_vars(MAX_DOCUMENTS_PER_REGISTRATION_PAGE="3")
-        assert get_max_documents_per_registration_page() == 3
+        assert get_max_documents_per_assembly() == 3
 
     def test_invalid_string_falls_back_to_default(self, temp_env_vars):
         temp_env_vars(MAX_DOCUMENTS_PER_REGISTRATION_PAGE="lots")
-        assert get_max_documents_per_registration_page() == 5
+        assert get_max_documents_per_assembly() == 5
 
     def test_clamps_below_minimum(self, temp_env_vars):
         temp_env_vars(MAX_DOCUMENTS_PER_REGISTRATION_PAGE="0")
-        assert get_max_documents_per_registration_page() == 1
+        assert get_max_documents_per_assembly() == 1
 
     def test_clamps_above_ceiling(self, temp_env_vars):
         temp_env_vars(MAX_DOCUMENTS_PER_REGISTRATION_PAGE="500")
-        assert get_max_documents_per_registration_page() == 20
+        assert get_max_documents_per_assembly() == 20
 
 
 class TestPdfUploadContributesToMaxContentLength:

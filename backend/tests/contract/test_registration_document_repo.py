@@ -15,7 +15,6 @@ from tests.contract.conftest import (
     ContractBackend,
     make_assembly,
     make_registration_document,
-    make_registration_page,
 )
 
 
@@ -48,58 +47,58 @@ class TestAddAndGet:
         assert registration_document_backend.repo.get(uuid.uuid4()) is None
 
     def test_all_returns_added_documents(self, registration_document_backend: ContractBackend):
-        page_id = registration_document_backend.make_registration_page().id
-        a = registration_document_backend.make_registration_document(registration_page_id=page_id)
-        b = registration_document_backend.make_registration_document(registration_page_id=page_id)
+        assembly_id = registration_document_backend.make_assembly().id
+        a = registration_document_backend.make_registration_document(assembly_id=assembly_id)
+        b = registration_document_backend.make_registration_document(assembly_id=assembly_id)
 
         ids = {doc.id for doc in registration_document_backend.repo.all()}
         assert {a.id, b.id} <= ids
 
 
-class TestGetByPageAndSha:
+class TestGetByAssemblyAndSha:
     def test_finds_matching_document(self, registration_document_backend: ContractBackend):
-        page_id = registration_document_backend.make_registration_page().id
-        doc = registration_document_backend.make_registration_document(registration_page_id=page_id, sha256="abc")
+        assembly_id = registration_document_backend.make_assembly().id
+        doc = registration_document_backend.make_registration_document(assembly_id=assembly_id, sha256="abc")
 
-        found = registration_document_backend.repo.get_by_page_and_sha(page_id, "abc")
+        found = registration_document_backend.repo.get_by_assembly_and_sha(assembly_id, "abc")
         assert found is not None
         assert found.id == doc.id
 
     def test_returns_none_for_wrong_sha(self, registration_document_backend: ContractBackend):
-        page_id = registration_document_backend.make_registration_page().id
-        registration_document_backend.make_registration_document(registration_page_id=page_id, sha256="abc")
+        assembly_id = registration_document_backend.make_assembly().id
+        registration_document_backend.make_registration_document(assembly_id=assembly_id, sha256="abc")
 
-        assert registration_document_backend.repo.get_by_page_and_sha(page_id, "other") is None
+        assert registration_document_backend.repo.get_by_assembly_and_sha(assembly_id, "other") is None
 
-    def test_returns_none_for_wrong_page(self, registration_document_backend: ContractBackend):
-        page_id = registration_document_backend.make_registration_page().id
-        registration_document_backend.make_registration_document(registration_page_id=page_id, sha256="abc")
+    def test_returns_none_for_wrong_assembly(self, registration_document_backend: ContractBackend):
+        assembly_id = registration_document_backend.make_assembly().id
+        registration_document_backend.make_registration_document(assembly_id=assembly_id, sha256="abc")
 
-        assert registration_document_backend.repo.get_by_page_and_sha(uuid.uuid4(), "abc") is None
+        assert registration_document_backend.repo.get_by_assembly_and_sha(uuid.uuid4(), "abc") is None
 
 
-class TestListAndCountByPageId:
-    def test_lists_only_that_page_oldest_first(self, registration_document_backend: ContractBackend):
-        page_id = registration_document_backend.make_registration_page().id
-        other_page_id = registration_document_backend.make_registration_page().id
+class TestListAndCountByAssemblyId:
+    def test_lists_only_that_assembly_oldest_first(self, registration_document_backend: ContractBackend):
+        assembly_id = registration_document_backend.make_assembly().id
+        other_assembly_id = registration_document_backend.make_assembly().id
         older = registration_document_backend.make_registration_document(
-            registration_page_id=page_id, created_at=datetime(2026, 1, 1, tzinfo=UTC)
+            assembly_id=assembly_id, created_at=datetime(2026, 1, 1, tzinfo=UTC)
         )
         newer = registration_document_backend.make_registration_document(
-            registration_page_id=page_id, created_at=datetime(2026, 2, 1, tzinfo=UTC)
+            assembly_id=assembly_id, created_at=datetime(2026, 2, 1, tzinfo=UTC)
         )
-        registration_document_backend.make_registration_document(registration_page_id=other_page_id)
+        registration_document_backend.make_registration_document(assembly_id=other_assembly_id)
 
-        listed = registration_document_backend.repo.list_by_page_id(page_id)
+        listed = registration_document_backend.repo.list_by_assembly_id(assembly_id)
         assert [doc.id for doc in listed] == [older.id, newer.id]
 
-    def test_count_by_page_id(self, registration_document_backend: ContractBackend):
-        page_id = registration_document_backend.make_registration_page().id
-        registration_document_backend.make_registration_document(registration_page_id=page_id)
-        registration_document_backend.make_registration_document(registration_page_id=page_id)
+    def test_count_by_assembly_id(self, registration_document_backend: ContractBackend):
+        assembly_id = registration_document_backend.make_assembly().id
+        registration_document_backend.make_registration_document(assembly_id=assembly_id)
+        registration_document_backend.make_registration_document(assembly_id=assembly_id)
 
-        assert registration_document_backend.repo.count_by_page_id(page_id) == 2
-        assert registration_document_backend.repo.count_by_page_id(uuid.uuid4()) == 0
+        assert registration_document_backend.repo.count_by_assembly_id(assembly_id) == 2
+        assert registration_document_backend.repo.count_by_assembly_id(uuid.uuid4()) == 0
 
 
 class TestDelete:
@@ -111,34 +110,32 @@ class TestDelete:
         assert registration_document_backend.repo.get(doc.id) is None
 
 
-def _persisted_page(session) -> uuid.UUID:
+def _persisted_assembly(session) -> uuid.UUID:
     assembly = make_assembly()
     session.add(assembly)
-    page = make_registration_page(assembly_id=assembly.id)
-    session.add(page)
     session.flush()
-    return page.id
+    return assembly.id
 
 
 class TestSqlConstraints:
-    def test_duplicate_page_and_sha_violates_unique_index(self, postgres_session):
-        page_id = _persisted_page(postgres_session)
+    def test_duplicate_assembly_and_sha_violates_unique_index(self, postgres_session):
+        assembly_id = _persisted_assembly(postgres_session)
         repo = SqlAlchemyRegistrationDocumentRepository(postgres_session)
-        repo.add(make_registration_document(page_id, sha256="dup"))
+        repo.add(make_registration_document(assembly_id, sha256="dup"))
         postgres_session.flush()
-        repo.add(make_registration_document(page_id, sha256="dup"))
+        repo.add(make_registration_document(assembly_id, sha256="dup"))
 
         with pytest.raises(IntegrityError):
             postgres_session.flush()
 
-    def test_deleting_page_cascades_to_documents(self, postgres_session):
-        page_id = _persisted_page(postgres_session)
+    def test_deleting_assembly_cascades_to_documents(self, postgres_session):
+        assembly_id = _persisted_assembly(postgres_session)
         repo = SqlAlchemyRegistrationDocumentRepository(postgres_session)
-        repo.add(make_registration_document(page_id))
+        repo.add(make_registration_document(assembly_id))
         postgres_session.flush()
-        assert repo.count_by_page_id(page_id) == 1
+        assert repo.count_by_assembly_id(assembly_id) == 1
 
-        postgres_session.execute(orm.registration_pages.delete().where(orm.registration_pages.c.id == page_id))
+        postgres_session.execute(orm.assemblies.delete().where(orm.assemblies.c.id == assembly_id))
         postgres_session.expire_all()
 
-        assert repo.count_by_page_id(page_id) == 0
+        assert repo.count_by_assembly_id(assembly_id) == 0

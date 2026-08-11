@@ -133,24 +133,22 @@ def make_registration_page(assembly_id: uuid.UUID | None = None, **kwargs: Any) 
     return RegistrationPage(assembly_id=assembly_id, **kwargs)
 
 
-def make_registration_image(registration_page_id: uuid.UUID, sha256: str = "", **kwargs: Any) -> RegistrationImage:
+def make_registration_image(assembly_id: uuid.UUID, sha256: str = "", **kwargs: Any) -> RegistrationImage:
     """Create a RegistrationImage domain object with sensible defaults."""
     if not sha256:
         sha256 = uuid.uuid4().hex + uuid.uuid4().hex[:32]
     defaults: dict[str, Any] = {"byte_size": 8, "width": 10, "height": 10, "data": b"pngbytes"}
     defaults.update(kwargs)
-    return RegistrationImage(registration_page_id=registration_page_id, sha256=sha256, **defaults)
+    return RegistrationImage(assembly_id=assembly_id, sha256=sha256, **defaults)
 
 
-def make_registration_document(
-    registration_page_id: uuid.UUID, sha256: str = "", **kwargs: Any
-) -> RegistrationDocument:
+def make_registration_document(assembly_id: uuid.UUID, sha256: str = "", **kwargs: Any) -> RegistrationDocument:
     """Create a RegistrationDocument domain object with sensible defaults."""
     if not sha256:
         sha256 = uuid.uuid4().hex + uuid.uuid4().hex[:32]
     defaults: dict[str, Any] = {"byte_size": 13, "data": b"%PDF-1.7 body"}
     defaults.update(kwargs)
-    return RegistrationDocument(registration_page_id=registration_page_id, sha256=sha256, **defaults)
+    return RegistrationDocument(assembly_id=assembly_id, sha256=sha256, **defaults)
 
 
 def make_respondent(assembly_id: uuid.UUID | None = None, **kwargs: Any) -> Respondent:
@@ -209,6 +207,10 @@ class ContractBackend:
         """Fetch a field definition from storage without any instance-cache effects."""
         raise NotImplementedError
 
+    def fresh_get_registration_page(self, page_id: uuid.UUID) -> RegistrationPage | None:
+        """Fetch a registration page from storage without any instance-cache effects."""
+        raise NotImplementedError
+
     def make_user(self, **kwargs: Any) -> User:
         user = make_user(**kwargs)
         self.persist(user)
@@ -229,22 +231,18 @@ class ContractBackend:
         self.commit()
         return page
 
-    def make_registration_image(
-        self, registration_page_id: uuid.UUID | None = None, **kwargs: Any
-    ) -> RegistrationImage:
-        if registration_page_id is None:
-            registration_page_id = self.make_registration_page().id
-        image = make_registration_image(registration_page_id=registration_page_id, **kwargs)
+    def make_registration_image(self, assembly_id: uuid.UUID | None = None, **kwargs: Any) -> RegistrationImage:
+        if assembly_id is None:
+            assembly_id = self.make_assembly().id
+        image = make_registration_image(assembly_id=assembly_id, **kwargs)
         self.repo.add(image)
         self.commit()
         return image
 
-    def make_registration_document(
-        self, registration_page_id: uuid.UUID | None = None, **kwargs: Any
-    ) -> RegistrationDocument:
-        if registration_page_id is None:
-            registration_page_id = self.make_registration_page().id
-        document = make_registration_document(registration_page_id=registration_page_id, **kwargs)
+    def make_registration_document(self, assembly_id: uuid.UUID | None = None, **kwargs: Any) -> RegistrationDocument:
+        if assembly_id is None:
+            assembly_id = self.make_assembly().id
+        document = make_registration_document(assembly_id=assembly_id, **kwargs)
         self.repo.add(document)
         self.commit()
         return document
@@ -278,6 +276,9 @@ class FakeContractBackend(ContractBackend):
     def fresh_get_field_definition(self, field_id: uuid.UUID) -> Any:
         return self.repo.get(field_id)
 
+    def fresh_get_registration_page(self, page_id: uuid.UUID) -> RegistrationPage | None:
+        return self.repo.get(page_id)  # type: ignore[no-any-return]
+
 
 class SqlContractBackend(ContractBackend):
     """Backend using real SqlAlchemy repositories with a Postgres session."""
@@ -301,6 +302,16 @@ class SqlContractBackend(ContractBackend):
         assert self._session_factory is not None, "session_factory required for fresh reads"
         with self._session_factory() as fresh_session:
             return SqlAlchemyRespondentFieldDefinitionRepository(fresh_session).get(field_id)
+
+    def fresh_get_registration_page(self, page_id: uuid.UUID) -> RegistrationPage | None:
+        """Detach everything first so the page is rebuilt from its database row.
+
+        expire_all() is not enough: it refreshes mapped columns but leaves
+        unmapped Python attributes in place, so a field that was never mapped
+        would appear to round-trip.
+        """
+        self._session.expunge_all()
+        return SqlAlchemyRegistrationPageRepository(self._session).get(page_id)
 
 
 # ---------------------------------------------------------------------------

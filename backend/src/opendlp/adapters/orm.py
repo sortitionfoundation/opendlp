@@ -551,6 +551,13 @@ respondents = Table(
     Column("can_attend", Boolean, nullable=True),
     Column("email", String(255), nullable=False, default="", index=True),
     Column("source_type", EnumAsString(RespondentSourceType, 50), nullable=False),
+    Column(
+        "registration_page_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("registration_pages.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    ),
     Column("attributes", JSON, nullable=False, default=dict),
     Column("comments", RespondentCommentListJSON, nullable=False, default=list),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
@@ -597,7 +604,7 @@ respondent_field_definitions = Table(
     Index("ix_respondent_field_definitions_assembly_group_order", "assembly_id", "field_group", "sort_order"),
 )
 
-# Registration pages table — one optional registration page per assembly.
+# Registration pages table — an assembly may have many, for A/B variants and languages.
 registration_pages = Table(
     "registration_pages",
     metadata,
@@ -607,8 +614,10 @@ registration_pages = Table(
         PostgresUUID(as_uuid=True),
         ForeignKey("assemblies.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
+        index=True,
     ),
+    Column("name", String(100), nullable=False, server_default=""),
+    Column("language", String(20), nullable=False, server_default=""),
     Column("url_slug", String(100), nullable=False, default=""),
     Column("short_url_slug", String(30), nullable=False, default=""),
     Column(
@@ -629,7 +638,14 @@ registration_pages = Table(
     ),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
-    # Partial unique indexes — only enforce uniqueness when the slug is set.
+    # Partial unique indexes — only enforce uniqueness when the value is set.
+    Index(
+        "ix_registration_pages_assembly_name_unique",
+        "assembly_id",
+        "name",
+        unique=True,
+        postgresql_where=text("name != ''"),
+    ),
     Index(
         "ix_registration_pages_url_slug_unique",
         "url_slug",
@@ -661,15 +677,15 @@ registration_page_html_sources = Table(
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
 )
 
-# Registration images table — re-encoded PNG bytes embedded in a page's form HTML.
+# Registration images table — re-encoded PNG bytes shared by an assembly's pages.
 registration_images = Table(
     "registration_images",
     metadata,
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column(
-        "registration_page_id",
+        "assembly_id",
         PostgresUUID(as_uuid=True),
-        ForeignKey("registration_pages.id", ondelete="CASCADE"),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     ),
@@ -682,18 +698,18 @@ registration_images = Table(
     Column("original_filename", String(255), nullable=False, server_default=""),
     Column("created_by", PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
-    Index("ix_registration_images_page_sha_unique", "registration_page_id", "sha256", unique=True),
+    Index("ix_registration_images_assembly_sha_unique", "assembly_id", "sha256", unique=True),
 )
 
-# Registration documents table — PDF bytes offered as download links from a page's form HTML.
+# Registration documents table — PDF bytes shared by an assembly's pages.
 registration_documents = Table(
     "registration_documents",
     metadata,
     Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column(
-        "registration_page_id",
+        "assembly_id",
         PostgresUUID(as_uuid=True),
-        ForeignKey("registration_pages.id", ondelete="CASCADE"),
+        ForeignKey("assemblies.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     ),
@@ -704,7 +720,7 @@ registration_documents = Table(
     Column("original_filename", String(255), nullable=False, server_default=""),
     Column("created_by", PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=True),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
-    Index("ix_registration_documents_page_sha_unique", "registration_page_id", "sha256", unique=True),
+    Index("ix_registration_documents_assembly_sha_unique", "assembly_id", "sha256", unique=True),
 )
 
 # Email templates table — assembly-scoped, database-stored templated emails.

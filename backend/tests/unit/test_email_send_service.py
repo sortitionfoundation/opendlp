@@ -119,7 +119,9 @@ class TestSendTemplatedEmail:
 
 
 class TestSendRegistrationAutoReply:
-    def _setup(self, uow: FakeUnitOfWork, *, with_template: bool = True, respondent: Respondent | None = None):
+    def _setup(
+        self, uow: FakeUnitOfWork, *, with_template: bool = True, respondent: Respondent | None = None
+    ) -> Respondent:
         assembly = _assembly(reply_to_email="team@example.com")
         uow.assemblies.add(assembly)
         template = _template(assembly.id)
@@ -131,15 +133,16 @@ class TestSendRegistrationAutoReply:
         uow.registration_pages.add(page)
         if respondent is None:
             respondent = _respondent(assembly.id)
-        return assembly, respondent
+        respondent.registration_page_id = page.id
+        return respondent
 
     def test_sends_for_live_submission(self):
         uow = FakeUnitOfWork()
         adapter = MagicMock()
         adapter.send_email.return_value = True
-        assembly, respondent = self._setup(uow)
+        respondent = self._setup(uow)
 
-        record = service.send_registration_auto_reply(uow, adapter, respondent=respondent, assembly_id=assembly.id)
+        record = service.send_registration_auto_reply(uow, adapter, respondent=respondent)
 
         assert record is not None
         adapter.send_email.assert_called_once()
@@ -148,21 +151,22 @@ class TestSendRegistrationAutoReply:
     def test_skips_when_no_template_configured(self):
         uow = FakeUnitOfWork()
         adapter = MagicMock()
-        assembly, respondent = self._setup(uow, with_template=False)
+        respondent = self._setup(uow, with_template=False)
 
-        result = service.send_registration_auto_reply(uow, adapter, respondent=respondent, assembly_id=assembly.id)
+        result = service.send_registration_auto_reply(uow, adapter, respondent=respondent)
 
         assert result is None
         adapter.send_email.assert_not_called()
 
-    def test_skips_when_no_page(self):
+    def test_skips_when_the_respondent_came_from_elsewhere(self):
+        """A CSV or manually added respondent has no registration page to reply from."""
         uow = FakeUnitOfWork()
         adapter = MagicMock()
         assembly = _assembly()
         uow.assemblies.add(assembly)
         respondent = _respondent(assembly.id)
 
-        result = service.send_registration_auto_reply(uow, adapter, respondent=respondent, assembly_id=assembly.id)
+        result = service.send_registration_auto_reply(uow, adapter, respondent=respondent)
 
         assert result is None
         adapter.send_email.assert_not_called()
@@ -170,10 +174,9 @@ class TestSendRegistrationAutoReply:
     def test_skips_and_warns_when_respondent_has_no_email(self, capture_json_handler):
         uow = FakeUnitOfWork()
         adapter = MagicMock()
-        assembly, _ = self._setup(uow)
-        no_email = _respondent(assembly.id, email="")
+        no_email = self._setup(uow, respondent=_respondent(_assembly().id, email=""))
 
-        result = service.send_registration_auto_reply(uow, adapter, respondent=no_email, assembly_id=assembly.id)
+        result = service.send_registration_auto_reply(uow, adapter, respondent=no_email)
 
         assert result is None
         adapter.send_email.assert_not_called()
@@ -183,10 +186,9 @@ class TestSendRegistrationAutoReply:
     def test_no_email_without_template_is_silent(self, capture_json_handler):
         uow = FakeUnitOfWork()
         adapter = MagicMock()
-        assembly, _ = self._setup(uow, with_template=False)
-        no_email = _respondent(assembly.id, email="")
+        no_email = self._setup(uow, with_template=False, respondent=_respondent(_assembly().id, email=""))
 
-        result = service.send_registration_auto_reply(uow, adapter, respondent=no_email, assembly_id=assembly.id)
+        result = service.send_registration_auto_reply(uow, adapter, respondent=no_email)
 
         assert result is None
         assert "has no email" not in capture_json_handler.getvalue()
@@ -195,10 +197,11 @@ class TestSendRegistrationAutoReply:
         uow = FakeUnitOfWork()
         adapter = MagicMock()
         adapter.send_email.return_value = True
-        assembly, _ = self._setup(uow)
-        test_respondent = _respondent(assembly.id, selection_status=RespondentStatus.TEST_SUBMISSION)
+        test_respondent = self._setup(
+            uow, respondent=_respondent(_assembly().id, selection_status=RespondentStatus.TEST_SUBMISSION)
+        )
 
-        result = service.send_registration_auto_reply(uow, adapter, respondent=test_respondent, assembly_id=assembly.id)
+        result = service.send_registration_auto_reply(uow, adapter, respondent=test_respondent)
 
         assert result is not None
         assert result.outcome is EmailSendOutcome.SENT

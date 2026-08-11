@@ -338,7 +338,6 @@ def _send_registration_auto_reply(respondent) -> None:  # type: ignore[no-untype
             bootstrap.get_flask_uow(),
             bootstrap.get_email_adapter(),
             respondent=respondent,
-            assembly_id=respondent.assembly_id,
         )
     except Exception:
         logger.exception("Failed to send registration auto-reply")
