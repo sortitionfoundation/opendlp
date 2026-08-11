@@ -1,15 +1,15 @@
 # Frontend interactivity: implementation plan
 
-**Status:** Phases 1a, 1b, 1c, 1d, 2, 3, 4 and 5 are implemented (§2, §5, §3, §4, §6, §7, §8, §9). Phase 6 is parked; one question is still open.
+**Status:** Phases 1a, 1b, 1c, 1d, 2, 3, 4 and 5 are implemented (§2, §5, §3, §4, §6, §7, §8, §9). Phase 6 is in progress; no questions remain open.
 **Decision this implements:** [vanilla-alpine-json.md](vanilla-alpine-json.md) — vanilla JS + Alpine.js (CSP build) + JSON routes, organised into real files, tested, for internal/backoffice interactivity. Public pages stay server-rendered, no-JS-required.
 
 This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 records what was decided and what is still parked pending a team discussion.
 
 **Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), Phase 2 (the JS source relocation to `src/js/`, §5.2), Phase 3 (the API-fixture machinery, §4), Phase 4 (the `patterns.html` pilot migration, §9), Phase 5 (the `assembly_registration.html` production migration, §9), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
 
-**Not started:** Phase 6 — the parked `service_docs.html` (§9).
+**In progress:** Phase 6 — `service_docs.html` and `dev.py` (§9).
 
-**Still open (do not start this):** whether anything in `service_docs.html`/`dev.py` is load-bearing (§10 Phase 6).
+**Nothing open.** The last parked question — whether anything in `service_docs.html`/`dev.py` is load-bearing — has been overtaken by Chewie's decision to do Phase 6 anyway (§11 row 9).
 
 ---
 
@@ -537,9 +537,11 @@ convention it documents, so (b) stands on its own feet.
 - **Not blocked:** the `patterns.html` migration (§9), agreed on its own merits.
 - **Now unblocked:** the "not a pattern source" annotations above (small — a docstring and two doc
   lines; see Phase 1d in §10).
-- **Still open, separately:** whether anything in `service_docs.html`/`dev.py` is load-bearing for a
-  real workflow (§11 row 9). That is a different question from "is it a pattern source", and it is
-  what still governs Phase 6.
+- **No longer open:** whether anything in `service_docs.html`/`dev.py` is load-bearing for a real
+  workflow (§11 row 9). Chewie's call is to migrate it regardless, so the question stopped
+  deciding anything. Note that this does **not** reopen §8: `dev.py` gets its script extracted and
+  the drift between its handler table and the page's service list closed, and it is still not a
+  pattern source afterwards. Consistent is not the same as canonical.
 
 **What's there today:** `dev.py` is a real, fairly large (1500+ line) blueprint with its own JSON API (`/dev/service-docs/execute`) that exercises most of the service layer, plus the `patterns.html` "living reference" page. It's dev-only (`not config.is_production()`) and admin-gated. Test coverage is partial: image/document/email handlers have component tests; the registration-page-lifecycle handlers and the route itself don't (§0), and that's exactly where the JSON error-handling violation lives (§3) — i.e., the _untested_ corner is also the _unsafe_ corner. That's not a coincidence I'd bet against generalising.
 
@@ -634,7 +636,16 @@ with no script body left. Notes:
 
 **Then `assembly_registration.html` (567-line inline block)** — the actual production high-value target (`vanilla-alpine-json.md` §2.3 calls out its image manager as the canonical "genuinely stateful" use case). This is the one that most benefits from the drift-prevention machinery in §4 since it's the heaviest JSON-endpoint consumer.
 
-**Then `service_docs.html` (722 lines)** — dev-only, lowest urgency, and §8's answer pushes it further down: `dev.py` is explicitly not a pattern source, so polishing its UI page buys much less than the other two. It stays parked, but now on the narrower question of whether anything it does is load-bearing for a real workflow (§11 row 9) rather than on §8. The first two are unaffected.
+**Then `service_docs.html` (722 lines)** — dev-only, lowest urgency, and §8's answer pushed it further down: `dev.py` is explicitly not a pattern source, so polishing its UI page buys much less than the other two. It was parked on the narrower question of whether anything it does is load-bearing for a real workflow (§11 row 9).
+
+**Unparked by Chewie, on grounds that make the parked question moot** (§11 row 9). Two reasons:
+
+1. **Consistency.** With Phase 5 landed this is the last inline `<script>` block in the repo. A single exception to a rule is worse than no rule: it is what someone finds when they go looking for how the codebase does interactivity, and `dev.py`'s docstring saying "not a pattern source" does not travel with a copied snippet.
+2. **Reuse.** 722 lines of inline script can only ever serve one page. The same logic in `src/js/` can be imported — the file-to-base64 readers and the JSON-response viewer in particular are general, and a production page wanting either would today have to rewrite them. That is an option this creates rather than a debt it pays, but it is only available on the far side of the extraction.
+
+Neither reason depends on knowing who uses the page, which is why the question stops mattering rather than getting answered.
+
+**What "and `dev.py`" means here.** The blueprint is in scope for one specific thing: `_SERVICE_HANDLERS` is the authoritative list of service names, and the page's `keyMap` duplicates all 38 of them in JavaScript. Rename a handler and the page silently posts a name the server does not know. That map moves to `dev.py` beside the handler table, is rendered into the page's data block, and a test asserts the two cover exactly the same services. Same shape of fix as the API fixtures in §4: put the two halves where one test can see both. No test-coverage backfill beyond that — §8 still stands, `dev.py` is still a scratch space, and being consistent with the conventions is not the same as being a pattern source.
 
 For each: lift inline `<script>` into named `Alpine.data()` components under `src/js/components/`, unit-test the extracted logic with Vitest, shrink the template to markup + flat `x-data` wiring, regenerate `static_hashes()`/cache-busting automatically (no registration needed per `frontend_security.md`), backfill/confirm BDD coverage for the flow. No behavioural changes in the same PR as the extraction — that's a second pass, only after tests exist to prove behaviour is unchanged.
 
@@ -642,7 +653,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `sr
 
 ## 10. Proposed phase sequencing
 
-1. **Phase 0 — decisions.** Mostly done (§11). One item still open (§11 row 9), and it only affects Phase 6.
+1. **Phase 0 — decisions. ✅ DONE.** All settled (§11); the last one, row 9, by being made moot rather than answered.
 2. **Phase 1a — vendoring. ✅ DONE.** Vendor Alpine/htmx/govuk-frontend (§2), including the `build` npm script + `just build-all` + `.gitignore` wiring and the fresh-checkout/Docker acceptance check. Update `docs/frontend_security.md` and `docs/frontend_build.md`. Self-contained and shippable on its own.
 3. **Phase 1b — JS tooling. ✅ DONE.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and a first test proving the wiring end to end. Landed with `tests/js/` rather than colocated — see §5 for why; Phase 2 moves them.
 4. **Phase 1c — error-handling convention. ✅ DONE.** `user_msg()` on the exception hierarchy with a generic default, the `CuratedMessage` opt-in mixin, both `backoffice_registration.py` call sites switched, `_dev_error()` in `dev.py` with the five handlers narrowed onto it (§3), the convention documented (§6) and the checks added to `sf-code-review` (§7).
@@ -651,7 +662,7 @@ For each: lift inline `<script>` into named `Alpine.data()` components under `sr
 7. **Phase 3 — drift-prevention machinery. ✅ DONE.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
 8. **Phase 4 — pilot migration. ✅ DONE.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup. Also the thing §8 depends on — see there.
 9. **Phase 5 — production migration. ✅ DONE.** `assembly_registration.html` image/alt-text manager, and the PDF document panel and edit guard alongside it (§9). Introduces the JSON data block as the way a bundled component receives server-side configuration, documented in `docs/frontend_build.md`.
-10. **Phase 6 — PARKED pending §11 row 9.** `service_docs.html`. §8 is answered, so no `dev.py` test backfill is planned; what's left parked is just whether `service_docs.html` is load-bearing enough to be worth migrating at all.
+10. **Phase 6 — UNPARKED (§11 row 9).** `service_docs.html` and the `dev.py` service-name map (§9). Migrating it regardless of who depends on it: it holds the last inline `<script>` in the repo, and extracted components are reusable where an inline block never is. §8 is unaffected — no broader `dev.py` test backfill, and it remains not a pattern source.
 
 Each phase is independently shippable and reversible; nothing here requires a big-bang cutover. Phase 1 is split into four because the parts touch entirely different files and have different review audiences — bundling them would make the vendoring change (the one with real deploy risk) hard to see.
 
@@ -669,15 +680,17 @@ Each phase is independently shippable and reversible; nothing here requires a bi
 | 6   | Where Vitest runs                                     | **`just test` for tests, `just check` for linting** — and the linting gets there by living in the prek config, since that's the bulk of what `just check` does.                                                                         |
 | 7   | Pilot order (§9)                                      | **Confirmed:** `patterns.html` → `assembly_registration.html` → `service_docs.html`.                                                                                                                                                    |
 | 8   | govuk-frontend bump                                   | **5.11.1 → 5.14.0 is fine**, fold it into the vendoring change. **govuk-frontend 6.x is explicitly out of scope for this round of work** — it's a much bigger upgrade and needs its own planning.                                       |
-| 9   | Anything load-bearing in `dev.py`/`service_docs.html` | **Still open.** Distinct from row 3 — "don't copy from it" doesn't tell us whether anyone depends on it. Phase 6 stays parked until answered.                                                                                           |
+| 9   | Anything load-bearing in `dev.py`/`service_docs.html` | **Answered by being made moot.** Chewie's call: migrate it regardless, for consistency — the last inline script in the repo is a standing exception to a rule everything else now follows, and extracted components are reusable in a way an inline block never is. Whether anything depends on the page no longer decides anything. Phase 6 is unparked. |
 | 10  | `user_msg()` default on `OpenDLPError` (§3)           | **Generic translated string**, not `NotImplementedError` — better an unhelpfully vague message than a 500 with no feedback at all. Vagueness is caught by a `sf-code-review` check instead (§7).                                        |
 | 11  | Where the dev-only message lives (§3)                 | **A `_dev_error()` helper local to `dev.py`**, not a `dev_msg()` method on the exception hierarchy — keeps the dev-only concern in the dev-only file, and doesn't give production exceptions a method production must never call.       |
 
-### Still open
+### Nothing open
 
-- **§10 Phase 6 — is anything in `service_docs.html`/`dev.py` load-bearing** for a real workflow rather than a dev convenience?
-
-Down from three: §8 is answered (table row 3) and so is §5's placement question (row 5). This is the last one, and it only gates Phase 6.
+All three are answered. §8 by table row 3, §5's placement question by row 5, and the
+`service_docs.html` question by row 9 — not by finding out whether anything depends on the page,
+but by deciding that the answer does not matter. Consistency is the reason: with Phase 5 landed,
+`service_docs.html` holds the last inline `<script>` block in the repo, which makes it a standing
+exception to a rule every other page now follows and a permanent temptation to copy.
 
 ### Pre-commit config decisions
 
