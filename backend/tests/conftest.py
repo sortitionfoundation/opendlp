@@ -25,6 +25,8 @@ from opendlp.config import PostgresCfg, RedisCfg, get_api_url
 from opendlp.feature_flags import reload_flags
 from opendlp.logging import pre_chain
 from opendlp.service_layer import security, totp_service
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.fakes import FakeUnitOfWork
 
 # the plugins have to be defined at the top level, even though they only apply to the BDD tests.
 # https://daobook.github.io/pytest/how-to/writing_plugins.html#requiring-loading-plugins-in-a-test-module-or-conftest-file
@@ -341,6 +343,28 @@ def postgres_session(postgres_session_factory):
 
     session.rollback()
     session.close()
+
+
+@pytest.fixture
+def uow():
+    """An already-entered fake UnitOfWork, so tests need no `with` block of their own.
+
+    Strict, so a test cannot pass by using repositories outside the context. Use
+    the `fake_<name>` aliases to arrange or inspect data outside it.
+    """
+    with FakeUnitOfWork(strict=True) as entered:
+        yield entered
+
+
+@pytest.fixture
+def sql_uow(postgres_session_factory):
+    """An already-entered SqlAlchemyUnitOfWork, for tests that need only one context.
+
+    A test proving that committed data is visible to a *fresh* session must
+    build its own second UnitOfWork - this fixture cannot show that.
+    """
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as entered:
+        yield entered
 
 
 @pytest.fixture
