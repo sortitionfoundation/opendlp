@@ -269,13 +269,14 @@ def confirm_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     try:
         uow = bootstrap.get_flask_uow()
-        diff = compute_diff_for_pending_csv(
-            uow,
-            current_user.id,
-            assembly_id,
-            pending.csv_content,
-            pending.id_column,
-        )
+        with uow:
+            diff = compute_diff_for_pending_csv(
+                uow,
+                current_user.id,
+                assembly_id,
+                pending.csv_content,
+                pending.id_column,
+            )
     except InvalidSelection as e:
         flash(_("Invalid CSV format: %(error)s", error=str(e)), "error")
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
@@ -754,10 +755,10 @@ def view_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
             can_manage = bool(viewer and assembly_obj and can_manage_assembly(viewer, assembly_obj))
             can_edit = bool(viewer and assembly_obj and can_edit_respondent(viewer, assembly_obj))
 
-        # Load the per-assembly field schema and pack it into display sections.
+            # Load the per-assembly field schema for the display sections below.
+            grouped_schema = get_schema_grouped(uow, current_user.id, assembly_id)
+
         # Empty groups are filtered out so the template renders only populated sections.
-        # Reuse the same UnitOfWork (the block above has exited).
-        grouped_schema = get_schema_grouped(uow, current_user.id, assembly_id)
         schema_sections = [
             {"label": GROUP_LABELS[group], "fields": grouped_schema[group]}
             for group in GROUP_DISPLAY_ORDER
@@ -906,14 +907,16 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
                     url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
                 )
 
-        respondent = get_respondent(uow, current_user.id, assembly_id, respondent_id)
+            respondent = get_respondent(uow, current_user.id, assembly_id, respondent_id)
+            schema = get_schema(uow, current_user.id, assembly_id)
+            grouped_schema = get_schema_grouped(uow, current_user.id, assembly_id)
+
         if respondent.selection_status == RespondentStatus.DELETED:
             flash(_("Cannot edit a deleted respondent"), "error")
             return redirect(
                 url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id)
             )
 
-        schema = get_schema(uow, current_user.id, assembly_id)
         form, warnings = build_edit_respondent_form(schema, respondent)
 
         if request.method == "POST" and form.validate_on_submit():
@@ -924,7 +927,6 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         for warning in warnings:
             flash(warning, "warning")
 
-        grouped_schema = get_schema_grouped(uow, current_user.id, assembly_id)
         ordered_sections = []
         for group in GROUP_DISPLAY_ORDER:
             fields_in_group = [f for f in grouped_schema.get(group, []) if not f.is_derived]
@@ -977,14 +979,15 @@ def transition_status(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respo
 
     try:
         uow = bootstrap.get_flask_uow()
-        transition_respondent_status(
-            uow=uow,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            respondent_id=respondent_id,
-            new_status=new_status,
-            comment=comment,
-        )
+        with uow:
+            transition_respondent_status(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                respondent_id=respondent_id,
+                new_status=new_status,
+                comment=comment,
+            )
         flash(_("Status updated."), "success")
     except ValueError as e:
         flash(str(e), "error")

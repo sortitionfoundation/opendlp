@@ -131,7 +131,8 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         # Get registration page data from service layer
         uow = bootstrap.get_flask_uow()
-        registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
+        with uow:
+            registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
         registration_page = registration_pages[0] if registration_pages else None
 
         # Build registration URLs and a QR code for the short URL, when configured
@@ -619,7 +620,8 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
         search_term = request.args.get("q", "").strip()
 
         uow = bootstrap.get_flask_uow()
-        matching_users = search_assembly_candidate_users(uow, assembly_id, search_term, current_user)
+        with uow:
+            matching_users = search_assembly_candidate_users(uow, assembly_id, search_term, current_user)
 
         # Return JSON array with id, label, sublabel format expected by autocomplete
         results = [

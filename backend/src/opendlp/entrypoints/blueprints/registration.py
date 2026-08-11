@@ -126,23 +126,24 @@ def show_registration_form(url_slug: str) -> ResponseReturnValue:
     """Render the public registration form for the given URL slug."""
     uow = bootstrap.get_flask_uow()
 
-    page = find_registration_page_by_url_slug(uow, url_slug)
-    visibility = resolve_visibility(page)
+    with uow:
+        page = find_registration_page_by_url_slug(uow, url_slug)
+        visibility = resolve_visibility(page)
 
-    if visibility.state == RegistrationPageVisibilityState.NOT_FOUND:
-        abort(404)
+        if visibility.state == RegistrationPageVisibilityState.NOT_FOUND:
+            abort(404)
 
-    if visibility.state == RegistrationPageVisibilityState.CLOSED:
-        return redirect(url_for("registration.registration_closed"), 302)
+        if visibility.state == RegistrationPageVisibilityState.CLOSED:
+            return redirect(url_for("registration.registration_closed"), 302)
 
-    # LIVE or TEST - render the form
-    assert page is not None  # Guaranteed by visibility state
-    rendered_form = render_registration_form(
-        uow,
-        page,
-        csrf_form_element=_build_security_form_elements(),
-        form_action=url_for("registration.submit_registration_form", url_slug=url_slug),
-    )
+        # LIVE or TEST - render the form
+        assert page is not None  # Guaranteed by visibility state
+        rendered_form = render_registration_form(
+            uow,
+            page,
+            csrf_form_element=_build_security_form_elements(),
+            form_action=url_for("registration.submit_registration_form", url_slug=url_slug),
+        )
 
     return render_template(
         "register/form.html",
@@ -273,62 +274,63 @@ def submit_registration_form(url_slug: str) -> ResponseReturnValue:
     """
     uow = bootstrap.get_flask_uow()
 
-    ip_address = request.remote_addr or ""
-    email = request.form.get("email", "").strip().lower()
+    with uow:
+        ip_address = request.remote_addr or ""
+        email = request.form.get("email", "").strip().lower()
 
-    if request.form.get("_opendlp_ttoken_"):
-        logger.warning(
-            "Bot protection: honeypot triggered",
-            ip_address=request.remote_addr,
-            slug=url_slug,
-        )
-        _record_submission(ip_address, email)
-        return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
+        if request.form.get("_opendlp_ttoken_"):
+            logger.warning(
+                "Bot protection: honeypot triggered",
+                ip_address=request.remote_addr,
+                slug=url_slug,
+            )
+            _record_submission(ip_address, email)
+            return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
 
-    token_error = _check_form_tokens(uow, url_slug, ip_address, email)
-    if token_error is not None:
-        return token_error
+        token_error = _check_form_tokens(uow, url_slug, ip_address, email)
+        if token_error is not None:
+            return token_error
 
-    try:
-        check_registration_rate_limit(
-            ip_address,
-            email,
-            url_slug=url_slug,
-            max_per_ip=current_app.config["REGISTRATION_RATE_LIMIT_PER_IP"],
-            max_per_email=current_app.config["REGISTRATION_RATE_LIMIT_PER_EMAIL"],
-            ip_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES"],
-            email_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES"],
-        )
-    except RateLimitExceeded:
+        try:
+            check_registration_rate_limit(
+                ip_address,
+                email,
+                url_slug=url_slug,
+                max_per_ip=current_app.config["REGISTRATION_RATE_LIMIT_PER_IP"],
+                max_per_email=current_app.config["REGISTRATION_RATE_LIMIT_PER_EMAIL"],
+                ip_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_IP_WINDOW_MINUTES"],
+                email_window_minutes=current_app.config["REGISTRATION_RATE_LIMIT_EMAIL_WINDOW_MINUTES"],
+            )
+        except RateLimitExceeded:
+            return _rerender_form_with_values(
+                uow,
+                url_slug,
+                values=dict(request.form),
+                form_errors=[_("Too many registrations from your location. Please try again later.")],
+            )
+
+        try:
+            result = submit_registration(uow, url_slug=url_slug, form_data=request.form)
+        except RegistrationNotFoundError:
+            abort(404)
+        except RegistrationClosedError:
+            return redirect(url_for("registration.registration_closed"), 302)
+
+        if result.is_valid:
+            _record_submission(ip_address, email)
+            _send_registration_auto_reply(result.respondent)
+            return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
+
+        # Validation failed - re-render form with errors. We deliberately do not
+        # count this against the rate limit: members of the public may take several
+        # tries over a tricky form and must not lock themselves out by mistyping.
         return _rerender_form_with_values(
             uow,
             url_slug,
-            values=dict(request.form),
-            form_errors=[_("Too many registrations from your location. Please try again later.")],
+            values=result.values,
+            field_errors=result.field_errors,
+            form_errors=result.form_errors,
         )
-
-    try:
-        result = submit_registration(uow, url_slug=url_slug, form_data=request.form)
-    except RegistrationNotFoundError:
-        abort(404)
-    except RegistrationClosedError:
-        return redirect(url_for("registration.registration_closed"), 302)
-
-    if result.is_valid:
-        _record_submission(ip_address, email)
-        _send_registration_auto_reply(result.respondent)
-        return redirect(url_for("registration.thank_you", url_slug=url_slug), 302)
-
-    # Validation failed - re-render form with errors. We deliberately do not
-    # count this against the rate limit: members of the public may take several
-    # tries over a tricky form and must not lock themselves out by mistyping.
-    return _rerender_form_with_values(
-        uow,
-        url_slug,
-        values=result.values,
-        field_errors=result.field_errors,
-        form_errors=result.form_errors,
-    )
 
 
 def _send_registration_auto_reply(respondent) -> None:  # type: ignore[no-untyped-def]
@@ -347,7 +349,8 @@ def serve_registration_image(url_slug: str, image_name: str) -> ResponseReturnVa
     """Serve a registration page image from the database (public, image-only)."""
     uow = bootstrap.get_flask_uow()
 
-    served = get_registration_image_for_serving(uow, url_slug, image_name)
+    with uow:
+        served = get_registration_image_for_serving(uow, url_slug, image_name)
     if served is None:
         abort(404)
 
@@ -368,7 +371,8 @@ def serve_registration_document(url_slug: str, document_name: str) -> ResponseRe
     """Serve a registration page PDF from the database (public, attachment download)."""
     uow = bootstrap.get_flask_uow()
 
-    served = get_registration_document_for_serving(uow, url_slug, document_name)
+    with uow:
+        served = get_registration_document_for_serving(uow, url_slug, document_name)
     if served is None:
         abort(404)
 
@@ -390,7 +394,8 @@ def thank_you(url_slug: str) -> ResponseReturnValue:
     """Display the thank-you page after successful registration submission."""
     uow = bootstrap.get_flask_uow()
 
-    page = find_registration_page_by_url_slug(uow, url_slug)
+    with uow:
+        page = find_registration_page_by_url_slug(uow, url_slug)
     if page is None:
         abort(404)
 
@@ -414,7 +419,8 @@ def short_url_redirect(short_url_slug: str) -> ResponseReturnValue:
     """
     uow = bootstrap.get_flask_uow()
 
-    page = find_registration_page_by_short_url_slug(uow, short_url_slug)
+    with uow:
+        page = find_registration_page_by_short_url_slug(uow, short_url_slug)
     if page is None or not page.url_slug:
         abort(404)
 

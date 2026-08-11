@@ -952,13 +952,15 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Save Google Spreadsheet configuration for an assembly."""
     try:
         uow = bootstrap.get_flask_uow()
-        existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+        with uow:
+            existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
         is_update = existing_gsheet is not None
         form = EditAssemblyGSheetForm() if is_update else CreateAssemblyGSheetForm()
 
         if form.validate_on_submit():
             try:
-                return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
+                with uow:
+                    return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
             except InsufficientPermissions as e:
                 logger.warning("Insufficient permissions for gsheet save", error=str(e))
                 flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
@@ -972,12 +974,12 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         # Form validation failed or service error - re-render the page with errors.
         # Reuse the UnitOfWork from the lookup above.
+        sel_settings = None
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-        sel_settings = None
-        # selection_settings is optional for the form re-render.
-        with contextlib.suppress(ServiceLayerError):
-            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
+            # selection_settings is optional for the form re-render.
+            with contextlib.suppress(ServiceLayerError):
+                sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
 
         return render_template(
             "backoffice/assembly_data.html",
@@ -1013,7 +1015,8 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Delete Google Spreadsheet configuration for an assembly."""
     try:
         uow = bootstrap.get_flask_uow()
-        remove_assembly_gsheet(uow, assembly_id, current_user.id)
+        with uow:
+            remove_assembly_gsheet(uow, assembly_id, current_user.id)
         flash(_("Google Spreadsheet configuration removed successfully"), "success")
         # Redirect without source param - selector will be unlocked allowing user to choose again
         return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))

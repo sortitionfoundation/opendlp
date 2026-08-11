@@ -376,22 +376,24 @@ def save_db_selection_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
         form = DbSelectionSettingsForm(available_columns=available_columns)
         if form.validate_on_submit():
             uow2 = bootstrap.get_flask_uow()
-            update_selection_settings(
-                uow=uow2,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                selection_algorithm="maximin",
-                check_same_address=form.check_same_address.data or False,
-                check_same_address_cols=_parse_comma_list(form.check_same_address_cols_string.data),
-                columns_to_keep=_parse_comma_list(form.columns_to_keep_string.data),
-            )
+            with uow2:
+                update_selection_settings(
+                    uow=uow2,
+                    user_id=current_user.id,
+                    assembly_id=assembly_id,
+                    selection_algorithm="maximin",
+                    check_same_address=form.check_same_address.data or False,
+                    check_same_address_cols=_parse_comma_list(form.check_same_address_cols_string.data),
+                    columns_to_keep=_parse_comma_list(form.columns_to_keep_string.data),
+                )
             uow3 = bootstrap.get_flask_uow()
-            update_csv_config(
-                uow=uow3,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                settings_confirmed=True,
-            )
+            with uow3:
+                update_csv_config(
+                    uow=uow3,
+                    user_id=current_user.id,
+                    assembly_id=assembly_id,
+                    settings_confirmed=True,
+                )
             flash(_("Selection settings saved"), "success")
             return redirect(url_for("db_selection_legacy.view_db_selection", assembly_id=assembly_id))
 
@@ -439,7 +441,8 @@ def view_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def reset_respondents_for_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
-        count = reset_selection_status(uow, current_user.id, assembly_id)
+        with uow:
+            count = reset_selection_status(uow, current_user.id, assembly_id)
         flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
         return redirect(url_for("db_selection_legacy.view_db_selection", assembly_id=assembly_id))
     except NotFoundError:

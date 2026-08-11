@@ -382,10 +382,25 @@ def confirm_email(token: str) -> ResponseReturnValue:
     """Confirm email with token. GET shows confirmation page, POST confirms."""
     uow = bootstrap.get_flask_uow()
 
-    if request.method == "GET":
+    with uow:
+        if request.method == "GET":
+            try:
+                validate_confirmation_token(uow, token)
+                return render_template("auth/confirm_email.html", token=token)
+            except InvalidConfirmationToken as e:
+                flash(str(e), "error")
+                return redirect(url_for("auth.login"))
+            except Exception as e:
+                logger.exception("Email confirmation error", error=str(e))
+                flash(_("An error occurred. Please try again."), "error")
+                return redirect(url_for("auth.login"))
+
+        # POST: actually confirm the email
         try:
-            validate_confirmation_token(uow, token)
-            return render_template("auth/confirm_email.html", token=token)
+            user = confirm_email_with_token(uow, token)
+            flash(_("Email confirmed successfully! You can now log in."), "success")
+            login_user(user)
+            return redirect(url_for(default_dashboard_endpoint()))
         except InvalidConfirmationToken as e:
             flash(str(e), "error")
             return redirect(url_for("auth.login"))
@@ -393,20 +408,6 @@ def confirm_email(token: str) -> ResponseReturnValue:
             logger.exception("Email confirmation error", error=str(e))
             flash(_("An error occurred. Please try again."), "error")
             return redirect(url_for("auth.login"))
-
-    # POST: actually confirm the email
-    try:
-        user = confirm_email_with_token(uow, token)
-        flash(_("Email confirmed successfully! You can now log in."), "success")
-        login_user(user)
-        return redirect(url_for(default_dashboard_endpoint()))
-    except InvalidConfirmationToken as e:
-        flash(str(e), "error")
-        return redirect(url_for("auth.login"))
-    except Exception as e:
-        logger.exception("Email confirmation error", error=str(e))
-        flash(_("An error occurred. Please try again."), "error")
-        return redirect(url_for("auth.login"))
 
 
 @auth_bp.route("/resend-confirmation", methods=["GET", "POST"])
@@ -418,12 +419,13 @@ def resend_confirmation() -> ResponseReturnValue:
         try:
             assert form.email.data is not None
             uow = bootstrap.get_flask_uow()
-            email_adapter = get_email_adapter()
-            template_renderer = get_template_renderer(current_app)
-            url_generator = get_url_generator(current_app)
+            with uow:
+                email_adapter = get_email_adapter()
+                template_renderer = get_template_renderer(current_app)
+                url_generator = get_url_generator(current_app)
 
-            # Service layer handles token creation and email sending
-            resend_confirmation_email(uow, form.email.data, email_adapter, template_renderer, url_generator)
+                # Service layer handles token creation and email sending
+                resend_confirmation_email(uow, form.email.data, email_adapter, template_renderer, url_generator)
 
             # Always show success (anti-enumeration)
             flash(
@@ -506,7 +508,8 @@ def reset_password(token: str) -> ResponseReturnValue:
     if request.method == "GET":
         try:
             uow = bootstrap.get_flask_uow()
-            validate_reset_token(uow, token)
+            with uow:
+                validate_reset_token(uow, token)
         except InvalidResetToken as e:
             flash(str(e), "error")
             return redirect(url_for("auth.forgot_password"))
@@ -517,7 +520,8 @@ def reset_password(token: str) -> ResponseReturnValue:
             uow = bootstrap.get_flask_uow()
 
             # Reset the password
-            reset_password_with_token(uow, token, form.password.data)
+            with uow:
+                reset_password_with_token(uow, token, form.password.data)
 
             flash(_("Your password has been reset successfully. You can now log in."), "success")
             return redirect(url_for("auth.login"))
@@ -578,16 +582,17 @@ def google_callback() -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
 
         # Try to find or create OAuth user
-        user, created = find_or_create_oauth_user(
-            uow=uow,
-            provider="google",
-            oauth_id=google_id,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            invite_code=session.get("oauth_invite_code"),
-            accept_data_agreement=session.get("oauth_accept_agreement", False),
-        )
+        with uow:
+            user, created = find_or_create_oauth_user(
+                uow=uow,
+                provider="google",
+                oauth_id=google_id,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                invite_code=session.get("oauth_invite_code"),
+                accept_data_agreement=session.get("oauth_accept_agreement", False),
+            )
 
         # Clear OAuth session data
         session.pop("oauth_invite_code", None)
@@ -686,16 +691,17 @@ def microsoft_callback() -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
 
         # Try to find or create OAuth user
-        user, created = find_or_create_oauth_user(
-            uow=uow,
-            provider="microsoft",
-            oauth_id=microsoft_id,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            invite_code=session.get("oauth_invite_code"),
-            accept_data_agreement=session.get("oauth_accept_agreement", False),
-        )
+        with uow:
+            user, created = find_or_create_oauth_user(
+                uow=uow,
+                provider="microsoft",
+                oauth_id=microsoft_id,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                invite_code=session.get("oauth_invite_code"),
+                accept_data_agreement=session.get("oauth_accept_agreement", False),
+            )
 
         # Clear OAuth session data
         session.pop("oauth_invite_code", None)

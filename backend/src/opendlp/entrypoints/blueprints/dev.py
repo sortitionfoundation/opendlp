@@ -171,7 +171,8 @@ def service_docs() -> ResponseReturnValue:
 
     # Get all assemblies for the dropdown (admin can see all via get_user_assemblies)
     uow = bootstrap.get_flask_uow()
-    assemblies = get_user_assemblies(uow, current_user.id)
+    with uow:
+        assemblies = get_user_assemblies(uow, current_user.id)
 
     return render_template("backoffice/service_docs.html", assemblies=assemblies, active_tab=active_tab), 200
 
@@ -419,12 +420,13 @@ def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any
             )
             if sel_kwargs:
                 uow2 = bootstrap.get_flask_uow()
-                sel_settings = update_selection_settings(
-                    uow=uow2,
-                    user_id=current_user.id,
-                    assembly_id=assembly_id,
-                    **sel_kwargs,
-                )
+                with uow2:
+                    sel_settings = update_selection_settings(
+                        uow=uow2,
+                        user_id=current_user.id,
+                        assembly_id=assembly_id,
+                        **sel_kwargs,
+                    )
             else:
                 sel_settings = get_or_create_selection_settings(
                     uow=bootstrap.get_flask_uow(),
@@ -1444,7 +1446,8 @@ def _execute_service(service_name: str, params: dict[str, Any]) -> dict[str, Any
         return {"status": "error", "error": f"Unknown service: {service_name}", "error_type": "ValidationError"}
 
     uow = bootstrap.get_flask_uow()
-    return handler(uow, params)
+    with uow:
+        return handler(uow, params)
 
 
 # =============================================================================
@@ -1483,7 +1486,8 @@ def patterns() -> ResponseReturnValue:
 
     # Get assemblies for live examples
     uow = bootstrap.get_flask_uow()
-    assemblies = get_user_assemblies(uow, current_user.id)
+    with uow:
+        assemblies = get_user_assemblies(uow, current_user.id)
 
     return render_template("backoffice/patterns.html", assemblies=assemblies, active_tab=active_tab), 200
 

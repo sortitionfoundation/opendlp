@@ -72,15 +72,16 @@ def _can_manage(assembly_id: uuid.UUID) -> bool:
 def _get_assembly_context(assembly_id: uuid.UUID) -> dict:
     """Get common assembly context needed for the targets page layout (tabs, data source)."""
     uow = bootstrap.get_flask_uow()
-    gsheet = None
-    # No gsheet config exists is expected for new assemblies.
-    with contextlib.suppress(ServiceLayerError):
-        gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+    with uow:
+        gsheet = None
+        # No gsheet config exists is expected for new assemblies.
+        with contextlib.suppress(ServiceLayerError):
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-    csv_status: CSVUploadStatus | None = None
-    # No CSV data is expected for new assemblies.
-    with contextlib.suppress(ServiceLayerError):
-        csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
+        csv_status: CSVUploadStatus | None = None
+        # No CSV data is expected for new assemblies.
+        with contextlib.suppress(ServiceLayerError):
+            csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
     data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
@@ -102,8 +103,7 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-        target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
         upload_form = UploadTargetsCsvForm()
         add_category_form = AddTargetCategoryForm()
@@ -165,9 +165,10 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def _render_targets_upload_page(assembly_id: uuid.UUID, form: UploadTargetsCsvForm) -> ResponseReturnValue:
     """Re-render the targets page so the user sees their upload error inline."""
     uow = bootstrap.get_flask_uow()
-    assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+    with uow:
+        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
-    target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+        target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
     context = _get_assembly_context(assembly_id)
 
@@ -198,13 +199,14 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         filename = csv_file.filename or "unknown.csv"
 
         uow = bootstrap.get_flask_uow()
-        categories = import_targets_from_csv(
-            uow=uow,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            csv_content=csv_content,
-            replace_existing=True,
-        )
+        with uow:
+            categories = import_targets_from_csv(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                csv_content=csv_content,
+                replace_existing=True,
+            )
 
         total_values = sum(len(c.values) for c in categories)
         flash(
@@ -298,17 +300,18 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.get_flask_uow()
-        existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
-        sort_order = len(existing)
-        assert form.name.data is not None  # this is basically a type hint
+        with uow:
+            existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            sort_order = len(existing)
+            assert form.name.data is not None  # this is basically a type hint
 
-        category = create_target_category(
-            uow=uow,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            name=form.name.data,
-            sort_order=sort_order,
-        )
+            category = create_target_category(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                name=form.name.data,
+                sort_order=sort_order,
+            )
 
         if _is_htmx():
             value_form = TargetValueForm()
@@ -372,14 +375,15 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.get_flask_uow()
-        assert form.name.data is not None
-        category = update_target_category(
-            uow=uow,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            category_id=category_id,
-            name=form.name.data,
-        )
+        with uow:
+            assert form.name.data is not None
+            category = update_target_category(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                category_id=category_id,
+                name=form.name.data,
+            )
 
         if _is_htmx():
             value_form = TargetValueForm()
@@ -423,12 +427,13 @@ def remove_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseR
     """Delete a target category and all its values."""
     try:
         uow = bootstrap.get_flask_uow()
-        delete_target_category(
-            uow=uow,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            category_id=category_id,
-        )
+        with uow:
+            delete_target_category(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                category_id=category_id,
+            )
 
         if _is_htmx():
             response = make_response("")
@@ -455,7 +460,8 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
         if not form.validate_on_submit():
             if _is_htmx():
                 uow = bootstrap.get_flask_uow()
-                categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+                with uow:
+                    categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
                 category = next((c for c in categories if c.id == category_id), None)
                 if not category:
                     return "", 404
@@ -477,18 +483,19 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.get_flask_uow()
-        assert form.value.data is not None
-        assert form.min_count.data is not None
-        assert form.max_count.data is not None
-        category = add_target_value(
-            uow=uow,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            category_id=category_id,
-            value=form.value.data,
-            min_count=form.min_count.data,
-            max_count=form.max_count.data,
-        )
+        with uow:
+            assert form.value.data is not None
+            assert form.min_count.data is not None
+            assert form.max_count.data is not None
+            category = add_target_value(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                category_id=category_id,
+                value=form.value.data,
+                min_count=form.min_count.data,
+                max_count=form.max_count.data,
+            )
 
         if _is_htmx():
             value_form = TargetValueForm()
@@ -513,7 +520,8 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
         if _is_htmx():
             form.value.errors.append(str(e))  # type: ignore[attr-defined]
             uow = bootstrap.get_flask_uow()
-            categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            with uow:
+                categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
             category = next((c for c in categories if c.id == category_id), None)
             if not category:
                 return "", 404
@@ -550,7 +558,8 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
         if not form.validate_on_submit():
             if _is_htmx():
                 uow = bootstrap.get_flask_uow()
-                categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+                with uow:
+                    categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
                 category = next((c for c in categories if c.id == category_id), None)
                 if not category:
                     return "", 404
@@ -572,19 +581,20 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
         uow = bootstrap.get_flask_uow()
-        assert form.value.data is not None
-        assert form.min_count.data is not None
-        assert form.max_count.data is not None
-        category = update_target_value(
-            uow=uow,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            category_id=category_id,
-            value_id=value_id,
-            value=form.value.data,
-            min_count=form.min_count.data,
-            max_count=form.max_count.data,
-        )
+        with uow:
+            assert form.value.data is not None
+            assert form.min_count.data is not None
+            assert form.max_count.data is not None
+            category = update_target_value(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                category_id=category_id,
+                value_id=value_id,
+                value=form.value.data,
+                min_count=form.min_count.data,
+                max_count=form.max_count.data,
+            )
 
         if _is_htmx():
             value_form = TargetValueForm()
@@ -609,7 +619,8 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
         if _is_htmx():
             form.value.errors.append(str(e))  # type: ignore[attr-defined]
             uow = bootstrap.get_flask_uow()
-            categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            with uow:
+                categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
             category = next((c for c in categories if c.id == category_id), None)
             if not category:
                 return "", 404
@@ -640,13 +651,14 @@ def remove_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.
     """Delete a target value from a category."""
     try:
         uow = bootstrap.get_flask_uow()
-        category = delete_target_value(
-            uow=uow,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            category_id=category_id,
-            value_id=value_id,
-        )
+        with uow:
+            category = delete_target_value(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                category_id=category_id,
+                value_id=value_id,
+            )
 
         if _is_htmx():
             value_form = TargetValueForm()
@@ -685,7 +697,8 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
             flash(_("No values to add"), "warning")
             if _is_htmx():
                 uow = bootstrap.get_flask_uow()
-                categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+                with uow:
+                    categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
                 category = next((c for c in categories if c.id == category_id), None)
                 if not category:
                     return "", 404
@@ -700,16 +713,17 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
 
         category = None
         uow = bootstrap.get_flask_uow()
-        for value_name in missing_values:
-            category = add_target_value(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                category_id=category_id,
-                value=value_name,
-                min_count=0,
-                max_count=0,
-            )
+        with uow:
+            for value_name in missing_values:
+                category = add_target_value(
+                    uow=uow,
+                    user_id=current_user.id,
+                    assembly_id=assembly_id,
+                    category_id=category_id,
+                    value=value_name,
+                    min_count=0,
+                    max_count=0,
+                )
 
         if _is_htmx() and category is not None:
             value_form = TargetValueForm()
@@ -748,8 +762,7 @@ def respondent_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-        target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
         attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
         column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
@@ -785,48 +798,48 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
             flash(_("No columns selected"), "warning")
             return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
-        uow = bootstrap.get_flask_uow()
-        existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
-        sort_order = len(existing)
-
         attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
         column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
 
         created = []
         values_added_count = 0
-        # Reuse the same UnitOfWork across the loop; each call is a separate,
-        # sequential unit of work that commits independently.
-        for column_name in selected_columns:
-            try:
-                category = create_target_category(
-                    uow=uow,
-                    user_id=current_user.id,
-                    assembly_id=assembly_id,
-                    name=column_name,
-                    sort_order=sort_order,
-                )
-                created.append(column_name)
-                sort_order += 1
+        uow = bootstrap.get_flask_uow()
+        # The whole bulk create is one unit of work: either every category the
+        # organiser selected lands or none does.
+        with uow:
+            existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            sort_order = len(existing)
 
-                # Auto-add all distinct values for low-cardinality columns
-                distinct_count = column_distinct_counts.get(column_name, 0)
-                if distinct_count > 0 and distinct_count < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
-                    with uow:
+            for column_name in selected_columns:
+                try:
+                    category = create_target_category(
+                        uow=uow,
+                        user_id=current_user.id,
+                        assembly_id=assembly_id,
+                        name=column_name,
+                        sort_order=sort_order,
+                    )
+                    created.append(column_name)
+                    sort_order += 1
+
+                    # Auto-add all distinct values for low-cardinality columns
+                    distinct_count = column_distinct_counts.get(column_name, 0)
+                    if distinct_count > 0 and distinct_count < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
                         value_counts = get_respondent_attribute_value_counts(uow, assembly_id, column_name)
-                    for value_name in sorted(value_counts.keys()):
-                        add_target_value(
-                            uow=uow,
-                            user_id=current_user.id,
-                            assembly_id=assembly_id,
-                            category_id=category.id,
-                            value=value_name,
-                            min_count=0,
-                            max_count=0,
-                        )
-                        values_added_count += 1
-            except ValueError:
-                # Category with this name may already exist; skip it
-                continue
+                        for value_name in sorted(value_counts.keys()):
+                            add_target_value(
+                                uow=uow,
+                                user_id=current_user.id,
+                                assembly_id=assembly_id,
+                                category_id=category.id,
+                                value=value_name,
+                                min_count=0,
+                                max_count=0,
+                            )
+                            values_added_count += 1
+                except ValueError:
+                    # Category with this name may already exist; skip it
+                    continue
 
         if created:
             if values_added_count > 0:
@@ -860,12 +873,10 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Run detailed target validation and display results."""
     try:
         uow = bootstrap.get_flask_uow()
-        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
         with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             check_result = check_targets_detailed(uow, current_user.id, assembly_id)
-
-        target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
         upload_form = UploadTargetsCsvForm()
         add_category_form = AddTargetCategoryForm()
