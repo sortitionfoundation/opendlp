@@ -74,8 +74,7 @@ def _stored_image(uow: FakeUnitOfWork, page: RegistrationPage, color=(255, 0, 0)
 
 
 class TestAddRegistrationImage:
-    def test_stores_returns(self):
-        uow = FakeUnitOfWork()
+    def test_stores_returns(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
 
@@ -84,8 +83,7 @@ class TestAddRegistrationImage:
         assert isinstance(image, RegistrationImage)
         assert uow.registration_images.count_by_assembly_id(page.assembly_id) == 1
 
-    def test_permission_denied_for_viewer(self):
-        uow = FakeUnitOfWork()
+    def test_permission_denied_for_viewer(self, uow):
         assembly = _assembly(uow)
         viewer = _viewer(uow, assembly)
         _page(uow, assembly)
@@ -93,30 +91,26 @@ class TestAddRegistrationImage:
         with pytest.raises(InsufficientPermissions):
             service.add_registration_image(uow, viewer.id, assembly.id, _png())
 
-    def test_unknown_user_raises(self):
-        uow = FakeUnitOfWork()
+    def test_unknown_user_raises(self, uow):
         assembly = _assembly(uow)
 
         with pytest.raises(UserNotFoundError):
             service.add_registration_image(uow, uuid.uuid4(), assembly.id, _png())
 
-    def test_unknown_assembly_raises(self):
-        uow = FakeUnitOfWork()
+    def test_unknown_assembly_raises(self, uow):
         admin = _admin(uow)
 
         with pytest.raises(AssemblyNotFoundError):
             service.add_registration_image(uow, admin.id, uuid.uuid4(), _png())
 
-    def test_invalid_image_propagates(self):
-        uow = FakeUnitOfWork()
+    def test_invalid_image_propagates(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
         with pytest.raises(ImageValidationError):
             service.add_registration_image(uow, admin.id, assembly.id, b"not an image")
 
-    def test_stores_alt_text(self):
-        uow = FakeUnitOfWork()
+    def test_stores_alt_text(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -124,8 +118,7 @@ class TestAddRegistrationImage:
 
         assert image.alt == "A red square"
 
-    def test_dedup_updates_alt(self):
-        uow = FakeUnitOfWork()
+    def test_dedup_updates_alt(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -134,8 +127,7 @@ class TestAddRegistrationImage:
 
         assert second.alt == "Second caption"
 
-    def test_stores_original_filename(self):
-        uow = FakeUnitOfWork()
+    def test_stores_original_filename(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -145,8 +137,7 @@ class TestAddRegistrationImage:
 
         assert image.original_filename == "red square.png"
 
-    def test_sanitises_original_filename(self):
-        uow = FakeUnitOfWork()
+    def test_sanitises_original_filename(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -156,8 +147,7 @@ class TestAddRegistrationImage:
 
         assert image.original_filename == "red square.png"
 
-    def test_dedup_keeps_first_original_filename(self):
-        uow = FakeUnitOfWork()
+    def test_dedup_keeps_first_original_filename(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -168,8 +158,7 @@ class TestAddRegistrationImage:
 
         assert second.original_filename == "first.png"
 
-    def test_dedup_returns_existing_without_a_new_row(self):
-        uow = FakeUnitOfWork()
+    def test_dedup_returns_existing_without_a_new_row(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
 
@@ -179,9 +168,8 @@ class TestAddRegistrationImage:
         assert second.id == first.id
         assert uow.registration_images.count_by_assembly_id(page.assembly_id) == 1
 
-    def test_quota_at_limit_raises(self, monkeypatch):
+    def test_quota_at_limit_raises(self, uow, monkeypatch):
         monkeypatch.setenv("MAX_IMAGES_PER_REGISTRATION_PAGE", "1")
-        uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -189,9 +177,8 @@ class TestAddRegistrationImage:
         with pytest.raises(ImageQuotaExceeded):
             service.add_registration_image(uow, admin.id, assembly.id, _png((0, 0, 255)))
 
-    def test_dedup_at_limit_still_succeeds(self, monkeypatch):
+    def test_dedup_at_limit_still_succeeds(self, uow, monkeypatch):
         monkeypatch.setenv("MAX_IMAGES_PER_REGISTRATION_PAGE", "1")
-        uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
 
@@ -202,8 +189,7 @@ class TestAddRegistrationImage:
 
 
 class TestListRegistrationImages:
-    def test_lists_only_images_for_this_assembly(self):
-        uow = FakeUnitOfWork()
+    def test_lists_only_images_for_this_assembly(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
         _stored_image(uow, page, (255, 0, 0))
@@ -212,13 +198,11 @@ class TestListRegistrationImages:
         listed = service.list_registration_images(uow, admin.id, assembly.id)
         assert len(listed) == 2
 
-    def test_empty_when_no_page(self):
-        uow = FakeUnitOfWork()
+    def test_empty_when_no_page(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         assert service.list_registration_images(uow, admin.id, assembly.id) == []
 
-    def test_permission_denied_for_stranger(self):
-        uow = FakeUnitOfWork()
+    def test_permission_denied_for_stranger(self, uow):
         assembly = _assembly(uow)
         stranger = User(email=f"x-{uuid.uuid4()}@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(stranger)
@@ -229,8 +213,7 @@ class TestListRegistrationImages:
 
 
 class TestDeleteRegistrationImage:
-    def test_deletes(self):
-        uow = FakeUnitOfWork()
+    def test_deletes(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
         image = _stored_image(uow, page)
@@ -239,8 +222,7 @@ class TestDeleteRegistrationImage:
 
         assert uow.registration_images.count_by_assembly_id(page.assembly_id) == 0
 
-    def test_permission_denied_for_viewer(self):
-        uow = FakeUnitOfWork()
+    def test_permission_denied_for_viewer(self, uow):
         assembly = _assembly(uow)
         viewer = _viewer(uow, assembly)
         page = _page(uow, assembly)
@@ -249,8 +231,7 @@ class TestDeleteRegistrationImage:
         with pytest.raises(InsufficientPermissions):
             service.delete_registration_image(uow, viewer.id, assembly.id, image.id)
 
-    def test_missing_image_raises(self):
-        uow = FakeUnitOfWork()
+    def test_missing_image_raises(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -259,8 +240,7 @@ class TestDeleteRegistrationImage:
 
 
 class TestListImageSnippets:
-    def test_builds_snippet_per_image_with_builder_url(self):
-        uow = FakeUnitOfWork()
+    def test_builds_snippet_per_image_with_builder_url(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
         _stored_image(uow, page)
@@ -271,8 +251,7 @@ class TestListImageSnippets:
         assert f'src="/x/{image.sha256}.png"' in html
         assert html.startswith("<img ")
 
-    def test_snippet_includes_stored_alt(self):
-        uow = FakeUnitOfWork()
+    def test_snippet_includes_stored_alt(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
         service.add_registration_image(uow, admin.id, assembly.id, _png(), alt="A red square")
@@ -283,8 +262,7 @@ class TestListImageSnippets:
 
 
 class TestSetRegistrationImageAlt:
-    def test_updates_alt(self):
-        uow = FakeUnitOfWork()
+    def test_updates_alt(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
         image = _stored_image(uow, page)
@@ -294,8 +272,7 @@ class TestSetRegistrationImageAlt:
         assert updated.alt == "New caption"
         assert uow.registration_images.get(image.id).alt == "New caption"
 
-    def test_permission_denied_for_viewer(self):
-        uow = FakeUnitOfWork()
+    def test_permission_denied_for_viewer(self, uow):
         assembly = _assembly(uow)
         viewer = _viewer(uow, assembly)
         page = _page(uow, assembly)
@@ -304,8 +281,7 @@ class TestSetRegistrationImageAlt:
         with pytest.raises(InsufficientPermissions):
             service.set_registration_image_alt(uow, viewer.id, assembly.id, image.id, "New caption")
 
-    def test_missing_image_raises(self):
-        uow = FakeUnitOfWork()
+    def test_missing_image_raises(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -315,8 +291,7 @@ class TestSetRegistrationImageAlt:
 
 class TestGetRegistrationImageForServing:
     @pytest.mark.parametrize("status", [RegistrationPageStatus.TEST, RegistrationPageStatus.PUBLISHED])
-    def test_serves_for_loadable_statuses(self, status):
-        uow = FakeUnitOfWork()
+    def test_serves_for_loadable_statuses(self, uow, status):
         assembly = _assembly(uow)
         page = _page(uow, assembly, url_slug="live", status=status)
         image = _stored_image(uow, page)
@@ -325,26 +300,22 @@ class TestGetRegistrationImageForServing:
         assert served is not None
         assert served.id == image.id
 
-    def test_none_when_closed(self):
-        uow = FakeUnitOfWork()
+    def test_none_when_closed(self, uow):
         assembly = _assembly(uow)
         page = _page(uow, assembly, url_slug="closed", status=RegistrationPageStatus.CLOSED)
         image = _stored_image(uow, page)
 
         assert service.get_registration_image_for_serving(uow, "closed", f"{image.sha256}.png") is None
 
-    def test_none_for_unknown_slug(self):
-        uow = FakeUnitOfWork()
+    def test_none_for_unknown_slug(self, uow):
         assert service.get_registration_image_for_serving(uow, "nope", "abc.png") is None
 
-    def test_none_for_unknown_sha(self):
-        uow = FakeUnitOfWork()
+    def test_none_for_unknown_sha(self, uow):
         assembly = _assembly(uow)
         _page(uow, assembly, url_slug="live")
         assert service.get_registration_image_for_serving(uow, "live", "deadbeef.png") is None
 
-    def test_handles_missing_extension(self):
-        uow = FakeUnitOfWork()
+    def test_handles_missing_extension(self, uow):
         assembly = _assembly(uow)
         page = _page(uow, assembly, url_slug="live")
         image = _stored_image(uow, page)

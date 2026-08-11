@@ -330,7 +330,7 @@ def assembly_creator(test_database, admin_user):
     def _create_assembly(title: str, question: str = "", number_to_select: int = 10) -> Assembly:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        with uow, uow:
+        with uow:
             return create_assembly(
                 uow=uow,
                 title=title,
@@ -351,7 +351,7 @@ def assembly_user_role_creator(test_database, admin_user):
     ) -> UserAssemblyRole:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        with uow, uow:
+        with uow:
             role, _user = grant_user_assembly_role(
                 uow=uow, user_id=user.id, assembly_id=assembly.id, role=assembly_role, current_user=admin_user
             )
@@ -367,7 +367,7 @@ def assembly_gsheet_creator(test_database, admin_user):
     def _create_assembly_gsheet(title: str) -> tuple[Assembly, AssemblyGSheet]:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        with uow, uow:
+        with uow:
             assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id, number_to_select=22)
             gsheet_assembly = add_assembly_gsheet(
                 uow=uow,

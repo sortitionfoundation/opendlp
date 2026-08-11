@@ -28,9 +28,8 @@ from tests.fakes import FakeUnitOfWork
 class TestStartGsheetLoadTask:
     """Test starting Google Sheets loading tasks."""
 
-    def test_start_gsheet_load_task_success_admin(self):
+    def test_start_gsheet_load_task_success_admin(self, uow):
         """Test successful task start by admin user."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -85,9 +84,8 @@ class TestStartGsheetLoadTask:
 
         assert uow.committed
 
-    def test_start_gsheet_load_task_assembly_not_found(self):
+    def test_start_gsheet_load_task_assembly_not_found(self, uow):
         """Test error when assembly doesn't exist."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -96,9 +94,8 @@ class TestStartGsheetLoadTask:
         with pytest.raises(AssemblyNotFoundError, match=f"Assembly {non_existent_id} not found"):
             sortition.start_gsheet_load_task(uow, admin_user.id, non_existent_id)
 
-    def test_start_gsheet_load_task_no_gsheet_config(self):
+    def test_start_gsheet_load_task_no_gsheet_config(self, uow):
         """Test error when assembly has no Google Sheets configuration."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -111,9 +108,8 @@ class TestStartGsheetLoadTask:
         ):
             sortition.start_gsheet_load_task(uow, admin_user.id, assembly.id)
 
-    def test_start_gsheet_load_task_insufficient_permissions(self):
+    def test_start_gsheet_load_task_insufficient_permissions(self, uow):
         """Test error when user doesn't have management permissions."""
-        uow = FakeUnitOfWork()
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
@@ -140,9 +136,8 @@ class TestStartGsheetLoadTask:
 class TestGetSelectionRunStatus:
     """Test getting selection run status."""
 
-    def test_get_selection_run_status_exists(self):
+    def test_get_selection_run_status_exists(self, uow):
         """Test getting status for existing task."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         assembly_id = uuid.uuid4()
@@ -165,19 +160,17 @@ class TestGetSelectionRunStatus:
         assert run_record.status == SelectionRunStatus.RUNNING
         assert len(run_record.log_messages) == 2
 
-    def test_get_selection_run_status_not_found(self):
+    def test_get_selection_run_status_not_found(self, uow):
         """Test getting status for non-existent task."""
-        uow = FakeUnitOfWork()
 
         non_existent_id = uuid.uuid4()
         result = sortition.get_selection_run_status(uow, non_existent_id)
 
         assert result.run_record is None
 
-    def test_get_selection_run_status_returns_log_messages_while_running(self):
+    def test_get_selection_run_status_returns_log_messages_while_running(self, uow):
         """While the task is running (PROGRESS state in celery), the result must
         include log_messages from the DB record so the modal shows live updates."""
-        uow = FakeUnitOfWork()
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
             assembly_id=uuid.uuid4(),
@@ -205,10 +198,9 @@ class TestGetSelectionRunStatus:
             "Loaded 5 features",
         ]
 
-    def test_get_selection_run_status_returns_log_messages_while_pending(self):
+    def test_get_selection_run_status_returns_log_messages_while_pending(self, uow):
         """While the task is still queued (PENDING in celery), the result must
         still include the initial submission log message from the DB record."""
-        uow = FakeUnitOfWork()
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
             assembly_id=uuid.uuid4(),
@@ -287,9 +279,8 @@ class TestGetManageOldTabsStatus:
 class TestGetLatestRunForAssembly:
     """Test getting latest run for assembly."""
 
-    def test_get_latest_run_for_assembly_exists(self):
+    def test_get_latest_run_for_assembly_exists(self, uow):
         """Test getting latest run when runs exist."""
-        uow = FakeUnitOfWork()
 
         assembly_id = uuid.uuid4()
 
@@ -320,9 +311,8 @@ class TestGetLatestRunForAssembly:
         assert result.task_id == new_record.task_id
         assert result.status == SelectionRunStatus.RUNNING
 
-    def test_get_latest_run_for_assembly_not_found(self):
+    def test_get_latest_run_for_assembly_not_found(self, uow):
         """Test getting latest run when no runs exist."""
-        uow = FakeUnitOfWork()
 
         non_existent_assembly_id = uuid.uuid4()
         result = sortition.get_latest_run_for_assembly(uow, non_existent_assembly_id)
@@ -333,9 +323,8 @@ class TestGetLatestRunForAssembly:
 class TestCheckAndUpdateTaskHealth:
     """Test checking and updating task health status."""
 
-    def test_ignores_completed_tasks(self):
+    def test_ignores_completed_tasks(self, uow):
         """Test that completed tasks are not checked or modified."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
@@ -356,9 +345,8 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.status == SelectionRunStatus.COMPLETED
         assert len(updated_record.log_messages) == 1
 
-    def test_ignores_failed_tasks(self):
+    def test_ignores_failed_tasks(self, uow):
         """Test that failed tasks are not checked or modified."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
@@ -380,9 +368,8 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.status == SelectionRunStatus.FAILED
         assert updated_record.error_message == "Original error"
 
-    def test_marks_running_task_as_failed_when_celery_says_failure(self):
+    def test_marks_running_task_as_failed_when_celery_says_failure(self, uow):
         """Test that RUNNING task is marked FAILED when Celery reports FAILURE state."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
@@ -412,9 +399,8 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.completed_at is not None
         assert any("ERROR" in msg for msg in updated_record.log_messages)
 
-    def test_marks_running_task_as_failed_when_celery_says_revoked(self):
+    def test_marks_running_task_as_failed_when_celery_says_revoked(self, uow):
         """Test that RUNNING task is marked FAILED when Celery reports REVOKED state."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
@@ -441,9 +427,8 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.status == SelectionRunStatus.FAILED
         assert "stopped unexpectedly" in updated_record.error_message
 
-    def test_marks_running_task_as_failed_when_celery_forgot_it(self):
+    def test_marks_running_task_as_failed_when_celery_forgot_it(self, uow):
         """Test that RUNNING task is marked FAILED when Celery has no record (state=PENDING)."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
@@ -470,9 +455,8 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.status == SelectionRunStatus.FAILED
         assert "stopped unexpectedly" in updated_record.error_message
 
-    def test_leaves_running_task_alone_when_celery_says_started(self):
+    def test_leaves_running_task_alone_when_celery_says_started(self, uow):
         """Test that RUNNING task is left alone when Celery reports STARTED state."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
@@ -499,9 +483,8 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.status == SelectionRunStatus.RUNNING
         assert len(updated_record.log_messages) == 1
 
-    def test_leaves_running_task_alone_when_celery_says_success(self):
+    def test_leaves_running_task_alone_when_celery_says_success(self, uow):
         """Test that RUNNING task is left alone when Celery reports SUCCESS state."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
@@ -528,9 +511,8 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.status == SelectionRunStatus.RUNNING
         assert len(updated_record.log_messages) == 1
 
-    def test_marks_pending_task_as_failed_when_celery_says_failure(self):
+    def test_marks_pending_task_as_failed_when_celery_says_failure(self, uow):
         """Test that PENDING task is marked FAILED when Celery reports FAILURE state."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         record = SelectionRunRecord(
@@ -557,9 +539,8 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.status == SelectionRunStatus.FAILED
         assert "failed to start" in updated_record.error_message.lower()
 
-    def test_marks_task_as_failed_when_timeout_exceeded(self):
+    def test_marks_task_as_failed_when_timeout_exceeded(self, uow):
         """Test that task is marked FAILED when it exceeds the timeout."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         # Create record with old created_at (25 hours ago)
@@ -583,9 +564,8 @@ class TestCheckAndUpdateTaskHealth:
         assert updated_record.status == SelectionRunStatus.FAILED
         assert "timeout" in updated_record.error_message.lower()
 
-    def test_does_not_fail_task_within_timeout(self):
+    def test_does_not_fail_task_within_timeout(self, uow):
         """Test that task is not marked failed when within timeout period."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         # Create record with recent created_at (1 hour ago)
@@ -615,18 +595,16 @@ class TestCheckAndUpdateTaskHealth:
         updated_record = uow.selection_run_records.get_by_task_id(task_id)
         assert updated_record.status == SelectionRunStatus.RUNNING
 
-    def test_does_nothing_when_task_not_found(self):
+    def test_does_nothing_when_task_not_found(self, uow):
         """Test that function handles gracefully when task doesn't exist."""
-        uow = FakeUnitOfWork()
 
         non_existent_id = uuid.uuid4()
 
         # Should not raise an exception
         sortition.check_and_update_task_health(uow, non_existent_id)
 
-    def test_handles_missing_celery_task_id_gracefully(self):
+    def test_handles_missing_celery_task_id_gracefully(self, uow):
         """Test that function handles gracefully when celery_task_id is None or empty."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         # Create record without celery_task_id (None)
@@ -647,9 +625,8 @@ class TestCheckAndUpdateTaskHealth:
         updated_record = uow.selection_run_records.get_by_task_id(task_id)
         assert updated_record.status == SelectionRunStatus.RUNNING
 
-    def test_handles_empty_celery_task_id_gracefully(self):
+    def test_handles_empty_celery_task_id_gracefully(self, uow):
         """Test that function handles gracefully when celery_task_id is empty string."""
-        uow = FakeUnitOfWork()
 
         task_id = uuid.uuid4()
         # Create record with empty celery_task_id
@@ -674,9 +651,8 @@ class TestCheckAndUpdateTaskHealth:
 class TestCancelTask:
     """Test cancelling running tasks."""
 
-    def test_cancel_pending_task_success(self):
+    def test_cancel_pending_task_success(self, uow):
         """Test successfully cancelling a PENDING task."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -711,9 +687,8 @@ class TestCancelTask:
         assert "cancelled" in updated_record.error_message.lower()
         assert "cancelled" in updated_record.log_messages[-1].lower()
 
-    def test_cancel_running_task_success(self):
+    def test_cancel_running_task_success(self, uow):
         """Test successfully cancelling a RUNNING task."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -745,9 +720,8 @@ class TestCancelTask:
         assert updated_record.status == SelectionRunStatus.CANCELLED
         assert updated_record.completed_at is not None
 
-    def test_cancel_already_completed_task_fails(self):
+    def test_cancel_already_completed_task_fails(self, uow):
         """Test that cancelling a COMPLETED task raises an error."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -774,9 +748,8 @@ class TestCancelTask:
         with pytest.raises(InvalidSelection, match="Cannot cancel task"):
             sortition.cancel_task(uow, admin_user.id, assembly.id, task_id)
 
-    def test_cancel_already_failed_task_fails(self):
+    def test_cancel_already_failed_task_fails(self, uow):
         """Test that cancelling a FAILED task raises an error."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -804,9 +777,8 @@ class TestCancelTask:
         with pytest.raises(InvalidSelection, match="Cannot cancel task"):
             sortition.cancel_task(uow, admin_user.id, assembly.id, task_id)
 
-    def test_cancel_already_cancelled_task_fails(self):
+    def test_cancel_already_cancelled_task_fails(self, uow):
         """Test that cancelling a CANCELLED task raises an error."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -834,9 +806,8 @@ class TestCancelTask:
         with pytest.raises(InvalidSelection, match="Cannot cancel task"):
             sortition.cancel_task(uow, admin_user.id, assembly.id, task_id)
 
-    def test_cancel_nonexistent_task_fails(self):
+    def test_cancel_nonexistent_task_fails(self, uow):
         """Test that cancelling a non-existent task raises an error."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -850,9 +821,8 @@ class TestCancelTask:
         with pytest.raises(InvalidSelection, match="Task not found"):
             sortition.cancel_task(uow, admin_user.id, assembly.id, uuid.uuid4())
 
-    def test_cancel_task_celery_revoke_fails_still_marks_cancelled(self):
+    def test_cancel_task_celery_revoke_fails_still_marks_cancelled(self, uow):
         """Test that task is marked CANCELLED even if Celery revoke fails."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -902,8 +872,7 @@ class TestCancelTask:
 class TestStartGsheetSelectTaskCeleryApplyKwargs:
     """Test that start_gsheet_select_task forwards celery_apply_kwargs to apply_async."""
 
-    def _make_uow_with_select_setup(self) -> tuple[FakeUnitOfWork, User, Assembly]:
-        uow = FakeUnitOfWork()
+    def _make_uow_with_select_setup(self, uow) -> tuple[FakeUnitOfWork, User, Assembly]:
         admin = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin)
 
@@ -921,8 +890,8 @@ class TestStartGsheetSelectTaskCeleryApplyKwargs:
         assembly.selection_settings = sel_settings
         return uow, admin, assembly
 
-    def test_default_call_uses_apply_async_without_extra_kwargs(self):
-        uow, admin, assembly = self._make_uow_with_select_setup()
+    def test_default_call_uses_apply_async_without_extra_kwargs(self, uow):
+        uow, admin, assembly = self._make_uow_with_select_setup(uow)
 
         with patch("opendlp.service_layer.sortition.tasks.run_select.apply_async") as mock_apply:
             mock_result = Mock()
@@ -947,8 +916,8 @@ class TestStartGsheetSelectTaskCeleryApplyKwargs:
         extra = {k: v for k, v in call_args.kwargs.items() if k != "kwargs"}
         assert extra == {}
 
-    def test_forwards_celery_apply_kwargs_to_apply_async(self):
-        uow, admin, assembly = self._make_uow_with_select_setup()
+    def test_forwards_celery_apply_kwargs_to_apply_async(self, uow):
+        uow, admin, assembly = self._make_uow_with_select_setup(uow)
 
         with patch("opendlp.service_layer.sortition.tasks.run_select.apply_async") as mock_apply:
             mock_result = Mock()
@@ -981,9 +950,8 @@ class TestStartGsheetSelectTaskCeleryApplyKwargs:
 class TestSortitionErrorHandling:
     """Test that sortition-algorithms library errors are properly converted to service layer exceptions."""
 
-    def test_start_gsheet_load_task_invalid_settings_raises_invalid_selection(self):
+    def test_start_gsheet_load_task_invalid_settings_raises_invalid_selection(self, uow):
         """Test that ConfigurationError from to_settings() is converted to InvalidSelection."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -1014,9 +982,8 @@ class TestSortitionErrorHandling:
         with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
             sortition.start_gsheet_load_task(uow, admin_user.id, assembly.id)
 
-    def test_start_gsheet_select_task_invalid_settings_raises_invalid_selection(self):
+    def test_start_gsheet_select_task_invalid_settings_raises_invalid_selection(self, uow):
         """Test that ConfigurationError from to_settings() is converted to InvalidSelection in select task."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -1046,9 +1013,8 @@ class TestSortitionErrorHandling:
         with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
             sortition.start_gsheet_select_task(uow, admin_user.id, assembly.id)
 
-    def test_start_gsheet_replace_load_task_invalid_settings_raises_invalid_selection(self):
+    def test_start_gsheet_replace_load_task_invalid_settings_raises_invalid_selection(self, uow):
         """Test that ConfigurationError from to_settings() is converted to InvalidSelection in replace load."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -1078,9 +1044,8 @@ class TestSortitionErrorHandling:
         with pytest.raises(InvalidSelection, match="check_same_address is TRUE but there are no columns"):
             sortition.start_gsheet_replace_load_task(uow, admin_user.id, assembly.id)
 
-    def test_start_gsheet_replace_task_invalid_settings_raises_invalid_selection(self):
+    def test_start_gsheet_replace_task_invalid_settings_raises_invalid_selection(self, uow):
         """Test that ConfigurationError from to_settings() is converted to InvalidSelection in replace task."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
@@ -1114,9 +1079,8 @@ class TestSortitionErrorHandling:
 class TestStartDbSelectTask:
     """Test starting database-based selection tasks."""
 
-    def test_start_db_select_task_success(self):
+    def test_start_db_select_task_success(self, uow):
         """Test successful task start by admin user."""
-        uow = FakeUnitOfWork()
 
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
@@ -1151,9 +1115,8 @@ class TestStartDbSelectTask:
 
         assert uow.committed
 
-    def test_start_db_select_task_zero_number_to_select_raises(self):
+    def test_start_db_select_task_zero_number_to_select_raises(self, uow):
         """Test that InvalidSelection is raised when number_to_select is zero."""
-        uow = FakeUnitOfWork()
 
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
@@ -1164,9 +1127,8 @@ class TestStartDbSelectTask:
         with pytest.raises(InvalidSelection):
             sortition.start_db_select_task(uow, admin_user.id, assembly.id)
 
-    def test_start_db_test_select_task_uses_correct_task_type(self):
+    def test_start_db_test_select_task_uses_correct_task_type(self, uow):
         """Test that test selection uses TEST_SELECT_FROM_DB task type."""
-        uow = FakeUnitOfWork()
 
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
@@ -1191,8 +1153,7 @@ class TestStartDbSelectTask:
         call_kwargs = mock_celery.call_args[1]
         assert call_kwargs["test_selection"] is True
 
-    def test_start_db_select_task_snapshots_targets(self):
-        uow = FakeUnitOfWork()
+    def test_start_db_select_task_snapshots_targets(self, uow):
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -1242,9 +1203,8 @@ class TestStartDbSelectTask:
             },
         ]
 
-    def test_start_db_select_task_assembly_not_found_raises(self):
+    def test_start_db_select_task_assembly_not_found_raises(self, uow):
         """Test that AssemblyNotFoundError is raised for non-existent assembly."""
-        uow = FakeUnitOfWork()
 
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)

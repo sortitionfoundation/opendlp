@@ -247,7 +247,7 @@ class TestAnnotationsFromInfeasibleQuotas:
         assert female_anns[0].field == "max"
         assert female_anns[0].suggested_value == 23
 
-    def test_no_changes(self):
+    def test_no_changes(self, uow):
         original = {"gender": {"male": FeatureValueMinMax(min=10, max=20, min_flex=0, max_flex=30)}}
         relaxed = {"gender": {"male": FeatureValueMinMax(min=10, max=20, min_flex=0, max_flex=30)}}
         error = InfeasibleQuotasError(features=relaxed, output=[])
@@ -259,11 +259,11 @@ class TestAnnotationsFromInfeasibleQuotas:
 
 
 def _make_uow_with_targets_and_respondents(
+    uow: FakeUnitOfWork,
     number_to_select: int = 10,
     target_categories: list[TargetCategory] | None = None,
     respondents: list[Respondent] | None = None,
 ) -> tuple[FakeUnitOfWork, uuid.UUID, uuid.UUID]:
-    uow = FakeUnitOfWork()
 
     admin = User(email="admin@test.com", global_role=GlobalRole.ADMIN, password_hash="hash")
     uow.users.add(admin)
@@ -287,7 +287,7 @@ def _make_uow_with_targets_and_respondents(
 
 
 class TestCheckTargetsDetailed:
-    def test_success_with_valid_targets_and_respondents(self):
+    def test_success_with_valid_targets_and_respondents(self, uow):
         targets = [
             TargetCategory(
                 assembly_id=uuid.uuid4(),
@@ -308,7 +308,7 @@ class TestCheckTargetsDetailed:
             for i in range(20)
         ]
         uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
-            number_to_select=10, target_categories=targets, respondents=respondents
+            uow, number_to_select=10, target_categories=targets, respondents=respondents
         )
 
         result = check_targets_detailed(uow, user_id, assembly_id)
@@ -320,9 +320,9 @@ class TestCheckTargetsDetailed:
         assert not result.annotations
         assert not result.category_annotations
 
-    def test_no_targets_returns_global_error(self):
+    def test_no_targets_returns_global_error(self, uow):
         uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
-            number_to_select=10, target_categories=[], respondents=[]
+            uow, number_to_select=10, target_categories=[], respondents=[]
         )
 
         result = check_targets_detailed(uow, user_id, assembly_id)
@@ -332,7 +332,7 @@ class TestCheckTargetsDetailed:
         # (empty features is not an error at the parse level)
         assert result.num_features == 0
 
-    def test_no_respondents_returns_global_error(self):
+    def test_no_respondents_returns_global_error(self, uow):
         targets = [
             TargetCategory(
                 assembly_id=uuid.uuid4(),
@@ -344,7 +344,7 @@ class TestCheckTargetsDetailed:
             ),
         ]
         uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
-            number_to_select=10, target_categories=targets, respondents=[]
+            uow, number_to_select=10, target_categories=targets, respondents=[]
         )
 
         result = check_targets_detailed(uow, user_id, assembly_id)
@@ -352,7 +352,7 @@ class TestCheckTargetsDetailed:
         assert result.success is False
         assert len(result.global_errors) > 0
 
-    def test_cross_feature_min_exceeds_number_to_select(self):
+    def test_cross_feature_min_exceeds_number_to_select(self, uow):
         targets = [
             TargetCategory(
                 assembly_id=uuid.uuid4(),
@@ -374,7 +374,7 @@ class TestCheckTargetsDetailed:
         ]
         # sum of mins = 16 > number_to_select = 10
         uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
-            number_to_select=10, target_categories=targets, respondents=respondents
+            uow, number_to_select=10, target_categories=targets, respondents=respondents
         )
 
         result = check_targets_detailed(uow, user_id, assembly_id)
@@ -383,7 +383,7 @@ class TestCheckTargetsDetailed:
         assert "gender" in result.category_annotations
         assert any("16" in ann.message for ann in result.category_annotations["gender"])
 
-    def test_insufficient_respondents_for_value(self):
+    def test_insufficient_respondents_for_value(self, uow):
         targets = [
             TargetCategory(
                 assembly_id=uuid.uuid4(),
@@ -418,7 +418,7 @@ class TestCheckTargetsDetailed:
             for i in range(2, 20)
         ]
         uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
-            number_to_select=10, target_categories=targets, respondents=respondents
+            uow, number_to_select=10, target_categories=targets, respondents=respondents
         )
 
         result = check_targets_detailed(uow, user_id, assembly_id)
@@ -429,8 +429,7 @@ class TestCheckTargetsDetailed:
         female_anns = result.annotations["gender"]["female"]
         assert any(ann.level == "error" and ann.field == "min" for ann in female_anns)
 
-    def test_assembly_not_found_raises(self):
-        uow = FakeUnitOfWork()
+    def test_assembly_not_found_raises(self, uow):
         admin = User(email="admin@test.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin)
 

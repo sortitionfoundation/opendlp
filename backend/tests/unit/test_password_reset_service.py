@@ -16,7 +16,8 @@ from tests.fakes import FakeUnitOfWork
 @pytest.fixture
 def uow():
     """Create a fake unit of work."""
-    return FakeUnitOfWork()
+    with FakeUnitOfWork() as entered:
+        yield entered
 
 
 @pytest.fixture

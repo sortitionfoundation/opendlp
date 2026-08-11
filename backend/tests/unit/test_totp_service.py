@@ -11,7 +11,6 @@ from cryptography.fernet import InvalidToken
 
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.service_layer import totp_service
-from tests.fakes import FakeUnitOfWork
 
 
 def _setup_test_encryption_key(temp_env_vars):
@@ -198,9 +197,8 @@ class TestHashVerifyBackupCode:
         assert hashed != code
         assert len(hashed) > len(code)
 
-    def test_verify_accepts_correct_code(self):
+    def test_verify_accepts_correct_code(self, uow):
         """Test that verify_backup_code() accepts a valid code."""
-        uow = FakeUnitOfWork()
         user_id = uuid.uuid4()
         code = "ABCD-1234"
 
@@ -216,9 +214,8 @@ class TestHashVerifyBackupCode:
         codes = list(uow.user_backup_codes.get_codes_for_user(user_id))
         assert codes[0].is_used()
 
-    def test_verify_rejects_incorrect_code(self):
+    def test_verify_rejects_incorrect_code(self, uow):
         """Test that verify_backup_code() rejects an invalid code."""
-        uow = FakeUnitOfWork()
         user_id = uuid.uuid4()
         code = "ABCD-1234"
         wrong_code = "WXYZ-9999"
@@ -235,9 +232,8 @@ class TestHashVerifyBackupCode:
         codes = list(uow.user_backup_codes.get_codes_for_user(user_id))
         assert not codes[0].is_used()
 
-    def test_verify_rejects_already_used_code(self):
+    def test_verify_rejects_already_used_code(self, uow):
         """Test that verify_backup_code() rejects a code that has already been used."""
-        uow = FakeUnitOfWork()
         user_id = uuid.uuid4()
         code = "ABCD-1234"
 
@@ -255,9 +251,8 @@ class TestHashVerifyBackupCode:
 class TestCreateBackupCodesForUser:
     """Tests for create_backup_codes_for_user()."""
 
-    def test_creates_backup_codes_in_database(self):
+    def test_creates_backup_codes_in_database(self, uow):
         """Test that backup codes are created and stored."""
-        uow = FakeUnitOfWork()
         user_id = uuid.uuid4()
 
         codes = totp_service.create_backup_codes_for_user(uow, user_id)
@@ -269,9 +264,8 @@ class TestCreateBackupCodesForUser:
         stored_codes = list(uow.user_backup_codes.get_codes_for_user(user_id))
         assert len(stored_codes) == 8
 
-    def test_deletes_existing_codes_before_creating_new_ones(self):
+    def test_deletes_existing_codes_before_creating_new_ones(self, uow):
         """Test that old backup codes are deleted when generating new ones."""
-        uow = FakeUnitOfWork()
         user_id = uuid.uuid4()
 
         # Create initial codes
@@ -291,9 +285,8 @@ class TestCreateBackupCodesForUser:
 class TestCountRemainingBackupCodes:
     """Tests for count_remaining_backup_codes()."""
 
-    def test_counts_unused_codes(self):
+    def test_counts_unused_codes(self, uow):
         """Test that only unused codes are counted."""
-        uow = FakeUnitOfWork()
         user_id = uuid.uuid4()
 
         # Add 3 unused codes and 2 used codes

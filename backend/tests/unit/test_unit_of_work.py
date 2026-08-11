@@ -147,9 +147,8 @@ class TestSqlAlchemyUnitOfWork:
 
 
 class TestFakeUnitOfWorkCommitAndReset:
-    def test_commit_and_reset_keeps_data(self):
+    def test_commit_and_reset_keeps_data(self, uow):
         """commit_and_reset marks committed and carries on against the same store."""
-        uow = FakeUnitOfWork()
         sentinel = object()
         uow.fake_users._items.append(sentinel)
 
@@ -228,32 +227,32 @@ class TestSqlAlchemyUnitOfWorkStrictness:
             _ = uow.session
 
 
-class TestFakeUnitOfWorkStrictMode:
-    """A strict fake mirrors the real UnitOfWork: repositories only work inside the block.
+class TestFakeUnitOfWorkStrictness:
+    """The fake mirrors the real UnitOfWork: repositories only work inside the block.
 
     This is what stops a test passing while the code under test relies on the
     resurrecting-session bug the convention work exists to remove.
     """
 
     def test_repository_access_before_the_block_raises(self):
-        uow = FakeUnitOfWork(strict=True)
+        uow = FakeUnitOfWork()
 
         with pytest.raises(UnitOfWorkError):
             uow.users.get(uuid.uuid4())
 
     def test_repository_access_inside_the_block_works(self):
-        with FakeUnitOfWork(strict=True) as uow:
+        with FakeUnitOfWork() as uow:
             assert uow.users.get(uuid.uuid4()) is None
 
     def test_repository_access_after_the_block_raises(self):
-        with FakeUnitOfWork(strict=True) as uow:
+        with FakeUnitOfWork() as uow:
             pass
 
         with pytest.raises(UnitOfWorkError):
             uow.users.get(uuid.uuid4())
 
     def test_the_block_can_be_re_entered(self):
-        uow = FakeUnitOfWork(strict=True)
+        uow = FakeUnitOfWork()
         with uow:
             pass
 
@@ -262,7 +261,7 @@ class TestFakeUnitOfWorkStrictMode:
 
     def test_fake_aliases_stay_usable_outside_the_block(self):
         """The `fake_` aliases are the deliberate arrange/inspect seam."""
-        uow = FakeUnitOfWork(strict=True)
+        uow = FakeUnitOfWork()
         user = User(email="strict@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.fake_users.add(user)
 
@@ -271,22 +270,17 @@ class TestFakeUnitOfWorkStrictMode:
 
         assert uow.fake_users.get(user.id) is user
 
-    def test_non_strict_is_the_default_and_needs_no_block(self):
+    def test_the_error_names_the_repository(self):
         uow = FakeUnitOfWork()
-
-        assert uow.users.get(uuid.uuid4()) is None
-
-    def test_strict_error_names_the_repository(self):
-        uow = FakeUnitOfWork(strict=True)
 
         with pytest.raises(UnitOfWorkError, match="assemblies"):
             uow.assemblies.get(uuid.uuid4())
 
-    def test_a_shared_store_still_rolls_back_when_strict(self):
+    def test_a_shared_store_still_rolls_back(self):
         store = FakeStore()
         user = User(email="rollback@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
-        with pytest.raises(ValueError), FakeUnitOfWork(store, strict=True) as uow:  # noqa: PT012
+        with pytest.raises(ValueError), FakeUnitOfWork(store) as uow:  # noqa: PT012
             uow.users.add(user)
             raise ValueError("boom")
 

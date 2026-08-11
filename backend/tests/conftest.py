@@ -352,7 +352,7 @@ def uow():
     Strict, so a test cannot pass by using repositories outside the context. Use
     the `fake_<name>` aliases to arrange or inspect data outside it.
     """
-    with FakeUnitOfWork(strict=True) as entered:
+    with FakeUnitOfWork() as entered:
         yield entered
 
 

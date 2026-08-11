@@ -26,8 +26,7 @@ _SCHEMA = [
 ]
 
 
-def _build(status: RegistrationPageStatus) -> tuple[FakeUnitOfWork, str]:
-    uow = FakeUnitOfWork()
+def _build(uow, status: RegistrationPageStatus) -> tuple[FakeUnitOfWork, str]:
     assembly = Assembly(
         title="Climate Assembly",
         question="What should we do about transport?",
@@ -67,8 +66,8 @@ def _build(status: RegistrationPageStatus) -> tuple[FakeUnitOfWork, str]:
     return uow, "join-us"
 
 
-def test_live_submission_sends_auto_reply_and_records_it() -> None:
-    uow, slug = _build(RegistrationPageStatus.PUBLISHED)
+def test_live_submission_sends_auto_reply_and_records_it(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
     adapter = MagicMock()
     adapter.send_email.return_value = True
 
@@ -94,8 +93,8 @@ def test_live_submission_sends_auto_reply_and_records_it() -> None:
     assert "Hi Ada, you registered for Climate Assembly." in kwargs["html_body"]
 
 
-def test_autoescapes_untrusted_respondent_name() -> None:
-    uow, slug = _build(RegistrationPageStatus.PUBLISHED)
+def test_autoescapes_untrusted_respondent_name(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
     adapter = MagicMock()
     adapter.send_email.return_value = True
 
@@ -112,8 +111,8 @@ def test_autoescapes_untrusted_respondent_name() -> None:
     assert "&lt;script&gt;" in html_body
 
 
-def test_console_adapter_send_succeeds_end_to_end() -> None:
-    uow, slug = _build(RegistrationPageStatus.PUBLISHED)
+def test_console_adapter_send_succeeds_end_to_end(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
 
     result = submit_registration(
         uow,
@@ -127,8 +126,8 @@ def test_console_adapter_send_succeeds_end_to_end() -> None:
     assert record.outcome is EmailSendOutcome.SENT
 
 
-def test_test_submission_sends_auto_reply() -> None:
-    uow, slug = _build(RegistrationPageStatus.TEST)
+def test_test_submission_sends_auto_reply(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.TEST)
     adapter = MagicMock()
     adapter.send_email.return_value = True
 

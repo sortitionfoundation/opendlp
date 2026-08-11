@@ -977,19 +977,18 @@ class FakeUnitOfWork(AbstractUnitOfWork):
     a shared database: every instance sees the same data, and the ``with`` block
     rolls back on exception via a snapshot of each repository.
 
-    With ``strict`` the repositories are only bound inside the ``with`` block, as
-    they are on the real UnitOfWork. The ``fake_<name>`` aliases are unaffected
-    and stay usable throughout as the arrange/inspect seam.
+    The repositories are only bound inside the ``with`` block, as they are on the
+    real UnitOfWork. The ``fake_<name>`` aliases are unaffected and stay usable
+    throughout as the arrange/inspect seam.
     """
 
-    def __init__(self, store: FakeStore | None = None, strict: bool = False) -> None:
+    def __init__(self, store: FakeStore | None = None) -> None:
         self._shared = store is not None
-        self._strict = strict
         self._store = store if store is not None else FakeStore()
         # The legacy ``uow.fake_users`` alias is bound once and never withdrawn.
         for name in _REPO_NAMES:
             setattr(self, f"fake_{name}", getattr(self._store, name))
-        self._bind_repositories(open_context=not strict)
+        self._bind_repositories(open_context=False)
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly.
         # All instances sharing a store share repositories, so pointing at the latest is fine.
         self._store.user_assembly_roles._uow = self
@@ -1003,8 +1002,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
             setattr(self, name, repo)
 
     def __enter__(self) -> AbstractUnitOfWork:
-        if self._strict:
-            self._bind_repositories(open_context=True)
+        self._bind_repositories(open_context=True)
         if self._shared:
             self._take_snapshot()
         return self
@@ -1013,8 +1011,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         # Match SqlAlchemyUnitOfWork: roll back the shared store on exception.
         if self._shared and exc_type is not None:
             self.rollback()
-        if self._strict:
-            self._bind_repositories(open_context=False)
+        self._bind_repositories(open_context=False)
 
     def _take_snapshot(self) -> None:
         self._snapshot = {name: list(getattr(self._store, name)._items) for name in _REPO_NAMES}

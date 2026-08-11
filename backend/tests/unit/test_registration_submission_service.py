@@ -17,8 +17,7 @@ from opendlp.service_layer.registration_submission_service import (
 from tests.fakes import FakeUnitOfWork
 
 
-def _uow_with_assembly() -> tuple[FakeUnitOfWork, Assembly]:
-    uow = FakeUnitOfWork()
+def _uow_with_assembly(uow) -> tuple[FakeUnitOfWork, Assembly]:
     assembly = Assembly(title="Test Assembly", question="?", status=AssemblyStatus.ACTIVE)
     uow.assemblies.add(assembly)
     return uow, assembly
@@ -50,8 +49,7 @@ def _add_field(
     )
 
 
-def _populated_uow_with_text_field() -> tuple[FakeUnitOfWork, Assembly]:
-    uow = FakeUnitOfWork()
+def _populated_uow_with_text_field(uow) -> tuple[FakeUnitOfWork, Assembly]:
     admin = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
     uow.users.add(admin)
     assembly = Assembly(title="Test Assembly", question="?", status=AssemblyStatus.ACTIVE)
@@ -74,8 +72,8 @@ class TestSubmitRegistrationValidationErrors:
     no respondent is created, and the submitted values are echoed back so the
     re-rendered form can preserve what the user typed."""
 
-    def test_missing_required_field_returns_field_errors(self):
-        uow, assembly = _populated_uow_with_text_field()
+    def test_missing_required_field_returns_field_errors(self, uow):
+        uow, assembly = _populated_uow_with_text_field(uow)
 
         result = submit_registration_by_assembly_id(
             uow,
@@ -90,8 +88,8 @@ class TestSubmitRegistrationValidationErrors:
         assert result.form_errors == []
         assert not uow.committed
 
-    def test_invalid_field_value_echoed_back_in_values(self):
-        uow, assembly = _populated_uow_with_text_field()
+    def test_invalid_field_value_echoed_back_in_values(self, uow):
+        uow, assembly = _populated_uow_with_text_field(uow)
 
         result = submit_registration_by_assembly_id(
             uow,
@@ -109,8 +107,8 @@ class TestSubmitRegistrationCreateComment:
     """A successful submission records a CREATE comment whose text makes clear,
     for test submissions, that the page was in TEST status (Q13)."""
 
-    def test_live_submission_records_create_comment(self):
-        uow, assembly = _populated_uow_with_text_field()
+    def test_live_submission_records_create_comment(self, uow):
+        uow, assembly = _populated_uow_with_text_field(uow)
 
         result = submit_registration_by_assembly_id(
             uow,
@@ -125,8 +123,8 @@ class TestSubmitRegistrationCreateComment:
         assert len(create_comments) == 1
         assert create_comments[0].text == "Created via registration form"
 
-    def test_test_submission_comment_flags_test_status(self):
-        uow, assembly = _populated_uow_with_text_field()
+    def test_test_submission_comment_flags_test_status(self, uow):
+        uow, assembly = _populated_uow_with_text_field(uow)
 
         result = submit_registration_by_assembly_id(
             uow,
@@ -148,8 +146,8 @@ class TestEnumDrivenValidation:
     """The on_registration_page enum drives which fields are collected and how
     strictly they are validated."""
 
-    def test_no_field_is_ignored(self):
-        uow, assembly = _uow_with_assembly()
+    def test_no_field_is_ignored(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
         _add_field(uow, assembly, "internal_note", on_registration_page=FieldOnRegistrationPage.NO)
 
         result = submit_registration_by_assembly_id(
@@ -163,8 +161,8 @@ class TestEnumDrivenValidation:
         assert "internal_note" not in result.respondent.attributes
         assert result.field_errors == {}
 
-    def test_optional_non_bool_blank_is_accepted_and_not_stored(self):
-        uow, assembly = _uow_with_assembly()
+    def test_optional_non_bool_blank_is_accepted_and_not_stored(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
         _add_field(uow, assembly, "nickname", on_registration_page=FieldOnRegistrationPage.YES_OPTIONAL)
 
         result = submit_registration_by_assembly_id(
@@ -178,8 +176,8 @@ class TestEnumDrivenValidation:
         assert "nickname" not in result.respondent.attributes
         assert result.field_errors == {}
 
-    def test_required_checkbox_unchecked_returns_error(self):
-        uow, assembly = _uow_with_assembly()
+    def test_required_checkbox_unchecked_returns_error(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
         _add_field(
             uow,
             assembly,
@@ -199,8 +197,8 @@ class TestEnumDrivenValidation:
         assert result.respondent is None
         assert "consent" in result.field_errors
 
-    def test_required_checkbox_explicit_no_returns_error(self):
-        uow, assembly = _uow_with_assembly()
+    def test_required_checkbox_explicit_no_returns_error(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
         _add_field(
             uow,
             assembly,
@@ -220,8 +218,8 @@ class TestEnumDrivenValidation:
         assert result.respondent is None
         assert "consent" in result.field_errors
 
-    def test_required_checkbox_checked_is_true(self):
-        uow, assembly = _uow_with_assembly()
+    def test_required_checkbox_checked_is_true(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
         _add_field(
             uow,
             assembly,
@@ -241,8 +239,8 @@ class TestEnumDrivenValidation:
         assert result.respondent is not None
         assert result.respondent.consent is True
 
-    def test_optional_checkbox_unchecked_is_false(self):
-        uow, assembly = _uow_with_assembly()
+    def test_optional_checkbox_unchecked_is_false(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
         _add_field(
             uow,
             assembly,
@@ -262,8 +260,8 @@ class TestEnumDrivenValidation:
         assert result.respondent is not None
         assert result.respondent.stay_on_db is False
 
-    def test_optional_checkbox_explicit_no_is_false(self):
-        uow, assembly = _uow_with_assembly()
+    def test_optional_checkbox_explicit_no_is_false(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
         _add_field(
             uow,
             assembly,
@@ -283,8 +281,8 @@ class TestEnumDrivenValidation:
         assert result.respondent is not None
         assert result.respondent.stay_on_db is False
 
-    def test_unexpected_bool_value_returns_error(self):
-        uow, assembly = _uow_with_assembly()
+    def test_unexpected_bool_value_returns_error(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
         _add_field(
             uow,
             assembly,
@@ -304,8 +302,8 @@ class TestEnumDrivenValidation:
         assert result.respondent is None
         assert "stay_on_db" in result.field_errors
 
-    def test_required_choice_unselected_returns_error(self):
-        uow, assembly = _uow_with_assembly()
+    def test_required_choice_unselected_returns_error(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
         _add_field(
             uow,
             assembly,

@@ -78,7 +78,7 @@ def shared_uow(fake_store):
 
     Strict, so it behaves like the real UnitOfWork the routes use.
     """
-    with FakeUnitOfWork(store=fake_store, strict=True) as entered:
+    with FakeUnitOfWork(store=fake_store) as entered:
         yield entered
 
 

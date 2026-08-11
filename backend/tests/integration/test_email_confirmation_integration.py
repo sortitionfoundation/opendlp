@@ -18,76 +18,70 @@ from opendlp.service_layer.email_confirmation_service import (
 )
 from opendlp.service_layer.exceptions import EmailNotConfirmed, InvalidConfirmationToken, RateLimitExceeded
 from opendlp.service_layer.user_service import authenticate_user, create_user, find_or_create_oauth_user
-from tests.fakes import FakeTemplateRenderer, FakeUnitOfWork, FakeURLGenerator
+from tests.fakes import FakeTemplateRenderer, FakeURLGenerator
 
 
 class TestEmailConfirmationIntegration:
     """Integration tests for email confirmation with FakeUnitOfWork."""
 
-    def _create_uow_with_invite(self):
+    def _create_uow_with_invite(self, uow):
         """Create a FakeUnitOfWork with a valid invite."""
-        uow = FakeUnitOfWork()
-        with uow:
-            invite = UserInvite(
-                code="TESTINVITE",
-                global_role=GlobalRole.USER,
-                created_by=uuid.uuid4(),
-                expires_at=datetime.now(UTC) + timedelta(hours=24),
-            )
-            uow.user_invites.add(invite)
-            uow.commit()
+        invite = UserInvite(
+            code="TESTINVITE",
+            global_role=GlobalRole.USER,
+            created_by=uuid.uuid4(),
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+        )
+        uow.user_invites.add(invite)
+        uow.commit()
         return uow
 
-    def test_password_user_registration_creates_unconfirmed_user(self):
+    def test_password_user_registration_creates_unconfirmed_user(self, uow):
         """Password registration should create unconfirmed user with token."""
-        uow = self._create_uow_with_invite()
+        uow = self._create_uow_with_invite(uow)
 
         # Register user
-        with uow:
-            user, token = create_user(
-                uow=uow,
-                email="test@example.com",
-                password="StrongPassword123",  # pragma: allowlist secret
-                invite_code="TESTINVITE",
-            )
+        user, token = create_user(
+            uow=uow,
+            email="test@example.com",
+            password="StrongPassword123",  # pragma: allowlist secret
+            invite_code="TESTINVITE",
+        )
 
         assert user.email_confirmed_at is None  # Not confirmed yet
         assert token is not None  # Token was created
         assert token.user_id == user.id
 
         # Verify token is in repository
-        with uow:
-            stored_token = uow.email_confirmation_tokens.get_by_token(token.token)
-            assert stored_token is not None
-            assert stored_token.is_valid()
+        stored_token = uow.email_confirmation_tokens.get_by_token(token.token)
+        assert stored_token is not None
+        assert stored_token.is_valid()
 
-    def test_user_cannot_login_before_confirmation(self):
+    def test_user_cannot_login_before_confirmation(self, uow):
         """User cannot login before confirming email."""
-        uow = self._create_uow_with_invite()
+        uow = self._create_uow_with_invite(uow)
 
-        with uow:
-            create_user(
-                uow=uow,
-                email="test@example.com",
-                password="StrongPassword123",  # pragma: allowlist secret
-                invite_code="TESTINVITE",
-            )
+        create_user(
+            uow=uow,
+            email="test@example.com",
+            password="StrongPassword123",  # pragma: allowlist secret
+            invite_code="TESTINVITE",
+        )
 
         # Try to login
         with pytest.raises(EmailNotConfirmed):
             authenticate_user(uow, "test@example.com", "StrongPassword123")
 
-    def test_user_can_confirm_email_with_token(self):
+    def test_user_can_confirm_email_with_token(self, uow):
         """User can confirm email with valid token."""
-        uow = self._create_uow_with_invite()
+        uow = self._create_uow_with_invite(uow)
 
-        with uow:
-            _, token = create_user(
-                uow=uow,
-                email="test@example.com",
-                password="StrongPassword123",  # pragma: allowlist secret
-                invite_code="TESTINVITE",
-            )
+        _, token = create_user(
+            uow=uow,
+            email="test@example.com",
+            password="StrongPassword123",  # pragma: allowlist secret
+            invite_code="TESTINVITE",
+        )
 
         # Confirm email
         confirmed_user = confirm_email_with_token(uow, token.token)
@@ -95,17 +89,16 @@ class TestEmailConfirmationIntegration:
         assert confirmed_user.email_confirmed_at is not None
         assert confirmed_user.is_email_confirmed()
 
-    def test_user_can_login_after_confirmation(self):
+    def test_user_can_login_after_confirmation(self, uow):
         """User can login after confirming email."""
-        uow = self._create_uow_with_invite()
+        uow = self._create_uow_with_invite(uow)
 
-        with uow:
-            _, token = create_user(
-                uow=uow,
-                email="test@example.com",
-                password="StrongPassword123",  # pragma: allowlist secret
-                invite_code="TESTINVITE",
-            )
+        _, token = create_user(
+            uow=uow,
+            email="test@example.com",
+            password="StrongPassword123",  # pragma: allowlist secret
+            invite_code="TESTINVITE",
+        )
 
         # Confirm email
         confirm_email_with_token(uow, token.token)
@@ -115,9 +108,9 @@ class TestEmailConfirmationIntegration:
         assert authenticated_user is not None
         assert authenticated_user.is_email_confirmed()
 
-    def test_oauth_user_auto_confirmed(self):
+    def test_oauth_user_auto_confirmed(self, uow):
         """OAuth users are automatically confirmed."""
-        uow = self._create_uow_with_invite()
+        uow = self._create_uow_with_invite(uow)
 
         # Register OAuth user
         user, created = find_or_create_oauth_user(
@@ -132,17 +125,16 @@ class TestEmailConfirmationIntegration:
         assert user.email_confirmed_at is not None  # Auto-confirmed
         assert user.is_email_confirmed()
 
-    def test_resend_confirmation_creates_new_token(self):
+    def test_resend_confirmation_creates_new_token(self, uow):
         """Resend confirmation creates a new token."""
-        uow = self._create_uow_with_invite()
+        uow = self._create_uow_with_invite(uow)
 
-        with uow:
-            create_user(
-                uow=uow,
-                email="test@example.com",
-                password="StrongPassword123",  # pragma: allowlist secret
-                invite_code="TESTINVITE",
-            )
+        create_user(
+            uow=uow,
+            email="test@example.com",
+            password="StrongPassword123",  # pragma: allowlist secret
+            invite_code="TESTINVITE",
+        )
 
         # Resend confirmation
         email_adapter = MagicMock()
@@ -152,52 +144,47 @@ class TestEmailConfirmationIntegration:
         resend_confirmation_email(uow, "test@example.com", email_adapter, template_renderer, url_generator)
 
         # Check that a new token was created
-        with uow:
-            tokens = list(uow.email_confirmation_tokens.all())
-            assert len(tokens) == 2  # Original + new token
+        tokens = list(uow.email_confirmation_tokens.all())
+        assert len(tokens) == 2  # Original + new token
 
-    def test_expired_token_rejected(self):
+    def test_expired_token_rejected(self, uow):
         """Expired tokens are rejected."""
-        uow = FakeUnitOfWork()
 
         # Create user directly with unconfirmed email
-        with uow:
-            user = User(
-                email="test@example.com",
-                global_role=GlobalRole.USER,
-                password_hash="hashed",  # pragma: allowlist secret
-            )
-            uow.users.add(user)
-            uow.commit()
-            user_id = user.id
+        user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed",  # pragma: allowlist secret
+        )
+        uow.users.add(user)
+        uow.commit()
+        user_id = user.id
 
         # Create expired token
-        with uow:
-            past_time = datetime.now(UTC) - timedelta(hours=25)
-            expired_token = EmailConfirmationToken(
-                user_id=user_id,
-                token="expired-token",
-                created_at=past_time,
-                expires_at=past_time + timedelta(hours=24),
-            )
-            uow.email_confirmation_tokens.add(expired_token)
-            uow.commit()
+        past_time = datetime.now(UTC) - timedelta(hours=25)
+        expired_token = EmailConfirmationToken(
+            user_id=user_id,
+            token="expired-token",
+            created_at=past_time,
+            expires_at=past_time + timedelta(hours=24),
+        )
+        uow.email_confirmation_tokens.add(expired_token)
+        uow.commit()
 
         # Try to confirm with expired token
         with pytest.raises(InvalidConfirmationToken, match="expired"):
             confirm_email_with_token(uow, "expired-token")
 
-    def test_rate_limiting_works(self):
+    def test_rate_limiting_works(self, uow):
         """Rate limiting prevents spam."""
-        uow = self._create_uow_with_invite()
+        uow = self._create_uow_with_invite(uow)
 
-        with uow:
-            create_user(
-                uow=uow,
-                email="test@example.com",
-                password="StrongPassword123",  # pragma: allowlist secret
-                invite_code="TESTINVITE",
-            )
+        create_user(
+            uow=uow,
+            email="test@example.com",
+            password="StrongPassword123",  # pragma: allowlist secret
+            invite_code="TESTINVITE",
+        )
 
         # Request 2 more times (total 3)
         email_adapter = MagicMock()
@@ -211,17 +198,16 @@ class TestEmailConfirmationIntegration:
         with pytest.raises(RateLimitExceeded):
             resend_confirmation_email(uow, "test@example.com", email_adapter, template_renderer, url_generator)
 
-    def test_used_token_rejected(self):
+    def test_used_token_rejected(self, uow):
         """Used tokens cannot be reused."""
-        uow = self._create_uow_with_invite()
+        uow = self._create_uow_with_invite(uow)
 
-        with uow:
-            _, token = create_user(
-                uow=uow,
-                email="test@example.com",
-                password="StrongPassword123",  # pragma: allowlist secret
-                invite_code="TESTINVITE",
-            )
+        _, token = create_user(
+            uow=uow,
+            email="test@example.com",
+            password="StrongPassword123",  # pragma: allowlist secret
+            invite_code="TESTINVITE",
+        )
 
         # Confirm email once
         confirm_email_with_token(uow, token.token)
@@ -230,37 +216,33 @@ class TestEmailConfirmationIntegration:
         with pytest.raises(InvalidConfirmationToken, match="already been used"):
             confirm_email_with_token(uow, token.token)
 
-    def test_cleanup_removes_old_tokens(self):
+    def test_cleanup_removes_old_tokens(self, uow):
         """Cleanup removes old tokens."""
-        uow = FakeUnitOfWork()
 
         # Create user
-        with uow:
-            user = User(
-                email="test@example.com",
-                global_role=GlobalRole.USER,
-                password_hash="hashed",  # pragma: allowlist secret
-            )
-            uow.users.add(user)
-            uow.commit()
-            user_id = user.id
+        user = User(
+            email="test@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed",  # pragma: allowlist secret
+        )
+        uow.users.add(user)
+        uow.commit()
+        user_id = user.id
 
         # Create old token
-        with uow:
-            old_time = datetime.now(UTC) - timedelta(days=31)
-            old_token = EmailConfirmationToken(
-                user_id=user_id,
-                created_at=old_time,
-                expires_at=old_time + timedelta(hours=24),
-            )
-            uow.email_confirmation_tokens.add(old_token)
-            uow.commit()
+        old_time = datetime.now(UTC) - timedelta(days=31)
+        old_token = EmailConfirmationToken(
+            user_id=user_id,
+            created_at=old_time,
+            expires_at=old_time + timedelta(hours=24),
+        )
+        uow.email_confirmation_tokens.add(old_token)
+        uow.commit()
 
         # Create recent token
-        with uow:
-            recent_token = create_confirmation_token(uow, user_id)
-            uow.commit()
-            recent_token_string = recent_token.token
+        recent_token = create_confirmation_token(uow, user_id)
+        uow.commit()
+        recent_token_string = recent_token.token
 
         # Cleanup
         count = cleanup_expired_tokens(uow, days_old=30)
@@ -268,27 +250,23 @@ class TestEmailConfirmationIntegration:
         assert count == 1  # Only old token removed
 
         # Verify recent token still exists
-        with uow:
-            stored_token = uow.email_confirmation_tokens.get_by_token(recent_token_string)
-            assert stored_token is not None
+        stored_token = uow.email_confirmation_tokens.get_by_token(recent_token_string)
+        assert stored_token is not None
 
-    def test_grandfathered_user_can_login(self):
+    def test_grandfathered_user_can_login(self, uow):
         """Existing users with email_confirmed_at set can login."""
-        uow = FakeUnitOfWork()
 
         # Create a "grandfathered" user (simulating migration)
-        with uow:
-            user = User(
-                email="existing@example.com",
-                global_role=GlobalRole.USER,
-                password_hash="$2b$12$KIXm3zXvqXvX1XvX1XvX1Oe5KQvX1XvX1XvX1XvX1XvX1XvX1XvX1X",  # pragma: allowlist secret
-                email_confirmed_at=datetime.now(UTC) - timedelta(days=30),  # Set by migration
-            )
-            uow.users.add(user)
-            uow.commit()
+        user = User(
+            email="existing@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="$2b$12$KIXm3zXvqXvX1XvX1XvX1Oe5KQvX1XvX1XvX1XvX1XvX1XvX1XvX1X",  # pragma: allowlist secret
+            email_confirmed_at=datetime.now(UTC) - timedelta(days=30),  # Set by migration
+        )
+        uow.users.add(user)
+        uow.commit()
 
         # Should be able to check authentication (password won't match but email confirmation check will pass)
-        with uow:
-            fetched_user = uow.users.get_by_email("existing@example.com")
-            assert fetched_user is not None
-            assert fetched_user.is_email_confirmed()
+        fetched_user = uow.users.get_by_email("existing@example.com")
+        assert fetched_user is not None
+        assert fetched_user.is_email_confirmed()

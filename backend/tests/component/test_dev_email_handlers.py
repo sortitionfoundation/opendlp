@@ -121,15 +121,16 @@ class TestSerialiseEmailTemplate:
 
 class TestHandleCreateEmailTemplate:
     def test_creates_and_returns_serialised_template(self, fake_store, existing_assembly, as_admin):
-        result = _handle_create_email_template(
-            uow=_uow(fake_store),
-            params={
-                "assembly_id": str(existing_assembly.id),
-                "name": "New template",
-                "subject": "Subject",
-                "body_html": "<p>Body</p>",
-            },
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_create_email_template(
+                uow=uow,
+                params={
+                    "assembly_id": str(existing_assembly.id),
+                    "name": "New template",
+                    "subject": "Subject",
+                    "body_html": "<p>Body</p>",
+                },
+            )
 
         assert result["status"] == "success"
         assert result["template"]["name"] == "New template"
@@ -139,10 +140,11 @@ class TestHandleCreateEmailTemplate:
 
     def test_invalid_template_returns_error_with_problems(self, fake_store, existing_assembly, as_admin):
         # Empty name/subject/body all violate the domain-level validator.
-        result = _handle_create_email_template(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(existing_assembly.id), "name": "", "subject": "", "body_html": ""},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_create_email_template(
+                uow=uow,
+                params={"assembly_id": str(existing_assembly.id), "name": "", "subject": "", "body_html": ""},
+            )
         assert result["status"] == "error"
         assert result["error_type"] == "EmailTemplateInvalid"
         assert result["problems"], "expected the list of validation problems to be surfaced"
@@ -153,10 +155,11 @@ class TestHandleListEmailTemplates:
         _seed_template(fake_store, existing_assembly.id, name="A")
         _seed_template(fake_store, existing_assembly.id, name="B")
 
-        result = _handle_list_email_templates(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(existing_assembly.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_list_email_templates(
+                uow=uow,
+                params={"assembly_id": str(existing_assembly.id)},
+            )
         assert result["status"] == "success"
         assert result["total_count"] == 2
         names = {t["name"] for t in result["templates"]}
@@ -167,19 +170,21 @@ class TestHandleGetEmailTemplate:
     def test_returns_serialised_template(self, fake_store, existing_assembly, as_admin):
         template = _seed_template(fake_store, existing_assembly.id, name="Detailed")
 
-        result = _handle_get_email_template(
-            uow=_uow(fake_store),
-            params={"template_id": str(template.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_get_email_template(
+                uow=uow,
+                params={"template_id": str(template.id)},
+            )
         assert result["status"] == "success"
         assert result["template"]["id"] == str(template.id)
         assert result["template"]["name"] == "Detailed"
 
     def test_missing_template_returns_error(self, fake_store, existing_assembly, as_admin):
-        result = _handle_get_email_template(
-            uow=_uow(fake_store),
-            params={"template_id": str(uuid.uuid4())},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_get_email_template(
+                uow=uow,
+                params={"template_id": str(uuid.uuid4())},
+            )
         assert result["status"] == "error"
         assert result["error_type"] == "EmailTemplateNotFoundError"
 
@@ -190,15 +195,16 @@ class TestHandleUpdateEmailTemplate:
             fake_store, existing_assembly.id, name="Old", subject="Old subj", body_html="<p>Old</p>"
         )
 
-        result = _handle_update_email_template(
-            uow=_uow(fake_store),
-            params={
-                "template_id": str(template.id),
-                "name": "Renamed",
-                "subject": "New subj",
-                "body_html": "<p>New</p>",
-            },
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_update_email_template(
+                uow=uow,
+                params={
+                    "template_id": str(template.id),
+                    "name": "Renamed",
+                    "subject": "New subj",
+                    "body_html": "<p>New</p>",
+                },
+            )
         assert result["status"] == "success"
         with _uow(fake_store) as uow:
             saved = uow.email_templates.get(template.id)
@@ -208,15 +214,16 @@ class TestHandleUpdateEmailTemplate:
     def test_invalid_update_returns_error_with_problems(self, fake_store, existing_assembly, as_admin):
         template = _seed_template(fake_store, existing_assembly.id)
 
-        result = _handle_update_email_template(
-            uow=_uow(fake_store),
-            params={
-                "template_id": str(template.id),
-                "name": "",
-                "subject": "",
-                "body_html": "",
-            },
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_update_email_template(
+                uow=uow,
+                params={
+                    "template_id": str(template.id),
+                    "name": "",
+                    "subject": "",
+                    "body_html": "",
+                },
+            )
         assert result["status"] == "error"
         assert result["error_type"] == "EmailTemplateInvalid"
         assert result["problems"]
@@ -226,10 +233,11 @@ class TestHandleDeleteEmailTemplate:
     def test_deletes_and_returns_id(self, fake_store, existing_assembly, as_admin):
         template = _seed_template(fake_store, existing_assembly.id)
 
-        result = _handle_delete_email_template(
-            uow=_uow(fake_store),
-            params={"template_id": str(template.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_delete_email_template(
+                uow=uow,
+                params={"template_id": str(template.id)},
+            )
         assert result == {"status": "success", "deleted_template_id": str(template.id)}
         with _uow(fake_store) as uow:
             assert uow.email_templates.list_by_assembly(existing_assembly.id) == []
@@ -240,10 +248,11 @@ class TestHandleAssignAutoReplyTemplate:
         template = _seed_template(fake_store, existing_assembly.id)
         _seed_page(fake_store, existing_assembly.id)
 
-        result = _handle_assign_auto_reply_template(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(existing_assembly.id), "template_id": str(template.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_assign_auto_reply_template(
+                uow=uow,
+                params={"assembly_id": str(existing_assembly.id), "template_id": str(template.id)},
+            )
         assert result["status"] == "success"
         assert result["auto_reply_email_template_id"] == str(template.id)
         with _uow(fake_store) as uow:
@@ -254,10 +263,11 @@ class TestHandleAssignAutoReplyTemplate:
         template = _seed_template(fake_store, existing_assembly.id)
         _seed_page(fake_store, existing_assembly.id, auto_reply_template_id=template.id)
 
-        result = _handle_assign_auto_reply_template(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(existing_assembly.id), "template_id": ""},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_assign_auto_reply_template(
+                uow=uow,
+                params={"assembly_id": str(existing_assembly.id), "template_id": ""},
+            )
         assert result["status"] == "success"
         assert result["auto_reply_email_template_id"] is None
         with _uow(fake_store) as uow:
@@ -267,10 +277,11 @@ class TestHandleAssignAutoReplyTemplate:
     def test_no_page_returns_error(self, fake_store, existing_assembly, as_admin):
         template = _seed_template(fake_store, existing_assembly.id)
 
-        result = _handle_assign_auto_reply_template(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(existing_assembly.id), "template_id": str(template.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_assign_auto_reply_template(
+                uow=uow,
+                params={"assembly_id": str(existing_assembly.id), "template_id": str(template.id)},
+            )
         assert result["status"] == "error"
         assert result["error_type"] == "RegistrationPageNotFoundError"
 
@@ -278,10 +289,11 @@ class TestHandleAssignAutoReplyTemplate:
 class TestHandleAutoReplyReadinessProblems:
     def test_no_email_field_reports_error_severity(self, fake_store, existing_assembly, as_admin):
         # No email field configured at all — the auto-reply cannot deliver.
-        result = _handle_auto_reply_readiness_problems(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(existing_assembly.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_auto_reply_readiness_problems(
+                uow=uow,
+                params={"assembly_id": str(existing_assembly.id)},
+            )
         assert result["status"] == "success"
         assert result["problem_count"] == 1
         assert result["problems"][0]["severity"] == "error"
@@ -289,20 +301,22 @@ class TestHandleAutoReplyReadinessProblems:
     def test_optional_email_field_reports_warning(self, fake_store, existing_assembly, as_admin):
         _seed_email_field(fake_store, existing_assembly.id, on_page=FieldOnRegistrationPage.YES_OPTIONAL)
 
-        result = _handle_auto_reply_readiness_problems(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(existing_assembly.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_auto_reply_readiness_problems(
+                uow=uow,
+                params={"assembly_id": str(existing_assembly.id)},
+            )
         assert result["problem_count"] == 1
         assert result["problems"][0]["severity"] == "warning"
 
     def test_required_email_field_reports_no_problems(self, fake_store, existing_assembly, as_admin):
         _seed_email_field(fake_store, existing_assembly.id, on_page=FieldOnRegistrationPage.YES_REQUIRED)
 
-        result = _handle_auto_reply_readiness_problems(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(existing_assembly.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_auto_reply_readiness_problems(
+                uow=uow,
+                params={"assembly_id": str(existing_assembly.id)},
+            )
         assert result["status"] == "success"
         assert result["problem_count"] == 0
         assert result["problems"] == []

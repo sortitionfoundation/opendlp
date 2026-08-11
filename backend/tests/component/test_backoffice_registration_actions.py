@@ -62,26 +62,33 @@ def assembly_id(fake_store, admin_id) -> uuid.UUID:
 
 def _page_id(fake_store, assembly_id):
     """The id of the assembly's single registration page."""
-    page = page_for_assembly(FakeUnitOfWork(store=fake_store), assembly_id)
+    with FakeUnitOfWork(store=fake_store) as uow:
+        page = page_for_assembly(uow, assembly_id)
     assert page is not None
     return page.id
 
 
 def _seed_page(fake_store, admin_id, assembly_id, *, target_status: RegistrationPageStatus):
-    page = create_registration_page(FakeUnitOfWork(store=fake_store), admin_id, assembly_id, name="Registration page")
-    update_registration_page(FakeUnitOfWork(store=fake_store), admin_id, page.id, url_slug="component-page")
-    update_registration_page_html(FakeUnitOfWork(store=fake_store), admin_id, page.id, _READY_HTML)
+    with FakeUnitOfWork(store=fake_store) as uow:
+        page = create_registration_page(uow, admin_id, assembly_id, name="Registration page")
+    with FakeUnitOfWork(store=fake_store) as uow:
+        update_registration_page(uow, admin_id, page.id, url_slug="component-page")
+    with FakeUnitOfWork(store=fake_store) as uow:
+        update_registration_page_html(uow, admin_id, page.id, _READY_HTML)
     if target_status == RegistrationPageStatus.TEST:
         return
-    publish_registration_page(FakeUnitOfWork(store=fake_store), admin_id, page.id)
+    with FakeUnitOfWork(store=fake_store) as uow:
+        publish_registration_page(uow, admin_id, page.id)
     if target_status == RegistrationPageStatus.PUBLISHED:
         return
     if target_status == RegistrationPageStatus.CLOSED:
-        close_registration_page(FakeUnitOfWork(store=fake_store), admin_id, page.id)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            close_registration_page(uow, admin_id, page.id)
 
 
 def _stored_status(fake_store, admin_id, assembly_id) -> RegistrationPageStatus:
-    page = get_registration_page(FakeUnitOfWork(store=fake_store), admin_id, _page_id(fake_store, assembly_id))
+    with FakeUnitOfWork(store=fake_store) as uow:
+        page = get_registration_page(uow, admin_id, _page_id(fake_store, assembly_id))
     return page.status
 
 

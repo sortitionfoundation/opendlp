@@ -80,7 +80,8 @@ def assembly():
 @pytest.fixture
 def uow():
     """Create a fake Unit of Work for testing."""
-    return FakeUnitOfWork()
+    with FakeUnitOfWork() as entered:
+        yield entered
 
 
 @pytest.fixture
@@ -180,9 +181,8 @@ class TestGrantUserAssemblyRole:
         data = setup_database
         # Create another assembly
         other_assembly = Assembly(title="Other Assembly")
-        with uow:
-            uow.assemblies.add(other_assembly)
-            uow.commit()
+        uow.assemblies.add(other_assembly)
+        uow.commit()
 
         with pytest.raises(InsufficientPermissions):
             grant_user_assembly_role(
@@ -339,16 +339,15 @@ class TestRevokeUserAssemblyRole:
         data = setup_database
         # Create another assembly
         other_assembly = Assembly(title="Other Assembly")
-        with uow:
-            uow.assemblies.add(other_assembly)
-            # Add a user role on the other assembly
-            other_role = UserAssemblyRole(
-                user_id=data["target_user"].id,
-                assembly_id=other_assembly.id,
-                role=AssemblyRole.CONFIRMATION_CALLER,
-            )
-            uow.user_assembly_roles.add(other_role)
-            uow.commit()
+        uow.assemblies.add(other_assembly)
+        # Add a user role on the other assembly
+        other_role = UserAssemblyRole(
+            user_id=data["target_user"].id,
+            assembly_id=other_assembly.id,
+            role=AssemblyRole.CONFIRMATION_CALLER,
+        )
+        uow.user_assembly_roles.add(other_role)
+        uow.commit()
 
         with pytest.raises(InsufficientPermissions):
             revoke_user_assembly_role(

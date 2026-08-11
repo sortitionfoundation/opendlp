@@ -4,9 +4,12 @@ ABOUTME: Covers happy path, multi-category, deleted respondents, edge cases, and
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
+
+if TYPE_CHECKING:
+    from tests.fakes import FakeUnitOfWork
 
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
@@ -23,7 +26,6 @@ from opendlp.service_layer.selection_report import (
     build_selection_report,
     selection_report_to_csv,
 )
-from tests.fakes import FakeUnitOfWork
 
 
 class _StubURLGenerator:
@@ -112,8 +114,7 @@ def _make_run_record(
 
 
 class TestHappyPath:
-    def test_single_category_two_values(self):
-        uow = FakeUnitOfWork()
+    def test_single_category_two_values(self, uow):
         assembly = _make_assembly(uow, number_to_select=2)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
         _make_respondent(uow, assembly.id, "p2", {"Gender": "Man"})
@@ -152,8 +153,7 @@ class TestHappyPath:
 
 
 class TestMultiCategory:
-    def test_two_categories_isolated(self):
-        uow = FakeUnitOfWork()
+    def test_two_categories_isolated(self, uow):
         assembly = _make_assembly(uow, number_to_select=2)
         snapshot = [
             *_gender_snapshot(),
@@ -204,8 +204,7 @@ class TestMultiCategory:
 
 
 class TestDeletedRespondents:
-    def test_deleted_counted_at_top_level_when_in_selected(self):
-        uow = FakeUnitOfWork()
+    def test_deleted_counted_at_top_level_when_in_selected(self, uow):
         assembly = _make_assembly(uow, number_to_select=2)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
         _make_respondent(uow, assembly.id, "p2", {"Gender": "Woman"})
@@ -234,8 +233,7 @@ class TestDeletedRespondents:
         assert report.pool_size == 4
         assert report.deleted_count == 1
 
-    def test_deleted_counted_at_top_level_when_in_remaining(self):
-        uow = FakeUnitOfWork()
+    def test_deleted_counted_at_top_level_when_in_remaining(self, uow):
         assembly = _make_assembly(uow, number_to_select=2)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
         _make_respondent(uow, assembly.id, "p2", {"Gender": "Woman"})
@@ -266,8 +264,7 @@ class TestDeletedRespondents:
 
 
 class TestZeroPool:
-    def test_empty_pool_returns_zeroed_pcts(self):
-        uow = FakeUnitOfWork()
+    def test_empty_pool_returns_zeroed_pcts(self, uow):
         assembly = _make_assembly(uow, number_to_select=0)
         record = _make_run_record(
             uow,
@@ -291,8 +288,7 @@ class TestZeroPool:
 
 
 class TestUnknownAttributeRaises:
-    def test_unknown_value_raises(self):
-        uow = FakeUnitOfWork()
+    def test_unknown_value_raises(self, uow):
         assembly = _make_assembly(uow, number_to_select=1)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
         _make_respondent(uow, assembly.id, "p2", {"Gender": "Other"})
@@ -309,8 +305,7 @@ class TestUnknownAttributeRaises:
 
 
 class TestEmptyTargetsUsed:
-    def test_empty_targets_used_raises(self):
-        uow = FakeUnitOfWork()
+    def test_empty_targets_used_raises(self, uow):
         assembly = _make_assembly(uow, number_to_select=1)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
         record = _make_run_record(
@@ -326,8 +321,7 @@ class TestEmptyTargetsUsed:
 
 
 class TestHeaderFields:
-    def test_url_generator_called_with_run_id(self):
-        uow = FakeUnitOfWork()
+    def test_url_generator_called_with_run_id(self, uow):
         assembly = _make_assembly(uow, number_to_select=1)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
         _make_respondent(uow, assembly.id, "p2", {"Gender": "Woman"})
@@ -352,8 +346,7 @@ class TestHeaderFields:
 
 
 class TestCaseInsensitiveAttributeMatch:
-    def test_normalised_keys_match(self):
-        uow = FakeUnitOfWork()
+    def test_normalised_keys_match(self, uow):
         assembly = _make_assembly(uow, number_to_select=1)
         _make_respondent(uow, assembly.id, "p1", {"gender": "Man"})
         _make_respondent(uow, assembly.id, "p2", {"gender": "Woman"})
@@ -372,8 +365,7 @@ class TestCaseInsensitiveAttributeMatch:
 
 
 class TestRunNotFound:
-    def test_unknown_run_raises(self):
-        uow = FakeUnitOfWork()
+    def test_unknown_run_raises(self, uow):
         assembly = _make_assembly(uow, number_to_select=1)
 
         with pytest.raises(SelectionReportError, match="not found"):
