@@ -47,7 +47,7 @@ production callers, and migrating its tests all belong in the same commit.
 
 Four commits, no behaviour change, nothing depends on them being done together.
 
-### 0.1 Narrow the exception handling around service calls
+### 0.1 Narrow the exception handling around service calls - DONE
 
 Replace `contextlib.suppress(Exception)` and bare `except Exception` around
 service calls with the specific domain exceptions (`NotFoundError` and friends).
