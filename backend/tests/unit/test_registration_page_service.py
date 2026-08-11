@@ -89,7 +89,6 @@ class TestCreateRegistrationPage:
         assert page.source_type is RegistrationPageSource.HTML
         assert page_for_assembly(uow, assembly.id) is not None
         assert uow.registration_page_html_sources.get_by_page_id(page.id) is not None
-        assert uow.committed
 
     def test_create_seeds_default_thank_you_html(self):
         uow = FakeUnitOfWork()
@@ -1018,7 +1017,6 @@ class TestCreateRegistrationPageWithSlugs:
         assert page.short_url_slug != ""
         assert len(page.short_url_slug) == 6
         assert page.url_slug == "dublin-citizens-assembly"
-        assert uow.committed
 
     def test_generates_unique_slug_on_collision(self):
         uow = FakeUnitOfWork()

@@ -26,37 +26,36 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 @pytest.fixture
 def uow(postgres_session_factory):
-    return SqlAlchemyUnitOfWork(postgres_session_factory)
+    """An already-entered UnitOfWork; the whole test is one transaction."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as entered:
+        yield entered
 
 
 @pytest.fixture
 def admin_user(uow):
     user = User(email="schema-admin@test.com", global_role=GlobalRole.ADMIN, password_hash="hash123")
-    with uow:
-        uow.users.add(user)
-        detached = user.create_detached_copy()
-        uow.commit()
-        return detached
+    uow.users.add(user)
+    detached = user.create_detached_copy()
+    uow.commit()
+    return detached
 
 
 @pytest.fixture
 def regular_user(uow):
     user = User(email="schema-user@test.com", global_role=GlobalRole.USER, password_hash="hash123")
-    with uow:
-        uow.users.add(user)
-        detached = user.create_detached_copy()
-        uow.commit()
-        return detached
+    uow.users.add(user)
+    detached = user.create_detached_copy()
+    uow.commit()
+    return detached
 
 
 @pytest.fixture
 def test_assembly(uow):
     assembly = Assembly(title="Schema Test Assembly", question="Test?", number_to_select=30)
-    with uow:
-        uow.assemblies.add(assembly)
-        detached = assembly.create_detached_copy()
-        uow.commit()
-        return detached
+    uow.assemblies.add(assembly)
+    detached = assembly.create_detached_copy()
+    uow.commit()
+    return detached
 
 
 FIXED_KEYS = [key for key, _group, _label in IN_SCHEMA_FIXED_FIELDS]
@@ -317,9 +316,8 @@ class TestGuessFieldTypes:
                 TargetValue(value="West", min=0, max=10),
             ],
         )
-        with uow:
-            uow.target_categories.add(category)
-            uow.commit()
+        uow.target_categories.add(category)
+        uow.commit()
 
         # CSV has only "North" in the data but target has 4 values
         self._setup_custom_csv(
@@ -674,13 +672,12 @@ class TestPermissions:
 
 class TestReconciliation:
     def test_no_schema_yet_reports_all_keys_as_new(self, uow, admin_user, test_assembly):
-        with uow:
-            diff = respondent_field_schema_service.compute_reconciliation_diff(
-                uow,
-                test_assembly.id,
-                ["external_id", "first_name", "gender"],
-                "external_id",
-            )
+        diff = respondent_field_schema_service.compute_reconciliation_diff(
+            uow,
+            test_assembly.id,
+            ["external_id", "first_name", "gender"],
+            "external_id",
+        )
         assert diff.unchanged == []
         assert {k for k, _g in diff.new_keys} == {"first_name", "gender"}
         assert diff.absent_keys == []
@@ -694,13 +691,12 @@ class TestReconciliation:
             "external_id,first_name,gender\nR001,Alice,F\n",
         )
 
-        with uow:
-            diff = respondent_field_schema_service.compute_reconciliation_diff(
-                uow,
-                test_assembly.id,
-                ["external_id", "first_name", "gender"],
-                "external_id",
-            )
+        diff = respondent_field_schema_service.compute_reconciliation_diff(
+            uow,
+            test_assembly.id,
+            ["external_id", "first_name", "gender"],
+            "external_id",
+        )
 
         assert set(diff.unchanged) == {"first_name", "gender"}
         assert diff.new_keys == []
@@ -715,13 +711,12 @@ class TestReconciliation:
             "external_id,first_name\nR001,Alice\n",
         )
 
-        with uow:
-            diff = respondent_field_schema_service.compute_reconciliation_diff(
-                uow,
-                test_assembly.id,
-                ["external_id", "first_name", "postcode"],
-                "external_id",
-            )
+        diff = respondent_field_schema_service.compute_reconciliation_diff(
+            uow,
+            test_assembly.id,
+            ["external_id", "first_name", "postcode"],
+            "external_id",
+        )
 
         assert "first_name" in diff.unchanged
         new_keys = {k for k, _g in diff.new_keys}
@@ -740,26 +735,24 @@ class TestReconciliation:
             "external_id,first_name,gender,postcode\nR001,Alice,F,SW1A\n",
         )
 
-        with uow:
-            diff = respondent_field_schema_service.compute_reconciliation_diff(
-                uow,
-                test_assembly.id,
-                ["external_id", "first_name", "gender"],
-                "external_id",
-            )
+        diff = respondent_field_schema_service.compute_reconciliation_diff(
+            uow,
+            test_assembly.id,
+            ["external_id", "first_name", "gender"],
+            "external_id",
+        )
 
         assert diff.absent_keys == ["postcode"]
         assert diff.new_keys == []
 
     def test_id_column_change_is_flagged(self, uow, admin_user, test_assembly):
-        with uow:
-            diff = respondent_field_schema_service.compute_reconciliation_diff(
-                uow,
-                test_assembly.id,
-                ["participant_id", "first_name"],
-                "participant_id",
-                previous_id_column="external_id",
-            )
+        diff = respondent_field_schema_service.compute_reconciliation_diff(
+            uow,
+            test_assembly.id,
+            ["participant_id", "first_name"],
+            "participant_id",
+            previous_id_column="external_id",
+        )
         assert diff.id_column_changed == ("external_id", "participant_id")
         assert diff.has_changes is True
 
@@ -773,15 +766,14 @@ class TestReconciliation:
         before = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
         before_keys = {f.field_key for f in before}
 
-        with uow:
-            diff = respondent_field_schema_service.compute_reconciliation_diff(
-                uow,
-                test_assembly.id,
-                ["external_id", "first_name", "postcode", "favourite_colour"],
-                "external_id",
-            )
-            inserted = respondent_field_schema_service.apply_reconciliation(uow, test_assembly.id, diff)
-            uow.commit()
+        diff = respondent_field_schema_service.compute_reconciliation_diff(
+            uow,
+            test_assembly.id,
+            ["external_id", "first_name", "postcode", "favourite_colour"],
+            "external_id",
+        )
+        inserted = respondent_field_schema_service.apply_reconciliation(uow, test_assembly.id, diff)
+        uow.commit()
 
         assert inserted == 2
         after = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)

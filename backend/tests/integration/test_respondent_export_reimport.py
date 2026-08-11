@@ -13,27 +13,27 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 @pytest.fixture
 def uow(postgres_session_factory):
-    return SqlAlchemyUnitOfWork(postgres_session_factory)
+    """An already-entered UnitOfWork; the whole test is one transaction."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as entered:
+        yield entered
 
 
 @pytest.fixture
 def admin_user(uow):
     user = User(email="admin@test.com", global_role=GlobalRole.ADMIN, password_hash="hash123")
-    with uow:
-        uow.users.add(user)
-        detached = user.create_detached_copy()
-        uow.commit()
-        return detached
+    uow.users.add(user)
+    detached = user.create_detached_copy()
+    uow.commit()
+    return detached
 
 
 @pytest.fixture
 def test_assembly(uow):
     assembly = Assembly(title="Round Trip Assembly", question="Test?", number_to_select=30)
-    with uow:
-        uow.assemblies.add(assembly)
-        detached = assembly.create_detached_copy()
-        uow.commit()
-        return detached
+    uow.assemblies.add(assembly)
+    detached = assembly.create_detached_copy()
+    uow.commit()
+    return detached
 
 
 class TestExportReimportRoundTrip:
@@ -46,11 +46,10 @@ class TestExportReimportRoundTrip:
             test_assembly.id,
             "external_id,email,stay_on_db,Gender\nR1,a@b.com,true,Female\nR2,c@d.com,false,Male\n",
         )
-        with uow:
-            respondents = uow.respondents.get_by_assembly_id(test_assembly.id)
-            selected = respondents[0]
-            selected.selection_status = RespondentStatus.SELECTED
-            uow.commit()
+        respondents = uow.respondents.get_by_assembly_id(test_assembly.id)
+        selected = respondents[0]
+        selected.selection_status = RespondentStatus.SELECTED
+        uow.commit()
 
         export_target = CsvExportTarget()
         respondent_export_service.export_respondents(
@@ -61,10 +60,9 @@ class TestExportReimportRoundTrip:
 
         # Re-import the exported file into a fresh assembly: it must not crash.
         fresh = Assembly(title="Fresh Assembly", question="Test?", number_to_select=30)
-        with uow:
-            uow.assemblies.add(fresh)
-            fresh_id = fresh.id
-            uow.commit()
+        uow.assemblies.add(fresh)
+        fresh_id = fresh.id
+        uow.commit()
 
         respondents_out, errors, _id_col = respondent_service.import_respondents_from_csv(
             uow, admin_user.id, fresh_id, exported_csv.lstrip("﻿")

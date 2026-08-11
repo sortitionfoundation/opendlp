@@ -51,13 +51,14 @@ def assembly_with_csv_respondents(title: str, assembly_creator, admin_user, test
         "R002,Bob,Smith,Male,E1 6AN,note two\n"
     )
     uow = SqlAlchemyUnitOfWork(test_database)
-    import_respondents_from_csv(
-        uow,
-        admin_user.id,
-        assembly.id,
-        csv_content,
-        replace_existing=True,
-    )
+    with uow:
+        import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            assembly.id,
+            csv_content,
+            replace_existing=True,
+        )
 
 
 @given("I am signed in as an admin user")

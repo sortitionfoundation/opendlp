@@ -194,13 +194,14 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # When the diff has changes the organiser sees a confirmation page first;
         # otherwise we proceed straight to the import as before.
         uow_diff = bootstrap.get_flask_uow()
-        diff = compute_diff_for_pending_csv(
-            uow_diff,
-            current_user.id,
-            assembly_id,
-            csv_content,
-            id_column,
-        )
+        with uow_diff:
+            diff = compute_diff_for_pending_csv(
+                uow_diff,
+                current_user.id,
+                assembly_id,
+                csv_content,
+                id_column,
+            )
         if diff is not None and diff.has_changes:
             stash_pending_upload(
                 user_id=current_user.id,
@@ -870,16 +871,18 @@ def _edit_respondent_post(
         kwargs["email"] = _RESPONDENT_UNSET
     kwargs.update(_collect_bool_updates(form, schema))
     attribute_updates = _collect_attribute_updates(form, schema)
+    uow = bootstrap.get_flask_uow()
     try:
-        update_respondent(
-            uow=bootstrap.get_flask_uow(),
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            respondent_id=respondent_id,
-            comment=form["comment"].data or "",
-            attributes=attribute_updates,
-            **kwargs,
-        )
+        with uow:
+            update_respondent(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                respondent_id=respondent_id,
+                comment=form["comment"].data or "",
+                attributes=attribute_updates,
+                **kwargs,
+            )
     except ValueError as e:
         flash(str(e), "error")
         return None

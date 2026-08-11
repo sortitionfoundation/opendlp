@@ -24,9 +24,10 @@ def assembly_ready_to_export(title: str, assembly_creator, admin_user, test_data
 
     csv_content = "external_id,first_name,consent,eligible\nR001,Alice,true,true\nR002,Bob,true,true\n"
     uow = SqlAlchemyUnitOfWork(test_database)
-    import_respondents_from_csv(uow, admin_user.id, assembly.id, csv_content, replace_existing=True)
-    # Set the CSV config so the respondents page shows the CSV data source (and the Export button).
-    update_csv_config(uow, admin_user.id, assembly.id, csv_id_column="external_id")
+    with uow:
+        import_respondents_from_csv(uow, admin_user.id, assembly.id, csv_content, replace_existing=True)
+        # Set the CSV config so the respondents page shows the CSV data source (and the Export button).
+        update_csv_config(uow, admin_user.id, assembly.id, csv_id_column="external_id")
     return str(assembly.id)
 
 

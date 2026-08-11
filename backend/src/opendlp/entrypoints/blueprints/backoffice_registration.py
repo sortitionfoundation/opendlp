@@ -436,10 +436,12 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
     if registration_page is None:
         return email_template, email_readiness_problems
 
+    uow = bootstrap.get_flask_uow()
     template_id = registration_page.auto_reply_email_template_id
     if template_id is not None:
         try:
-            email_template = get_email_template(bootstrap.get_flask_uow(), current_user.id, template_id)
+            with uow:
+                email_template = get_email_template(uow, current_user.id, template_id)
         except EmailTemplateNotFoundError:
             logger.debug(
                 "auto_reply_template_load_failed",
@@ -460,7 +462,8 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
 
     if email_template is None:
         try:
-            templates = list_email_templates(bootstrap.get_flask_uow(), current_user.id, assembly_id)
+            with uow:
+                templates = list_email_templates(uow, current_user.id, assembly_id)
             if templates:
                 email_template = templates[0]
         except InsufficientPermissions:
@@ -472,7 +475,8 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
             )
             email_template = None
 
-    problems = auto_reply_readiness_problems(bootstrap.get_flask_uow(), assembly_id)
+    with uow:
+        problems = auto_reply_readiness_problems(uow, assembly_id)
     email_readiness_problems = [{"severity": p.severity.value, "message": p.message} for p in problems]
     return email_template, email_readiness_problems
 
@@ -511,15 +515,17 @@ def _create_and_assign_default_template(assembly_id: uuid.UUID) -> None:
     this helper is the single place that enforces that invariant.
     """
     defaults = _default_email_template_content()
-    template = create_email_template(
-        bootstrap.get_flask_uow(),
-        current_user.id,
-        assembly_id,
-        name=defaults["name"],
-        subject=defaults["subject"],
-        body_html=defaults["body_html"],
-    )
-    assign_auto_reply_template(bootstrap.get_flask_uow(), current_user.id, assembly_id, template.id)
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        template = create_email_template(
+            uow,
+            current_user.id,
+            assembly_id,
+            name=defaults["name"],
+            subject=defaults["subject"],
+            body_html=defaults["body_html"],
+        )
+        assign_auto_reply_template(uow, current_user.id, assembly_id, template.id)
 
 
 def _handle_email_action_create(assembly_id: uuid.UUID) -> str:
@@ -541,13 +547,15 @@ def _handle_email_action_save(
     # Name is intentionally not overwritten here — the UI doesn't expose it yet,
     # so we keep the value that was set at auto-creation time. Once multi-template
     # support ships we'll add name to the form and pass it here.
-    update_email_template(
-        bootstrap.get_flask_uow(),
-        current_user.id,
-        template_id,
-        subject=request.form.get("template_subject", "").strip(),
-        body_html=request.form.get("template_body_html", ""),
-    )
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        update_email_template(
+            uow,
+            current_user.id,
+            template_id,
+            subject=request.form.get("template_subject", "").strip(),
+            body_html=request.form.get("template_body_html", ""),
+        )
     flash(_("Auto-reply email saved."), "success")
     if advance:
         return url_for(
@@ -566,7 +574,7 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID) -> str:
     nav_uow = bootstrap.get_flask_uow()
     with nav_uow:
         get_assembly_nav_context(nav_uow, current_user.id, assembly_id, "")
-    page = _sole_page(bootstrap.get_flask_uow(), assembly_id)
+        page = _sole_page(nav_uow, assembly_id)
     if page is None:
         raise RegistrationPageNotFoundError(f"No registration page for assembly {assembly_id}")
 
@@ -834,15 +842,17 @@ def upload_registration_image(assembly_id: uuid.UUID) -> ResponseReturnValue:
     if not alt:
         return jsonify({"error": _("Alt text is required for accessibility")}), 400
 
+    uow = bootstrap.get_flask_uow()
     try:
-        image = add_registration_image(
-            bootstrap.get_flask_uow(),
-            current_user.id,
-            assembly_id,
-            raw,
-            alt=alt,
-            original_filename=upload.filename or "",
-        )
+        with uow:
+            image = add_registration_image(
+                uow,
+                current_user.id,
+                assembly_id,
+                raw,
+                alt=alt,
+                original_filename=upload.filename or "",
+            )
     except ImageValidationError as e:
         return jsonify({"error": e.message, "reason": e.reason}), 400
     except ImageQuotaExceeded as e:
@@ -933,15 +943,17 @@ def upload_registration_document(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     label = (request.form.get("label") or "").strip()
 
+    uow = bootstrap.get_flask_uow()
     try:
-        document = add_registration_document(
-            bootstrap.get_flask_uow(),
-            current_user.id,
-            assembly_id,
-            raw,
-            original_filename=upload.filename or "",
-            label=label,
-        )
+        with uow:
+            document = add_registration_document(
+                uow,
+                current_user.id,
+                assembly_id,
+                raw,
+                original_filename=upload.filename or "",
+                label=label,
+            )
     except DocumentValidationError as e:
         return jsonify({"error": e.message, "reason": e.reason}), 400
     except DocumentQuotaExceeded as e:

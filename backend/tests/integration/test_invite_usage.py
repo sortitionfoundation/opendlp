@@ -17,23 +17,25 @@ class TestInviteUsage:
         """Test that an invite is properly marked as used after successful user registration."""
         # Create an admin user first to generate invites
         admin_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        admin_user, _ = create_user(
-            uow=admin_uow,
-            email="admin@test.com",
-            password="secure_password123",  # pragma: allowlist secret
-            first_name="Admin",
-            last_name="User",
-            global_role=GlobalRole.ADMIN,
-        )
+        with admin_uow:
+            admin_user, _ = create_user(
+                uow=admin_uow,
+                email="admin@test.com",
+                password="secure_password123",  # pragma: allowlist secret
+                first_name="Admin",
+                last_name="User",
+                global_role=GlobalRole.ADMIN,
+            )
 
         # Generate an invite using the admin user
         invite_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        invite = generate_invite(
-            uow=invite_uow,
-            created_by_user_id=admin_user.id,
-            global_role=GlobalRole.USER,
-            expires_in_hours=24,
-        )
+        with invite_uow:
+            invite = generate_invite(
+                uow=invite_uow,
+                created_by_user_id=admin_user.id,
+                global_role=GlobalRole.USER,
+                expires_in_hours=24,
+            )
 
         # Verify invite is initially valid and not used
         fresh_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
@@ -46,14 +48,15 @@ class TestInviteUsage:
 
         # Create a new user using the invite
         user_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        new_user, _ = create_user(
-            uow=user_uow,
-            email="newuser@test.com",
-            password="secure_password456",  # pragma: allowlist secret
-            first_name="New",
-            last_name="User",
-            invite_code=invite.code,
-        )
+        with user_uow:
+            new_user, _ = create_user(
+                uow=user_uow,
+                email="newuser@test.com",
+                password="secure_password456",  # pragma: allowlist secret
+                first_name="New",
+                last_name="User",
+                invite_code=invite.code,
+            )
 
         # Verify the user was created successfully
         assert new_user.email == "newuser@test.com"
@@ -74,38 +77,41 @@ class TestInviteUsage:
         """Test that an invite cannot be reused after being marked as used."""
         # Create an admin user first to generate invites
         admin_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        admin_user, _ = create_user(
-            uow=admin_uow,
-            email="admin2@test.com",
-            password="secure_password123",  # pragma: allowlist secret
-            first_name="Admin",
-            last_name="User",
-            global_role=GlobalRole.ADMIN,
-        )
+        with admin_uow:
+            admin_user, _ = create_user(
+                uow=admin_uow,
+                email="admin2@test.com",
+                password="secure_password123",  # pragma: allowlist secret
+                first_name="Admin",
+                last_name="User",
+                global_role=GlobalRole.ADMIN,
+            )
 
         # Generate an invite
         invite_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        invite = generate_invite(
-            uow=invite_uow,
-            created_by_user_id=admin_user.id,
-            global_role=GlobalRole.USER,
-            expires_in_hours=24,
-        )
+        with invite_uow:
+            invite = generate_invite(
+                uow=invite_uow,
+                created_by_user_id=admin_user.id,
+                global_role=GlobalRole.USER,
+                expires_in_hours=24,
+            )
 
         # Create first user with the invite
         first_user_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        create_user(
-            uow=first_user_uow,
-            email="firstuser@test.com",
-            password="secure_password456",  # pragma: allowlist secret
-            first_name="First",
-            last_name="User",
-            invite_code=invite.code,
-        )
+        with first_user_uow:
+            create_user(
+                uow=first_user_uow,
+                email="firstuser@test.com",
+                password="secure_password456",  # pragma: allowlist secret
+                first_name="First",
+                last_name="User",
+                invite_code=invite.code,
+            )
 
         # Try to create second user with the same invite - this should fail
         second_user_uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with pytest.raises(InvalidInvite):
+        with second_user_uow, pytest.raises(InvalidInvite):
             create_user(
                 uow=second_user_uow,
                 email="seconduser@test.com",

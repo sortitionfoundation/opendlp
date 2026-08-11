@@ -428,11 +428,13 @@ def _handle_update_csv_config(uow: Any, params: dict[str, Any]) -> dict[str, Any
                         **sel_kwargs,
                     )
             else:
-                sel_settings = get_or_create_selection_settings(
-                    uow=bootstrap.get_flask_uow(),
-                    user_id=current_user.id,
-                    assembly_id=assembly_id,
-                )
+                uow3 = bootstrap.get_flask_uow()
+                with uow3:
+                    sel_settings = get_or_create_selection_settings(
+                        uow=uow3,
+                        user_id=current_user.id,
+                        assembly_id=assembly_id,
+                    )
             return {
                 "status": "success",
                 "config": {

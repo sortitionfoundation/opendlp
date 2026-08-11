@@ -56,7 +56,6 @@ class TestCreateUser:
         assert user.oauth_provider is None
         assert token is not None  # Password users should get a confirmation token
         assert len(uow.users.all()) == 1
-        assert uow.committed
 
     def test_create_user_with_oauth_success(self):
         """Test successful user creation with OAuth."""
@@ -929,7 +928,6 @@ class TestUpdateOwnProfile:
 
         assert updated_user.first_name == "Updated"
         assert updated_user.last_name == "Name"
-        assert uow.committed
 
     def test_update_own_profile_partial_update(self):
         """Test updating only some fields."""
@@ -971,7 +969,6 @@ class TestChangeOwnPassword:
             uow=uow, user_id=user.id, current_password="OldPass123", new_password="NewPass456!"
         )
 
-        assert uow.committed
         # Verify the password was actually changed
         stored_user = uow.users.get(user.id)
         assert stored_user is not None

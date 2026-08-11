@@ -215,18 +215,18 @@ def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         number_to_select=form.number_to_select.data,
                     )
 
-                # Save URL slugs via registration page service if registration page exists.
-                # Skip entirely once slugs are frozen — disabled inputs in the template send
-                # nothing, and the service layer would no-op anyway, but this avoids the
-                # round-trip and any audit noise.
-                if registration_page and not registration_page.slugs_frozen and (url_slug or short_url_slug):
-                    update_registration_page(
-                        uow=uow,
-                        user_id=current_user.id,
-                        page_id=registration_page.id,
-                        url_slug=url_slug or None,
-                        short_url_slug=short_url_slug or None,
-                    )
+                    # Save URL slugs via registration page service if registration page exists.
+                    # Skip entirely once slugs are frozen — disabled inputs in the template send
+                    # nothing, and the service layer would no-op anyway, but this avoids the
+                    # round-trip and any audit noise.
+                    if registration_page and not registration_page.slugs_frozen and (url_slug or short_url_slug):
+                        update_registration_page(
+                            uow=uow,
+                            user_id=current_user.id,
+                            page_id=registration_page.id,
+                            url_slug=url_slug or None,
+                            short_url_slug=short_url_slug or None,
+                        )
 
                 flash(_("Assembly '%(title)s' updated successfully", title=updated_assembly.title), "success")
                 return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
