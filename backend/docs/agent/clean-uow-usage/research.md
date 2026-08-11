@@ -5,7 +5,7 @@ Background, evidence and options analysis. **The plan of work is in
 figures.
 
 Outcome: **option B** - only entrypoints open `with uow:`. Step 1 (stopping the
-test hang) is committed as `8bc870fc`; everything else is sequenced in plan.md.
+test hang) is committed as `57623b24`; everything else is sequenced in plan.md.
 
 The step numbering below predates the plan and is kept because the analysis
 refers to it. plan.md maps its phases onto these steps.
@@ -63,9 +63,9 @@ The leak is a symptom. Scanning the tree found the codebase split between two
 opposite conventions for who owns the transaction boundary:
 
 ```
-146 functions open their own `with uow:`   (124 service_layer/, 20 blueprints/dev.py,
+152 functions open their own `with uow:`   (130 service_layer/, 20 blueprints/dev.py,
                                             2 blueprint helpers in blueprints/auth.py)
- 97 functions expect the caller to manage it
+111 functions expect the caller to manage it
 ```
 
 You cannot tell which convention a function follows without opening it, so call
@@ -126,7 +126,7 @@ one class, no call-site churn - and rejected as the _destination_:
 
 ### B - `with uow:` at entrypoints only. Chosen.
 
-All 146 self-managing functions to convert - 124 in `service_layer/`, 20 in
+All 152 self-managing functions to convert - 130 in `service_layer/`, 20 in
 `blueprints/dev.py`, 2 blueprint helpers in `blueprints/auth.py` - plus 36 call
 sites (37 less the one in `respondents_legacy.py`, which is being deleted). The
 edits are mechanical, local, and individually reviewable. Sized in steps 2-4
@@ -151,7 +151,7 @@ Measured across 198 routes (excluding `dev.py`):
 
 So ~70 routes compose several service calls and would need a new composed
 function; the 29 with zero drive repositories directly and would need one
-written from scratch. About 99 routes touched, against option B's 146 mechanical
+written from scratch. About 99 routes touched, against option B's 152 mechanical
 function edits.
 
 The count understates the cost. `gsheets.py::view_assembly_selection` is the
@@ -177,34 +177,36 @@ higher risk of behaviour change.
 
 Sizing the test work (see step 2) turned up a real advantage for C that the
 first draft of this section missed. Under C, service functions **keep** their
-own `with uow:`, so the ~800 bare service calls and ~575 bare repository
-accesses in the tests keep working unchanged. Option B's roughly 768 test
+own `with uow:`, so the ~899 bare service calls and ~585 bare repository
+accesses in the tests keep working unchanged. Option B's roughly 818 test
 migrations are avoided almost entirely. That is a genuine point in C's favour.
 
 Two things that are *not* objections to C, having checked:
 
-- Intra-service nesting is nearly absent. Of 100 service-to-service calls that
-  pass a `uow`, only **3** have a self-managing function calling another
-  self-managing function (`submit_registration`, `get_user_accessible_assemblies`,
-  `find_or_create_oauth_user`). C would not have to untangle a web of nested
-  service calls.
-- Private helpers already follow a clean rule: all **20** private
-  (`_`-prefixed) service functions are caller-manages, without exception.
+- Intra-service nesting is nearly absent. Of 115 service-to-service calls that
+  pass a `uow`, only **4** have a self-managing function calling another
+  self-managing function. C would not have to untangle a web of nested service
+  calls.
+- Private helpers very nearly follow a clean rule: **26 of 27** private
+  (`_`-prefixed) service functions are caller-manages. The single exception,
+  `_bulk_status_change` in `registration_page_service.py`, arrived with the
+  multiple-registration-pages work - which is a small illustration of the point
+  below: without an enforced rule, the split re-grows on its own.
 
 What C does still cost, beyond the route rewrites:
 
 - The public service layer is genuinely inconsistent, not latently rule-governed:
-  **124 public functions self-manage, 49 public functions are caller-manages**.
-  C has to convert those 49 in the *opposite* direction to option B.
+  **129 public functions self-manage, 53 public functions are caller-manages**.
+  C has to convert those 53 in the *opposite* direction to option B.
 
 So the honest comparison is not "B is cheaper" but a difference in risk profile:
 
 | | Option B | Option C |
 |---|---|---|
-| Function conversions | 146 | 49 (opposite direction) |
+| Function conversions | 152 | 53 (opposite direction) |
 | Call sites | 36 | - |
 | Route rewrites | - | ~99, with new DTOs |
-| Test migrations | ~768 | close to zero |
+| Test migrations | ~818 | close to zero |
 | Risk per edit | low, mechanical | high, judgement per route |
 
 Option B is high-volume and low-risk: most of its edits are a fixture swap that
@@ -223,7 +225,7 @@ it is pure refactoring with no transaction semantics at stake. Take that
 tidiness opportunistically where it pays, rather than betting the migration on
 it.
 
-## Step 1 - stop the hang (DONE, `8bc870fc`)
+## Step 1 - stop the hang (DONE, `57623b24`)
 
 `tests/conftest.py`:
 
@@ -253,7 +255,7 @@ Suggested order, smallest blast radius last:
 | ----- | ---------------------------------------------------------------------------------------------- | ----------------- |
 | 1     | `assembly_service.py`                                                                          | 25                |
 | 2     | `user_service.py`                                                                              | 18                |
-| 3     | `registration_page_service.py`                                                                 | 16                |
+| 3     | `registration_page_service.py`                                                                 | 22                |
 | 4     | `respondent_service.py`                                                                        | 11                |
 | 5     | `respondent_field_schema_service.py`                                                           | 11                |
 | 6     | `invite_service.py`, `email_template_service.py`                                               | 7, 7              |
@@ -333,13 +335,14 @@ opens its own. After step 2 neither works.
 
 | | Count |
 |---|---|
-| Service calls outside any `with uow:` | 800, in 33 files |
-| Bare `uow.<repo>` outside any `with uow:` | 575, in 29 files |
-| Test files affected | 47 |
+| Service calls outside any `with uow:` | 899, in 35 files |
+| Bare `uow.<repo>` outside any `with uow:` | 585, in 31 files |
+| Test files affected | 49 |
 
 Worst files: `test_registration_page_service.py` (147 service calls),
-`test_assembly_service_targets.py` (80), `test_respondent_field_schema_service.py`
-(79), `test_sortition_service.py` (90 bare repository accesses).
+`test_registration_page_multi.py` (91), `test_assembly_service_targets.py` (76),
+`test_respondent_field_schema_service.py` (78), and
+`test_sortition_service.py` (90 bare repository accesses).
 
 #### Use a fixture, do not indent 700 test bodies
 
@@ -372,10 +375,10 @@ Counted by how many UnitOfWork instances a single test constructs:
 
 | | 1 uow | 2+ uow |
 |---|---|---|
-| `FakeUnitOfWork` | 538 (425 unit, 104 component, 9 integration) | 22 component |
+| `FakeUnitOfWork` | 585 (464 unit, 107 component, 14 integration) | 25 component |
 | `SqlAlchemyUnitOfWork` | 133 (82 e2e, 44 integration, 7 unit) | **75** (42 e2e, 33 integration) |
 
-The 538 single-fake tests are a mechanical fixture swap.
+The 585 single-fake tests are a mechanical fixture swap.
 
 **The 75 multi-`SqlAlchemyUnitOfWork` tests must not get the fixture treatment.**
 They open a second UnitOfWork precisely to prove that data committed by the first
@@ -383,7 +386,7 @@ is visible to a fresh session. Collapsing them into one fixture-held transaction
 would leave them asserting nothing while still passing - the worst possible
 outcome. Migrate those by hand, keeping the explicit second block.
 
-The 22 multi-fake component tests need the same read, but the stakes are lower
+The 25 multi-fake component tests need the same read, but the stakes are lower
 since a shared `FakeStore` has no real transaction to be fooled by.
 
 ### Known call sites needing attention
@@ -426,7 +429,7 @@ routes that will need blocks once their callees convert). If they are on the
 same deletion path, excluding them shrinks the worklist further; if not, they
 migrate with everything else. Decide before starting slice 1.
 
-Note this only affects **call sites**: none of the 146 self-managing functions
+Note this only affects **call sites**: none of the 152 self-managing functions
 live in a legacy blueprint, so the service-layer migration is unaffected either
 way.
 
@@ -462,7 +465,7 @@ survive the test analysis above: **that idiom is exactly what step 2 changes
 anyway.** Once those tests take an entered `uow` from a fixture, enforcing the
 rule in the fake costs almost nothing extra.
 
-It is also worth more than it first appears. 538 of the affected tests are
+It is also worth more than it first appears. 585 of the affected tests are
 fake-backed, so without a strict fake the great majority of the suite cannot
 catch a convention regression at all - only e2e could.
 
@@ -543,8 +546,8 @@ against it.
 | GET-only routes (excl. `dev.py`)  | 87        |
 | ...that never write, transitively | **64**    |
 | ...that do write on a GET         | **23**    |
-| Service-layer functions           | 394       |
-| ...that write                     | 100 (25%) |
+| Service-layer functions           | 412       |
+| ...that write                     | 109 (26%) |
 
 ### Why it is worth doing
 

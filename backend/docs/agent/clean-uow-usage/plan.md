@@ -7,11 +7,19 @@ The work. For why, and for where every figure here comes from, see
 Celery tasks - open `with uow:`. Everything below the entrypoint assumes an open
 context and never opens its own.
 
-**Scale:** 146 functions to convert, 36 production call sites, ~800 service calls
-and ~575 bare repository accesses in 47 test files. Roughly 26 commits across
+**Scale:** 152 functions to convert, 36 production call sites, ~899 service calls
+and ~585 bare repository accesses in 49 test files. Roughly 26 commits across
 4 phases.
 
 **Constraint:** `just check` and the full test suite pass at every commit.
+
+**These figures are a snapshot and will drift.** Between first drafting this plan
+and rebasing on main, the multiple-registration-pages work added 6 self-managing
+service functions and 99 test call sites, and `registration_page_service.py` went
+from the third-largest slice to the largest. Re-run the appendix scanners in
+research.md before starting a slice rather than trusting the table. This drift is
+the case for phase 0.4's allowlist: it is the only mechanism here that stops the
+problem growing faster than the migration shrinks it.
 
 ## How every commit stays green
 
@@ -28,7 +36,7 @@ because each phase depends on them.
    a route's `with uow:`. Those conversions are one-sided.
 3. **Bare `uow.<repo>` access in tests does not break during phase 1.** It only
    breaks when `FakeUnitOfWork` goes strict, which is phase 3. So phase 1 only
-   has to fix the ~800 *service call* sites, not the ~575 repository accesses -
+   has to fix the ~899 *service call* sites, not the ~585 repository accesses -
    and adopting the `uow` fixture fixes both at once anyway.
 4. **The strict guards land last**, when nothing violates them.
 
@@ -84,7 +92,7 @@ the strict behaviour itself.
 function in `service_layer/` opens `with uow:` **and is not listed** in
 `docs/agent/clean-uow-usage/known_self_managing.txt`.
 
-Seed the allowlist with today's 124 service-layer offenders, so the commit is
+Seed the allowlist with today's 130 service-layer offenders, so the commit is
 green immediately. From this point CI blocks *new* offenders while the known ones
 shrink slice by slice - the allowlist is the migration's progress bar, and
 phase 3 deletes it.
@@ -101,23 +109,26 @@ test-call count.
 
 | # | Module | Fns | Test calls | Test files |
 |---|---|---|---|---|
-| 1 | `email_send_service.py` **(pilot)** | 2 | 16 | 2 |
+| 1 | `email_send_service.py` **(pilot)** | 2 | 19 | 3 |
 | 2 | `assembly_service.py` | 25 | 156 | 9 |
-| 3 | `registration_page_service.py` | 16 | 151 | 2 |
+| 3 | `registration_page_service.py` | 22 | 242 | 3 |
 | 4 | `user_service.py` | 18 | 86 | 7 |
 | 5 | `respondent_service.py` | 11 | 82 | 5 |
 | 6 | `respondent_field_schema_service.py` | 11 | 80 | 3 |
-| 7 | `registration_document_service.py` | 5 | 35 | 1 |
-| 8 | `registration_image_service.py` | 5 | 34 | 1 |
+| 7 | `registration_document_service.py` | 5 | 34 | 1 |
+| 8 | `registration_image_service.py` | 5 | 33 | 1 |
 | 9 | `email_template_service.py` | 7 | 30 | 1 |
 | 10 | `invite_service.py` | 7 | 29 | 3 |
 | 11 | `email_confirmation_service.py` | 4 | 29 | 4 |
 | 12 | `password_reset_service.py` | 5 | 28 | 2 |
-| 13 | `two_factor_service.py` | 6 | 24 | 3 |
-| 14 | `registration_submission_service.py` | 2 | 20 | 3 |
+| 13 | `registration_submission_service.py` | 2 | 27 | 4 |
+| 14 | `two_factor_service.py` | 6 | 24 | 3 |
+
+Totals: 130 functions, 899 test calls - the whole service layer.
 
 Slices 2 and 3 are large enough to split into two or three commits each, by
-group of related functions. A partial slice is still green, provided the commit
+group of related functions. Slice 3 is now the largest in the list and should
+definitely be split. A partial slice is still green, provided the commit
 converts a function together with all its callers and tests.
 
 ### The per-slice recipe
@@ -193,7 +204,7 @@ This commit is where the original leak actually dies.
 ### 3.2 Make `FakeUnitOfWork` strict by default
 
 Flip the default, delete the `strict` flag, and migrate any test still
-constructing a loose fake. This is where the ~575 bare repository accesses must
+constructing a loose fake. This is where the ~585 bare repository accesses must
 all be inside a block or switched to the `fake_<name>` aliases.
 
 ### 3.3 Delete the allowlist
