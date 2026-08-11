@@ -181,3 +181,27 @@ export function urlBuild(baseUrl, params) {
   if (!params || typeof params !== "object") return baseUrl;
   return urlSetParams(baseUrl, params);
 }
+
+/**
+ * The placeholder id a server-rendered URL template carries.
+ *
+ * A per-item route URL is rendered once by `url_for` with this UUID standing in
+ * for the real id, so the route name stays a Python-side dependency rather than
+ * the JavaScript assuming a URL hierarchy it would then have to keep in step.
+ */
+export const ID_SENTINEL = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Put a real id into a URL template rendered with ID_SENTINEL.
+ *
+ * @param {string} template - the URL as rendered by url_for with the sentinel id
+ * @param {string} id - the id of the item to address
+ * @returns {string} the URL for that item
+ *
+ * @example
+ * urlWithId('/assembly/1/images/00000000-0000-0000-0000-000000000000', 'abc')
+ * // Returns: '/assembly/1/images/abc'
+ */
+export function urlWithId(template, id) {
+  return template.replace(ID_SENTINEL, encodeURIComponent(id));
+}

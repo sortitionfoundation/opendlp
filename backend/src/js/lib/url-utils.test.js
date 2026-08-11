@@ -4,12 +4,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ID_SENTINEL,
   urlSetParam,
   urlRemoveParam,
   urlGetParam,
   urlHasParam,
   urlSetParams,
   urlBuild,
+  urlWithId,
 } from "./url-utils.js";
 
 describe("urlSetParam", () => {
@@ -159,5 +161,23 @@ describe("urlBuild", () => {
 
   it("returns the base URL when there are no parameters", () => {
     expect(urlBuild("/api/users")).toBe("/api/users");
+  });
+});
+
+describe("urlWithId", () => {
+  it("substitutes the real id for the sentinel a url_for template carries", () => {
+    expect(urlWithId(`/assembly/1/images/${ID_SENTINEL}`, "abc-123")).toBe(
+      "/assembly/1/images/abc-123",
+    );
+  });
+
+  it("percent-encodes the id, so it cannot escape its path segment", () => {
+    expect(urlWithId(`/images/${ID_SENTINEL}`, "a/../b")).toBe(
+      "/images/a%2F..%2Fb",
+    );
+  });
+
+  it("returns the template unchanged when it holds no sentinel", () => {
+    expect(urlWithId("/images/fixed", "abc-123")).toBe("/images/fixed");
   });
 });
