@@ -146,6 +146,15 @@ converts a function together with all its callers and tests.
    `uow = FakeUnitOfWork()` line, add `uow` as a test parameter. **Do not** wrap
    test bodies in a `with` block; that re-indents everything and makes the diff
    unreadable.
+
+   A test file can only take the fixture once **every** self-managing function it
+   calls has been converted. The fixture's fake is strict, and a not-yet-converted
+   callee's inner `with uow:` exits the fixture's context and withdraws the
+   repositories for the rest of the test. Leave such a file on its own
+   `FakeUnitOfWork()` until the slice that owns its other callees lands. This is
+   the one place property 1 does not hold: the real UnitOfWork survives nesting
+   today because its closed session resurrects; the strict fake deliberately
+   does not.
 6. Delete the module's entries from `known_self_managing.txt`.
 7. `just check && just test`.
 
