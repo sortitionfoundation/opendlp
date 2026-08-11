@@ -1,31 +1,6 @@
 # Service-layer functions that still open their own `with uow:`.
 # The convention is that only entrypoints do. See plan.md - this file is a
 # ratchet: entries may be removed as functions are migrated, never added.
-assembly_service.py::add_assembly_gsheet
-assembly_service.py::add_target_value
-assembly_service.py::archive_assembly
-assembly_service.py::create_assembly
-assembly_service.py::create_target_category
-assembly_service.py::delete_respondents_for_assembly
-assembly_service.py::delete_target_category
-assembly_service.py::delete_target_value
-assembly_service.py::delete_targets_for_assembly
-assembly_service.py::get_assembly_gsheet
-assembly_service.py::get_assembly_with_permissions
-assembly_service.py::get_csv_upload_status
-assembly_service.py::get_feature_collection_for_assembly
-assembly_service.py::get_or_create_csv_config
-assembly_service.py::get_or_create_selection_settings
-assembly_service.py::get_targets_for_assembly
-assembly_service.py::get_user_accessible_assemblies
-assembly_service.py::import_targets_from_csv
-assembly_service.py::remove_assembly_gsheet
-assembly_service.py::update_assembly
-assembly_service.py::update_assembly_gsheet
-assembly_service.py::update_csv_config
-assembly_service.py::update_selection_settings
-assembly_service.py::update_target_category
-assembly_service.py::update_target_value
 email_confirmation_service.py::cleanup_expired_tokens
 email_confirmation_service.py::confirm_email_with_token
 email_confirmation_service.py::resend_confirmation_email

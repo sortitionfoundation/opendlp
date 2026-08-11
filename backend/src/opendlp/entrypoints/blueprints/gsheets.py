@@ -223,10 +223,11 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Reuse the same UnitOfWork for the remaining sequential reads.
         # Check if gsheet is configured
         gsheet = None
-        try:
-            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-        except ServiceLayerError as gsheet_error:
-            logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
+        with uow:
+            try:
+                gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            except ServiceLayerError as gsheet_error:
+                logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
 
         # Fetch paginated selection history
         with uow:
@@ -241,7 +242,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Get CSV status for tab enabled states
         csv_status = None
         # No CSV data is expected for new assemblies.
-        with contextlib.suppress(ServiceLayerError):
+        with uow, contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
         # Determine data source and tab enabled states

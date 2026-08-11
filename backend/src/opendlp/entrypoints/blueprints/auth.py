@@ -272,7 +272,8 @@ def verify_2fa() -> ResponseReturnValue:
                     return redirect(url_for("auth.login"))
 
             # Verify code (TOTP or backup code)
-            success, is_backup_code = _verify_2fa_code_for_user(uow, pending_user_id, verification_code)
+            with uow:
+                success, is_backup_code = _verify_2fa_code_for_user(uow, pending_user_id, verification_code)
 
             # Handle failed verification
             if not success:
@@ -293,7 +294,8 @@ def verify_2fa() -> ResponseReturnValue:
                 return render_template("auth/verify_2fa.html")
 
             # Success! Complete login
-            return _complete_2fa_login(uow, pending_user_id, is_backup_code)
+            with uow:
+                return _complete_2fa_login(uow, pending_user_id, is_backup_code)
 
         except TwoFactorVerificationError as e:
             flash(str(e), "error")
@@ -457,7 +459,8 @@ def forgot_password() -> ResponseReturnValue:
             uow = bootstrap.get_flask_uow()
 
             # Request password reset (creates token if valid user)
-            success = request_password_reset(uow, form.email.data)
+            with uow:
+                success = request_password_reset(uow, form.email.data)
 
             if success:
                 # Get the token and user to send email

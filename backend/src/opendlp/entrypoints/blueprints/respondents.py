@@ -105,14 +105,15 @@ def _run_csv_import(
 
     # Reuse the same UnitOfWork: the import block above has committed and the
     # session is reusable for this second, separate unit of work.
-    update_csv_config(
-        uow=uow,
-        user_id=current_user.id,
-        assembly_id=assembly_id,
-        last_import_filename=filename,
-        last_import_timestamp=datetime.now(UTC),
-        csv_id_column=resolved_id_column,
-    )
+    with uow:
+        update_csv_config(
+            uow=uow,
+            user_id=current_user.id,
+            assembly_id=assembly_id,
+            last_import_filename=filename,
+            last_import_timestamp=datetime.now(UTC),
+            csv_id_column=resolved_id_column,
+        )
 
     if errors:
         logger.warning(
@@ -614,21 +615,22 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Reuse the same UnitOfWork for the remaining sequential reads.
         gsheet = None
         # No gsheet config exists is expected for new assemblies.
-        with contextlib.suppress(ServiceLayerError):
-            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+        with uow:
+            with contextlib.suppress(ServiceLayerError):
+                gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        # Get CSV status
-        csv_status: CSVUploadStatus | None = None
-        # No CSV data is expected for new assemblies.
-        with contextlib.suppress(ServiceLayerError):
-            csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
+            # Get CSV status
+            csv_status: CSVUploadStatus | None = None
+            # No CSV data is expected for new assemblies.
+            with contextlib.suppress(ServiceLayerError):
+                csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
-        # The saved respondent-export sheet config (if the organiser has exported
-        # to Google Sheets) drives the "Exported to Google Spreadsheet" link.
-        # No export config is expected until the first Google Sheets export, which
-        # the repository reports as None rather than as an error.
-        respondent_gsheet = None
-        saved = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
+            # The saved respondent-export sheet config (if the organiser has exported
+            # to Google Sheets) drives the "Exported to Google Spreadsheet" link.
+            # No export config is expected until the first Google Sheets export, which
+            # the repository reports as None rather than as an error.
+            respondent_gsheet = None
+            saved = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
         if saved is not None:
             respondent_gsheet = saved.create_detached_copy()
 

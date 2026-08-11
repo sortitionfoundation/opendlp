@@ -182,12 +182,14 @@ def _document_to_dict(document: RegistrationDocument, url_slug: str) -> dict[str
 def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice registration form configuration page."""
     try:
-        nav = get_assembly_nav_context(
-            bootstrap.get_flask_uow,
-            current_user.id,
-            assembly_id,
-            request.args.get("source", ""),
-        )
+        nav_uow = bootstrap.get_flask_uow()
+        with nav_uow:
+            nav = get_assembly_nav_context(
+                nav_uow,
+                current_user.id,
+                assembly_id,
+                request.args.get("source", ""),
+            )
 
         # Get registration page and HTML source from service layer
         uow = bootstrap.get_flask_uow()
@@ -354,12 +356,14 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     error_redirect_url = url_for("backoffice_registration.view_assembly_registration", **error_kwargs)
     try:
         # Verify user has permission to access this assembly (side effect: raises if unauthorized)
-        get_assembly_nav_context(
-            bootstrap.get_flask_uow,
-            current_user.id,
-            assembly_id,
-            "",
-        )
+        nav_uow = bootstrap.get_flask_uow()
+        with nav_uow:
+            get_assembly_nav_context(
+                nav_uow,
+                current_user.id,
+                assembly_id,
+                "",
+            )
 
         # Only save-family actions carry HTML content. Publish/close/etc post from
         # buttons that don't render the editor, so guard against blanking the HTML.
@@ -559,7 +563,9 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID) -> str:
 
     Raises the service-layer exceptions the caller handles centrally.
     """
-    get_assembly_nav_context(bootstrap.get_flask_uow, current_user.id, assembly_id, "")
+    nav_uow = bootstrap.get_flask_uow()
+    with nav_uow:
+        get_assembly_nav_context(nav_uow, current_user.id, assembly_id, "")
     page = _sole_page(bootstrap.get_flask_uow(), assembly_id)
     if page is None:
         raise RegistrationPageNotFoundError(f"No registration page for assembly {assembly_id}")
@@ -741,12 +747,14 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
     """Download registration QR code as PNG image."""
     try:
         # Verify user has permission to access this assembly
-        get_assembly_nav_context(
-            bootstrap.get_flask_uow,
-            current_user.id,
-            assembly_id,
-            "",
-        )
+        nav_uow = bootstrap.get_flask_uow()
+        with nav_uow:
+            get_assembly_nav_context(
+                nav_uow,
+                current_user.id,
+                assembly_id,
+                "",
+            )
 
         # The QR code encodes the short URL, so a short slug must be configured
         uow = bootstrap.get_flask_uow()

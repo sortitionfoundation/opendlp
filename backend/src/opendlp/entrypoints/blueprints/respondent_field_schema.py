@@ -268,40 +268,41 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
             if existing is not None and existing.field_type not in CHOICE_TYPES:
                 seed_options = [ChoiceOption(value="option_1")]
 
-    try:
-        if seed_options is not None:
-            update_field(
-                uow,
-                current_user.id,
-                assembly_id,
-                field_id,
-                label=label,
-                group=group,
-                field_type=field_type,
-                options=seed_options,
-                on_registration_page=on_registration_page,
-            )
-        else:
-            update_field(
-                uow,
-                current_user.id,
-                assembly_id,
-                field_id,
-                label=label,
-                group=group,
-                field_type=field_type,
-                on_registration_page=on_registration_page,
-            )
-        flash(_("Field updated."), "success")
-    except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
-    except FieldDefinitionNotFoundError:
-        flash(_("Field not found."), "error")
-    except InsufficientPermissions:
-        flash(_("You don't have permission to edit the schema"), "error")
-    except NotFoundError:
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+    with uow:
+        try:
+            if seed_options is not None:
+                update_field(
+                    uow,
+                    current_user.id,
+                    assembly_id,
+                    field_id,
+                    label=label,
+                    group=group,
+                    field_type=field_type,
+                    options=seed_options,
+                    on_registration_page=on_registration_page,
+                )
+            else:
+                update_field(
+                    uow,
+                    current_user.id,
+                    assembly_id,
+                    field_id,
+                    label=label,
+                    group=group,
+                    field_type=field_type,
+                    on_registration_page=on_registration_page,
+                )
+            flash(_("Field updated."), "success")
+        except FieldDefinitionConflictError as e:
+            flash(str(e), "error")
+        except FieldDefinitionNotFoundError:
+            flash(_("Field not found."), "error")
+        except InsufficientPermissions:
+            flash(_("You don't have permission to edit the schema"), "error")
+        except NotFoundError:
+            flash(_("Assembly not found"), "error")
+            return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)
 
 

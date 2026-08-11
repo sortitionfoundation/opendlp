@@ -89,13 +89,14 @@ def _build_published_page_with_auto_reply(session_factory, admin_id) -> Registra
             )
         uow.commit()
 
-    update_assembly(
-        SqlAlchemyUnitOfWork(session_factory),
-        assembly_id,
-        admin_id,
-        reply_to_name="The Team",
-        reply_to_email="team@example.com",
-    )
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        update_assembly(
+            uow,
+            assembly_id,
+            admin_id,
+            reply_to_name="The Team",
+            reply_to_email="team@example.com",
+        )
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         create_registration_page_with_slugs(uow, admin_id, assembly_id, name="Registration page")

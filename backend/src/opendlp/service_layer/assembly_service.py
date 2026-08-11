@@ -3,7 +3,6 @@ ABOUTME: Provides functions for assembly creation, updates, permissions, and lif
 
 import csv as csv_module
 import uuid
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from io import StringIO
@@ -68,27 +67,27 @@ def create_assembly(
     Raises:
         InsufficientPermissions: If user cannot create assemblies
         UserNotFoundError: If user not found or invalid data
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(created_by_user_id)
-        if not user:
-            raise UserNotFoundError(f"User {created_by_user_id} not found")
+    user = uow.users.get(created_by_user_id)
+    if not user:
+        raise UserNotFoundError(f"User {created_by_user_id} not found")
 
-        # Check permissions - only global organisers and admins can create assemblies
-        if not has_global_organiser(user):
-            raise InsufficientPermissions(action="create assembly", required_role="global-organiser or admin")
+    # Check permissions - only global organisers and admins can create assemblies
+    if not has_global_organiser(user):
+        raise InsufficientPermissions(action="create assembly", required_role="global-organiser or admin")
 
-        # Create the assembly
-        assembly = Assembly(
-            title=title,
-            question=question,
-            first_assembly_date=first_assembly_date,
-            number_to_select=number_to_select,
-        )
+    # Create the assembly
+    assembly = Assembly(
+        title=title,
+        question=question,
+        first_assembly_date=first_assembly_date,
+        number_to_select=number_to_select,
+    )
 
-        uow.assemblies.add(assembly)
-        uow.commit()
-        return assembly.create_detached_copy()
+    uow.assemblies.add(assembly)
+    return assembly.create_detached_copy()
 
 
 def update_assembly(
@@ -111,31 +110,31 @@ def update_assembly(
     Raises:
         UserNotFoundError, AssemblyNotFoundError: If assembly or user not found
         InsufficientPermissions: If user cannot manage this assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Check permissions
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="update assembly", required_role="assembly-manager, global-organiser or admin"
-            )
+    # Check permissions
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="update assembly", required_role="assembly-manager, global-organiser or admin"
+        )
 
-        # Apply updates
-        for field, value in updates.items():
-            if hasattr(assembly, field):
-                setattr(assembly, field, value)
+    # Apply updates
+    for field, value in updates.items():
+        if hasattr(assembly, field):
+            setattr(assembly, field, value)
 
-        uow.commit()
-        # Explicit typing to satisfy mypy
-        updated_assembly: Assembly = assembly
-        return updated_assembly
+    # Explicit typing to satisfy mypy
+    updated_assembly: Assembly = assembly
+    return updated_assembly
 
 
 def get_assembly_with_permissions(
@@ -157,23 +156,24 @@ def get_assembly_with_permissions(
     Raises:
         NotFoundError: If assembly or user not found
         InsufficientPermissions: If user cannot view this assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Check permissions
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(action="view assembly", required_role="assembly role or global privileges")
+    # Check permissions
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(action="view assembly", required_role="assembly role or global privileges")
 
-        # Explicit typing to satisfy mypy
-        retrieved_assembly: Assembly = assembly.create_detached_copy()
-        return retrieved_assembly
+    # Explicit typing to satisfy mypy
+    retrieved_assembly: Assembly = assembly.create_detached_copy()
+    return retrieved_assembly
 
 
 def archive_assembly(
@@ -195,29 +195,29 @@ def archive_assembly(
     Raises:
         NotFoundError: If assembly or user not found
         InsufficientPermissions: If user cannot manage this assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Check permissions
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="archive assembly", required_role="assembly-manager, global-organiser or admin"
-            )
+    # Check permissions
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="archive assembly", required_role="assembly-manager, global-organiser or admin"
+        )
 
-        # Archive the assembly
-        assembly.status = AssemblyStatus.ARCHIVED
+    # Archive the assembly
+    assembly.status = AssemblyStatus.ARCHIVED
 
-        uow.commit()
-        # Explicit typing to satisfy mypy
-        archived_assembly: Assembly = assembly
-        return archived_assembly
+    # Explicit typing to satisfy mypy
+    archived_assembly: Assembly = assembly
+    return archived_assembly
 
 
 def get_user_accessible_assemblies(
@@ -236,15 +236,16 @@ def get_user_accessible_assemblies(
 
     Raises:
         UserNotFoundError: If user not found
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        # Use existing user_service function for consistency
+    # Use existing user_service function for consistency
 
-        return get_user_assemblies(uow, user_id)
+    return get_user_assemblies(uow, user_id)
 
 
 def add_assembly_gsheet(
@@ -274,43 +275,42 @@ def add_assembly_gsheet(
         AssemblyNotFoundError: If assembly not found
         InsufficientPermissions: If user cannot manage this assembly
         ValueError: If assembly already has a gsheet
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Check permissions
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="add gsheet to assembly", required_role="assembly-manager, global-organiser or admin"
-            )
+    # Check permissions
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="add gsheet to assembly", required_role="assembly-manager, global-organiser or admin"
+        )
 
-        # Check if assembly already has a gsheet
-        existing_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
-        if existing_gsheet:
-            raise ValueError(f"Assembly {assembly_id} already has a Google Spreadsheet configuration")
+    # Check if assembly already has a gsheet
+    existing_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+    if existing_gsheet:
+        raise ValueError(f"Assembly {assembly_id} already has a Google Spreadsheet configuration")
 
-        # Split options into gsheet-specific and selection settings
-        sel_kwargs, gsheet_kwargs = _split_select_gsheet_kwargs(**gsheet_options)
+    # Split options into gsheet-specific and selection settings
+    sel_kwargs, gsheet_kwargs = _split_select_gsheet_kwargs(**gsheet_options)
 
-        assembly_gsheet = AssemblyGSheet(assembly_id=assembly_id, url=url, **gsheet_kwargs)
-        uow.assembly_gsheets.add(assembly_gsheet)
+    assembly_gsheet = AssemblyGSheet(assembly_id=assembly_id, url=url, **gsheet_kwargs)
+    uow.assembly_gsheets.add(assembly_gsheet)
 
-        # Create or update SelectionSettings
-        sel_settings = assembly.selection_settings or SelectionSettings(assembly_id=assembly_id)
-        sel_settings.update_from_str_kwargs(**sel_kwargs)
-        if team in VALID_TEAMS:
-            _apply_team_defaults(sel_settings, cast("Teams", team))
-        assembly.selection_settings = sel_settings
+    # Create or update SelectionSettings
+    sel_settings = assembly.selection_settings or SelectionSettings(assembly_id=assembly_id)
+    sel_settings.update_from_str_kwargs(**sel_kwargs)
+    if team in VALID_TEAMS:
+        _apply_team_defaults(sel_settings, cast("Teams", team))
+    assembly.selection_settings = sel_settings
 
-        uow.commit()
-
-        return assembly_gsheet.create_detached_copy()
+    return assembly_gsheet.create_detached_copy()
 
 
 def update_assembly_gsheet(
@@ -336,46 +336,43 @@ def update_assembly_gsheet(
         AssemblyNotFoundError: If assembly not found
         GoogleSheetConfigNotFoundError: If gsheet not found
         InsufficientPermissions: If user cannot manage this assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Check permissions
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="update assembly gsheet", required_role="assembly-manager, global-organiser or admin"
-            )
+    # Check permissions
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="update assembly gsheet", required_role="assembly-manager, global-organiser or admin"
+        )
 
-        # Get the existing gsheet
-        assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
-        if not assembly_gsheet:
-            raise GoogleSheetConfigNotFoundError(
-                f"Assembly {assembly_id} does not have a Google Spreadsheet configuration"
-            )
+    # Get the existing gsheet
+    assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+    if not assembly_gsheet:
+        raise GoogleSheetConfigNotFoundError(f"Assembly {assembly_id} does not have a Google Spreadsheet configuration")
 
-        # Split updates into gsheet-specific and selection settings
-        sel_kwargs, gsheet_kwargs = _split_select_gsheet_kwargs(**updates)
+    # Split updates into gsheet-specific and selection settings
+    sel_kwargs, gsheet_kwargs = _split_select_gsheet_kwargs(**updates)
 
-        # Apply gsheet-specific updates
-        team = gsheet_kwargs.pop("team", OTHER_TEAM)
-        assembly_gsheet.update_values(**gsheet_kwargs)
+    # Apply gsheet-specific updates
+    team = gsheet_kwargs.pop("team", OTHER_TEAM)
+    assembly_gsheet.update_values(**gsheet_kwargs)
 
-        # Apply selection settings updates
-        sel_settings = assembly.selection_settings or SelectionSettings(assembly_id=assembly_id)
-        sel_settings.update_from_str_kwargs(**sel_kwargs)
-        if team in VALID_TEAMS:
-            _apply_team_defaults(sel_settings, cast("Teams", team))
-        assembly.selection_settings = sel_settings
+    # Apply selection settings updates
+    sel_settings = assembly.selection_settings or SelectionSettings(assembly_id=assembly_id)
+    sel_settings.update_from_str_kwargs(**sel_kwargs)
+    if team in VALID_TEAMS:
+        _apply_team_defaults(sel_settings, cast("Teams", team))
+    assembly.selection_settings = sel_settings
 
-        uow.commit()
-
-        return assembly_gsheet.create_detached_copy()
+    return assembly_gsheet.create_detached_copy()
 
 
 def remove_assembly_gsheet(
@@ -396,31 +393,29 @@ def remove_assembly_gsheet(
         AssemblyNotFoundError: If assembly not found
         GoogleSheetConfigNotFoundError: If gsheet not found
         InsufficientPermissions: If user cannot manage this assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Check permissions
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="remove assembly gsheet", required_role="assembly-manager, global-organiser or admin"
-            )
+    # Check permissions
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="remove assembly gsheet", required_role="assembly-manager, global-organiser or admin"
+        )
 
-        # Get the existing gsheet
-        assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
-        if not assembly_gsheet:
-            raise GoogleSheetConfigNotFoundError(
-                f"Assembly {assembly_id} does not have a Google Spreadsheet configuration"
-            )
+    # Get the existing gsheet
+    assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+    if not assembly_gsheet:
+        raise GoogleSheetConfigNotFoundError(f"Assembly {assembly_id} does not have a Google Spreadsheet configuration")
 
-        uow.assembly_gsheets.delete(assembly_gsheet)
-        uow.commit()
+    uow.assembly_gsheets.delete(assembly_gsheet)
 
 
 def get_assembly_gsheet(
@@ -443,28 +438,27 @@ def get_assembly_gsheet(
         UserNotFoundError: If user not found
         AssemblyNotFoundError: If assembly not found
         InsufficientPermissions: If user cannot view this assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Check permissions
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="view assembly gsheet", required_role="assembly role or global privileges"
-            )
+    # Check permissions
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(action="view assembly gsheet", required_role="assembly role or global privileges")
 
-        # Get the gsheet
-        assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
-        if assembly_gsheet:
-            return assembly_gsheet.create_detached_copy()
+    # Get the gsheet
+    assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
+    if assembly_gsheet:
+        return assembly_gsheet.create_detached_copy()
 
-        return None
+    return None
 
 
 def _apply_team_defaults(sel_settings: SelectionSettings, team: Teams) -> None:
@@ -496,27 +490,29 @@ def get_or_create_selection_settings(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> SelectionSettings:
-    """Get or create selection settings for an assembly."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Get or create selection settings for an assembly.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="view selection settings",
-                required_role="assembly role or global privileges",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        if assembly.selection_settings is None:
-            assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
-            uow.commit()
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="view selection settings",
+            required_role="assembly role or global privileges",
+        )
 
-        return cast("SelectionSettings", assembly.selection_settings).create_detached_copy()
+    if assembly.selection_settings is None:
+        assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
+        uow.commit()
+
+    return cast("SelectionSettings", assembly.selection_settings).create_detached_copy()
 
 
 def update_selection_settings(
@@ -525,33 +521,33 @@ def update_selection_settings(
     assembly_id: uuid.UUID,
     **settings: Any,
 ) -> SelectionSettings:
-    """Update selection settings for an assembly."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Update selection settings for an assembly.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="update selection settings",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        if assembly.selection_settings is None:
-            assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="update selection settings",
+            required_role="assembly-manager, global-organiser or admin",
+        )
 
-        sel_settings = cast("SelectionSettings", assembly.selection_settings)
-        for key, value in settings.items():
-            if hasattr(sel_settings, key):
-                setattr(sel_settings, key, value)
+    if assembly.selection_settings is None:
+        assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
 
-        uow.commit()
+    sel_settings = cast("SelectionSettings", assembly.selection_settings)
+    for key, value in settings.items():
+        if hasattr(sel_settings, key):
+            setattr(sel_settings, key, value)
 
-        return sel_settings.create_detached_copy()
+    return sel_settings.create_detached_copy()
 
 
 def create_target_category(
@@ -562,46 +558,47 @@ def create_target_category(
     description: str = "",
     sort_order: int = 0,
 ) -> TargetCategory:
-    """Create a new target category for an assembly."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Create a new target category for an assembly.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="create target category",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        existing = uow.target_categories.get_by_assembly_id(assembly_id)
-        if any(c.name.lower() == name.lower() for c in existing):
-            raise ValueError(f"A category named '{name}' already exists")
-
-        category = TargetCategory(
-            assembly_id=assembly_id,
-            name=name,
-            description=description,
-            sort_order=sort_order,
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="create target category",
+            required_role="assembly-manager, global-organiser or admin",
         )
 
-        # Auto-add values if category name matches a low-cardinality respondent column
-        attribute_columns = get_respondent_attribute_columns(uow, assembly_id)
-        columns_lower = {col.lower(): col for col in attribute_columns}
-        matched_col = columns_lower.get(name.lower())
-        if matched_col is not None:
-            value_counts = get_respondent_attribute_value_counts(uow, assembly_id, matched_col)
-            if 0 < len(value_counts) < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
-                for value_name in sorted(value_counts.keys()):
-                    category.add_value(TargetValue(value=value_name, min=0, max=0))
+    existing = uow.target_categories.get_by_assembly_id(assembly_id)
+    if any(c.name.lower() == name.lower() for c in existing):
+        raise ValueError(f"A category named '{name}' already exists")
 
-        uow.target_categories.add(category)
-        uow.commit()
-        return category.create_detached_copy()
+    category = TargetCategory(
+        assembly_id=assembly_id,
+        name=name,
+        description=description,
+        sort_order=sort_order,
+    )
+
+    # Auto-add values if category name matches a low-cardinality respondent column
+    attribute_columns = get_respondent_attribute_columns(uow, assembly_id)
+    columns_lower = {col.lower(): col for col in attribute_columns}
+    matched_col = columns_lower.get(name.lower())
+    if matched_col is not None:
+        value_counts = get_respondent_attribute_value_counts(uow, assembly_id, matched_col)
+        if 0 < len(value_counts) < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
+            for value_name in sorted(value_counts.keys()):
+                category.add_value(TargetValue(value=value_name, min=0, max=0))
+
+    uow.target_categories.add(category)
+    return category.create_detached_copy()
 
 
 def get_targets_for_assembly(
@@ -609,24 +606,26 @@ def get_targets_for_assembly(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> list[TargetCategory]:
-    """Get all target categories for an assembly."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Get all target categories for an assembly.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="view targets",
-                required_role="assembly role or global privileges",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        categories = uow.target_categories.get_by_assembly_id(assembly_id)
-        return [c.create_detached_copy() for c in categories]
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="view targets",
+            required_role="assembly role or global privileges",
+        )
+
+    categories = uow.target_categories.get_by_assembly_id(assembly_id)
+    return [c.create_detached_copy() for c in categories]
 
 
 def import_targets_from_csv(
@@ -641,68 +640,68 @@ def import_targets_from_csv(
 
     CSV format matches sortition-algorithms feature files with columns:
     feature, value, min, max, min_flex, max_flex
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="import targets",
-                required_role="assembly-manager, global-organiser or admin",
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="import targets",
+            required_role="assembly-manager, global-organiser or admin",
+        )
+
+    # Parse and validate CSV using sortition-algorithms
+    # Note: read_in_features() already calls set_default_max_flex() and check_min_max()
+    csv_file = StringIO(csv_content)
+    reader = csv_module.DictReader(csv_file)
+
+    if not reader.fieldnames:
+        raise InvalidSelection("CSV file is empty or malformed")
+
+    headers = list(reader.fieldnames)
+    body = list(reader)
+
+    try:
+        feature_collection, _, __ = read_in_features(headers, body)
+    except Exception as e:
+        raise InvalidSelection(f"Failed to parse CSV: {e!s}") from e
+
+    # Replace existing if requested
+    if replace_existing:
+        uow.target_categories.delete_all_for_assembly(assembly_id)
+
+    # Convert to TargetCategory objects
+    categories = []
+    for idx, (feature_name, feature_values) in enumerate(feature_collection.items()):
+        category = TargetCategory(
+            assembly_id=assembly_id,
+            name=feature_name,
+            description="",
+            sort_order=idx,
+        )
+
+        # Add target values
+        for value_name, fv_minmax in feature_values.items():
+            target_val = TargetValue(
+                value=value_name,
+                min=fv_minmax.min,
+                max=fv_minmax.max,
+                min_flex=fv_minmax.min_flex,
+                max_flex=fv_minmax.max_flex,
             )
+            category.add_value(target_val)
 
-        # Parse and validate CSV using sortition-algorithms
-        # Note: read_in_features() already calls set_default_max_flex() and check_min_max()
-        csv_file = StringIO(csv_content)
-        reader = csv_module.DictReader(csv_file)
+        uow.target_categories.add(category)
+        categories.append(category)
 
-        if not reader.fieldnames:
-            raise InvalidSelection("CSV file is empty or malformed")
-
-        headers = list(reader.fieldnames)
-        body = list(reader)
-
-        try:
-            feature_collection, _, __ = read_in_features(headers, body)
-        except Exception as e:
-            raise InvalidSelection(f"Failed to parse CSV: {e!s}") from e
-
-        # Replace existing if requested
-        if replace_existing:
-            uow.target_categories.delete_all_for_assembly(assembly_id)
-
-        # Convert to TargetCategory objects
-        categories = []
-        for idx, (feature_name, feature_values) in enumerate(feature_collection.items()):
-            category = TargetCategory(
-                assembly_id=assembly_id,
-                name=feature_name,
-                description="",
-                sort_order=idx,
-            )
-
-            # Add target values
-            for value_name, fv_minmax in feature_values.items():
-                target_val = TargetValue(
-                    value=value_name,
-                    min=fv_minmax.min,
-                    max=fv_minmax.max,
-                    min_flex=fv_minmax.min_flex,
-                    max_flex=fv_minmax.max_flex,
-                )
-                category.add_value(target_val)
-
-            uow.target_categories.add(category)
-            categories.append(category)
-
-        uow.commit()
-        return [c.create_detached_copy() for c in categories]
+    return [c.create_detached_copy() for c in categories]
 
 
 def update_target_category(
@@ -713,32 +712,33 @@ def update_target_category(
     name: str,
     description: str = "",
 ) -> TargetCategory:
-    """Update a target category's name and description."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Update a target category's name and description.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="update target category",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
-        if not category or category.assembly_id != assembly_id:
-            raise NotFoundError(f"Target category {category_id} not found")
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="update target category",
+            required_role="assembly-manager, global-organiser or admin",
+        )
 
-        category.name = name.strip()
-        category.description = description.strip()
-        category.updated_at = datetime.now(UTC)
+    category = cast("TargetCategory | None", uow.target_categories.get(category_id))
+    if not category or category.assembly_id != assembly_id:
+        raise NotFoundError(f"Target category {category_id} not found")
 
-        uow.commit()
-        return category.create_detached_copy()
+    category.name = name.strip()
+    category.description = description.strip()
+    category.updated_at = datetime.now(UTC)
+
+    return category.create_detached_copy()
 
 
 def delete_target_category(
@@ -747,28 +747,29 @@ def delete_target_category(
     assembly_id: uuid.UUID,
     category_id: uuid.UUID,
 ) -> None:
-    """Delete a target category."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Delete a target category.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="delete target category",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
-        if not category or category.assembly_id != assembly_id:
-            raise NotFoundError(f"Target category {category_id} not found")
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="delete target category",
+            required_role="assembly-manager, global-organiser or admin",
+        )
 
-        uow.target_categories.delete(category)
-        uow.commit()
+    category = cast("TargetCategory | None", uow.target_categories.get(category_id))
+    if not category or category.assembly_id != assembly_id:
+        raise NotFoundError(f"Target category {category_id} not found")
+
+    uow.target_categories.delete(category)
 
 
 def add_target_value(
@@ -780,32 +781,33 @@ def add_target_value(
     min_count: int,
     max_count: int,
 ) -> TargetCategory:
-    """Add a value to a target category. Returns the updated category."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Add a value to a target category. Returns the updated category.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="add target value",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
-        if not category or category.assembly_id != assembly_id:
-            raise NotFoundError(f"Target category {category_id} not found")
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="add target value",
+            required_role="assembly-manager, global-organiser or admin",
+        )
 
-        target_val = TargetValue(value=value, min=min_count, max=max_count)
-        category.add_value(target_val)
-        flag_modified(category, "values")
+    category = cast("TargetCategory | None", uow.target_categories.get(category_id))
+    if not category or category.assembly_id != assembly_id:
+        raise NotFoundError(f"Target category {category_id} not found")
 
-        uow.commit()
-        return category.create_detached_copy()
+    target_val = TargetValue(value=value, min=min_count, max=max_count)
+    category.add_value(target_val)
+    flag_modified(category, "values")
+
+    return category.create_detached_copy()
 
 
 def update_target_value(
@@ -818,46 +820,47 @@ def update_target_value(
     min_count: int,
     max_count: int,
 ) -> TargetCategory:
-    """Update a value within a target category. Returns the updated category."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Update a value within a target category. Returns the updated category.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="update target value",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
-        if not category or category.assembly_id != assembly_id:
-            raise NotFoundError(f"Target category {category_id} not found")
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="update target value",
+            required_role="assembly-manager, global-organiser or admin",
+        )
 
-        existing = next((v for v in category.values if v.value_id == value_id), None)
-        if not existing:
-            raise NotFoundError(f"Target value {value_id} not found")
+    category = cast("TargetCategory | None", uow.target_categories.get(category_id))
+    if not category or category.assembly_id != assembly_id:
+        raise NotFoundError(f"Target category {category_id} not found")
 
-        if value != existing.value and any(v.value == value for v in category.values):
-            raise ValueError(f"Value '{value}' already exists in category '{category.name}'")
+    existing = next((v for v in category.values if v.value_id == value_id), None)
+    if not existing:
+        raise NotFoundError(f"Target value {value_id} not found")
 
-        existing.value = value.strip()
-        existing.min = min_count
-        existing.max = max_count
-        # Reset flex values since the form doesn't expose them;
-        # the sortition library recalculates safe defaults at selection time
-        existing.min_flex = 0
-        existing.max_flex = MAX_FLEX_UNSET
-        existing._validate()
-        category.updated_at = datetime.now(UTC)
-        flag_modified(category, "values")
+    if value != existing.value and any(v.value == value for v in category.values):
+        raise ValueError(f"Value '{value}' already exists in category '{category.name}'")
 
-        uow.commit()
-        return category.create_detached_copy()
+    existing.value = value.strip()
+    existing.min = min_count
+    existing.max = max_count
+    # Reset flex values since the form doesn't expose them;
+    # the sortition library recalculates safe defaults at selection time
+    existing.min_flex = 0
+    existing.max_flex = MAX_FLEX_UNSET
+    existing._validate()
+    category.updated_at = datetime.now(UTC)
+    flag_modified(category, "values")
+
+    return category.create_detached_copy()
 
 
 def delete_target_value(
@@ -867,32 +870,33 @@ def delete_target_value(
     category_id: uuid.UUID,
     value_id: uuid.UUID,
 ) -> TargetCategory:
-    """Delete a value from a target category. Returns the updated category."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Delete a value from a target category. Returns the updated category.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="delete target value",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        category = cast("TargetCategory | None", uow.target_categories.get(category_id))
-        if not category or category.assembly_id != assembly_id:
-            raise NotFoundError(f"Target category {category_id} not found")
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="delete target value",
+            required_role="assembly-manager, global-organiser or admin",
+        )
 
-        if not category.remove_value(value_id):
-            raise NotFoundError(f"Target value {value_id} not found")
-        flag_modified(category, "values")
+    category = cast("TargetCategory | None", uow.target_categories.get(category_id))
+    if not category or category.assembly_id != assembly_id:
+        raise NotFoundError(f"Target category {category_id} not found")
 
-        uow.commit()
-        return category.create_detached_copy()
+    if not category.remove_value(value_id):
+        raise NotFoundError(f"Target value {value_id} not found")
+    flag_modified(category, "values")
+
+    return category.create_detached_copy()
 
 
 def get_feature_collection_for_assembly(
@@ -905,30 +909,31 @@ def get_feature_collection_for_assembly(
     Used internally for selection operations.
 
     Returns: (FeatureCollection, report_text)
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="get feature collection",
-                required_role="assembly role or global privileges",
-            )
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="get feature collection",
+            required_role="assembly role or global privileges",
+        )
 
-        # Use SelectionData with our custom adapter
-        adapter = OpenDLPDataAdapter(uow, assembly_id)
-        select_data = SelectionData(adapter)
+    # Use SelectionData with our custom adapter
+    adapter = OpenDLPDataAdapter(uow, assembly_id)
+    select_data = SelectionData(adapter)
 
-        # Load features using sortition-algorithms
-        features, report = select_data.load_features(assembly.number_to_select)
+    # Load features using sortition-algorithms
+    features, report = select_data.load_features(assembly.number_to_select)
 
-        return features, report.as_text()
+    return features, report.as_text()
 
 
 def get_or_create_csv_config(
@@ -936,29 +941,31 @@ def get_or_create_csv_config(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> AssemblyCSV:
-    """Get or create CSV configuration for an assembly."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Get or create CSV configuration for an assembly.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="view CSV configuration",
-                required_role="assembly role or global privileges",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Create default config if doesn't exist
-        if assembly.csv is None:
-            assembly.csv = AssemblyCSV(assembly_id=assembly_id)
-            uow.commit()
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="view CSV configuration",
+            required_role="assembly role or global privileges",
+        )
 
-        csv_config = cast("AssemblyCSV", assembly.csv)
-        return csv_config.create_detached_copy()
+    # Create default config if doesn't exist
+    if assembly.csv is None:
+        assembly.csv = AssemblyCSV(assembly_id=assembly_id)
+        uow.commit()
+
+    csv_config = cast("AssemblyCSV", assembly.csv)
+    return csv_config.create_detached_copy()
 
 
 def update_csv_config(
@@ -967,36 +974,37 @@ def update_csv_config(
     assembly_id: uuid.UUID,
     **settings: Any,
 ) -> AssemblyCSV:
-    """Update CSV configuration for an assembly."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Update CSV configuration for an assembly.
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="update CSV configuration",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Create if doesn't exist
-        if assembly.csv is None:
-            assembly.csv = AssemblyCSV(assembly_id=assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="update CSV configuration",
+            required_role="assembly-manager, global-organiser or admin",
+        )
 
-        # Update settings
-        csv_config = cast("AssemblyCSV", assembly.csv)
-        for key, value in settings.items():
-            if hasattr(csv_config, key):
-                setattr(csv_config, key, value)
+    # Create if doesn't exist
+    if assembly.csv is None:
+        assembly.csv = AssemblyCSV(assembly_id=assembly_id)
 
-        csv_config.updated_at = datetime.now(UTC)
-        uow.commit()
+    # Update settings
+    csv_config = cast("AssemblyCSV", assembly.csv)
+    for key, value in settings.items():
+        if hasattr(csv_config, key):
+            setattr(csv_config, key, value)
 
-        return csv_config.create_detached_copy()
+    csv_config.updated_at = datetime.now(UTC)
+
+    return csv_config.create_detached_copy()
 
 
 @dataclass(kw_only=True)
@@ -1079,38 +1087,39 @@ def get_csv_upload_status(
         - has_respondents: bool - whether any respondents have been uploaded
         - respondents_count: int - number of respondents
         - csv_config: AssemblyCSV | None - the CSV config if exists
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="view CSV upload status",
-                required_role="assembly role or global privileges",
-            )
-
-        # Get targets count
-        targets = uow.target_categories.get_by_assembly_id(assembly_id)
-        targets_count = len(targets)
-
-        # Get respondents count
-        respondents = uow.respondents.get_by_assembly_id(assembly_id)
-        respondents_count = len(respondents)
-
-        # Get CSV config if exists
-        csv_config = assembly.csv.create_detached_copy() if assembly.csv else None
-
-        return CSVUploadStatus(
-            targets_count=targets_count,
-            respondents_count=respondents_count,
-            csv_config=csv_config,
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="view CSV upload status",
+            required_role="assembly role or global privileges",
         )
+
+    # Get targets count
+    targets = uow.target_categories.get_by_assembly_id(assembly_id)
+    targets_count = len(targets)
+
+    # Get respondents count
+    respondents = uow.respondents.get_by_assembly_id(assembly_id)
+    respondents_count = len(respondents)
+
+    # Get CSV config if exists
+    csv_config = assembly.csv.create_detached_copy() if assembly.csv else None
+
+    return CSVUploadStatus(
+        targets_count=targets_count,
+        respondents_count=respondents_count,
+        csv_config=csv_config,
+    )
 
 
 @dataclass(kw_only=True)
@@ -1133,23 +1142,21 @@ class AssemblyNavContext:
 
 
 def get_assembly_nav_context(
-    uow_factory: Callable[[], AbstractUnitOfWork],
+    uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     preferred_source: str = "",
 ) -> AssemblyNavContext:
     """Load an assembly along with everything the backoffice nav shell needs.
 
-    The callers are Flask routes that create a fresh UnitOfWork per service
-    call, so this function takes a ``uow_factory`` (typically
-    ``opendlp.bootstrap.bootstrap``) and calls it once per underlying load.
-
     Raises the same exceptions as the wrapped service functions:
     UserNotFoundError, AssemblyNotFoundError, InsufficientPermissions.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    assembly = get_assembly_with_permissions(uow_factory(), assembly_id, user_id)
-    gsheet = get_assembly_gsheet(uow_factory(), assembly_id, user_id)
-    csv_status = get_csv_upload_status(uow_factory(), user_id, assembly_id)
+    assembly = get_assembly_with_permissions(uow, assembly_id, user_id)
+    gsheet = get_assembly_gsheet(uow, assembly_id, user_id)
+    csv_status = get_csv_upload_status(uow, user_id, assembly_id)
     data_source, locked = determine_data_source(gsheet, csv_status, preferred_source)
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
     return AssemblyNavContext(
@@ -1172,25 +1179,24 @@ def delete_targets_for_assembly(
     """Delete all target categories for an assembly.
 
     Returns the number of categories deleted.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="delete targets",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="delete targets",
+            required_role="assembly-manager, global-organiser or admin",
+        )
 
-        count = uow.target_categories.delete_all_for_assembly(assembly_id)
-        uow.commit()
-        return count
+    return uow.target_categories.delete_all_for_assembly(assembly_id)
 
 
 def delete_respondents_for_assembly(
@@ -1201,22 +1207,21 @@ def delete_respondents_for_assembly(
     """Delete all respondents for an assembly.
 
     Returns the number of respondents deleted.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(
-                action="delete respondents",
-                required_role="assembly-manager, global-organiser or admin",
-            )
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(
+            action="delete respondents",
+            required_role="assembly-manager, global-organiser or admin",
+        )
 
-        count = uow.respondents.delete_all_for_assembly(assembly_id)
-        uow.commit()
-        return count
+    return uow.respondents.delete_all_for_assembly(assembly_id)
