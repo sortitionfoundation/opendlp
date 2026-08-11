@@ -163,8 +163,50 @@ variables**:
 `view_assembly_respondents` (105 lines, 14 template vars) and
 `view_schema` (76 lines, 14) are the same shape, smaller.
 
-Estimated at 3-5x option B's effort with materially higher risk of behaviour
-change.
+Estimated at 3-5x option B's effort on the production side, with materially
+higher risk of behaviour change.
+
+#### What option C avoids, and what it still costs
+
+Sizing the test work (see step 2) turned up a real advantage for C that the
+first draft of this section missed. Under C, service functions **keep** their
+own `with uow:`, so the ~800 bare service calls and ~575 bare repository
+accesses in the tests keep working unchanged. Option B's roughly 768 test
+migrations are avoided almost entirely. That is a genuine point in C's favour.
+
+Two things that are *not* objections to C, having checked:
+
+- Intra-service nesting is nearly absent. Of 100 service-to-service calls that
+  pass a `uow`, only **3** have a self-managing function calling another
+  self-managing function (`submit_registration`, `get_user_accessible_assemblies`,
+  `find_or_create_oauth_user`). C would not have to untangle a web of nested
+  service calls.
+- Private helpers already follow a clean rule: all **20** private
+  (`_`-prefixed) service functions are caller-manages, without exception.
+
+What C does still cost, beyond the route rewrites:
+
+- The public service layer is genuinely inconsistent, not latently rule-governed:
+  **124 public functions self-manage, 49 public functions are caller-manages**.
+  C has to convert those 49 in the *opposite* direction to option B.
+
+So the honest comparison is not "B is cheaper" but a difference in risk profile:
+
+| | Option B | Option C |
+|---|---|---|
+| Function conversions | 146 | 49 (opposite direction) |
+| Call sites | 36 | - |
+| Route rewrites | - | ~99, with new DTOs |
+| Test migrations | ~768 | close to zero |
+| Risk per edit | low, mechanical | high, judgement per route |
+
+Option B is high-volume and low-risk: most of its edits are a fixture swap that
+a reviewer can scan. Option C is lower-volume and higher-risk: each route rewrite
+relocates presentation logic and can silently change behaviour. Both fix the leak
+and both make routes atomic.
+
+B remains the choice on that basis, but the test-churn asymmetry is material
+enough that it is worth re-confirming rather than assuming.
 
 **The distinction worth keeping:** "one service call per route" is a
 _code-organisation_ goal; "who owns the transaction boundary" is a _correctness_
@@ -263,6 +305,80 @@ block count.
 5. Run `just test-nobdd && just test-bdd-headless` (never concurrently - they
    share a database).
 
+### What changes in the tests
+
+This is the largest part of the work, larger than the production change, and it
+had not been sized until now.
+
+Tests call service functions directly and construct their own UnitOfWork inline
+rather than taking one from a fixture:
+
+```python
+def test_create_assembly_success_admin(self):
+    uow = FakeUnitOfWork()
+    uow.users.add(admin_user)
+    assembly = assembly_service.create_assembly(uow=uow, title=..., ...)
+```
+
+Both the `uow.users.add(...)` and the `create_assembly(uow=uow, ...)` sit outside
+any `with uow:` block, and today that is correct because the service function
+opens its own. After step 2 neither works.
+
+| | Count |
+|---|---|
+| Service calls outside any `with uow:` | 800, in 33 files |
+| Bare `uow.<repo>` outside any `with uow:` | 575, in 29 files |
+| Test files affected | 47 |
+
+Worst files: `test_registration_page_service.py` (147 service calls),
+`test_assembly_service_targets.py` (80), `test_respondent_field_schema_service.py`
+(79), `test_sortition_service.py` (90 bare repository accesses).
+
+#### Use a fixture, do not indent 700 test bodies
+
+The obvious fix - wrap each test body in `with FakeUnitOfWork() as uow:` -
+re-indents every affected test and makes the diff unreviewable. Instead provide
+an already-entered UnitOfWork as a fixture:
+
+```python
+@pytest.fixture
+def uow():
+    with FakeUnitOfWork() as u:
+        yield u
+```
+
+The test then drops its construction line and takes `uow` as a parameter, with
+no reflow of the body:
+
+```python
+def test_create_assembly_success_admin(self, uow):
+    uow.users.add(admin_user)
+    assembly = assembly_service.create_assembly(uow=uow, title=..., ...)
+```
+
+The block is held open for the whole test, so every existing bare call is inside
+a context and needs no edit. `__exit__` runs at teardown, after the assertions.
+
+#### How far the fixture goes
+
+Counted by how many UnitOfWork instances a single test constructs:
+
+| | 1 uow | 2+ uow |
+|---|---|---|
+| `FakeUnitOfWork` | 538 (425 unit, 104 component, 9 integration) | 22 component |
+| `SqlAlchemyUnitOfWork` | 133 (82 e2e, 44 integration, 7 unit) | **75** (42 e2e, 33 integration) |
+
+The 538 single-fake tests are a mechanical fixture swap.
+
+**The 75 multi-`SqlAlchemyUnitOfWork` tests must not get the fixture treatment.**
+They open a second UnitOfWork precisely to prove that data committed by the first
+is visible to a fresh session. Collapsing them into one fixture-held transaction
+would leave them asserting nothing while still passing - the worst possible
+outcome. Migrate those by hand, keeping the explicit second block.
+
+The 22 multi-fake component tests need the same read, but the stakes are lower
+since a shared `FakeStore` has no real transaction to be fooled by.
+
 ### Known call sites needing attention
 
 37 sites use `uow` outside any block. Distribution on the clean tree:
@@ -330,10 +446,37 @@ Use `setattr` with names read off `AbstractUnitOfWork.__annotations__` rather
 than defining `__getattr__` on the UnitOfWork - a `__getattr__` would make mypy
 accept any attribute name and lose typo detection across the whole codebase.
 
-Decide separately whether `FakeUnitOfWork` should enforce the same rule.
-Currently it does not, so component tests will not catch regressions - only e2e
-will. Aligning it would break the very common `uow = FakeUnitOfWork(); uow.users.add(...)`
-idiom in unit tests, so this is a real cost, not a free win.
+### Tighten `FakeUnitOfWork` too - yes
+
+An earlier draft of this plan said aligning the fake was "a real cost, not a free
+win", on the grounds that it breaks the ubiquitous
+`uow = FakeUnitOfWork(); uow.users.add(...)` idiom. That objection does not
+survive the test analysis above: **that idiom is exactly what step 2 changes
+anyway.** Once those tests take an entered `uow` from a fixture, enforcing the
+rule in the fake costs almost nothing extra.
+
+It is also worth more than it first appears. 538 of the affected tests are
+fake-backed, so without a strict fake the great majority of the suite cannot
+catch a convention regression at all - only e2e could.
+
+Mirror the real implementation: `__enter__` marks the context open, `__exit__`
+marks it closed and swaps each repository for a placeholder that raises.
+
+Keep the `fake_<name>` aliases as the deliberate seam for arranging or
+inspecting state *outside* a block. They already exist on `FakeUnitOfWork` (set
+up alongside the plain names in `__init__`) and are used exactly 3 times in the
+whole suite, so repurposing them is free.
+
+#### Roll it out incrementally
+
+Tightening the fake in one commit turns every unmigrated test red at once. Add
+an opt-in flag instead - `FakeUnitOfWork(strict=True)` - and have the new `uow`
+fixture construct a strict one. Migrated modules use the fixture and are
+enforced; unmigrated tests keep constructing a loose fake directly. The final
+commit of step 3 flips the default and deletes the flag.
+
+That also gives the migration a per-slice signal: a slice is done when its tests
+pass against a strict fake.
 
 ## Step 4 - make the convention enforceable
 
