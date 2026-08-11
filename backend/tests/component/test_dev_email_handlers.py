@@ -29,10 +29,12 @@ from opendlp.service_layer.registration_page_service import page_for_assembly
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
-def _seed_page(store: FakeStore, assembly_id: uuid.UUID, *, auto_reply_template_id=None) -> RegistrationPage:
+def _seed_page(
+    store: FakeStore, assembly_id: uuid.UUID, *, auto_reply_template_id=None, url_slug="my-slug"
+) -> RegistrationPage:
     page = RegistrationPage(
         assembly_id=assembly_id,
-        url_slug="my-slug",
+        url_slug=url_slug,
         status=RegistrationPageStatus.TEST,
         auto_reply_email_template_id=auto_reply_template_id,
     )
@@ -270,6 +272,41 @@ class TestHandleAssignAutoReplyTemplate:
         result = _handle_assign_auto_reply_template(
             uow=_uow(fake_store),
             params={"assembly_id": str(existing_assembly.id), "template_id": str(template.id)},
+        )
+        assert result["status"] == "error"
+        assert result["error_type"] == "RegistrationPageNotFoundError"
+
+    def test_page_id_targets_that_page_not_the_oldest(self, fake_store, existing_assembly, as_admin):
+        template = _seed_template(fake_store, existing_assembly.id)
+        oldest = _seed_page(fake_store, existing_assembly.id)
+        newer = _seed_page(fake_store, existing_assembly.id, url_slug="my-slug-es")
+
+        result = _handle_assign_auto_reply_template(
+            uow=_uow(fake_store),
+            params={
+                "assembly_id": str(existing_assembly.id),
+                "template_id": str(template.id),
+                "page_id": str(newer.id),
+            },
+        )
+        assert result["status"] == "success"
+        assert result["registration_page_id"] == str(newer.id)
+        with _uow(fake_store) as uow:
+            assert uow.registration_pages.get(newer.id).auto_reply_email_template_id == template.id
+            assert uow.registration_pages.get(oldest.id).auto_reply_email_template_id is None
+
+    def test_page_id_from_another_assembly_is_rejected(self, fake_store, existing_assembly, as_admin):
+        template = _seed_template(fake_store, existing_assembly.id)
+        _seed_page(fake_store, existing_assembly.id)
+        foreign_page = _seed_page(fake_store, uuid.uuid4(), url_slug="foreign-slug")
+
+        result = _handle_assign_auto_reply_template(
+            uow=_uow(fake_store),
+            params={
+                "assembly_id": str(existing_assembly.id),
+                "template_id": str(template.id),
+                "page_id": str(foreign_page.id),
+            },
         )
         assert result["status"] == "error"
         assert result["error_type"] == "RegistrationPageNotFoundError"

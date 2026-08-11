@@ -1454,16 +1454,21 @@ def _handle_assign_auto_reply_template(uow: Any, params: dict[str, Any]) -> dict
     assembly_id = uuid.UUID(params["assembly_id"])
     template_id_raw = params.get("template_id")
     template_id = uuid.UUID(template_id_raw) if template_id_raw else None
+    page_id_raw = params.get("page_id")
+    page_id = uuid.UUID(page_id_raw) if page_id_raw else None
     try:
-        assign_auto_reply_template(
+        page = assign_auto_reply_template(
             uow=uow,
             user_id=current_user.id,
             assembly_id=assembly_id,
             template_id=template_id,
+            page_id=page_id,
         )
         return {
             "status": "success",
             "assembly_id": str(assembly_id),
+            "registration_page_id": str(page.id),
+            "registration_page_name": page.name,
             "auto_reply_email_template_id": str(template_id) if template_id else None,
         }
     except EmailTemplateNotFoundError as e:
