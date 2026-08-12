@@ -394,6 +394,22 @@ def get_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: 
         return page.create_detached_copy()
 
 
+def get_registration_page_by_slug(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, url_slug: str
+) -> RegistrationPage:
+    """Return the assembly's registration page with that url_slug.
+
+    Slugs are globally unique, so the assembly check stops a slug from another
+    assembly resolving under this assembly's URLs.
+    """
+    with uow:
+        found = uow.registration_pages.get_by_url_slug(url_slug)
+        if found is None or found.assembly_id != assembly_id:
+            raise RegistrationPageNotFoundError(f"No registration page '{url_slug}' for assembly {assembly_id}")
+        _user, page = _load_viewable_page(uow, user_id, found.id)
+        return page.create_detached_copy()
+
+
 def get_registration_page_with_source(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID
 ) -> tuple[RegistrationPage, HtmlSource]:

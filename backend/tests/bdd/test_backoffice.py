@@ -15,6 +15,7 @@ from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.registration_page_service import (
     create_registration_page_with_slugs,
+    page_for_assembly,
     publish_registration_page,
     update_registration_page_html,
 )
@@ -404,11 +405,39 @@ def create_test_assembly_with_registration_page(title: str, admin_user, test_dat
     )
 
 
+def _page_slug(assembly_id, test_database) -> str:
+    """The url_slug of the assembly's registration page — the editor is slug-addressed."""
+    registration_page = page_for_assembly(SqlAlchemyUnitOfWork(test_database), assembly_id)
+    assert registration_page is not None, "expected the assembly to have a registration page"
+    return registration_page.url_slug
+
+
+@when(parsers.parse('I visit the registration tab for "{title}"'))
+def visit_registration_tab(page: Page, title: str, test_database):
+    """Open the registration tab — the list of the assembly's registration pages."""
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration")
+
+
+@then("I should see the registration page list")
+def see_registration_page_list(page: Page):
+    """The list shows the table headers and the create CTA."""
+    expect(page.get_by_role("columnheader", name="Date of publish")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.get_by_role("button", name="Create HTML page")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I open the first registration page from the list")
+def open_first_registration_page(page: Page):
+    """Follow the first page-name link into that page's editor."""
+    page.get_by_role("link", name="Registration page", exact=True).first.click()
+
+
 @when(parsers.parse('I visit the registration form editor for "{title}"'))
 def visit_registration_form_editor(page: Page, title: str, test_database):
     """Open the registration form step in edit mode."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form&edit=1")
+    slug = _page_slug(assembly_id, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=form&edit=1")
 
 
 @then("the HTML content field should be a mounted code editor")
@@ -538,7 +567,8 @@ def registration_shown_as_test_mode(page: Page):
 def visit_registration_preview_step(page: Page, title: str, test_database):
     """Open the preview-and-publish step of the registration wizard."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=preview")
+    slug = _page_slug(assembly_id, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=preview")
 
 
 @then("I should see the embedded registration form preview")
@@ -582,7 +612,8 @@ def visit_registration_form_view_with_scroll(page: Page, title: str, pos: int, t
     DOMContentLoaded scroll-restore leg of scroll preservation (the leg that
     x-preserve-scroll-on-submit / x-scroll-preserve-links append on navigation)."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration?section=form&scroll={pos}")
+    slug = _page_slug(assembly_id, test_database)
+    page.goto(f"{Urls.base}/backoffice/assembly/{assembly_id}/registration/{slug}?section=form&scroll={pos}")
 
 
 @then("the page should be scrolled down")

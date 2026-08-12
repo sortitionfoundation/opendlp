@@ -87,10 +87,11 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
         seeded = uow.email_templates.list_by_assembly(assembly_id)
         assert len(seeded) == 1, "creation should seed exactly one default template"
         assert page.auto_reply_email_template_id == seeded[0].id, "seeded template is assigned (always-on)"
+        slug = page.url_slug
 
     # Step 1: save the form HTML with save_and_next. Redirects to the email section.
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/save",
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
         data={"action": "save_and_next", "html_content": READY_FORM_HTML},
     )
     assert response.status_code == 302
@@ -104,7 +105,7 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
     # Step 2: save updated auto-reply copy with save_and_next (it is already
     # assigned and always-on — there is no enable step).
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/email/save",
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/save",
         data={
             "action": "save_and_next",
             "template_subject": "Thanks {{ respondent.first_name_or_friend }}!",
@@ -123,7 +124,7 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
 
     # Step 3: publish. Same save endpoint, no html_content payload (guard skips update).
     response = logged_in_admin.post(
-        f"/backoffice/assembly/{assembly_id}/registration/save",
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
         data={"action": "publish"},
     )
     assert response.status_code == 302

@@ -15,8 +15,10 @@ from opendlp.domain.registration_page import (
 from tests.fakes import FakeUnitOfWork
 
 
-def _seed_page(fake_store, assembly_id, status, *, url_slug="my-slug", form_html="<p>hi</p>"):
-    page = RegistrationPage(assembly_id=assembly_id, url_slug=url_slug, status=status)
+def _seed_page(
+    fake_store, assembly_id, status, *, url_slug="my-slug", form_html="<p>hi</p>", name="English", language=""
+):
+    page = RegistrationPage(assembly_id=assembly_id, url_slug=url_slug, status=status, name=name, language=language)
     html = RegistrationPageHtml(registration_page_id=page.id, form_html=form_html)
     with FakeUnitOfWork(store=fake_store) as uow:
         uow.registration_pages.add(page)
@@ -40,7 +42,7 @@ class TestViewEditModeFlag:
     def test_default_test_status_is_read_only(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
 
         assert response.status_code == 200
         assert "readonly" in _extract_textarea(response.get_data(as_text=True))
@@ -48,7 +50,7 @@ class TestViewEditModeFlag:
     def test_edit_param_enables_edit_in_test_status(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
 
         assert response.status_code == 200
         assert "readonly" not in _extract_textarea(response.get_data(as_text=True))
@@ -56,7 +58,7 @@ class TestViewEditModeFlag:
     def test_edit_param_enables_edit_in_published_status(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
 
         assert response.status_code == 200
         assert "readonly" not in _extract_textarea(response.get_data(as_text=True))
@@ -64,7 +66,7 @@ class TestViewEditModeFlag:
     def test_edit_param_is_ignored_in_closed_status(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
 
         assert response.status_code == 200
         assert "readonly" in _extract_textarea(response.get_data(as_text=True))
@@ -72,7 +74,7 @@ class TestViewEditModeFlag:
     def test_edit_param_other_values_do_not_enable_edit(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=true")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=true")
 
         assert response.status_code == 200
         assert "readonly" in _extract_textarea(response.get_data(as_text=True))
@@ -82,21 +84,21 @@ class TestEditModeRendersExpectedHtml:
     def test_test_status_read_only_has_readonly_textarea_and_edit_link(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         assert "readonly" in _extract_textarea(body)
         # Edit link points at the section-scoped edit URL
-        assert f"/backoffice/assembly/{assembly_id}/registration?section=form&amp;edit=1" in body
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=form&amp;edit=1" in body
         # Next → CTA advances to the auto-reply email step
-        assert f"/backoffice/assembly/{assembly_id}/registration?section=email" in body
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=email" in body
         assert "Cancel</a>" not in body
 
     def test_test_status_edit_mode_shows_header_save_controls(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
@@ -109,15 +111,17 @@ class TestEditModeRendersExpectedHtml:
         # Cancel returns to read-only on the form step
         cancel_block = body.split("Cancel</span></a>", 1)[0]
         anchor = cancel_block.rsplit("<a", 1)[1]
-        assert f"/backoffice/assembly/{assembly_id}/registration" in anchor
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug" in anchor
         assert "edit=1" not in anchor
 
     def test_edit_mode_disables_the_stepper_navigation(self, logged_in_admin, fake_store, assembly_id):
         """While editing, the stepper renders aria-disabled spans instead of links."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        view_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
-        edit_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1").get_data(
+        view_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug").get_data(
+            as_text=True
+        )
+        edit_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1").get_data(
             as_text=True
         )
 
@@ -132,8 +136,10 @@ class TestEditModeRendersExpectedHtml:
         """The Assets panel is an editing tool, so it only renders in edit mode."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        view_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
-        edit_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1").get_data(
+        view_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug").get_data(
+            as_text=True
+        )
+        edit_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1").get_data(
             as_text=True
         )
 
@@ -143,7 +149,7 @@ class TestEditModeRendersExpectedHtml:
     def test_published_status_edit_mode_uses_save_and_republish_label(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
@@ -154,7 +160,7 @@ class TestEditModeRendersExpectedHtml:
     def test_closed_status_ignores_edit_param(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
@@ -167,7 +173,7 @@ class TestViewPermissions:
     def test_non_member_is_redirected(self, logged_in_user, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_user.get(f"/backoffice/assembly/{assembly_id}/registration")
+        response = logged_in_user.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
 
         assert response.status_code == 302
 
@@ -177,12 +183,12 @@ class TestSaveRedirectPreservesEditMode:
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/save",
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
             data={"action": "save", "html_content": "<p>updated body</p>"},
         )
 
         assert response.status_code == 302
-        assert f"/backoffice/assembly/{assembly_id}/registration" in response.location
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug" in response.location
         assert "edit=1" not in response.location
         with FakeUnitOfWork(store=fake_store) as uow:
             stored = uow.registration_page_html_sources.get_by_page_id(page.id)
@@ -196,7 +202,7 @@ class TestSaveRedirectPreservesEditMode:
             side_effect=ValueError("bad html"),
         ):
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_id}/registration/save",
+                f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
                 data={"action": "save", "html_content": "<p>x</p>"},
             )
 
@@ -211,7 +217,7 @@ class TestSaveRedirectPreservesEditMode:
             side_effect=RuntimeError("boom"),
         ):
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_id}/registration/save",
+                f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
                 data={"action": "save", "html_content": "<p>x</p>"},
             )
 
@@ -226,7 +232,7 @@ class TestSaveRedirectPreservesEditMode:
             side_effect=RegistrationPageNotReady(["missing field"]),
         ):
             response = logged_in_admin.post(
-                f"/backoffice/assembly/{assembly_id}/registration/save",
+                f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
                 data={"action": "publish", "html_content": "<p>x</p>"},
             )
 
@@ -241,7 +247,7 @@ class TestCodeEditorEnhancement:
         """Read-only view still tags the textarea so it renders highlighted (Q4)."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
 
         assert response.status_code == 200
         textarea = _extract_textarea(response.get_data(as_text=True))
@@ -252,7 +258,7 @@ class TestCodeEditorEnhancement:
         """Edit mode tags the textarea and leaves it editable."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?edit=1")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1")
 
         assert response.status_code == 200
         textarea = _extract_textarea(response.get_data(as_text=True))
@@ -263,7 +269,7 @@ class TestCodeEditorEnhancement:
         """The CodeMirror bundle is referenced so the enhancement can run."""
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
 
         assert response.status_code == 200
         assert "backoffice/js/dist/html-editor.js" in response.get_data(as_text=True)
@@ -284,7 +290,7 @@ class TestFormPreviewRoute:
     def test_preview_renders_saved_form_with_submission_disabled(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug/form-preview")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
@@ -300,18 +306,18 @@ class TestFormPreviewRoute:
     def test_preview_is_framable_by_same_origin_only(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug/form-preview")
 
         assert response.headers.get("X-Frame-Options") == "SAMEORIGIN"
         assert "frame-ancestors 'self'" in response.headers.get("Content-Security-Policy", "")
 
     def test_preview_404_without_registration_page(self, logged_in_admin, assembly_id):
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug/form-preview")
 
         assert response.status_code == 404
 
     def test_preview_404_for_unknown_assembly(self, logged_in_admin):
-        response = logged_in_admin.get(f"/backoffice/assembly/{uuid.uuid4()}/registration/form-preview")
+        response = logged_in_admin.get(f"/backoffice/assembly/{uuid.uuid4()}/registration/my-slug/form-preview")
 
         assert response.status_code == 404
 
@@ -322,26 +328,28 @@ class TestFormPreviewRoute:
             "opendlp.entrypoints.blueprints.backoffice_registration.render_registration_form",
             side_effect=RuntimeError("boom"),
         ):
-            response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+            response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug/form-preview")
 
         assert response.status_code == 500
 
-    def test_preview_403_for_non_member(self, logged_in_user, fake_store, assembly_id):
+    def test_preview_404_for_non_member(self, logged_in_user, fake_store, assembly_id):
+        # Slug lookup masks pages the user cannot view as not-found, so slugs
+        # cannot be probed to discover which assemblies exist.
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
 
-        response = logged_in_user.get(f"/backoffice/assembly/{assembly_id}/registration/form-preview")
+        response = logged_in_user.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug/form-preview")
 
-        assert response.status_code == 403
+        assert response.status_code == 404
 
     def test_preview_section_embeds_the_preview_iframe(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html=_PREVIEWABLE_FORM)
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?section=preview")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=preview")
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         assert "<iframe" in body
-        assert f"/backoffice/assembly/{assembly_id}/registration/form-preview" in body
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug/form-preview" in body
 
 
 class TestLifecycleFooterControls:
@@ -349,7 +357,7 @@ class TestLifecycleFooterControls:
     TEST → Publish; PUBLISHED → Unpublish + Close registration; CLOSED → nothing."""
 
     def _preview_body(self, logged_in_admin, assembly_id) -> str:
-        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration?section=preview")
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?section=preview")
         assert response.status_code == 200
         return response.get_data(as_text=True)
 
@@ -360,7 +368,7 @@ class TestLifecycleFooterControls:
 
         assert 'value="publish"' in body
         assert 'value="unpublish"' not in body
-        assert "Close registration" not in body
+        assert "Close registration/my-slug" not in body
 
     def test_published_status_offers_unpublish_and_close(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
@@ -381,13 +389,13 @@ class TestLifecycleFooterControls:
 
         assert 'value="publish"' not in body
         assert 'value="unpublish"' not in body
-        assert "Close registration" not in body
+        assert "Close registration/my-slug" not in body
 
     def test_unpublish_returns_page_to_test_and_lands_on_preview(self, logged_in_admin, fake_store, assembly_id):
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/save",
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
             data={"action": "unpublish"},
         )
 
@@ -401,7 +409,7 @@ class TestLifecycleFooterControls:
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/save",
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
             data={"action": "close"},
         )
 
@@ -418,7 +426,7 @@ class TestLifecycleFooterControls:
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
 
         response = logged_in_admin.post(
-            f"/backoffice/assembly/{assembly_id}/registration/save",
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
             data={"action": "bogus"},
         )
 
@@ -428,3 +436,141 @@ class TestLifecycleFooterControls:
         with FakeUnitOfWork(store=fake_store) as uow:
             stored = uow.registration_pages.get(page.id)
         assert stored.status == RegistrationPageStatus.PUBLISHED
+
+
+class TestRegistrationListView:
+    def test_lists_every_page_with_links_to_their_editors(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="my-slug", name="English")
+        _seed_page(
+            fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="my-slug-es", name="Spanish", language="es"
+        )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "English" in body
+        assert "Spanish" in body
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug" in body
+        assert f"/backoffice/assembly/{assembly_id}/registration/my-slug-es" in body
+
+    def test_published_page_shows_its_publish_date(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(
+            fake_store,
+            assembly_id,
+            RegistrationPageStatus.TEST,
+            url_slug="pub-slug",
+            name="Live",
+            form_html="<form>{{ csrf_form_element }} {{ form_action }}</form>",
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+            stored.publish(uow.registration_page_html_sources.get_by_page_id(page.id), author_id=uuid.uuid4())
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        # The publish date renders through the babel dateformat filter (not the em dash placeholder)
+        row = body.split("Live", 1)[1]
+        assert "\u2014" not in row.split("</tr>", 1)[0]
+
+    def test_empty_assembly_offers_page_creation(self, logged_in_admin, fake_store, assembly_id):
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+
+        assert response.status_code == 200
+        assert f"/backoffice/assembly/{assembly_id}/registration/create" in response.get_data(as_text=True)
+
+    def test_close_action_offered_only_for_published_pages(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert f"/backoffice/assembly/{assembly_id}/registration/live-slug/save" in body
+        assert f"/backoffice/assembly/{assembly_id}/registration/draft-slug/save" not in body
+
+
+class TestEditorAtSlugUrl:
+    def test_editor_renders_at_the_slug_url(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, form_html="<p>slug-editor</p>")
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
+
+        assert response.status_code == 200
+        assert "slug-editor" in response.get_data(as_text=True)
+
+    def test_unknown_slug_redirects_to_the_list(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/nope")
+
+        assert response.status_code == 302
+        assert response.location.rstrip("/").endswith(f"/backoffice/assembly/{assembly_id}/registration")
+
+    def test_foreign_assembly_slug_redirects_to_the_list(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, uuid.uuid4(), RegistrationPageStatus.TEST, url_slug="foreign-slug")
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/foreign-slug")
+
+        assert response.status_code == 302
+        assert response.location.rstrip("/").endswith(f"/backoffice/assembly/{assembly_id}/registration")
+
+
+class TestEditorNameAndSlugEditing:
+    def test_save_renames_the_page(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save", "html_content": "<p>hi</p>", "page_name": "Spanish variant"},
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_pages.get(page.id).name == "Spanish variant"
+
+    def test_save_with_a_new_slug_redirects_to_the_new_url(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save", "html_content": "<p>hi</p>", "url_slug": "renamed-slug"},
+        )
+
+        assert response.status_code == 302
+        assert f"/backoffice/assembly/{assembly_id}/registration/renamed-slug" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_pages.get(page.id).url_slug == "renamed-slug"
+
+    def test_duplicate_name_is_rejected_and_page_kept(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="other-slug", name="Taken")
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "save", "html_content": "<p>hi</p>", "page_name": "Taken"},
+        )
+
+        assert response.status_code == 302
+        assert "edit=1" in response.location
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_pages.get(page.id).name == "English"
+
+    def test_edit_mode_offers_name_and_slug_inputs(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+
+        read_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug").get_data(
+            as_text=True
+        )
+        edit_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug?edit=1").get_data(
+            as_text=True
+        )
+
+        assert 'name="page_name"' not in read_body
+        assert 'name="page_name"' in edit_body
+        assert 'name="url_slug"' in edit_body
+        assert 'name="short_url_slug"' in edit_body
+        # The heading shows the page name in read-only mode
+        assert "English" in read_body
