@@ -19,7 +19,6 @@ repos:
 
   # TODO: consider
   # - csslint
-  # - javascript
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.15.5"
@@ -38,7 +37,11 @@ repos:
     hooks:
       - id: djhtml
       - id: djcss
+      # djhtml already indents inline <script> blocks inside templates, so this
+      # only covers a standalone .js file under templates/ - there are none
+      # today. Standalone .js belongs to prettier (see the local hooks below).
       - id: djjs
+        files: ^backend/templates/
 
   # check for secrets, ssh keys etc
   - repo: https://github.com/Yelp/detect-secrets
@@ -71,3 +74,23 @@ repos:
         language: pygrep
         files: ^backend/templates/.*\.html$
         entry: '\.strftime\s*\('
+
+  # JavaScript linting and formatting. These run the npm scripts rather than
+  # installing their own copies, so the eslint/prettier versions are the ones
+  # pinned in backend/package.json - node_modules/ is already present from
+  # `just install`, CI's `npm install` and the Dockerfile. Both lint the whole
+  # tree rather than the passed filenames, which is why pass_filenames is false.
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint (backend JavaScript)
+        language: system
+        files: ^backend/.*\.(js|mjs)$
+        pass_filenames: false
+        entry: npm --prefix backend run lint
+      - id: prettier
+        name: prettier (backend JavaScript)
+        language: system
+        files: ^backend/.*\.(js|mjs)$
+        pass_filenames: false
+        entry: npm --prefix backend run format

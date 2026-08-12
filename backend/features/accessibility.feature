@@ -7,65 +7,6 @@ Feature: Component Accessibility
     Given a user is logged in as an admin
 
   # =============================================================================
-  # URL Utilities Tests (JavaScript functions evaluated in browser)
-  # =============================================================================
-
-  Scenario: URL utilities - urlSetParam adds parameter to URL without params
-    Given a page with url-utils.js loaded
-    Then urlSetParam("/page", "filter", "active") should return "/page?filter=active"
-
-  Scenario: URL utilities - urlSetParam adds parameter to URL with existing params
-    Given a page with url-utils.js loaded
-    Then urlSetParam("/page?tab=1", "filter", "active") should return "/page?tab=1&filter=active"
-
-  Scenario: URL utilities - urlSetParam updates existing parameter
-    Given a page with url-utils.js loaded
-    Then urlSetParam("/page?filter=old", "filter", "new") should return "/page?filter=new"
-
-  Scenario: URL utilities - urlRemoveParam removes existing parameter
-    Given a page with url-utils.js loaded
-    Then urlRemoveParam("/page?tab=1&filter=active", "filter") should return "/page?tab=1"
-
-  Scenario: URL utilities - urlRemoveParam handles non-existent parameter
-    Given a page with url-utils.js loaded
-    Then urlRemoveParam("/page?tab=1", "filter") should return "/page?tab=1"
-
-  Scenario: URL utilities - urlGetParam retrieves parameter value
-    Given a page with url-utils.js loaded
-    Then urlGetParam("/page?filter=active", "filter") should return "active"
-
-  Scenario: URL utilities - urlGetParam returns null for missing parameter
-    Given a page with url-utils.js loaded
-    Then urlGetParam("/page?tab=1", "filter") should return null
-
-  Scenario: URL utilities - urlHasParam returns true for existing parameter
-    Given a page with url-utils.js loaded
-    Then urlHasParam("/page?filter=active", "filter") should return true
-
-  Scenario: URL utilities - urlHasParam returns false for missing parameter
-    Given a page with url-utils.js loaded
-    Then urlHasParam("/page?tab=1", "filter") should return false
-
-  Scenario: URL utilities - urlSetParams adds multiple parameters
-    Given a page with url-utils.js loaded
-    Then urlSetParams("/page", {"filter": "active", "page": "2"}) should contain "filter=active"
-    And urlSetParams("/page", {"filter": "active", "page": "2"}) should contain "page=2"
-
-  Scenario: URL utilities - urlBuild constructs URL with parameters
-    Given a page with url-utils.js loaded
-    Then urlBuild("/api/users", {"page": "1", "sort": "name"}) should contain "page=1"
-    And urlBuild("/api/users", {"page": "1", "sort": "name"}) should contain "sort=name"
-
-  Scenario: URL utilities - handles special characters in values
-    Given a page with url-utils.js loaded
-    Then urlSetParam("/page", "query", "hello world") should contain "hello"
-    And urlSetParam("/page", "query", "hello world") should contain "world"
-
-  Scenario: URL utilities - handles empty URL gracefully
-    Given a page with url-utils.js loaded
-    Then urlSetParam with empty URL should return empty string
-
-  # =============================================================================
   # Focus Preservation Tests
   # Note: Focus restoration on page load requires element persistence across
   # navigations. These tests verify the mechanisms are in place.

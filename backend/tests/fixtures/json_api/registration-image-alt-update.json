@@ -1,0 +1,17 @@
+{
+  "image": {
+    "alt": "Assembly logo, renamed",
+    "aria_label_copy_snippet": "Copy <img> snippet for Assembly logo, renamed",
+    "aria_label_delete": "Delete Assembly logo, renamed",
+    "aria_label_details": "Details for Assembly logo, renamed",
+    "byte_size": 83,
+    "display_name": "Assembly logo, renamed",
+    "file_name": "0000000000000000000000000000000000000000000000000000000000000000.png",
+    "height": 20,
+    "id": "00000000-0000-4000-8000-000000000000",
+    "img_snippet": "<img src=\"/register/example-assembly/assets/0000000000000000000000000000000000000000000000000000000000000000.png\" alt=\"Assembly logo, renamed\">",
+    "original_filename": "logo.png",
+    "public_url": "/register/example-assembly/assets/0000000000000000000000000000000000000000000000000000000000000000.png",
+    "width": 20
+  }
+}

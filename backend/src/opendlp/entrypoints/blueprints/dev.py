@@ -1,5 +1,28 @@
 """ABOUTME: Developer tools routes for interactive testing and documentation
-ABOUTME: Provides /backoffice/dev/* routes - only registered in non-production environments"""
+ABOUTME: Provides /backoffice/dev/* routes - only registered in non-production environments
+
+NOT A PATTERN SOURCE - do not copy from this file when writing production code.
+
+This blueprint is a low-stakes scratch space for interactive testing. It is dev-only
+(registered when ``not config.is_production()``) and admin-gated, and it is deliberately
+not held to the same bar as production code: test coverage is partial by design and there
+is no parity requirement. Code here may be fine, may be stale, and is not maintained as an
+example either way.
+
+The canonical examples live elsewhere:
+
+- JSON error handling and response shape: ``docs/agent/json_api_conventions.md``, and the
+  routes in ``backoffice_registration.py`` / ``backoffice.py``.
+- CSP-compatible Alpine patterns: ``templates/backoffice/patterns.html``, served from here
+  at ``/backoffice/dev/patterns``. That *page* is a maintained reference and is canonical;
+  this blueprint, which merely serves it, is not. Its components live in
+  ``src/js/components/patterns-controller.js`` and ``file-upload-demo.js``, bundled by the
+  ``src/js/backoffice/patterns.js`` entry point - the page holds markup and no script body.
+- Component markup and accessibility: ``docs/agent/component_accessibility.md``.
+
+New handlers added here should still follow the conventions, and the ``test_dev_*`` files
+under ``tests/component/`` show how to test them where that is cheap.
+"""
 
 import base64
 import binascii
@@ -15,6 +38,7 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.domain.registration_document import PDF_FILE_EXTENSION, DocumentValidationError, RegistrationDocument
 from opendlp.domain.registration_image import IMAGE_FILE_EXTENSION, ImageValidationError, RegistrationImage
+from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldType,
@@ -115,6 +139,23 @@ dev_bp = Blueprint("dev", __name__)
 logger = structlog.get_logger(__name__)
 
 
+def _dev_error(exc: Exception) -> str:
+    """Error text for a dev-only JSON response: what is safe to show, plus where the rest is.
+
+    The full exception and traceback go to the Flask console via structlog, but
+    the developer is looking at the page, not the terminal - so say where to look
+    rather than leaving them at a dead end.
+
+    Deliberately duck-typed on ``user_msg``: it covers the service layer's
+    OpenDLPError tree and domain exceptions like RegistrationPageNotReady that
+    implement the same protocol without sharing a base class. Anything else -
+    a bare ValueError, say - falls back to the generic message, so no caller has
+    to reason about whether a given exception's str() is safe to show.
+    """
+    safe_message = exc.user_msg() if hasattr(exc, "user_msg") else _("Something went wrong. Please try again.")
+    return f"{safe_message} {_('(check the Flask console log for full error details)')}"
+
+
 # =============================================================================
 # Developer Tools Dashboard (Admin-only)
 # =============================================================================
@@ -173,7 +214,14 @@ def service_docs() -> ResponseReturnValue:
     uow = bootstrap.get_flask_uow()
     assemblies = get_user_assemblies(uow, current_user.id)
 
-    return render_template("backoffice/service_docs.html", assemblies=assemblies, active_tab=active_tab), 200
+    # SERVICE_RESPONSE_KEYS is defined below, next to the handler table it mirrors; the
+    # page needs it to know which response panel each service's result belongs in.
+    return render_template(
+        "backoffice/service_docs.html",
+        assemblies=assemblies,
+        active_tab=active_tab,
+        service_response_keys=SERVICE_RESPONSE_KEYS,
+    ), 200
 
 
 @dev_bp.route("/dev/service-docs/execute", methods=["POST"])
@@ -545,7 +593,7 @@ def _page_id_for_assembly(uow: Any, assembly_id: uuid.UUID) -> uuid.UUID:
     """Resolve the assembly's registration page id for the assembly-addressed handlers."""
     page = page_for_assembly(uow, assembly_id)
     if page is None:
-        raise NotFoundError(f"Assembly {assembly_id} does not have a registration page")
+        raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
     return page.id
 
 
@@ -723,13 +771,9 @@ def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[
                     "status": reg_page.status.value if reg_page.status else None,
                 },
             }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            # Catch RegistrationPageNotReady or other validation errors
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+        except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError) as e:
+            logger.warning("Registration page lifecycle call failed", error=str(e))
+            return {"status": "error", "error": _dev_error(e), "error_type": type(e).__name__}
 
 
 def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -750,12 +794,9 @@ def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dic
                     "status": reg_page.status.value if reg_page.status else None,
                 },
             }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+        except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError) as e:
+            logger.warning("Registration page lifecycle call failed", error=str(e))
+            return {"status": "error", "error": _dev_error(e), "error_type": type(e).__name__}
 
 
 def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -776,12 +817,9 @@ def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[st
                     "status": reg_page.status.value if reg_page.status else None,
                 },
             }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+        except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError) as e:
+            logger.warning("Registration page lifecycle call failed", error=str(e))
+            return {"status": "error", "error": _dev_error(e), "error_type": type(e).__name__}
 
 
 def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -802,12 +840,9 @@ def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
                     "status": reg_page.status.value if reg_page.status else None,
                 },
             }
-        except InsufficientPermissions as e:
-            return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
-        except NotFoundError as e:
-            return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+        except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError) as e:
+            logger.warning("Registration page lifecycle call failed", error=str(e))
+            return {"status": "error", "error": _dev_error(e), "error_type": type(e).__name__}
 
 
 def _handle_submit_registration(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -816,30 +851,30 @@ def _handle_submit_registration(uow: Any, params: dict[str, Any]) -> dict[str, A
     form_data = params.get("form_data", {})
     is_test = params.get("is_test", False)
 
+    # No except clause: this service reports validation problems in its result
+    # rather than raising, so anything it does raise is genuinely unexpected and
+    # belongs to the logs-and-generic-message handler in service_docs_execute.
     with uow:
-        try:
-            result = submit_registration_by_assembly_id(
-                uow=uow,
-                assembly_id=assembly_id,
-                form_data=form_data,
-                is_test=is_test,
-            )
-            return {
-                "status": "success" if result.is_valid else "validation_error",
-                "respondent": {
-                    "id": str(result.respondent.id),
-                    "external_id": result.respondent.external_id,
-                    "selection_status": result.respondent.selection_status.value,
-                    "attributes": result.respondent.attributes,
-                }
-                if result.respondent
-                else None,
-                "is_test": result.is_test,
-                "field_errors": result.field_errors,
-                "form_errors": result.form_errors,
+        result = submit_registration_by_assembly_id(
+            uow=uow,
+            assembly_id=assembly_id,
+            form_data=form_data,
+            is_test=is_test,
+        )
+        return {
+            "status": "success" if result.is_valid else "validation_error",
+            "respondent": {
+                "id": str(result.respondent.id),
+                "external_id": result.respondent.external_id,
+                "selection_status": result.respondent.selection_status.value,
+                "attributes": result.respondent.attributes,
             }
-        except Exception as e:
-            return {"status": "error", "error": str(e), "error_type": type(e).__name__}
+            if result.respondent
+            else None,
+            "is_test": result.is_test,
+            "field_errors": result.field_errors,
+            "form_errors": result.form_errors,
+        }
 
 
 def _handle_add_field(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -1434,6 +1469,53 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "delete_email_template": _handle_delete_email_template,
     "assign_auto_reply_template": _handle_assign_auto_reply_template,
     "auto_reply_readiness_problems": _handle_auto_reply_readiness_problems,
+}
+
+
+# Service name -> the short key the service docs page keys its loading flag and response
+# panel by. Public, and here rather than in the page's JavaScript, because it is a view of
+# the table above: keeping the two in one file is what lets a test assert they cover the
+# same services. Rendered into the page's JSON data block by service_docs().
+SERVICE_RESPONSE_KEYS: dict[str, str] = {
+    "import_respondents_from_csv": "import_respondents",
+    "reset_selection_status": "reset_status",
+    "get_respondents_for_assembly": "get_respondents",
+    "import_targets_from_csv": "import_targets",
+    "get_or_create_csv_config": "get_csv_config",
+    "update_csv_config": "update_csv_config",
+    "create_assembly": "create_assembly",
+    "get_assembly_with_permissions": "get_assembly",
+    "update_assembly": "update_assembly",
+    "create_registration_page": "create_registration_page",
+    "get_registration_page_with_source": "get_registration_page",
+    "update_registration_page": "update_registration_page",
+    "update_registration_page_html": "update_registration_html",
+    "generate_starter_form_html": "generate_starter_html",
+    "publish_registration_page": "publish_registration",
+    "unpublish_registration_page": "unpublish_registration",
+    "close_registration_page": "close_registration",
+    "reopen_registration_page": "reopen_registration",
+    "submit_registration": "submit_registration",
+    "add_field": "add_field",
+    "add_registration_image": "add_image",
+    "list_registration_images": "list_images",
+    "delete_registration_image": "delete_image",
+    "set_registration_image_alt": "set_image_alt",
+    "list_image_snippets": "list_snippets",
+    "get_registration_image_for_serving": "serve_image",
+    "add_registration_document": "add_document",
+    "list_registration_documents": "list_documents",
+    "delete_registration_document": "delete_document",
+    "set_registration_document_label": "set_document_label",
+    "list_document_snippets": "list_document_snippets",
+    "get_registration_document_for_serving": "serve_document",
+    "create_email_template": "create_email_template",
+    "list_email_templates": "list_email_templates",
+    "get_email_template": "get_email_template",
+    "update_email_template": "update_email_template",
+    "delete_email_template": "delete_email_template",
+    "assign_auto_reply_template": "assign_auto_reply_template",
+    "auto_reply_readiness_problems": "auto_reply_readiness",
 }
 
 

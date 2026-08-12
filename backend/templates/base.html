@@ -200,22 +200,16 @@
             </div>
         </footer>
         <script nonce="{{ csp_nonce }}"
-                src="https://cdn.jsdelivr.net/npm/govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js"
-                integrity="sha384-gDZkBYDiXRQUvstxmxJ+TbB7CxTGzhmH+ZmBAGzbAEgYb/bglRLXcnh6ZxhaVYLy"
-                crossorigin="anonymous"></script>
+                src="{{ url_for('static', filename='js/vendor/govuk-frontend.js', v=static_hashes('js/vendor/govuk-frontend.js')) }}"></script>
         <script nonce="{{ csp_nonce }}"
                 src="{{ url_for('static', filename='js/utilities.js', v=static_hashes('js/utilities.js')) }}"></script>
         <script nonce="{{ csp_nonce }}"
                 src="{{ url_for('static', filename='js/alpine-components.js', v=static_hashes('js/alpine-components.js')) }}"></script>
         <script nonce="{{ csp_nonce }}"
                 defer
-                src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.15.8/dist/cdn.min.js"
-                integrity="sha384-xnBLNTJyXCEHkKKVePh5Vzi1CyXuyWtN5HjqtWbBBchGrbCslU+ThoGQ/DcdOe9o"
-                crossorigin="anonymous"></script>
+                src="{{ url_for('static', filename='js/vendor/alpine-csp.js', v=static_hashes('js/vendor/alpine-csp.js')) }}"></script>
         <script nonce="{{ csp_nonce }}"
-                src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
-                integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
-                crossorigin="anonymous"></script>
+                src="{{ url_for('static', filename='js/vendor/htmx.js', v=static_hashes('js/vendor/htmx.js')) }}"></script>
         <script nonce="{{ csp_nonce }}"
                 src="{{ url_for('static', filename='js/htmx-422-swap.js', v=static_hashes('js/htmx-422-swap.js')) }}"></script>
         <script nonce="{{ csp_nonce }}">

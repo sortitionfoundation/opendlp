@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opendlp.sortitionfoundation.org/schemas/json_api/registration-image.schema.json",
+  "title": "Registration image response",
+  "description": "Returned by the registration image upload (201) and alt-text update (200) routes.",
+  "type": "object",
+  "properties": {
+    "image": {
+      "$ref": "#/$defs/image"
+    }
+  },
+  "required": [
+    "image"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "image": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "alt": {
+          "type": "string",
+          "description": "Alt text. Required on upload, so never empty in practice."
+        },
+        "original_filename": {
+          "type": "string",
+          "description": "Empty when the upload carried no filename."
+        },
+        "file_name": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}\\.png$",
+          "description": "Content-addressed: the SHA-256 of the stored bytes."
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Alt text, else original filename, else a truncated hash. Never empty."
+        },
+        "public_url": {
+          "type": "string",
+          "description": "Empty when the registration page has no slug yet."
+        },
+        "img_snippet": {
+          "type": "string",
+          "description": "Ready-to-paste <img> tag, html-escaped. Empty when public_url is."
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "byte_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "aria_label_details": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aria_label_copy_snippet": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aria_label_delete": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "alt",
+        "original_filename",
+        "file_name",
+        "display_name",
+        "public_url",
+        "img_snippet",
+        "width",
+        "height",
+        "byte_size",
+        "aria_label_details",
+        "aria_label_copy_snippet",
+        "aria_label_delete"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

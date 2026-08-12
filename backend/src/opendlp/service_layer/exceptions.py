@@ -1,6 +1,8 @@
 """ABOUTME: Custom exceptions for service layer operations
 ABOUTME: Defines business logic exceptions with proper error messages and codes"""
 
+from typing import Protocol, runtime_checkable
+
 # Re-exported so service-layer callers import it from the usual exceptions module.
 from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.domain.validators import SlugError
@@ -9,11 +11,13 @@ from opendlp.translations import gettext as _
 __all__ = [
     "AssemblyNotFoundError",
     "CannotRemoveLastAuthMethod",
+    "CuratedMessage",
     "DocumentQuotaExceeded",
     "EmailNotConfirmed",
     "EmailTemplateInvalid",
     "EmailTemplateNotFoundError",
     "GoogleSheetConfigNotFoundError",
+    "HasCuratedMessage",
     "ImageQuotaExceeded",
     "InsufficientPermissions",
     "InvalidConfirmationToken",
@@ -41,8 +45,58 @@ __all__ = [
 ]
 
 
+@runtime_checkable
+class HasCuratedMessage(Protocol):
+    """Structural type for exceptions that supply their own user-facing message.
+
+    ``curated_msg`` is deliberately a name :class:`OpenDLPError` does not itself
+    define, which is what makes the opt-in independent of base-class order. The
+    method exists in one place only, so there is no resolution for
+    ``class X(ServiceLayerError, CuratedMessage)`` to lose.
+
+    Do not give ``OpenDLPError`` a ``curated_msg()`` of its own. That reinstates
+    the name collision, and then whether a class gets its curated message back
+    depends on which way round its bases happen to be written.
+    """
+
+    def curated_msg(self) -> str: ...
+
+
 class OpenDLPError(Exception):
     """Base exception for all our custom errors."""
+
+    def user_msg(self) -> str:
+        """The message that may be shown to a user or returned in a JSON response.
+
+        Deliberately generic rather than ``str(self)``. An exception message may
+        carry internal detail, so the default assumes it does; subclasses whose
+        message is written for a user opt in via :class:`CuratedMessage`. A class
+        that forgets says too little, which is a much better failure than leaking
+        internals - and better than raising, which would turn a handled error
+        into a 500 with no feedback at all.
+
+        Do not change the fallback to return ``str(self)``: that would silently
+        make every exception in the tree claim to be safe to show, which is the
+        problem this method exists to solve.
+        """
+        if isinstance(self, HasCuratedMessage):
+            return self.curated_msg()
+        return _("Something went wrong. Please try again.")
+
+
+class CuratedMessage:
+    """Mixin for exceptions whose ``str()`` is a curated, user-facing message.
+
+    Mix in only where the message is built for a user to read - translated, and
+    free of internal detail. It is what makes "is this safe to show?" answerable
+    by looking at the class rather than by reading every call site.
+
+    Supplies the :class:`HasCuratedMessage` hook rather than overriding
+    ``user_msg()``, so it works whichever order the bases are written in.
+    """
+
+    def curated_msg(self) -> str:
+        return str(self)
 
 
 class ServiceLayerError(OpenDLPError):
@@ -53,7 +107,7 @@ class PasswordTooWeak(ServiceLayerError):
     """Exception if the password is too weak."""
 
 
-class UserAlreadyExists(ServiceLayerError):
+class UserAlreadyExists(CuratedMessage, ServiceLayerError):
     """Raised when attempting to create a user that already exists."""
 
     def __init__(self, email: str = "") -> None:
@@ -62,7 +116,7 @@ class UserAlreadyExists(ServiceLayerError):
         self.email = email
 
 
-class InvalidCredentials(ServiceLayerError):
+class InvalidCredentials(CuratedMessage, ServiceLayerError):
     """Raised when authentication fails due to invalid credentials."""
 
     def __init__(self, message: str = "") -> None:
@@ -71,7 +125,7 @@ class InvalidCredentials(ServiceLayerError):
         super().__init__(message)
 
 
-class InvalidInvite(ServiceLayerError):
+class InvalidInvite(CuratedMessage, ServiceLayerError):
     """Raised when an invite code is invalid, expired, or already used."""
 
     def __init__(self, code: str = "", reason: str = "") -> None:
@@ -88,7 +142,7 @@ class InvalidInvite(ServiceLayerError):
         self.reason = reason
 
 
-class InsufficientPermissions(ServiceLayerError):
+class InsufficientPermissions(CuratedMessage, ServiceLayerError):
     """Raised when a user lacks permissions for an operation."""
 
     def __init__(self, action: str = "", required_role: str = "") -> None:
@@ -109,7 +163,7 @@ class InsufficientPermissions(ServiceLayerError):
         self.required_role = required_role
 
 
-class InvalidResetToken(ServiceLayerError):
+class InvalidResetToken(CuratedMessage, ServiceLayerError):
     """Raised when a password reset token is invalid, expired, or already used."""
 
     def __init__(self, reason: str = "") -> None:
@@ -121,14 +175,14 @@ class InvalidResetToken(ServiceLayerError):
         self.reason = reason
 
 
-class EmailNotConfirmed(ServiceLayerError):
+class EmailNotConfirmed(CuratedMessage, ServiceLayerError):
     """Raised when user tries to login without confirming email."""
 
     def __init__(self) -> None:
         super().__init__(_("Please confirm your email address before logging in."))
 
 
-class InvalidConfirmationToken(ServiceLayerError):
+class InvalidConfirmationToken(CuratedMessage, ServiceLayerError):
     """Raised when email confirmation token is invalid, expired, or already used."""
 
     def __init__(self, reason: str = "") -> None:
@@ -140,7 +194,7 @@ class InvalidConfirmationToken(ServiceLayerError):
         self.reason = reason
 
 
-class RateLimitExceeded(ServiceLayerError):
+class RateLimitExceeded(CuratedMessage, ServiceLayerError):
     """Raised when a user has exceeded rate limits for an operation."""
 
     def __init__(self, operation: str = "", retry_after_seconds: int = 0) -> None:
@@ -199,7 +253,7 @@ class EmailTemplateNotFoundError(NotFoundError):
     """An email template could not be found in the database"""
 
 
-class EmailTemplateInvalid(ServiceLayerError):
+class EmailTemplateInvalid(CuratedMessage, ServiceLayerError):
     """Raised when an email template fails validation, carrying the problem list."""
 
     def __init__(self, problems: list[str]) -> None:
@@ -207,14 +261,14 @@ class EmailTemplateInvalid(ServiceLayerError):
         super().__init__("; ".join(problems))
 
 
-class ImageQuotaExceeded(ServiceLayerError):
+class ImageQuotaExceeded(CuratedMessage, ServiceLayerError):
     """Raised when a registration page already has the maximum number of images."""
 
     def __init__(self, limit: int) -> None:
         super().__init__(_("This registration page already has the maximum of %(limit)s images", limit=limit))
 
 
-class DocumentQuotaExceeded(ServiceLayerError):
+class DocumentQuotaExceeded(CuratedMessage, ServiceLayerError):
     """Raised when a registration page already has the maximum number of documents."""
 
     def __init__(self, limit: int) -> None:
@@ -229,7 +283,7 @@ class RespondentNotFoundError(NotFoundError):
     """A respondent could not be found in the database"""
 
 
-class OAuthError(ServiceLayerError):
+class OAuthError(CuratedMessage, ServiceLayerError):
     """Raised when OAuth authentication fails."""
 
     def __init__(self, provider: str = "", reason: str = "") -> None:
@@ -253,7 +307,7 @@ class OAuthStateError(OAuthError):
         super().__init__(reason=_("Invalid OAuth state parameter"))
 
 
-class CannotRemoveLastAuthMethod(ServiceLayerError):
+class CannotRemoveLastAuthMethod(CuratedMessage, ServiceLayerError):
     """Raised when attempting to remove the last authentication method."""
 
     def __init__(self) -> None:

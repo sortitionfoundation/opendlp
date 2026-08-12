@@ -32,6 +32,7 @@ class Urls:
 
     # Backoffice URLs (Pines UI + Tailwind)
     backoffice_showcase = f"{base}/backoffice/showcase"
+    backoffice_patterns = f"{base}/backoffice/dev/patterns"
     backoffice_dashboard = f"{base}/backoffice/dashboard"
     backoffice_create_assembly = f"{base}/backoffice/assembly/new"
     backoffice_assembly = "{base}/backoffice/assembly/{assembly_id}"
