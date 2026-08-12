@@ -75,6 +75,16 @@ class RegistrationPageNotReady(Exception):
         self.problems = problems
         super().__init__("; ".join(problems))
 
+    def user_msg(self) -> str:
+        """The readiness problems, which are written to be read by an organiser.
+
+        Defines the method callers duck-type on directly. It cannot use the service
+        layer's CuratedMessage mixin - the domain does not import from the service
+        layer - and being outside the OpenDLPError tree, the mixin's curated_msg()
+        hook would never be consulted anyway.
+        """
+        return str(self)
+
 
 @dataclass(frozen=True)
 class RegistrationPageActivity:

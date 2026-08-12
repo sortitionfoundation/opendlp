@@ -119,3 +119,43 @@ class TestCSPNonceInApp:
                     break
 
             assert "'strict-dynamic'" in script_src
+
+
+class TestVendoredScripts:
+    """Third party JavaScript is served from our own origin, never from a CDN."""
+
+    VENDORED_FILES = ("alpine-csp.js", "htmx.js", "govuk-frontend.js")
+
+    @pytest.fixture
+    def app(self) -> Flask:
+        """Create test Flask application."""
+        return create_app("testing")
+
+    def test_page_loads_no_scripts_from_a_cdn(self, app: Flask) -> None:
+        """Test that no script tag on a rendered page points at a third party CDN."""
+        with app.test_client() as client:
+            html = client.get("/").data.decode("utf-8")
+
+            assert "cdn.jsdelivr.net" not in html
+            assert "unpkg.com" not in html
+
+    def test_page_loads_alpine_and_htmx_from_static(self, app: Flask) -> None:
+        """Test that the Alpine and htmx script tags point at our vendored copies."""
+        with app.test_client() as client:
+            html = client.get("/").data.decode("utf-8")
+
+            assert "/static/js/vendor/alpine-csp.js" in html
+            assert "/static/js/vendor/htmx.js" in html
+
+    @pytest.mark.parametrize("filename", VENDORED_FILES)
+    def test_vendored_file_is_served(self, app: Flask, filename: str) -> None:
+        """Test that each vendored library is present and served as static content.
+
+        Failure here means `npm run build:vendor` has not been run - the same
+        symptom a developer sees as a page with no interactivity.
+        """
+        with app.test_client() as client:
+            response = client.get(f"/static/js/vendor/{filename}")
+
+            assert response.status_code == 200
+            assert len(response.data) > 0

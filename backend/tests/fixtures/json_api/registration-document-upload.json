@@ -1,0 +1,15 @@
+{
+  "document": {
+    "a_snippet": "<a href=\"/register/example-assembly/documents/0000000000000000000000000000000000000000000000000000000000000000.pdf\">Information pack (PDF, 19 bytes)</a>",
+    "aria_label_copy_snippet": "Copy download link snippet for Information pack",
+    "aria_label_delete": "Delete Information pack",
+    "aria_label_details": "Details for Information pack",
+    "byte_size": 19,
+    "display_name": "Information pack",
+    "file_name": "0000000000000000000000000000000000000000000000000000000000000000.pdf",
+    "id": "00000000-0000-4000-8000-000000000000",
+    "label": "Information pack",
+    "original_filename": "info-pack.pdf",
+    "public_url": "/register/example-assembly/documents/0000000000000000000000000000000000000000000000000000000000000000.pdf"
+  }
+}

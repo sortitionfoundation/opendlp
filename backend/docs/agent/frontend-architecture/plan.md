@@ -1,0 +1,765 @@
+# Frontend interactivity: implementation plan
+
+**Status:** Every phase is implemented (§2, §5, §3, §4, §6, §7, §8, §9). No questions remain open. The three big inline script blocks the plan set out to remove are gone; six small ones survive elsewhere, listed in §12 — none of them was in scope, and two of them should stay where they are.
+**Decision this implements:** [vanilla-alpine-json.md](vanilla-alpine-json.md) — vanilla JS + Alpine.js (CSP build) + JSON routes, organised into real files, tested, for internal/backoffice interactivity. Public pages stay server-rendered, no-JS-required.
+
+This document lays out a concrete plan for the workstreams Chewie asked for. Chewie's review answers most of the questions; §11 records what was decided and what is still parked pending a team discussion.
+
+**Done:** Phase 1a (vendoring, §2), Phase 1b (JS tooling, §5), Phase 1c (JSON error handling, §3), Phase 1d (the `dev.py` "not a pattern source" annotations, §8), Phase 2 (the JS source relocation to `src/js/`, §5.2), Phase 3 (the API-fixture machinery, §4), Phase 4 (the `patterns.html` pilot migration, §9), Phase 5 (the `assembly_registration.html` production migration, §9), plus the doc and review-skill updates those imply (§6, §7). Each section carries a note on what was actually built and where it diverged.
+
+**Done:** Phase 6 — `service_docs.html` and the `dev.py` service-name map (§9).
+
+**Nothing open.** The last parked question — whether anything in `service_docs.html`/`dev.py` is load-bearing — was overtaken by Chewie's decision to do Phase 6 anyway (§11 row 9).
+
+---
+
+## 0. Findings from reviewing the current code
+
+Grounding facts the plan below relies on:
+
+- **The CDN scripts are exactly four `<script>` tags**, all with a nonce already:
+  - `templates/base.html:212` — `@alpinejs/csp@3.15.8` from jsdelivr
+  - `templates/base.html:216` — `htmx.org@2.0.7` from jsdelivr
+  - `templates/base.html:203` and `templates/base_public.html:53` — `govuk-frontend@5.11.1/dist/govuk/all.bundle.min.js` from jsdelivr
+  - `templates/backoffice/base.html:33` and `:38` — the same Alpine/htmx CDN tags again
+- **`govuk-frontend` is already an npm dependency** (`package.json` pins `^5.14.0`) and its built bundle already exists locally at `node_modules/govuk-frontend/dist/govuk/all.bundle.js` — it is not currently used; we still fetch an _older_ version (5.11.1) from the CDN instead. Vendoring this one is a copy step, not a new dependency.
+- **`@alpinejs/csp` and `htmx.org` are not npm dependencies at all** — they're pulled from jsdelivr with no local copy. Vendoring these means adding two small npm packages.
+- **The three inline `<script nonce>` blocks** the decision doc flags, measured directly:
+  - `templates/backoffice/assembly_registration.html:1381-1948` — **567 lines** (file is 1950 lines total, not 1078 — it's grown since the doc was written)
+  - `templates/backoffice/service_docs.html:106-828` — **722 lines** (dev-only tool)
+  - `templates/backoffice/patterns.html:112-396` — **284 lines** — notable because this page is the _living reference_ for "how to do Alpine right" (`docs/frontend_security.md`, CLAUDE.md both point here), yet it is itself 100% inline, untested script.
+- **JSON error handling is already mostly disciplined** in the production blueprints. The pattern in `backoffice_registration.py` and `backoffice.py` is consistently: log the real exception via `structlog` (`logger.exception(..., error=str(e))`), return a translated _generic_ message to the client. The two places a caught exception's `str(e)` reaches the client directly (`backoffice_registration.py:811`, `:908`) are custom domain exceptions (`ImageQuotaExceeded`, `DocumentQuotaExceeded`) whose `__str__` _is_ the curated user-facing message — that's a deliberate, safe use of `str(e)`, not a leak.
+- **`dev.py` breaks that discipline in five places.** `_handle_publish_registration_page`, `_handle_unpublish_registration_page`, `_handle_close_registration_page`, `_handle_reopen_registration_page`, and `_handle_submit_registration` each end with a bare `except Exception as e: return {"error": str(e), "error_type": type(e).__name__}` — the raw exception string goes straight into the JSON response, no logging, no translation, no generic-message fallback. `dev_bp` is only registered when `not config.is_production()` (`flask_app.py:137-140`) and is admin-gated, so this isn't an internet-facing leak today — but it's the opposite of the convention we're about to write down, and it sits in the file most likely to get copied as a pattern.
+- **These same five handlers have zero test coverage** — `grep` for their names across `tests/` returns nothing, and the route that calls them (`/dev/service-docs/execute`) isn't tested directly either. By contrast, the image/document/email handlers _do_ have component tests (`tests/component/test_dev_image_handlers.py`, `test_dev_document_handlers.py`, `test_dev_email_handlers.py`) that drive the `_handle_*` functions over a `FakeUnitOfWork`. So the dev blueprint already has a working test pattern for about half its handlers — it just wasn't applied uniformly.
+- **No JS test runner, no eslint, config exists** — confirmed no `vitest.config.*`, no `.eslintrc*`/`eslint.config.*`, no `*.test.js` anywhere outside `node_modules`.
+- **`jsonschema` is not currently a Python dependency** — it appears nowhere in `pyproject.toml` or `uv.lock`. So the Python half of §4 needs `uv add --group dev jsonschema` too; it's not "already available" as §1 originally guessed.
+- **The frontend build has exactly one entry point that everything reuses: the `build` npm script.** `package.json`'s `"build": "npm run build:sass && npm run build:backoffice && npm run build:js"` is called by `just install`, by CI (`.github/actions/setup-python-env/action.yml`, which runs `npm install && npm run build`), and by `Dockerfile:85`. Separately, `just build-all` = `build-all-css` (= `build-css` + `build-backoffice`) + `build-js`, and `just test`/`just test-bdd`/`just run` all depend on `build-all`. So a new build step must be added in **both** places to be picked up everywhere: appended to the `build` npm script, and given a `just build-vendor` recipe wired into `build-all`. See §2.
+- **`just check` is mostly a prek wrapper** — `uv lock --locked`, then `uv tool run prek run --all-files`, then `mypy`, then `deptry`. `check-ci` is the same but points prek at `../.pre-commit-config-ci.yaml`. The pre-commit configs live at the repo root (one level above `backend/`), so hook `files:` patterns are repo-root-relative (`^backend/templates/...`), and there is already a `- repo: local` hook (`no-strftime-in-templates`) to copy the shape from. Both configs carry a literal `# TODO: consider ... - javascript` comment, so JS linting in prek is a pre-existing intention, not a new idea.
+- **"Contract test" is already a taken term in this codebase** (`docs/testing.md` §Contract Tests / `tests/contract/`): it specifically means "fake repo vs SQL repo behave identically." Whatever we build to stop JSON/JS drift must not be called "contract tests" or it'll collide with that meaning in conversation and in `just check` output. See §4.
+
+---
+
+## 1. New dependencies — approved
+
+Chewie has signed off on all of these. Recorded here with the reasoning so the choice is auditable later.
+
+| Dependency                                 | Why                                                                                                                                                                                                                                    | Alternative considered                                                                                                  |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Vitest** (jsdom env)                     | JS unit tests — the load-bearing new piece per the decision doc. Covers `url-utils.js`, autocomplete debounce/keyboard logic, modal state, and whatever we extract from the inline scripts.                                            | Jest (heavier, same job); `node:test` (no dep, but no jsdom story, worse ergonomics for DOM-touching Alpine components) |
+| **eslint + prettier**                      | Lint/format JS once it's out of templates and into files. Runs as prek hooks, not as a bespoke `just check` step — see below.                                                                                                          | Biome (single faster binary, newer/less mature ecosystem)                                                               |
+| **`@alpinejs/csp`, `htmx.org`** (npm)      | Needed to vendor them locally instead of jsdelivr (see §2). Same libraries we already run, just as npm packages instead of CDN tags.                                                                                                   | Keep on CDN and accept the supply-chain/privacy surface (all three architecture docs argue against this)                |
+| **`ajv`** (JSON Schema validator, JS side) | The JS half of the drift-prevention plan (§4), now confirmed. Validates the imported fixture against the same schema the Python side asserts against.                                                                                  | Skip schema validation, rely on golden fixtures alone (weaker guarantee, no dependency)                                 |
+| **`jsonschema`** (Python, dev group)       | The Python half of §4. **Not currently a dependency** (§0) — my earlier "probably already available" was wrong, so this is a fifth new dependency, not a freebie. Chewie has explicitly approved it as a new dependency on that basis. | Hand-rolled shape assertions in pytest (more code, weaker, drifts from the JS side)                                     |
+
+### eslint/prettier run via prek, not as a bespoke `just check` step
+
+Per Chewie: don't bolt these onto `just check` directly — `just check`'s main job is already "run the prek hooks", so JS linting belongs _inside_ the prek config where it gets the same file-scoping, caching, and commit-time enforcement as ruff and djhtml. Both `../.pre-commit-config.yaml` and `../.pre-commit-config-ci.yaml` even carry a standing `# TODO: consider ... - javascript` note in the same place, so this fills an existing gap.
+
+Practically that means:
+
+- Add eslint and prettier hooks to `../.pre-commit-config.yaml`, scoped with `files: ^backend/static/.*\.js$` (repo-root-relative, matching the existing `no-strftime-in-templates` hook), excluding `static/**/dist/` and the new `static/js/vendor/` (§2) — vendored and generated files must not be linted or reformatted.
+- **Mirror the change into `../.pre-commit-config-ci.yaml`.** That file is a hand-maintained copy that only omits `detect-secrets`. Chewie is happy for it to stay hand-maintained — it changes infrequently, so the duplication isn't worth automating away. It just means every hook added in Phase 1 (eslint, prettier, and the `djjs` scoping) has to be applied to **both** files in the same commit, and reviewers should check for that.
+- Hook mechanics to settle during Phase 1: prefer `- repo: local` hooks with `language: system` invoking the npm scripts (`npm run lint` / `npm run format:check` with `--prefix backend`), since `node_modules/` is already guaranteed by `just install`, `npm install` in CI, and the Dockerfile. The alternative — prek's `language: node` with `additional_dependencies`, or the upstream eslint mirror repo — would install a _second_ copy of eslint at a version independent of `package.json`, which is exactly the drift we're trying to avoid elsewhere. **To verify in Phase 1:** that prek 0.4.x runs `language: system` local hooks with a `working-directory`-equivalent cleanly from the repo root; the fallback if not is a tiny wrapper script in the repo root.
+
+### The `djjs` / prettier split — decided
+
+prettier and the existing `djjs` hook (djHTML's JS indenter) both reformat `.js` files, and `djjs` currently has no `files:`/`exclude:` restriction, so it formats every tracked `.js` file in the repo. **Chewie's call: scope `djjs` to the `templates/` directory — djHTML handles inline JS, prettier owns standalone `.js` files.** That's the right division of labour. Two details to get right when implementing it:
+
+- **Scoping `djjs` to `^backend/templates/` makes it a no-op, and that's fine.** There are currently zero `.js` files anywhere under `templates/` — inline `<script>` blocks live inside `.html` files, and those are already indented by the **`djhtml`** hook, which formats the contents of `<script>`/`<style>` tags itself. So `djjs` isn't what's been maintaining inline JS; `djhtml` is, and that's unaffected by any of this. The scoped `djjs` hook survives as a declaration of intent (and would start working if a standalone `.js` ever lands under `templates/`). Worth a one-line comment in the config saying so, or the next person will delete it as dead config. If the team would rather not carry a hook that matches nothing, dropping `djjs` entirely is behaviourally identical today — flagging the option, not arguing for it.
+- **Don't scope prettier to `static/` only.** Once `djjs` stops covering the repo, `backend/tailwind.config.js` — the one tracked `.js` file outside `static/` — would be formatted by nothing at all. Scope prettier as `files: ^backend/.*\.js$` with `exclude:` for `static/**/dist/`, `static/js/vendor/` (§2) and `node_modules/`, so nothing silently falls through the gap. Keep prettier to `.js` for now: `djcss` has the same shape of overlap for stylesheets, and widening prettier to CSS opens a second front this plan doesn't need.
+
+---
+
+## 2. Vendor Alpine, htmx, and govuk-frontend off jsdelivr — ✅ DONE (Phase 1a)
+
+Approved. All three architecture docs agree on this independent of which approach won, and Chewie has confirmed the govuk-frontend version bump that falls out of it (see §11).
+
+**Implemented.** Deviations from the plan below, all minor:
+
+- `govuk-frontend` ships no minified bundle in the npm package — only `dist/govuk/all.bundle.js`. That is what we copy, so the vendored govuk-frontend is unminified where the CDN copy was minified (104 KB vs the CDN's smaller `.min.js`). Alpine and htmx both ship minified builds and we use those.
+- The old CDN tags carried `integrity=`/`crossorigin=` attributes; the vendored tags drop them, since SRI pins a third party we no longer have.
+- The jsdelivr entries in the CSP `script_src`/`style_src`/`font_src` allowlists (`flask_app.py:219-222`) were **left alone**, as §2.5 said they could be — they are inert under `strict-dynamic` and `style_src`/`font_src` were not in scope here.
+- Added `TestVendoredScripts` to `tests/unit/test_csp_nonce.py`: no CDN URL appears in a rendered page, the Alpine/htmx tags point at `static/js/vendor/`, and each vendored file is served. This is the regression net for the `sf-code-review` check in §7.
+- `docs/agent/frontend_design_system.md` also carried a stale CDN `<script>` example and was updated alongside the two docs §2.6 lists.
+
+**Plan:**
+
+1. `npm add @alpinejs/csp htmx.org` (pinned to the versions already in use: `3.15.8`, `2.0.7`).
+2. Add a `build:vendor` npm script that places:
+   - `node_modules/@alpinejs/csp/dist/cdn.min.js` → `static/js/vendor/alpine-csp.js`
+   - `node_modules/htmx.org/dist/htmx.min.js` → `static/js/vendor/htmx.js`
+   - `node_modules/govuk-frontend/dist/govuk/all.bundle.js` → `static/js/vendor/govuk-frontend.js` (picking up the 5.11.1 → 5.14.0 bump as a side effect — see §11 for scope)
+     These are vendor copies, not bundled/minified by esbuild (they're already built); a plain `cp` in the npm script is enough, matching how CSS already imports govuk-frontend via `--load-path=node_modules`.
+3. **Wire the new step into every build path** (Chewie's requirement — the failure mode is a container or a CI run that silently ships a page with no interactivity):
+   - Append it to the `build` npm script: `"build": "npm run build:sass && npm run build:backoffice && npm run build:js && npm run build:vendor"`. That single change is what makes `Dockerfile:85` (`RUN npm run build`), CI (`.github/actions/setup-python-env/action.yml`, which runs `npm install && npm run build`), and `just install` all pick it up — none of those three need editing.
+   - Add a `just build-vendor` recipe (same shape as `build-js`: echo, `npm run build:vendor`, `touch src/opendlp/entrypoints/flask_app.py`) and add it to `build-all`: `build-all: build-all-css build-js build-vendor`. That covers `just run`, `just test`, `just test-bdd` and friends, which all depend on `build-all`.
+   - Add `backend/static/js/vendor/` to the repo-root `.gitignore`, alongside the existing build-output entries (`dist/`, `backend/static/css/application.css`), consistent with "nothing built is committed".
+   - A Phase 1 acceptance check: `git clean`-equivalent fresh checkout → `npm install && npm run build` → `static/js/vendor/` contains all three files; and `docker compose build` + load a page → Alpine and htmx work.
+4. Update the four CDN `<script>` tags in `base.html` / `base_public.html` / `backoffice/base.html` to `{{ url_for('static', filename='js/vendor/...', v=static_hashes(...)) }}`, keeping the existing `nonce`.
+5. No CSP header changes needed — `strict-dynamic` already authorises same-origin nonce'd scripts; removing the jsdelivr allowlist entries (currently vestigial per `frontend_security.md`) is a nice-to-have cleanup, not a requirement.
+6. Update `docs/frontend_security.md` and `docs/frontend_build.md` to describe vendored Alpine/htmx/govuk-frontend instead of CDN.
+
+**Risk:** none functionally (same code, different origin), but it's the first thing a broken build makes visibly obvious (unstyled page / no interactivity) per the existing "nothing built is committed" tradeoff in `frontend_build.md` — worth calling out in the PR description.
+
+---
+
+## 3. JSON error-handling convention — ✅ DONE (Phase 1c)
+
+Written up as `docs/agent/json_api_conventions.md`, summarised in `docs/frontend_security.md` and `AGENTS.md`, and applied.
+
+**Implemented:**
+
+- `OpenDLPError.user_msg()` returns a generic translated string; a new `CuratedMessage` mixin makes it return `str(self)`, and 13 exception classes opt in (`UserAlreadyExists`, `InvalidCredentials`, `InvalidInvite`, `InsufficientPermissions`, `InvalidResetToken`, `EmailNotConfirmed`, `InvalidConfirmationToken`, `RateLimitExceeded`, `EmailTemplateInvalid`, `ImageQuotaExceeded`, `DocumentQuotaExceeded`, `OAuthError` — and `OAuthStateError` by inheritance). A mixin rather than 13 hand-written methods, so opting in is one word on the class line and visible at a glance.
+- Deliberately **not** opted in: `PasswordTooWeak`, `InvalidSelection`, and the whole `NotFoundError` tree. Their messages carry ids and internal detail (`f"Registration page {page.id} has no HTML source"`) or, for `InvalidSelection`, are sometimes `str(e)` from the sortition library. This is the distinction doing real work.
+- `RegistrationPageNotReady` defines `user_msg()` directly — the domain must not import the service layer, so it implements the protocol without the mixin, and callers duck-type on the method.
+- The two `str(e)` call sites in `backoffice_registration.py` now use `.user_msg()`.
+- `_dev_error(exc)` added to `dev.py` as a module-local helper, per §11 row 11. It duck-types on `user_msg` and falls back to the generic message, so an unexpected `ValueError` can't leak either.
+- The five handlers narrowed to `except (InsufficientPermissions, NotFoundError, RegistrationPageNotReady, ValueError)`, each now logging via `structlog` before returning. `_handle_submit_registration` lost its `except` entirely: that service reports validation problems in its result rather than raising, so it had nothing specific to catch and anything it does raise is genuinely unexpected.
+- Tests: `tests/unit/test_exception_user_msg.py` (28) pins down which exceptions expose their message and that the uncurated ones don't; `tests/component/test_dev_registration_page_handlers.py` (17) covers all five previously untested handlers, including that an unexpected `RuntimeError` still propagates to the route handler rather than being swallowed.
+- `just translate-regen` run for the two new strings.
+
+**Deviation worth noting:** the plan said this "wants its own commit" separate from the `dev.py` changes. It landed as one commit — the `dev.py` handlers are the only consumer of `_dev_error`, and `_dev_error` only makes sense given `user_msg()`, so splitting would have left a commit that adds a helper nothing calls.
+
+**The rule:**
+
+- A JSON error response's `"error"` field must be either (a) a translated, curated string you wrote (`_("...")`), or (b) `exc.user_msg()` on a domain exception specifically designed to carry a safe, user-facing message (see below) — never `str(e)` from a bare `except Exception`.
+- **Catch narrowly.** Chewie's call: option (a) below is the general principle. Catch the specific exceptions a call can actually raise; let genuinely unexpected ones propagate to a single outer handler that logs and returns a generic message.
+- Every `except Exception` branch that does survive and produces a JSON response must log the real error via `structlog` (`logger.exception(...)` or `.error(...)`, with `error=str(e)`) and return a generic, translated message plus an appropriate status code (usually 500). This is already the house style in `backoffice_registration.py` / `backoffice.py`; it just needs to be written down and applied to `dev.py`.
+- Envelope shape (already the de facto standard): success is the resource at `2xx`; errors are `{"error": "...", "reason"?: "..."}` at a real status code. Document this as _the_ shape, matching §Migration in `vanilla-alpine-json.md`.
+
+### `user_msg()` — making "safe to show" explicit
+
+Chewie's point: today, "this exception's `str()` is a curated user-facing message" is a fact you can only learn by reading the exception class. `backoffice_registration.py:811` and `:908` pass `str(e)` to the client and are correct; a copy-paste of that line one class over would be a leak. Nothing — not a reviewer skimming, not a grep, not a linter — can tell the two apart.
+
+So: add an explicit `user_msg()` method to the exceptions that carry safe messages.
+
+- Put a default `user_msg()` on `OpenDLPError` in `src/opendlp/service_layer/exceptions.py`. The default must _not_ be `return str(self)` — that would silently make every exception in the tree claim to be user-safe, which is the current problem with extra steps.
+- **Decided (Chewie): the default returns a generic translated string** — `_("Something went wrong")` or similar — rather than raising `NotImplementedError`. The reasoning: a class that forgets to override degrades to an unhelpfully vague message, which is annoying; raising would turn a handled error into a 500 with no feedback at all, which is worse. Better too little information than a crash. The vagueness is caught by review instead — a `sf-code-review` check (§7) that new user-facing exception classes override `user_msg()`.
+- Worth a comment on the base-class default saying exactly this, so the next person doesn't "improve" it into `str(self)` and quietly undo the whole point.
+- Override it on the exceptions that already build a curated message: `ImageQuotaExceeded`, `DocumentQuotaExceeded`, `EmailTemplateInvalid`, `UserAlreadyExists`, and the rest of the `_()`-carrying classes in that module. For most it is literally `return str(self)` — but written _once_, in the class that has earned it, rather than at every call site.
+- Then the rule for blueprints becomes mechanically checkable: **a JSON response body never contains `str(e)`; it contains `e.user_msg()` or a literal `_("...")`.** A grep for `str(e)` inside a `jsonify`/dict-return is then a review flag on its own, with no case-by-case judgement needed — which is exactly what makes it worth doing.
+- This is a cross-cutting change to `exceptions.py` plus the two call sites in `backoffice_registration.py`. It's small, but it isn't free, and it touches production error paths — so it wants its own commit, with the existing component tests for the quota paths proving the messages are unchanged.
+
+### The dev-only error message — a helper in `dev.py`
+
+Chewie's second point: `dev.py` is used by developers, the full error _is_ in the Flask console output, but in the moment you're looking at the page, not the terminal. Suppressing the raw string without pointing anywhere is worse for the dev than the current leak.
+
+**Decided (Chewie): a helper function local to `dev.py`, not a `dev_msg()` method on the exception hierarchy.** That keeps the dev-only concern in the dev-only file, and avoids giving every production exception a method that production code must never call — a footgun in the opposite direction from the one we're fixing. Shape:
+
+```python
+def _dev_error(exc: Exception) -> str:
+    """Dev-only error text: the safe message, plus a pointer to where the real one is.
+
+    The full traceback is in the Flask console, but the developer is looking at
+    the page, so say so explicitly rather than leaving them at a dead end.
+    """
+    msg = exc.user_msg() if isinstance(exc, OpenDLPError) else _("Something went wrong")
+    return f"{msg} {_('(check the Flask console log for full error details)')}"
+```
+
+Two things this buys us beyond tidiness: the `isinstance` check means a non-`OpenDLPError` (a `ValueError` from a service call, say) can't leak its `str()` either, without every handler having to think about it; and the whole dev-only convention is one function, so it can be changed in one place if the wording turns out to be wrong in practice.
+
+Every error response in `dev.py` goes through it, including the outer catch-all in `service_docs_execute` — so the truly-unexpected case gives the dev "something blew up, look at the terminal", which is honest and actionable, rather than either a leaked traceback string or a dead end. The real exception still gets logged via `structlog` at every one of those points; the helper governs what reaches the page, not what reaches the log.
+
+**Fix required:** the five `dev.py` handlers listed in §0 (`_handle_publish_registration_page`, `_handle_unpublish_registration_page`, `_handle_close_registration_page`, `_handle_reopen_registration_page`, `_handle_submit_registration`), applying option (a):
+
+- (a) **Chosen.** Narrow the `except Exception` to the specific exceptions each service call can actually raise (`RegistrationPageNotReady`, `SlugError`, `ValueError`, etc. — to be determined per handler by reading the service functions), return `_dev_error(exc)` for those, and let anything truly unexpected propagate to the outer `except Exception` in `service_docs_execute`, which already logs-and-generic-messages correctly (and which also routes its message through `_dev_error`).
+- (b) Rejected: keep a catch-all but change it to `logger.exception(...)` + a generic message. Loses the specific, useful message for the expected failures, which is most of what these handlers hit.
+
+Narrowing means reading each service call to find what it actually raises — which is also what gives the component tests (§7) a concrete target rather than a `pytest.raises(Exception)` shrug.
+
+---
+
+## 4. Preventing server/JS JSON drift — ✅ DONE (Phase 3)
+
+**Implemented** as `tests/api_fixtures.py` (record/compare/normalise), `tests/component/test_json_api_fixtures.py` (12 tests driving the real routes), `src/opendlp/schemas/json_api/` (three schemas) and `src/js/test-support/api-fixtures.js` + its test (8 tests). Deviations from the plan below:
+
+- **Staleness is asserted inside the test, not by a CI `git diff` step.** `check_api_fixture()` compares against the recorded file and fails with a message naming the regeneration command; `UPDATE_API_FIXTURES=1` rewrites instead of comparing. That needs no CI wiring at all, and the failure explains itself where a `git diff --exit-code` step would not.
+- **Normalisation is caller-directed, not blind.** UUIDs are flattened automatically, but the generated page slug and the content hash are passed in as explicit replacements. Keys are deliberately never normalised, so a renamed field always shows as a diff — that being the drift the fixtures exist to catch.
+- **ajv needs its 2020 build.** The schemas declare draft 2020-12; ajv's default export only knows draft-07 and fails to resolve `$schema`, leaving a half-registered schema that then fails the *next* compile with a confusing "already exists". `ajv/dist/2020.js` plus a compiled-validator cache fixes both.
+- **Three schemas, not four:** the registration image response, the document response, and the shared error envelope. The autocomplete search response was left for whoever next touches it — it has no fixture consumer yet, and an unused fixture is a maintenance cost with no signal.
+- **A completeness test on the JS side:** `FIXTURE_SCHEMAS` in `api-fixtures.test.js` must list every recorded fixture, so a new fixture cannot be added and then go unvalidated by the JS half.
+- **Known fragility, accepted:** a fixture pins real values including an encoded image's `byte_size`, so a Pillow upgrade can move a fixture legitimately. The failure message points at the fix, and the diff makes the cause obvious. Documented rather than engineered around.
+- `tests/contract/`'s note in `docs/testing.md` already reserved the "contract test" name; `docs/testing.md` now carries an "API Fixtures" section next to it, and `json_api_conventions.md` the full mechanism.
+
+**Original plan:**
+
+Per `contract-style-testing.md`, the recommendation for "a Flask app with a few JSON endpoints" was **golden fixtures generated by the Python test suite (option 1) + a hand-written JSON Schema validated on both sides (option 2)**. I'm carrying that recommendation forward. Concretely:
+
+1. **Schemas.** One JSON Schema file per JSON response shape, `additionalProperties: false`, required/optional fields marked, enums for status/error codes. Location wasn't settled in review; proceeding with `src/opendlp/schemas/json_api/*.schema.json` unless someone objects, since the schema is a property of the server's API rather than documentation about it, and keeping it in `src/` means it ships with the package and can be loaded by path from both pytest and Vitest without a `../../..` climb. Easy to move later — it's a directory rename plus two path constants. Start with the highest-value ones: the registration image/document upload+list responses, the autocomplete search response, and whatever the pilot migration (§9) ends up touching.
+2. **Python side:** a pytest fixture that (a) hits the real endpoint via the Flask test client, (b) asserts the response validates against the schema (`jsonschema.validate`), (c) writes the response body to a fixture file under (proposed) `tests/fixtures/json_api/*.json`, normalising volatile fields (UUIDs, timestamps) the way the fixture doc describes. A CI step (`git diff --exit-code` on the fixtures dir, or just asserting fixtures are up to date within the test itself) fails the build if a fixture goes stale without the JS being updated.
+3. **JS side:** Vitest tests `import` the fixture JSON directly — never a hand-typed literal of an API response, per the invariant in `contract-style-testing.md`. A small Vitest helper also validates the imported fixture against the same schema with `ajv`, so schema and fixture can't drift from each other either.
+4. **Naming: "API fixtures"** — confirmed by Chewie. Not "contract tests", which is reserved in this repo for fake-vs-SQL repository parity (§0). Use it consistently in the fixture directory name (`tests/fixtures/json_api/`), the docs, and any `just` target, so the two never get conflated in conversation or in CI output.
+5. **Where the Python-side test lives:** `tests/component/` fits best (drives real routes over a `FakeUnitOfWork`, no DB needed) rather than a new top-level tier — this is additive to the existing component-test style, not a new testing level.
+6. **Dependencies:** `ajv` (npm) and `jsonschema` (`uv add --group dev jsonschema` — it is _not_ currently installed, §0). Both approved in §1.
+
+This is more machinery than "just Vitest," but it's the piece that actually answers the "how do we stop the JSON shape from drifting between server and JS tests" question — a Vitest suite with hand-typed fixtures gives false confidence without it.
+
+---
+
+## 5. JS file organisation and tooling — ✅ TOOLING DONE (Phase 1b)
+
+The tooling half is implemented; the file reorganisation (`components/`, `lib/`, `init/`) happens with the §9 migrations, not before there is anything to put in them.
+
+**Implemented:** Vitest (jsdom) under `just test-js`, which `test-html`/`test-xml`/`test-nobdd` depend on; ESLint (flat config, `eslint.config.mjs`) and Prettier as `- repo: local` prek hooks in both pre-commit configs; `djjs` scoped to `^backend/templates/`. Configs are `.mjs` because `package.json` has no `"type": "module"` and `tailwind.config.js` is CommonJS, so a `.js` config would be loaded as CJS.
+
+**Decisions taken where the plan left room:**
+
+- **Test placement: `tests/js/` for now.** The plan said scaffold colocated pending the team discussion, but colocated collides with the hard constraint it also names — everything under `static/` is web-served, so `static/js/foo.test.js` would be publicly fetchable. `tests/js/` sidesteps that and matches where every other test in the repo lives. Chewie wants colocation, and **§5.1/§5.2 record the decision on how to get there: move first-party JS to `src/js/` and build it into `static/` with esbuild (Phase 2).** `tests/js/` is the interim position until that lands.
+- **Classic scripts are tested as they ship.** Files under `static/js/` are loaded as plain `<script src>` and cannot use `export` without changing how they load. `tests/js/support/load-global-script.js` evaluates one and returns the named declarations, so `url-utils.js` is now covered (25 tests) without touching how it is served.
+- **Prek hooks use `language: system` + `npm --prefix backend run …` with `pass_filenames: false`.** Verified working with prek 0.4.12, so the wrapper-script fallback wasn't needed.
+- **`no-unused-vars` is configured with `caughtErrors: "none"` for `static/**`.** Several handlers swallow an exception deliberately; whether that is justified is a review question (and CLAUDE.md already requires a comment), not something the linter can judge.
+
+### 5.1 Colocating the Vitest files — DECIDED (option 1, with esbuild)
+
+**Chewie's call: option 1, built with esbuild.** First-party JS moves out of the served tree into
+`src/js/`, esbuild emits the non-test entry points into `static/`, and the Vitest files sit next to
+the code they test. That is Phase 2 in §10; the concrete shape is at the end of this section, and
+the options it was chosen from are kept below as the record.
+
+Chewie wants the tests next to the source. The only thing standing in the way is that first-party
+JS currently lives under `static/`, and `static/` is web-served in its entirety. Worth being precise
+about by what, because it changes what "exclude it" means:
+
+- **WhiteNoise is what actually serves `/static/*`** (`entrypoints/extensions.py:79`), wrapping the
+  WSGI app with `root="static/"`. It scans the tree at startup into a dict of files it will serve.
+- **Flask's own static view is still registered underneath it** (`flask_app.py:56`,
+  `static_folder=config.get_static_path()`), and is what `url_for('static', ...)` builds URLs against.
+- **`Dockerfile:110` does `cp -r /src/static /app/static`** — the whole tree, unfiltered, goes into
+  the image.
+
+So there are three separate places a `.test.js` under `static/` would have to be stopped. That
+asymmetry is what makes the options differ.
+
+Two precedents already in the repo, pulling in opposite directions: `src/scss/` → `static/css/`
+keeps sources outside the served tree, while `static/backoffice/js/src/html-editor.js` keeps them
+inside it (and that source file is, today, publicly fetchable — nobody minds, but it shows the rule
+isn't currently held anywhere).
+
+---
+
+**Option 1 — CHOSEN. Move first-party JS out of the served tree, build it in with esbuild.**
+
+A new `src/js/` alongside the existing `src/scss/`, holding `lib/`, `components/`, `init/` and their
+`*.test.js` siblings. An esbuild step emits the non-test entry points to `static/js/` and
+`static/backoffice/js/`. Test files are never an entry point, so they are never emitted, never
+copied into the image and never served — a property of the layout rather than a setting someone has
+to maintain.
+
+The extra payoff is the reason I'd pick this one rather than just tolerate it. Sources stop being
+classic scripts and become ES modules, which:
+
+- retires `tests/js/support/load-global-script.js` — tests just `import` the thing;
+- fixes the duplicate-`urlSetParam` bug (§5, finding 1) structurally, via module scope, instead of
+  by picking a winner and hoping nobody redeclares it again;
+- retires the `/* exported */` / `/* global */` comment convention documented in
+  `frontend_js_testing.md`, and the `sourceType: "script"` block in `eslint.config.mjs`;
+- makes load order explicit in imports rather than implicit in `<script>` tag order in `base.html`.
+
+Costs, honestly:
+
+- A fourth build step, wired into **both** places per §2 (`build` npm script _and_ a `just` recipe
+  under `build-all`) — plus a `watch:` script, or every one-line JS edit needs a manual rebuild.
+  _(Overtaken by §5.2: `build:js`/`watch:js` already exist and already run esbuild, so this is a
+  widened step rather than a new one — and watch mode is a firm requirement, not an optional extra.)_
+- `static/js/*.js` becomes generated: gitignore it, `git rm` the current files, and put a
+  `--banner:js="// generated from src/js/ - do not edit"` on the output so the next person doesn't
+  edit the build product.
+- Sourcemaps needed for debugging (already how `build:js` works for `html-editor.js`).
+- One entry point per current file keeps every `<script src>` in the templates unchanged. Shared
+  `lib/` code then gets duplicated into each bundle that imports it — irrelevant at this size, but
+  it's the reason not to fan out entry points later.
+- `static/backoffice/js/src/html-editor.js` should probably move to `src/js/` too for consistency.
+  Not required, and it can follow separately.
+
+**Timing matters:** if we do this, do it _before_ the §9 migrations, since those are what produce
+most of the JS. Retrofitting afterwards is the same work plus churn on newly written files.
+
+**Option 1b — rejected. Same move, plain copy instead of esbuild.** Colocation without the module system:
+`src/js/` copied to `static/js/` with `*.test.js` filtered out, in the same spirit as `build:vendor`
+(a `cp` won't express the exclusion, so it'd be an `rsync --exclude` or a few lines of node).
+Cheaper, and it still
+guarantees tests aren't served. But it pays the build-step cost and collects none of the prize —
+still classic scripts, still `load-global-script.js`, still shared globals, still the duplicate
+declaration. Listed for completeness; I wouldn't.
+
+---
+
+**Option 2 — rejected. Leave the JS where it is, teach the serving layer to refuse `*.test.js`.**
+
+Cheapest in effort. But it is two exclusions, not one: prune WhiteNoise's file map after it is
+constructed (there is no documented exclude option — this reaches into its internals), _and_ guard
+Flask's static view underneath. Miss the second and the first is decorative.
+
+Pin it with a test — `GET /static/js/url-utils.test.js` → 404 — which is cheap and genuinely
+protects the invariant. That test is what makes this option defensible at all.
+
+Costs: depends on WhiteNoise internals across upgrades; test files still ship inside the Docker
+image as dead weight, so any future change of static server re-exposes them; and the protection is a
+few lines of config in a file nobody reads, which is the failure mode the test exists to catch.
+
+---
+
+**Option 3 — rejected. Strip test files at packaging time.**
+
+`find /app/static -name '*.test.js' -delete` in the Dockerfile. Protects the container and nothing
+else: `just run` and the CI/BDD runs serve straight from the checkout, so the files stay fetchable
+there. And it's one more packaging path to remember when a second one appears. Only sensible as
+belt-and-braces on top of option 2, not on its own.
+
+---
+
+**Option 4 — keep `tests/js/` (status quo).**
+
+Zero work, and it is where every other test in the repo lives. Costs the colocation, and keeps the
+`load-global-script.js` shim alive.
+
+---
+
+---
+
+### 5.2 What option 1 looks like concretely — ✅ DONE (Phase 2)
+
+**Implemented.** Deviations from the plan below, all minor:
+
+- **The entry-point list lives in `esbuild.config.mjs`, not in the npm scripts.** esbuild's CLI can
+  alias entry points (`out/path=src/file.js`), but the list has to appear in both `build:js` and
+  `watch:js`, and duplicating six entries across two shell strings is exactly the drift this phase
+  exists to remove. A small node script using esbuild's JS API keeps one `ENTRY_POINTS` map that
+  both modes read, and it is where the watch-mode Flask bounce lives too.
+- **Watch mode bounces Flask via an esbuild `onEnd` plugin.** The concern §5.2 raised was real:
+  `static_hashes()` is `@cache`d, so a rebuild alone leaves a running dev server serving the old
+  cache-busting URL. The plugin touches `flask_app.py` after every successful rebuild, verified end
+  to end.
+- **`build:js` minifies, `watch:js` does not** — carried over from how the two scripts already
+  differed for `html-editor.js`, so the browser shows readable code while you work.
+- **The backoffice bundle was split by component, not moved wholesale.** The 839-line
+  `alpine-components.js` became one file per `Alpine.data()` factory under `components/`, three
+  `init/` modules for the magics and directives, and a thin entry point that only registers them.
+  That is what §5's `components/`/`lib/`/`init/` split asks for, and it is what makes the components
+  importable by a test.
+- **`utilities.js` and `alpine-scroll-manager.js` were split the same way**, into `lib/clipboard.js`
+  and five `init/` modules, leaving both entry points as a few `init*()` calls.
+- **Tests added beyond the move:** 94 Vitest tests in total — `url-utils` (28, including the form
+  action cases the deleted duplicate used to serve), `autocomplete` (28), `tabs-keyboard` (13),
+  `url-select` (9), `auto-dismiss-alert` (9), `modal` (13).
+- **13 BDD scenarios deleted.** `features/accessibility.feature` exercised the `url-utils` helpers by
+  evaluating them as browser globals, which module scope ends. The same behaviour is covered by
+  `url-utils.test.js`, so the scenarios and their step definitions went rather than the module
+  boundary being reopened to keep them. `autocomplete.fetchResults` now returns its promise so a test
+  can await it — the only behaviour change in the phase, and an additive one.
+- **`.prettierignore` and the ESLint ignore list collapsed to `static/`** — with nothing hand-written
+  there, the previous per-directory exclusions (`static/js/vendor/`, `static/**/dist/`,
+  `static/css/`) are one rule. The prek hooks' `files: ^backend/.*\.(js|mjs)$` scoping needed no
+  change; the `format`/`format:check` npm scripts were widened from `**/*.js` to `**/*.{js,mjs}` so
+  they cover the `.mjs` configs the hook already matched.
+
+**Original plan:**
+
+Chosen because it is the only option where "a test file is never web-served" follows from where the
+file is rather than from a rule someone maintains — and the only one that pays for its own cost, by
+taking out the `load-global-script` shim, the shared-globals convention and the
+duplicate-`urlSetParam` bug on the way past.
+
+**It is not a fourth build step after all.** `build:js`/`watch:js` and `just build-js`/`just
+watch-js` already exist and already run esbuild — today over the single `html-editor.js` entry
+point. Phase 2 widens the entry-point list rather than adding a step, so the §2 "wire it into both
+places" hazard doesn't arise: `build:js` is already in the `build` npm script and `just build-js` is
+already in `build-all`. That is a meaningful reduction in risk versus how §5.1 originally costed it.
+
+**Layout.** All hand-written first-party JS moves to `src/js/`, alongside the existing `src/scss/`:
+
+```txt
+src/js/
+    lib/            # pure helpers - url-utils.js and its url-utils.test.js side by side
+    components/     # Alpine.data() components + their .test.js
+    init/           # Alpine directives/magics, alpine:init wiring
+    backoffice/     # backoffice-only equivalents, incl. html-editor.js
+```
+
+Output goes to `static/js/` and `static/backoffice/js/` at the paths the templates already use, so
+**no `<script src>` in any template changes**. `static/js/vendor/` (§2) is untouched — that stays a
+copy step, not an esbuild one.
+
+**Move `html-editor.js` too.** `static/backoffice/js/src/html-editor.js` is the one remaining
+hand-written file that would otherwise stay inside the served tree. Moving it to
+`src/js/backoffice/` buys the invariant worth having: **nothing under `static/` is hand-written, and
+nothing under `src/js/` is served.** One rule, no exceptions to remember, and one esbuild invocation
+instead of two. If a smaller first commit is wanted this can follow immediately afterwards, but it
+should not be dropped — an exception here is what erodes the rule.
+
+**Watch mode is a requirement, not a nice-to-have** (Chewie). Editing a JS file must not mean
+remembering to rebuild:
+
+- `watch:js` widens to the same entry-point list as `build:js`, with esbuild's `--watch`.
+- `just watch-js` already calls it, so it keeps working unchanged.
+- The build recipes end with `touch src/opendlp/entrypoints/flask_app.py` to bounce Flask (and so
+  re-hash `static_hashes()`); check whether watch mode needs an equivalent, since esbuild's
+  `--watch` writes the output file directly and Flask isn't watching `static/`. If a stale
+  `static_hashes()` value survives the rebuild, that is a confusing "my change didn't take" bug and
+  is worth solving in this phase rather than discovering during Phase 4.
+- Document `just watch-js` in `frontend_build.md` as the thing to run while editing JS, next to the
+  existing `watch-css`/`watch-backoffice` entries.
+
+**The rest of the wiring:**
+
+- Add `--sourcemap` (as `build:js` already does) so the browser points at `src/js/`, and
+  `--banner:js="// generated from src/js/ - do not edit"` on the output, so nobody edits the build
+  product.
+- `.gitignore` the generated `static/js/*.js` and `static/backoffice/js/*.js` in the repo-root
+  `.gitignore` next to `static/js/vendor/`, and `git rm` the five files currently tracked under
+  `static/js/` plus `static/backoffice/js/alpine-components.js`.
+- Vitest `include` becomes `src/js/**/*.test.js`; move `tests/js/url-utils.test.js` next to its
+  source and delete `tests/js/support/load-global-script.js` once nothing imports it.
+- ESLint: drop the `sourceType: "script"` block and the `tests/js/**` block, replace with
+  `src/js/**` as modules. The `/* exported */` / `/* global */` comments go with them.
+- Prettier's prek scoping (`^backend/.*\.js$`) already covers `src/js/`; the `exclude:` list gains
+  the newly generated output paths so prettier doesn't reformat build products.
+- Resolve the duplicate `urlSetParam` here (finding 1 below): one `lib/url-utils.js`, imported by
+  both callers, with the try/catch-fallback behaviour and a test pinning it. This is the phase where
+  that bug gets fixed, not §9.
+- Docs: `frontend_build.md` (entry-point table, watch guidance), `frontend_js_testing.md` (rewrite
+  "Where tests live" and delete the classic-global-script section), and the §5 file-organisation
+  bullet below now describes `src/js/` rather than `static/js/`.
+
+**Findings — two real bugs the linter surfaced on its first run.** Neither is fixed, because Phase 1b is explicitly tooling-only:
+
+1. **`urlSetParam` is defined twice, with different behaviour.** `static/js/url-utils.js:31` and `static/backoffice/js/alpine-components.js:19` both declare a global of that name, and `templates/backoffice/base.html` loads both — so on every backoffice page the second silently overwrites the first. They are not equivalent: the url-utils version has a try/catch fallback and returns an empty input unchanged, the backoffice version resolves against `window.location.origin` and would throw on an empty URL. Whichever page you are on, half the callers are getting an implementation they were not written against. This is exactly the mess the move to `lib/` modules exists to end, and it gets resolved in Phase 2 (§5.2) rather than by picking a winner now.
+2. **`../.pre-commit-config-ci.yaml` was already missing the `no-strftime-in-templates` hook** — a pre-existing drift between the two configs, predating this work, which means that rule has never been enforced in CI. The header comment warned this would happen. Left alone as an unrelated fix; worth a separate one-line commit.
+
+Following §5 of `vanilla-alpine-json.md` directly:
+
+- The `components/` (Alpine.data components), `lib/` (pure helpers — `url-utils.js` is the model) and `init/` (Alpine directives/magics/`alpine:init` wiring) split still holds, but per §5.2 it lands under `src/js/` rather than `static/js/`, with `static/` holding only build output plus `vendor/` (§2). ABOUTME headers on every new file per house style.
+- Vitest config: jsdom environment. **Test-file placement: colocated under `src/js/`, decided — see §5.1 for the options and §5.2 for the shape.** Shipped as `tests/js/` in the interim. The constraint that drove the decision: `*.test.js` must never be reachable under `static/`, since anything there is web-served.
+- **Where it runs in the `just` pipeline — decided (Chewie): tests under `just test`, linting under `just check`.** Concretely:
+  - `npm run test` runs Vitest. Wire it into the `just test` chain — the natural spot is a `just test-js` recipe that `test-html`/`test-nobdd` depend on, or a line in the existing recipes; either way `just test` alone must fail if a JS test fails. It is fast (no browser, no DB) so it should run _first_, before the 10-minute Python suite, so a broken JS test fails in seconds rather than after the full run.
+  - Linting goes into `just check` **via prek**, not as a bespoke `just check` line — see §1. `just check` already is, in the main, "run the prek hooks", and putting eslint/prettier there means they also run at commit time for free.
+  - Do _not_ also put Vitest in `just check`. My earlier draft suggested both; Chewie's split is cleaner and I agree on reflection — "check = static analysis, test = behaviour" is a boundary worth keeping crisp, and duplicating the run just makes `just check` slower for no new signal.
+- eslint config: flat config (`eslint.config.js`, the current default). Note what eslint can and cannot do for us here: CSP-Alpine's restrictions (no arrow functions, no template literals, no string arguments to `@click`) apply to _Alpine expressions in HTML attributes_, not to `.js` files — in an external JS file those constructs are perfectly fine. So eslint covers file-based JS quality only; CSP-Alpine attribute compliance stays a manual/review check against `patterns.html`. Say this explicitly in the docs (§6), or someone will reasonably assume a green lint run means CSP-safe.
+- CI: with linting inside prek, CI needs _no_ new lint step — `just check-ci` already runs `prek run --all-files --config ../.pre-commit-config-ci.yaml`, so the eslint/prettier hooks come along automatically **provided they were mirrored into the CI config** (§1). The only genuinely new CI wiring is the Vitest run, which arrives via `just test`. `.github/actions/setup-python-env/action.yml` already does `npm install`, so `node_modules/` is present for both.
+
+---
+
+## 6. Documentation updates — ✅ DONE for phases 1a–1c
+
+Everything below is done, including §4's API fixtures (Phase 3). `docs/agent/frontend_js_testing.md` and `docs/agent/json_api_conventions.md` both exist; `AGENTS.md` gained a "JSON responses" section under Development Patterns, the `just test-js` command, and index entries for both new docs.
+
+- **`docs/frontend_security.md`**: replace the CDN Alpine/htmx snippets with vendored-script examples (§2); add the JSON error-handling convention (§3) either inline or as a link to a new doc.
+- **`docs/frontend_build.md`**: document the vendor copy step (§2) alongside the existing three tools; note Vitest/eslint as a fourth and fifth tool once approved (§5).
+- **New: `docs/agent/frontend_js_testing.md`** (permanent, alongside `frontend_testing.md`) — Vitest conventions, the fixture/schema drift-prevention setup (§4), and where JS tests live. Cross-link from `docs/testing.md`'s BDD section so there's one obvious jumping-off point regardless of which doc someone lands on first.
+- **`docs/testing.md`**: add a short "JavaScript testing" pointer section linking to the new doc, and clarify that "contract" is reserved for the fake/SQL meaning while "API fixtures" is the JSON-drift thing (§4).
+- **`AGENTS.md`** (not `CLAUDE.md` — `CLAUDE.md` is a symlink to `AGENTS.md`, confirmed by Chewie; edit `AGENTS.md` directly and the symlink follows): add a line under "Development Patterns" pointing at the new JS conventions doc, same as the existing i18n/database-pattern call-outs, so future sessions don't have to rediscover this plan. Also update the two existing `AGENTS.md` references that this work invalidates — the "Testing and Quality" section (Vitest now runs under `just test`) and the JSON error-handling rule (§3's `user_msg()`).
+- **`docs/frontend_build.md`**: also record the `build:vendor` → `build` → Dockerfile/CI chain (§2), since the whole point of that wiring is that it's invisible until it breaks.
+- **Phase 2 doc changes (§5.2) — done:** `frontend_build.md` gained the `src/js/` layout table, the entry-point table and `just watch-js` (with why the Flask bounce matters); `frontend_js_testing.md` had "Where tests live" rewritten and its classic-global-script section replaced with "Testing a component".
+
+- **Phase 5 doc changes (§9) — done:** `frontend_build.md` gained the two page-specific entry points and a "Passing server data to a bundle" section — the `x-data` argument versus JSON data block choice, why user-written text forces the block, and the babel constraint that keeps translated strings in the template. Two matching checks were added to `sf-code-review` (§7).
+
+Note for future sessions: several docs in this repo say "CLAUDE.md" when they mean the file — the symlink means editing either path works, but new edits should target `AGENTS.md` so the content lives with the real file.
+
+---
+
+## 7. `sf-code-review` skill updates — ✅ DONE (Phase 1c)
+
+Six checks added to `.claude/skills/sf-code-review/SKILL.md`'s "Things to Check" list, covering the items below plus the `CuratedMessage` opt-in and the both-places build wiring from §2.
+
+Original list, for reference:
+
+- If JS files changed under `static/js/` or `static/backoffice/js/`: is logic in `Alpine.data()` components, not inline in templates? Does it have a Vitest test if it contains non-trivial logic (debounce, state transitions, URL building)?
+- If a JSON-returning route changed shape: was the JSON Schema updated, and did the fixture regenerate (no stale fixture diff)? Flag a hand-typed literal API response in a `.test.js` file as a defect in itself, per the drift-prevention invariant.
+- Does any JSON response body contain `str(e)`? Once `user_msg()` exists (§3) this is a bright line, not a judgement call: the body carries `e.user_msg()` or a literal `_("...")`, never `str(e)`. This is exactly the kind of thing review should catch, since it's easy to write by copy-pasting a working example that happens to be safe.
+- Does an `except Exception` branch producing a JSON response log via `structlog` and return a generic message? And is the except as narrow as it can be (§3's option (a))?
+- Does a new exception class intended for user-facing messages override `user_msg()`?
+- Is any new/changed script tag using a CDN URL instead of a vendored copy?
+- Did a new npm build script get added without being wired into the `build` script and `just build-all` (§2)?
+
+Added when Phase 5 landed (§9):
+
+- Is server-side data reaching a bundled component through an `x-data` attribute when it holds
+  user-written text, or more than a couple of short values? It should be a JSON data block read
+  with `readJsonScript()`.
+- Is a user-facing string being written in a `.js` file? `babel.cfg` extracts from `**.py` and
+  `templates/**.html` only, so it can never be translated.
+
+Added when Phase 2 landed (§5.2):
+
+- Is any hand-written JS being added under `static/` instead of `src/js/`? The rule is absolute: `static/` holds build output and `vendor/` only. A hand-edited file there will be silently overwritten by the next build, and a `.test.js` there would be publicly served.
+- Was a new esbuild entry point added to `ENTRY_POINTS` in `esbuild.config.mjs`? A new `src/js/` file that no entry point imports is never built and never served.
+
+---
+
+## 8. The dev blueprint is NOT a pattern source — ✅ DONE (Phase 1d)
+
+**Chewie's call: (b) — `dev.py` is not a pattern source.** It is not held to production standards
+and must not be copied from. The canonical examples live elsewhere.
+
+**Implemented,** as the three annotations below, in one commit. No behaviour changes and no test
+changes — the only executable file touched is `dev.py`, and only its module docstring. The docstring
+also points at `docs/agent/component_accessibility.md`, which the plan didn't list but which belongs
+in the same "go here instead" set. Nothing else diverged.
+
+### What that means concretely
+
+- **Annotate `dev.py` itself.** Extend the module docstring (it already carries the two ABOUTME
+  lines) with a short, blunt note: dev-only, admin-gated, not a pattern source, do not copy verbatim
+  — and point at where the real examples are. A comment at the top of the file is the only place
+  someone about to copy from it is guaranteed to look.
+- **Draw the line inside the blueprint.** `patterns.html` — the page `dev.py` serves — _is_ canonical
+  and stays canonical; `AGENTS.md:323` already points there. The blueprint serving it is not. That
+  distinction has to be explicit or the annotation reads as disowning the patterns page too.
+- **Note it where the docs already discuss `dev.py`:** `docs/agent/json_api_conventions.md` (which
+  already describes `_dev_error()`), and a line in `AGENTS.md` next to the existing
+  `/backoffice/dev/patterns` call-out. Not in `frontend_js_testing.md` as the earlier draft of this
+  section suggested — that doc is about Vitest and has nothing to do with it.
+- **No broad backfill of `dev.py` test coverage.** The existing component tests for the image /
+  document / email / registration-page handlers stay and remain the pattern for new dev handlers
+  where it's cheap, but there's no parity bar to meet and no gap-filling exercise. This is what
+  (b) buys: `dev.py` stays a low-stakes scratch space.
+- **The §3 fixes stand regardless.** The five narrowed handlers and `_dev_error()` were a real bug in
+  a real code path, needed either way — see below.
+
+### The one dependency this creates
+
+(b) only works if the things we point at instead are actually good. `patterns.html` is today the
+worst offender in the repo for inline, untested script (§0) — 284 lines of it — while being the
+page `AGENTS.md` and `docs/frontend_security.md` send people to. **So the `patterns.html` migration
+(§9, Phase 4) is now load-bearing for this decision, not just a convenient pilot.** Until it lands
+we are telling people "copy from here, not there", where "here" contradicts the convention it is
+meant to demonstrate. Worth doing the annotations anyway — they're true now — but the pairing should
+be deliberate rather than accidental.
+
+**Resolved by Phase 4.** `patterns.html` now carries no script body at all: its components live in
+`src/js/components/` with 40 Vitest tests. The page we point people at no longer contradicts the
+convention it documents, so (b) stands on its own feet.
+
+### Material behind the decision, kept for the record
+
+- **Not blocked, and already done:** fixing the five leaky handlers (§3). Right either way.
+- **Not blocked:** the `patterns.html` migration (§9), agreed on its own merits.
+- **Now unblocked:** the "not a pattern source" annotations above (small — a docstring and two doc
+  lines; see Phase 1d in §10).
+- **No longer open:** whether anything in `service_docs.html`/`dev.py` is load-bearing for a real
+  workflow (§11 row 9). Chewie's call is to migrate it regardless, so the question stopped
+  deciding anything. Note that this does **not** reopen §8: `dev.py` gets its script extracted and
+  the drift between its handler table and the page's service list closed, and it is still not a
+  pattern source afterwards. Consistent is not the same as canonical.
+
+**What's there today:** `dev.py` is a real, fairly large (1500+ line) blueprint with its own JSON API (`/dev/service-docs/execute`) that exercises most of the service layer, plus the `patterns.html` "living reference" page. It's dev-only (`not config.is_production()`) and admin-gated. Test coverage is partial: image/document/email handlers have component tests; the registration-page-lifecycle handlers and the route itself don't (§0), and that's exactly where the JSON error-handling violation lives (§3) — i.e., the _untested_ corner is also the _unsafe_ corner. That's not a coincidence I'd bet against generalising.
+
+**The question behind the question:** Chewie's framing was "if Claude copies patterns from `dev.py` when writing prod code, how do we make sure it copies the _good_ parts?" Two options were live; (b) won:
+
+- **(a) Rejected. Bring `dev.py` up to the same bar as production code** — full test coverage, same error-handling discipline, and treat it as a legitimate pattern source. Cost: it's meant to be a low-stakes scratch space for interactive testing; holding it to production standards might blunt that purpose and slow down adding new dev-tool endpoints.
+- **(b) CHOSEN. Explicitly mark it as _not_ a pattern source** — a comment/doc note ("dev-only, does not follow production error-handling conventions, do not copy verbatim") at the top of `dev.py` and in `docs/agent/frontend_js_testing.md` (wrong doc — corrected above), and rely on `patterns.html`/`docs/frontend_security.md`/the new JSON conventions doc as the actual canonical examples instead. Cost: `patterns.html` itself is currently the worst offender for "inline, untested script" (§0) — so this only works if the `patterns.html` migration (§9) happens, and happens early.
+
+That is what was chosen, and it matches what the code was already telling us: the untested corner of `dev.py` was also the unsafe corner (§0), which is the shape you get from a file nobody is holding to a standard. Better to say so out loud than to keep half-pretending otherwise.
+
+---
+
+## 9. Migrating the existing inline scripts — ✅ PILOT DONE (Phase 4), ✅ PRODUCTION DONE (Phase 5)
+
+**`patterns.html` is migrated.** 284 lines of inline script became four modules and an entry
+point; the template is 386 lines down to 107, with no script body left at all. Notes:
+
+- **A page-specific entry point, not the shared backoffice bundle.** `patternsController` and
+  `fileUploadDemo` are dev-only demo components, so `src/js/backoffice/patterns.js` is built to
+  `static/backoffice/js/patterns.js` and loaded from the page's own `{% block head %}`. Registering
+  them in `backoffice/alpine-components.js` would have shipped them to every backoffice page —
+  which is, note, what the pre-existing `showcaseNav`/`buttonLoadingDemo`/`progressModalDemo`
+  registrations still do. Worth tidying separately; not in scope here.
+- **The snippets moved to their own module.** ~200 of the 284 lines were code samples built by
+  string concatenation with every Jinja delimiter escaped as `{{ "{%" }}`. In `src/js/components/patterns-snippets.js`
+  they are plain template literals, so they read as the code they are.
+- **The eleven one-line `copyXCode()` methods were kept, not collapsed into `copy(name)`.** The
+  CSP build forbids string arguments in an `@click` expression, so the generic version cannot
+  work — a constraint the page itself documents. The comment on the component says so, since it
+  otherwise reads as gratuitous repetition.
+- **`copyToClipboard` moved from async/await to an explicit promise chain**, so the component
+  is testable without the test having to know about Alpine's reactivity timing. The only other
+  behaviour-adjacent change is that the copy methods now return their promise.
+- **Tests at all three levels — the first coverage this page has ever had:**
+  - **40 Vitest** (`patterns-controller.test.js` 27, `file-upload-demo.test.js` 13);
+  - **33 component** (`tests/component/test_dev_patterns_page.py`). Two earn their place
+    specifically: every tab renders, since each is a separate partial and so a separate chance to
+    break; and the bundle is **not** `defer`red while Alpine **is** — the whole reason a script tag
+    sitting *after* Alpine's in the document still registers in time. Reverse either and the page
+    silently loses all interactivity, with nothing else to catch it;
+  - **4 BDD** (`features/frontend-patterns.feature`), because only a browser can confirm the bundle
+    really loads and Alpine really picks it up. They assert no inline script body survives, that
+    `x-cloak` is lifted from the `patternsController` root (it is not, if registration missed
+    `alpine:init`), that the file demo accepts a CSV and rejects a `.txt`, and that the copy button
+    raises a toast.
+
+**`assembly_registration.html` is migrated (Phase 5).** The 580-line inline block became five
+slice factories under `src/js/components/`, composed by `registrationPageController` and registered
+by a `src/js/backoffice/registration-page.js` entry point; the template is 2152 lines down to 1629
+with no script body left. Notes:
+
+- **A JSON data block, not an `x-data` argument.** The configuration is 26 translated strings, five
+  `url_for` routes, the CSRF token and two seeded asset lists — too much for an attribute, and
+  unsafe there besides: an organiser writes the image alt text, so a quote or a `</script>` in a
+  display name would break the page. A `<script type="application/json">` rendered with `|tojson`
+  does the escaping once, for every value, and a component test pins that with an alt text that
+  tries to close the tag. `readJsonScript()` in `src/js/lib/json-script.js` reads it, in the entry
+  point rather than the component, so the component stays a plain function of its options. This is
+  the first use of the pattern; it is written up in `docs/frontend_build.md`.
+- **Translated strings have to stay in the template.** `babel.cfg` extracts from `**.py` and
+  `templates/**.html` only, so a string moved into a `.js` file would silently stop being
+  translated. That is what makes the `messages` half of the data block necessary rather than
+  merely convenient.
+- **Slices, merged flat.** The CSP Alpine build needs real property names for `x-model`, so
+  `imageAlt` and `documentLabel` have to exist on the component. Each slice returns a flat object
+  and the controller `Object.assign`s them; `showToast` comes from the toast slice and the others
+  call it once merged. The image and document slices stay parallel rather than being generated from
+  a shared prefixed factory, which would make every name in the template ungreppable.
+- **Four shared helpers came out of it**, each with tests: `formatBytes`, `readJsonScript`, the
+  CSRF-carrying `postFormData`/`patchJson`/`deleteResource` (the six near-identical fetch chains
+  differed only in what they did with the result), and `urlWithId`, which names the existing
+  sentinel-UUID URL contract.
+- **Two quirks pinned rather than fixed**, so the extraction stayed reviewable: an earlier toast's
+  timer cuts a later one short, and a document label is optional on upload but required in the
+  details form. Both are noted in the tests that pin them. Worth a follow-up; not this change.
+- **Tests at all three levels:** 78 Vitest across the slices and the composition (the image and
+  document tests load the recorded API fixtures from Phase 3, which is what that machinery was
+  built for); 79 component tests, which list every Alpine binding exhaustively across all three
+  sections in every state — Alpine does not report an unknown property, so a rename made in
+  `src/js/` and not in the template just silently stops working — plus the not-deferred-while-
+  Alpine-is check and no-executable-inline-script; and 6 BDD scenarios covering upload, alt edit
+  and delete in a browser, each also asserting the page did not navigate. Pointing the script tag
+  at the wrong bundle fails all six, which is the check that the net is real.
+- **The existing 69 backoffice BDD scenarios pass unchanged**, which is the evidence for "no
+  behaviour change". The template-grepping assertions in
+  `tests/component/test_backoffice_registration_images.py` went with the inline script they were
+  reading.
+
+**Original plan.** Order agreed by Chewie: `patterns.html` → `assembly_registration.html` → `service_docs.html`. Incremental, per `vanilla-alpine-json.md` §5, smallest/highest-signal first:
+
+**Pilot: `patterns.html` (284 lines) first.** Rationale: it's the smallest of the three, and it's _the documented living reference_ — migrating it first means the reference itself demonstrates the new convention instead of contradicting it (right now `docs/frontend_security.md` and CLAUDE.md point people at a page that's 100% inline script). Low product risk since it's dev-only. **§8's decision raises the stakes on this one**: now that `dev.py` is explicitly not a pattern source, `patterns.html` is one of the few things we point at instead, so it has to stop contradicting the convention it documents.
+
+**Then `assembly_registration.html` (567-line inline block)** — the actual production high-value target (`vanilla-alpine-json.md` §2.3 calls out its image manager as the canonical "genuinely stateful" use case). This is the one that most benefits from the drift-prevention machinery in §4 since it's the heaviest JSON-endpoint consumer.
+
+**Then `service_docs.html` (722 lines)** — dev-only, lowest urgency, and §8's answer pushed it further down: `dev.py` is explicitly not a pattern source, so polishing its UI page buys much less than the other two. It was parked on the narrower question of whether anything it does is load-bearing for a real workflow (§11 row 9).
+
+**✅ DONE (Phase 6).** The 722-line inline block became ten modules under
+`src/js/components/service-docs/` — one per tab, plus a `core.js` they all execute through and a
+`controller.js` that merges them — behind a `src/js/backoffice/service-docs.js` entry point. The
+template is 819 lines down to 114. Notes:
+
+- **A directory under `components/`, not ten loose files.** Ten fragments of one component would
+  drown the list of actual components. `frontend_build.md` records the rule.
+- **The `keyMap` moved to Python** as `dev.py`'s `SERVICE_RESPONSE_KEYS`, rendered into the data
+  block, with a unit test asserting it and `_SERVICE_HANDLERS` cover exactly the same 38 services
+  in both directions. That closes the drift the inline copy allowed: a renamed handler used to
+  leave the page posting a name the server did not know, with no symptom until someone clicked.
+- **`readFileAsBase64` came out into `src/js/lib/`** — the images and documents tabs each had their
+  own copy of the same `FileReader` dance. First of the reuse the extraction was meant to unlock.
+- **The samples read as what they are.** The email samples exist to demonstrate `{{ }}` placeholders
+  and had to be written `{{ '{{' }}` inside a Jinja template. In `samples.js` they are plain
+  template literals. The unused `starter_html` sample was dropped rather than carried over — nothing
+  referenced it.
+- **A dead button, found and fixed.** `_config.html` binds `resetUpdateCsvConfig()`, which the
+  inline script never defined, so that Reset had never worked. Implemented to match its two
+  siblings, restoring the `check_same_address` default rather than blanking it. This is the one
+  behaviour change in the phase, and it is the extraction that made it visible — the component test
+  now parses every `@click` on every tab and fails on a name `src/js/` does not define.
+- **Tests:** 100 Vitest (core, a table covering all 35 execute methods against the properties they
+  read, and the composition); 30 component, including the every-bound-name check above, both
+  directions of service-name parity, and no-executable-inline-script on every tab; 4 BDD driving a
+  real execute round trip through the browser.
+
+**Unparked by Chewie, on grounds that make the parked question moot** (§11 row 9). Two reasons:
+
+1. **Consistency.** With Phase 5 landed this is the last inline `<script>` block in the repo. A single exception to a rule is worse than no rule: it is what someone finds when they go looking for how the codebase does interactivity, and `dev.py`'s docstring saying "not a pattern source" does not travel with a copied snippet.
+2. **Reuse.** 722 lines of inline script can only ever serve one page. The same logic in `src/js/` can be imported — the file-to-base64 readers and the JSON-response viewer in particular are general, and a production page wanting either would today have to rewrite them. That is an option this creates rather than a debt it pays, but it is only available on the far side of the extraction.
+
+Neither reason depends on knowing who uses the page, which is why the question stops mattering rather than getting answered.
+
+**What "and `dev.py`" means here.** The blueprint is in scope for one specific thing: `_SERVICE_HANDLERS` is the authoritative list of service names, and the page's `keyMap` duplicates all 38 of them in JavaScript. Rename a handler and the page silently posts a name the server does not know. That map moves to `dev.py` beside the handler table, is rendered into the page's data block, and a test asserts the two cover exactly the same services. Same shape of fix as the API fixtures in §4: put the two halves where one test can see both. No test-coverage backfill beyond that — §8 still stands, `dev.py` is still a scratch space, and being consistent with the conventions is not the same as being a pattern source.
+
+For each: lift inline `<script>` into named `Alpine.data()` components under `src/js/components/`, unit-test the extracted logic with Vitest, shrink the template to markup + flat `x-data` wiring, regenerate `static_hashes()`/cache-busting automatically (no registration needed per `frontend_security.md`), backfill/confirm BDD coverage for the flow. No behavioural changes in the same PR as the extraction — that's a second pass, only after tests exist to prove behaviour is unchanged.
+
+---
+
+## 10. Proposed phase sequencing
+
+1. **Phase 0 — decisions. ✅ DONE.** All settled (§11); the last one, row 9, by being made moot rather than answered.
+2. **Phase 1a — vendoring. ✅ DONE.** Vendor Alpine/htmx/govuk-frontend (§2), including the `build` npm script + `just build-all` + `.gitignore` wiring and the fresh-checkout/Docker acceptance check. Update `docs/frontend_security.md` and `docs/frontend_build.md`. Self-contained and shippable on its own.
+3. **Phase 1b — JS tooling. ✅ DONE.** Add Vitest (under `just test`) and eslint/prettier (as prek hooks in **both** pre-commit configs), apply the agreed `djjs` scoping (§1), and a first test proving the wiring end to end. Landed with `tests/js/` rather than colocated — see §5 for why; Phase 2 moves them.
+4. **Phase 1c — error-handling convention. ✅ DONE.** `user_msg()` on the exception hierarchy with a generic default, the `CuratedMessage` opt-in mixin, both `backoffice_registration.py` call sites switched, `_dev_error()` in `dev.py` with the five handlers narrowed onto it (§3), the convention documented (§6) and the checks added to `sf-code-review` (§7).
+5. **Phase 1d — `dev.py` is not a pattern source. ✅ DONE.** Docstring note in `dev.py`, a line in `AGENTS.md` next to the existing `/backoffice/dev/patterns` call-out, a line in `docs/agent/json_api_conventions.md`, and the explicit carve-out that `patterns.html` remains canonical (§8). Documentation and comments only, no code paths touched.
+6. **Phase 2 — JS source layout. ✅ DONE.** (§5.1, shape in §5.2.) Move all hand-written first-party JS — including `html-editor.js` — to `src/js/`, widen the existing esbuild `build:js`/`watch:js` entry-point list to cover it, colocate the Vitest files, retire `load-global-script.js` and the shared-globals convention, and resolve the duplicate `urlSetParam`. Watch mode must work end to end before this phase is called done. Deliberately ahead of the migrations: Phases 4 and 5 are what generate most of the JS, and writing it into the new layout is cheaper than moving it afterwards.
+7. **Phase 3 — drift-prevention machinery. ✅ DONE.** Build the API-fixture + schema pipeline (§4) against one existing JSON endpoint (propose: the image upload/list endpoints, since they're the most-cited good example already) before it's needed for the pilot migration, so the pilot isn't also inventing the test infra.
+8. **Phase 4 — pilot migration. ✅ DONE.** `patterns.html` (§9), using the now-proven fixture/schema/Vitest setup. Also the thing §8 depends on — see there.
+9. **Phase 5 — production migration. ✅ DONE.** `assembly_registration.html` image/alt-text manager, and the PDF document panel and edit guard alongside it (§9). Introduces the JSON data block as the way a bundled component receives server-side configuration, documented in `docs/frontend_build.md`.
+10. **Phase 6 — ✅ DONE (§11 row 9).** `service_docs.html` and the `dev.py` service-name map (§9). Migrated regardless of who depends on it: it held the last of the three big inline `<script>` blocks, and extracted components are reusable where an inline block never is. §8 is unaffected — no broader `dev.py` test backfill, and it remains not a pattern source. Six small inline blocks survive elsewhere; see §12.
+
+Each phase is independently shippable and reversible; nothing here requires a big-bang cutover. Phase 1 is split into four because the parts touch entirely different files and have different review audiences — bundling them would make the vendoring change (the one with real deploy risk) hard to see.
+
+---
+
+## 11. Decisions from Chewie's review
+
+| #   | Question                                              | Decision                                                                                                                                                                                                                                |
+| --- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | New dependencies (§1)                                 | **Yes to all six.** Vitest, eslint+prettier, `@alpinejs/csp`+`htmx.org`, `ajv`, and `jsonschema` (separately confirmed once it turned out not to be installed already). eslint/prettier run as **prek hooks**, not a `just check` line. |
+| 2   | Drift prevention (§4)                                 | **Confirmed:** golden fixtures + JSON Schema on both sides. Named **"API fixtures"**. Schema location not raised in review — proceeding with `src/opendlp/schemas/json_api/` (§4.1).                                                    |
+| 3   | Dev blueprint (§8)                                    | **Option (b): `dev.py` is not a pattern source.** Annotate it as such; no test-coverage backfill. `patterns.html` stays canonical, which makes its migration (Phase 4) load-bearing for this answer.                                    |
+| 4   | Fix the five `dev.py` leaks now                       | **Yes**, via option (a): narrow the excepts. Plus two additions from Chewie — `user_msg()` on domain exceptions, and a "check the Flask console log" hint for dev-only errors (§3).                                                     |
+| 5   | Vitest test-file placement                            | **Colocated, via option 1 with esbuild** (§5.1): first-party JS moves to `src/js/`, esbuild emits to `static/`, tests sit beside their source. Watch mode required. Lands as Phase 2; `tests/js/` until then.                            |
+| 6   | Where Vitest runs                                     | **`just test` for tests, `just check` for linting** — and the linting gets there by living in the prek config, since that's the bulk of what `just check` does.                                                                         |
+| 7   | Pilot order (§9)                                      | **Confirmed:** `patterns.html` → `assembly_registration.html` → `service_docs.html`.                                                                                                                                                    |
+| 8   | govuk-frontend bump                                   | **5.11.1 → 5.14.0 is fine**, fold it into the vendoring change. **govuk-frontend 6.x is explicitly out of scope for this round of work** — it's a much bigger upgrade and needs its own planning.                                       |
+| 9   | Anything load-bearing in `dev.py`/`service_docs.html` | **Answered by being made moot.** Chewie's call: migrate it regardless, for consistency — the last inline script in the repo is a standing exception to a rule everything else now follows, and extracted components are reusable in a way an inline block never is. Whether anything depends on the page no longer decides anything. Phase 6 is unparked. |
+| 10  | `user_msg()` default on `OpenDLPError` (§3)           | **Generic translated string**, not `NotImplementedError` — better an unhelpfully vague message than a 500 with no feedback at all. Vagueness is caught by a `sf-code-review` check instead (§7).                                        |
+| 11  | Where the dev-only message lives (§3)                 | **A `_dev_error()` helper local to `dev.py`**, not a `dev_msg()` method on the exception hierarchy — keeps the dev-only concern in the dev-only file, and doesn't give production exceptions a method production must never call.       |
+
+### Nothing open
+
+All three are answered. §8 by table row 3, §5's placement question by row 5, and the
+`service_docs.html` question by row 9 — not by finding out whether anything depends on the page,
+but by deciding that the answer does not matter. Consistency is the reason: with Phase 5 landed,
+`service_docs.html` holds the last inline `<script>` block in the repo, which makes it a standing
+exception to a rule every other page now follows and a permanent temptation to copy.
+
+### Pre-commit config decisions
+
+Both of the landmines I flagged in the previous round now have answers:
+
+- **`djjs` vs prettier (§1) — resolved.** Scope `djjs` to `templates/` (inline JS only); prettier owns standalone `.js` files. Two implementation details in §1: scoped that way `djjs` matches nothing today (there are no `.js` files under `templates/` — inline `<script>` blocks are handled by the `djhtml` hook, not `djjs`), so it becomes a statement of intent rather than an active hook; and prettier must be scoped to `^backend/.*\.js$` rather than just `static/`, or `backend/tailwind.config.js` ends up formatted by nothing.
+- **`../.pre-commit-config-ci.yaml` stays hand-maintained.** Chewie's call — it changes infrequently, so the duplication is acceptable. The working rule is just: hooks land in both files in the same commit.
+
+---
+
+## 12. The inline scripts that are left
+
+The plan set out to remove three inline `<script>` blocks (§0) and did: `patterns.html` (284
+lines, Phase 4), `assembly_registration.html` (580, Phase 5) and `service_docs.html` (722,
+Phase 6). Six small ones remain, none of them in scope, and it is worth writing down which
+should move and which should not so nobody has to rediscover the reasoning.
+
+| Where                                     | Lines | Verdict                                     |
+| ----------------------------------------- | ----- | ------------------------------------------- |
+| `base.html`, `base_public.html` (×2 each)  | 1, 5  | **Leave.** See below.                        |
+| `main/search_user_results.html`            | 11    | Should move; a partial, so needs a rethink.  |
+| `register/form_preview.html`               | 15    | Should move.                                 |
+
+**The two in each base template should stay inline, and this is not laziness.**
+
+- The one-liner adds `js-enabled` to `<body>`. It is GOV.UK Frontend's own convention, and it
+  has to run *before first paint* or every progressively-enhanced component flashes its no-JS
+  styling first. An external file cannot promise that: it is a separate request, and `defer`
+  or `async` both put it after parsing. This is the case inline script exists for.
+- The five-liner calls `GOVUKFrontend.initAll()` on `DOMContentLoaded`. It could move, and it
+  is the better candidate of the two — but it belongs with whatever eventually owns
+  govuk-frontend initialisation, which is a govuk-frontend 6.x question (§11 row 8) rather
+  than this plan's.
+
+**The other two should move**, and neither is hard:
+
+- `register/form_preview.html` is a self-contained pair of capture-phase listeners with no
+  Jinja in them at all — a straight lift into `src/js/` and a new entry point.
+- `main/search_user_results.html` is the awkward one. It is an **htmx partial**, so its script
+  runs on every swap and re-binds listeners to freshly inserted buttons. Lifting it means
+  either delegating from a stable ancestor (which the enclosing page's bundle can own) or an
+  `htmx:afterSwap` hook. Straightforward, but it is a small design decision rather than a move,
+  which is why it is not folded into Phase 6.
+
+Neither is urgent. Both are worth doing before anyone points at them as precedent.

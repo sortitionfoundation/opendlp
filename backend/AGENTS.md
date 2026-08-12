@@ -69,6 +69,10 @@ just test-nobdd
 # which is
 uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
 
+# Run the JavaScript unit tests only (vitest, no browser - seconds)
+just test-js
+# the `just test` targets depend on this, so it runs first and fails fast
+
 # Watch tests on file changes
 just watch-tests
 
@@ -244,6 +248,24 @@ This approach maintains the separation between domain objects (plain Python) and
 - Role-based access control throughout
 - **Frontend:** Follow [Frontend Security Guidelines](docs/frontend_security.md) for CSP compliance
 
+### JSON responses
+
+- A JSON response body **never** contains `str(e)`. It carries either a literal
+  `_("...")` you wrote, or `exc.user_msg()` on an exception that opts in to
+  exposing its message via the `CuratedMessage` mixin.
+- `OpenDLPError.user_msg()` defaults to a generic message, not `str(self)` — an
+  exception message may carry internal detail, so the default assumes it does.
+- Catch narrowly; let unexpected exceptions reach the route's outer handler,
+  which logs the real error and returns a generic message.
+- `error=str(e)` in a **log** call is correct and wanted — the rule is about
+  response bodies.
+- Changing a response shape means changing three things: the route, its JSON
+  Schema in `src/opendlp/schemas/json_api/`, and the recorded API fixture in
+  `tests/fixtures/json_api/`. Re-record with `UPDATE_API_FIXTURES=1 uv run pytest`
+  and read the diff.
+- Never hand-type an API response in a `.test.js` file — load a fixture.
+- See [docs/agent/json_api_conventions.md](docs/agent/json_api_conventions.md).
+
 ### Logging (PII / secrets)
 
 - Use `structlog.get_logger(__name__)` for all logging (services, adapters, and
@@ -285,7 +307,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Postfix Email Configuration](docs/postfix_configuration.md) - SMTP relay setup for production
 - [Google Service Account Setup](docs/google_service_account.md) - Google Sheets integration credentials
 - [Frontend Security Guidelines](docs/frontend_security.md) - CSP compliance, JavaScript/Alpine.js/CSS patterns
-- [Frontend Build Pipeline](docs/frontend_build.md) - Sass/Tailwind/esbuild asset build and `just` targets
+- [Frontend Build Pipeline](docs/frontend_build.md) - Sass/Tailwind/esbuild/vendor asset build and `just` targets
 - [Project Specification](docs/spec.md) - Original project specification
 
 ### Agent-Specific Documentation
@@ -299,6 +321,8 @@ The `docs/agent/` folder contains documentation for AI agents. See [docs/agent/A
 - [Frontend Design System](docs/agent/frontend_design_system.md) - GOV.UK styling and build pipeline
 - [GOV.UK Components](docs/agent/govuk_components.md) - Component usage and HTML examples
 - [Frontend Testing](docs/agent/frontend_testing.md) - Playwright MCP debugging workflows
+- [Frontend JS Testing](docs/agent/frontend_js_testing.md) - Vitest, ESLint/Prettier, and where JS tests live
+- [JSON API Conventions](docs/agent/json_api_conventions.md) - Response shape, and why a JSON body never contains `str(e)`
 - [Migration Notes](docs/agent/migration_notes.md) - Bootstrap to GOV.UK conversion guide
 
 **IMPORTANT - Before creating or modifying UI components:**
@@ -319,6 +343,8 @@ Check the interactive patterns documentation at `/backoffice/dev/patterns` (dev 
 - `x-model` must use flat properties (`x-model="selected"` not `x-model="form.field"`)
 - `@click` handlers cannot have string arguments (`@click="doThing()"` not `@click="doThing('arg')"`)
 - AJAX requests must include `X-CSRFToken` header
+
+The `patterns.html` page is canonical and maintained as a reference. The dev blueprint that serves it (`src/opendlp/entrypoints/blueprints/dev.py`) is **not** a pattern source - it is a dev-only scratch space held to a lower bar, with partial test coverage by design. Don't copy production code from it; see the note at the top of that file for where the real examples are.
 
 **Active development folders** contain specs for current work (e.g., `547-component-redesign/`).
 

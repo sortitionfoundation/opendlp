@@ -51,6 +51,7 @@ dev = [
   "celery-types>=0.23.0",
   "covdefaults>=2.3.0",
   "deptry>=0.23.1",
+  "jsonschema>=4.26.0",
   "mypy>=1.17.1",
   "playwright>=1.54.0",
   "pytest>=8.4.1",

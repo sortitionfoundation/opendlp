@@ -13,7 +13,7 @@ Our CSP uses `'strict-dynamic'` which provides strong XSS protection:
 
 - All `<script>` tags in HTML **must** have a `nonce="{{ csp_nonce }}"` attribute
 - Scripts loaded by trusted scripts (e.g., dynamically via `createElement`) are automatically trusted
-- Allowlists like `https://cdn.jsdelivr.net` are **ignored** (for backwards compatibility only)
+- Allowlists like `https://cdn.jsdelivr.net` are **ignored** (for backwards compatibility only) — and we no longer load any script from a CDN anyway; third-party libraries are vendored into `static/js/vendor/` (see [frontend_build.md](frontend_build.md))
 
 **Blocked:**
 
@@ -33,8 +33,12 @@ Our CSP uses `'strict-dynamic'` which provides strong XSS protection:
 
 **Always prefer external files over inline scripts.**
 
-1. Create file in `static/js/`
-2. Add to `base.html` with **nonce and cache busting**:
+1. Create the source file under `src/js/` — never under `static/`, which holds build
+   output only. Add it to `ENTRY_POINTS` in `esbuild.config.mjs` if it is a new entry
+   point rather than a module an existing one imports. See
+   [frontend_build.md](frontend_build.md).
+2. Add the **built** path to `base.html` (or a page's `{% block head %}`, for a bundle
+   only one page needs) with **nonce and cache busting**:
    ```html
    <script
      nonce="{{ csp_nonce }}"
@@ -100,12 +104,20 @@ document.addEventListener("submit", function (e) {
 
 **Use the CSP-compatible build:** `@alpinejs/csp`
 
+It is vendored out of `node_modules` into `static/js/vendor/` by `npm run build:vendor`
+and served from our own origin with a nonce — never from a CDN:
+
 ```html
 <script
+  nonce="{{ csp_nonce }}"
   defer
-  src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js"
+  src="{{ url_for('static', filename='js/vendor/alpine-csp.js', v=static_hashes('js/vendor/alpine-csp.js')) }}"
 ></script>
 ```
+
+htmx and govuk-frontend are vendored the same way, as `js/vendor/htmx.js` and
+`js/vendor/govuk-frontend.js`. See [frontend_build.md](frontend_build.md) for how
+the copy step is wired into the build.
 
 ### Supported Alpine.js Features
 
@@ -147,6 +159,15 @@ document.addEventListener("alpine:init", () => {
   <div x-show="isOther()">...</div>
 </div>
 ```
+
+## JSON responses
+
+Routes that return JSON to our own JavaScript follow a small set of rules — the response
+envelope, and how error strings are chosen so an exception's internal detail cannot reach the
+browser. See [agent/json_api_conventions.md](agent/json_api_conventions.md).
+
+The short version: **a JSON response body never contains `str(e)`.** It carries a literal
+`_("...")` you wrote, or `exc.user_msg()`.
 
 ## Styling
 

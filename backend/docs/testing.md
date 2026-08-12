@@ -33,6 +33,11 @@ def test_user_has_admin_role():
 
 **Purpose:** Verify that fake (in-memory) and SQL repository implementations behave identically for every repository method.
 
+> "Contract test" means only this in OpenDLP — fake-versus-SQL repository parity. It is not a
+> general term for any test that pins down an interface. The separate problem of keeping JSON
+> responses in step with the JavaScript that consumes them is handled by **API fixtures**, not
+> by anything in this directory.
+
 **Characteristics:**
 
 - Every test runs twice: once against the fake backend, once against the real SQL backend
@@ -309,9 +314,37 @@ just install-dev
 >
 > This ensures we explicitly test permission boundaries rather than accidentally bypassing them.
 
+## JavaScript Tests (`src/js/**/*.test.js`)
+
+First-party JavaScript is unit tested with Vitest in a jsdom environment, in files sitting
+next to the code they test. It is a separate runner from pytest, but not a separate workflow:
+`just test-js` runs it directly, and the `just test` targets depend on it, so it runs first
+and fails fast.
+
+See [agent/frontend_js_testing.md](agent/frontend_js_testing.md) for conventions — where
+tests live, how to test an `Alpine.data()` component, and what ESLint does and does not cover.
+
+## API Fixtures (`tests/fixtures/json_api/`)
+
+**Purpose:** stop a JSON response shape and the JavaScript that consumes it drifting apart.
+
+A recorded response lives in `tests/fixtures/json_api/` and the shape it must satisfy lives in
+`src/opendlp/schemas/json_api/`. `tests/component/test_json_api_fixtures.py` drives the real
+route, validates against the schema and diffs the fixture; the Vitest side imports the fixture
+and validates it against the same schema with ajv. Changing a response shape therefore means
+changing the route, the schema and the fixture, or the build fails.
+
+This is deliberately **not** called a contract test — see the note under Contract Tests above.
+Regenerate with `UPDATE_API_FIXTURES=1 uv run pytest tests/component/test_json_api_fixtures.py`
+and read the diff. Full details in
+[agent/json_api_conventions.md](agent/json_api_conventions.md).
+
 ## Running Tests
 
 ```bash
+# Run the JavaScript unit tests only (seconds)
+just test-js
+
 # Run non-BDD tests in parallel (default target)
 just test-nobdd  # uses pytest-xdist -n auto
 

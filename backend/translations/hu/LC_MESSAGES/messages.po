@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-07 12:54+0100\n"
+"POT-Creation-Date: 2026-08-11 10:08+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -1430,8 +1430,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:797
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:832
-#: templates/backoffice/assembly_registration.html:1790
-#: templates/backoffice/assembly_registration.html:1929
+#: templates/backoffice/assembly_registration.html:1591
 msgid "Alt text is required for accessibility"
 msgstr ""
 
@@ -1470,7 +1469,7 @@ msgid "An error occurred while uploading the document"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:931
-#: templates/backoffice/assembly_registration.html:2108
+#: templates/backoffice/assembly_registration.html:1601
 msgid "Label is required"
 msgstr ""
 
@@ -1676,28 +1675,38 @@ msgstr "További beállítások"
 msgid "An unexpected error occurred"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:131
-#: src/opendlp/entrypoints/blueprints/dev.py:151
-#: src/opendlp/entrypoints/blueprints/dev.py:1454
-#: src/opendlp/entrypoints/blueprints/dev.py:1489
+#: src/opendlp/entrypoints/blueprints/dev.py:154
+#: src/opendlp/service_layer/exceptions.py:84
+#, fuzzy
+msgid "Something went wrong. Please try again."
+msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
+
+#: src/opendlp/entrypoints/blueprints/dev.py:155
+msgid "(check the Flask console log for full error details)"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/dev.py:172
+#: src/opendlp/entrypoints/blueprints/dev.py:192
+#: src/opendlp/entrypoints/blueprints/dev.py:1536
+#: src/opendlp/entrypoints/blueprints/dev.py:1571
 #, fuzzy
 msgid "You don't have permission to access developer tools"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1497
+#: src/opendlp/entrypoints/blueprints/dev.py:1579
 msgid "Success! Your changes have been saved."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1498
+#: src/opendlp/entrypoints/blueprints/dev.py:1580
 msgid "Warning: Please review the data before continuing."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1499
+#: src/opendlp/entrypoints/blueprints/dev.py:1581
 #, fuzzy
 msgid "Error: Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1500
+#: src/opendlp/entrypoints/blueprints/dev.py:1582
 msgid "Info: A new feature is available."
 msgstr ""
 
@@ -2827,39 +2836,39 @@ msgstr ""
 msgid "parse_error_single_column"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:60
+#: src/opendlp/service_layer/exceptions.py:114
 #, python-format
 msgid "User with email '%(email)s' already exists"
 msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
 
-#: src/opendlp/service_layer/exceptions.py:60
+#: src/opendlp/service_layer/exceptions.py:114
 msgid "User already exists"
 msgstr "A felhasználó már létezik"
 
-#: src/opendlp/service_layer/exceptions.py:70
+#: src/opendlp/service_layer/exceptions.py:124
 msgid "Invalid email or password"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
-#: src/opendlp/service_layer/exceptions.py:79
+#: src/opendlp/service_layer/exceptions.py:133
 #, python-format
 msgid "Invalid invite code '%(code)s': %(reason)s"
 msgstr "Érvénytelen meghívókód: '%(code)s': %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:81
+#: src/opendlp/service_layer/exceptions.py:135
 #, python-format
 msgid "Invalid invite code '%(code)s'"
 msgstr "Érvénytelen meghívókód: '%(code)s'"
 
-#: src/opendlp/service_layer/exceptions.py:83
+#: src/opendlp/service_layer/exceptions.py:137
 #, python-format
 msgid "Invalid invite code: %(reason)s"
 msgstr "Érvénytelen meghívókód: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:85
+#: src/opendlp/service_layer/exceptions.py:139
 msgid "Invalid invite code"
 msgstr "Érvénytelen meghívókód"
 
-#: src/opendlp/service_layer/exceptions.py:97
+#: src/opendlp/service_layer/exceptions.py:151
 #, python-format
 msgid ""
 "Insufficient permissions for action: %(action)s (requires role: "
@@ -2868,94 +2877,94 @@ msgstr ""
 "Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges "
 "szerepkör: %(required_role)s)"
 
-#: src/opendlp/service_layer/exceptions.py:102
+#: src/opendlp/service_layer/exceptions.py:156
 #, python-format
 msgid "Insufficient permissions for action: %(action)s"
 msgstr "Nincs elegendő jogosultság a következő művelethez: %(action)s"
 
-#: src/opendlp/service_layer/exceptions.py:104
+#: src/opendlp/service_layer/exceptions.py:158
 #, python-format
 msgid "Insufficient permissions (requires role: %(required_role)s)"
 msgstr "Nincsenek megfelelő jogosultságok (szükséges szerepkör: %(required_role)s)"
 
-#: src/opendlp/service_layer/exceptions.py:106
+#: src/opendlp/service_layer/exceptions.py:160
 msgid "Insufficient permissions"
 msgstr "Nincsenek megfelelő jogosultságok"
 
-#: src/opendlp/service_layer/exceptions.py:117
+#: src/opendlp/service_layer/exceptions.py:171
 #, fuzzy, python-format
 msgid "Invalid password reset token: %(reason)s"
 msgstr "A jelszó túl gyenge: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:119
+#: src/opendlp/service_layer/exceptions.py:173
 #, fuzzy
 msgid "Invalid password reset token"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
-#: src/opendlp/service_layer/exceptions.py:128
+#: src/opendlp/service_layer/exceptions.py:182
 msgid "Please confirm your email address before logging in."
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:136
+#: src/opendlp/service_layer/exceptions.py:190
 #, fuzzy, python-format
 msgid "Invalid or expired confirmation link: %(reason)s"
 msgstr "A jelszó túl gyenge: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:138
+#: src/opendlp/service_layer/exceptions.py:192
 #, fuzzy
 msgid "Invalid or expired confirmation link"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/service_layer/exceptions.py:149
+#: src/opendlp/service_layer/exceptions.py:203
 #, python-format
 msgid ""
 "Rate limit exceeded for %(operation)s. Please try again in %(seconds)s "
 "seconds"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:154
+#: src/opendlp/service_layer/exceptions.py:208
 #, python-format
 msgid "Rate limit exceeded for %(operation)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:156
+#: src/opendlp/service_layer/exceptions.py:210
 msgid "Rate limit exceeded. Please try again later"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:214
+#: src/opendlp/service_layer/exceptions.py:268
 #, python-format
 msgid "This registration page already has the maximum of %(limit)s images"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:221
+#: src/opendlp/service_layer/exceptions.py:275
 #, python-format
 msgid "This registration page already has the maximum of %(limit)s documents"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:237
+#: src/opendlp/service_layer/exceptions.py:291
 #, python-format
 msgid "OAuth authentication failed for %(provider)s: %(reason)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:239
+#: src/opendlp/service_layer/exceptions.py:293
 #, python-format
 msgid "OAuth authentication failed for %(provider)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:241
+#: src/opendlp/service_layer/exceptions.py:295
 #, python-format
 msgid "OAuth authentication failed: %(reason)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:243
+#: src/opendlp/service_layer/exceptions.py:297
 msgid "OAuth authentication failed"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:253
+#: src/opendlp/service_layer/exceptions.py:307
 msgid "Invalid OAuth state parameter"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:260
+#: src/opendlp/service_layer/exceptions.py:314
 msgid "Cannot remove last authentication method. Add another method first."
 msgstr ""
 
@@ -5328,131 +5337,118 @@ msgstr "Módosítások mentése"
 msgid "Keep editing"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
-#: templates/backoffice/assembly_registration.html:1730
+#: templates/backoffice/assembly_registration.html:1585
 #, fuzzy
 msgid "An error occurred while fetching the form skeleton"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: templates/backoffice/assembly_registration.html:1750
-#: templates/backoffice/assembly_registration.html:1875
+#: templates/backoffice/assembly_registration.html:1586
 #: templates/backoffice/components/url_display.html:37
 msgid "Copied to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1753
-#: templates/backoffice/assembly_registration.html:1863
-#: templates/backoffice/assembly_registration.html:1876
-#: templates/backoffice/assembly_registration.html:2055
+#: templates/backoffice/assembly_registration.html:1587
 msgid "Failed to copy to clipboard"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1808
-#: templates/backoffice/assembly_registration.html:2000
+#: templates/backoffice/assembly_registration.html:1588
+msgid "Snippet copied to clipboard"
+msgstr ""
+
+#: templates/backoffice/assembly_registration.html:1589
+msgid "No public URL available yet"
+msgstr ""
+
+#: templates/backoffice/assembly_registration.html:1590
 #, fuzzy
 msgid "Upload failed"
 msgstr "Kész"
 
-#: templates/backoffice/assembly_registration.html:1819
+#: templates/backoffice/assembly_registration.html:1592
 #, fuzzy
 msgid "Image uploaded"
 msgstr "Új jelszó"
 
-#: templates/backoffice/assembly_registration.html:1822
+#: templates/backoffice/assembly_registration.html:1593
 #, fuzzy
 msgid "Network error while uploading the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:1831
+#: templates/backoffice/assembly_registration.html:1594
 #, fuzzy
 msgid "Delete this image?"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:1842
-#: templates/backoffice/assembly_registration.html:1908
+#: templates/backoffice/assembly_registration.html:1595
 msgid "Failed to delete image"
 msgstr ""
 
-#: templates/backoffice/assembly_registration.html:1846
-#: templates/backoffice/assembly_registration.html:1915
+#: templates/backoffice/assembly_registration.html:1596
 #, fuzzy
 msgid "Image deleted"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/assembly_registration.html:1849
-#: templates/backoffice/assembly_registration.html:1918
+#: templates/backoffice/assembly_registration.html:1597
 #, fuzzy
 msgid "Network error while deleting the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:1858
-#: templates/backoffice/assembly_registration.html:2050
-msgid "No public URL available yet"
-msgstr ""
-
-#: templates/backoffice/assembly_registration.html:1862
-#: templates/backoffice/assembly_registration.html:2054
-msgid "Snippet copied to clipboard"
-msgstr ""
-
-#: templates/backoffice/assembly_registration.html:1945
+#: templates/backoffice/assembly_registration.html:1598
 #, fuzzy
 msgid "Failed to update image"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:1953
+#: templates/backoffice/assembly_registration.html:1599
 #, fuzzy
 msgid "Image updated"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:1956
+#: templates/backoffice/assembly_registration.html:1600
 #, fuzzy
 msgid "Network error while updating the image"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:2011
+#: templates/backoffice/assembly_registration.html:1602
 #, fuzzy
 msgid "Document uploaded"
 msgstr "Új jelszó"
 
-#: templates/backoffice/assembly_registration.html:2014
+#: templates/backoffice/assembly_registration.html:1603
 #, fuzzy
 msgid "Network error while uploading the document"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:2023
+#: templates/backoffice/assembly_registration.html:1604
 #, fuzzy
 msgid "Delete this document?"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_registration.html:2034
-#: templates/backoffice/assembly_registration.html:2087
+#: templates/backoffice/assembly_registration.html:1605
 #, fuzzy
 msgid "Failed to delete document"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:2038
-#: templates/backoffice/assembly_registration.html:2094
+#: templates/backoffice/assembly_registration.html:1606
 #, fuzzy
 msgid "Document deleted"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/assembly_registration.html:2041
-#: templates/backoffice/assembly_registration.html:2097
+#: templates/backoffice/assembly_registration.html:1607
 #, fuzzy
 msgid "Network error while deleting the document"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: templates/backoffice/assembly_registration.html:2124
+#: templates/backoffice/assembly_registration.html:1608
 #, fuzzy
 msgid "Failed to update document"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:2132
+#: templates/backoffice/assembly_registration.html:1609
 #, fuzzy
 msgid "Document updated"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_registration.html:2135
+#: templates/backoffice/assembly_registration.html:1610
 #, fuzzy
 msgid "Network error while updating the document"
 msgstr "Hiba történt a gyűlés frissítése közben"

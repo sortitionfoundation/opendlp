@@ -244,12 +244,6 @@ class TestImageDetailsModalTemplate:
         assert start != -1 and end != -1, "Image Details modal section not found in template"
         return text[start:end]
 
-    @pytest.fixture
-    def alpine_data_block(self) -> str:
-        """Return the Alpine data block (where the JS handlers live)."""
-        path = Path(__file__).resolve().parents[2] / "templates/backoffice/assembly_registration.html"
-        return path.read_text(encoding="utf-8")
-
     def test_thumbnail_binds_to_public_url_with_no_preview_fallback(self, modal_block):
         assert ':src="editingImage.public_url"' in modal_block
         assert ':alt="editingImage.alt' in modal_block
@@ -293,12 +287,8 @@ class TestImageDetailsModalTemplate:
         # Old generic "Save" label is no longer the button text
         assert 'button(_("Save"),' not in modal_block
 
-    def test_alpine_data_block_exposes_copy_helper_and_delete_method(self, alpine_data_block):
-        # CSP-safe clipboard helper: reads the copy target/message from data-* attributes
-        # on the triggering element rather than accepting string literals as arguments
-        # (Alpine CSP build doesn't officially support literal-arg method calls).
-        assert "copyToClipboard($el)" in alpine_data_block
-        assert "$el.dataset.copyText" in alpine_data_block
-        # Modal-scoped delete that closes the modal on success and skips the panel's confirm()
-        assert "deleteEditingImage()" in alpine_data_block
-        assert "this.imageDetailsModalOpen = false" in alpine_data_block
+    # The handlers themselves used to be asserted here, by grepping the template for the
+    # inline script's source. They now live in src/js/components/ and are covered by
+    # registration-toast.test.js (copyToClipboard reading data-copy-text) and
+    # registration-images.test.js (deleteEditingImage closing the modal without a
+    # second confirm). What is left for this file is the markup, above.

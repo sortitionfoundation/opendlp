@@ -1,0 +1,9 @@
+# everything under static/ is build output - edit src/js/ instead
+static/
+node_modules/
+htmlcov/
+.venv/
+
+# not part of the project - local context only
+thirdparty/
+scratchpad/
