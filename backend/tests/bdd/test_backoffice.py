@@ -407,9 +407,10 @@ def create_test_assembly_with_registration_page(title: str, admin_user, test_dat
 
 def _page_slug(assembly_id, test_database) -> str:
     """The url_slug of the assembly's registration page — the editor is slug-addressed."""
-    registration_page = page_for_assembly(SqlAlchemyUnitOfWork(test_database), assembly_id)
-    assert registration_page is not None, "expected the assembly to have a registration page"
-    return registration_page.url_slug
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        registration_page = page_for_assembly(uow, assembly_id)
+        assert registration_page is not None, "expected the assembly to have a registration page"
+        return registration_page.url_slug
 
 
 @when(parsers.parse('I visit the registration tab for "{title}"'))
