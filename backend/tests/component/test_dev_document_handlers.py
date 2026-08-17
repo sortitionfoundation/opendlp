@@ -80,7 +80,8 @@ def page(fake_store):
 def app(fake_store):
     from opendlp.entrypoints.flask_app import create_app  # noqa: PLC0415
 
-    return create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return create_app("testing_component", uow_factory=lambda: uow)
 
 
 @pytest.fixture
@@ -120,15 +121,16 @@ class TestSerialiseDocument:
 class TestHandleAddRegistrationDocument:
     def test_decodes_base64_and_stores_document(self, fake_store, page, as_admin):
         b64 = base64.b64encode(_pdf()).decode()
-        result = _handle_add_registration_document(
-            uow=_uow(fake_store),
-            params={
-                "assembly_id": str(page.assembly_id),
-                "pdf_base64": b64,
-                "label": "Decoded",
-                "original_filename": "pack.pdf",
-            },
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_add_registration_document(
+                uow=uow,
+                params={
+                    "assembly_id": str(page.assembly_id),
+                    "pdf_base64": b64,
+                    "label": "Decoded",
+                    "original_filename": "pack.pdf",
+                },
+            )
 
         assert result["status"] == "success"
         assert result["document"]["label"] == "Decoded"
@@ -140,33 +142,36 @@ class TestHandleAddRegistrationDocument:
 
     def test_strips_data_url_prefix(self, fake_store, page, as_admin):
         b64 = base64.b64encode(_pdf()).decode()
-        result = _handle_add_registration_document(
-            uow=_uow(fake_store),
-            params={
-                "assembly_id": str(page.assembly_id),
-                "pdf_base64": f"data:application/pdf;base64,{b64}",
-                "label": "Prefixed",
-            },
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_add_registration_document(
+                uow=uow,
+                params={
+                    "assembly_id": str(page.assembly_id),
+                    "pdf_base64": f"data:application/pdf;base64,{b64}",
+                    "label": "Prefixed",
+                },
+            )
 
         assert result["status"] == "success"
         with _uow(fake_store) as uow:
             assert len(uow.registration_documents.list_by_assembly_id(page.assembly_id)) == 1
 
     def test_invalid_base64_returns_error(self, fake_store, page, as_admin):
-        result = _handle_add_registration_document(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id), "pdf_base64": "not!base64!", "label": "x"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_add_registration_document(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id), "pdf_base64": "not!base64!", "label": "x"},
+            )
         assert result["status"] == "error"
         assert result["error_type"] == "ValidationError"
 
     def test_non_pdf_bytes_return_validation_error(self, fake_store, page, as_admin):
         b64 = base64.b64encode(b"plain text, not a pdf").decode()
-        result = _handle_add_registration_document(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id), "pdf_base64": b64, "label": "x"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_add_registration_document(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id), "pdf_base64": b64, "label": "x"},
+            )
         assert result["status"] == "error"
         assert result["error_type"] == "DocumentValidationError"
         assert result["reason"] == "unsupported_format"
@@ -177,10 +182,11 @@ class TestHandleListRegistrationDocuments:
         _seed_document(fake_store, page, payload=b"one")
         _seed_document(fake_store, page, payload=b"two")
 
-        result = _handle_list_registration_documents(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_list_registration_documents(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id)},
+            )
 
         assert result["status"] == "success"
         assert result["total_count"] == 2
@@ -191,10 +197,11 @@ class TestHandleDeleteRegistrationDocument:
     def test_deletes_and_returns_id(self, fake_store, page, as_admin):
         document = _seed_document(fake_store, page)
 
-        result = _handle_delete_registration_document(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id), "document_id": str(document.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_delete_registration_document(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id), "document_id": str(document.id)},
+            )
 
         assert result == {"status": "success", "deleted_document_id": str(document.id)}
         with _uow(fake_store) as uow:
@@ -205,10 +212,11 @@ class TestHandleSetRegistrationDocumentLabel:
     def test_updates_label_and_returns_serialised_document(self, fake_store, page, as_admin):
         document = _seed_document(fake_store, page)
 
-        result = _handle_set_registration_document_label(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id), "document_id": str(document.id), "label": "Renamed"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_set_registration_document_label(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id), "document_id": str(document.id), "label": "Renamed"},
+            )
 
         assert result["status"] == "success"
         assert result["document"]["label"] == "Renamed"
@@ -220,10 +228,11 @@ class TestHandleListDocumentSnippets:
     def test_pairs_document_with_html_snippet(self, fake_store, page, as_admin):
         _seed_document(fake_store, page)
 
-        result = _handle_list_document_snippets(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_list_document_snippets(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id)},
+            )
 
         assert result["status"] == "success"
         assert result["total_count"] == 1
@@ -234,19 +243,21 @@ class TestHandleGetRegistrationDocumentForServing:
     def test_found_returns_serialised_document(self, fake_store, page, as_admin):
         document = _seed_document(fake_store, page)
 
-        result = _handle_get_registration_document_for_serving(
-            uow=_uow(fake_store),
-            params={"url_slug": page.url_slug, "document_name": f"{document.sha256}.pdf"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_get_registration_document_for_serving(
+                uow=uow,
+                params={"url_slug": page.url_slug, "document_name": f"{document.sha256}.pdf"},
+            )
 
         assert result["status"] == "success"
         assert result["found"] is True
         assert result["document"]["id"] == str(document.id)
 
     def test_not_found_returns_none(self, fake_store, page, as_admin):
-        result = _handle_get_registration_document_for_serving(
-            uow=_uow(fake_store),
-            params={"url_slug": "bad-slug", "document_name": "x.pdf"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_get_registration_document_for_serving(
+                uow=uow,
+                params={"url_slug": "bad-slug", "document_name": "x.pdf"},
+            )
 
         assert result == {"status": "success", "found": False, "document": None}

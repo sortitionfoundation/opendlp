@@ -73,12 +73,13 @@ def _(page: Page):
 def _(test_database: sessionmaker, admin_user, user_invite: str):
     """Create an unconfirmed user in the database."""
     uow = SqlAlchemyUnitOfWork(test_database)
-    user, token = create_user(
-        uow=uow,
-        email=NEWUSER_EMAIL,
-        password=FRESH_PASSWORD,
-        invite_code=user_invite,
-    )
+    with uow:
+        user, token = create_user(
+            uow=uow,
+            email=NEWUSER_EMAIL,
+            password=FRESH_PASSWORD,
+            invite_code=user_invite,
+        )
     return {"user": user, "token": token}
 
 
@@ -161,12 +162,13 @@ def _(page: Page):
 def _(test_database: sessionmaker, admin_user, user_invite: str):
     """Create a confirmed user in the database."""
     uow = SqlAlchemyUnitOfWork(test_database)
-    create_user(
-        uow=uow,
-        email=NEWUSER_EMAIL,
-        password=FRESH_PASSWORD,
-        invite_code=user_invite,
-    )
+    with uow:
+        create_user(
+            uow=uow,
+            email=NEWUSER_EMAIL,
+            password=FRESH_PASSWORD,
+            invite_code=user_invite,
+        )
     # Confirm the email
     with uow:
         fetched_user = uow.users.get_by_email(NEWUSER_EMAIL)
@@ -187,13 +189,14 @@ def _(page: Page, user_invite: str, test_database: sessionmaker):
     # In reality, this would go through OAuth flow
     # For testing, we'll create an OAuth user directly in the database
     uow = SqlAlchemyUnitOfWork(test_database)
-    user, _ = find_or_create_oauth_user(
-        uow=uow,
-        provider="google",
-        oauth_id="google_test_123",
-        email=NEWUSER_EMAIL,
-        invite_code=user_invite,
-    )
+    with uow:
+        user, _ = find_or_create_oauth_user(
+            uow=uow,
+            provider="google",
+            oauth_id="google_test_123",
+            email=NEWUSER_EMAIL,
+            invite_code=user_invite,
+        )
     # Return user for verification - we can't actually log in via OAuth in BDD tests
     # without a full OAuth flow, so we'll verify the database state instead
     return user

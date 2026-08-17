@@ -85,11 +85,13 @@ def get_schema(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> list[RespondentFieldDefinition]:
-    """Return the schema for an assembly, ordered by GROUP_DISPLAY_ORDER then sort_order."""
-    with uow:
-        _ensure_view_permission(uow, user_id, assembly_id)
-        fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-        return [f.create_detached_copy() for f in fields]
+    """Return the schema for an assembly, ordered by GROUP_DISPLAY_ORDER then sort_order.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _ensure_view_permission(uow, user_id, assembly_id)
+    fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+    return [f.create_detached_copy() for f in fields]
 
 
 def get_schema_grouped(
@@ -101,6 +103,8 @@ def get_schema_grouped(
 
     All groups are present in the map even if empty, so view code can iterate
     uniformly.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     fields = get_schema(uow, user_id, assembly_id)
     grouped: dict[RespondentFieldGroup, list[RespondentFieldDefinition]] = {group: [] for group in GROUP_DISPLAY_ORDER}
@@ -157,6 +161,8 @@ def populate_schema_from_headers(
     header, using heuristics to bucket each into a group. Preserves CSV header
     order within each group. No-op if the assembly already has a schema.
     Returns the number of rows inserted. Does not commit — caller owns the txn.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) > 0:
         return 0
@@ -199,15 +205,15 @@ def initialise_empty_schema(
 
     For registration-form-first assemblies that don't yet have respondent data.
     No-op if a schema already exists.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        _ensure_manage_permission(uow, user_id, assembly_id)
-        if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) > 0:
-            return 0
-        rows = _build_fixed_rows(assembly_id)
-        uow.respondent_field_definitions.bulk_add(rows)
-        uow.commit()
-        return len(rows)
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) > 0:
+        return 0
+    rows = _build_fixed_rows(assembly_id)
+    uow.respondent_field_definitions.bulk_add(rows)
+    return len(rows)
 
 
 def add_field(
@@ -244,39 +250,39 @@ def add_field(
     Raises:
         FieldDefinitionConflictError: If a field with this key already exists.
         InsufficientPermissions: If the user cannot manage the assembly.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        _ensure_manage_permission(uow, user_id, assembly_id)
+    _ensure_manage_permission(uow, user_id, assembly_id)
 
-        field_key = field_key.strip()
-        if not field_key:
-            raise FieldDefinitionConflictError(_l("Field key cannot be empty"))
+    field_key = field_key.strip()
+    if not field_key:
+        raise FieldDefinitionConflictError(_l("Field key cannot be empty"))
 
-        # Check for duplicate field_key
-        existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-        if any(f.field_key == field_key for f in existing):
-            raise FieldDefinitionConflictError(_l("Field '%(key)s' already exists in this assembly", key=field_key))
+    # Check for duplicate field_key
+    existing = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+    if any(f.field_key == field_key for f in existing):
+        raise FieldDefinitionConflictError(_l("Field '%(key)s' already exists in this assembly", key=field_key))
 
-        # Compute next sort_order for this group
-        per_group_next: dict[RespondentFieldGroup, int] = {}
-        for f in existing:
-            per_group_next[f.group] = max(per_group_next.get(f.group, 0), f.sort_order // SORT_ORDER_STEP)
+    # Compute next sort_order for this group
+    per_group_next: dict[RespondentFieldGroup, int] = {}
+    for f in existing:
+        per_group_next[f.group] = max(per_group_next.get(f.group, 0), f.sort_order // SORT_ORDER_STEP)
 
-        effective_label = label.strip() if label else humanise_field_key(field_key)
+    effective_label = label.strip() if label else humanise_field_key(field_key)
 
-        field = RespondentFieldDefinition(
-            assembly_id=assembly_id,
-            field_key=field_key,
-            label=effective_label,
-            group=group,
-            sort_order=_next_sort_order(per_group_next, group),
-            field_type=field_type,
-            options=options,
-            on_registration_page=on_registration_page,
-        )
-        uow.respondent_field_definitions.add(field)
-        uow.commit()
-        return field.create_detached_copy()
+    field = RespondentFieldDefinition(
+        assembly_id=assembly_id,
+        field_key=field_key,
+        label=effective_label,
+        group=group,
+        sort_order=_next_sort_order(per_group_next, group),
+        field_type=field_type,
+        options=options,
+        on_registration_page=on_registration_page,
+    )
+    uow.respondent_field_definitions.add(field)
+    return field.create_detached_copy()
 
 
 def update_field(
@@ -295,26 +301,26 @@ def update_field(
     on_registration_page.
 
     ``options`` uses a sentinel to distinguish "leave alone" from "set to None".
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        _ensure_manage_permission(uow, user_id, assembly_id)
-        field = uow.respondent_field_definitions.get(field_id)
-        if field is None or field.assembly_id != assembly_id:
-            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-        try:
-            field.update(
-                label=label,
-                group=group,
-                sort_order=sort_order,
-                field_type=field_type,
-                options=options,
-                on_registration_page=on_registration_page,
-            )
-        except FixedFieldError as exc:
-            raise FieldDefinitionConflictError(_l("You can't change the type or options of a fixed field")) from exc
-        uow.commit()
-        detached: RespondentFieldDefinition = field.create_detached_copy()
-        return detached
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    field = uow.respondent_field_definitions.get(field_id)
+    if field is None or field.assembly_id != assembly_id:
+        raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+    try:
+        field.update(
+            label=label,
+            group=group,
+            sort_order=sort_order,
+            field_type=field_type,
+            options=options,
+            on_registration_page=on_registration_page,
+        )
+    except FixedFieldError as exc:
+        raise FieldDefinitionConflictError(_l("You can't change the type or options of a fixed field")) from exc
+    detached: RespondentFieldDefinition = field.create_detached_copy()
+    return detached
 
 
 def _choice_type_for(n_options: int) -> FieldType:
@@ -354,56 +360,56 @@ def guess_field_types(
 ) -> dict[str, FieldType]:
     """Overwrite field_type for non-fixed, non-derived, text-typed fields based
     on the attribute-value distribution. Returns a map of field_key -> new type
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     for rows that were changed."""
     changed: dict[str, FieldType] = {}
-    with uow:
-        _ensure_manage_permission(uow, user_id, assembly_id)
-        fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-        target_categories = uow.target_categories.get_by_assembly_id(assembly_id)
-        target_by_name = {cat.name.lower(): cat for cat in target_categories}
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+    target_categories = uow.target_categories.get_by_assembly_id(assembly_id)
+    target_by_name = {cat.name.lower(): cat for cat in target_categories}
 
-        for f in fields:
-            if f.is_fixed or f.is_derived or f.field_type != FieldType.TEXT:
-                continue
+    for f in fields:
+        if f.is_fixed or f.is_derived or f.field_type != FieldType.TEXT:
+            continue
 
-            # Target-category name match wins first.
-            cat = target_by_name.get(f.field_key.lower())
-            if cat is not None and cat.values:
-                option_values = sorted(v.value for v in cat.values)
-                new_type = _choice_type_for(len(option_values))
-                f.update(
-                    field_type=new_type,
-                    options=[ChoiceOption(value=v) for v in option_values],
-                )
-                changed[f.field_key] = new_type
-                continue
+        # Target-category name match wins first.
+        cat = target_by_name.get(f.field_key.lower())
+        if cat is not None and cat.values:
+            option_values = sorted(v.value for v in cat.values)
+            new_type = _choice_type_for(len(option_values))
+            f.update(
+                field_type=new_type,
+                options=[ChoiceOption(value=v) for v in option_values],
+            )
+            changed[f.field_key] = new_type
+            continue
 
-            value_counts = uow.respondents.get_attribute_value_counts(assembly_id, f.field_key)
-            distinct = _non_empty(list(value_counts.keys()))
-            if not distinct:
-                continue
+        value_counts = uow.respondents.get_attribute_value_counts(assembly_id, f.field_key)
+        distinct = _non_empty(list(value_counts.keys()))
+        if not distinct:
+            continue
 
-            if _is_all_bool(distinct):
-                f.update(field_type=FieldType.BOOL_OR_NONE)
-                changed[f.field_key] = FieldType.BOOL_OR_NONE
-                continue
+        if _is_all_bool(distinct):
+            f.update(field_type=FieldType.BOOL_OR_NONE)
+            changed[f.field_key] = FieldType.BOOL_OR_NONE
+            continue
 
-            if _is_all_int(distinct):
-                f.update(field_type=FieldType.INTEGER)
-                changed[f.field_key] = FieldType.INTEGER
-                continue
+        if _is_all_int(distinct):
+            f.update(field_type=FieldType.INTEGER)
+            changed[f.field_key] = FieldType.INTEGER
+            continue
 
-            if 0 < len(distinct) < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
-                option_values = sorted(distinct)
-                new_type = _choice_type_for(len(option_values))
-                f.update(
-                    field_type=new_type,
-                    options=[ChoiceOption(value=v) for v in option_values],
-                )
-                changed[f.field_key] = new_type
-                continue
+        if 0 < len(distinct) < MAX_DISTINCT_VALUES_FOR_AUTO_ADD:
+            option_values = sorted(distinct)
+            new_type = _choice_type_for(len(option_values))
+            f.update(
+                field_type=new_type,
+                options=[ChoiceOption(value=v) for v in option_values],
+            )
+            changed[f.field_key] = new_type
+            continue
 
-        uow.commit()
     return changed
 
 
@@ -415,25 +421,26 @@ def add_choice_option(
     value: str,
     help_text: str = "",
 ) -> RespondentFieldDefinition:
-    """Append a ChoiceOption to a choice field's options list."""
-    with uow:
-        _ensure_manage_permission(uow, user_id, assembly_id)
-        field = uow.respondent_field_definitions.get(field_id)
-        if field is None or field.assembly_id != assembly_id:
-            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-        if field.field_type not in {FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN}:
-            raise FieldDefinitionConflictError(_l("Options can only be set on choice fields"))
-        value = value.strip()
-        if not value:
-            raise FieldDefinitionConflictError(_l("Option value cannot be blank"))
-        new_options = list(field.options or [])
-        if any(o.value == value for o in new_options):
-            raise FieldDefinitionConflictError(_l("Option '%(value)s' already exists", value=value))
-        new_options.append(ChoiceOption(value=value, help_text=help_text))
-        field.update(options=new_options)
-        uow.commit()
-        detached: RespondentFieldDefinition = field.create_detached_copy()
-        return detached
+    """Append a ChoiceOption to a choice field's options list.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    field = uow.respondent_field_definitions.get(field_id)
+    if field is None or field.assembly_id != assembly_id:
+        raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+    if field.field_type not in {FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN}:
+        raise FieldDefinitionConflictError(_l("Options can only be set on choice fields"))
+    value = value.strip()
+    if not value:
+        raise FieldDefinitionConflictError(_l("Option value cannot be blank"))
+    new_options = list(field.options or [])
+    if any(o.value == value for o in new_options):
+        raise FieldDefinitionConflictError(_l("Option '%(value)s' already exists", value=value))
+    new_options.append(ChoiceOption(value=value, help_text=help_text))
+    field.update(options=new_options)
+    detached: RespondentFieldDefinition = field.create_detached_copy()
+    return detached
 
 
 def update_choice_option(
@@ -448,27 +455,27 @@ def update_choice_option(
     """Update the value and/or help_text of an existing ChoiceOption.
 
     Pass ``new_value`` equal to ``old_value`` to edit help text only.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        _ensure_manage_permission(uow, user_id, assembly_id)
-        field = uow.respondent_field_definitions.get(field_id)
-        if field is None or field.assembly_id != assembly_id:
-            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-        new_value = new_value.strip()
-        if not new_value:
-            raise FieldDefinitionConflictError(_l("Option value cannot be blank"))
-        existing = list(field.options or [])
-        if not any(o.value == old_value for o in existing):
-            raise FieldDefinitionNotFoundError(f"Option '{old_value}' not found on field {field_id}")
-        if new_value != old_value and any(o.value == new_value for o in existing):
-            raise FieldDefinitionConflictError(_l("Option '%(value)s' already exists", value=new_value))
-        updated_options = [
-            ChoiceOption(value=new_value, help_text=new_help_text) if o.value == old_value else o for o in existing
-        ]
-        field.update(options=updated_options)
-        uow.commit()
-        detached: RespondentFieldDefinition = field.create_detached_copy()
-        return detached
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    field = uow.respondent_field_definitions.get(field_id)
+    if field is None or field.assembly_id != assembly_id:
+        raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+    new_value = new_value.strip()
+    if not new_value:
+        raise FieldDefinitionConflictError(_l("Option value cannot be blank"))
+    existing = list(field.options or [])
+    if not any(o.value == old_value for o in existing):
+        raise FieldDefinitionNotFoundError(f"Option '{old_value}' not found on field {field_id}")
+    if new_value != old_value and any(o.value == new_value for o in existing):
+        raise FieldDefinitionConflictError(_l("Option '%(value)s' already exists", value=new_value))
+    updated_options = [
+        ChoiceOption(value=new_value, help_text=new_help_text) if o.value == old_value else o for o in existing
+    ]
+    field.update(options=updated_options)
+    detached: RespondentFieldDefinition = field.create_detached_copy()
+    return detached
 
 
 def remove_choice_option(
@@ -478,22 +485,23 @@ def remove_choice_option(
     field_id: uuid.UUID,
     value: str,
 ) -> RespondentFieldDefinition:
-    """Remove a ChoiceOption from a choice field's options list."""
-    with uow:
-        _ensure_manage_permission(uow, user_id, assembly_id)
-        field = uow.respondent_field_definitions.get(field_id)
-        if field is None or field.assembly_id != assembly_id:
-            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-        existing = list(field.options or [])
-        remaining = [o for o in existing if o.value != value]
-        if len(remaining) == len(existing):
-            raise FieldDefinitionNotFoundError(f"Option '{value}' not found on field {field_id}")
-        if not remaining:
-            raise FieldDefinitionConflictError(_l("A choice field must keep at least one option"))
-        field.update(options=remaining)
-        uow.commit()
-        detached: RespondentFieldDefinition = field.create_detached_copy()
-        return detached
+    """Remove a ChoiceOption from a choice field's options list.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    field = uow.respondent_field_definitions.get(field_id)
+    if field is None or field.assembly_id != assembly_id:
+        raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+    existing = list(field.options or [])
+    remaining = [o for o in existing if o.value != value]
+    if len(remaining) == len(existing):
+        raise FieldDefinitionNotFoundError(f"Option '{value}' not found on field {field_id}")
+    if not remaining:
+        raise FieldDefinitionConflictError(_l("A choice field must keep at least one option"))
+    field.update(options=remaining)
+    detached: RespondentFieldDefinition = field.create_detached_copy()
+    return detached
 
 
 def reorder_group(
@@ -507,21 +515,21 @@ def reorder_group(
 
     ``ordered_field_ids`` must contain all field_ids currently in the group,
     in the desired display order. Fields are re-numbered 10, 20, 30, ...
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        _ensure_manage_permission(uow, user_id, assembly_id)
-        existing = [f for f in uow.respondent_field_definitions.list_by_assembly(assembly_id) if f.group == group]
-        existing_by_id = {f.id: f for f in existing}
-        if set(ordered_field_ids) != set(existing_by_id.keys()):
-            raise FieldDefinitionConflictError(
-                "reorder_group requires the complete set of field_ids currently in the group"
-            )
-        now = datetime.now(UTC)
-        for i, field_id in enumerate(ordered_field_ids, start=1):
-            field = existing_by_id[field_id]
-            field.sort_order = i * SORT_ORDER_STEP
-            field.updated_at = now
-        uow.commit()
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    existing = [f for f in uow.respondent_field_definitions.list_by_assembly(assembly_id) if f.group == group]
+    existing_by_id = {f.id: f for f in existing}
+    if set(ordered_field_ids) != set(existing_by_id.keys()):
+        raise FieldDefinitionConflictError(
+            "reorder_group requires the complete set of field_ids currently in the group"
+        )
+    now = datetime.now(UTC)
+    for i, field_id in enumerate(ordered_field_ids, start=1):
+        field = existing_by_id[field_id]
+        field.sort_order = i * SORT_ORDER_STEP
+        field.updated_at = now
 
 
 def delete_field(
@@ -535,16 +543,16 @@ def delete_field(
     Fixed fields cannot be deleted — raises FieldDefinitionConflictError.
     Respondent attribute data is untouched (the attributes dict still holds
     the value, it's just no longer rendered in the detail page).
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        _ensure_manage_permission(uow, user_id, assembly_id)
-        field = uow.respondent_field_definitions.get(field_id)
-        if field is None or field.assembly_id != assembly_id:
-            raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-        if field.is_fixed:
-            raise FieldDefinitionConflictError(_l("Fixed field '%(key)s' cannot be deleted", key=field.field_key))
-        uow.respondent_field_definitions.delete(field)
-        uow.commit()
+    _ensure_manage_permission(uow, user_id, assembly_id)
+    field = uow.respondent_field_definitions.get(field_id)
+    if field is None or field.assembly_id != assembly_id:
+        raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+    if field.is_fixed:
+        raise FieldDefinitionConflictError(_l("Fixed field '%(key)s' cannot be deleted", key=field.field_key))
+    uow.respondent_field_definitions.delete(field)
 
 
 # ---------------------------------------------------------------------------
@@ -593,6 +601,8 @@ def compute_reconciliation_diff(
 
     ``previous_id_column`` lets the caller supply the id column from the prior
     upload so a column rename can be flagged. Pass ``None`` to skip that check.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     diff = ReconciliationDiff(assembly_id=assembly_id)
     if previous_id_column and previous_id_column != id_column:
@@ -632,6 +642,8 @@ def apply_reconciliation(
     owns the transaction.
 
     Returns the number of new rows inserted.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     if not diff.new_keys:
         return 0
@@ -668,6 +680,8 @@ def update_schema_from_headers(
     Wraps the populate / reconcile branch: if no schema exists for the
     assembly, seed a fresh one; otherwise add rows for any new headers and
     leave absent keys in place. Returns the number of rows inserted.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
         return populate_schema_from_headers(
@@ -718,32 +732,33 @@ def compute_diff_for_pending_csv(
     yet — the caller interprets that as "skip the confirmation page entirely".
 
     Raises ``InvalidSelection`` if the CSV has no header row.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     headers = _parse_csv_headers(csv_content)
     id_column = _auto_detect_id_column(headers, explicit_id_column)
 
-    with uow:
-        _ensure_view_permission(uow, user_id, assembly_id)
-        if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
-            return None
+    _ensure_view_permission(uow, user_id, assembly_id)
+    if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
+        return None
 
-        target_category_names = [c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)]
+    target_category_names = [c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)]
 
-        # Pull the previous id column from the assembly's CSV config so we can
-        # flag column renames. ``assembly.csv`` is the ORM relationship, so we
-        # read it inside the same uow rather than reopening another one.
-        assembly = uow.assemblies.get(assembly_id)
-        if assembly is None:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
-        previous_id_column: str | None = None
-        if assembly.csv is not None:
-            previous_id_column = assembly.csv.csv_id_column
+    # Pull the previous id column from the assembly's CSV config so we can
+    # flag column renames. ``assembly.csv`` is the ORM relationship, so we
+    # read it inside the same uow rather than reopening another one.
+    assembly = uow.assemblies.get(assembly_id)
+    if assembly is None:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    previous_id_column: str | None = None
+    if assembly.csv is not None:
+        previous_id_column = assembly.csv.csv_id_column
 
-        return compute_reconciliation_diff(
-            uow,
-            assembly_id,
-            headers,
-            id_column,
-            target_category_names=target_category_names,
-            previous_id_column=previous_id_column,
-        )
+    return compute_reconciliation_diff(
+        uow,
+        assembly_id,
+        headers,
+        id_column,
+        target_category_names=target_category_names,
+        previous_id_column=previous_id_column,
+    )

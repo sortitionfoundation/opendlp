@@ -83,7 +83,8 @@ def page(fake_store):
 def app(fake_store):
     from opendlp.entrypoints.flask_app import create_app  # noqa: PLC0415
 
-    return create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return create_app("testing_component", uow_factory=lambda: uow)
 
 
 @pytest.fixture
@@ -127,15 +128,16 @@ class TestSerialiseImage:
 class TestHandleAddRegistrationImage:
     def test_decodes_base64_and_stores_image(self, fake_store, page, as_admin):
         b64 = base64.b64encode(_png()).decode()
-        result = _handle_add_registration_image(
-            uow=_uow(fake_store),
-            params={
-                "assembly_id": str(page.assembly_id),
-                "image_base64": b64,
-                "alt": "Decoded",
-                "original_filename": "logo.png",
-            },
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_add_registration_image(
+                uow=uow,
+                params={
+                    "assembly_id": str(page.assembly_id),
+                    "image_base64": b64,
+                    "alt": "Decoded",
+                    "original_filename": "logo.png",
+                },
+            )
 
         assert result["status"] == "success"
         assert result["image"]["alt"] == "Decoded"
@@ -147,24 +149,26 @@ class TestHandleAddRegistrationImage:
 
     def test_strips_data_url_prefix(self, fake_store, page, as_admin):
         b64 = base64.b64encode(_png()).decode()
-        result = _handle_add_registration_image(
-            uow=_uow(fake_store),
-            params={
-                "assembly_id": str(page.assembly_id),
-                "image_base64": f"data:image/png;base64,{b64}",
-                "alt": "Alt",
-            },
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_add_registration_image(
+                uow=uow,
+                params={
+                    "assembly_id": str(page.assembly_id),
+                    "image_base64": f"data:image/png;base64,{b64}",
+                    "alt": "Alt",
+                },
+            )
 
         assert result["status"] == "success"
         with _uow(fake_store) as uow:
             assert len(uow.registration_images.list_by_assembly_id(page.assembly_id)) == 1
 
     def test_invalid_base64_returns_error(self, fake_store, page, as_admin):
-        result = _handle_add_registration_image(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id), "image_base64": "not!base64!", "alt": "x"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_add_registration_image(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id), "image_base64": "not!base64!", "alt": "x"},
+            )
         assert result["status"] == "error"
         assert result["error_type"] == "ValidationError"
 
@@ -174,10 +178,11 @@ class TestHandleListRegistrationImages:
         _seed_image(fake_store, page, color=(255, 0, 0))
         _seed_image(fake_store, page, color=(0, 255, 0))
 
-        result = _handle_list_registration_images(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_list_registration_images(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id)},
+            )
 
         assert result["status"] == "success"
         assert result["total_count"] == 2
@@ -188,10 +193,11 @@ class TestHandleDeleteRegistrationImage:
     def test_deletes_and_returns_id(self, fake_store, page, as_admin):
         image = _seed_image(fake_store, page)
 
-        result = _handle_delete_registration_image(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id), "image_id": str(image.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_delete_registration_image(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id), "image_id": str(image.id)},
+            )
 
         assert result == {"status": "success", "deleted_image_id": str(image.id)}
         with _uow(fake_store) as uow:
@@ -202,10 +208,11 @@ class TestHandleSetRegistrationImageAlt:
     def test_updates_alt_and_returns_serialised_image(self, fake_store, page, as_admin):
         image = _seed_image(fake_store, page)
 
-        result = _handle_set_registration_image_alt(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id), "image_id": str(image.id), "alt": "Renamed"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_set_registration_image_alt(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id), "image_id": str(image.id), "alt": "Renamed"},
+            )
 
         assert result["status"] == "success"
         assert result["image"]["alt"] == "Renamed"
@@ -217,10 +224,11 @@ class TestHandleListImageSnippets:
     def test_pairs_image_with_html_snippet(self, fake_store, page, as_admin):
         _seed_image(fake_store, page, color=(0, 0, 255))
 
-        result = _handle_list_image_snippets(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(page.assembly_id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_list_image_snippets(
+                uow=uow,
+                params={"assembly_id": str(page.assembly_id)},
+            )
 
         assert result["status"] == "success"
         assert result["total_count"] == 1
@@ -231,19 +239,21 @@ class TestHandleGetRegistrationImageForServing:
     def test_found_returns_serialised_image(self, fake_store, page, as_admin):
         image = _seed_image(fake_store, page)
 
-        result = _handle_get_registration_image_for_serving(
-            uow=_uow(fake_store),
-            params={"url_slug": page.url_slug, "image_name": f"{image.sha256}.png"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_get_registration_image_for_serving(
+                uow=uow,
+                params={"url_slug": page.url_slug, "image_name": f"{image.sha256}.png"},
+            )
 
         assert result["status"] == "success"
         assert result["found"] is True
         assert result["image"]["id"] == str(image.id)
 
     def test_not_found_returns_none(self, fake_store, page, as_admin):
-        result = _handle_get_registration_image_for_serving(
-            uow=_uow(fake_store),
-            params={"url_slug": "bad-slug", "image_name": "x.png"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_get_registration_image_for_serving(
+                uow=uow,
+                params={"url_slug": "bad-slug", "image_name": "x.png"},
+            )
 
         assert result == {"status": "success", "found": False, "image": None}

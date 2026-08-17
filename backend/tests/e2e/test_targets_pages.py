@@ -95,7 +95,8 @@ class TestAddCategory:
 class TestDeleteCategory:
     def test_delete_category_redirects(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        with uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
 
         response = logged_in_admin.post(
             _targets_url(existing_assembly.id, f"/categories/{category.id}/delete"),
@@ -108,7 +109,8 @@ class TestDeleteCategory:
 class TestAddValue:
     def test_add_value_to_category(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        with uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
 
         response = logged_in_admin.post(
             _targets_url(existing_assembly.id, f"/categories/{category.id}/values"),
@@ -127,9 +129,11 @@ class TestAddValue:
 class TestEditValue:
     def test_edit_value(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        with uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
+        with uow2:
+            cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
         value_id = cat.values[0].value_id
 
         response = logged_in_admin.post(
@@ -149,9 +153,11 @@ class TestEditValue:
 class TestDeleteValue:
     def test_delete_value(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        with uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
+        with uow2:
+            cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
         value_id = cat.values[0].value_id
 
         response = logged_in_admin.post(
@@ -165,7 +171,8 @@ class TestDeleteValue:
 class TestEditCategory:
     def test_rename_category(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+        with uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
 
         response = logged_in_admin.post(
             _targets_url(existing_assembly.id, f"/categories/{category.id}"),
@@ -196,10 +203,12 @@ class TestAddMissingValues:
 
         # Use a name that doesn't match a respondent column to avoid auto-populate
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        category = create_target_category(uow, admin_user.id, existing_assembly.id, "Sex")
+        with uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Sex")
         # Add one value so the others are "missing"
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 3, 7)
+        with uow2:
+            add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 3, 7)
 
         response = logged_in_admin.post(
             _targets_url(existing_assembly.id, f"/categories/{category.id}/values/add-missing"),

@@ -48,7 +48,10 @@ def _load_user_and_assembly(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembl
 
 
 def page_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> RegistrationPage | None:
-    """The assembly's oldest registration page, or None when it has none."""
+    """The assembly's oldest registration page, or None when it has none.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     pages = uow.registration_pages.list_by_assembly_id(assembly_id)
     return pages[0] if pages else None
 
@@ -120,6 +123,8 @@ def generate_unique_url_slug(uow: AbstractUnitOfWork, base_slug: str) -> str:
     """Ensure slug is unique, appending -2, -3, etc. if needed.
 
     If base_slug is empty, generates a random fallback slug.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     if not base_slug:
         base_slug = f"assembly-{random.randint(100000, 999999)}"  # noqa: S311
@@ -144,7 +149,10 @@ def generate_short_url_slug() -> str:
 
 
 def generate_unique_short_url_slug(uow: AbstractUnitOfWork, max_attempts: int = 10) -> str:
-    """Generate unique 6-digit short slug, retrying on collision."""
+    """Generate unique 6-digit short slug, retrying on collision.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     for _ in range(max_attempts):
         candidate = generate_short_url_slug()
         if uow.registration_pages.get_by_short_url_slug(candidate) is None:
@@ -163,6 +171,8 @@ def _load_manageable_page(
     RegistrationPageNotFoundError as an unknown id, so page ids cannot be probed
     to discover which assemblies exist. A user who can view the assembly already
     knows it exists, so they get the more useful InsufficientPermissions.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     user = uow.users.get(user_id)
     if not user:
@@ -181,7 +191,10 @@ def _load_manageable_page(
 def _load_viewable_page(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID
 ) -> tuple[User, RegistrationPage]:
-    """Load a page the user may view, or raise as though it did not exist."""
+    """Load a page the user may view, or raise as though it did not exist.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     user = uow.users.get(user_id)
     if not user:
         raise UserNotFoundError(f"User {user_id} not found")
@@ -195,7 +208,10 @@ def _load_viewable_page(
 
 
 def _validated_name(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, name: str) -> str:
-    """Names label pages in the backoffice, so they must be present and distinct."""
+    """Names label pages in the backoffice, so they must be present and distinct.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     cleaned = name.strip()
     if not cleaned:
         raise ValueError("The registration page name is required")
@@ -214,24 +230,25 @@ def create_registration_page(
     language: str = "",
     source_type: RegistrationPageSource = RegistrationPageSource.HTML,
 ) -> RegistrationPage:
-    """Create a registration page and its HTML source for an assembly."""
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="create registration page", required_role=_MANAGE_ROLE)
+    """Create a registration page and its HTML source for an assembly.
 
-        page = RegistrationPage(
-            assembly_id=assembly_id,
-            source_type=source_type,
-            thank_you_html=DEFAULT_THANK_YOU_HTML,
-            name=_validated_name(uow, assembly_id, name),
-            language=language,
-        )
-        page.record_create(user.id)
-        uow.registration_pages.add(page)
-        uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
-        uow.commit()
-        return page.create_detached_copy()
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="create registration page", required_role=_MANAGE_ROLE)
+
+    page = RegistrationPage(
+        assembly_id=assembly_id,
+        source_type=source_type,
+        thank_you_html=DEFAULT_THANK_YOU_HTML,
+        name=_validated_name(uow, assembly_id, name),
+        language=language,
+    )
+    page.record_create(user.id)
+    uow.registration_pages.add(page)
+    uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
+    return page.create_detached_copy()
 
 
 def _generated_url_slug(
@@ -246,6 +263,8 @@ def _generated_url_slug(
     their name becomes the suffix, which reads far better than the numeric
     fallback. A clash with a different assembly still falls back to the number -
     that assembly's page names mean nothing here.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     base = generate_url_slug_from_name(assembly_title)
     suffix = _slugify(language)
@@ -269,30 +288,30 @@ def create_registration_page_with_slugs(
     The url_slug combines the assembly title with a suffix identifying the page,
     then gains a numeric suffix if that is taken. The short_url_slug is a random
     6-digit number.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="create registration page", required_role=_MANAGE_ROLE)
-        validated_name = _validated_name(uow, assembly_id, name)
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="create registration page", required_role=_MANAGE_ROLE)
+    validated_name = _validated_name(uow, assembly_id, name)
 
-        url_slug = _generated_url_slug(uow, assembly.id, assembly.title, validated_name, language)
-        short_url_slug = generate_unique_short_url_slug(uow)
+    url_slug = _generated_url_slug(uow, assembly.id, assembly.title, validated_name, language)
+    short_url_slug = generate_unique_short_url_slug(uow)
 
-        page = RegistrationPage(
-            assembly_id=assembly_id,
-            source_type=RegistrationPageSource.HTML,
-            thank_you_html=DEFAULT_THANK_YOU_HTML,
-            url_slug=url_slug,
-            short_url_slug=short_url_slug,
-            name=validated_name,
-            language=language,
-        )
-        page.record_create(user.id)
-        uow.registration_pages.add(page)
-        uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
-        uow.commit()
-        return page.create_detached_copy()
+    page = RegistrationPage(
+        assembly_id=assembly_id,
+        source_type=RegistrationPageSource.HTML,
+        thank_you_html=DEFAULT_THANK_YOU_HTML,
+        url_slug=url_slug,
+        short_url_slug=short_url_slug,
+        name=validated_name,
+        language=language,
+    )
+    page.record_create(user.id)
+    uow.registration_pages.add(page)
+    uow.registration_page_html_sources.add(RegistrationPageHtml(registration_page_id=page.id))
+    return page.create_detached_copy()
 
 
 def duplicate_registration_page(
@@ -307,39 +326,42 @@ def duplicate_registration_page(
 
     The auto-reply email template is deep-copied rather than shared, so editing
     one variant's auto-reply can never rewrite another's.
-    """
-    with uow:
-        user, source = _load_manageable_page(uow, user_id, source_page_id)
-        assembly = uow.assemblies.get(source.assembly_id)
-        if assembly is None:
-            raise AssemblyNotFoundError(f"Assembly {source.assembly_id} not found")
-        validated_name = _validated_name(uow, source.assembly_id, name)
 
-        page = RegistrationPage(
-            assembly_id=source.assembly_id,
-            source_type=source.source_type,
-            thank_you_html=source.thank_you_html,
-            url_slug=_generated_url_slug(uow, assembly.id, assembly.title, validated_name, language),
-            short_url_slug=generate_unique_short_url_slug(uow),
-            name=validated_name,
-            language=language,
-            auto_reply_email_template_id=_copy_auto_reply_template(uow, source, validated_name),
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, source = _load_manageable_page(uow, user_id, source_page_id)
+    assembly = uow.assemblies.get(source.assembly_id)
+    if assembly is None:
+        raise AssemblyNotFoundError(f"Assembly {source.assembly_id} not found")
+    validated_name = _validated_name(uow, source.assembly_id, name)
+
+    page = RegistrationPage(
+        assembly_id=source.assembly_id,
+        source_type=source.source_type,
+        thank_you_html=source.thank_you_html,
+        url_slug=_generated_url_slug(uow, assembly.id, assembly.title, validated_name, language),
+        short_url_slug=generate_unique_short_url_slug(uow),
+        name=validated_name,
+        language=language,
+        auto_reply_email_template_id=_copy_auto_reply_template(uow, source, validated_name),
+    )
+    page.record_create(user.id)
+    page.activity[-1] = replace(page.activity[-1], text=f"Registration page copied from '{source.name}'")
+    uow.registration_pages.add(page)
+    uow.registration_page_html_sources.add(
+        RegistrationPageHtml(
+            registration_page_id=page.id,
+            form_html=_load_html_source(uow, source).form_html,
         )
-        page.record_create(user.id)
-        page.activity[-1] = replace(page.activity[-1], text=f"Registration page copied from '{source.name}'")
-        uow.registration_pages.add(page)
-        uow.registration_page_html_sources.add(
-            RegistrationPageHtml(
-                registration_page_id=page.id,
-                form_html=_load_html_source(uow, source).form_html,
-            )
-        )
-        uow.commit()
-        return page.create_detached_copy()
+    )
+    return page.create_detached_copy()
 
 
 def _copy_auto_reply_template(uow: AbstractUnitOfWork, source: RegistrationPage, page_name: str) -> uuid.UUID | None:
-    """Give the copy its own template row, so the two never share mutable content."""
+    """Give the copy its own template row, so the two never share mutable content.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     if source.auto_reply_email_template_id is None:
         return None
     original = uow.email_templates.get(source.auto_reply_email_template_id)
@@ -361,47 +383,53 @@ def delete_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_i
     A published page keeps its row so the slugs on invites and QR codes still
     resolve; close it instead. A page in TEST can still have collected test
     submissions, which are equally worth keeping the row for.
-    """
-    with uow:
-        _user, page = _load_manageable_page(uow, user_id, page_id)
-        if not page.can_be_deleted():
-            raise ValueError("A registration page that has been published cannot be deleted; close it instead")
-        if uow.respondents.count_by_registration_page(page.assembly_id).get(page.id):
-            raise ValueError("This registration page has registrations, so it cannot be deleted")
 
-        source = uow.registration_page_html_sources.get_by_page_id(page.id)
-        if source is not None:
-            uow.registration_page_html_sources.delete(source)
-        uow.registration_pages.delete(page)
-        uow.commit()
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _user, page = _load_manageable_page(uow, user_id, page_id)
+    if not page.can_be_deleted():
+        raise ValueError("A registration page that has been published cannot be deleted; close it instead")
+    if uow.respondents.count_by_registration_page(page.assembly_id).get(page.id):
+        raise ValueError("This registration page has registrations, so it cannot be deleted")
+
+    source = uow.registration_page_html_sources.get_by_page_id(page.id)
+    if source is not None:
+        uow.registration_page_html_sources.delete(source)
+    uow.registration_pages.delete(page)
 
 
 def list_registration_pages(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> list[RegistrationPage]:
-    """Return every registration page for an assembly, oldest first."""
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(action="view registration pages", required_role=_VIEW_ROLE)
-        return [page.create_detached_copy() for page in uow.registration_pages.list_by_assembly_id(assembly_id)]
+    """Return every registration page for an assembly, oldest first.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(action="view registration pages", required_role=_VIEW_ROLE)
+    return [page.create_detached_copy() for page in uow.registration_pages.list_by_assembly_id(assembly_id)]
 
 
 def get_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID) -> RegistrationPage:
-    """Return one registration page by its id."""
-    with uow:
-        _user, page = _load_viewable_page(uow, user_id, page_id)
-        return page.create_detached_copy()
+    """Return one registration page by its id.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _user, page = _load_viewable_page(uow, user_id, page_id)
+    return page.create_detached_copy()
 
 
 def get_registration_page_with_source(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID
 ) -> tuple[RegistrationPage, HtmlSource]:
-    """Return one page and its active HTML source."""
-    with uow:
-        _user, page = _load_viewable_page(uow, user_id, page_id)
-        source = _load_html_source(uow, page)
-        return page.create_detached_copy(), source.create_detached_copy()
+    """Return one page and its active HTML source.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _user, page = _load_viewable_page(uow, user_id, page_id)
+    source = _load_html_source(uow, page)
+    return page.create_detached_copy(), source.create_detached_copy()
 
 
 def _describe_slug_change(field: str, before: str, after: str) -> str:
@@ -445,37 +473,38 @@ def update_registration_page(
     url_slug: str | None = None,
     short_url_slug: str | None = None,
 ) -> RegistrationPage:
-    """Update the page's URL slugs. Raises if a slug is taken or the page has been published."""
+    """Update the page's URL slugs. Raises if a slug is taken or the page has been published.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     url_slug = url_slug.strip() if url_slug is not None else None
     short_url_slug = short_url_slug.strip() if short_url_slug is not None else None
-    with uow:
-        user, page = _load_manageable_page(uow, user_id, page_id)
+    user, page = _load_manageable_page(uow, user_id, page_id)
 
-        _raise_if_slug_taken(uow, page.id, url_slug=url_slug, short_url_slug=short_url_slug)
+    _raise_if_slug_taken(uow, page.id, url_slug=url_slug, short_url_slug=short_url_slug)
 
-        # Treat "value matches what's already stored" as a no-op so that callers
-        # who resubmit the current slugs alongside other edits don't get an error
-        # when slugs are frozen.
-        url_slug_changed = url_slug is not None and url_slug != page.url_slug
-        short_changed = short_url_slug is not None and short_url_slug != page.short_url_slug
-        if url_slug_changed or short_changed:
-            before_url = page.url_slug
-            before_short = page.short_url_slug
-            page.update_slugs(
-                url_slug=url_slug if url_slug_changed else None,
-                short_url_slug=short_url_slug if short_changed else None,
-            )
+    # Treat "value matches what's already stored" as a no-op so that callers
+    # who resubmit the current slugs alongside other edits don't get an error
+    # when slugs are frozen.
+    url_slug_changed = url_slug is not None and url_slug != page.url_slug
+    short_changed = short_url_slug is not None and short_url_slug != page.short_url_slug
+    if url_slug_changed or short_changed:
+        before_url = page.url_slug
+        before_short = page.short_url_slug
+        page.update_slugs(
+            url_slug=url_slug if url_slug_changed else None,
+            short_url_slug=short_url_slug if short_changed else None,
+        )
 
-            changes: list[str] = []
-            if url_slug_changed:
-                changes.append(_describe_slug_change("url_slug", before_url, page.url_slug))
-            if short_changed:
-                changes.append(_describe_slug_change("short_url_slug", before_short, page.short_url_slug))
-            if changes:
-                page.record_edit(user.id, "; ".join(changes))
+        changes: list[str] = []
+        if url_slug_changed:
+            changes.append(_describe_slug_change("url_slug", before_url, page.url_slug))
+        if short_changed:
+            changes.append(_describe_slug_change("short_url_slug", before_short, page.short_url_slug))
+        if changes:
+            page.record_edit(user.id, "; ".join(changes))
 
-        uow.commit()
-        return page.create_detached_copy()
+    return page.create_detached_copy()
 
 
 def rename_registration_page(
@@ -486,112 +515,120 @@ def rename_registration_page(
     name: str | None = None,
     language: str | None = None,
 ) -> RegistrationPage:
-    """Update the page's backoffice label and language."""
-    with uow:
-        user, page = _load_manageable_page(uow, user_id, page_id)
-        changes: list[str] = []
-        if name is not None and name.strip() != page.name:
-            cleaned = name.strip()
-            if not cleaned:
-                raise ValueError("The registration page name is required")
-            for existing in uow.registration_pages.list_by_assembly_id(page.assembly_id):
-                if existing.id != page.id and existing.name == cleaned:
-                    raise ValueError(f"This assembly already has a registration page named '{cleaned}'")
-            changes.append(f"Renamed from '{page.name}' to '{cleaned}'")
-            page.rename(cleaned)
-        if language is not None and language.strip() != page.language:
-            changes.append(f"Set language to '{language.strip()}'")
-            page.set_language(language)
-        if changes:
-            page.record_edit(user.id, "; ".join(changes))
-        uow.commit()
-        return page.create_detached_copy()
+    """Update the page's backoffice label and language.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+    changes: list[str] = []
+    if name is not None and name.strip() != page.name:
+        cleaned = name.strip()
+        if not cleaned:
+            raise ValueError("The registration page name is required")
+        for existing in uow.registration_pages.list_by_assembly_id(page.assembly_id):
+            if existing.id != page.id and existing.name == cleaned:
+                raise ValueError(f"This assembly already has a registration page named '{cleaned}'")
+        changes.append(f"Renamed from '{page.name}' to '{cleaned}'")
+        page.rename(cleaned)
+    if language is not None and language.strip() != page.language:
+        changes.append(f"Set language to '{language.strip()}'")
+        page.set_language(language)
+    if changes:
+        page.record_edit(user.id, "; ".join(changes))
+    return page.create_detached_copy()
 
 
 def set_auto_reply_template(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, template_id: uuid.UUID | None
 ) -> RegistrationPage:
-    """Assign (or clear, with None) the page's auto-reply email template."""
-    with uow:
-        _user, page = _load_manageable_page(uow, user_id, page_id)
-        page.set_auto_reply_template(template_id)
-        uow.commit()
-        return page.create_detached_copy()
+    """Assign (or clear, with None) the page's auto-reply email template.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _user, page = _load_manageable_page(uow, user_id, page_id)
+    page.set_auto_reply_template(template_id)
+    return page.create_detached_copy()
 
 
 def update_thank_you_html(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, thank_you_html: str
 ) -> RegistrationPage:
-    """Update the page's thank-you HTML. Raises ValueError if it exceeds the size limit."""
-    with uow:
-        user, page = _load_manageable_page(uow, user_id, page_id)
+    """Update the page's thank-you HTML. Raises ValueError if it exceeds the size limit.
 
-        _check_size(thank_you_html, get_registration_thank_you_html_max_bytes(), "thank-you HTML")
-        if page.thank_you_html != thank_you_html:
-            page.update_thank_you_html(thank_you_html)
-            page.record_edit(user.id, "Updated thank-you HTML")
-        uow.commit()
-        return page.create_detached_copy()
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+
+    _check_size(thank_you_html, get_registration_thank_you_html_max_bytes(), "thank-you HTML")
+    if page.thank_you_html != thank_you_html:
+        page.update_thank_you_html(thank_you_html)
+        page.record_edit(user.id, "Updated thank-you HTML")
+    return page.create_detached_copy()
 
 
 def update_registration_page_html(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, form_html: str
 ) -> RegistrationPageHtml:
-    """Update the page's form HTML. Raises ValueError if it exceeds the size limit."""
-    with uow:
-        user, page = _load_manageable_page(uow, user_id, page_id)
+    """Update the page's form HTML. Raises ValueError if it exceeds the size limit.
 
-        _check_size(form_html, get_registration_form_html_max_bytes(), "form HTML")
-        source = _load_html_source(uow, page)
-        if source.form_html != form_html:
-            source.update_html(form_html)
-            page.record_edit(user.id, "Updated form HTML")
-        uow.commit()
-        return source.create_detached_copy()
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+
+    _check_size(form_html, get_registration_form_html_max_bytes(), "form HTML")
+    source = _load_html_source(uow, page)
+    if source.form_html != form_html:
+        source.update_html(form_html)
+        page.record_edit(user.id, "Updated form HTML")
+    return source.create_detached_copy()
 
 
 def publish_registration_page(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, text: str = ""
 ) -> RegistrationPage:
-    """Publish the page. Raises RegistrationPageNotReady if it is not ready."""
-    with uow:
-        user, page = _load_manageable_page(uow, user_id, page_id)
-        page.publish(_load_html_source(uow, page), author_id=user.id, text=text)
-        uow.commit()
-        return page.create_detached_copy()
+    """Publish the page. Raises RegistrationPageNotReady if it is not ready.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+    page.publish(_load_html_source(uow, page), author_id=user.id, text=text)
+    return page.create_detached_copy()
 
 
 def unpublish_registration_page(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, text: str = ""
 ) -> RegistrationPage:
-    """Move the page back to draft. Used for 'I made a mistake, want to fix and republish'."""
-    with uow:
-        user, page = _load_manageable_page(uow, user_id, page_id)
-        page.unpublish(author_id=user.id, text=text)
-        uow.commit()
-        return page.create_detached_copy()
+    """Move the page back to draft. Used for 'I made a mistake, want to fix and republish'.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+    page.unpublish(author_id=user.id, text=text)
+    return page.create_detached_copy()
 
 
 def close_registration_page(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, text: str = ""
 ) -> RegistrationPage:
-    """Close the page (registration period over)."""
-    with uow:
-        user, page = _load_manageable_page(uow, user_id, page_id)
-        page.close(author_id=user.id, text=text)
-        uow.commit()
-        return page.create_detached_copy()
+    """Close the page (registration period over).
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+    page.close(author_id=user.id, text=text)
+    return page.create_detached_copy()
 
 
 def reopen_registration_page(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID, text: str = ""
 ) -> RegistrationPage:
-    """Reopen a closed page. Runs the same readiness check as publish."""
-    with uow:
-        user, page = _load_manageable_page(uow, user_id, page_id)
-        page.reopen(_load_html_source(uow, page), author_id=user.id, text=text)
-        uow.commit()
-        return page.create_detached_copy()
+    """Reopen a closed page. Runs the same readiness check as publish.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, page = _load_manageable_page(uow, user_id, page_id)
+    page.reopen(_load_html_source(uow, page), author_id=user.id, text=text)
+    return page.create_detached_copy()
 
 
 class BulkStatusOutcome(Enum):
@@ -663,50 +700,62 @@ def _bulk_status_change(
 
     Pages that cannot make the transition are reported rather than raised, so one
     unfinished page never stops its siblings moving. Whatever moved is committed.
-    """
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action=action, required_role=_MANAGE_ROLE)
 
-        results = [transition(uow, page, user.id) for page in uow.registration_pages.list_by_assembly_id(assembly_id)]
-        uow.commit()
-        return results
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action=action, required_role=_MANAGE_ROLE)
+
+    return [transition(uow, page, user.id) for page in uow.registration_pages.list_by_assembly_id(assembly_id)]
 
 
 def publish_all_registration_pages(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> list[BulkStatusResult]:
-    """Publish every page of an assembly that is ready to go live."""
+    """Publish every page of an assembly that is ready to go live.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     return _bulk_status_change(uow, user_id, assembly_id, "publish registration pages", _bulk_publish_one)
 
 
 def unpublish_all_registration_pages(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> list[BulkStatusResult]:
-    """Return every published page of an assembly to TEST."""
+    """Return every published page of an assembly to TEST.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     return _bulk_status_change(uow, user_id, assembly_id, "unpublish registration pages", _bulk_unpublish_one)
 
 
 def close_all_registration_pages(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> list[BulkStatusResult]:
-    """Close every published page of an assembly."""
+    """Close every published page of an assembly.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     return _bulk_status_change(uow, user_id, assembly_id, "close registration pages", _bulk_close_one)
 
 
 def find_registration_page_by_url_slug(uow: AbstractUnitOfWork, url_slug: str) -> RegistrationPage | None:
-    """Public lookup for the canonical /register/<url_slug> route. No auth."""
-    with uow:
-        page = uow.registration_pages.get_by_url_slug(url_slug)
-        return page.create_detached_copy() if page else None
+    """Public lookup for the canonical /register/<url_slug> route. No auth.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    page = uow.registration_pages.get_by_url_slug(url_slug)
+    return page.create_detached_copy() if page else None
 
 
 def find_registration_page_by_short_url_slug(uow: AbstractUnitOfWork, short_url_slug: str) -> RegistrationPage | None:
-    """Public lookup for the /r/<short_url_slug> route. No auth."""
-    with uow:
-        page = uow.registration_pages.get_by_short_url_slug(short_url_slug)
-        return page.create_detached_copy() if page else None
+    """Public lookup for the /r/<short_url_slug> route. No auth.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    page = uow.registration_pages.get_by_short_url_slug(short_url_slug)
+    return page.create_detached_copy() if page else None
 
 
 class RegistrationPageVisibilityState(Enum):
@@ -777,20 +826,21 @@ def render_registration_form(
     The request CSP nonce is deliberately absent from the RenderContext: author
     HTML must not be able to reference ``{{ csp_nonce }}`` to whitelist its own
     inline JavaScript past the Content-Security-Policy.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        source = _load_html_source(uow, page)
-        assembly = uow.assemblies.get(page.assembly_id)
-        ctx = RenderContext(
-            csrf_form_element=csrf_form_element,
-            form_action=form_action,
-            assembly_title=assembly.title if assembly else "",
-            assembly_question=assembly.question if assembly else "",
-            values=values or {},
-            errors=errors or {},
-            form_level_errors=form_level_errors or [],
-        )
-        return source.render(ctx)
+    source = _load_html_source(uow, page)
+    assembly = uow.assemblies.get(page.assembly_id)
+    ctx = RenderContext(
+        csrf_form_element=csrf_form_element,
+        form_action=form_action,
+        assembly_title=assembly.title if assembly else "",
+        assembly_question=assembly.question if assembly else "",
+        values=values or {},
+        errors=errors or {},
+        form_level_errors=form_level_errors or [],
+    )
+    return source.render(ctx)
 
 
 def render_thank_you_html(page: RegistrationPage) -> str:
@@ -799,13 +849,15 @@ def render_thank_you_html(page: RegistrationPage) -> str:
 
 
 def generate_starter_form_html(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:
-    """Generate an unstyled starter HTML form from the assembly's respondent field schema."""
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
-        fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-        return _build_starter_html(list(fields))
+    """Generate an unstyled starter HTML form from the assembly's respondent field schema.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
+    fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+    return _build_starter_html(list(fields))
 
 
 @dataclass(frozen=True)
@@ -817,10 +869,12 @@ class StarterFormHtmlVariants:
 def generate_starter_form_html_variants(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> StarterFormHtmlVariants:
-    """Generate both the unstyled and GOV.UK-styled starter HTML forms from the assembly's respondent field schema."""
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
-        fields = list(uow.respondent_field_definitions.list_by_assembly(assembly_id))
-        return StarterFormHtmlVariants(plain=_build_starter_html(fields), govuk=_build_starter_html_govuk(fields))
+    """Generate both the unstyled and GOV.UK-styled starter HTML forms from the assembly's respondent field schema.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="generate starter HTML", required_role=_MANAGE_ROLE)
+    fields = list(uow.respondent_field_definitions.list_by_assembly(assembly_id))
+    return StarterFormHtmlVariants(plain=_build_starter_html(fields), govuk=_build_starter_html_govuk(fields))

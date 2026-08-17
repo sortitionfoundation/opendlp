@@ -27,7 +27,7 @@ from opendlp.service_layer.assembly_service import (
     remove_assembly_gsheet,
     update_assembly_gsheet,
 )
-from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
+from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_service import count_non_pool_respondents
 from opendlp.service_layer.sortition import (
@@ -223,27 +223,18 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Reuse the same UnitOfWork for the remaining sequential reads.
         # Check if gsheet is configured
         gsheet = None
-        try:
-            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-        except Exception as gsheet_error:
-            logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
+        with uow:
+            try:
+                gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            except ServiceLayerError as gsheet_error:
+                logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
 
         # Fetch paginated selection history
-        run_history: list = []
-        total_count = 0
-        total_pages = 0
-        try:
-            with uow:
-                run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
-                    assembly_id, page, per_page
-                )
-                total_pages = (total_count + per_page - 1) // per_page
-        except Exception as history_error:
-            logger.error(
-                "Error loading selection history for assembly",
-                assembly_id=str(assembly_id),
-                error=str(history_error),
+        with uow:
+            run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
+                assembly_id, page, per_page
             )
+            total_pages = (total_count + per_page - 1) // per_page
 
         replacement_modal_open = request.args.get("replacement_modal") == "open" or current_replacement is not None
         edit_number_modal_open = request.args.get("edit_number") == "1"
@@ -251,7 +242,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # Get CSV status for tab enabled states
         csv_status = None
         # No CSV data is expected for new assemblies.
-        with contextlib.suppress(Exception):
+        with uow, contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
         # Determine data source and tab enabled states
@@ -272,7 +263,7 @@ def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             try:
                 with uow:
                     csv_selected_count = count_non_pool_respondents(uow, assembly_id)
-            except Exception as count_error:
+            except ServiceLayerError as count_error:
                 logger.error("Error counting non-pool respondents", error=str(count_error))
         else:
             data_source = ""
@@ -962,13 +953,15 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Save Google Spreadsheet configuration for an assembly."""
     try:
         uow = bootstrap.get_flask_uow()
-        existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+        with uow:
+            existing_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
         is_update = existing_gsheet is not None
         form = EditAssemblyGSheetForm() if is_update else CreateAssemblyGSheetForm()
 
         if form.validate_on_submit():
             try:
-                return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
+                with uow:
+                    return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
             except InsufficientPermissions as e:
                 logger.warning("Insufficient permissions for gsheet save", error=str(e))
                 flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
@@ -982,12 +975,12 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         # Form validation failed or service error - re-render the page with errors.
         # Reuse the UnitOfWork from the lookup above.
+        sel_settings = None
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-        sel_settings = None
-        # selection_settings is optional for the form re-render.
-        with contextlib.suppress(Exception):
-            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
+            # selection_settings is optional for the form re-render.
+            with contextlib.suppress(ServiceLayerError):
+                sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
 
         return render_template(
             "backoffice/assembly_data.html",
@@ -1023,7 +1016,8 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Delete Google Spreadsheet configuration for an assembly."""
     try:
         uow = bootstrap.get_flask_uow()
-        remove_assembly_gsheet(uow, assembly_id, current_user.id)
+        with uow:
+            remove_assembly_gsheet(uow, assembly_id, current_user.id)
         flash(_("Google Spreadsheet configuration removed successfully"), "success")
         # Redirect without source param - selector will be unlocked allowing user to choose again
         return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))

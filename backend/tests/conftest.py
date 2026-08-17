@@ -25,6 +25,8 @@ from opendlp.config import PostgresCfg, RedisCfg, get_api_url
 from opendlp.feature_flags import reload_flags
 from opendlp.logging import pre_chain
 from opendlp.service_layer import security, totp_service
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.fakes import FakeUnitOfWork
 
 # the plugins have to be defined at the top level, even though they only apply to the BDD tests.
 # https://daobook.github.io/pytest/how-to/writing_plugins.html#requiring-loading-plugins-in-a-test-module-or-conftest-file
@@ -180,6 +182,12 @@ def cli_with_session_factory(postgres_session_factory):
     return _invoke_cli_with_context
 
 
+#: How long a test-database statement waits for a lock before giving up. Long
+#: enough that a slow-but-healthy statement is unaffected, short enough that a
+#: deadlocked run fails while you are still watching it.
+LOCK_TIMEOUT_MS = 30_000
+
+
 def _get_worker_db_name(worker_id: str) -> str:
     """Return a database name unique to each xdist worker."""
     if worker_id == "master":
@@ -251,6 +259,11 @@ def postgres_engine(_worker_database):
         isolation_level="SERIALIZABLE",
         pool_size=2,
         max_overflow=3,
+        # A session leaked by the code under test sits `idle in transaction`
+        # holding row/table locks. Without a timeout, anything needing a
+        # conflicting lock (notably DROP TABLE at teardown) waits forever and
+        # pytest hangs with no output. Fail loudly instead.
+        connect_args={"options": f"-c lock_timeout={LOCK_TIMEOUT_MS}"},
     )
     wait_for_postgres_to_come_up(engine)
 
@@ -260,13 +273,18 @@ def postgres_engine(_worker_database):
 
 
 @pytest.fixture(scope="session")
-def _postgres_tables(postgres_engine):
+def _postgres_tables(postgres_engine, worker_id):
     """Create tables once for the entire test session."""
     orm.metadata.create_all(postgres_engine)
     database.start_mappers()
     yield
     database.clear_mappers()
-    orm.metadata.drop_all(postgres_engine)
+    if worker_id == "master":
+        orm.metadata.drop_all(postgres_engine)
+    # Under xdist each worker owns a whole database that `_worker_database`
+    # drops next, after terminating any backend still connected to it. Dropping
+    # the tables first is redundant, and it blocks on locks that the wholesale
+    # DROP DATABASE does not have to wait for.
 
 
 def _delete_all_test_data(session_factory):
@@ -325,6 +343,28 @@ def postgres_session(postgres_session_factory):
 
     session.rollback()
     session.close()
+
+
+@pytest.fixture
+def uow():
+    """An already-entered fake UnitOfWork, so tests need no `with` block of their own.
+
+    Strict, so a test cannot pass by using repositories outside the context. Use
+    the `fake_<name>` aliases to arrange or inspect data outside it.
+    """
+    with FakeUnitOfWork() as entered:
+        yield entered
+
+
+@pytest.fixture
+def sql_uow(postgres_session_factory):
+    """An already-entered SqlAlchemyUnitOfWork, for tests that need only one context.
+
+    A test proving that committed data is visible to a *fresh* session must
+    build its own second UnitOfWork - this fixture cannot show that.
+    """
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as entered:
+        yield entered
 
 
 @pytest.fixture

@@ -47,37 +47,37 @@ def request_password_reset(
 
     Raises:
         RateLimitExceeded: If user has exceeded rate limits
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        # Look up user by email
-        user = uow.users.get_by_email(email)
+    # Look up user by email
+    user = uow.users.get_by_email(email)
 
-        # If user doesn't exist, return success (anti-enumeration)
-        if not user:
-            return True
-
-        # If user is OAuth-based, return success without creating token
-        if user.oauth_provider:
-            return True
-
-        # If user is inactive, return success without creating token
-        if not user.is_active:
-            return True
-
-        # Check rate limiting
-        check_rate_limit(uow, user.id)
-
-        # Create reset token
-        token = PasswordResetToken(
-            user_id=user.id,
-            expires_in_hours=expires_in_hours,
-        )
-
-        uow.password_reset_tokens.add(token)
-        uow.commit()
-
-        # Return True - email sending happens in the caller
+    # If user doesn't exist, return success (anti-enumeration)
+    if not user:
         return True
+
+    # If user is OAuth-based, return success without creating token
+    if user.oauth_provider:
+        return True
+
+    # If user is inactive, return success without creating token
+    if not user.is_active:
+        return True
+
+    # Check rate limiting
+    check_rate_limit(uow, user.id)
+
+    # Create reset token
+    token = PasswordResetToken(
+        user_id=user.id,
+        expires_in_hours=expires_in_hours,
+    )
+
+    uow.password_reset_tokens.add(token)
+
+    # Return True - email sending happens in the caller
+    return True
 
 
 def check_rate_limit(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> None:
@@ -90,6 +90,8 @@ def check_rate_limit(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> None:
 
     Raises:
         RateLimitExceeded: If user has exceeded rate limits
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Note: This function is called from within a UnitOfWork context,
     # so we don't need another `with uow:` block
@@ -120,25 +122,26 @@ def validate_reset_token(uow: AbstractUnitOfWork, token_string: str) -> Password
 
     Raises:
         InvalidResetToken: If token is invalid, expired, or used
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        token = uow.password_reset_tokens.get_by_token(token_string)
+    token = uow.password_reset_tokens.get_by_token(token_string)
 
-        if not token:
-            raise InvalidResetToken("Token not found")
+    if not token:
+        raise InvalidResetToken("Token not found")
 
-        if token.is_expired():
-            raise InvalidResetToken("Token has expired")
+    if token.is_expired():
+        raise InvalidResetToken("Token has expired")
 
-        if token.is_used():
-            raise InvalidResetToken("Token has already been used")
+    if token.is_used():
+        raise InvalidResetToken("Token has already been used")
 
-        # Verify associated user still exists and is active
-        user = uow.users.get(token.user_id)
-        if not user or not user.is_active:
-            raise InvalidResetToken("Associated user not found or inactive")
+    # Verify associated user still exists and is active
+    user = uow.users.get(token.user_id)
+    if not user or not user.is_active:
+        raise InvalidResetToken("Associated user not found or inactive")
 
-        return token.create_detached_copy()
+    return token.create_detached_copy()
 
 
 def reset_password_with_token(
@@ -160,53 +163,53 @@ def reset_password_with_token(
     Raises:
         InvalidResetToken: If token is invalid
         PasswordTooWeak: If password doesn't meet requirements
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        # Validate token
-        token = uow.password_reset_tokens.get_by_token(token_string)
+    # Validate token
+    token = uow.password_reset_tokens.get_by_token(token_string)
 
-        if not token:
-            raise InvalidResetToken("Token not found")
+    if not token:
+        raise InvalidResetToken("Token not found")
 
-        if not token.is_valid():
-            if token.is_expired():
-                raise InvalidResetToken("Token has expired")
-            if token.is_used():
-                raise InvalidResetToken("Token has already been used")
-            raise InvalidResetToken("Token is invalid")
+    if not token.is_valid():
+        if token.is_expired():
+            raise InvalidResetToken("Token has expired")
+        if token.is_used():
+            raise InvalidResetToken("Token has already been used")
+        raise InvalidResetToken("Token is invalid")
 
-        # Get user
-        user = uow.users.get(token.user_id)
-        if not user:
-            raise InvalidResetToken("Associated user not found")
+    # Get user
+    user = uow.users.get(token.user_id)
+    if not user:
+        raise InvalidResetToken("Associated user not found")
 
-        if not user.is_active:
-            raise InvalidResetToken("User account is inactive")
+    if not user.is_active:
+        raise InvalidResetToken("User account is inactive")
 
-        # Validate new password strength
-        temp_user = TempUser(
-            email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-        )
-        is_valid, error_msg = validate_password_strength(new_password, temp_user)
-        if not is_valid:
-            raise PasswordTooWeak(error_msg)
+    # Validate new password strength
+    temp_user = TempUser(
+        email=user.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
+    )
+    is_valid, error_msg = validate_password_strength(new_password, temp_user)
+    if not is_valid:
+        raise PasswordTooWeak(error_msg)
 
-        # Update password
-        user.password_hash = hash_password(new_password)
+    # Update password
+    user.password_hash = hash_password(new_password)
 
-        # Mark token as used
-        token.use()
+    # Mark token as used
+    token.use()
 
-        # Invalidate all other tokens for this user
-        invalidate_user_tokens(uow, user.id)
+    # Invalidate all other tokens for this user
+    invalidate_user_tokens(uow, user.id)
 
-        detached_user = user.create_detached_copy()
-        uow.commit()
-        assert isinstance(detached_user, User)
+    detached_user = user.create_detached_copy()
+    assert isinstance(detached_user, User)
 
-        return detached_user
+    return detached_user
 
 
 def invalidate_user_tokens(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> int:
@@ -222,6 +225,8 @@ def invalidate_user_tokens(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> int:
 
     Returns:
         Number of tokens invalidated
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Note: This function is called from within a UnitOfWork context,
     # so we don't need another `with uow:` block
@@ -238,10 +243,11 @@ def get_token_by_string(uow: AbstractUnitOfWork, token_string: str) -> PasswordR
 
     Returns:
         PasswordResetToken if found, None otherwise
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        token = uow.password_reset_tokens.get_by_token(token_string)
-        return token.create_detached_copy() if token else None
+    token = uow.password_reset_tokens.get_by_token(token_string)
+    return token.create_detached_copy() if token else None
 
 
 def cleanup_expired_tokens(uow: AbstractUnitOfWork, days_old: int = 30) -> int:
@@ -257,12 +263,11 @@ def cleanup_expired_tokens(uow: AbstractUnitOfWork, days_old: int = 30) -> int:
 
     Returns:
         Number of tokens deleted
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        before = datetime.now(UTC) - timedelta(days=days_old)
-        count = uow.password_reset_tokens.delete_old_tokens(before)
-        uow.commit()
-        return count
+    before = datetime.now(UTC) - timedelta(days=days_old)
+    return uow.password_reset_tokens.delete_old_tokens(before)
 
 
 def send_password_reset_email(

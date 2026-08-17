@@ -20,7 +20,6 @@ from opendlp.service_layer.permissions import (
     require_assembly_permission,
     require_global_role,
 )
-from tests.fakes import FakeUnitOfWork
 
 
 class TestCanManageAssembly:
@@ -419,9 +418,8 @@ class TestRequireGlobalRoleDecorator:
 class TestRequireAssemblyPermissionDecorator:
     """Test assembly permission requirement decorator."""
 
-    def test_require_assembly_permission_success(self):
+    def test_require_assembly_permission_success(self, uow):
         """Test decorator allows access with sufficient permission."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -441,9 +439,8 @@ class TestRequireAssemblyPermissionDecorator:
         result = test_function(uow, admin_user.id, assembly.id, "test_data")
         assert result == "success with test_data"
 
-    def test_require_assembly_permission_failure(self):
+    def test_require_assembly_permission_failure(self, uow):
         """Test decorator blocks access with insufficient permission."""
-        uow = FakeUnitOfWork()
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
@@ -463,9 +460,8 @@ class TestRequireAssemblyPermissionDecorator:
         with pytest.raises(InsufficientPermissions):
             test_function(uow, regular_user.id, assembly.id, "test_data")
 
-    def test_require_assembly_permission_user_not_found(self):
+    def test_require_assembly_permission_user_not_found(self, uow):
         """Test decorator handles user not found."""
-        uow = FakeUnitOfWork()
         future_date = date.today() + timedelta(days=30)
         assembly = Assembly(
             title="Test Assembly",
@@ -483,9 +479,8 @@ class TestRequireAssemblyPermissionDecorator:
             test_function(uow, uuid.uuid4(), assembly.id, "test_data")
         assert "User" in str(exc_info.value) and "not found" in str(exc_info.value)
 
-    def test_require_assembly_permission_assembly_not_found(self):
+    def test_require_assembly_permission_assembly_not_found(self, uow):
         """Test decorator handles assembly not found."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -498,9 +493,8 @@ class TestRequireAssemblyPermissionDecorator:
             test_function(uow, admin_user.id, uuid.uuid4(), "test_data")
         assert "Assembly" in str(exc_info.value) and "not found" in str(exc_info.value)
 
-    def test_require_assembly_permission_different_permission_functions(self):
+    def test_require_assembly_permission_different_permission_functions(self, uow):
         """Test decorator works with different permission functions."""
-        uow = FakeUnitOfWork()
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 

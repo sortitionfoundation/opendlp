@@ -74,69 +74,69 @@ def create_user(
         UserAlreadyExists: If email already exists
         InvalidInvite: If invite code is invalid/expired/used
         ValueError: If password validation fails
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     if global_role and invite_code:
         raise ServiceLayerError("create_user: Cannot have both invite_code and global_role")
     if not global_role and not invite_code:
         raise ServiceLayerError("create_user: Need either invite_code or global_role")
-    with uow:
-        # Check for existing users
-        existing_user = uow.users.get_by_email(email)
-        if existing_user:
-            raise UserAlreadyExists(email=email)
+    # Check for existing users
+    existing_user = uow.users.get_by_email(email)
+    if existing_user:
+        raise UserAlreadyExists(email=email)
 
-        # temporary user to pass to password validation
-        temp_user = TempUser(email=email, first_name=first_name, last_name=last_name)
+    # temporary user to pass to password validation
+    temp_user = TempUser(email=email, first_name=first_name, last_name=last_name)
 
-        # Handle password validation and hashing
-        password_hash = None
-        if password:
-            is_valid, error_msg = validate_password_strength(password, temp_user)
-            if not is_valid:
-                raise PasswordTooWeak(error_msg)
-            password_hash = hash_password(password)
+    # Handle password validation and hashing
+    password_hash = None
+    if password:
+        is_valid, error_msg = validate_password_strength(password, temp_user)
+        if not is_valid:
+            raise PasswordTooWeak(error_msg)
+        password_hash = hash_password(password)
 
-        # Validate invite code (but don't mark as used yet)
-        # Do this AFTER checking the password, so the invite validation happens
-        # before creating the user, but we mark it as used only after user creation succeeds.
-        user_role = validate_invite(uow, invite_code) if invite_code else global_role
-        assert isinstance(user_role, GlobalRole)
+    # Validate invite code (but don't mark as used yet)
+    # Do this AFTER checking the password, so the invite validation happens
+    # before creating the user, but we mark it as used only after user creation succeeds.
+    user_role = validate_invite(uow, invite_code) if invite_code else global_role
+    assert isinstance(user_role, GlobalRole)
 
-        # Create the user
-        # OAuth users and CLI-created users are auto-confirmed
-        email_confirmed_at = datetime.now(UTC) if (oauth_provider or auto_confirm_email) else None
+    # Create the user
+    # OAuth users and CLI-created users are auto-confirmed
+    email_confirmed_at = datetime.now(UTC) if (oauth_provider or auto_confirm_email) else None
 
-        user = User(
-            email=email,
-            global_role=user_role,
-            first_name=first_name,
-            last_name=last_name,
-            password_hash=password_hash,
-            oauth_provider=oauth_provider,
-            oauth_id=oauth_id,
-            is_active=is_active,
-            email_confirmed_at=email_confirmed_at,
-        )
+    user = User(
+        email=email,
+        global_role=user_role,
+        first_name=first_name,
+        last_name=last_name,
+        password_hash=password_hash,
+        oauth_provider=oauth_provider,
+        oauth_id=oauth_id,
+        is_active=is_active,
+        email_confirmed_at=email_confirmed_at,
+    )
 
-        # Mark data agreement as accepted if provided
-        if accept_data_agreement:
-            user.mark_data_agreement_agreed()
+    # Mark data agreement as accepted if provided
+    if accept_data_agreement:
+        user.mark_data_agreement_agreed()
 
-        uow.users.add(user)
+    uow.users.add(user)
 
-        # Mark invite as used now that user creation succeeded
-        if invite_code:
-            use_invite(uow, invite_code, user.id)
+    # Mark invite as used now that user creation succeeded
+    if invite_code:
+        use_invite(uow, invite_code, user.id)
 
-        # Create confirmation token for password users who need email confirmation
-        token = None
-        if password and not oauth_provider and not auto_confirm_email:
-            token = create_confirmation_token(uow, user.id)
+    # Create confirmation token for password users who need email confirmation
+    token = None
+    if password and not oauth_provider and not auto_confirm_email:
+        token = create_confirmation_token(uow, user.id)
 
-        detached_user = user.create_detached_copy()
-        detached_token = token.create_detached_copy() if token else None
-        uow.commit()
-        return detached_user, detached_token
+    detached_user = user.create_detached_copy()
+    detached_token = token.create_detached_copy() if token else None
+    return detached_user, detached_token
 
 
 def authenticate_user(uow: AbstractUnitOfWork, email: str, password: str) -> User:
@@ -154,36 +154,39 @@ def authenticate_user(uow: AbstractUnitOfWork, email: str, password: str) -> Use
     Raises:
         InvalidCredentials: If authentication fails
         EmailNotConfirmed: If email is not confirmed
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get_by_email(email)
+    user = uow.users.get_by_email(email)
 
-        if not user or not user.is_active:
-            raise InvalidCredentials()
+    if not user or not user.is_active:
+        raise InvalidCredentials()
 
-        if not user.password_hash or not verify_password(password, user.password_hash):
-            raise InvalidCredentials()
+    if not user.password_hash or not verify_password(password, user.password_hash):
+        raise InvalidCredentials()
 
-        # Check email confirmation for password users
-        if not user.email_confirmed_at:
-            raise EmailNotConfirmed()
+    # Check email confirmation for password users
+    if not user.email_confirmed_at:
+        raise EmailNotConfirmed()
 
-        return user.create_detached_copy()
+    return user.create_detached_copy()
 
 
 def get_user_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> list[Assembly]:
-    """Get all assemblies a user has access to."""
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    """Get all assemblies a user has access to.
 
-        # Global admins and organisers can see all assemblies
-        if user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
-            return list(uow.assemblies.get_active_assemblies())
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        # Regular users see only assemblies they have specific roles for
-        return list(uow.assemblies.get_assemblies_for_user(user_id))
+    # Global admins and organisers can see all assemblies
+    if user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
+        return list(uow.assemblies.get_active_assemblies())
+
+    # Regular users see only assemblies they have specific roles for
+    return list(uow.assemblies.get_assemblies_for_user(user_id))
 
 
 def assign_assembly_role(
@@ -203,37 +206,37 @@ def assign_assembly_role(
 
     Returns:
         Created UserAssemblyRole instance
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # TODO: consider if we want a user to have multiple roles
     # Maybe we need to have two roles where one is not a superset of the other?
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Check if role already exists
-        existing_role = next((r for r in user.assembly_roles if r.assembly_id == assembly_id), None)
+    # Check if role already exists
+    existing_role = next((r for r in user.assembly_roles if r.assembly_id == assembly_id), None)
 
-        if existing_role:
-            # Update existing role
-            assert isinstance(existing_role, UserAssemblyRole)
-            existing_role.role = role
-            assembly_role = existing_role
-        else:
-            # Create new role
-            assembly_role = UserAssemblyRole(
-                user_id=user_id,
-                assembly_id=assembly_id,
-                role=role,
-            )
-            user.assembly_roles.append(assembly_role)
+    if existing_role:
+        # Update existing role
+        assert isinstance(existing_role, UserAssemblyRole)
+        existing_role.role = role
+        assembly_role = existing_role
+    else:
+        # Create new role
+        assembly_role = UserAssemblyRole(
+            user_id=user_id,
+            assembly_id=assembly_id,
+            role=role,
+        )
+        user.assembly_roles.append(assembly_role)
 
-        uow.commit()
-        return assembly_role
+    return assembly_role
 
 
 def validate_invite(uow: AbstractUnitOfWork, invite_code: str) -> GlobalRole:
@@ -249,6 +252,8 @@ def validate_invite(uow: AbstractUnitOfWork, invite_code: str) -> GlobalRole:
 
     Raises:
         InvalidInvite: If invite is invalid, expired, or already used
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Note this is called from create_user() inside a `with uow:` block
     # so we don't need a `with uow:` block in this function.
@@ -276,6 +281,8 @@ def use_invite(uow: AbstractUnitOfWork, invite_code: str, user_id: uuid.UUID) ->
     Raises:
         InvalidInvite: If invite is not found
         ValueError: If invite is already used or invalid
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Note this is called from create_user() inside a `with uow:` block
     # so we don't need a `with uow:` block in this function.
@@ -302,6 +309,8 @@ def validate_and_use_invite(uow: AbstractUnitOfWork, invite_code: str, user_id: 
 
     Raises:
         InvalidInvite: If invite is invalid, expired, or already used
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     role = validate_invite(uow, invite_code)
     if user_id:
@@ -342,40 +351,41 @@ def find_or_create_oauth_user(
 
     Raises:
         InvalidInvite: If invite code is invalid/expired when creating new user
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        # Check for existing OAuth user
-        existing_user = uow.users.get_by_oauth_credentials(provider, oauth_id)
-        if existing_user:
-            return existing_user.create_detached_copy(), False
+    # Check for existing OAuth user
+    existing_user = uow.users.get_by_oauth_credentials(provider, oauth_id)
+    if existing_user:
+        return existing_user.create_detached_copy(), False
 
-        # Check for existing user with same email (account linking)
-        existing_user = uow.users.get_by_email(email)
-        if existing_user:
-            # Link OAuth to existing account and auto-confirm email
-            existing_user.add_oauth_credentials(provider, oauth_id)
-            if not existing_user.email_confirmed_at:
-                existing_user.confirm_email()
-            detached_user = existing_user.create_detached_copy()
-            uow.commit()
-            return detached_user, False
+    # Check for existing user with same email (account linking)
+    existing_user = uow.users.get_by_email(email)
+    if existing_user:
+        # Link OAuth to existing account and auto-confirm email
+        existing_user.add_oauth_credentials(provider, oauth_id)
+        if not existing_user.email_confirmed_at:
+            existing_user.confirm_email()
+        detached_user = existing_user.create_detached_copy()
+        uow.commit()
+        return detached_user, False
 
-        # Create new user - invite code required
-        if not invite_code:
-            raise InvalidInvite(reason="Invite code required for new user registration")
+    # Create new user - invite code required
+    if not invite_code:
+        raise InvalidInvite(reason="Invite code required for new user registration")
 
-        user, _token = create_user(
-            uow=uow,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            oauth_provider=provider,
-            oauth_id=oauth_id,
-            invite_code=invite_code,
-            accept_data_agreement=accept_data_agreement,
-        )
-        # Token will be None for OAuth users (they're auto-confirmed)
-        return user, True
+    user, _token = create_user(
+        uow=uow,
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        oauth_provider=provider,
+        oauth_id=oauth_id,
+        invite_code=invite_code,
+        accept_data_agreement=accept_data_agreement,
+    )
+    # Token will be None for OAuth users (they're auto-confirmed)
+    return user, True
 
 
 def list_users_paginated(
@@ -405,31 +415,32 @@ def list_users_paginated(
     Raises:
         UserNotFoundError: If admin user not found
         InsufficientPermissions: If user is not admin
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        admin_user = uow.users.get(admin_user_id)
-        if not admin_user:
-            raise UserNotFoundError(f"User {admin_user_id} not found")
+    admin_user = uow.users.get(admin_user_id)
+    if not admin_user:
+        raise UserNotFoundError(f"User {admin_user_id} not found")
 
-        if not has_global_admin(admin_user):
-            raise InsufficientPermissions("Only admins can list all users")
+    if not has_global_admin(admin_user):
+        raise InsufficientPermissions("Only admins can list all users")
 
-        # Calculate offset
-        offset = (page - 1) * per_page
+    # Calculate offset
+    offset = (page - 1) * per_page
 
-        # Get paginated users
-        users, total_count = uow.users.filter_paginated(
-            role=role_filter,
-            active=active_filter,
-            search=search_term,
-            limit=per_page,
-            offset=offset,
-        )
+    # Get paginated users
+    users, total_count = uow.users.filter_paginated(
+        role=role_filter,
+        active=active_filter,
+        search=search_term,
+        limit=per_page,
+        offset=offset,
+    )
 
-        # Calculate total pages
-        total_pages = (total_count + per_page - 1) // per_page
+    # Calculate total pages
+    total_pages = (total_count + per_page - 1) // per_page
 
-        return [user.create_detached_copy() for user in users], total_count, total_pages
+    return [user.create_detached_copy() for user in users], total_count, total_pages
 
 
 def get_user_by_id(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> User:
@@ -447,21 +458,22 @@ def get_user_by_id(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: u
     Raises:
         UserNotFoundError: If user not found
         InsufficientPermissions: If requesting user is not admin
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        admin_user = uow.users.get(admin_user_id)
-        if not admin_user:
-            raise UserNotFoundError(f"Admin user {admin_user_id} not found")
+    admin_user = uow.users.get(admin_user_id)
+    if not admin_user:
+        raise UserNotFoundError(f"Admin user {admin_user_id} not found")
 
-        if not has_global_admin(admin_user):
-            raise InsufficientPermissions("Only admins can view user details")
+    if not has_global_admin(admin_user):
+        raise InsufficientPermissions("Only admins can view user details")
 
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assert isinstance(user, User)
-        return user.create_detached_copy()
+    assert isinstance(user, User)
+    return user.create_detached_copy()
 
 
 def update_user(
@@ -492,41 +504,40 @@ def update_user(
         UserNotFoundError: If user not found or invalid update
         InsufficientPermissions: If requesting user is not admin
         ValueError: If operation is not allowed on self
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        admin_user = uow.users.get(admin_user_id)
-        if not admin_user:
-            raise UserNotFoundError(f"Admin user {admin_user_id} not found")
+    admin_user = uow.users.get(admin_user_id)
+    if not admin_user:
+        raise UserNotFoundError(f"Admin user {admin_user_id} not found")
 
-        if not has_global_admin(admin_user):
-            raise InsufficientPermissions("Only admins can update users")
+    if not has_global_admin(admin_user):
+        raise InsufficientPermissions("Only admins can update users")
 
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
-        assert isinstance(user, User)
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+    assert isinstance(user, User)
 
-        # Prevent admin from changing their own role (avoid lockout)
-        if user_id == admin_user_id and global_role is not None and global_role != user.global_role:
-            raise ValueError("Cannot change your own admin role")
+    # Prevent admin from changing their own role (avoid lockout)
+    if user_id == admin_user_id and global_role is not None and global_role != user.global_role:
+        raise ValueError("Cannot change your own admin role")
 
-        # Prevent admin from deactivating themselves
-        if user_id == admin_user_id and is_active is False:
-            raise ValueError("Cannot deactivate your own account")
+    # Prevent admin from deactivating themselves
+    if user_id == admin_user_id and is_active is False:
+        raise ValueError("Cannot deactivate your own account")
 
-        # Apply updates
-        if first_name is not None:
-            user.first_name = first_name
-        if last_name is not None:
-            user.last_name = last_name
-        if global_role is not None:
-            user.global_role = global_role
-        if is_active is not None:
-            user.is_active = is_active
+    # Apply updates
+    if first_name is not None:
+        user.first_name = first_name
+    if last_name is not None:
+        user.last_name = last_name
+    if global_role is not None:
+        user.global_role = global_role
+    if is_active is not None:
+        user.is_active = is_active
 
-        detached_user = user.create_detached_copy()
-        uow.commit()
-        return detached_user
+    return user.create_detached_copy()
 
 
 def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[str, int]:
@@ -543,31 +554,32 @@ def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[st
     Raises:
         UserNotFoundError: If admin user not found
         InsufficientPermissions: If requesting user is not admin
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        admin_user = uow.users.get(admin_user_id)
-        if not admin_user:
-            raise UserNotFoundError(f"Admin user {admin_user_id} not found")
+    admin_user = uow.users.get(admin_user_id)
+    if not admin_user:
+        raise UserNotFoundError(f"Admin user {admin_user_id} not found")
 
-        if not has_global_admin(admin_user):
-            raise InsufficientPermissions("Only admins can view user statistics")
+    if not has_global_admin(admin_user):
+        raise InsufficientPermissions("Only admins can view user statistics")
 
-        all_users = list(uow.users.all())
+    all_users = list(uow.users.all())
 
-        # Count password-based users (not OAuth) for 2FA statistics
-        password_users = [u for u in all_users if not u.oauth_provider]
-        users_with_2fa = [u for u in password_users if u.totp_enabled]
+    # Count password-based users (not OAuth) for 2FA statistics
+    password_users = [u for u in all_users if not u.oauth_provider]
+    users_with_2fa = [u for u in password_users if u.totp_enabled]
 
-        return {
-            "total_users": len(all_users),
-            "active_users": len([u for u in all_users if u.is_active]),
-            "inactive_users": len([u for u in all_users if not u.is_active]),
-            "admin_users": len([u for u in all_users if u.global_role == GlobalRole.ADMIN]),
-            "organiser_users": len([u for u in all_users if u.global_role == GlobalRole.GLOBAL_ORGANISER]),
-            "password_users": len(password_users),
-            "users_with_2fa": len(users_with_2fa),
-            "regular_users": len([u for u in all_users if u.global_role == GlobalRole.USER]),
-        }
+    return {
+        "total_users": len(all_users),
+        "active_users": len([u for u in all_users if u.is_active]),
+        "inactive_users": len([u for u in all_users if not u.is_active]),
+        "admin_users": len([u for u in all_users if u.global_role == GlobalRole.ADMIN]),
+        "organiser_users": len([u for u in all_users if u.global_role == GlobalRole.GLOBAL_ORGANISER]),
+        "password_users": len(password_users),
+        "users_with_2fa": len(users_with_2fa),
+        "regular_users": len([u for u in all_users if u.global_role == GlobalRole.USER]),
+    }
 
 
 def grant_user_assembly_role(
@@ -600,69 +612,69 @@ def grant_user_assembly_role(
         InsufficientPermissions: If current_user lacks permission to grant roles
         UserNotFoundError: If user not found
         AssemblyNotFoundError: If assembly not found
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        # Check permissions: must be admin or global organiser or assembly manager
-        if not has_global_admin(current_user):
-            # Load the assembly to check if user can manage it
-            assembly = uow.assemblies.get(assembly_id)
-            if not assembly:
-                raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
-
-            if not can_manage_assembly(current_user, assembly):
-                raise InsufficientPermissions(
-                    action="grant_user_assembly_role",
-                    required_role="admin, global-organiser, or assembly manager",
-                )
-
-        # Validate target user exists
-        target_user = uow.users.get(user_id)
-        if not target_user:
-            raise UserNotFoundError(f"User {user_id} not found")
-
-        # Validate assembly exists
+    # Check permissions: must be admin or global organiser or assembly manager
+    if not has_global_admin(current_user):
+        # Load the assembly to check if user can manage it
         assembly = uow.assemblies.get(assembly_id)
         if not assembly:
             raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Check if role already exists
-        existing_role = next(
-            (r for r in target_user.assembly_roles if r.assembly_id == assembly_id),
-            None,
+        if not can_manage_assembly(current_user, assembly):
+            raise InsufficientPermissions(
+                action="grant_user_assembly_role",
+                required_role="admin, global-organiser, or assembly manager",
+            )
+
+    # Validate target user exists
+    target_user = uow.users.get(user_id)
+    if not target_user:
+        raise UserNotFoundError(f"User {user_id} not found")
+
+    # Validate assembly exists
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+    # Check if role already exists
+    existing_role = next(
+        (r for r in target_user.assembly_roles if r.assembly_id == assembly_id),
+        None,
+    )
+
+    is_new_role = existing_role is None
+
+    if existing_role:
+        # Update existing role
+        assert isinstance(existing_role, UserAssemblyRole)
+        existing_role.role = role
+        assembly_role = existing_role
+    else:
+        # Create new role
+        assembly_role = UserAssemblyRole(
+            user_id=user_id,
+            assembly_id=assembly_id,
+            role=role,
+        )
+        uow.user_assembly_roles.add(assembly_role)
+        target_user.assembly_roles.append(assembly_role)
+
+    detached_user = target_user.create_detached_copy()
+
+    # Send email notification if this is a new role assignment and all adapters are provided
+    if is_new_role and email_adapter and template_renderer and url_generator:
+        send_assembly_role_assigned_email(
+            email_adapter=email_adapter,
+            template_renderer=template_renderer,
+            url_generator=url_generator,
+            user=detached_user,
+            assembly=assembly,
+            role=role,
         )
 
-        is_new_role = existing_role is None
-
-        if existing_role:
-            # Update existing role
-            assert isinstance(existing_role, UserAssemblyRole)
-            existing_role.role = role
-            assembly_role = existing_role
-        else:
-            # Create new role
-            assembly_role = UserAssemblyRole(
-                user_id=user_id,
-                assembly_id=assembly_id,
-                role=role,
-            )
-            uow.user_assembly_roles.add(assembly_role)
-            target_user.assembly_roles.append(assembly_role)
-
-        detached_user = target_user.create_detached_copy()
-        uow.commit()
-
-        # Send email notification if this is a new role assignment and all adapters are provided
-        if is_new_role and email_adapter and template_renderer and url_generator:
-            send_assembly_role_assigned_email(
-                email_adapter=email_adapter,
-                template_renderer=template_renderer,
-                url_generator=url_generator,
-                user=detached_user,
-                assembly=assembly,
-                role=role,
-            )
-
-        return assembly_role, detached_user
+    return assembly_role, detached_user
 
 
 def revoke_user_assembly_role(
@@ -686,48 +698,48 @@ def revoke_user_assembly_role(
     Raises:
         InsufficientPermissions: If current_user lacks permission to revoke roles
         UserNotFoundError: If user, assembly, or role not found
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        # Check permissions: must be admin or global organiser or assembly manager
-        if not has_global_admin(current_user):
-            # Load the assembly to check if user can manage it
-            assembly = uow.assemblies.get(assembly_id)
-            if not assembly:
-                raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
-
-            if not can_manage_assembly(current_user, assembly):
-                raise InsufficientPermissions(
-                    action="revoke_user_assembly_role",
-                    required_role="admin, global-organiser, or assembly manager",
-                )
-
-        # Validate target user exists
-        target_user = uow.users.get(user_id)
-        if not target_user:
-            raise UserNotFoundError(f"User {user_id} not found")
-
-        # Validate assembly exists
+    # Check permissions: must be admin or global organiser or assembly manager
+    if not has_global_admin(current_user):
+        # Load the assembly to check if user can manage it
         assembly = uow.assemblies.get(assembly_id)
         if not assembly:
             raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        # Find the role to revoke
-        existing_role = next(
-            (r for r in target_user.assembly_roles if r.assembly_id == assembly_id),
-            None,
-        )
+        if not can_manage_assembly(current_user, assembly):
+            raise InsufficientPermissions(
+                action="revoke_user_assembly_role",
+                required_role="admin, global-organiser, or assembly manager",
+            )
 
-        if not existing_role:
-            raise NotFoundError(f"User {user_id} has no role on assembly {assembly_id}")
-        assert isinstance(existing_role, UserAssemblyRole)
+    # Validate target user exists
+    target_user = uow.users.get(user_id)
+    if not target_user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        # Remove the role
-        target_user.assembly_roles.remove(existing_role)
-        uow.user_assembly_roles.remove_role(user_id, assembly_id)
+    # Validate assembly exists
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        detached_user = target_user.create_detached_copy()
-        uow.commit()
-        return existing_role, detached_user
+    # Find the role to revoke
+    existing_role = next(
+        (r for r in target_user.assembly_roles if r.assembly_id == assembly_id),
+        None,
+    )
+
+    if not existing_role:
+        raise NotFoundError(f"User {user_id} has no role on assembly {assembly_id}")
+    assert isinstance(existing_role, UserAssemblyRole)
+
+    # Remove the role
+    target_user.assembly_roles.remove(existing_role)
+    uow.user_assembly_roles.remove_role(user_id, assembly_id)
+
+    detached_user = target_user.create_detached_copy()
+    return existing_role, detached_user
 
 
 def get_assembly_members(
@@ -749,19 +761,20 @@ def get_assembly_members(
     Raises:
         AssemblyNotFoundError: If assembly not found
         InsufficientPermissions: If current_user cannot view the assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        assembly = uow.assemblies.get(assembly_id)
-        if not assembly:
-            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
-        if not can_view_assembly(current_user, assembly):
-            raise InsufficientPermissions(
-                action="get_assembly_members",
-                required_role="assembly role or global privileges",
-            )
+    if not can_view_assembly(current_user, assembly):
+        raise InsufficientPermissions(
+            action="get_assembly_members",
+            required_role="assembly role or global privileges",
+        )
 
-        return uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
+    return uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
 
 
 def search_assembly_candidate_users(
@@ -785,19 +798,20 @@ def search_assembly_candidate_users(
 
     Raises:
         InsufficientPermissions: If current_user lacks permission to manage members
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        if not has_global_admin(current_user):
-            raise InsufficientPermissions(
-                action="search_assembly_candidate_users",
-                required_role="admin or global-organiser",
-            )
+    if not has_global_admin(current_user):
+        raise InsufficientPermissions(
+            action="search_assembly_candidate_users",
+            required_role="admin or global-organiser",
+        )
 
-        if not search_term:
-            return []
+    if not search_term:
+        return []
 
-        matching = uow.users.search_users_not_in_assembly(assembly_id, search_term)
-        return [user.create_detached_copy() for user in matching]
+    matching = uow.users.search_users_not_in_assembly(assembly_id, search_term)
+    return [user.create_detached_copy() for user in matching]
 
 
 def update_own_profile(
@@ -820,22 +834,21 @@ def update_own_profile(
 
     Raises:
         UserNotFoundError: If user not found
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
-        assert isinstance(user, User)
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+    assert isinstance(user, User)
 
-        # Apply updates
-        if first_name is not None:
-            user.first_name = first_name
-        if last_name is not None:
-            user.last_name = last_name
+    # Apply updates
+    if first_name is not None:
+        user.first_name = first_name
+    if last_name is not None:
+        user.last_name = last_name
 
-        detached_user = user.create_detached_copy()
-        uow.commit()
-        return detached_user
+    return user.create_detached_copy()
 
 
 def change_own_password(
@@ -857,26 +870,26 @@ def change_own_password(
         UserNotFoundError: If user not found
         InvalidCredentials: If current password is incorrect
         PasswordTooWeak: If new password doesn't meet requirements
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
-        assert isinstance(user, User)
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+    assert isinstance(user, User)
 
-        # Verify current password
-        if not user.password_hash or not verify_password(current_password, user.password_hash):
-            raise InvalidCredentials("Current password is incorrect")
+    # Verify current password
+    if not user.password_hash or not verify_password(current_password, user.password_hash):
+        raise InvalidCredentials("Current password is incorrect")
 
-        # Validate new password strength
-        temp_user = TempUser(email=user.email, first_name=user.first_name, last_name=user.last_name)
-        is_valid, error_msg = validate_password_strength(new_password, temp_user)
-        if not is_valid:
-            raise PasswordTooWeak(error_msg)
+    # Validate new password strength
+    temp_user = TempUser(email=user.email, first_name=user.first_name, last_name=user.last_name)
+    is_valid, error_msg = validate_password_strength(new_password, temp_user)
+    if not is_valid:
+        raise PasswordTooWeak(error_msg)
 
-        # Update password
-        user.password_hash = hash_password(new_password)
-        uow.commit()
+    # Update password
+    user.password_hash = hash_password(new_password)
 
 
 def link_oauth_to_user(
@@ -905,28 +918,27 @@ def link_oauth_to_user(
     Raises:
         UserNotFoundError: If user not found
         ValueError: If emails don't match or OAuth already linked to another account
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
-        assert isinstance(user, User)
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+    assert isinstance(user, User)
 
-        # Verify email match for security
-        if user.email.lower() != oauth_email.lower():
-            raise ValueError("OAuth email does not match your account email")
+    # Verify email match for security
+    if user.email.lower() != oauth_email.lower():
+        raise ValueError("OAuth email does not match your account email")
 
-        # Check if OAuth credentials already linked to different account
-        existing_oauth_user = uow.users.get_by_oauth_credentials(provider, oauth_id)
-        if existing_oauth_user and existing_oauth_user.id != user_id:
-            raise ValueError(f"This {provider} account is already linked to another user")
+    # Check if OAuth credentials already linked to different account
+    existing_oauth_user = uow.users.get_by_oauth_credentials(provider, oauth_id)
+    if existing_oauth_user and existing_oauth_user.id != user_id:
+        raise ValueError(f"This {provider} account is already linked to another user")
 
-        # Link OAuth credentials
-        user.add_oauth_credentials(provider, oauth_id)
+    # Link OAuth credentials
+    user.add_oauth_credentials(provider, oauth_id)
 
-        detached_user = user.create_detached_copy()
-        uow.commit()
-        return detached_user
+    return user.create_detached_copy()
 
 
 def remove_password_auth(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> User:
@@ -943,21 +955,20 @@ def remove_password_auth(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> User:
     Raises:
         UserNotFoundError: If user not found
         CannotRemoveLastAuthMethod: If user has no OAuth authentication
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
 
-        assert isinstance(user, User)
-        if not user.oauth_provider:
-            raise CannotRemoveLastAuthMethod()
+    assert isinstance(user, User)
+    if not user.oauth_provider:
+        raise CannotRemoveLastAuthMethod()
 
-        user.remove_password()
+    user.remove_password()
 
-        detached_user = user.create_detached_copy()
-        uow.commit()
-        return detached_user
+    return user.create_detached_copy()
 
 
 def remove_oauth_auth(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> User:
@@ -974,21 +985,20 @@ def remove_oauth_auth(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> User:
     Raises:
         UserNotFoundError: If user not found
         CannotRemoveLastAuthMethod: If user has no password authentication
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if not user:
-            raise UserNotFoundError(f"User {user_id} not found")
-        assert isinstance(user, User)
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+    assert isinstance(user, User)
 
-        if not user.password_hash:
-            raise CannotRemoveLastAuthMethod()
+    if not user.password_hash:
+        raise CannotRemoveLastAuthMethod()
 
-        user.remove_oauth()
+    user.remove_oauth()
 
-        detached_user = user.create_detached_copy()
-        uow.commit()
-        return detached_user
+    return user.create_detached_copy()
 
 
 def send_assembly_role_assigned_email(

@@ -69,11 +69,12 @@ def send_templated_email(
     assembly: Assembly,
     respondent: Respondent,
 ) -> RespondentEmailSendRecord:
-    """Render and send a template to a respondent, recording the outcome. Never raises on send failure."""
-    with uow:
-        record = _build_and_send(uow, email_adapter, template, assembly, respondent)
-        uow.commit()
-        return record.create_detached_copy()
+    """Render and send a template to a respondent, recording the outcome. Never raises on send failure.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    record = _build_and_send(uow, email_adapter, template, assembly, respondent)
+    return record.create_detached_copy()
 
 
 def send_registration_auto_reply(
@@ -91,24 +92,24 @@ def send_registration_auto_reply(
     auto-reply to send. When an auto-reply *is* configured but the respondent
     has no email address, logs a warning (a likely page misconfiguration) and
     writes no record.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        if respondent.registration_page_id is None:
-            return None
-        page = uow.registration_pages.get(respondent.registration_page_id)
-        if page is None or page.auto_reply_email_template_id is None:
-            return None
-        if not respondent.email:
-            logger.warning(
-                "Auto-reply is configured for registration page %s but respondent %s has no email; skipping send",
-                page.id,
-                respondent.id,
-            )
-            return None
-        template = uow.email_templates.get(page.auto_reply_email_template_id)
-        assembly = uow.assemblies.get(page.assembly_id)
-        if template is None or assembly is None:
-            return None
-        record = _build_and_send(uow, email_adapter, template, assembly, respondent)
-        uow.commit()
-        return record.create_detached_copy()
+    if respondent.registration_page_id is None:
+        return None
+    page = uow.registration_pages.get(respondent.registration_page_id)
+    if page is None or page.auto_reply_email_template_id is None:
+        return None
+    if not respondent.email:
+        logger.warning(
+            "Auto-reply is configured for registration page %s but respondent %s has no email; skipping send",
+            page.id,
+            respondent.id,
+        )
+        return None
+    template = uow.email_templates.get(page.auto_reply_email_template_id)
+    assembly = uow.assemblies.get(page.assembly_id)
+    if template is None or assembly is None:
+        return None
+    record = _build_and_send(uow, email_adapter, template, assembly, respondent)
+    return record.create_detached_copy()

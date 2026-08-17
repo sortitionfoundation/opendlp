@@ -16,7 +16,8 @@ from tests.fakes import FakeTemplateRenderer, FakeUnitOfWork, FakeURLGenerator
 @pytest.fixture
 def uow():
     """Create a fake unit of work."""
-    return FakeUnitOfWork()
+    with FakeUnitOfWork() as entered:
+        yield entered
 
 
 @pytest.fixture
@@ -80,8 +81,7 @@ class TestCreateConfirmationToken:
 
     def test_creates_token_for_user(self, uow, unconfirmed_user):
         """Should create token for user."""
-        with uow:
-            token = email_confirmation_service.create_confirmation_token(uow, unconfirmed_user.id)
+        token = email_confirmation_service.create_confirmation_token(uow, unconfirmed_user.id)
 
         assert token is not None
         assert token.user_id == unconfirmed_user.id
@@ -90,16 +90,14 @@ class TestCreateConfirmationToken:
 
     def test_default_expiry_24_hours(self, uow, unconfirmed_user):
         """Should use default expiry of 24 hours."""
-        with uow:
-            token = email_confirmation_service.create_confirmation_token(uow, unconfirmed_user.id)
+        token = email_confirmation_service.create_confirmation_token(uow, unconfirmed_user.id)
 
         expected_expiry = token.created_at + timedelta(hours=24)
         assert abs((token.expires_at - expected_expiry).total_seconds()) < 1
 
     def test_custom_expiry(self, uow, unconfirmed_user):
         """Should use custom expiry hours."""
-        with uow:
-            token = email_confirmation_service.create_confirmation_token(uow, unconfirmed_user.id, expires_in_hours=48)
+        token = email_confirmation_service.create_confirmation_token(uow, unconfirmed_user.id, expires_in_hours=48)
 
         expected_expiry = token.created_at + timedelta(hours=48)
         assert abs((token.expires_at - expected_expiry).total_seconds()) < 1
@@ -111,7 +109,7 @@ class TestCreateConfirmationToken:
             token = EmailConfirmationToken(user_id=unconfirmed_user.id)
             uow.email_confirmation_tokens.add(token)
 
-        with pytest.raises(RateLimitExceeded) as exc_info, uow:
+        with pytest.raises(RateLimitExceeded) as exc_info:
             email_confirmation_service.create_confirmation_token(uow, unconfirmed_user.id)
 
         assert "rate limit" in str(exc_info.value).lower()
@@ -122,9 +120,8 @@ class TestCheckRateLimit:
 
     def test_allows_first_request(self, uow, unconfirmed_user):
         """Should allow first request."""
-        with uow:
-            # Should not raise
-            email_confirmation_service.check_rate_limit(uow, unconfirmed_user.id)
+        # Should not raise
+        email_confirmation_service.check_rate_limit(uow, unconfirmed_user.id)
 
     def test_blocks_after_limit(self, uow, unconfirmed_user):
         """Should block after hitting rate limit."""
@@ -133,7 +130,7 @@ class TestCheckRateLimit:
             token = EmailConfirmationToken(user_id=unconfirmed_user.id)
             uow.email_confirmation_tokens.add(token)
 
-        with pytest.raises(RateLimitExceeded), uow:
+        with pytest.raises(RateLimitExceeded):
             email_confirmation_service.check_rate_limit(uow, unconfirmed_user.id)
 
     def test_allows_old_tokens(self, uow, unconfirmed_user):
@@ -148,9 +145,8 @@ class TestCheckRateLimit:
             )
             uow.email_confirmation_tokens.add(token)
 
-        with uow:
-            # Should not raise
-            email_confirmation_service.check_rate_limit(uow, unconfirmed_user.id)
+        # Should not raise
+        email_confirmation_service.check_rate_limit(uow, unconfirmed_user.id)
 
 
 class TestSendConfirmationEmail:
@@ -251,7 +247,6 @@ class TestConfirmEmailWithToken:
 
         assert result is not None
         assert result.email_confirmed_at is not None
-        assert uow.committed is True
 
     def test_marks_token_as_used(self, uow, unconfirmed_user):
         """Should mark token as used after confirmation."""
@@ -305,7 +300,6 @@ class TestResendConfirmationEmail:
             )
 
             assert result is True
-            assert uow.committed is True
             mock_send.assert_called_once()
 
         # Check token was created
@@ -399,8 +393,7 @@ class TestInvalidateUserTokens:
             token = EmailConfirmationToken(user_id=unconfirmed_user.id, token=f"token{i}")
             uow.email_confirmation_tokens.add(token)
 
-        with uow:
-            count = email_confirmation_service.invalidate_user_tokens(uow, unconfirmed_user.id)
+        count = email_confirmation_service.invalidate_user_tokens(uow, unconfirmed_user.id)
 
         assert count == 3
 
@@ -424,8 +417,7 @@ class TestInvalidateUserTokens:
         )
         uow.email_confirmation_tokens.add(expired_token)
 
-        with uow:
-            count = email_confirmation_service.invalidate_user_tokens(uow, unconfirmed_user.id)
+        count = email_confirmation_service.invalidate_user_tokens(uow, unconfirmed_user.id)
 
         # Only the valid token should be invalidated
         assert count == 1

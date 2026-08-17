@@ -4,9 +4,7 @@ ABOUTME: Coordinates repository operations within database transactions"""
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Self
-
-from sqlalchemy.orm import Session, sessionmaker
+from typing import TYPE_CHECKING, Any, Self
 
 from opendlp.adapters.sql_repository import (
     SqlAlchemyAssemblyGSheetRepository,
@@ -34,6 +32,8 @@ from opendlp.adapters.sql_repository import (
 
 if TYPE_CHECKING:
     from types import TracebackType
+
+    from sqlalchemy.orm import Session, sessionmaker
 
     from opendlp.service_layer.repositories import (
         AssemblyGSheetRepository,
@@ -131,21 +131,53 @@ class AbstractUnitOfWork(abc.ABC):
         raise NotImplementedError
 
 
+class UnitOfWorkError(Exception):
+    """Exception raised when Unit of Work operations fail."""
+
+
+class ClosedRepository:
+    """Stand-in bound to a UnitOfWork's repository names outside its block.
+
+    Repositories hold their own session reference, so guarding the ``session``
+    property alone would still let ``uow.users.get(...)`` run on a closed
+    session. Any attribute access here raises instead.
+    """
+
+    def __init__(self, name: str) -> None:
+        self._name = name
+
+    def __getattr__(self, attr: str) -> Any:
+        raise UnitOfWorkError(f"uow.{self._name} is only available inside `with uow: ...`")
+
+
 class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
-    """SQLAlchemy implementation of Unit of Work pattern."""
+    """SQLAlchemy implementation of Unit of Work pattern.
+
+    The session exists only for the duration of the ``with`` block. Outside it
+    both ``session`` and the repositories raise: a closed SQLAlchemy session is
+    still usable and silently autobegins a new transaction, so work done through
+    a leaked UnitOfWork would belong to a transaction nobody commits while its
+    connection sits ``idle in transaction`` holding locks.
+    """
 
     def __init__(self, session_factory: sessionmaker) -> None:
         self.session_factory = session_factory
         self._session: Session | None = None
+        self._close_repositories()
+
+    def _close_repositories(self) -> None:
+        for name in AbstractUnitOfWork.__annotations__:
+            setattr(self, name, ClosedRepository(name))
 
     @property
     def session(self) -> Session:
         if self._session is None:
-            self._session = self.session_factory()
-        assert isinstance(self._session, Session)
+            raise UnitOfWorkError("uow.session is only available inside `with uow: ...`")
         return self._session
 
     def __enter__(self) -> Self:
+        self._session = self.session_factory()
+
         # Initialize repositories with the session
         self.users = SqlAlchemyUserRepository(self.session)
         self.assemblies = SqlAlchemyAssemblyRepository(self.session)
@@ -177,12 +209,18 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        if exc_type is not None:
-            self.rollback()
-        else:
-            self.commit()
-
-        self.session.close()
+        session = self.session
+        try:
+            if exc_type is not None:
+                self.rollback()
+            else:
+                self.commit()
+        finally:
+            # try/finally so a failing commit still releases the connection, and
+            # clearing _session so the closed session can never be resurrected.
+            session.close()
+            self._session = None
+            self._close_repositories()
 
     def commit(self) -> None:
         """Commit the current transaction."""
@@ -216,7 +254,3 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         processes (notably Celery workers updating SelectionRunRecord rows).
         """
         self.session.expire_all()
-
-
-class UnitOfWorkError(Exception):
-    """Exception raised when Unit of Work operations fail."""

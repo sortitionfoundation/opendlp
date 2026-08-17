@@ -155,7 +155,10 @@ def google_link_callback() -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
 
         # Link OAuth to current user
-        link_oauth_to_user(uow=uow, user_id=current_user.id, provider="google", oauth_id=google_id, oauth_email=email)
+        with uow:
+            link_oauth_to_user(
+                uow=uow, user_id=current_user.id, provider="google", oauth_id=google_id, oauth_email=email
+            )
 
         flash(_("Google account linked successfully"), "success")
         return redirect(url_for("profile.view"))
@@ -216,9 +219,10 @@ def microsoft_link_callback() -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
 
         # Link OAuth to current user
-        link_oauth_to_user(
-            uow=uow, user_id=current_user.id, provider="microsoft", oauth_id=microsoft_id, oauth_email=email
-        )
+        with uow:
+            link_oauth_to_user(
+                uow=uow, user_id=current_user.id, provider="microsoft", oauth_id=microsoft_id, oauth_email=email
+            )
 
         flash(_("Microsoft account linked successfully"), "success")
         return redirect(url_for("profile.view"))
@@ -238,7 +242,8 @@ def remove_password() -> ResponseReturnValue:
     """Remove password authentication (requires OAuth)."""
     try:
         uow = bootstrap.get_flask_uow()
-        remove_password_auth(uow=uow, user_id=current_user.id)
+        with uow:
+            remove_password_auth(uow=uow, user_id=current_user.id)
 
         flash(_("Password authentication removed successfully"), "success")
     except CannotRemoveLastAuthMethod as e:
@@ -256,7 +261,8 @@ def remove_oauth() -> ResponseReturnValue:
     """Remove OAuth authentication (requires password)."""
     try:
         uow = bootstrap.get_flask_uow()
-        remove_oauth_auth(uow=uow, user_id=current_user.id)
+        with uow:
+            remove_oauth_auth(uow=uow, user_id=current_user.id)
 
         flash(_("OAuth authentication removed successfully"), "success")
     except CannotRemoveLastAuthMethod as e:
@@ -386,7 +392,8 @@ def enable_2fa() -> ResponseReturnValue:
 
     try:
         uow = bootstrap.get_flask_uow()
-        two_factor_service.enable_2fa(uow, current_user.id, totp_secret, totp_code, backup_codes)
+        with uow:
+            two_factor_service.enable_2fa(uow, current_user.id, totp_secret, totp_code, backup_codes)
 
         # Clear setup session data
         session.pop("totp_setup_secret", None)
@@ -416,7 +423,8 @@ def disable_2fa() -> ResponseReturnValue:
 
     try:
         uow = bootstrap.get_flask_uow()
-        two_factor_service.disable_2fa(uow, current_user.id, totp_code)
+        with uow:
+            two_factor_service.disable_2fa(uow, current_user.id, totp_code)
 
         flash(_("Two-factor authentication has been disabled"), "success")
         return redirect(url_for("profile.two_factor_settings"))

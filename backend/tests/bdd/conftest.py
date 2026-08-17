@@ -278,15 +278,16 @@ def admin_user(test_database):
     uow = SqlAlchemyUnitOfWork(session_factory)
 
     # Create admin user
-    _admin, _token = create_user(
-        uow=uow,
-        email=ADMIN_EMAIL,
-        password=ADMIN_PASSWORD,
-        first_name="Test",
-        last_name="Admin",
-        global_role=GlobalRole.ADMIN,
-        accept_data_agreement=True,
-    )
+    with uow:
+        _admin, _token = create_user(
+            uow=uow,
+            email=ADMIN_EMAIL,
+            password=ADMIN_PASSWORD,
+            first_name="Test",
+            last_name="Admin",
+            global_role=GlobalRole.ADMIN,
+            accept_data_agreement=True,
+        )
 
     # Confirm email for test users (they need to login)
     with uow:
@@ -303,15 +304,16 @@ def normal_user(test_database):
     uow = SqlAlchemyUnitOfWork(session_factory)
 
     # Create normal user
-    _user, _token = create_user(
-        uow=uow,
-        email=NORMAL_EMAIL,
-        password=NORMAL_PASSWORD,
-        first_name="Test",
-        last_name="Normal",
-        global_role=GlobalRole.USER,
-        accept_data_agreement=True,
-    )
+    with uow:
+        _user, _token = create_user(
+            uow=uow,
+            email=NORMAL_EMAIL,
+            password=NORMAL_PASSWORD,
+            first_name="Test",
+            last_name="Normal",
+            global_role=GlobalRole.USER,
+            accept_data_agreement=True,
+        )
 
     # Confirm email for test users (they need to login)
     with uow:
@@ -328,9 +330,14 @@ def assembly_creator(test_database, admin_user):
     def _create_assembly(title: str, question: str = "", number_to_select: int = 10) -> Assembly:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        return create_assembly(
-            uow=uow, title=title, created_by_user_id=admin_user.id, question=question, number_to_select=number_to_select
-        )
+        with uow:
+            return create_assembly(
+                uow=uow,
+                title=title,
+                created_by_user_id=admin_user.id,
+                question=question,
+                number_to_select=number_to_select,
+            )
 
     return _create_assembly
 
@@ -344,9 +351,10 @@ def assembly_user_role_creator(test_database, admin_user):
     ) -> UserAssemblyRole:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        role, _user = grant_user_assembly_role(
-            uow=uow, user_id=user.id, assembly_id=assembly.id, role=assembly_role, current_user=admin_user
-        )
+        with uow:
+            role, _user = grant_user_assembly_role(
+                uow=uow, user_id=user.id, assembly_id=assembly.id, role=assembly_role, current_user=admin_user
+            )
         return role
 
     return _create_assembly_user_role
@@ -359,26 +367,27 @@ def assembly_gsheet_creator(test_database, admin_user):
     def _create_assembly_gsheet(title: str) -> tuple[Assembly, AssemblyGSheet]:
         session_factory = test_database
         uow = SqlAlchemyUnitOfWork(session_factory)
-        assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id, number_to_select=22)
-        gsheet_assembly = add_assembly_gsheet(
-            uow=uow,
-            assembly_id=assembly.id,
-            user_id=admin_user.id,
-            url=VALID_GSHEET_URL,
-            team="custom",
-            id_column="nationbuilder_id",
-            check_same_address=True,
-            check_same_address_cols=["primary_address1", "primary_zip"],
-            columns_to_keep=[
-                "first_name",
-                "last_name",
-                "email",
-                "mobile_number",
-                "primary_address1",
-                "primary_address2",
-                "primary_city",
-            ],
-        )
+        with uow:
+            assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id, number_to_select=22)
+            gsheet_assembly = add_assembly_gsheet(
+                uow=uow,
+                assembly_id=assembly.id,
+                user_id=admin_user.id,
+                url=VALID_GSHEET_URL,
+                team="custom",
+                id_column="nationbuilder_id",
+                check_same_address=True,
+                check_same_address_cols=["primary_address1", "primary_zip"],
+                columns_to_keep=[
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "mobile_number",
+                    "primary_address1",
+                    "primary_address2",
+                    "primary_city",
+                ],
+            )
         return assembly, gsheet_assembly
 
     return _create_assembly_gsheet
@@ -514,12 +523,13 @@ def user_invite(test_database, admin_user) -> str:
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
 
-    invite = generate_invite(
-        uow=uow,
-        created_by_user_id=admin_user.id,
-        global_role=GlobalRole.USER,
-        expires_in_hours=24,  # 24 hours for testing
-    )
+    with uow:
+        invite = generate_invite(
+            uow=uow,
+            created_by_user_id=admin_user.id,
+            global_role=GlobalRole.USER,
+            expires_in_hours=24,  # 24 hours for testing
+        )
 
     return invite.code
 

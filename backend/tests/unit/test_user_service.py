@@ -21,15 +21,13 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.security import hash_password
-from tests.fakes import FakeUnitOfWork
 
 
 class TestCreateUser:
     """Test user creation functionality."""
 
-    def test_create_user_with_password_success(self):
+    def test_create_user_with_password_success(self, uow):
         """Test successful user creation with password."""
-        uow = FakeUnitOfWork()
         # Add a valid invite
         invite = UserInvite(
             code="TESTCODE",
@@ -56,11 +54,9 @@ class TestCreateUser:
         assert user.oauth_provider is None
         assert token is not None  # Password users should get a confirmation token
         assert len(uow.users.all()) == 1
-        assert uow.committed
 
-    def test_create_user_with_oauth_success(self):
+    def test_create_user_with_oauth_success(self, uow):
         """Test successful user creation with OAuth."""
-        uow = FakeUnitOfWork()
         invite = UserInvite(
             code="TESTCODE",
             global_role=GlobalRole.GLOBAL_ORGANISER,
@@ -89,9 +85,8 @@ class TestCreateUser:
         assert token is None  # OAuth users should not get a confirmation token
         assert user.email_confirmed_at is not None  # OAuth users are auto-confirmed
 
-    def test_create_user_email_already_exists(self):
+    def test_create_user_email_already_exists(self, uow):
         """Test user creation fails when email exists."""
-        uow = FakeUnitOfWork()
         existing_user = User(
             email="test@example.com",
             global_role=GlobalRole.USER,
@@ -119,18 +114,16 @@ class TestCreateUser:
             ("a" * 258, "must not contain more than 256 characters"),
         ],
     )
-    def test_create_user_weak_password(self, password, msg):
+    def test_create_user_weak_password(self, uow, password, msg):
         """Test user creation fails with weak passwords."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(PasswordTooWeak) as exc_info:
             user_service.create_user(uow=uow, email="test@example.com", password=password, global_role=GlobalRole.USER)
 
         assert msg in str(exc_info.value).lower()
 
-    def test_create_user_invalid_invite(self):
+    def test_create_user_invalid_invite(self, uow):
         """Test user creation fails with invalid invite."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(InvalidInvite):
             user_service.create_user(
@@ -144,9 +137,8 @@ class TestCreateUser:
 class TestAuthenticateUser:
     """Test user authentication functionality."""
 
-    def test_authenticate_user_success_with_email(self):
+    def test_authenticate_user_success_with_email(self, uow):
         """Test successful authentication with email."""
-        uow = FakeUnitOfWork()
         password_hash = hash_password("testpass")
         user = User(
             email="test@example.com",
@@ -160,9 +152,8 @@ class TestAuthenticateUser:
 
         assert authenticated_user.email == "test@example.com"
 
-    def test_authenticate_user_not_found(self):
+    def test_authenticate_user_not_found(self, uow):
         """Test authentication fails when user not found."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(InvalidCredentials):
             user_service.authenticate_user(
@@ -171,9 +162,8 @@ class TestAuthenticateUser:
                 password="testpass",  # pragma: allowlist secret
             )
 
-    def test_authenticate_user_wrong_password(self):
+    def test_authenticate_user_wrong_password(self, uow):
         """Test authentication fails with wrong password."""
-        uow = FakeUnitOfWork()
         password_hash = hash_password("correctpass")
         user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash=password_hash)
         uow.users.add(user)
@@ -185,9 +175,8 @@ class TestAuthenticateUser:
                 password="wrongpass",  # pragma: allowlist secret
             )
 
-    def test_authenticate_user_inactive(self):
+    def test_authenticate_user_inactive(self, uow):
         """Test authentication fails for inactive user."""
-        uow = FakeUnitOfWork()
         password_hash = hash_password("testpass")
         user = User(email="test@example.com", global_role=GlobalRole.USER, password_hash=password_hash, is_active=False)
         uow.users.add(user)
@@ -203,9 +192,8 @@ class TestAuthenticateUser:
 class TestValidateInvite:
     """Test invite validation (without usage)."""
 
-    def test_validate_invite_success(self):
+    def test_validate_invite_success(self, uow):
         """Test successful invite validation returns correct role."""
-        uow = FakeUnitOfWork()
 
         invite = UserInvite(
             code="VALIDCODE",
@@ -222,9 +210,8 @@ class TestValidateInvite:
         assert invite.used_by is None
         assert invite.used_at is None
 
-    def test_validate_invite_not_found(self):
+    def test_validate_invite_not_found(self, uow):
         """Test invite validation fails when code not found."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(InvalidInvite) as exc_info:
             user_service.validate_invite(uow=uow, invite_code="NOTFOUND")
@@ -235,9 +222,8 @@ class TestValidateInvite:
 class TestUseInvite:
     """Test invite usage (marking as used)."""
 
-    def test_use_invite_success(self):
+    def test_use_invite_success(self, uow):
         """Test successfully marking invite as used."""
-        uow = FakeUnitOfWork()
         user_id = uuid.uuid4()
 
         invite = UserInvite(
@@ -258,9 +244,8 @@ class TestUseInvite:
         assert invite.used_by == user_id
         assert invite.used_at is not None
 
-    def test_use_invite_not_found(self):
+    def test_use_invite_not_found(self, uow):
         """Test using invite fails when code not found."""
-        uow = FakeUnitOfWork()
         user_id = uuid.uuid4()
 
         with pytest.raises(InvalidInvite) as exc_info:
@@ -268,9 +253,8 @@ class TestUseInvite:
 
         assert "not found" in str(exc_info.value).lower()
 
-    def test_use_invite_already_used(self):
+    def test_use_invite_already_used(self, uow):
         """Test using invite fails when already used."""
-        uow = FakeUnitOfWork()
         first_user_id = uuid.uuid4()
         second_user_id = uuid.uuid4()
 
@@ -293,9 +277,8 @@ class TestUseInvite:
 class TestValidateAndUseInvite:
     """Test invite validation functionality."""
 
-    def test_validate_invite_success(self):
+    def test_validate_invite_success(self, uow):
         """Test successful invite validation."""
-        uow = FakeUnitOfWork()
         invite = UserInvite(
             code="VALIDCODE",
             global_role=GlobalRole.GLOBAL_ORGANISER,
@@ -308,18 +291,16 @@ class TestValidateAndUseInvite:
 
         assert role == GlobalRole.GLOBAL_ORGANISER
 
-    def test_validate_invite_not_found(self):
+    def test_validate_invite_not_found(self, uow):
         """Test invite validation fails when code not found."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(InvalidInvite) as exc_info:
             user_service.validate_and_use_invite(uow=uow, invite_code="NOTFOUND")
 
         assert "not found" in str(exc_info.value).lower()
 
-    def test_validate_invite_expired(self):
+    def test_validate_invite_expired(self, uow):
         """Test invite validation fails when expired."""
-        uow = FakeUnitOfWork()
         invite = UserInvite(
             code="EXPIRED",
             global_role=GlobalRole.USER,
@@ -333,9 +314,8 @@ class TestValidateAndUseInvite:
 
         assert "expired" in str(exc_info.value).lower()
 
-    def test_validate_invite_already_used(self):
+    def test_validate_invite_already_used(self, uow):
         """Test invite validation fails when already used."""
-        uow = FakeUnitOfWork()
         user_id = uuid.uuid4()
         invite = UserInvite(
             code="USED",
@@ -356,9 +336,8 @@ class TestValidateAndUseInvite:
 class TestFindOrCreateOAuthUser:
     """Test OAuth user find/create functionality."""
 
-    def test_find_existing_oauth_user(self):
+    def test_find_existing_oauth_user(self, uow):
         """Test finding existing OAuth user."""
-        uow = FakeUnitOfWork()
         existing_user = User(
             email="test@example.com",
             global_role=GlobalRole.USER,
@@ -381,9 +360,8 @@ class TestFindOrCreateOAuthUser:
         assert user == existing_user
         assert created is False
 
-    def test_link_oauth_to_existing_email_user(self):
+    def test_link_oauth_to_existing_email_user(self, uow):
         """Test linking OAuth to existing email user."""
-        uow = FakeUnitOfWork()
         existing_user = User(
             email="test@example.com",
             global_role=GlobalRole.USER,
@@ -405,9 +383,8 @@ class TestFindOrCreateOAuthUser:
         assert user.oauth_id == "google123"
         assert created is False
 
-    def test_create_new_oauth_user(self):
+    def test_create_new_oauth_user(self, uow):
         """Test creating new OAuth user."""
-        uow = FakeUnitOfWork()
 
         # Add valid invite
         invite = UserInvite(
@@ -439,9 +416,8 @@ class TestFindOrCreateOAuthUser:
 class TestGetUserAssemblies:
     """Test getting user assemblies."""
 
-    def test_get_user_assemblies_admin(self):
+    def test_get_user_assemblies_admin(self, uow):
         """Test admin user can see all active assemblies."""
-        uow = FakeUnitOfWork()
 
         admin_user = User(
             email="admin@example.com",
@@ -471,9 +447,8 @@ class TestGetUserAssemblies:
         assert assembly1 in assemblies
         assert assembly2 in assemblies
 
-    def test_get_user_assemblies_user_not_found(self):
+    def test_get_user_assemblies_user_not_found(self, uow):
         """Test error when user not found."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             user_service.get_user_assemblies(uow=uow, user_id=uuid.uuid4())
@@ -482,9 +457,8 @@ class TestGetUserAssemblies:
 class TestAssignAssemblyRole:
     """Test assembly role assignment."""
 
-    def test_assign_assembly_role_success(self):
+    def test_assign_assembly_role_success(self, uow):
         """Test successful role assignment."""
-        uow = FakeUnitOfWork()
 
         user = User(
             email="test@example.com",
@@ -511,9 +485,8 @@ class TestAssignAssemblyRole:
         assert role.role == AssemblyRole.ASSEMBLY_MANAGER
         assert len(user.assembly_roles) == 1
 
-    def test_assign_assembly_role_user_not_found(self):
+    def test_assign_assembly_role_user_not_found(self, uow):
         """Test role assignment fails when user not found."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             user_service.assign_assembly_role(
@@ -527,9 +500,8 @@ class TestAssignAssemblyRole:
 class TestListUsersPaginated:
     """Test paginated user listing."""
 
-    def test_list_users_paginated_success(self):
+    def test_list_users_paginated_success(self, uow):
         """Test successful paginated user listing."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(
@@ -559,9 +531,8 @@ class TestListUsersPaginated:
         assert total_count == 26  # 25 + admin
         assert total_pages == 3  # ceil(26 / 10)
 
-    def test_list_users_paginated_with_filters(self):
+    def test_list_users_paginated_with_filters(self, uow):
         """Test paginated listing with role and active filters."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(
@@ -605,9 +576,8 @@ class TestListUsersPaginated:
         assert total_count == 3  # admin, user1, org1
         assert all(u.is_active for u in users)
 
-    def test_list_users_paginated_with_search(self):
+    def test_list_users_paginated_with_search(self, uow):
         """Test paginated listing with search term."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(
@@ -654,9 +624,8 @@ class TestListUsersPaginated:
         assert total_count == 2
         assert all(u.first_name == "Alice" for u in users)
 
-    def test_list_users_paginated_non_admin(self):
+    def test_list_users_paginated_non_admin(self, uow):
         """Test that non-admin users cannot list users."""
-        uow = FakeUnitOfWork()
 
         # Create non-admin user
         regular_user = User(
@@ -673,9 +642,8 @@ class TestListUsersPaginated:
 class TestGetUserById:
     """Test getting user by ID."""
 
-    def test_get_user_by_id_success(self):
+    def test_get_user_by_id_success(self, uow):
         """Test successfully getting user by ID."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(
@@ -700,9 +668,8 @@ class TestGetUserById:
         assert user.email == "target@example.com"
         assert user.first_name == "Target"
 
-    def test_get_user_by_id_not_found(self):
+    def test_get_user_by_id_not_found(self, uow):
         """Test getting non-existent user."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(
@@ -715,9 +682,8 @@ class TestGetUserById:
         with pytest.raises(UserNotFoundError, match="not found"):
             user_service.get_user_by_id(uow=uow, user_id=uuid.uuid4(), admin_user_id=admin_user.id)
 
-    def test_get_user_by_id_non_admin(self):
+    def test_get_user_by_id_non_admin(self, uow):
         """Test that non-admin users cannot get user details."""
-        uow = FakeUnitOfWork()
 
         # Create non-admin user
         regular_user = User(
@@ -734,9 +700,8 @@ class TestGetUserById:
 class TestUpdateUser:
     """Test user update functionality."""
 
-    def test_update_user_success(self):
+    def test_update_user_success(self, uow):
         """Test successfully updating user."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(
@@ -771,9 +736,8 @@ class TestUpdateUser:
         assert updated_user.global_role == GlobalRole.GLOBAL_ORGANISER
         assert updated_user.is_active is False
 
-    def test_update_user_cannot_change_own_role(self):
+    def test_update_user_cannot_change_own_role(self, uow):
         """Test admin cannot change their own role."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(
@@ -792,9 +756,8 @@ class TestUpdateUser:
                 global_role=GlobalRole.USER,
             )
 
-    def test_update_user_cannot_deactivate_self(self):
+    def test_update_user_cannot_deactivate_self(self, uow):
         """Test admin cannot deactivate their own account."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(
@@ -813,9 +776,8 @@ class TestUpdateUser:
                 is_active=False,
             )
 
-    def test_update_user_non_admin(self):
+    def test_update_user_non_admin(self, uow):
         """Test that non-admin users cannot update users."""
-        uow = FakeUnitOfWork()
 
         # Create non-admin user
         regular_user = User(
@@ -843,9 +805,8 @@ class TestUpdateUser:
 class TestGetUserStats:
     """Test user statistics."""
 
-    def test_get_user_stats_success(self):
+    def test_get_user_stats_success(self, uow):
         """Test successfully getting user statistics."""
-        uow = FakeUnitOfWork()
 
         # Create admin user
         admin_user = User(
@@ -899,9 +860,8 @@ class TestGetUserStats:
         assert stats["organiser_users"] == 1
         assert stats["regular_users"] == 2
 
-    def test_get_user_stats_non_admin(self):
+    def test_get_user_stats_non_admin(self, uow):
         """Test that non-admin users cannot get statistics."""
-        uow = FakeUnitOfWork()
 
         # Create non-admin user
         regular_user = User(
@@ -918,9 +878,8 @@ class TestGetUserStats:
 class TestUpdateOwnProfile:
     """Test user updating their own profile."""
 
-    def test_update_own_profile_success(self):
+    def test_update_own_profile_success(self, uow):
         """Test successfully updating own profile."""
-        uow = FakeUnitOfWork()
 
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(user)
@@ -929,11 +888,9 @@ class TestUpdateOwnProfile:
 
         assert updated_user.first_name == "Updated"
         assert updated_user.last_name == "Name"
-        assert uow.committed
 
-    def test_update_own_profile_partial_update(self):
+    def test_update_own_profile_partial_update(self, uow):
         """Test updating only some fields."""
-        uow = FakeUnitOfWork()
 
         user = User(
             email="user@example.com",
@@ -949,9 +906,8 @@ class TestUpdateOwnProfile:
         assert updated_user.first_name == "NewFirst"
         assert updated_user.last_name == "Name"
 
-    def test_update_own_profile_user_not_found(self):
+    def test_update_own_profile_user_not_found(self, uow):
         """Test error when user not found."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             user_service.update_own_profile(uow=uow, user_id=uuid.uuid4(), first_name="Test")
@@ -960,9 +916,8 @@ class TestUpdateOwnProfile:
 class TestChangeOwnPassword:
     """Test user changing their own password."""
 
-    def test_change_own_password_success(self):
+    def test_change_own_password_success(self, uow):
         """Test successfully changing password."""
-        uow = FakeUnitOfWork()
 
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash=hash_password("OldPass123"))
         uow.users.add(user)
@@ -971,15 +926,13 @@ class TestChangeOwnPassword:
             uow=uow, user_id=user.id, current_password="OldPass123", new_password="NewPass456!"
         )
 
-        assert uow.committed
         # Verify the password was actually changed
         stored_user = uow.users.get(user.id)
         assert stored_user is not None
         assert stored_user.password_hash != hash_password("OldPass123")
 
-    def test_change_own_password_wrong_current_password(self):
+    def test_change_own_password_wrong_current_password(self, uow):
         """Test that wrong current password is rejected."""
-        uow = FakeUnitOfWork()
 
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash=hash_password("OldPass123"))
         uow.users.add(user)
@@ -989,9 +942,8 @@ class TestChangeOwnPassword:
                 uow=uow, user_id=user.id, current_password="WrongPassword", new_password="NewPass456!"
             )
 
-    def test_change_own_password_weak_new_password(self):
+    def test_change_own_password_weak_new_password(self, uow):
         """Test that weak new password is rejected."""
-        uow = FakeUnitOfWork()
 
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash=hash_password("OldPass123"))
         uow.users.add(user)
@@ -1001,18 +953,16 @@ class TestChangeOwnPassword:
                 uow=uow, user_id=user.id, current_password="OldPass123", new_password="weak"
             )
 
-    def test_change_own_password_user_not_found(self):
+    def test_change_own_password_user_not_found(self, uow):
         """Test error when user not found."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(UserNotFoundError, match=r"User .* not found"):
             user_service.change_own_password(
                 uow=uow, user_id=uuid.uuid4(), current_password="test", new_password="NewPass456!"
             )
 
-    def test_change_own_password_no_password_hash(self):
+    def test_change_own_password_no_password_hash(self, uow):
         """Test error when user has no password (OAuth user)."""
-        uow = FakeUnitOfWork()
 
         user = User(email="user@example.com", global_role=GlobalRole.USER, oauth_provider="google", oauth_id="123")
         uow.users.add(user)
@@ -1026,18 +976,16 @@ class TestChangeOwnPassword:
 class TestOAuthUserOperations:
     """Test OAuth user operations."""
 
-    def test_find_or_create_oauth_user_new_user_requires_invite(self):
+    def test_find_or_create_oauth_user_new_user_requires_invite(self, uow):
         """Test OAuth registration requires invite code."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(InvalidInvite, match="Invite code required"):
             user_service.find_or_create_oauth_user(
                 uow=uow, provider="google", oauth_id="google123", email="newuser@example.com", invite_code=None
             )
 
-    def test_find_or_create_oauth_user_creates_new_user_with_invite(self, patch_password_hashing):
+    def test_find_or_create_oauth_user_creates_new_user_with_invite(self, uow, patch_password_hashing):
         """Test OAuth user creation with valid invite."""
-        uow = FakeUnitOfWork()
         invite = UserInvite(
             code="TESTCODE",
             global_role=GlobalRole.USER,
@@ -1065,9 +1013,8 @@ class TestOAuthUserOperations:
         assert user.first_name == "New"
         assert user.last_name == "User"
 
-    def test_find_or_create_oauth_user_returns_existing_oauth_user(self):
+    def test_find_or_create_oauth_user_returns_existing_oauth_user(self, uow):
         """Test finding existing OAuth user."""
-        uow = FakeUnitOfWork()
         existing = User(
             email="existing@example.com",
             global_role=GlobalRole.USER,
@@ -1084,9 +1031,8 @@ class TestOAuthUserOperations:
         assert user.id == existing.id
         assert user.email == "existing@example.com"
 
-    def test_find_or_create_oauth_user_links_to_existing_email(self):
+    def test_find_or_create_oauth_user_links_to_existing_email(self, uow):
         """Test auto-linking OAuth to existing email account."""
-        uow = FakeUnitOfWork()
         existing = User(email="existing@example.com", global_role=GlobalRole.USER, password_hash="hashed_password")
         uow.users.add(existing)
 
@@ -1100,9 +1046,8 @@ class TestOAuthUserOperations:
         assert user.oauth_id == "google123"
         assert user.password_hash == "hashed_password"  # pragma: allowlist secret
 
-    def test_link_oauth_to_user_success(self):
+    def test_link_oauth_to_user_success(self, uow):
         """Test linking OAuth to user account."""
-        uow = FakeUnitOfWork()
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
         uow.users.add(user)
 
@@ -1113,9 +1058,8 @@ class TestOAuthUserOperations:
         assert updated.oauth_provider == "google"
         assert updated.oauth_id == "google123"
 
-    def test_link_oauth_to_user_email_mismatch(self):
+    def test_link_oauth_to_user_email_mismatch(self, uow):
         """Test OAuth linking fails on email mismatch."""
-        uow = FakeUnitOfWork()
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
         uow.users.add(user)
 
@@ -1124,9 +1068,8 @@ class TestOAuthUserOperations:
                 uow=uow, user_id=user.id, provider="google", oauth_id="google123", oauth_email="different@example.com"
             )
 
-    def test_link_oauth_to_user_already_linked_to_another(self):
+    def test_link_oauth_to_user_already_linked_to_another(self, uow):
         """Test OAuth linking fails when OAuth already linked to different account."""
-        uow = FakeUnitOfWork()
         user1 = User(
             email="user1@example.com",
             global_role=GlobalRole.USER,
@@ -1143,9 +1086,8 @@ class TestOAuthUserOperations:
                 uow=uow, user_id=user2.id, provider="google", oauth_id="google123", oauth_email="user2@example.com"
             )
 
-    def test_remove_password_auth_success(self):
+    def test_remove_password_auth_success(self, uow):
         """Test removing password when OAuth exists."""
-        uow = FakeUnitOfWork()
         user = User(
             email="user@example.com",
             global_role=GlobalRole.USER,
@@ -1160,18 +1102,16 @@ class TestOAuthUserOperations:
         assert updated.password_hash is None
         assert updated.oauth_provider == "google"
 
-    def test_remove_password_auth_fails_without_oauth(self):
+    def test_remove_password_auth_fails_without_oauth(self, uow):
         """Test cannot remove password without OAuth."""
-        uow = FakeUnitOfWork()
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
         uow.users.add(user)
 
         with pytest.raises(CannotRemoveLastAuthMethod):
             user_service.remove_password_auth(uow=uow, user_id=user.id)
 
-    def test_remove_oauth_auth_success(self):
+    def test_remove_oauth_auth_success(self, uow):
         """Test removing OAuth when password exists."""
-        uow = FakeUnitOfWork()
         user = User(
             email="user@example.com",
             global_role=GlobalRole.USER,
@@ -1187,9 +1127,8 @@ class TestOAuthUserOperations:
         assert updated.oauth_id is None
         assert updated.password_hash == "hashed"  # pragma: allowlist secret
 
-    def test_remove_oauth_auth_fails_without_password(self):
+    def test_remove_oauth_auth_fails_without_password(self, uow):
         """Test cannot remove OAuth without password."""
-        uow = FakeUnitOfWork()
         user = User(
             email="user@example.com", global_role=GlobalRole.USER, oauth_provider="google", oauth_id="google123"
         )

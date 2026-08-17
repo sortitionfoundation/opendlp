@@ -79,9 +79,8 @@ def _assembly_with_two_pages(uow: FakeUnitOfWork) -> tuple[Assembly, Registratio
 
 
 class TestRespondentProvenance:
-    def test_submissions_record_the_page_they_came_through(self) -> None:
+    def test_submissions_record_the_page_they_came_through(self, uow) -> None:
         """Without this the whole point of A/B testing - comparing variants - is unmeasurable."""
-        uow = FakeUnitOfWork()
         _assembly, english, spanish = _assembly_with_two_pages(uow)
 
         first = submit_registration(uow, url_slug="climate-en", form_data={"email": "ada@example.com"})
@@ -92,8 +91,7 @@ class TestRespondentProvenance:
         assert first.respondent.registration_page_id == english.id
         assert second.respondent.registration_page_id == spanish.id
 
-    def test_both_variants_feed_the_same_pool(self) -> None:
-        uow = FakeUnitOfWork()
+    def test_both_variants_feed_the_same_pool(self, uow) -> None:
         assembly, _english, _spanish = _assembly_with_two_pages(uow)
 
         submit_registration(uow, url_slug="climate-en", form_data={"email": "ada@example.com"})
@@ -105,9 +103,8 @@ class TestRespondentProvenance:
 
 
 class TestAutoReplyFollowsTheSubmittingPage:
-    def test_reply_uses_the_submitting_pages_template_not_a_siblings(self) -> None:
+    def test_reply_uses_the_submitting_pages_template_not_a_siblings(self, uow) -> None:
         """A Spanish registrant must not receive the English page's auto-reply."""
-        uow = FakeUnitOfWork()
         assembly, english, spanish = _assembly_with_two_pages(uow)
 
         english_template = EmailTemplate(
@@ -130,8 +127,7 @@ class TestAutoReplyFollowsTheSubmittingPage:
         assert len(adapter.sent) == 1
         assert adapter.sent[0]["subject"] == "Gracias"
 
-    def test_no_reply_when_the_submitting_page_has_no_template(self) -> None:
-        uow = FakeUnitOfWork()
+    def test_no_reply_when_the_submitting_page_has_no_template(self, uow) -> None:
         assembly, english, _spanish = _assembly_with_two_pages(uow)
         template = EmailTemplate(
             assembly_id=assembly.id, name="EN reply", subject="Thanks", body_html="<p>Thank you</p>"
@@ -148,9 +144,8 @@ class TestAutoReplyFollowsTheSubmittingPage:
         assert record is None
         assert adapter.sent == []
 
-    def test_no_reply_for_a_respondent_with_no_page(self) -> None:
+    def test_no_reply_for_a_respondent_with_no_page(self, uow) -> None:
         """CSV and manual respondents never came through a registration page."""
-        uow = FakeUnitOfWork()
         assembly, english, _spanish = _assembly_with_two_pages(uow)
         template = EmailTemplate(
             assembly_id=assembly.id, name="EN reply", subject="Thanks", body_html="<p>Thank you</p>"

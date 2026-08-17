@@ -70,18 +70,20 @@ def logged_in_as_admin(page: Page, admin_user):
 
 @given(parsers.parse('there is an assembly called "{title}" with a registration page'))
 def assembly_with_registration_page(title: str, admin_user, test_database):
-    assembly = create_assembly(
-        uow=SqlAlchemyUnitOfWork(test_database),
-        title=title,
-        created_by_user_id=admin_user.id,
-    )
-    create_registration_page_with_slugs(
-        uow=SqlAlchemyUnitOfWork(test_database),
-        user_id=admin_user.id,
-        assembly_id=assembly.id,
-        name="Registration page",
-    )
-    _assembly_ids[title] = str(assembly.id)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        assembly = create_assembly(
+            uow=uow,
+            title=title,
+            created_by_user_id=admin_user.id,
+        )
+        create_registration_page_with_slugs(
+            uow=uow,
+            user_id=admin_user.id,
+            assembly_id=assembly.id,
+            name="Registration page",
+        )
+        # Read before the block commits and expires the attribute.
+        _assembly_ids[title] = str(assembly.id)
 
 
 @when(parsers.parse('I visit the registration form editor for "{title}"'))

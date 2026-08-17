@@ -14,8 +14,7 @@ from opendlp.service_layer.registration_submission_service import submit_registr
 from tests.fakes import FakeUnitOfWork
 
 
-def _build(status: RegistrationPageStatus) -> tuple[FakeUnitOfWork, str]:
-    uow = FakeUnitOfWork()
+def _build(uow, status: RegistrationPageStatus) -> tuple[FakeUnitOfWork, str]:
     assembly = Assembly(title="Test Assembly", question="?", status=AssemblyStatus.ACTIVE)
     uow.assemblies.add(assembly)
     uow.registration_pages.add(RegistrationPage(assembly_id=assembly.id, url_slug="join-us", status=status))
@@ -45,8 +44,8 @@ def _build(status: RegistrationPageStatus) -> tuple[FakeUnitOfWork, str]:
     return uow, "join-us"
 
 
-def test_published_submission_lands_in_pool_with_mixed_schema() -> None:
-    uow, slug = _build(RegistrationPageStatus.PUBLISHED)
+def test_published_submission_lands_in_pool_with_mixed_schema(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
 
     result = submit_registration(
         uow,
@@ -74,8 +73,8 @@ def test_published_submission_lands_in_pool_with_mixed_schema() -> None:
     assert "internal_note" not in result.respondent.attributes
 
 
-def test_test_page_submission_is_test_submission() -> None:
-    uow, slug = _build(RegistrationPageStatus.TEST)
+def test_test_page_submission_is_test_submission(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.TEST)
 
     result = submit_registration(
         uow,
@@ -93,8 +92,8 @@ def test_test_page_submission_is_test_submission() -> None:
     assert result.respondent.selection_status == RespondentStatus.TEST_SUBMISSION
 
 
-def test_missing_required_consent_checkbox_rejects() -> None:
-    uow, slug = _build(RegistrationPageStatus.PUBLISHED)
+def test_missing_required_consent_checkbox_rejects(uow) -> None:
+    _, slug = _build(uow, RegistrationPageStatus.PUBLISHED)
 
     result = submit_registration(
         uow,

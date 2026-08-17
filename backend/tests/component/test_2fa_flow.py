@@ -112,7 +112,8 @@ class Test2FALoginFlow:
 class Test2FAManagement:
     def test_regenerate_backup_codes(self, client: FlaskClient, fake_store: FakeStore, user_with_2fa: dict) -> None:
         """A 2FA user can regenerate their backup codes with a valid TOTP code."""
-        user = FakeUnitOfWork(store=fake_store).users.get(user_with_2fa["id"]).create_detached_copy()
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user = uow.users.get(user_with_2fa["id"]).create_detached_copy()
         _login_session(client, user)
 
         valid_code = pyotp.TOTP(user_with_2fa["totp_secret"]).now()

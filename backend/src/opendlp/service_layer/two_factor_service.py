@@ -37,28 +37,29 @@ def setup_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> tuple[str, str, li
 
     Raises:
         TwoFactorSetupError: If user is OAuth user or already has 2FA enabled
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if user is None:
-            raise TwoFactorSetupError(_l("User not found"))
+    user = uow.users.get(user_id)
+    if user is None:
+        raise TwoFactorSetupError(_l("User not found"))
 
-        if user.oauth_provider:
-            raise TwoFactorSetupError(_l("Cannot enable 2FA for OAuth users"))
+    if user.oauth_provider:
+        raise TwoFactorSetupError(_l("Cannot enable 2FA for OAuth users"))
 
-        if user.totp_enabled:
-            raise TwoFactorSetupError(_l("2FA is already enabled for this user"))
+    if user.totp_enabled:
+        raise TwoFactorSetupError(_l("2FA is already enabled for this user"))
 
-        # Generate TOTP secret
-        totp_secret = totp_service.generate_totp_secret()
+    # Generate TOTP secret
+    totp_secret = totp_service.generate_totp_secret()
 
-        # Generate QR code
-        qr_code_url = totp_service.generate_qr_code_data_url(totp_secret, user.email)
+    # Generate QR code
+    qr_code_url = totp_service.generate_qr_code_data_url(totp_secret, user.email)
 
-        # Generate backup codes
-        backup_codes = totp_service.generate_backup_codes()
+    # Generate backup codes
+    backup_codes = totp_service.generate_backup_codes()
 
-        return totp_secret, qr_code_url, backup_codes
+    return totp_secret, qr_code_url, backup_codes
 
 
 def enable_2fa(
@@ -83,45 +84,45 @@ def enable_2fa(
     Raises:
         TwoFactorVerificationError: If TOTP code is invalid
         TwoFactorSetupError: If user cannot enable 2FA
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if user is None:
-            raise TwoFactorSetupError(_l("User not found"))
+    user = uow.users.get(user_id)
+    if user is None:
+        raise TwoFactorSetupError(_l("User not found"))
 
-        if user.oauth_provider:
-            raise TwoFactorSetupError(_l("Cannot enable 2FA for OAuth users"))
+    if user.oauth_provider:
+        raise TwoFactorSetupError(_l("Cannot enable 2FA for OAuth users"))
 
-        # Verify the TOTP code
-        if not totp_service.verify_totp_code(totp_secret, totp_code):
-            raise TwoFactorVerificationError(_l("Invalid authentication code"))
+    # Verify the TOTP code
+    if not totp_service.verify_totp_code(totp_secret, totp_code):
+        raise TwoFactorVerificationError(_l("Invalid authentication code"))
 
-        # Encrypt and store the TOTP secret
-        encrypted_secret = totp_service.encrypt_totp_secret(totp_secret, user_id)
+    # Encrypt and store the TOTP secret
+    encrypted_secret = totp_service.encrypt_totp_secret(totp_secret, user_id)
 
-        # Enable 2FA on the user
-        user.enable_totp(encrypted_secret)
+    # Enable 2FA on the user
+    user.enable_totp(encrypted_secret)
 
-        # Delete any existing backup codes and create new ones
-        uow.user_backup_codes.delete_codes_for_user(user_id)
+    # Delete any existing backup codes and create new ones
+    uow.user_backup_codes.delete_codes_for_user(user_id)
 
-        for code in backup_codes:
-            hashed = totp_service.hash_backup_code(code)
-            backup_code = UserBackupCode(user_id=user_id, code_hash=hashed)
-            uow.user_backup_codes.add(backup_code)
+    for code in backup_codes:
+        hashed = totp_service.hash_backup_code(code)
+        backup_code = UserBackupCode(user_id=user_id, code_hash=hashed)
+        uow.user_backup_codes.add(backup_code)
 
-        # Create audit log entry
-        audit_log = TwoFactorAuditLog(
-            user_id=user_id,
-            action="enabled",
-            performed_by=user_id,
-            metadata={"method": "totp"},
-        )
-        uow.two_factor_audit_logs.add(audit_log)
+    # Create audit log entry
+    audit_log = TwoFactorAuditLog(
+        user_id=user_id,
+        action="enabled",
+        performed_by=user_id,
+        metadata={"method": "totp"},
+    )
+    uow.two_factor_audit_logs.add(audit_log)
 
-        detached_user: User = user.create_detached_copy()
-        uow.commit()
-        return detached_user
+    detached_user: User = user.create_detached_copy()
+    return detached_user
 
 
 def disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_code: str) -> User:
@@ -140,39 +141,39 @@ def disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_code: str) -> 
     Raises:
         TwoFactorVerificationError: If TOTP code is invalid
         TwoFactorSetupError: If user doesn't have 2FA enabled
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
 
-    with uow:
-        user = uow.users.get(user_id)
-        if user is None:
-            raise TwoFactorSetupError(_l("User not found"))
+    user = uow.users.get(user_id)
+    if user is None:
+        raise TwoFactorSetupError(_l("User not found"))
 
-        if not user.totp_enabled:
-            raise TwoFactorSetupError(_l("2FA is not enabled for this user"))
+    if not user.totp_enabled:
+        raise TwoFactorSetupError(_l("2FA is not enabled for this user"))
 
-        # Decrypt the secret and verify the code
-        decrypted_secret = totp_service.decrypt_totp_secret(user.totp_secret_encrypted, user_id)
-        if not totp_service.verify_totp_code(decrypted_secret, totp_code):
-            raise TwoFactorVerificationError(_l("Invalid authentication code"))
+    # Decrypt the secret and verify the code
+    decrypted_secret = totp_service.decrypt_totp_secret(user.totp_secret_encrypted, user_id)
+    if not totp_service.verify_totp_code(decrypted_secret, totp_code):
+        raise TwoFactorVerificationError(_l("Invalid authentication code"))
 
-        # Disable 2FA
-        user.disable_totp()
+    # Disable 2FA
+    user.disable_totp()
 
-        # Delete all backup codes
-        uow.user_backup_codes.delete_codes_for_user(user_id)
+    # Delete all backup codes
+    uow.user_backup_codes.delete_codes_for_user(user_id)
 
-        # Create audit log entry
-        audit_log = TwoFactorAuditLog(
-            user_id=user_id,
-            action="disabled",
-            performed_by=user_id,
-            metadata={"method": "user_requested"},
-        )
-        uow.two_factor_audit_logs.add(audit_log)
+    # Create audit log entry
+    audit_log = TwoFactorAuditLog(
+        user_id=user_id,
+        action="disabled",
+        performed_by=user_id,
+        metadata={"method": "user_requested"},
+    )
+    uow.two_factor_audit_logs.add(audit_log)
 
-        detached_user: User = user.create_detached_copy()
-        uow.commit()
-        return detached_user
+    detached_user: User = user.create_detached_copy()
+    return detached_user
 
 
 def regenerate_backup_codes(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_code: str) -> list[str]:
@@ -192,35 +193,34 @@ def regenerate_backup_codes(uow: AbstractUnitOfWork, user_id: uuid.UUID, totp_co
     Raises:
         TwoFactorVerificationError: If TOTP code is invalid
         TwoFactorSetupError: If user doesn't have 2FA enabled
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        user = uow.users.get(user_id)
-        if user is None:
-            raise TwoFactorSetupError(_l("User not found"))
+    user = uow.users.get(user_id)
+    if user is None:
+        raise TwoFactorSetupError(_l("User not found"))
 
-        if not user.totp_enabled:
-            raise TwoFactorSetupError(_l("2FA is not enabled for this user"))
+    if not user.totp_enabled:
+        raise TwoFactorSetupError(_l("2FA is not enabled for this user"))
 
-        # Decrypt the secret and verify the code
-        decrypted_secret = totp_service.decrypt_totp_secret(user.totp_secret_encrypted, user_id)
-        if not totp_service.verify_totp_code(decrypted_secret, totp_code):
-            raise TwoFactorVerificationError(_l("Invalid authentication code"))
+    # Decrypt the secret and verify the code
+    decrypted_secret = totp_service.decrypt_totp_secret(user.totp_secret_encrypted, user_id)
+    if not totp_service.verify_totp_code(decrypted_secret, totp_code):
+        raise TwoFactorVerificationError(_l("Invalid authentication code"))
 
-        # Generate new backup codes
-        backup_codes = totp_service.create_backup_codes_for_user(uow, user_id)
+    # Generate new backup codes
+    backup_codes = totp_service.create_backup_codes_for_user(uow, user_id)
 
-        # Create audit log entry
-        audit_log = TwoFactorAuditLog(
-            user_id=user_id,
-            action="backup_codes_regenerated",
-            performed_by=user_id,
-            metadata={"codes_count": len(backup_codes)},
-        )
-        uow.two_factor_audit_logs.add(audit_log)
+    # Create audit log entry
+    audit_log = TwoFactorAuditLog(
+        user_id=user_id,
+        action="backup_codes_regenerated",
+        performed_by=user_id,
+        metadata={"codes_count": len(backup_codes)},
+    )
+    uow.two_factor_audit_logs.add(audit_log)
 
-        uow.commit()
-
-        return backup_codes
+    return backup_codes
 
 
 def admin_disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> User:
@@ -239,41 +239,41 @@ def admin_disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id
 
     Raises:
         TwoFactorSetupError: If user doesn't have 2FA enabled or is OAuth user
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
 
-    with uow:
-        user = uow.users.get(user_id)
-        if user is None:
-            raise TwoFactorSetupError(_l("User not found"))
+    user = uow.users.get(user_id)
+    if user is None:
+        raise TwoFactorSetupError(_l("User not found"))
 
-        admin_user = uow.users.get(admin_user_id)
-        if admin_user is None:
-            raise TwoFactorSetupError(_l("Admin user not found"))
+    admin_user = uow.users.get(admin_user_id)
+    if admin_user is None:
+        raise TwoFactorSetupError(_l("Admin user not found"))
 
-        if not user.totp_enabled:
-            raise TwoFactorSetupError(_l("2FA is not enabled for this user"))
+    if not user.totp_enabled:
+        raise TwoFactorSetupError(_l("2FA is not enabled for this user"))
 
-        if user.oauth_provider:
-            raise TwoFactorSetupError(_l("Cannot disable 2FA for OAuth users (they don't use 2FA)"))
+    if user.oauth_provider:
+        raise TwoFactorSetupError(_l("Cannot disable 2FA for OAuth users (they don't use 2FA)"))
 
-        # Disable 2FA
-        user.disable_totp()
+    # Disable 2FA
+    user.disable_totp()
 
-        # Delete all backup codes
-        uow.user_backup_codes.delete_codes_for_user(user_id)
+    # Delete all backup codes
+    uow.user_backup_codes.delete_codes_for_user(user_id)
 
-        # Create audit log entry
-        audit_log = TwoFactorAuditLog(
-            user_id=user_id,
-            action="admin_disabled",
-            performed_by=admin_user_id,
-            metadata={"admin_email": admin_user.email},
-        )
-        uow.two_factor_audit_logs.add(audit_log)
+    # Create audit log entry
+    audit_log = TwoFactorAuditLog(
+        user_id=user_id,
+        action="admin_disabled",
+        performed_by=admin_user_id,
+        metadata={"admin_email": admin_user.email},
+    )
+    uow.two_factor_audit_logs.add(audit_log)
 
-        detached_user: User = user.create_detached_copy()
-        uow.commit()
-        return detached_user
+    detached_user: User = user.create_detached_copy()
+    return detached_user
 
 
 def get_2fa_status(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict:
@@ -285,18 +285,19 @@ def get_2fa_status(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict:
 
     Returns:
         Dictionary with 2FA status information
-    """
-    with uow:
-        user = uow.users.get(user_id)
-        if user is None:
-            raise TwoFactorSetupError(_l("User not found"))
 
-        return {
-            "enabled": user.totp_enabled,
-            "enabled_at": user.totp_enabled_at,
-            "is_oauth_user": user.oauth_provider is not None,
-            "backup_codes_remaining": totp_service.count_remaining_backup_codes(uow, user_id),
-        }
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if user is None:
+        raise TwoFactorSetupError(_l("User not found"))
+
+    return {
+        "enabled": user.totp_enabled,
+        "enabled_at": user.totp_enabled_at,
+        "is_oauth_user": user.oauth_provider is not None,
+        "backup_codes_remaining": totp_service.count_remaining_backup_codes(uow, user_id),
+    }
 
 
 def get_2fa_audit_logs(uow: AbstractUnitOfWork, user_id: uuid.UUID, limit: int = 100) -> list[TwoFactorAuditLog]:
@@ -311,6 +312,8 @@ def get_2fa_audit_logs(uow: AbstractUnitOfWork, user_id: uuid.UUID, limit: int =
 
     Returns:
         List of TwoFactorAuditLog entries, most recent first
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     user = uow.users.get(user_id)
     if user is None:

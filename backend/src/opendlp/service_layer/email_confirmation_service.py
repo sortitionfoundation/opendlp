@@ -41,6 +41,8 @@ def create_confirmation_token(
 
     Raises:
         RateLimitExceeded: If user has exceeded rate limits
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Note: This function is called from within a UnitOfWork context,
     # so we don't need another `with uow:` block
@@ -68,6 +70,8 @@ def check_rate_limit(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> None:
 
     Raises:
         RateLimitExceeded: If user has exceeded rate limits
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Note: This function is called from within a UnitOfWork context,
     # so we don't need another `with uow:` block
@@ -161,28 +165,29 @@ def validate_confirmation_token(uow: AbstractUnitOfWork, token_string: str) -> E
 
     Raises:
         InvalidConfirmationToken: If token is invalid, expired, or used
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        token = uow.email_confirmation_tokens.get_by_token(token_string)
+    token = uow.email_confirmation_tokens.get_by_token(token_string)
 
-        if not token:
-            raise InvalidConfirmationToken("Token not found")
+    if not token:
+        raise InvalidConfirmationToken("Token not found")
 
-        # Help mypy understand the type
-        assert isinstance(token, EmailConfirmationToken)
+    # Help mypy understand the type
+    assert isinstance(token, EmailConfirmationToken)
 
-        if token.is_expired():
-            raise InvalidConfirmationToken("Token has expired")
+    if token.is_expired():
+        raise InvalidConfirmationToken("Token has expired")
 
-        if token.is_used():
-            raise InvalidConfirmationToken("Token has already been used")
+    if token.is_used():
+        raise InvalidConfirmationToken("Token has already been used")
 
-        # Verify associated user still exists and is active
-        user = uow.users.get(token.user_id)
-        if not user or not user.is_active:
-            raise InvalidConfirmationToken("Associated user not found or inactive")
+    # Verify associated user still exists and is active
+    user = uow.users.get(token.user_id)
+    if not user or not user.is_active:
+        raise InvalidConfirmationToken("Associated user not found or inactive")
 
-        return token.create_detached_copy()
+    return token.create_detached_copy()
 
 
 def confirm_email_with_token(
@@ -201,43 +206,43 @@ def confirm_email_with_token(
 
     Raises:
         InvalidConfirmationToken: If token is invalid
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        # Validate token
-        token = uow.email_confirmation_tokens.get_by_token(token_string)
+    # Validate token
+    token = uow.email_confirmation_tokens.get_by_token(token_string)
 
-        if not token:
-            raise InvalidConfirmationToken("Token not found")
+    if not token:
+        raise InvalidConfirmationToken("Token not found")
 
-        if not token.is_valid():
-            if token.is_expired():
-                raise InvalidConfirmationToken("Token has expired")
-            if token.is_used():
-                raise InvalidConfirmationToken("Token has already been used")
-            raise InvalidConfirmationToken("Token is invalid")
+    if not token.is_valid():
+        if token.is_expired():
+            raise InvalidConfirmationToken("Token has expired")
+        if token.is_used():
+            raise InvalidConfirmationToken("Token has already been used")
+        raise InvalidConfirmationToken("Token is invalid")
 
-        # Get user
-        user = uow.users.get(token.user_id)
-        if not user:
-            raise InvalidConfirmationToken("Associated user not found")
+    # Get user
+    user = uow.users.get(token.user_id)
+    if not user:
+        raise InvalidConfirmationToken("Associated user not found")
 
-        if not user.is_active:
-            raise InvalidConfirmationToken("User account is inactive")
+    if not user.is_active:
+        raise InvalidConfirmationToken("User account is inactive")
 
-        # Confirm email
-        user.confirm_email()
+    # Confirm email
+    user.confirm_email()
 
-        # Mark token as used
-        token.use()
+    # Mark token as used
+    token.use()
 
-        # Invalidate all other tokens for this user
-        invalidate_user_tokens(uow, user.id)
+    # Invalidate all other tokens for this user
+    invalidate_user_tokens(uow, user.id)
 
-        detached_user = user.create_detached_copy()
-        uow.commit()
-        assert isinstance(detached_user, User)
+    detached_user = user.create_detached_copy()
+    assert isinstance(detached_user, User)
 
-        return detached_user
+    return detached_user
 
 
 def invalidate_user_tokens(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> int:
@@ -253,6 +258,8 @@ def invalidate_user_tokens(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> int:
 
     Returns:
         Number of tokens invalidated
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Note: This function is called from within a UnitOfWork context,
     # so we don't need another `with uow:` block
@@ -285,35 +292,34 @@ def resend_confirmation_email(
 
     Raises:
         RateLimitExceeded: If user has exceeded rate limits
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        # Look up user by email
-        user = uow.users.get_by_email(email)
+    # Look up user by email
+    user = uow.users.get_by_email(email)
 
-        # If user doesn't exist, return success (anti-enumeration)
-        if not user:
-            return True
-
-        # If user is already confirmed, return success (anti-enumeration)
-        if user.email_confirmed_at:
-            return True
-
-        # If user is inactive, return success without creating token
-        if not user.is_active:
-            return True
-
-        # Check rate limiting
-        check_rate_limit(uow, user.id)
-
-        # Create confirmation token
-        token = create_confirmation_token(uow, user.id)
-
-        uow.commit()
-
-        # Send confirmation email
-        send_confirmation_email(email_adapter, template_renderer, url_generator, user, token.token)
-
+    # If user doesn't exist, return success (anti-enumeration)
+    if not user:
         return True
+
+    # If user is already confirmed, return success (anti-enumeration)
+    if user.email_confirmed_at:
+        return True
+
+    # If user is inactive, return success without creating token
+    if not user.is_active:
+        return True
+
+    # Check rate limiting
+    check_rate_limit(uow, user.id)
+
+    # Create confirmation token
+    token = create_confirmation_token(uow, user.id)
+
+    # Send confirmation email
+    send_confirmation_email(email_adapter, template_renderer, url_generator, user, token.token)
+
+    return True
 
 
 def cleanup_expired_tokens(uow: AbstractUnitOfWork, days_old: int = 30) -> int:
@@ -329,9 +335,8 @@ def cleanup_expired_tokens(uow: AbstractUnitOfWork, days_old: int = 30) -> int:
 
     Returns:
         Number of tokens deleted
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    with uow:
-        before = datetime.now(UTC) - timedelta(days=days_old)
-        count = uow.email_confirmation_tokens.delete_old_tokens(before)
-        uow.commit()
-        return count
+    before = datetime.now(UTC) - timedelta(days=days_old)
+    return uow.email_confirmation_tokens.delete_old_tokens(before)

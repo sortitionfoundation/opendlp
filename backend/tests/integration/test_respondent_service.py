@@ -17,29 +17,29 @@ from opendlp.service_layer.user_service import grant_user_assembly_role
 @pytest.fixture
 def uow(postgres_session_factory):
     """Create a UnitOfWork for testing."""
-    return SqlAlchemyUnitOfWork(postgres_session_factory)
+    """An already-entered UnitOfWork; the whole test is one transaction."""
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as entered:
+        yield entered
 
 
 @pytest.fixture
 def admin_user(uow):
     """Create an admin user."""
     user = User(email="admin@test.com", global_role=GlobalRole.ADMIN, password_hash="hash123")
-    with uow:
-        uow.users.add(user)
-        detached_user = user.create_detached_copy()
-        uow.commit()
-        return detached_user
+    uow.users.add(user)
+    detached_user = user.create_detached_copy()
+    uow.commit()
+    return detached_user
 
 
 @pytest.fixture
 def test_assembly(uow):
     """Create a test assembly."""
     assembly = Assembly(title="Test Assembly", question="Test?", number_to_select=30)
-    with uow:
-        uow.assemblies.add(assembly)
-        detached_assembly = assembly.create_detached_copy()
-        uow.commit()
-        return detached_assembly
+    uow.assemblies.add(assembly)
+    detached_assembly = assembly.create_detached_copy()
+    uow.commit()
+    return detached_assembly
 
 
 class TestCreateRespondent:
@@ -61,10 +61,9 @@ class TestCreateRespondent:
         assert resp.eligible is True
 
         # Verify it was persisted
-        with uow:
-            retrieved = uow.respondents.get(resp.id)
-            assert retrieved is not None
-            assert retrieved.external_id == "NB001"
+        retrieved = uow.respondents.get(resp.id)
+        assert retrieved is not None
+        assert retrieved.external_id == "NB001"
 
     def test_create_duplicate_raises_error(self, uow, admin_user: User, test_assembly: Assembly):
         """Test creating duplicate respondent raises error."""
@@ -93,10 +92,9 @@ class TestCreateRespondent:
     def test_create_without_permission(self, uow, test_assembly: Assembly):
         """Test creating respondent without permission raises error."""
         user = User(email="user@test.com", global_role=GlobalRole.USER, password_hash="hash123")
-        with uow:
-            uow.users.add(user)
-            user_id = user.id
-            uow.commit()
+        uow.users.add(user)
+        user_id = user.id
+        uow.commit()
 
         with pytest.raises(InsufficientPermissions):
             respondent_service.create_respondent(uow, user_id, test_assembly.id, external_id="NB001", attributes={})
@@ -121,9 +119,8 @@ NB002,Male,16-29,bob@test.com"""
         assert resolved_id_column == "external_id"
 
         # Verify they were persisted
-        with uow:
-            all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
-            assert len(all_resp) == 2
+        all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
+        assert len(all_resp) == 2
 
     def test_import_csv_uses_first_column_as_id(self, uow, admin_user: User, test_assembly: Assembly):
         """Test importing CSV without explicit id_column uses first column."""
@@ -176,9 +173,8 @@ NB001,Female"""
         respondent_service.import_respondents_from_csv(uow, admin_user.id, test_assembly.id, csv1)
 
         # Verify first import
-        with uow:
-            all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
-            assert len(all_resp) == 1
+        all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
+        assert len(all_resp) == 1
 
         # Second import with replace
         csv2 = """external_id,Age
@@ -192,10 +188,9 @@ NB002,30-44"""
         assert respondents[0].external_id == "NB002"
 
         # Verify old respondent is gone
-        with uow:
-            all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
-            assert len(all_resp) == 1
-            assert all_resp[0].external_id == "NB002"
+        all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
+        assert len(all_resp) == 1
+        assert all_resp[0].external_id == "NB002"
 
     def test_import_with_nullable_boolean_fields(self, uow, admin_user: User, test_assembly: Assembly):
         """Test importing CSV without boolean fields leaves them as None."""
@@ -231,10 +226,9 @@ NB002,Male,false,true,true"""
     def test_import_without_permission(self, uow, test_assembly: Assembly):
         """Test importing without permission raises error."""
         user = User(email="user@test.com", global_role=GlobalRole.USER, password_hash="hash123")
-        with uow:
-            uow.users.add(user)
-            user_id = user.id
-            uow.commit()
+        uow.users.add(user)
+        user_id = user.id
+        uow.commit()
 
         csv_content = """external_id,Gender
 NB001,Female"""
@@ -277,19 +271,17 @@ class TestResetSelectionStatus:
         assert count == 3
 
         # Verify all are now POOL
-        with uow:
-            all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
-            for r in all_resp:
-                assert r.selection_status == RespondentStatus.POOL
-                assert r.selection_run_id is None
+        all_resp = uow.respondents.get_by_assembly_id(test_assembly.id)
+        for r in all_resp:
+            assert r.selection_status == RespondentStatus.POOL
+            assert r.selection_run_id is None
 
     def test_reset_without_permission(self, uow, test_assembly: Assembly):
         """Test resetting without permission raises error."""
         user = User(email="user@test.com", global_role=GlobalRole.USER, password_hash="hash123")
-        with uow:
-            uow.users.add(user)
-            user_id = user.id
-            uow.commit()
+        uow.users.add(user)
+        user_id = user.id
+        uow.commit()
 
         with pytest.raises(InsufficientPermissions):
             respondent_service.reset_selection_status(uow, user_id, test_assembly.id)
@@ -328,8 +320,7 @@ class TestCountNonPoolRespondents:
             selection_status=RespondentStatus.POOL,
         )
 
-        with uow:
-            count = respondent_service.count_non_pool_respondents(uow, test_assembly.id)
+        count = respondent_service.count_non_pool_respondents(uow, test_assembly.id)
 
         assert count == 2
 
@@ -350,15 +341,13 @@ class TestCountNonPoolRespondents:
             attributes={},
         )
 
-        with uow:
-            count = respondent_service.count_non_pool_respondents(uow, test_assembly.id)
+        count = respondent_service.count_non_pool_respondents(uow, test_assembly.id)
 
         assert count == 0
 
     def test_count_non_pool_empty_assembly(self, uow, admin_user: User, test_assembly: Assembly):
         """Test counting non-POOL respondents for assembly with no respondents."""
-        with uow:
-            count = respondent_service.count_non_pool_respondents(uow, test_assembly.id)
+        count = respondent_service.count_non_pool_respondents(uow, test_assembly.id)
 
         assert count == 0
 
@@ -417,10 +406,9 @@ NB002,Male"""
     def test_get_respondents_without_permission(self, uow, test_assembly: Assembly):
         """Test getting respondents without permission raises error."""
         user = User(email="user@test.com", global_role=GlobalRole.USER, password_hash="hash123")
-        with uow:
-            uow.users.add(user)
-            user_id = user.id
-            uow.commit()
+        uow.users.add(user)
+        user_id = user.id
+        uow.commit()
 
         with pytest.raises(InsufficientPermissions):
             respondent_service.get_respondents_for_assembly(uow, user_id, test_assembly.id)
@@ -447,26 +435,23 @@ class TestTransitionRespondentStatus:
             new_status=RespondentStatus.SELECTED,
             comment="manual override",
         )
-        with uow:
-            retrieved = uow.respondents.get(resp.id)
-            assert retrieved is not None
-            assert retrieved.selection_status == RespondentStatus.SELECTED
+        retrieved = uow.respondents.get(resp.id)
+        assert retrieved is not None
+        assert retrieved.selection_status == RespondentStatus.SELECTED
 
     def _make_caller(self, uow, admin_user, assembly, email: str) -> uuid.UUID:
         caller = User(email=email, global_role=GlobalRole.USER, password_hash="h")
-        with uow:
-            uow.users.add(caller)
-            caller_id = caller.id
-            uow.commit()
-        with uow:
-            granter = uow.users.get(admin_user.id)
-            grant_user_assembly_role(
-                uow,
-                user_id=caller_id,
-                assembly_id=assembly.id,
-                role=AssemblyRole.CONFIRMATION_CALLER,
-                current_user=granter,
-            )
+        uow.users.add(caller)
+        caller_id = caller.id
+        uow.commit()
+        granter = uow.users.get(admin_user.id)
+        grant_user_assembly_role(
+            uow,
+            user_id=caller_id,
+            assembly_id=assembly.id,
+            role=AssemblyRole.CONFIRMATION_CALLER,
+            current_user=granter,
+        )
         return caller_id
 
     def test_selected_to_confirmed_allowed_for_confirmation_caller(self, uow, admin_user, test_assembly):
@@ -481,9 +466,8 @@ class TestTransitionRespondentStatus:
             new_status=RespondentStatus.CONFIRMED,
             comment="confirmed on call",
         )
-        with uow:
-            retrieved = uow.respondents.get(resp.id)
-            assert retrieved.selection_status == RespondentStatus.CONFIRMED
+        retrieved = uow.respondents.get(resp.id)
+        assert retrieved.selection_status == RespondentStatus.CONFIRMED
 
     def test_caller_cannot_manually_select_from_pool(self, uow, admin_user, test_assembly):
         caller_id = self._make_caller(uow, admin_user, test_assembly, "caller2@test.com")
@@ -548,20 +532,18 @@ class TestUpdateRespondent:
             comment="fix email",
             email="new@b.com",
         )
-        with uow:
-            retrieved = uow.respondents.get(resp.id)
-            assert retrieved is not None
-            assert retrieved.email == "new@b.com"
-            edit_comments = [c for c in retrieved.comments if c.text == "fix email"]
-            assert len(edit_comments) == 1
+        retrieved = uow.respondents.get(resp.id)
+        assert retrieved is not None
+        assert retrieved.email == "new@b.com"
+        edit_comments = [c for c in retrieved.comments if c.text == "fix email"]
+        assert len(edit_comments) == 1
 
     def test_raises_for_mismatched_assembly(self, uow, admin_user, test_assembly):
         resp = self._create(uow, admin_user, test_assembly)
         other_assembly = Assembly(title="other", question="?", number_to_select=1)
-        with uow:
-            uow.assemblies.add(other_assembly)
-            other_id = other_assembly.id
-            uow.commit()
+        uow.assemblies.add(other_assembly)
+        other_id = other_assembly.id
+        uow.commit()
         with pytest.raises(RespondentNotFoundError):
             respondent_service.update_respondent(
                 uow,
@@ -575,20 +557,18 @@ class TestUpdateRespondent:
     def test_refuses_when_permission_denied(self, uow, test_assembly):
         # Create respondent as admin first
         admin = User(email="admin_for_edit@test.com", global_role=GlobalRole.ADMIN, password_hash="h")
-        with uow:
-            uow.users.add(admin)
-            admin_id = admin.id
-            uow.commit()
+        uow.users.add(admin)
+        admin_id = admin.id
+        uow.commit()
         resp = respondent_service.create_respondent(
             uow, admin_id, test_assembly.id, external_id="NB_PERM", attributes={}
         )
 
         # Now try with a user with no role
         user = User(email="noedit@test.com", global_role=GlobalRole.USER, password_hash="h")
-        with uow:
-            uow.users.add(user)
-            user_id = user.id
-            uow.commit()
+        uow.users.add(user)
+        user_id = user.id
+        uow.commit()
         with pytest.raises(InsufficientPermissions):
             respondent_service.update_respondent(uow, user_id, test_assembly.id, resp.id, comment="x", email="z@z.com")
 
