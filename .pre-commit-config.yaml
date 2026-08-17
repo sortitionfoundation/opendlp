@@ -20,12 +20,29 @@ repos:
   # TODO: consider
   # - csslint
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.15.5"
+  # Python linting and formatting. Like the eslint/prettier hooks below, these
+  # run the tool from the project rather than installing an isolated copy, so
+  # the ruff version is the one pinned in backend/pyproject.toml + uv.lock -
+  # `just install`, CI's `uv sync --frozen` and the Dockerfile all provide it.
+  # That keeps a direct `uv run ruff` on the command line and the hook on
+  # exactly the same version; an isolated `rev:` pin drifts from uv.lock,
+  # because dependabot watches the uv ecosystem but not pre-commit.
+  # `python -m ruff` rather than plain `ruff`: `uv run ruff` silently falls back
+  # to a ruff on $PATH when the venv lacks it, which is the drift we're closing.
+  - repo: local
     hooks:
       - id: ruff-check
-        args: [--exit-non-zero-on-fix, --fix, --config=backend/pyproject.toml]
+        name: ruff check (backend)
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+        entry: uv run --project backend python -m ruff check --force-exclude --exit-non-zero-on-fix --fix --config=backend/pyproject.toml
       - id: ruff-format
+        name: ruff format (backend)
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
+        entry: uv run --project backend python -m ruff format --force-exclude --config=backend/pyproject.toml
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
