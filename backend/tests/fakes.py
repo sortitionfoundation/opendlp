@@ -58,7 +58,7 @@ from opendlp.service_layer.repositories import (
     UserInviteRepository,
     UserRepository,
 )
-from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork, UnitOfWorkError
 
 
 class FakeRepository(AbstractRepository):
@@ -951,6 +951,24 @@ class FakeStore:
         self.respondent_email_send_records = FakeRespondentEmailSendRecordRepository()
 
 
+class ClosedRepository:
+    """Stand-in bound to a strict FakeUnitOfWork's repository names outside its block.
+
+    Any attribute access raises, so a test that reaches for ``uow.users`` without
+    an open context fails at the point of the mistake rather than silently
+    working in a way the real UnitOfWork will not.
+    """
+
+    def __init__(self, name: str) -> None:
+        self._name = name
+
+    def __getattr__(self, attr: str) -> Any:
+        raise UnitOfWorkError(
+            f"uow.{self._name} is only available inside `with uow:`. "
+            f"To arrange or inspect data outside the context, use uow.fake_{self._name}."
+        )
+
+
 class FakeUnitOfWork(AbstractUnitOfWork):
     """Fake Unit of Work implementation for testing.
 
@@ -958,24 +976,33 @@ class FakeUnitOfWork(AbstractUnitOfWork):
     used by unit tests). With a shared ``store`` it behaves like a real UoW over
     a shared database: every instance sees the same data, and the ``with`` block
     rolls back on exception via a snapshot of each repository.
+
+    The repositories are only bound inside the ``with`` block, as they are on the
+    real UnitOfWork. The ``fake_<name>`` aliases are unaffected and stay usable
+    throughout as the arrange/inspect seam.
     """
 
     def __init__(self, store: FakeStore | None = None) -> None:
         self._shared = store is not None
         self._store = store if store is not None else FakeStore()
-        # Expose each repository both as ``uow.users`` and the legacy ``uow.fake_users``.
+        # The legacy ``uow.fake_users`` alias is bound once and never withdrawn.
         for name in _REPO_NAMES:
-            repo = getattr(self._store, name)
-            setattr(self, name, repo)
-            setattr(self, f"fake_{name}", repo)
+            setattr(self, f"fake_{name}", getattr(self._store, name))
+        self._bind_repositories(open_context=False)
         # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly.
         # All instances sharing a store share repositories, so pointing at the latest is fine.
-        self.user_assembly_roles._uow = self
+        self._store.user_assembly_roles._uow = self
         self.committed = False
         self.expire_all_calls = 0
         self._snapshot: dict[str, list[Any]] | None = None
 
+    def _bind_repositories(self, open_context: bool) -> None:
+        for name in _REPO_NAMES:
+            repo = getattr(self._store, name) if open_context else ClosedRepository(name)
+            setattr(self, name, repo)
+
     def __enter__(self) -> AbstractUnitOfWork:
+        self._bind_repositories(open_context=True)
         if self._shared:
             self._take_snapshot()
         return self
@@ -984,6 +1011,7 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         # Match SqlAlchemyUnitOfWork: roll back the shared store on exception.
         if self._shared and exc_type is not None:
             self.rollback()
+        self._bind_repositories(open_context=False)
 
     def _take_snapshot(self) -> None:
         self._snapshot = {name: list(getattr(self._store, name)._items) for name in _REPO_NAMES}

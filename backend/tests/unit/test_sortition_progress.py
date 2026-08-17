@@ -12,8 +12,7 @@ from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
 from tests.fakes import FakeUnitOfWork
 
 
-def _make_uow_with_record(task_id: uuid.UUID) -> FakeUnitOfWork:
-    uow = FakeUnitOfWork()
+def _make_uow_with_record(uow, task_id: uuid.UUID) -> FakeUnitOfWork:
     assembly_id = uuid.uuid4()
     uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Test Assembly"))
     uow.selection_run_records.add(
@@ -62,14 +61,14 @@ def register_uow(monkeypatch):
 
 
 class TestDatabaseProgressReporter:
-    def test_constructor_does_not_touch_db(self, register_uow):
+    def test_constructor_does_not_touch_db(self, register_uow, uow):
         # No uow registered — if construction called bootstrap, the assertion
         # inside fake_bootstrap would trip.
         DatabaseProgressReporter(task_id=uuid.uuid4(), session_factory=None)
 
-    def test_start_phase_always_writes(self, fake_clock, register_uow):
+    def test_start_phase_always_writes(self, fake_clock, register_uow, uow):
         task_id = uuid.uuid4()
-        uow = _make_uow_with_record(task_id)
+        uow = _make_uow_with_record(uow, task_id)
         register_uow(uow)
         reporter = DatabaseProgressReporter(task_id=task_id, session_factory=None)
 
@@ -77,16 +76,16 @@ class TestDatabaseProgressReporter:
         fake_clock.advance(0.01)
         reporter.start_phase("phase_b", total=20)
 
-        record = uow.selection_run_records.get_by_task_id(task_id)
+        record = uow.fake_selection_run_records.get_by_task_id(task_id)
         assert record is not None
         assert record.progress is not None
         assert record.progress["phase"] == "phase_b"
         assert record.progress["current"] == 0
         assert record.progress["total"] == 20
 
-    def test_update_within_min_interval_is_dropped(self, fake_clock, register_uow):
+    def test_update_within_min_interval_is_dropped(self, fake_clock, register_uow, uow):
         task_id = uuid.uuid4()
-        uow = _make_uow_with_record(task_id)
+        uow = _make_uow_with_record(uow, task_id)
         register_uow(uow)
         reporter = DatabaseProgressReporter(task_id=task_id, session_factory=None, min_interval_seconds=1.0)
 
@@ -94,16 +93,16 @@ class TestDatabaseProgressReporter:
         fake_clock.advance(0.1)
         reporter.update(1)
 
-        record = uow.selection_run_records.get_by_task_id(task_id)
+        record = uow.fake_selection_run_records.get_by_task_id(task_id)
         assert record is not None
         assert record.progress is not None
         # The update within the interval was dropped; progress still shows
         # the start_phase force-flush value.
         assert record.progress["current"] == 0
 
-    def test_update_beyond_min_interval_writes(self, fake_clock, register_uow):
+    def test_update_beyond_min_interval_writes(self, fake_clock, register_uow, uow):
         task_id = uuid.uuid4()
-        uow = _make_uow_with_record(task_id)
+        uow = _make_uow_with_record(uow, task_id)
         register_uow(uow)
         reporter = DatabaseProgressReporter(task_id=task_id, session_factory=None, min_interval_seconds=1.0)
 
@@ -111,16 +110,16 @@ class TestDatabaseProgressReporter:
         fake_clock.advance(1.5)
         reporter.update(5)
 
-        record = uow.selection_run_records.get_by_task_id(task_id)
+        record = uow.fake_selection_run_records.get_by_task_id(task_id)
         assert record is not None
         assert record.progress is not None
         assert record.progress["phase"] == "phase_a"
         assert record.progress["current"] == 5
         assert record.progress["total"] == 100
 
-    def test_phase_transition_forces_flush_within_interval(self, fake_clock, register_uow):
+    def test_phase_transition_forces_flush_within_interval(self, fake_clock, register_uow, uow):
         task_id = uuid.uuid4()
-        uow = _make_uow_with_record(task_id)
+        uow = _make_uow_with_record(uow, task_id)
         register_uow(uow)
         reporter = DatabaseProgressReporter(task_id=task_id, session_factory=None, min_interval_seconds=1.0)
 
@@ -128,7 +127,7 @@ class TestDatabaseProgressReporter:
         fake_clock.advance(0.1)
         reporter.start_phase("phase_b", total=20)
 
-        record = uow.selection_run_records.get_by_task_id(task_id)
+        record = uow.fake_selection_run_records.get_by_task_id(task_id)
         assert record is not None
         assert record.progress is not None
         assert record.progress["phase"] == "phase_b"
@@ -144,27 +143,27 @@ class TestDatabaseProgressReporter:
         reporter.update(5)
         reporter.end_phase()
 
-    def test_end_phase_is_noop(self, fake_clock, register_uow):
+    def test_end_phase_is_noop(self, fake_clock, register_uow, uow):
         task_id = uuid.uuid4()
-        uow = _make_uow_with_record(task_id)
+        uow = _make_uow_with_record(uow, task_id)
         register_uow(uow)
         reporter = DatabaseProgressReporter(task_id=task_id, session_factory=None)
 
         reporter.end_phase()
 
-        record = uow.selection_run_records.get_by_task_id(task_id)
+        record = uow.fake_selection_run_records.get_by_task_id(task_id)
         assert record is not None
         assert record.progress is None
 
-    def test_update_includes_updated_at_timestamp(self, fake_clock, register_uow):
+    def test_update_includes_updated_at_timestamp(self, fake_clock, register_uow, uow):
         task_id = uuid.uuid4()
-        uow = _make_uow_with_record(task_id)
+        uow = _make_uow_with_record(uow, task_id)
         register_uow(uow)
         reporter = DatabaseProgressReporter(task_id=task_id, session_factory=None)
 
         reporter.start_phase("phase_a", total=10)
 
-        record = uow.selection_run_records.get_by_task_id(task_id)
+        record = uow.fake_selection_run_records.get_by_task_id(task_id)
         assert record is not None
         assert record.progress is not None
         assert "updated_at" in record.progress

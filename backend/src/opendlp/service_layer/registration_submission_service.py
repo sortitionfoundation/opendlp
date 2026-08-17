@@ -145,7 +145,10 @@ def _create_and_save_respondent(
     is_test: bool,
     registration_page_id: uuid.UUID | None = None,
 ) -> Respondent:
-    """Build a Respondent from cleaned form data, persist it, and return a detached copy."""
+    """Build a Respondent from cleaned form data, persist it, and return a detached copy.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     respondent_status = RespondentStatus.TEST_SUBMISSION if is_test else RespondentStatus.POOL
 
     email = str(cleaned_data.pop("email", ""))
@@ -205,50 +208,51 @@ def submit_registration(
     Raises:
         RegistrationNotFoundError: If the page doesn't exist or has no slug
         RegistrationClosedError: If the page is closed
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Convert form_data to a plain dict for storage in result
     submitted_values = dict(form_data)
 
-    with uow:
-        # Look up the registration page
-        page = find_registration_page_by_url_slug(uow, url_slug)
+    # Look up the registration page
+    page = find_registration_page_by_url_slug(uow, url_slug)
 
-        if page is None:
-            raise RegistrationNotFoundError(f"Registration page not found: {url_slug}")
+    if page is None:
+        raise RegistrationNotFoundError(f"Registration page not found: {url_slug}")
 
-        visibility = resolve_visibility(page)
+    visibility = resolve_visibility(page)
 
-        if not visibility.is_visible:
-            if page.status == RegistrationPageStatus.CLOSED:
-                raise RegistrationClosedError("Registration is closed")
-            raise RegistrationNotFoundError(f"Registration page not available: {url_slug}")
+    if not visibility.is_visible:
+        if page.status == RegistrationPageStatus.CLOSED:
+            raise RegistrationClosedError("Registration is closed")
+        raise RegistrationNotFoundError(f"Registration page not available: {url_slug}")
 
-        is_test = visibility.is_test
+    is_test = visibility.is_test
 
-        # Get field definitions for validation
-        field_definitions = uow.respondent_field_definitions.list_by_assembly(page.assembly_id)
+    # Get field definitions for validation
+    field_definitions = uow.respondent_field_definitions.list_by_assembly(page.assembly_id)
 
-        # Validate form data
-        cleaned_data, field_errors = _validate_form_data(form_data, field_definitions)
+    # Validate form data
+    cleaned_data, field_errors = _validate_form_data(form_data, field_definitions)
 
-        if field_errors:
-            return RegistrationSubmissionResult(
-                respondent=None,
-                values=submitted_values,
-                field_errors=field_errors,
-                form_errors=[],
-                is_test=is_test,
-            )
-
-        respondent = _create_and_save_respondent(uow, page.assembly_id, cleaned_data, is_test, page.id)
-
+    if field_errors:
         return RegistrationSubmissionResult(
-            respondent=respondent,
+            respondent=None,
             values=submitted_values,
-            field_errors={},
+            field_errors=field_errors,
             form_errors=[],
             is_test=is_test,
         )
+
+    respondent = _create_and_save_respondent(uow, page.assembly_id, cleaned_data, is_test, page.id)
+
+    return RegistrationSubmissionResult(
+        respondent=respondent,
+        values=submitted_values,
+        field_errors={},
+        form_errors=[],
+        is_test=is_test,
+    )
 
 
 def submit_registration_by_assembly_id(
@@ -271,42 +275,43 @@ def submit_registration_by_assembly_id(
 
     Returns:
         RegistrationSubmissionResult with the created respondent or validation errors.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     submitted_values = dict(form_data)
 
-    with uow:
-        # Verify assembly exists
-        assembly = uow.assemblies.get(assembly_id)
-        if assembly is None:
-            return RegistrationSubmissionResult(
-                respondent=None,
-                values=submitted_values,
-                field_errors={},
-                form_errors=["Assembly not found"],
-                is_test=is_test,
-            )
-
-        # Get field definitions for validation
-        field_definitions = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-
-        # Validate form data
-        cleaned_data, field_errors = _validate_form_data(form_data, field_definitions)
-
-        if field_errors:
-            return RegistrationSubmissionResult(
-                respondent=None,
-                values=submitted_values,
-                field_errors=field_errors,
-                form_errors=[],
-                is_test=is_test,
-            )
-
-        respondent = _create_and_save_respondent(uow, assembly_id, cleaned_data, is_test)
-
+    # Verify assembly exists
+    assembly = uow.assemblies.get(assembly_id)
+    if assembly is None:
         return RegistrationSubmissionResult(
-            respondent=respondent,
+            respondent=None,
             values=submitted_values,
             field_errors={},
+            form_errors=["Assembly not found"],
+            is_test=is_test,
+        )
+
+    # Get field definitions for validation
+    field_definitions = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+
+    # Validate form data
+    cleaned_data, field_errors = _validate_form_data(form_data, field_definitions)
+
+    if field_errors:
+        return RegistrationSubmissionResult(
+            respondent=None,
+            values=submitted_values,
+            field_errors=field_errors,
             form_errors=[],
             is_test=is_test,
         )
+
+    respondent = _create_and_save_respondent(uow, assembly_id, cleaned_data, is_test)
+
+    return RegistrationSubmissionResult(
+        respondent=respondent,
+        values=submitted_values,
+        field_errors={},
+        form_errors=[],
+        is_test=is_test,
+    )

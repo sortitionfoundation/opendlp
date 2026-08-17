@@ -107,6 +107,8 @@ check:
   @uv run mypy
   @echo "🚀 Checking for obsolete dependencies: Running deptry"
   @uv run deptry src
+  @echo "🚀 Checking the UnitOfWork convention"
+  @uv run python scripts/check_uow_convention.py
 
 # Run code quality tools - CI edition
 check-ci:
@@ -118,6 +120,8 @@ check-ci:
   @uv run mypy
   @echo "🚀 Checking for obsolete dependencies: Running deptry"
   @uv run deptry src
+  @echo "🚀 Checking the UnitOfWork convention"
+  @uv run python scripts/check_uow_convention.py
 
 # start the flask shell
 flask-shell:

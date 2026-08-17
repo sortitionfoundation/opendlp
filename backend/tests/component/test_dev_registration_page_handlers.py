@@ -84,10 +84,6 @@ def as_admin(app, admin):
         yield
 
 
-def _uow(fake_store) -> FakeUnitOfWork:
-    return FakeUnitOfWork(store=fake_store)
-
-
 class TestDevError:
     """The dev-only error text: safe message, plus where to find the rest."""
 
@@ -111,18 +107,18 @@ class TestDevError:
 
 
 class TestPublishRegistrationPage:
-    def test_publishes_a_ready_page(self, fake_store, as_admin):
+    def test_publishes_a_ready_page(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store)
 
-        result = _handle_publish_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+        result = _handle_publish_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "success"
         assert result["registration_page"]["status"] == RegistrationPageStatus.PUBLISHED.value
 
-    def test_reports_readiness_problems_to_the_developer(self, fake_store, as_admin):
+    def test_reports_readiness_problems_to_the_developer(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store, form_html="")
 
-        result = _handle_publish_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+        result = _handle_publish_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "error"
         assert result["error_type"] == "RegistrationPageNotReady"
@@ -130,13 +126,13 @@ class TestPublishRegistrationPage:
         assert "The form HTML is empty" in result["error"]
         assert "check the Flask console log" in result["error"]
 
-    def test_reports_a_missing_page_without_leaking_the_internal_message(self, fake_store, as_admin):
+    def test_reports_a_missing_page_without_leaking_the_internal_message(self, fake_store, as_admin, shared_uow):
         assembly = Assembly(title="No page", question="?", status=AssemblyStatus.ACTIVE)
         with FakeUnitOfWork(store=fake_store) as uow:
             uow.assemblies.add(assembly)
             uow.commit()
 
-        result = _handle_publish_registration_page(_uow(fake_store), {"assembly_id": str(assembly.id)})
+        result = _handle_publish_registration_page(shared_uow, {"assembly_id": str(assembly.id)})
 
         assert result["status"] == "error"
         assert result["error_type"] == "RegistrationPageNotFoundError"
@@ -144,15 +140,15 @@ class TestPublishRegistrationPage:
         assert str(assembly.id) not in result["error"]
         assert "Something went wrong" in result["error"]
 
-    def test_reports_a_wrong_status_as_a_value_error(self, fake_store, as_admin):
+    def test_reports_a_wrong_status_as_a_value_error(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store, status=RegistrationPageStatus.PUBLISHED)
 
-        result = _handle_publish_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+        result = _handle_publish_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "error"
         assert result["error_type"] == "ValueError"
 
-    def test_lets_an_unexpected_error_propagate_to_the_route(self, fake_store, as_admin):
+    def test_lets_an_unexpected_error_propagate_to_the_route(self, fake_store, as_admin, shared_uow):
         """Anything not in the narrowed tuple belongs to service_docs_execute's handler."""
         page = _seed_page(fake_store)
 
@@ -163,22 +159,22 @@ class TestPublishRegistrationPage:
             ),
             pytest.raises(RuntimeError),
         ):
-            _handle_publish_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+            _handle_publish_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
 
 class TestUnpublishRegistrationPage:
-    def test_returns_a_published_page_to_test(self, fake_store, as_admin):
+    def test_returns_a_published_page_to_test(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store, status=RegistrationPageStatus.PUBLISHED)
 
-        result = _handle_unpublish_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+        result = _handle_unpublish_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "success"
         assert result["registration_page"]["status"] == RegistrationPageStatus.TEST.value
 
-    def test_reports_a_wrong_status_without_raising(self, fake_store, as_admin):
+    def test_reports_a_wrong_status_without_raising(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store, status=RegistrationPageStatus.TEST)
 
-        result = _handle_unpublish_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+        result = _handle_unpublish_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "error"
         assert result["error_type"] == "ValueError"
@@ -186,36 +182,36 @@ class TestUnpublishRegistrationPage:
 
 
 class TestCloseRegistrationPage:
-    def test_closes_a_published_page(self, fake_store, as_admin):
+    def test_closes_a_published_page(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store, status=RegistrationPageStatus.PUBLISHED)
 
-        result = _handle_close_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+        result = _handle_close_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "success"
         assert result["registration_page"]["status"] == RegistrationPageStatus.CLOSED.value
 
-    def test_reports_a_wrong_status_without_raising(self, fake_store, as_admin):
+    def test_reports_a_wrong_status_without_raising(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store, status=RegistrationPageStatus.TEST)
 
-        result = _handle_close_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+        result = _handle_close_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "error"
         assert result["error_type"] == "ValueError"
 
 
 class TestReopenRegistrationPage:
-    def test_reopens_a_closed_page(self, fake_store, as_admin):
+    def test_reopens_a_closed_page(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store, status=RegistrationPageStatus.CLOSED)
 
-        result = _handle_reopen_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+        result = _handle_reopen_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "success"
         assert result["registration_page"]["status"] == RegistrationPageStatus.PUBLISHED.value
 
-    def test_reports_readiness_problems_when_reopening(self, fake_store, as_admin):
+    def test_reports_readiness_problems_when_reopening(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store, status=RegistrationPageStatus.CLOSED, form_html="")
 
-        result = _handle_reopen_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+        result = _handle_reopen_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "error"
         assert result["error_type"] == "RegistrationPageNotReady"
@@ -223,14 +219,14 @@ class TestReopenRegistrationPage:
 
 
 class TestSubmitRegistration:
-    def test_reports_a_missing_assembly_as_a_form_error(self, fake_store, as_admin):
+    def test_reports_a_missing_assembly_as_a_form_error(self, fake_store, as_admin, shared_uow):
         """This service reports problems in its result rather than raising."""
-        result = _handle_submit_registration(_uow(fake_store), {"assembly_id": str(uuid.uuid4()), "form_data": {}})
+        result = _handle_submit_registration(shared_uow, {"assembly_id": str(uuid.uuid4()), "form_data": {}})
 
         assert result["status"] == "validation_error"
         assert result["form_errors"] == ["Assembly not found"]
 
-    def test_lets_an_unexpected_error_propagate_to_the_route(self, fake_store, as_admin):
+    def test_lets_an_unexpected_error_propagate_to_the_route(self, fake_store, as_admin, shared_uow):
         with (
             patch(
                 "opendlp.entrypoints.blueprints.dev.submit_registration_by_assembly_id",
@@ -238,18 +234,18 @@ class TestSubmitRegistration:
             ),
             pytest.raises(RuntimeError),
         ):
-            _handle_submit_registration(_uow(fake_store), {"assembly_id": str(uuid.uuid4()), "form_data": {}})
+            _handle_submit_registration(shared_uow, {"assembly_id": str(uuid.uuid4()), "form_data": {}})
 
 
 class TestPermissionErrorsStayCurated:
-    def test_insufficient_permissions_keeps_its_message(self, fake_store, as_admin):
+    def test_insufficient_permissions_keeps_its_message(self, fake_store, as_admin, shared_uow):
         page = _seed_page(fake_store)
 
         with patch(
             "opendlp.entrypoints.blueprints.dev.publish_registration_page",
             side_effect=InsufficientPermissions(action="publish registration page", required_role="organiser"),
         ):
-            result = _handle_publish_registration_page(_uow(fake_store), {"assembly_id": str(page.assembly_id)})
+            result = _handle_publish_registration_page(shared_uow, {"assembly_id": str(page.assembly_id)})
 
         assert result["status"] == "error"
         assert result["error_type"] == "InsufficientPermissions"

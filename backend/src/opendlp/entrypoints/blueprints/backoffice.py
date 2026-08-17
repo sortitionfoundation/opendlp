@@ -117,17 +117,20 @@ def new_assembly() -> ResponseReturnValue:
 def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly details page."""
     try:
-        nav = get_assembly_nav_context(
-            bootstrap.get_flask_uow,
-            current_user.id,
-            assembly_id,
-            request.args.get("source", ""),
-        )
+        nav_uow = bootstrap.get_flask_uow()
+        with nav_uow:
+            nav = get_assembly_nav_context(
+                nav_uow,
+                current_user.id,
+                assembly_id,
+                request.args.get("source", ""),
+            )
 
         # Read-only registration page summary: name, status and copyable URLs per
         # page. Editing lives on the Registration tab, not here.
         uow = bootstrap.get_flask_uow()
-        registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
+        with uow:
+            registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
         registration_page_rows = [
             {
                 "page": page,
@@ -289,21 +292,24 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
 
-        nav = get_assembly_nav_context(
-            bootstrap.get_flask_uow,
-            current_user.id,
-            assembly_id,
-            request.args.get("source", ""),
-        )
+        nav_uow = bootstrap.get_flask_uow()
+        with nav_uow:
+            nav = get_assembly_nav_context(
+                nav_uow,
+                current_user.id,
+                assembly_id,
+                request.args.get("source", ""),
+            )
 
         # Get selection settings for gsheet display and form population.
         # A single UnitOfWork is reused for the sequential reads below.
         uow = bootstrap.get_flask_uow()
         sel_settings = None
-        try:
-            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
-        except Exception as sel_error:
-            logger.exception("Error loading selection settings", error=str(sel_error))
+        with uow:
+            try:
+                sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
+            except Exception as sel_error:
+                logger.exception("Error loading selection settings", error=str(sel_error))
 
         # Set up gsheet form if gsheet source is selected
         gsheet_mode = "new"
@@ -398,12 +404,14 @@ def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly team members page."""
     try:
-        nav = get_assembly_nav_context(
-            bootstrap.get_flask_uow,
-            current_user.id,
-            assembly_id,
-            request.args.get("source", ""),
-        )
+        nav_uow = bootstrap.get_flask_uow()
+        with nav_uow:
+            nav = get_assembly_nav_context(
+                nav_uow,
+                current_user.id,
+                assembly_id,
+                request.args.get("source", ""),
+            )
 
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -575,7 +583,8 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
         search_term = request.args.get("q", "").strip()
 
         uow = bootstrap.get_flask_uow()
-        matching_users = search_assembly_candidate_users(uow, assembly_id, search_term, current_user)
+        with uow:
+            matching_users = search_assembly_candidate_users(uow, assembly_id, search_term, current_user)
 
         # Return JSON array with id, label, sublabel format expected by autocomplete
         results = [

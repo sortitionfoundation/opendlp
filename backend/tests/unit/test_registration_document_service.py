@@ -69,8 +69,7 @@ def _stored_document(uow: FakeUnitOfWork, page: RegistrationPage, marker: bytes 
 
 
 class TestAddRegistrationDocument:
-    def test_stores_returns(self):
-        uow = FakeUnitOfWork()
+    def test_stores_returns(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
 
@@ -78,10 +77,8 @@ class TestAddRegistrationDocument:
 
         assert isinstance(document, RegistrationDocument)
         assert uow.registration_documents.count_by_assembly_id(page.assembly_id) == 1
-        assert uow.committed
 
-    def test_permission_denied_for_viewer(self):
-        uow = FakeUnitOfWork()
+    def test_permission_denied_for_viewer(self, uow):
         assembly = _assembly(uow)
         viewer = _viewer(uow, assembly)
         _page(uow, assembly)
@@ -89,30 +86,26 @@ class TestAddRegistrationDocument:
         with pytest.raises(InsufficientPermissions):
             service.add_registration_document(uow, viewer.id, assembly.id, _pdf())
 
-    def test_unknown_user_raises(self):
-        uow = FakeUnitOfWork()
+    def test_unknown_user_raises(self, uow):
         assembly = _assembly(uow)
 
         with pytest.raises(UserNotFoundError):
             service.add_registration_document(uow, uuid.uuid4(), assembly.id, _pdf())
 
-    def test_unknown_assembly_raises(self):
-        uow = FakeUnitOfWork()
+    def test_unknown_assembly_raises(self, uow):
         admin = _admin(uow)
 
         with pytest.raises(AssemblyNotFoundError):
             service.add_registration_document(uow, admin.id, uuid.uuid4(), _pdf())
 
-    def test_invalid_document_propagates(self):
-        uow = FakeUnitOfWork()
+    def test_invalid_document_propagates(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
         with pytest.raises(DocumentValidationError):
             service.add_registration_document(uow, admin.id, assembly.id, b"not a pdf")
 
-    def test_stores_label(self):
-        uow = FakeUnitOfWork()
+    def test_stores_label(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -120,8 +113,7 @@ class TestAddRegistrationDocument:
 
         assert document.label == "Information pack"
 
-    def test_label_defaults_to_filename(self):
-        uow = FakeUnitOfWork()
+    def test_label_defaults_to_filename(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -131,8 +123,7 @@ class TestAddRegistrationDocument:
 
         assert document.label == "info pack.pdf"
 
-    def test_dedup_updates_label(self):
-        uow = FakeUnitOfWork()
+    def test_dedup_updates_label(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -141,8 +132,7 @@ class TestAddRegistrationDocument:
 
         assert second.label == "Second label"
 
-    def test_stores_and_sanitises_original_filename(self):
-        uow = FakeUnitOfWork()
+    def test_stores_and_sanitises_original_filename(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -152,8 +142,7 @@ class TestAddRegistrationDocument:
 
         assert document.original_filename == "info pack.pdf"
 
-    def test_dedup_keeps_first_original_filename(self):
-        uow = FakeUnitOfWork()
+    def test_dedup_keeps_first_original_filename(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -162,8 +151,7 @@ class TestAddRegistrationDocument:
 
         assert second.original_filename == "first.pdf"
 
-    def test_dedup_returns_existing_without_a_new_row(self):
-        uow = FakeUnitOfWork()
+    def test_dedup_returns_existing_without_a_new_row(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
 
@@ -173,9 +161,8 @@ class TestAddRegistrationDocument:
         assert second.id == first.id
         assert uow.registration_documents.count_by_assembly_id(page.assembly_id) == 1
 
-    def test_quota_at_limit_raises(self, monkeypatch):
+    def test_quota_at_limit_raises(self, uow, monkeypatch):
         monkeypatch.setenv("MAX_DOCUMENTS_PER_REGISTRATION_PAGE", "1")
-        uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -183,9 +170,8 @@ class TestAddRegistrationDocument:
         with pytest.raises(DocumentQuotaExceeded):
             service.add_registration_document(uow, admin.id, assembly.id, _pdf(b"two"))
 
-    def test_dedup_at_limit_still_succeeds(self, monkeypatch):
+    def test_dedup_at_limit_still_succeeds(self, uow, monkeypatch):
         monkeypatch.setenv("MAX_DOCUMENTS_PER_REGISTRATION_PAGE", "1")
-        uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
 
@@ -196,8 +182,7 @@ class TestAddRegistrationDocument:
 
 
 class TestListRegistrationDocuments:
-    def test_lists_only_documents_for_this_assembly(self):
-        uow = FakeUnitOfWork()
+    def test_lists_only_documents_for_this_assembly(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
         _stored_document(uow, page, b"one")
@@ -206,13 +191,11 @@ class TestListRegistrationDocuments:
         listed = service.list_registration_documents(uow, admin.id, assembly.id)
         assert len(listed) == 2
 
-    def test_empty_when_no_page(self):
-        uow = FakeUnitOfWork()
+    def test_empty_when_no_page(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         assert service.list_registration_documents(uow, admin.id, assembly.id) == []
 
-    def test_permission_denied_for_stranger(self):
-        uow = FakeUnitOfWork()
+    def test_permission_denied_for_stranger(self, uow):
         assembly = _assembly(uow)
         stranger = User(email=f"x-{uuid.uuid4()}@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(stranger)
@@ -223,8 +206,7 @@ class TestListRegistrationDocuments:
 
 
 class TestDeleteRegistrationDocument:
-    def test_deletes(self):
-        uow = FakeUnitOfWork()
+    def test_deletes(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
         document = _stored_document(uow, page)
@@ -233,8 +215,7 @@ class TestDeleteRegistrationDocument:
 
         assert uow.registration_documents.count_by_assembly_id(page.assembly_id) == 0
 
-    def test_permission_denied_for_viewer(self):
-        uow = FakeUnitOfWork()
+    def test_permission_denied_for_viewer(self, uow):
         assembly = _assembly(uow)
         viewer = _viewer(uow, assembly)
         page = _page(uow, assembly)
@@ -243,8 +224,7 @@ class TestDeleteRegistrationDocument:
         with pytest.raises(InsufficientPermissions):
             service.delete_registration_document(uow, viewer.id, assembly.id, document.id)
 
-    def test_missing_document_raises(self):
-        uow = FakeUnitOfWork()
+    def test_missing_document_raises(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -253,8 +233,7 @@ class TestDeleteRegistrationDocument:
 
 
 class TestListDocumentSnippets:
-    def test_builds_snippet_per_document_with_builder_url(self):
-        uow = FakeUnitOfWork()
+    def test_builds_snippet_per_document_with_builder_url(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
         service.add_registration_document(uow, admin.id, assembly.id, _pdf(), label="Information pack")
@@ -265,8 +244,7 @@ class TestListDocumentSnippets:
         assert f'href="/x/{document.sha256}.pdf"' in html
         assert html.startswith("<a ")
 
-    def test_snippet_text_includes_label_type_and_size(self):
-        uow = FakeUnitOfWork()
+    def test_snippet_text_includes_label_type_and_size(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
         service.add_registration_document(uow, admin.id, assembly.id, _pdf(), label="Information pack")
@@ -277,8 +255,7 @@ class TestListDocumentSnippets:
 
 
 class TestSetRegistrationDocumentLabel:
-    def test_updates_label(self):
-        uow = FakeUnitOfWork()
+    def test_updates_label(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
         document = _stored_document(uow, page)
@@ -287,10 +264,8 @@ class TestSetRegistrationDocumentLabel:
 
         assert updated.label == "New label"
         assert uow.registration_documents.get(document.id).label == "New label"
-        assert uow.committed
 
-    def test_permission_denied_for_viewer(self):
-        uow = FakeUnitOfWork()
+    def test_permission_denied_for_viewer(self, uow):
         assembly = _assembly(uow)
         viewer = _viewer(uow, assembly)
         page = _page(uow, assembly)
@@ -299,8 +274,7 @@ class TestSetRegistrationDocumentLabel:
         with pytest.raises(InsufficientPermissions):
             service.set_registration_document_label(uow, viewer.id, assembly.id, document.id, "New label")
 
-    def test_missing_document_raises(self):
-        uow = FakeUnitOfWork()
+    def test_missing_document_raises(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -310,8 +284,7 @@ class TestSetRegistrationDocumentLabel:
 
 class TestGetRegistrationDocumentForServing:
     @pytest.mark.parametrize("status", [RegistrationPageStatus.TEST, RegistrationPageStatus.PUBLISHED])
-    def test_serves_for_loadable_statuses(self, status):
-        uow = FakeUnitOfWork()
+    def test_serves_for_loadable_statuses(self, uow, status):
         assembly = _assembly(uow)
         page = _page(uow, assembly, url_slug="live", status=status)
         document = _stored_document(uow, page)
@@ -320,26 +293,22 @@ class TestGetRegistrationDocumentForServing:
         assert served is not None
         assert served.id == document.id
 
-    def test_none_when_closed(self):
-        uow = FakeUnitOfWork()
+    def test_none_when_closed(self, uow):
         assembly = _assembly(uow)
         page = _page(uow, assembly, url_slug="closed", status=RegistrationPageStatus.CLOSED)
         document = _stored_document(uow, page)
 
         assert service.get_registration_document_for_serving(uow, "closed", f"{document.sha256}.pdf") is None
 
-    def test_none_for_unknown_slug(self):
-        uow = FakeUnitOfWork()
+    def test_none_for_unknown_slug(self, uow):
         assert service.get_registration_document_for_serving(uow, "nope", "abc.pdf") is None
 
-    def test_none_for_unknown_sha(self):
-        uow = FakeUnitOfWork()
+    def test_none_for_unknown_sha(self, uow):
         assembly = _assembly(uow)
         _page(uow, assembly, url_slug="live")
         assert service.get_registration_document_for_serving(uow, "live", "deadbeef.pdf") is None
 
-    def test_handles_missing_extension(self):
-        uow = FakeUnitOfWork()
+    def test_handles_missing_extension(self, uow):
         assembly = _assembly(uow)
         page = _page(uow, assembly, url_slug="live")
         document = _stored_document(uow, page)

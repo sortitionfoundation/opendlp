@@ -218,8 +218,7 @@ def _add_respondent(uow: FakeUnitOfWork, assembly: Assembly, external_id: str, s
 
 
 class TestExportRespondents:
-    def test_rows_ordered_oldest_first(self):
-        uow = FakeUnitOfWork()
+    def test_rows_ordered_oldest_first(self, uow):
         user, assembly = _seed(uow)
         uow.respondents.add(
             Respondent(assembly_id=assembly.id, external_id="R-new", created_at=datetime(2026, 3, 1, tzinfo=UTC))
@@ -236,26 +235,22 @@ class TestExportRespondents:
 
         assert [row["external_id"] for row in _parse_export(target)] == ["R-old", "R-mid", "R-new"]
 
-    def test_raises_when_user_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_user_missing(self, uow):
         _, assembly = _seed(uow)
         with pytest.raises(UserNotFoundError):
             export_respondents(uow, uuid.uuid4(), assembly.id, status_filter=None, target=CsvExportTarget())
 
-    def test_raises_when_assembly_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_assembly_missing(self, uow):
         user, _ = _seed(uow)
         with pytest.raises(AssemblyNotFoundError):
             export_respondents(uow, user.id, uuid.uuid4(), status_filter=None, target=CsvExportTarget())
 
-    def test_requires_manage_permission(self):
-        uow = FakeUnitOfWork()
+    def test_requires_manage_permission(self, uow):
         user, assembly = _seed(uow, global_role=GlobalRole.USER)
         with pytest.raises(InsufficientPermissions):
             export_respondents(uow, user.id, assembly.id, status_filter=None, target=CsvExportTarget())
 
-    def test_all_exports_every_non_deleted_respondent(self):
-        uow = FakeUnitOfWork()
+    def test_all_exports_every_non_deleted_respondent(self, uow):
         user, assembly = _seed(uow)
         _add_respondent(uow, assembly, "R-pool", RespondentStatus.POOL)
         _add_respondent(uow, assembly, "R-selected", RespondentStatus.SELECTED)
@@ -267,8 +262,7 @@ class TestExportRespondents:
         ids = {row["external_id"] for row in _parse_export(target)}
         assert ids == {"R-pool", "R-selected"}
 
-    def test_single_status_filter(self):
-        uow = FakeUnitOfWork()
+    def test_single_status_filter(self, uow):
         user, assembly = _seed(uow)
         _add_respondent(uow, assembly, "R-pool", RespondentStatus.POOL)
         _add_respondent(uow, assembly, "R-selected", RespondentStatus.SELECTED)
@@ -279,8 +273,7 @@ class TestExportRespondents:
         ids = {row["external_id"] for row in _parse_export(target)}
         assert ids == {"R-selected"}
 
-    def test_selected_or_confirmed_filter(self):
-        uow = FakeUnitOfWork()
+    def test_selected_or_confirmed_filter(self, uow):
         user, assembly = _seed(uow)
         _add_respondent(uow, assembly, "R-pool", RespondentStatus.POOL)
         _add_respondent(uow, assembly, "R-selected", RespondentStatus.SELECTED)
@@ -298,8 +291,7 @@ class TestExportRespondents:
         ids = {row["external_id"] for row in _parse_export(target)}
         assert ids == {"R-selected", "R-confirmed"}
 
-    def test_uses_configured_id_column_header(self):
-        uow = FakeUnitOfWork()
+    def test_uses_configured_id_column_header(self, uow):
         user, assembly = _seed(uow)
         assembly.csv = AssemblyCSV(assembly_id=assembly.id, csv_id_column="nationbuilder_id")
         _add_respondent(uow, assembly, "R1", RespondentStatus.POOL)
@@ -313,8 +305,7 @@ class TestExportRespondents:
 
 
 class TestExportToGSheetTarget:
-    def test_records_single_write_with_table(self):
-        uow = FakeUnitOfWork()
+    def test_records_single_write_with_table(self, uow):
         user, assembly = _seed(uow)
         _add_respondent(uow, assembly, "R1", RespondentStatus.POOL)
         _add_respondent(uow, assembly, "R2", RespondentStatus.SELECTED)
@@ -334,8 +325,7 @@ _SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUU
 
 
 class TestExportRespondentsToGSheet:
-    def test_writes_and_saves_config(self):
-        uow = FakeUnitOfWork()
+    def test_writes_and_saves_config(self, uow):
         user, assembly = _seed(uow)
         _add_respondent(uow, assembly, "R1", RespondentStatus.SELECTED)
 
@@ -360,8 +350,7 @@ class TestExportRespondentsToGSheet:
         assert saved.url == _SHEET_URL
         assert saved.worksheet_name == "Export tab"
 
-    def test_saves_title_and_worksheet_url_from_target(self):
-        uow = FakeUnitOfWork()
+    def test_saves_title_and_worksheet_url_from_target(self, uow):
         user, assembly = _seed(uow)
         _add_respondent(uow, assembly, "R1", RespondentStatus.SELECTED)
 
@@ -384,8 +373,7 @@ class TestExportRespondentsToGSheet:
         assert saved.spreadsheet_title == "Assembly Data"
         assert saved.worksheet_url == "https://docs.google.com/spreadsheets/d/abc#gid=42"
 
-    def test_updates_existing_config(self):
-        uow = FakeUnitOfWork()
+    def test_updates_existing_config(self, uow):
         user, assembly = _seed(uow)
         _add_respondent(uow, assembly, "R1", RespondentStatus.POOL)
 
@@ -414,7 +402,6 @@ class TestExportRespondentsToGSheet:
         # Still one config row for the assembly.
         assert len(list(uow.assembly_respondent_gsheets.all())) == 1
 
-    def test_get_config_returns_none_when_unset(self):
-        uow = FakeUnitOfWork()
+    def test_get_config_returns_none_when_unset(self, uow):
         user, assembly = _seed(uow)
         assert get_respondent_gsheet_config(uow, user.id, assembly.id) is None

@@ -98,10 +98,11 @@ class TestHandleCreateRegistrationPage:
     def test_creates_a_second_page_for_the_same_assembly(self, fake_store, assembly, as_admin):
         _seed_page(fake_store, assembly, name="English")
 
-        result = _handle_create_registration_page(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(assembly.id), "name": "Spanish", "language": "es"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_create_registration_page(
+                uow=uow,
+                params={"assembly_id": str(assembly.id), "name": "Spanish", "language": "es"},
+            )
 
         assert result["status"] == "success"
         assert result["registration_page"]["name"] == "Spanish"
@@ -110,10 +111,11 @@ class TestHandleCreateRegistrationPage:
             assert len(uow.registration_pages.list_by_assembly_id(assembly.id)) == 2
 
     def test_with_slugs_generates_working_slugs(self, fake_store, assembly, as_admin):
-        result = _handle_create_registration_page(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(assembly.id), "name": "English", "with_slugs": True},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_create_registration_page(
+                uow=uow,
+                params={"assembly_id": str(assembly.id), "name": "English", "with_slugs": True},
+            )
 
         assert result["status"] == "success"
         assert result["registration_page"]["url_slug"]
@@ -122,10 +124,11 @@ class TestHandleCreateRegistrationPage:
     def test_rejects_duplicate_name_within_assembly(self, fake_store, assembly, as_admin):
         _seed_page(fake_store, assembly, name="English")
 
-        result = _handle_create_registration_page(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(assembly.id), "name": "English"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_create_registration_page(
+                uow=uow,
+                params={"assembly_id": str(assembly.id), "name": "English"},
+            )
 
         assert result["status"] == "error"
         assert result["error_type"] == "ValueError"
@@ -136,7 +139,8 @@ class TestHandleListRegistrationPages:
         first = _seed_page(fake_store, assembly, name="English")
         second = _seed_page(fake_store, assembly, name="Spanish")
 
-        result = _handle_list_registration_pages(uow=_uow(fake_store), params={"assembly_id": str(assembly.id)})
+        with _uow(fake_store) as uow:
+            result = _handle_list_registration_pages(uow=uow, params={"assembly_id": str(assembly.id)})
 
         assert result["status"] == "success"
         assert result["page_count"] == 2
@@ -145,7 +149,8 @@ class TestHandleListRegistrationPages:
         assert result["registration_pages"][0]["status"] == "TEST"
 
     def test_empty_assembly_returns_no_pages(self, fake_store, assembly, as_admin):
-        result = _handle_list_registration_pages(uow=_uow(fake_store), params={"assembly_id": str(assembly.id)})
+        with _uow(fake_store) as uow:
+            result = _handle_list_registration_pages(uow=uow, params={"assembly_id": str(assembly.id)})
 
         assert result["status"] == "success"
         assert result["page_count"] == 0
@@ -156,10 +161,11 @@ class TestHandleDuplicateRegistrationPage:
     def test_copies_content_into_a_fresh_test_page(self, fake_store, assembly, as_admin):
         source = _seed_page(fake_store, assembly, name="English", url_slug="english-slug")
 
-        result = _handle_duplicate_registration_page(
-            uow=_uow(fake_store),
-            params={"source_page_id": str(source.id), "name": "Spanish", "language": "es"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_duplicate_registration_page(
+                uow=uow,
+                params={"source_page_id": str(source.id), "name": "Spanish", "language": "es"},
+            )
 
         assert result["status"] == "success"
         copy = result["registration_page"]
@@ -172,10 +178,11 @@ class TestHandleDuplicateRegistrationPage:
             assert copied_source.form_html == _VALID_FORM_HTML
 
     def test_missing_source_page_is_reported(self, fake_store, assembly, as_admin):
-        result = _handle_duplicate_registration_page(
-            uow=_uow(fake_store),
-            params={"source_page_id": str(uuid.uuid4()), "name": "Spanish"},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_duplicate_registration_page(
+                uow=uow,
+                params={"source_page_id": str(uuid.uuid4()), "name": "Spanish"},
+            )
 
         assert result["status"] == "error"
         assert result["error_type"] == "NotFoundError"
@@ -185,7 +192,8 @@ class TestHandleDeleteRegistrationPage:
     def test_deletes_an_unpublished_page(self, fake_store, assembly, as_admin):
         page = _seed_page(fake_store, assembly, name="English")
 
-        result = _handle_delete_registration_page(uow=_uow(fake_store), params={"page_id": str(page.id)})
+        with _uow(fake_store) as uow:
+            result = _handle_delete_registration_page(uow=uow, params={"page_id": str(page.id)})
 
         assert result["status"] == "success"
         assert result["deleted_page_id"] == str(page.id)
@@ -199,7 +207,8 @@ class TestHandleDeleteRegistrationPage:
             stored.publish(uow.registration_page_html_sources.get_by_page_id(page.id), author_id=admin.id)
             uow.commit()
 
-        result = _handle_delete_registration_page(uow=_uow(fake_store), params={"page_id": str(page.id)})
+        with _uow(fake_store) as uow:
+            result = _handle_delete_registration_page(uow=uow, params={"page_id": str(page.id)})
 
         assert result["status"] == "error"
         assert result["error_type"] == "ValueError"
@@ -210,10 +219,11 @@ class TestPageAddressing:
         oldest = _seed_page(fake_store, assembly, name="English", url_slug="english-slug")
         newer = _seed_page(fake_store, assembly, name="Spanish", url_slug="spanish-slug")
 
-        result = _handle_publish_registration_page(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(assembly.id), "page_id": str(newer.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_publish_registration_page(
+                uow=uow,
+                params={"assembly_id": str(assembly.id), "page_id": str(newer.id)},
+            )
 
         assert result["status"] == "success"
         with _uow(fake_store) as uow:
@@ -224,7 +234,8 @@ class TestPageAddressing:
         oldest = _seed_page(fake_store, assembly, name="English")
         _seed_page(fake_store, assembly, name="Spanish")
 
-        result = _handle_get_registration_page(uow=_uow(fake_store), params={"assembly_id": str(assembly.id)})
+        with _uow(fake_store) as uow:
+            result = _handle_get_registration_page(uow=uow, params={"assembly_id": str(assembly.id)})
 
         assert result["status"] == "success"
         assert result["registration_page"]["id"] == str(oldest.id)
@@ -233,10 +244,11 @@ class TestPageAddressing:
         oldest = _seed_page(fake_store, assembly, name="English")
         _seed_page(fake_store, assembly, name="Spanish")
 
-        result = _handle_close_registration_page(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(assembly.id), "page_id": ""},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_close_registration_page(
+                uow=uow,
+                params={"assembly_id": str(assembly.id), "page_id": ""},
+            )
 
         # close on a TEST page is an invalid transition - the point is it resolved to the oldest page
         assert result["status"] == "error"
@@ -248,10 +260,11 @@ class TestPageAddressing:
         _seed_page(fake_store, assembly, name="English")
         newer = _seed_page(fake_store, assembly, name="Spanish")
 
-        result = _handle_get_registration_page(
-            uow=_uow(fake_store),
-            params={"assembly_id": str(assembly.id), "page_id": str(newer.id)},
-        )
+        with _uow(fake_store) as uow:
+            result = _handle_get_registration_page(
+                uow=uow,
+                params={"assembly_id": str(assembly.id), "page_id": str(newer.id)},
+            )
 
         assert result["status"] == "success"
         assert result["registration_page"]["id"] == str(newer.id)

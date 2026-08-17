@@ -65,8 +65,7 @@ VALID = {"name": "Auto-reply", "subject": "Thanks {{ respondent.first_name_or_fr
 
 
 class TestCreate:
-    def test_create_persists_template(self):
-        uow = FakeUnitOfWork()
+    def test_create_persists_template(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
 
         template = service.create_email_template(uow, admin.id, assembly.id, **VALID)
@@ -74,26 +73,22 @@ class TestCreate:
         assert template.assembly_id == assembly.id
         assert template.name == "Auto-reply"
         assert uow.email_templates.get(template.id) is not None
-        assert uow.committed
 
-    def test_create_requires_manage_permission(self):
-        uow = FakeUnitOfWork()
+    def test_create_requires_manage_permission(self, uow):
         assembly = _assembly(uow)
         viewer = _viewer(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
             service.create_email_template(uow, viewer.id, assembly.id, **VALID)
 
-    def test_create_rejects_invalid_template(self):
-        uow = FakeUnitOfWork()
+    def test_create_rejects_invalid_template(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
 
         with pytest.raises(EmailTemplateInvalid) as exc:
             service.create_email_template(uow, admin.id, assembly.id, name="", subject="", body_html="")
         assert exc.value.problems
 
-    def test_create_rejects_oversized_body(self):
-        uow = FakeUnitOfWork()
+    def test_create_rejects_oversized_body(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         huge = "<p>" + ("x" * (2 * 1024 * 1024)) + "</p>"
 
@@ -102,8 +97,7 @@ class TestCreate:
 
 
 class TestUpdate:
-    def test_update_changes_fields(self):
-        uow = FakeUnitOfWork()
+    def test_update_changes_fields(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         template = service.create_email_template(uow, admin.id, assembly.id, **VALID)
 
@@ -112,16 +106,14 @@ class TestUpdate:
         assert updated.name == "Renamed"
         assert uow.email_templates.get(template.id).name == "Renamed"
 
-    def test_update_rejects_invalid(self):
-        uow = FakeUnitOfWork()
+    def test_update_rejects_invalid(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         template = service.create_email_template(uow, admin.id, assembly.id, **VALID)
 
         with pytest.raises(EmailTemplateInvalid):
             service.update_email_template(uow, admin.id, template.id, subject="")
 
-    def test_update_missing_template_raises(self):
-        uow = FakeUnitOfWork()
+    def test_update_missing_template_raises(self, uow):
         admin = _admin(uow)
 
         with pytest.raises(EmailTemplateNotFoundError):
@@ -129,8 +121,7 @@ class TestUpdate:
 
 
 class TestGetAndList:
-    def test_list_scoped_to_assembly(self):
-        uow = FakeUnitOfWork()
+    def test_list_scoped_to_assembly(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         other = _assembly(uow)
         mine = service.create_email_template(uow, admin.id, assembly.id, **VALID)
@@ -140,8 +131,7 @@ class TestGetAndList:
 
         assert [t.id for t in templates] == [mine.id]
 
-    def test_get_requires_view_permission(self):
-        uow = FakeUnitOfWork()
+    def test_get_requires_view_permission(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         template = service.create_email_template(uow, admin.id, assembly.id, **VALID)
         outsider = User(email=f"out-{uuid.uuid4()}@example.com", global_role=GlobalRole.USER, password_hash="hash")
@@ -152,8 +142,7 @@ class TestGetAndList:
 
 
 class TestDelete:
-    def test_delete_removes_template(self):
-        uow = FakeUnitOfWork()
+    def test_delete_removes_template(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         template = service.create_email_template(uow, admin.id, assembly.id, **VALID)
 
@@ -163,8 +152,7 @@ class TestDelete:
 
 
 class TestAssignAutoReply:
-    def test_assign_sets_page_fk(self):
-        uow = FakeUnitOfWork()
+    def test_assign_sets_page_fk(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         page = RegistrationPage(assembly_id=assembly.id)
         uow.registration_pages.add(page)
@@ -174,8 +162,7 @@ class TestAssignAutoReply:
 
         assert page_for_assembly(uow, assembly.id).auto_reply_email_template_id == template.id
 
-    def test_assign_none_clears_fk(self):
-        uow = FakeUnitOfWork()
+    def test_assign_none_clears_fk(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         template = service.create_email_template(uow, admin.id, assembly.id, **VALID)
         page = RegistrationPage(assembly_id=assembly.id, auto_reply_email_template_id=template.id)
@@ -185,16 +172,14 @@ class TestAssignAutoReply:
 
         assert page_for_assembly(uow, assembly.id).auto_reply_email_template_id is None
 
-    def test_assign_requires_existing_page(self):
-        uow = FakeUnitOfWork()
+    def test_assign_requires_existing_page(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         template = service.create_email_template(uow, admin.id, assembly.id, **VALID)
 
         with pytest.raises(RegistrationPageNotFoundError):
             service.assign_auto_reply_template(uow, admin.id, assembly.id, template.id)
 
-    def test_assign_rejects_template_from_other_assembly(self):
-        uow = FakeUnitOfWork()
+    def test_assign_rejects_template_from_other_assembly(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)
         other = _assembly(uow)
         page = RegistrationPage(assembly_id=assembly.id)
@@ -204,9 +189,8 @@ class TestAssignAutoReply:
         with pytest.raises(EmailTemplateNotFoundError):
             service.assign_auto_reply_template(uow, admin.id, assembly.id, foreign.id)
 
-    def test_assign_does_not_block_when_email_field_missing(self):
+    def test_assign_does_not_block_when_email_field_missing(self, uow):
         # "Advise, don't block": assignment succeeds even if the email field is NO.
-        uow = FakeUnitOfWork()
         admin, assembly = _admin(uow), _assembly(uow)
         uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.NO))
         page = RegistrationPage(assembly_id=assembly.id)
@@ -219,15 +203,13 @@ class TestAssignAutoReply:
 
 
 class TestAutoReplyReadiness:
-    def test_required_email_is_ready(self):
-        uow = FakeUnitOfWork()
+    def test_required_email_is_ready(self, uow):
         assembly = _assembly(uow)
         uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.YES_REQUIRED))
 
         assert service.auto_reply_readiness_problems(uow, assembly.id) == []
 
-    def test_optional_email_warns(self):
-        uow = FakeUnitOfWork()
+    def test_optional_email_warns(self, uow):
         assembly = _assembly(uow)
         uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.YES_OPTIONAL))
 
@@ -236,8 +218,7 @@ class TestAutoReplyReadiness:
         assert len(problems) == 1
         assert problems[0].severity is AutoReplyReadinessSeverity.WARNING
 
-    def test_email_not_on_page_is_error(self):
-        uow = FakeUnitOfWork()
+    def test_email_not_on_page_is_error(self, uow):
         assembly = _assembly(uow)
         uow.respondent_field_definitions.add(_email_field(assembly.id, FieldOnRegistrationPage.NO))
 
@@ -246,8 +227,7 @@ class TestAutoReplyReadiness:
         assert len(problems) == 1
         assert problems[0].severity is AutoReplyReadinessSeverity.ERROR
 
-    def test_missing_email_field_is_error(self):
-        uow = FakeUnitOfWork()
+    def test_missing_email_field_is_error(self, uow):
         assembly = _assembly(uow)
 
         problems = service.auto_reply_readiness_problems(uow, assembly.id)

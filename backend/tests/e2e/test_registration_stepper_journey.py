@@ -52,13 +52,14 @@ def _seed_assembly_with_required_email(postgres_session_factory, admin_id):
         )
         uow.commit()
 
-    update_assembly(
-        SqlAlchemyUnitOfWork(postgres_session_factory),
-        assembly_id,
-        admin_id,
-        reply_to_name="The Team",
-        reply_to_email="team@example.com",
-    )
+    with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        update_assembly(
+            uow,
+            assembly_id,
+            admin_id,
+            reply_to_name="The Team",
+            reply_to_email="team@example.com",
+        )
     return assembly_id
 
 

@@ -124,6 +124,8 @@ def _fetch_respondents(
 
     ``None`` means every non-DELETED respondent; a list means those statuses.
     Ordering is done in the query so the export is stable regardless of status.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     return list(uow.respondents.get_by_assembly_id_statuses(assembly_id, status_filter))
 
@@ -133,6 +135,8 @@ def _load_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> Assembly:
 
     Manage permission is enforced by the ``require_assembly_permission``
     decorator on the public functions, so this only guards against a missing
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     row (which the decorator also rejects, but mypy needs the narrowing)."""
     assembly: Assembly | None = uow.assemblies.get(assembly_id)
     if not assembly:
@@ -149,6 +153,8 @@ def _write_export(
     sheet_title: str,
 ) -> None:
     """Build the respondent table and hand it to the target. Assumes an open
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     uow and an already-authorised caller."""
     respondents = _fetch_respondents(uow, assembly_id, status_filter)
     schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
@@ -173,6 +179,8 @@ def export_respondents(
     of statuses exports just those (fetched in a single query). Requires manage
     permission on the assembly. The caller is expected to manage the ``uow``
     context (``with uow: ...``).
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     assembly = _load_assembly(uow, assembly_id)
     _write_export(uow, assembly_id, assembly, status_filter, target, sheet_title)
@@ -184,7 +192,10 @@ def get_respondent_gsheet_config(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> "AssemblyRespondentGSheet | None":
-    """Return the saved respondent-export sheet config, or None. Manage-gated."""
+    """Return the saved respondent-export sheet config, or None. Manage-gated.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     config = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
     return config.create_detached_copy() if config else None
 
@@ -208,6 +219,8 @@ def export_respondents_to_gsheet(
     with the spreadsheet's title and the direct worksheet link read off the
     target after the write, so the respondents page can link to the export. The
     caller is expected to manage the ``uow`` context (``with uow: ...``).
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     worksheet_name = worksheet_name.strip() or DEFAULT_SHEET_TITLE
     assembly = _load_assembly(uow, assembly_id)

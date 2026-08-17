@@ -34,8 +34,7 @@ def _seed(uow: FakeUnitOfWork, *, global_role: GlobalRole = GlobalRole.ADMIN) ->
 
 
 class TestGetRespondent:
-    def test_returns_respondent_for_admin(self):
-        uow = FakeUnitOfWork()
+    def test_returns_respondent_for_admin(self, uow):
         user, assembly, respondent = _seed(uow)
 
         result = respondent_service.get_respondent(uow, user.id, assembly.id, respondent.id)
@@ -44,30 +43,26 @@ class TestGetRespondent:
         assert result.external_id == "R001"
         assert result.email == "alice@example.com"
 
-    def test_returns_detached_copy(self):
-        uow = FakeUnitOfWork()
+    def test_returns_detached_copy(self, uow):
         user, assembly, respondent = _seed(uow)
 
         result = respondent_service.get_respondent(uow, user.id, assembly.id, respondent.id)
 
         assert result is not respondent
 
-    def test_raises_when_user_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_user_missing(self, uow):
         _, assembly, respondent = _seed(uow)
 
         with pytest.raises(UserNotFoundError):
             respondent_service.get_respondent(uow, uuid.uuid4(), assembly.id, respondent.id)
 
-    def test_raises_when_assembly_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_assembly_missing(self, uow):
         user, _, respondent = _seed(uow)
 
         with pytest.raises(AssemblyNotFoundError):
             respondent_service.get_respondent(uow, user.id, uuid.uuid4(), respondent.id)
 
-    def test_raises_when_user_lacks_permission(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_user_lacks_permission(self, uow):
         _, assembly, respondent = _seed(uow)
         outsider = User(email="outsider@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(outsider)
@@ -75,15 +70,13 @@ class TestGetRespondent:
         with pytest.raises(InsufficientPermissions):
             respondent_service.get_respondent(uow, outsider.id, assembly.id, respondent.id)
 
-    def test_raises_when_respondent_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_respondent_missing(self, uow):
         user, assembly, _ = _seed(uow)
 
         with pytest.raises(RespondentNotFoundError):
             respondent_service.get_respondent(uow, user.id, assembly.id, uuid.uuid4())
 
-    def test_raises_when_respondent_belongs_to_other_assembly(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_respondent_belongs_to_other_assembly(self, uow):
         user, assembly, _ = _seed(uow)
         other_assembly = Assembly(title="Other")
         uow.assemblies.add(other_assembly)
@@ -113,8 +106,7 @@ def _make_confirmation_caller(uow: FakeUnitOfWork, assembly: Assembly) -> User:
 
 
 class TestDeleteRespondent:
-    def test_admin_can_delete(self):
-        uow = FakeUnitOfWork()
+    def test_admin_can_delete(self, uow):
         user, assembly, respondent = _seed(uow)
 
         respondent_service.delete_respondent(uow, user.id, assembly.id, respondent.id, comment="gdpr request")
@@ -126,16 +118,14 @@ class TestDeleteRespondent:
         assert respondent.comments[0].author_id == user.id
         assert respondent.comments[0].action is RespondentAction.DELETE
 
-    def test_global_organiser_can_delete(self):
-        uow = FakeUnitOfWork()
+    def test_global_organiser_can_delete(self, uow):
         user, assembly, respondent = _seed(uow, global_role=GlobalRole.GLOBAL_ORGANISER)
 
         respondent_service.delete_respondent(uow, user.id, assembly.id, respondent.id, comment="gdpr request")
 
         assert respondent.selection_status == RespondentStatus.DELETED
 
-    def test_assembly_manager_can_delete(self):
-        uow = FakeUnitOfWork()
+    def test_assembly_manager_can_delete(self, uow):
         _, assembly, respondent = _seed(uow, global_role=GlobalRole.USER)
         manager = _make_assembly_manager(uow, assembly)
 
@@ -143,8 +133,7 @@ class TestDeleteRespondent:
 
         assert respondent.selection_status == RespondentStatus.DELETED
 
-    def test_confirmation_caller_cannot_delete(self):
-        uow = FakeUnitOfWork()
+    def test_confirmation_caller_cannot_delete(self, uow):
         _, assembly, respondent = _seed(uow, global_role=GlobalRole.USER)
         caller = _make_confirmation_caller(uow, assembly)
 
@@ -152,8 +141,7 @@ class TestDeleteRespondent:
             respondent_service.delete_respondent(uow, caller.id, assembly.id, respondent.id, comment="gdpr request")
         assert respondent.selection_status == RespondentStatus.POOL
 
-    def test_unrelated_user_cannot_delete(self):
-        uow = FakeUnitOfWork()
+    def test_unrelated_user_cannot_delete(self, uow):
         _, assembly, respondent = _seed(uow, global_role=GlobalRole.USER)
         outsider = User(email="outsider@example.com", global_role=GlobalRole.USER, password_hash="h")
         uow.users.add(outsider)
@@ -161,23 +149,20 @@ class TestDeleteRespondent:
         with pytest.raises(InsufficientPermissions):
             respondent_service.delete_respondent(uow, outsider.id, assembly.id, respondent.id, comment="gdpr request")
 
-    def test_empty_comment_rejected(self):
-        uow = FakeUnitOfWork()
+    def test_empty_comment_rejected(self, uow):
         user, assembly, respondent = _seed(uow)
 
         with pytest.raises(ValueError, match="comment is required"):
             respondent_service.delete_respondent(uow, user.id, assembly.id, respondent.id, comment="")
         assert respondent.selection_status == RespondentStatus.POOL
 
-    def test_whitespace_comment_rejected(self):
-        uow = FakeUnitOfWork()
+    def test_whitespace_comment_rejected(self, uow):
         user, assembly, respondent = _seed(uow)
 
         with pytest.raises(ValueError, match="comment is required"):
             respondent_service.delete_respondent(uow, user.id, assembly.id, respondent.id, comment="   ")
 
-    def test_raises_when_respondent_in_other_assembly(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_respondent_in_other_assembly(self, uow):
         user, assembly, _ = _seed(uow)
         other = Assembly(title="Other")
         uow.assemblies.add(other)
@@ -187,22 +172,19 @@ class TestDeleteRespondent:
         with pytest.raises(RespondentNotFoundError):
             respondent_service.delete_respondent(uow, user.id, assembly.id, other_respondent.id, comment="hi")
 
-    def test_raises_when_respondent_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_respondent_missing(self, uow):
         user, assembly, _ = _seed(uow)
 
         with pytest.raises(RespondentNotFoundError):
             respondent_service.delete_respondent(uow, user.id, assembly.id, uuid.uuid4(), comment="hi")
 
-    def test_raises_when_user_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_user_missing(self, uow):
         _, assembly, respondent = _seed(uow)
 
         with pytest.raises(UserNotFoundError):
             respondent_service.delete_respondent(uow, uuid.uuid4(), assembly.id, respondent.id, comment="hi")
 
-    def test_raises_when_assembly_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_assembly_missing(self, uow):
         user, _, respondent = _seed(uow)
 
         with pytest.raises(AssemblyNotFoundError):
@@ -210,8 +192,7 @@ class TestDeleteRespondent:
 
 
 class TestAddRespondentComment:
-    def test_manager_can_add_comment(self):
-        uow = FakeUnitOfWork()
+    def test_manager_can_add_comment(self, uow):
         _, assembly, respondent = _seed(uow, global_role=GlobalRole.USER)
         manager = _make_assembly_manager(uow, assembly)
 
@@ -222,16 +203,14 @@ class TestAddRespondentComment:
         assert respondent.comments[0].action is RespondentAction.NONE
         assert respondent.comments[0].author_id == manager.id
 
-    def test_confirmation_caller_cannot_add_comment(self):
-        uow = FakeUnitOfWork()
+    def test_confirmation_caller_cannot_add_comment(self, uow):
         _, assembly, respondent = _seed(uow, global_role=GlobalRole.USER)
         caller = _make_confirmation_caller(uow, assembly)
 
         with pytest.raises(InsufficientPermissions):
             respondent_service.add_respondent_comment(uow, caller.id, assembly.id, respondent.id, text="note")
 
-    def test_empty_text_rejected(self):
-        uow = FakeUnitOfWork()
+    def test_empty_text_rejected(self, uow):
         user, assembly, respondent = _seed(uow)
 
         with pytest.raises(ValueError, match="Comment text is required"):
@@ -239,8 +218,7 @@ class TestAddRespondentComment:
 
 
 class TestGetRespondentsIncludeDeleted:
-    def test_excludes_deleted_by_default(self):
-        uow = FakeUnitOfWork()
+    def test_excludes_deleted_by_default(self, uow):
         user, assembly, live = _seed(uow)
         dead = Respondent(
             assembly_id=assembly.id,
@@ -252,8 +230,7 @@ class TestGetRespondentsIncludeDeleted:
         results = respondent_service.get_respondents_for_assembly(uow, user.id, assembly.id)
         assert {r.id for r in results} == {live.id}
 
-    def test_includes_deleted_when_requested(self):
-        uow = FakeUnitOfWork()
+    def test_includes_deleted_when_requested(self, uow):
         user, assembly, live = _seed(uow)
         dead = Respondent(
             assembly_id=assembly.id,
@@ -267,8 +244,7 @@ class TestGetRespondentsIncludeDeleted:
 
 
 class TestGetRespondentWithCommentAuthors:
-    def test_returns_detached_respondent_and_authors(self):
-        uow = FakeUnitOfWork()
+    def test_returns_detached_respondent_and_authors(self, uow):
         user, assembly, respondent = _seed(uow)
         other_author = User(email="author2@example.com", global_role=GlobalRole.USER, password_hash="h")
         uow.users.add(other_author)
@@ -286,8 +262,7 @@ class TestGetRespondentWithCommentAuthors:
         assert authors[user.id].email == "admin@example.com"
         assert authors[other_author.id].email == "author2@example.com"
 
-    def test_returns_empty_authors_when_no_comments(self):
-        uow = FakeUnitOfWork()
+    def test_returns_empty_authors_when_no_comments(self, uow):
         user, assembly, respondent = _seed(uow)
 
         fetched, authors = respondent_service.get_respondent_with_comment_authors(
@@ -297,8 +272,7 @@ class TestGetRespondentWithCommentAuthors:
         assert fetched.id == respondent.id
         assert authors == {}
 
-    def test_skips_unknown_authors(self):
-        uow = FakeUnitOfWork()
+    def test_skips_unknown_authors(self, uow):
         user, assembly, respondent = _seed(uow)
         missing_author_id = uuid.uuid4()
         # Manually append a comment authored by a user that no longer exists
@@ -311,9 +285,8 @@ class TestGetRespondentWithCommentAuthors:
         assert fetched.id == respondent.id
         assert missing_author_id not in authors
 
-    def test_deduplicates_author_lookups(self):
+    def test_deduplicates_author_lookups(self, uow):
         """Multiple comments by the same author should only produce one dict entry."""
-        uow = FakeUnitOfWork()
         user, assembly, respondent = _seed(uow)
 
         respondent.add_comment("one", user.id)
@@ -324,22 +297,19 @@ class TestGetRespondentWithCommentAuthors:
 
         assert list(authors.keys()) == [user.id]
 
-    def test_raises_when_user_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_user_missing(self, uow):
         _, assembly, respondent = _seed(uow)
 
         with pytest.raises(UserNotFoundError):
             respondent_service.get_respondent_with_comment_authors(uow, uuid.uuid4(), assembly.id, respondent.id)
 
-    def test_raises_when_assembly_missing(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_assembly_missing(self, uow):
         user, _, respondent = _seed(uow)
 
         with pytest.raises(AssemblyNotFoundError):
             respondent_service.get_respondent_with_comment_authors(uow, user.id, uuid.uuid4(), respondent.id)
 
-    def test_raises_when_user_lacks_permission(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_user_lacks_permission(self, uow):
         _, assembly, respondent = _seed(uow)
         outsider = User(email="outsider@example.com", global_role=GlobalRole.USER, password_hash="h")
         uow.users.add(outsider)
@@ -347,8 +317,7 @@ class TestGetRespondentWithCommentAuthors:
         with pytest.raises(InsufficientPermissions):
             respondent_service.get_respondent_with_comment_authors(uow, outsider.id, assembly.id, respondent.id)
 
-    def test_raises_when_respondent_in_other_assembly(self):
-        uow = FakeUnitOfWork()
+    def test_raises_when_respondent_in_other_assembly(self, uow):
         user, assembly, _ = _seed(uow)
         other = Assembly(title="Other")
         uow.assemblies.add(other)
@@ -360,8 +329,7 @@ class TestGetRespondentWithCommentAuthors:
 
 
 class TestGetRespondentsForAssemblyPaginated:
-    def test_returns_paginated_respondents(self):
-        uow = FakeUnitOfWork()
+    def test_returns_paginated_respondents(self, uow):
         user, assembly, _ = _seed(uow)
         # Add more respondents (seed already adds one)
         for i in range(4):
@@ -374,8 +342,7 @@ class TestGetRespondentsForAssemblyPaginated:
         assert len(results) == 2
         assert total_count == 5  # 1 from seed + 4 added
 
-    def test_returns_detached_copies(self):
-        uow = FakeUnitOfWork()
+    def test_returns_detached_copies(self, uow):
         user, assembly, respondent = _seed(uow)
 
         results, _ = respondent_service.get_respondents_for_assembly_paginated(
@@ -384,8 +351,7 @@ class TestGetRespondentsForAssemblyPaginated:
 
         assert results[0] is not respondent
 
-    def test_filters_by_status(self):
-        uow = FakeUnitOfWork()
+    def test_filters_by_status(self, uow):
         user, assembly, _ = _seed(uow)  # seed adds one POOL respondent
         # Add a SELECTED respondent
         selected = Respondent(
@@ -403,8 +369,7 @@ class TestGetRespondentsForAssemblyPaginated:
 
 
 class TestCreateRespondentEmitsCreateComment:
-    def test_manual_create_records_create_comment(self):
-        uow = FakeUnitOfWork()
+    def test_manual_create_records_create_comment(self, uow):
         user, assembly, _ = _seed(uow)
 
         resp = respondent_service.create_respondent(
@@ -420,8 +385,7 @@ class TestCreateRespondentEmitsCreateComment:
         assert "manual entry" in create_comments[0].text
         assert create_comments[0].author_id == user.id
 
-    def test_csv_import_records_create_comment_per_row_with_filename(self):
-        uow = FakeUnitOfWork()
+    def test_csv_import_records_create_comment_per_row_with_filename(self, uow):
         user, assembly, _ = _seed(uow)
         csv_content = "external_id,Gender\nCSV-1,Female\nCSV-2,Male\n"
 
@@ -446,8 +410,7 @@ class TestImportRespondentsFromRows:
     # Row-to-Respondent mapping (attributes, flags, internal columns, comment) is
     # covered directly in TestRespondentFromRow. These tests cover the
     # orchestration: id-column resolution, deduplication, and permissions.
-    def test_auto_detects_id_column_from_first_column(self):
-        uow = FakeUnitOfWork()
+    def test_auto_detects_id_column_from_first_column(self, uow):
         user, assembly, _ = _seed(uow)
         headers = ["person_id", "Gender"]
         rows = [{"person_id": "ROW-1", "Gender": "Female"}, {"person_id": "ROW-2", "Gender": "Male"}]
@@ -460,8 +423,7 @@ class TestImportRespondentsFromRows:
         assert id_col == "person_id"
         assert {r.external_id for r in respondents} == {"ROW-1", "ROW-2"}
 
-    def test_skips_empty_and_duplicate_ids(self):
-        uow = FakeUnitOfWork()
+    def test_skips_empty_and_duplicate_ids(self, uow):
         user, assembly, _ = _seed(uow)
         headers = ["external_id", "Gender"]
         rows = [
@@ -480,14 +442,12 @@ class TestImportRespondentsFromRows:
         assert any(e.startswith("Row 3:") and "empty" in e for e in errors)
         assert any(e.startswith("Row 4:") and "duplicate" in e.lower() for e in errors)
 
-    def test_empty_headers_raise(self):
-        uow = FakeUnitOfWork()
+    def test_empty_headers_raise(self, uow):
         user, assembly, _ = _seed(uow)
         with pytest.raises(InvalidSelection):
             respondent_service.import_respondents_from_rows(uow, user.id, assembly.id, [], [])
 
-    def test_requires_manage_permission(self):
-        uow = FakeUnitOfWork()
+    def test_requires_manage_permission(self, uow):
         user = User(email="plain@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(user)
         assembly = Assembly(title="Locked")
@@ -503,8 +463,7 @@ class TestImportSkipsInternalColumns:
     # TestRespondentFromRow.test_discards_internal_columns. This test covers the
     # import-level behaviour: the columns are reported to the organiser, and a
     # re-imported (previously exported) row lands back in POOL.
-    def test_internal_columns_are_reported_and_reset_to_pool(self):
-        uow = FakeUnitOfWork()
+    def test_internal_columns_are_reported_and_reset_to_pool(self, uow):
         user, assembly, _ = _seed(uow)
         headers = ["external_id", "Gender", "selection_status", "source_type", "selection_run_id"]
         rows = [

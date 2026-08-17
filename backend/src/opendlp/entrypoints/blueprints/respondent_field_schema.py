@@ -32,6 +32,7 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     NotFoundError,
+    ServiceLayerError,
 )
 from opendlp.service_layer.respondent_field_schema_service import (
     FieldDefinitionConflictError,
@@ -97,10 +98,19 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Display and edit the respondent field schema for an assembly."""
     try:
         uow = bootstrap.get_flask_uow()
+        gsheet = None
+        csv_status = None
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            grouped = get_schema_grouped(uow, current_user.id, assembly_id)
 
-        grouped = get_schema_grouped(uow, current_user.id, assembly_id)
+            # Reuse the assembly-tabs computed state so the tab bar renders correctly.
+            # Both lookups are optional — a fresh assembly has neither.
+            with contextlib.suppress(ServiceLayerError):
+                gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            with contextlib.suppress(ServiceLayerError):
+                csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
+
         sections = [
             {
                 "group": group,
@@ -111,14 +121,6 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         ]
         schema_has_rows = any(section["fields"] for section in sections)
 
-        # Reuse the assembly-tabs computed state so the tab bar renders correctly.
-        # Both lookups are optional — a fresh assembly has neither.
-        gsheet = None
-        with contextlib.suppress(Exception):
-            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-        csv_status = None
-        with contextlib.suppress(Exception):
-            csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
         data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
         targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(
             data_source, gsheet, csv_status
@@ -177,7 +179,8 @@ def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Seed an empty schema (fixed-field rows only) for registration-first assemblies."""
     try:
         uow = bootstrap.get_flask_uow()
-        inserted = initialise_empty_schema(uow, current_user.id, assembly_id)
+        with uow:
+            inserted = initialise_empty_schema(uow, current_user.id, assembly_id)
         if inserted:
             flash(_("Schema initialised with %(count)d fixed fields.", count=inserted), "success")
         else:
@@ -215,17 +218,18 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     try:
         uow = bootstrap.get_flask_uow()
-        add_field(
-            uow,
-            current_user.id,
-            assembly_id,
-            field_key,
-            label=label,
-            group=group,
-            field_type=field_type,
-            options=options,
-            on_registration_page=on_registration_page,
-        )
+        with uow:
+            add_field(
+                uow,
+                current_user.id,
+                assembly_id,
+                field_key,
+                label=label,
+                group=group,
+                field_type=field_type,
+                options=options,
+                on_registration_page=on_registration_page,
+            )
         flash(_("Field added."), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")
@@ -264,40 +268,41 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
             if existing is not None and existing.field_type not in CHOICE_TYPES:
                 seed_options = [ChoiceOption(value="option_1")]
 
-    try:
-        if seed_options is not None:
-            update_field(
-                uow,
-                current_user.id,
-                assembly_id,
-                field_id,
-                label=label,
-                group=group,
-                field_type=field_type,
-                options=seed_options,
-                on_registration_page=on_registration_page,
-            )
-        else:
-            update_field(
-                uow,
-                current_user.id,
-                assembly_id,
-                field_id,
-                label=label,
-                group=group,
-                field_type=field_type,
-                on_registration_page=on_registration_page,
-            )
-        flash(_("Field updated."), "success")
-    except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
-    except FieldDefinitionNotFoundError:
-        flash(_("Field not found."), "error")
-    except InsufficientPermissions:
-        flash(_("You don't have permission to edit the schema"), "error")
-    except NotFoundError:
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+    with uow:
+        try:
+            if seed_options is not None:
+                update_field(
+                    uow,
+                    current_user.id,
+                    assembly_id,
+                    field_id,
+                    label=label,
+                    group=group,
+                    field_type=field_type,
+                    options=seed_options,
+                    on_registration_page=on_registration_page,
+                )
+            else:
+                update_field(
+                    uow,
+                    current_user.id,
+                    assembly_id,
+                    field_id,
+                    label=label,
+                    group=group,
+                    field_type=field_type,
+                    on_registration_page=on_registration_page,
+                )
+            flash(_("Field updated."), "success")
+        except FieldDefinitionConflictError as e:
+            flash(str(e), "error")
+        except FieldDefinitionNotFoundError:
+            flash(_("Field not found."), "error")
+        except InsufficientPermissions:
+            flash(_("You don't have permission to edit the schema"), "error")
+        except NotFoundError:
+            flash(_("Assembly not found"), "error")
+            return redirect(url_for("backoffice.dashboard"))
     return _schema_page_redirect(assembly_id)
 
 
@@ -310,7 +315,8 @@ def guess_types_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Overwrite TEXT-typed schema rows with guessed types based on respondent data."""
     try:
         uow = bootstrap.get_flask_uow()
-        changed = guess_field_types(uow, current_user.id, assembly_id)
+        with uow:
+            changed = guess_field_types(uow, current_user.id, assembly_id)
         if changed:
             flash(_("Guessed types for %(count)d fields.", count=len(changed)), "success")
         else:
@@ -337,7 +343,8 @@ def add_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetu
         return _schema_page_redirect(assembly_id)
     try:
         uow = bootstrap.get_flask_uow()
-        add_choice_option(uow, current_user.id, assembly_id, field_id, value, help_text)
+        with uow:
+            add_choice_option(uow, current_user.id, assembly_id, field_id, value, help_text)
         flash(_("Option added."), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")
@@ -369,15 +376,16 @@ def update_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
         return _schema_page_redirect(assembly_id)
     try:
         uow = bootstrap.get_flask_uow()
-        update_choice_option(
-            uow,
-            current_user.id,
-            assembly_id,
-            field_id,
-            old_value=old_value,
-            new_value=new_value,
-            new_help_text=new_help_text,
-        )
+        with uow:
+            update_choice_option(
+                uow,
+                current_user.id,
+                assembly_id,
+                field_id,
+                old_value=old_value,
+                new_value=new_value,
+                new_help_text=new_help_text,
+            )
         flash(_("Option updated."), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")
@@ -404,7 +412,8 @@ def remove_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
         return _schema_page_redirect(assembly_id)
     try:
         uow = bootstrap.get_flask_uow()
-        remove_choice_option(uow, current_user.id, assembly_id, field_id, value)
+        with uow:
+            remove_choice_option(uow, current_user.id, assembly_id, field_id, value)
         flash(_("Option removed."), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")
@@ -436,28 +445,29 @@ def move_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnVal
 
     try:
         uow = bootstrap.get_flask_uow()
-        fields = get_schema(uow, current_user.id, assembly_id)
-        target = next((f for f in fields if f.id == field_id), None)
-        if target is None:
-            flash(_("Field not found."), "error")
-            return _schema_page_redirect(assembly_id)
+        with uow:
+            fields = get_schema(uow, current_user.id, assembly_id)
+            target = next((f for f in fields if f.id == field_id), None)
+            if target is None:
+                flash(_("Field not found."), "error")
+                return _schema_page_redirect(assembly_id)
 
-        same_group = [f for f in fields if f.group == target.group]
-        index = next(i for i, f in enumerate(same_group) if f.id == field_id)
-        swap_with = index - 1 if direction == "up" else index + 1
-        if swap_with < 0 or swap_with >= len(same_group):
-            # Already at the top/bottom — silent no-op rather than a flash.
-            return _schema_page_redirect(assembly_id)
+            same_group = [f for f in fields if f.group == target.group]
+            index = next(i for i, f in enumerate(same_group) if f.id == field_id)
+            swap_with = index - 1 if direction == "up" else index + 1
+            if swap_with < 0 or swap_with >= len(same_group):
+                # Already at the top/bottom — silent no-op rather than a flash.
+                return _schema_page_redirect(assembly_id)
 
-        new_order = same_group[:]
-        new_order[index], new_order[swap_with] = new_order[swap_with], new_order[index]
-        reorder_group(
-            uow,
-            current_user.id,
-            assembly_id,
-            target.group,
-            [f.id for f in new_order],
-        )
+            new_order = same_group[:]
+            new_order[index], new_order[swap_with] = new_order[swap_with], new_order[index]
+            reorder_group(
+                uow,
+                current_user.id,
+                assembly_id,
+                target.group,
+                [f.id for f in new_order],
+            )
     except InsufficientPermissions:
         flash(_("You don't have permission to reorder fields"), "error")
     except NotFoundError:
@@ -475,7 +485,8 @@ def delete_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
     """Delete a non-fixed field from the schema. Fixed fields are protected by the service layer."""
     try:
         uow = bootstrap.get_flask_uow()
-        delete_field(uow, current_user.id, assembly_id, field_id)
+        with uow:
+            delete_field(uow, current_user.id, assembly_id, field_id)
         flash(_("Field removed."), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")

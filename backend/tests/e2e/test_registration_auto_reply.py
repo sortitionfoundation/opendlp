@@ -89,28 +89,31 @@ def _build_published_page_with_auto_reply(session_factory, admin_id) -> Registra
             )
         uow.commit()
 
-    update_assembly(
-        SqlAlchemyUnitOfWork(session_factory),
-        assembly_id,
-        admin_id,
-        reply_to_name="The Team",
-        reply_to_email="team@example.com",
-    )
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        update_assembly(
+            uow,
+            assembly_id,
+            admin_id,
+            reply_to_name="The Team",
+            reply_to_email="team@example.com",
+        )
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         create_registration_page_with_slugs(uow, admin_id, assembly_id, name="Registration page")
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         update_registration_page_html(uow, admin_id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
 
-    template = create_email_template(
-        SqlAlchemyUnitOfWork(session_factory),
-        admin_id,
-        assembly_id,
-        name="Auto-reply",
-        subject=AUTO_REPLY_SUBJECT,
-        body_html=AUTO_REPLY_BODY,
-    )
-    assign_auto_reply_template(SqlAlchemyUnitOfWork(session_factory), admin_id, assembly_id, template.id)
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        template = create_email_template(
+            uow,
+            admin_id,
+            assembly_id,
+            name="Auto-reply",
+            subject=AUTO_REPLY_SUBJECT,
+            body_html=AUTO_REPLY_BODY,
+        )
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        assign_auto_reply_template(uow, admin_id, assembly_id, template.id)
 
     with SqlAlchemyUnitOfWork(session_factory) as uow:
         return publish_registration_page(uow, admin_id, _page_id(uow, assembly_id))

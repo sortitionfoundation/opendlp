@@ -151,6 +151,8 @@ def verify_backup_code(uow: AbstractUnitOfWork, user_id: uuid.UUID, code: str) -
 
     Returns:
         True if the code is valid and was successfully used, False otherwise
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Get all unused backup codes for the user
     unused_codes = uow.user_backup_codes.get_unused_codes_for_user(user_id)
@@ -175,6 +177,8 @@ def count_remaining_backup_codes(uow: AbstractUnitOfWork, user_id: uuid.UUID) ->
 
     Returns:
         Number of remaining unused backup codes
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     unused_codes = uow.user_backup_codes.get_unused_codes_for_user(user_id)
     return len(list(unused_codes))
@@ -191,6 +195,8 @@ def create_backup_codes_for_user(uow: AbstractUnitOfWork, user_id: uuid.UUID) ->
 
     Returns:
         List of plaintext backup codes (to show to the user once)
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Delete existing backup codes
     uow.user_backup_codes.delete_codes_for_user(user_id)
@@ -225,6 +231,8 @@ def check_totp_rate_limit(
 
     Returns:
         Tuple of (is_allowed, attempts_remaining)
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Calculate cutoff time
     cutoff_time = datetime.now(UTC) - timedelta(minutes=window_minutes)
@@ -252,6 +260,8 @@ def record_totp_attempt(uow: AbstractUnitOfWork, user_id: uuid.UUID, success: bo
         uow: Unit of Work for database access
         user_id: The user's UUID
         success: Whether the verification was successful
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     attempt = TotpVerificationAttempt(user_id=user_id, success=success)
     uow.totp_attempts.add(attempt)

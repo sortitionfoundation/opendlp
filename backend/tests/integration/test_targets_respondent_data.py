@@ -236,7 +236,8 @@ class TestTargetCategoryRespondentCounts:
 
         # Create a target category matching the attribute name
         uow2 = SqlAlchemyUnitOfWork(uow.session_factory)
-        assembly_service.create_target_category(uow2, admin_user.id, assembly_id, name="Gender")
+        with uow2:
+            assembly_service.create_target_category(uow2, admin_user.id, assembly_id, name="Gender")
 
         # Verify that repository returns correct columns and counts
         uow3 = SqlAlchemyUnitOfWork(uow.session_factory)
@@ -280,7 +281,8 @@ class TestAddCategoriesAutoAddValues:
 
         # create_target_category auto-adds values for matching low-cardinality columns
         uow3 = SqlAlchemyUnitOfWork(uow.session_factory)
-        category = assembly_service.create_target_category(uow3, admin_user.id, assembly_id, name="Gender")
+        with uow3:
+            category = assembly_service.create_target_category(uow3, admin_user.id, assembly_id, name="Gender")
 
         # Verify values were auto-added
         value_names = sorted(v.value for v in category.values)

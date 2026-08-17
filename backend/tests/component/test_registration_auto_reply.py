@@ -93,7 +93,8 @@ def admin_user(fake_store):
 def app(fake_store, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("FF_REGISTRATION_PAGE", "true")
     reload_flags()
-    return create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return create_app("testing_component", uow_factory=lambda: uow)
 
 
 @pytest.fixture
@@ -140,13 +141,14 @@ def _build_page_with_auto_reply(
             )
         uow.commit()
 
-    update_assembly(
-        FakeUnitOfWork(store=fake_store),
-        assembly_id,
-        admin_id,
-        reply_to_name="The Team",
-        reply_to_email="team@example.com",
-    )
+    with FakeUnitOfWork(store=fake_store) as uow:
+        update_assembly(
+            uow,
+            assembly_id,
+            admin_id,
+            reply_to_name="The Team",
+            reply_to_email="team@example.com",
+        )
 
     with FakeUnitOfWork(store=fake_store) as uow:
         create_registration_page_with_slugs(uow, admin_id, assembly_id, name="Registration page")
@@ -154,15 +156,17 @@ def _build_page_with_auto_reply(
         update_registration_page_html(uow, admin_id, _page_id(uow, assembly_id), MINIMAL_FORM_HTML)
 
     if with_template:
-        template = create_email_template(
-            FakeUnitOfWork(store=fake_store),
-            admin_id,
-            assembly_id,
-            name="Auto-reply",
-            subject=AUTO_REPLY_SUBJECT,
-            body_html=AUTO_REPLY_BODY,
-        )
-        assign_auto_reply_template(FakeUnitOfWork(store=fake_store), admin_id, assembly_id, template.id)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            template = create_email_template(
+                uow,
+                admin_id,
+                assembly_id,
+                name="Auto-reply",
+                subject=AUTO_REPLY_SUBJECT,
+                body_html=AUTO_REPLY_BODY,
+            )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assign_auto_reply_template(uow, admin_id, assembly_id, template.id)
 
     if publish:
         with FakeUnitOfWork(store=fake_store) as uow:

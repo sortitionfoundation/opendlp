@@ -877,8 +877,8 @@ def cleanup_old_password_reset_tokens(days_old: int = 30) -> int:
     Returns:
         Number of tokens deleted
     """
-    uow = bootstrap()
-    count = password_reset_service.cleanup_expired_tokens(uow, days_old=days_old)
+    with bootstrap() as uow:
+        count = password_reset_service.cleanup_expired_tokens(uow, days_old=days_old)
     logger.info(f"Cleaned up {count} old password reset tokens (older than {days_old} days)")
     return count
 

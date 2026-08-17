@@ -50,13 +50,13 @@ def _import_targets(fake_store, admin_user, assembly_id, csv_content):
 
 
 def _create_category(fake_store, admin_user, assembly_id, name):
-    return create_target_category(FakeUnitOfWork(store=fake_store), admin_user.id, assembly_id, name)
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return create_target_category(uow, admin_user.id, assembly_id, name)
 
 
 def _add_value(fake_store, admin_user, assembly_id, category_id, value, min_count, max_count):
-    return add_target_value(
-        FakeUnitOfWork(store=fake_store), admin_user.id, assembly_id, category_id, value, min_count, max_count
-    )
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return add_target_value(uow, admin_user.id, assembly_id, category_id, value, min_count, max_count)
 
 
 class TestViewTargetsPage:

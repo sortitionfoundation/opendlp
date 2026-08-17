@@ -73,6 +73,16 @@ def fake_store():
 
 
 @pytest.fixture
+def shared_uow(fake_store):
+    """An already-entered UnitOfWork over the same store the Flask app is wired to.
+
+    Strict, so it behaves like the real UnitOfWork the routes use.
+    """
+    with FakeUnitOfWork(store=fake_store) as entered:
+        yield entered
+
+
+@pytest.fixture
 def app(fake_store):
     """Flask app whose UnitOfWork factory is backed by the shared FakeStore.
 

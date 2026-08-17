@@ -77,89 +77,90 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
             template = "gsheets/create_config.html"
             action = "create"
 
-        if form.validate_on_submit():
-            try:
-                if action == "create":
-                    add_assembly_gsheet(
-                        uow=uow,
-                        assembly_id=assembly_id,
-                        user_id=current_user.id,
-                        url=form.url.data,  # type: ignore[arg-type]
-                        team=form.team.data,
-                        select_registrants_tab=form.select_registrants_tab.data,
-                        select_targets_tab=form.select_targets_tab.data,
-                        replace_registrants_tab=form.replace_registrants_tab.data,
-                        replace_targets_tab=form.replace_targets_tab.data,
-                        id_column=form.id_column.data,
-                        check_same_address=form.check_same_address.data,
-                        generate_remaining_tab=form.generate_remaining_tab.data,
-                        check_same_address_cols_string=form.check_same_address_cols_string.data,
-                        columns_to_keep_string=form.columns_to_keep_string.data,
-                    )
-                    flash(_("Google Spreadsheet configuration created successfully"), "success")
-                else:
-                    update_assembly_gsheet(
-                        uow=uow,
-                        assembly_id=assembly_id,
-                        user_id=current_user.id,
-                        url=form.url.data,
-                        team=form.team.data,
-                        select_registrants_tab=form.select_registrants_tab.data,
-                        select_targets_tab=form.select_targets_tab.data,
-                        replace_registrants_tab=form.replace_registrants_tab.data,
-                        replace_targets_tab=form.replace_targets_tab.data,
-                        id_column=form.id_column.data,
-                        check_same_address=form.check_same_address.data,
-                        generate_remaining_tab=form.generate_remaining_tab.data,
-                        check_same_address_cols_string=form.check_same_address_cols_string.data,
-                        columns_to_keep_string=form.columns_to_keep_string.data,
-                    )
-                    flash(_("Google Spreadsheet configuration updated successfully"), "success")
+        with uow:
+            if form.validate_on_submit():
+                try:
+                    if action == "create":
+                        add_assembly_gsheet(
+                            uow=uow,
+                            assembly_id=assembly_id,
+                            user_id=current_user.id,
+                            url=form.url.data,  # type: ignore[arg-type]
+                            team=form.team.data,
+                            select_registrants_tab=form.select_registrants_tab.data,
+                            select_targets_tab=form.select_targets_tab.data,
+                            replace_registrants_tab=form.replace_registrants_tab.data,
+                            replace_targets_tab=form.replace_targets_tab.data,
+                            id_column=form.id_column.data,
+                            check_same_address=form.check_same_address.data,
+                            generate_remaining_tab=form.generate_remaining_tab.data,
+                            check_same_address_cols_string=form.check_same_address_cols_string.data,
+                            columns_to_keep_string=form.columns_to_keep_string.data,
+                        )
+                        flash(_("Google Spreadsheet configuration created successfully"), "success")
+                    else:
+                        update_assembly_gsheet(
+                            uow=uow,
+                            assembly_id=assembly_id,
+                            user_id=current_user.id,
+                            url=form.url.data,
+                            team=form.team.data,
+                            select_registrants_tab=form.select_registrants_tab.data,
+                            select_targets_tab=form.select_targets_tab.data,
+                            replace_registrants_tab=form.replace_registrants_tab.data,
+                            replace_targets_tab=form.replace_targets_tab.data,
+                            id_column=form.id_column.data,
+                            check_same_address=form.check_same_address.data,
+                            generate_remaining_tab=form.generate_remaining_tab.data,
+                            check_same_address_cols_string=form.check_same_address_cols_string.data,
+                            columns_to_keep_string=form.columns_to_keep_string.data,
+                        )
+                        flash(_("Google Spreadsheet configuration updated successfully"), "success")
 
-                # Soft validation warning - check if columns_to_keep is empty
-                # Team defaults may have populated columns_to_keep even if the form field was empty
-                team = form.team.data if hasattr(form, "team") and form.team else ""
-                columns_to_keep = form.columns_to_keep_string.data or ""
-                has_team_with_defaults = team and team != "other"
-                if not columns_to_keep.strip() and not has_team_with_defaults:
-                    flash(
-                        _(
-                            "Warning: No columns to keep specified. "
-                            "This means the output will only include participant data columns "
-                            "used for the targets and address checking. Is this intentional?"
-                        ),
-                        "warning",
-                    )
+                    # Soft validation warning - check if columns_to_keep is empty
+                    # Team defaults may have populated columns_to_keep even if the form field was empty
+                    team = form.team.data if hasattr(form, "team") and form.team else ""
+                    columns_to_keep = form.columns_to_keep_string.data or ""
+                    has_team_with_defaults = team and team != "other"
+                    if not columns_to_keep.strip() and not has_team_with_defaults:
+                        flash(
+                            _(
+                                "Warning: No columns to keep specified. "
+                                "This means the output will only include participant data columns "
+                                "used for the targets and address checking. Is this intentional?"
+                            ),
+                            "warning",
+                        )
 
-                return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
-            except InsufficientPermissions as e:
-                logger.warning(
-                    "Insufficient permissions to manage gsheet for assembly",
-                    action=action,
-                    assembly_id=str(assembly_id),
-                    user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
-                return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
-            except NotFoundError as e:
-                logger.error(
-                    "Gsheet validation error",
-                    action=action,
-                    assembly_id=str(assembly_id),
-                    user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(_("Please check your input and try again"), "error")
-            except Exception as e:
-                logger.error(
-                    "Gsheet management error",
-                    action=action,
-                    assembly_id=str(assembly_id),
-                    user_id=str(current_user.id),
-                    error=str(e),
-                )
-                flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
+                    return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
+                except InsufficientPermissions as e:
+                    logger.warning(
+                        "Insufficient permissions to manage gsheet for assembly",
+                        action=action,
+                        assembly_id=str(assembly_id),
+                        user_id=str(current_user.id),
+                        error=str(e),
+                    )
+                    flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
+                    return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
+                except NotFoundError as e:
+                    logger.error(
+                        "Gsheet validation error",
+                        action=action,
+                        assembly_id=str(assembly_id),
+                        user_id=str(current_user.id),
+                        error=str(e),
+                    )
+                    flash(_("Please check your input and try again"), "error")
+                except Exception as e:
+                    logger.error(
+                        "Gsheet management error",
+                        action=action,
+                        assembly_id=str(assembly_id),
+                        user_id=str(current_user.id),
+                        error=str(e),
+                    )
+                    flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
 
         return render_template(template, form=form, assembly=assembly, gsheet=existing_gsheet, current_tab="data"), 200
     except NotFoundError as e:

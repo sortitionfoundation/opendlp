@@ -34,7 +34,8 @@ PER_PAGE = 50
 def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
-        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+        with uow:
+            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
         status_filter_str = request.args.get("status", "")
         status_filter: RespondentStatus | None = None
@@ -97,7 +98,8 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         if not form.validate_on_submit():
             uow = bootstrap.get_flask_uow()
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            with uow:
+                assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
             uow2 = bootstrap.get_flask_uow()
             with uow2:
@@ -125,24 +127,26 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         id_column = form.id_column.data.strip() if form.id_column.data else None
 
         uow = bootstrap.get_flask_uow()
-        respondents, errors, resolved_id_column = import_respondents_from_csv(
-            uow=uow,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            csv_content=csv_content,
-            replace_existing=form.replace_existing.data or False,
-            id_column=id_column or None,
-        )
+        with uow:
+            respondents, errors, resolved_id_column = import_respondents_from_csv(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                csv_content=csv_content,
+                replace_existing=form.replace_existing.data or False,
+                id_column=id_column or None,
+            )
 
         uow2 = bootstrap.get_flask_uow()
-        update_csv_config(
-            uow=uow2,
-            user_id=current_user.id,
-            assembly_id=assembly_id,
-            last_import_filename=filename,
-            last_import_timestamp=datetime.now(UTC),
-            csv_id_column=resolved_id_column,
-        )
+        with uow2:
+            update_csv_config(
+                uow=uow2,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                last_import_filename=filename,
+                last_import_timestamp=datetime.now(UTC),
+                csv_id_column=resolved_id_column,
+            )
 
         msg = _("Successfully imported %(count)s respondents from %(file)s", count=len(respondents), file=filename)
         flash(msg, "success")
@@ -182,7 +186,8 @@ def upload_respondents_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def reset_respondent_status(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
-        count = reset_selection_status(uow, current_user.id, assembly_id)
+        with uow:
+            count = reset_selection_status(uow, current_user.id, assembly_id)
         flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
         return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError:

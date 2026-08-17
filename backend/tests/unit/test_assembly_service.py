@@ -19,15 +19,13 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from tests.data import VALID_GSHEET_URL
-from tests.fakes import FakeUnitOfWork
 
 
 class TestCreateAssembly:
     """Test assembly creation functionality."""
 
-    def test_create_assembly_success_admin(self):
+    def test_create_assembly_success_admin(self, uow):
         """Test successful assembly creation by admin."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -46,11 +44,9 @@ class TestCreateAssembly:
         assert assembly.first_assembly_date == future_date
         assert assembly.status == AssemblyStatus.ACTIVE
         assert len(uow.assemblies.all()) == 1
-        assert uow.committed
 
-    def test_create_assembly_success_global_organiser(self):
+    def test_create_assembly_success_global_organiser(self, uow):
         """Test successful assembly creation by global organiser."""
-        uow = FakeUnitOfWork()
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
@@ -69,11 +65,9 @@ class TestCreateAssembly:
         )
 
         assert assembly.title == "Test Assembly"
-        assert uow.committed
 
-    def test_create_assembly_insufficient_permissions(self):
+    def test_create_assembly_insufficient_permissions(self, uow):
         """Test assembly creation fails for regular user."""
-        uow = FakeUnitOfWork()
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
@@ -88,9 +82,8 @@ class TestCreateAssembly:
                 first_assembly_date=future_date,
             )
 
-    def test_create_assembly_user_not_found(self):
+    def test_create_assembly_user_not_found(self, uow):
         """Test assembly creation fails when user not found."""
-        uow = FakeUnitOfWork()
         future_date = date.today() + timedelta(days=30)
 
         with pytest.raises(UserNotFoundError) as exc_info:
@@ -104,9 +97,8 @@ class TestCreateAssembly:
 
         assert "not found" in str(exc_info.value)
 
-    def test_create_assembly_minimal_data(self):
+    def test_create_assembly_minimal_data(self, uow):
         """Test creating assembly with only required fields."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -121,15 +113,13 @@ class TestCreateAssembly:
         assert assembly.first_assembly_date is None
         assert assembly.status == AssemblyStatus.ACTIVE
         assert len(uow.assemblies.all()) == 1
-        assert uow.committed
 
 
 class TestUpdateAssembly:
     """Test assembly update functionality."""
 
-    def test_update_assembly_success_admin(self):
+    def test_update_assembly_success_admin(self, uow):
         """Test successful assembly update by admin."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -151,11 +141,9 @@ class TestUpdateAssembly:
 
         assert updated_assembly.title == "Updated Title"
         assert updated_assembly.question == "Updated question?"
-        assert uow.committed
 
-    def test_update_assembly_success_assembly_manager(self):
+    def test_update_assembly_success_assembly_manager(self, uow):
         """Test successful assembly update by assembly manager."""
-        uow = FakeUnitOfWork()
         manager_user = User(email="manager@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(manager_user)
 
@@ -180,11 +168,9 @@ class TestUpdateAssembly:
         )
 
         assert updated_assembly.title == "Updated Title"
-        assert uow.committed
 
-    def test_update_assembly_insufficient_permissions(self):
+    def test_update_assembly_insufficient_permissions(self, uow):
         """Test assembly update fails for user without permissions."""
-        uow = FakeUnitOfWork()
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
@@ -201,9 +187,8 @@ class TestUpdateAssembly:
                 uow=uow, assembly_id=assembly.id, user_id=regular_user.id, title="Updated Title"
             )
 
-    def test_update_assembly_not_found(self):
+    def test_update_assembly_not_found(self, uow):
         """Test assembly update fails when assembly not found."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -219,9 +204,8 @@ class TestUpdateAssembly:
 class TestGetAssemblyWithPermissions:
     """Test assembly retrieval with permission checks."""
 
-    def test_get_assembly_success_admin(self):
+    def test_get_assembly_success_admin(self, uow):
         """Test successful assembly retrieval by admin."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -239,9 +223,8 @@ class TestGetAssemblyWithPermissions:
 
         assert retrieved_assembly == assembly
 
-    def test_get_assembly_success_with_role(self):
+    def test_get_assembly_success_with_role(self, uow):
         """Test successful assembly retrieval by user with assembly role."""
-        uow = FakeUnitOfWork()
         user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(user)
 
@@ -267,9 +250,8 @@ class TestGetAssemblyWithPermissions:
 
         assert retrieved_assembly == assembly
 
-    def test_get_assembly_insufficient_permissions(self):
+    def test_get_assembly_insufficient_permissions(self, uow):
         """Test assembly retrieval fails without permissions."""
-        uow = FakeUnitOfWork()
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
@@ -288,9 +270,8 @@ class TestGetAssemblyWithPermissions:
 class TestArchiveAssembly:
     """Test assembly archival functionality."""
 
-    def test_archive_assembly_success(self):
+    def test_archive_assembly_success(self, uow):
         """Test successful assembly archival."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -305,11 +286,9 @@ class TestArchiveAssembly:
         archived_assembly = assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=admin_user.id)
 
         assert archived_assembly.status == AssemblyStatus.ARCHIVED
-        assert uow.committed
 
-    def test_archive_assembly_insufficient_permissions(self):
+    def test_archive_assembly_insufficient_permissions(self, uow):
         """Test assembly archival fails without permissions."""
-        uow = FakeUnitOfWork()
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
@@ -328,9 +307,8 @@ class TestArchiveAssembly:
 class TestGetUserAccessibleAssemblies:
     """Test getting user's accessible assemblies."""
 
-    def test_get_accessible_assemblies_admin(self):
+    def test_get_accessible_assemblies_admin(self, uow):
         """Test admin can access all assemblies."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -353,9 +331,8 @@ class TestGetUserAccessibleAssemblies:
 
         assert len(assemblies) == 2
 
-    def test_get_accessible_assemblies_user_not_found(self):
+    def test_get_accessible_assemblies_user_not_found(self, uow):
         """Test error when user not found."""
-        uow = FakeUnitOfWork()
 
         with pytest.raises(UserNotFoundError) as exc_info:
             assembly_service.get_user_accessible_assemblies(uow=uow, user_id=uuid.uuid4())
@@ -366,9 +343,8 @@ class TestGetUserAccessibleAssemblies:
 class TestAssemblyGSheetOperations:
     """Test AssemblyGSheet management operations."""
 
-    def test_add_assembly_gsheet_success_admin(self):
+    def test_add_assembly_gsheet_success_admin(self, uow):
         """Test successful AssemblyGSheet creation by admin."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -394,11 +370,9 @@ class TestAssemblyGSheetOperations:
         # UK team defaults are applied to selection settings, not to gsheet
         assert assembly.selection_settings is not None
         assert assembly.selection_settings.id_column == "nationbuilder_id"  # UK default
-        assert uow.committed
 
-    def test_add_assembly_gsheet_with_overrides(self):
+    def test_add_assembly_gsheet_with_overrides(self, uow):
         """Test adding AssemblyGSheet with custom options."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -424,11 +398,9 @@ class TestAssemblyGSheetOperations:
         # id_column is now on selection settings, not on gsheet
         assert assembly.selection_settings is not None
         assert assembly.selection_settings.id_column == "custom_id"
-        assert uow.committed
 
-    def test_add_assembly_gsheet_assembly_manager(self):
+    def test_add_assembly_gsheet_assembly_manager(self, uow):
         """Test AssemblyGSheet creation by assembly manager."""
-        uow = FakeUnitOfWork()
         manager_user = User(email="manager@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(manager_user)
 
@@ -456,11 +428,9 @@ class TestAssemblyGSheetOperations:
         )
 
         assert assembly_gsheet.assembly_id == assembly.id
-        assert uow.committed
 
-    def test_add_assembly_gsheet_insufficient_permissions(self):
+    def test_add_assembly_gsheet_insufficient_permissions(self, uow):
         """Test AssemblyGSheet creation fails for user without permissions."""
-        uow = FakeUnitOfWork()
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
@@ -480,9 +450,8 @@ class TestAssemblyGSheetOperations:
                 url=VALID_GSHEET_URL,
             )
 
-    def test_add_assembly_gsheet_already_exists(self):
+    def test_add_assembly_gsheet_already_exists(self, uow):
         """Test AssemblyGSheet creation fails when assembly already has one."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -508,9 +477,8 @@ class TestAssemblyGSheetOperations:
 
         assert "already has a Google Spreadsheet configuration" in str(exc_info.value)
 
-    def test_update_assembly_gsheet_success(self):
+    def test_update_assembly_gsheet_success(self, uow):
         """Test successful AssemblyGSheet update."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -541,11 +509,9 @@ class TestAssemblyGSheetOperations:
         assert assembly.selection_settings is not None
         assert assembly.selection_settings.id_column == "updated_id"
         assert assembly.selection_settings.check_same_address_cols == ["updated", "columns", "here"]
-        assert uow.committed
 
-    def test_update_assembly_gsheet_not_found(self):
+    def test_update_assembly_gsheet_not_found(self, uow):
         """Test AssemblyGSheet update fails when gsheet doesn't exist."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -567,9 +533,8 @@ class TestAssemblyGSheetOperations:
 
         assert "does not have a Google Spreadsheet configuration" in str(exc_info.value)
 
-    def test_remove_assembly_gsheet_success(self):
+    def test_remove_assembly_gsheet_success(self, uow):
         """Test successful AssemblyGSheet removal."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -592,11 +557,9 @@ class TestAssemblyGSheetOperations:
         )
 
         assert len(uow.assembly_gsheets.all()) == 0
-        assert uow.committed
 
-    def test_remove_assembly_gsheet_not_found(self):
+    def test_remove_assembly_gsheet_not_found(self, uow):
         """Test AssemblyGSheet removal fails when gsheet doesn't exist."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -617,9 +580,8 @@ class TestAssemblyGSheetOperations:
 
         assert "does not have a Google Spreadsheet configuration" in str(exc_info.value)
 
-    def test_get_assembly_gsheet_success(self):
+    def test_get_assembly_gsheet_success(self, uow):
         """Test successful AssemblyGSheet retrieval."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -650,9 +612,8 @@ class TestAssemblyGSheetOperations:
         assert retrieved_gsheet.url == VALID_GSHEET_URL
         assert retrieved_gsheet.select_registrants_tab == "Custom Tab"
 
-    def test_get_assembly_gsheet_not_found(self):
+    def test_get_assembly_gsheet_not_found(self, uow):
         """Test AssemblyGSheet retrieval returns None when not found."""
-        uow = FakeUnitOfWork()
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
@@ -672,9 +633,8 @@ class TestAssemblyGSheetOperations:
 
         assert retrieved_gsheet is None
 
-    def test_get_assembly_gsheet_insufficient_permissions(self):
+    def test_get_assembly_gsheet_insufficient_permissions(self, uow):
         """Test AssemblyGSheet retrieval fails without permissions."""
-        uow = FakeUnitOfWork()
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
         uow.users.add(regular_user)
 
@@ -808,17 +768,16 @@ class TestSelectionSettingsDomainModel:
 class TestCreateTargetCategoryAutoPopulate:
     """Test auto-population of target category values from respondent data."""
 
-    def _setup(self):
-        uow = FakeUnitOfWork()
+    def _setup(self, uow):
         admin = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin)
         assembly = Assembly(title="Test", question="?", number_to_select=30)
         uow.assemblies.add(assembly)
-        return uow, admin, assembly
+        return admin, assembly
 
-    def test_auto_populates_values_from_matching_respondent_column(self):
+    def test_auto_populates_values_from_matching_respondent_column(self, uow):
         """Creating a category whose name matches a respondent column auto-adds its values."""
-        uow, admin, assembly = self._setup()
+        admin, assembly = self._setup(uow)
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="1", attributes={"Gender": "Male"}))
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="2", attributes={"Gender": "Female"}))
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="3", attributes={"Gender": "Non-binary"}))
@@ -830,9 +789,9 @@ class TestCreateTargetCategoryAutoPopulate:
         assert all(v.min == 0 for v in category.values)
         assert all(v.max == 0 for v in category.values)
 
-    def test_auto_populates_case_insensitive(self):
+    def test_auto_populates_case_insensitive(self, uow):
         """Auto-population matches column names case-insensitively."""
-        uow, admin, assembly = self._setup()
+        admin, assembly = self._setup(uow)
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="1", attributes={"Gender": "Male"}))
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="2", attributes={"Gender": "Female"}))
 
@@ -841,26 +800,26 @@ class TestCreateTargetCategoryAutoPopulate:
         value_names = sorted(v.value for v in category.values)
         assert value_names == ["Female", "Male"]
 
-    def test_no_auto_populate_when_no_matching_column(self):
+    def test_no_auto_populate_when_no_matching_column(self, uow):
         """No values are added when category name doesn't match any respondent column."""
-        uow, admin, assembly = self._setup()
+        admin, assembly = self._setup(uow)
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="1", attributes={"Gender": "Male"}))
 
         category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="Ethnicity")
 
         assert category.values == []
 
-    def test_no_auto_populate_when_no_respondents(self):
+    def test_no_auto_populate_when_no_respondents(self, uow):
         """No values are added when there are no respondents."""
-        uow, admin, assembly = self._setup()
+        admin, assembly = self._setup(uow)
 
         category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="Gender")
 
         assert category.values == []
 
-    def test_no_auto_populate_for_high_cardinality_column(self):
+    def test_no_auto_populate_for_high_cardinality_column(self, uow):
         """Columns with >= 20 distinct values are not auto-populated."""
-        uow, admin, assembly = self._setup()
+        admin, assembly = self._setup(uow)
         for i in range(25):
             uow.respondents.add(
                 Respondent(assembly_id=assembly.id, external_id=str(i), attributes={"PostCode": f"PC{i:03d}"})

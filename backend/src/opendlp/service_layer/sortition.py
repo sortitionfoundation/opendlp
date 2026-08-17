@@ -82,6 +82,8 @@ def start_gsheet_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
         AssemblyNotFoundError: If assembly not found
         GoogleSheetConfigNotFoundError: If gsheet configuration not found
         InsufficientPermissions: If user cannot manage the assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
@@ -218,6 +220,8 @@ def start_gsheet_replace_load_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, 
         AssemblyNotFoundError: If assembly not found
         GoogleSheetConfigNotFoundError: If gsheet configuration not found
         InsufficientPermissions: If user cannot manage the assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
@@ -285,6 +289,8 @@ def start_gsheet_replace_task(
         AssemblyNotFoundError: If assembly not found
         GoogleSheetConfigNotFoundError: If gsheet configuration not found
         InsufficientPermissions: If user cannot manage the assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
@@ -356,6 +362,8 @@ def start_gsheet_manage_tabs_task(
         AssemblyNotFoundError: If assembly not found
         GoogleSheetConfigNotFoundError: If gsheet configuration not found
         InsufficientPermissions: If user cannot manage the assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Get assembly and validate gsheet configuration exists
     assembly = uow.assemblies.get(assembly_id)
@@ -420,7 +428,10 @@ def check_db_selection_data(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
 ) -> CheckDataResult:
-    """Synchronously validate targets and respondents against selection settings."""
+    """Synchronously validate targets and respondents against selection settings.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
@@ -688,6 +699,8 @@ def get_selection_run_status(uow: AbstractUnitOfWork, task_id: uuid.UUID) -> Run
 
     Returns:
         SelectionRunRecord with current status, or None if not found
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     run_record = uow.selection_run_records.get_by_task_id(task_id)
     # this is the null result, effectively
@@ -730,6 +743,8 @@ def cancel_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.U
         NotFoundError: If task not found
         InvalidSelection: If task has already finished
         InsufficientPermissions: If user cannot manage the assembly
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     logger.info(f"User {user_id} attempting to cancel task {task_id}")
 
@@ -807,6 +822,8 @@ def get_active_initial_selection_run_id(uow: AbstractUnitOfWork, assembly_id: uu
 
     Used by the selection page to swap the check/test/run buttons for a single
     "View Running Selection" button while a task is pending or running.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     latest = uow.selection_run_records.get_latest_for_assembly(assembly_id)
     if latest is None or latest.has_finished or latest.task_type not in _INITIAL_SELECTION_TASK_TYPES:
@@ -824,6 +841,8 @@ def get_latest_run_for_assembly(uow: AbstractUnitOfWork, assembly_id: uuid.UUID)
 
     Returns:
         Most recent SelectionRunRecord for the assembly, or None if no runs exist
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     return uow.selection_run_records.get_latest_for_assembly(assembly_id)
 
@@ -856,6 +875,8 @@ def _mark_task_as_failed(
         error_msg: User-friendly error message
         technical_msg: Technical details for logs
         celery_state: The Celery state that triggered this failure
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     # Log technical details
     logger.warning(
@@ -923,6 +944,8 @@ def check_and_update_task_health(uow: AbstractUnitOfWork, task_id: uuid.UUID, ti
         uow: Unit of work for database operations
         task_id: UUID of the task (SelectionRunRecord.task_id)
         timeout_hours: Optional timeout in hours (overrides env config)
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     run_record = uow.selection_run_records.get_by_task_id(task_id)
 

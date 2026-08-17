@@ -55,79 +55,70 @@ def add_registration_document(
     original_filename: str = "",
     label: str = "",
 ) -> RegistrationDocument:
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="add registration document", required_role=_MANAGE_ROLE)
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="add registration document", required_role=_MANAGE_ROLE)
 
-        validated = validate_pdf(raw, max_bytes=get_max_pdf_upload_bytes())
-        clean_filename = sanitise_original_filename(original_filename)
-        # Label defaults to the filename; a future editor lets organisers change it.
-        effective_label = label or clean_filename
-        # Content-addressed dedup: identical bytes on a page collapse to one row.
-        # The original filename is kept; the caller's label always wins on re-upload.
-        existing = uow.registration_documents.get_by_assembly_and_sha(assembly_id, validated.sha256)
-        if existing is not None:
-            if existing.label != effective_label:
-                existing.label = effective_label
-                uow.commit()
-            return existing.create_detached_copy()
+    validated = validate_pdf(raw, max_bytes=get_max_pdf_upload_bytes())
+    clean_filename = sanitise_original_filename(original_filename)
+    # Label defaults to the filename; a future editor lets organisers change it.
+    effective_label = label or clean_filename
+    # Content-addressed dedup: identical bytes on a page collapse to one row.
+    # The original filename is kept; the caller's label always wins on re-upload.
+    existing = uow.registration_documents.get_by_assembly_and_sha(assembly_id, validated.sha256)
+    if existing is not None:
+        if existing.label != effective_label:
+            existing.label = effective_label
+            uow.commit()
+        return existing.create_detached_copy()
 
-        limit = get_max_documents_per_assembly()
-        if uow.registration_documents.count_by_assembly_id(assembly_id) >= limit:
-            raise DocumentQuotaExceeded(limit)
+    limit = get_max_documents_per_assembly()
+    if uow.registration_documents.count_by_assembly_id(assembly_id) >= limit:
+        raise DocumentQuotaExceeded(limit)
 
-        document = RegistrationDocument.from_validated(
-            assembly_id,
-            validated,
-            created_by=user.id,
-            label=effective_label,
-            original_filename=clean_filename,
-        )
-        uow.registration_documents.add(document)
-        uow.commit()
-        return document.create_detached_copy()
+    document = RegistrationDocument.from_validated(
+        assembly_id,
+        validated,
+        created_by=user.id,
+        label=effective_label,
+        original_filename=clean_filename,
+    )
+    uow.registration_documents.add(document)
+    return document.create_detached_copy()
 
 
 def list_registration_documents(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
 ) -> list[RegistrationDocument]:
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_view_assembly(user, assembly):
-            raise InsufficientPermissions(action="view registration documents", required_role=_VIEW_ROLE)
-        return [
-            document.create_detached_copy() for document in uow.registration_documents.list_by_assembly_id(assembly_id)
-        ]
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_view_assembly(user, assembly):
+        raise InsufficientPermissions(action="view registration documents", required_role=_VIEW_ROLE)
+    return [document.create_detached_copy() for document in uow.registration_documents.list_by_assembly_id(assembly_id)]
 
 
 def delete_registration_document(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, document_id: uuid.UUID
 ) -> None:
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="delete registration document", required_role=_MANAGE_ROLE)
-        document = uow.registration_documents.get(document_id)
-        if document is None or document.assembly_id != assembly_id:
-            raise RegistrationDocumentNotFoundError(f"Document {document_id} not found for this registration page")
-        uow.registration_documents.delete(document)
-        uow.commit()
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="delete registration document", required_role=_MANAGE_ROLE)
+    document = uow.registration_documents.get(document_id)
+    if document is None or document.assembly_id != assembly_id:
+        raise RegistrationDocumentNotFoundError(f"Document {document_id} not found for this registration page")
+    uow.registration_documents.delete(document)
 
 
 def set_registration_document_label(
     uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, document_id: uuid.UUID, label: str
 ) -> RegistrationDocument:
-    with uow:
-        user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
-        if not can_manage_assembly(user, assembly):
-            raise InsufficientPermissions(action="edit registration document", required_role=_MANAGE_ROLE)
-        document: RegistrationDocument | None = uow.registration_documents.get(document_id)
-        if document is None or document.assembly_id != assembly_id:
-            raise RegistrationDocumentNotFoundError(f"Document {document_id} not found for this registration page")
-        document.label = label
-        uow.commit()
-        return document.create_detached_copy()
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        raise InsufficientPermissions(action="edit registration document", required_role=_MANAGE_ROLE)
+    document: RegistrationDocument | None = uow.registration_documents.get(document_id)
+    if document is None or document.assembly_id != assembly_id:
+        raise RegistrationDocumentNotFoundError(f"Document {document_id} not found for this registration page")
+    document.label = label
+    return document.create_detached_copy()
 
 
 def list_document_snippets(
@@ -151,9 +142,8 @@ def get_registration_document_for_serving(
     uow: AbstractUnitOfWork, url_slug: str, document_name: str
 ) -> RegistrationDocument | None:
     sha256 = document_name.rsplit(".", 1)[0]
-    with uow:
-        page = uow.registration_pages.get_by_url_slug(url_slug)
-        if page is None or not page.is_publicly_loadable():
-            return None
-        document = uow.registration_documents.get_by_assembly_and_sha(page.assembly_id, sha256)
-        return document.create_detached_copy() if document else None
+    page = uow.registration_pages.get_by_url_slug(url_slug)
+    if page is None or not page.is_publicly_loadable():
+        return None
+    document = uow.registration_documents.get_by_assembly_and_sha(page.assembly_id, sha256)
+    return document.create_detached_copy() if document else None

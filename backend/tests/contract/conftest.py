@@ -63,7 +63,6 @@ from tests.fakes import (
     FakeTargetCategoryRepository,
     FakeTotpVerificationAttemptRepository,
     FakeTwoFactorAuditLogRepository,
-    FakeUnitOfWork,
     FakeUserBackupCodeRepository,
     FakeUserInviteRepository,
     FakeUserRepository,
@@ -366,9 +365,8 @@ def user_invite_backend(request, postgres_session) -> ContractBackend:
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
-def user_assembly_role_backend(request, postgres_session) -> ContractBackend:
+def user_assembly_role_backend(uow, request, postgres_session) -> ContractBackend:
     if request.param == "fake":
-        uow = FakeUnitOfWork()
         return FakeContractBackend(repo=uow.user_assembly_roles, commit=lambda: None)
     return SqlContractBackend(repo=SqlAlchemyUserAssemblyRoleRepository(postgres_session), session=postgres_session)
 

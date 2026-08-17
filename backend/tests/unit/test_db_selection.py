@@ -30,8 +30,7 @@ def app() -> Flask:
 class TestCheckDbSelectionData:
     """Tests for the check_db_selection_data service function."""
 
-    def _setup_uow(self) -> tuple[FakeUnitOfWork, User, Assembly]:
-        uow = FakeUnitOfWork()
+    def _setup_uow(self, uow) -> tuple[FakeUnitOfWork, User, Assembly]:
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
         assembly = Assembly(title="Test Assembly", number_to_select=5)
@@ -42,8 +41,8 @@ class TestCheckDbSelectionData:
 
     @patch("opendlp.service_layer.sortition.OpenDLPDataAdapter")
     @patch("opendlp.service_layer.sortition.adapters.SelectionData")
-    def test_success_when_data_valid(self, mock_selection_data_cls, mock_adapter_cls):
-        uow, admin_user, assembly = self._setup_uow()
+    def test_success_when_data_valid(self, mock_selection_data_cls, mock_adapter_cls, uow):
+        _, admin_user, assembly = self._setup_uow(uow)
 
         mock_features = MagicMock()
         mock_features.__len__ = MagicMock(return_value=3)
@@ -65,8 +64,8 @@ class TestCheckDbSelectionData:
 
     @patch("opendlp.service_layer.sortition.OpenDLPDataAdapter")
     @patch("opendlp.service_layer.sortition.adapters.SelectionData")
-    def test_returns_error_when_features_fail(self, mock_selection_data_cls, mock_adapter_cls):
-        uow, admin_user, assembly = self._setup_uow()
+    def test_returns_error_when_features_fail(self, mock_selection_data_cls, mock_adapter_cls, uow):
+        _, admin_user, assembly = self._setup_uow(uow)
 
         mock_select_data = MagicMock()
         mock_select_data.load_features.side_effect = SortitionBaseError("Bad features")
@@ -81,9 +80,9 @@ class TestCheckDbSelectionData:
 
     @patch("opendlp.service_layer.sortition.OpenDLPDataAdapter")
     @patch("opendlp.service_layer.sortition.adapters.SelectionData")
-    def test_errors_are_plain_text_not_html(self, mock_selection_data_cls, mock_adapter_cls):
+    def test_errors_are_plain_text_not_html(self, mock_selection_data_cls, mock_adapter_cls, uow):
         """Multi-line errors must be joined with newlines, not <br /> tags (issue in PR #195)."""
-        uow, admin_user, assembly = self._setup_uow()
+        _, admin_user, assembly = self._setup_uow(uow)
 
         sub_errors = [
             ParseTableErrorMsg(row=1, row_name="p1", key="age_bracket", value="0", msg="Error 1"),
@@ -102,8 +101,8 @@ class TestCheckDbSelectionData:
 
     @patch("opendlp.service_layer.sortition.OpenDLPDataAdapter")
     @patch("opendlp.service_layer.sortition.adapters.SelectionData")
-    def test_returns_error_when_people_fail(self, mock_selection_data_cls, mock_adapter_cls):
-        uow, admin_user, assembly = self._setup_uow()
+    def test_returns_error_when_people_fail(self, mock_selection_data_cls, mock_adapter_cls, uow):
+        _, admin_user, assembly = self._setup_uow(uow)
 
         mock_features = MagicMock()
         mock_features.__len__ = MagicMock(return_value=3)
@@ -123,8 +122,8 @@ class TestCheckDbSelectionData:
 
     @patch("opendlp.service_layer.sortition.OpenDLPDataAdapter")
     @patch("opendlp.service_layer.sortition.adapters.SelectionData")
-    def test_skips_people_when_features_fail(self, mock_selection_data_cls, mock_adapter_cls):
-        uow, admin_user, assembly = self._setup_uow()
+    def test_skips_people_when_features_fail(self, mock_selection_data_cls, mock_adapter_cls, uow):
+        _, admin_user, assembly = self._setup_uow(uow)
 
         mock_select_data = MagicMock()
         mock_select_data.load_features.side_effect = SortitionBaseError("Bad features")
@@ -134,16 +133,14 @@ class TestCheckDbSelectionData:
 
         mock_select_data.load_people.assert_not_called()
 
-    def test_assembly_not_found_raises(self):
-        uow = FakeUnitOfWork()
+    def test_assembly_not_found_raises(self, uow):
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
 
         with pytest.raises(AssemblyNotFoundError):
             check_db_selection_data(uow=uow, user_id=admin_user.id, assembly_id=uuid.uuid4())
 
-    def test_returns_error_when_settings_invalid(self):
-        uow = FakeUnitOfWork()
+    def test_returns_error_when_settings_invalid(self, uow):
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         uow.users.add(admin_user)
         assembly = Assembly(title="Test Assembly", number_to_select=5)

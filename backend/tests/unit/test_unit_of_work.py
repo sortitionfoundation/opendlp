@@ -1,6 +1,7 @@
 """ABOUTME: Unit tests for the Unit of Work pattern
 ABOUTME: Tests transaction management and repository coordination"""
 
+import uuid
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,8 +13,10 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserInviteRepository,
     SqlAlchemyUserRepository,
 )
-from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from tests.fakes import FakeUnitOfWork
+from opendlp.domain.users import User
+from opendlp.domain.value_objects import GlobalRole
+from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork, UnitOfWorkError
+from tests.fakes import FakeStore, FakeUnitOfWork
 
 
 class TestSqlAlchemyUnitOfWork:
@@ -144,9 +147,8 @@ class TestSqlAlchemyUnitOfWork:
 
 
 class TestFakeUnitOfWorkCommitAndReset:
-    def test_commit_and_reset_keeps_data(self):
+    def test_commit_and_reset_keeps_data(self, uow):
         """commit_and_reset marks committed and carries on against the same store."""
-        uow = FakeUnitOfWork()
         sentinel = object()
         uow.fake_users._items.append(sentinel)
 
@@ -155,3 +157,131 @@ class TestFakeUnitOfWorkCommitAndReset:
         assert uow.committed is True
         # Unlike rollback (which clears the store), the data carries on.
         assert sentinel in uow.fake_users._items
+
+
+class TestSqlAlchemyUnitOfWorkStrictness:
+    """Outside its block a UnitOfWork must be inert.
+
+    The original bug: `__exit__` closed the session but left it attached, and a
+    closed SQLAlchemy session silently autobegins a new transaction on next use.
+    Work done through it then belonged to a transaction nobody would commit, and
+    the connection sat `idle in transaction` holding locks.
+    """
+
+    def _uow(self):
+        mock_session = MagicMock(spec=Session)
+        mock_session_factory = MagicMock(spec=sessionmaker)
+        mock_session_factory.return_value = mock_session
+        return SqlAlchemyUnitOfWork(mock_session_factory), mock_session
+
+    def test_session_is_not_available_before_the_block(self):
+        uow, _ = self._uow()
+
+        with pytest.raises(UnitOfWorkError):
+            _ = uow.session
+
+    def test_session_is_not_available_after_the_block(self):
+        uow, _ = self._uow()
+        with uow:
+            pass
+
+        with pytest.raises(UnitOfWorkError):
+            _ = uow.session
+
+    def test_repositories_are_not_available_after_the_block(self):
+        """Repositories hold their own session reference, so guarding `session` is not enough."""
+        uow, _ = self._uow()
+        with uow:
+            pass
+
+        with pytest.raises(UnitOfWorkError, match="users"):
+            uow.users.get(uuid.uuid4())
+
+    def test_a_second_block_asks_the_factory_for_a_second_session(self):
+        """A reused UnitOfWork must build a fresh session, not revive the closed one."""
+        uow, _ = self._uow()
+        with uow:
+            pass
+        with uow:
+            pass
+
+        assert uow.session_factory.call_count == 2
+
+    def test_a_failing_commit_still_releases_the_connection(self):
+        uow, mock_session = self._uow()
+        mock_session.commit.side_effect = RuntimeError("commit failed")
+
+        with pytest.raises(RuntimeError), uow:
+            pass
+
+        mock_session.close.assert_called_once()
+
+    def test_a_failing_commit_still_closes_the_unit_of_work(self):
+        uow, mock_session = self._uow()
+        mock_session.commit.side_effect = RuntimeError("commit failed")
+
+        with pytest.raises(RuntimeError), uow:
+            pass
+
+        with pytest.raises(UnitOfWorkError):
+            _ = uow.session
+
+
+class TestFakeUnitOfWorkStrictness:
+    """The fake mirrors the real UnitOfWork: repositories only work inside the block.
+
+    This is what stops a test passing while the code under test relies on the
+    resurrecting-session bug the convention work exists to remove.
+    """
+
+    def test_repository_access_before_the_block_raises(self):
+        uow = FakeUnitOfWork()
+
+        with pytest.raises(UnitOfWorkError):
+            uow.users.get(uuid.uuid4())
+
+    def test_repository_access_inside_the_block_works(self):
+        with FakeUnitOfWork() as uow:
+            assert uow.users.get(uuid.uuid4()) is None
+
+    def test_repository_access_after_the_block_raises(self):
+        with FakeUnitOfWork() as uow:
+            pass
+
+        with pytest.raises(UnitOfWorkError):
+            uow.users.get(uuid.uuid4())
+
+    def test_the_block_can_be_re_entered(self):
+        uow = FakeUnitOfWork()
+        with uow:
+            pass
+
+        with uow:
+            assert uow.users.get(uuid.uuid4()) is None
+
+    def test_fake_aliases_stay_usable_outside_the_block(self):
+        """The `fake_` aliases are the deliberate arrange/inspect seam."""
+        uow = FakeUnitOfWork()
+        user = User(email="strict@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.fake_users.add(user)
+
+        with uow:
+            assert uow.users.get(user.id) is user
+
+        assert uow.fake_users.get(user.id) is user
+
+    def test_the_error_names_the_repository(self):
+        uow = FakeUnitOfWork()
+
+        with pytest.raises(UnitOfWorkError, match="assemblies"):
+            uow.assemblies.get(uuid.uuid4())
+
+    def test_a_shared_store_still_rolls_back(self):
+        store = FakeStore()
+        user = User(email="rollback@example.com", global_role=GlobalRole.USER, password_hash="hash")
+
+        with pytest.raises(ValueError), FakeUnitOfWork(store) as uow:  # noqa: PT012
+            uow.users.add(user)
+            raise ValueError("boom")
+
+        assert store.users.get(user.id) is None

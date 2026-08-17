@@ -365,11 +365,12 @@ def create_test_assembly(title: str, admin_user, test_database):
     """Create a test assembly for the admin user."""
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
-    assembly = create_assembly(
-        uow=uow,
-        title=title,
-        created_by_user_id=admin_user.id,
-    )
+    with uow:
+        assembly = create_assembly(
+            uow=uow,
+            title=title,
+            created_by_user_id=admin_user.id,
+        )
     _assembly_name_id_cache.add_existing(title, assembly)
 
 
@@ -378,12 +379,13 @@ def create_test_assembly_with_number_to_select(title: str, number: int, admin_us
     """Create a test assembly with a specific number_to_select for the admin user."""
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
-    assembly = create_assembly(
-        uow=uow,
-        title=title,
-        created_by_user_id=admin_user.id,
-        number_to_select=number,
-    )
+    with uow:
+        assembly = create_assembly(
+            uow=uow,
+            title=title,
+            created_by_user_id=admin_user.id,
+            number_to_select=number,
+        )
     _assembly_name_id_cache.add_existing(title, assembly)
 
 
@@ -391,18 +393,16 @@ def create_test_assembly_with_number_to_select(title: str, number: int, admin_us
 def create_test_assembly_with_registration_page(title: str, admin_user, test_database):
     """Create a test assembly that already has a registration page (in TEST status)."""
     session_factory = test_database
-    assembly = create_assembly(
-        uow=SqlAlchemyUnitOfWork(session_factory),
-        title=title,
-        created_by_user_id=admin_user.id,
-    )
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id)
     _assembly_name_id_cache.add_existing(title, assembly)
-    create_registration_page_with_slugs(
-        uow=SqlAlchemyUnitOfWork(session_factory),
-        user_id=admin_user.id,
-        assembly_id=assembly.id,
-        name="Registration page",
-    )
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        create_registration_page_with_slugs(
+            uow=uow,
+            user_id=admin_user.id,
+            assembly_id=assembly.id,
+            name="Registration page",
+        )
 
 
 def _page_slug(assembly_id, test_database) -> str:
@@ -475,31 +475,30 @@ def _create_assembly_with_saved_form(title: str, admin_user, session_factory):
 
     Returns the registration page, which the callers need to address it by id.
     """
-    assembly = create_assembly(
-        uow=SqlAlchemyUnitOfWork(session_factory),
-        title=title,
-        created_by_user_id=admin_user.id,
-    )
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        assembly = create_assembly(uow=uow, title=title, created_by_user_id=admin_user.id)
     _assembly_name_id_cache.add_existing(title, assembly)
-    registration_page = create_registration_page_with_slugs(
-        uow=SqlAlchemyUnitOfWork(session_factory),
-        user_id=admin_user.id,
-        assembly_id=assembly.id,
-        name="Registration page",
-    )
-    update_registration_page_html(
-        uow=SqlAlchemyUnitOfWork(session_factory),
-        user_id=admin_user.id,
-        page_id=registration_page.id,
-        form_html=(
-            '<form action="{{ form_action }}" method="post">'
-            "{{ csrf_form_element }}"
-            '<label for="colour">Favourite colour</label>'
-            '<select id="colour" name="colour"><option>Red</option><option>Blue</option></select>'
-            '<button type="submit">Register</button>'
-            "</form>"
-        ),
-    )
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        registration_page = create_registration_page_with_slugs(
+            uow=uow,
+            user_id=admin_user.id,
+            assembly_id=assembly.id,
+            name="Registration page",
+        )
+    with SqlAlchemyUnitOfWork(session_factory) as uow:
+        update_registration_page_html(
+            uow=uow,
+            user_id=admin_user.id,
+            page_id=registration_page.id,
+            form_html=(
+                '<form action="{{ form_action }}" method="post">'
+                "{{ csrf_form_element }}"
+                '<label for="colour">Favourite colour</label>'
+                '<select id="colour" name="colour"><option>Red</option><option>Blue</option></select>'
+                '<button type="submit">Register</button>'
+                "</form>"
+            ),
+        )
     return registration_page
 
 
@@ -513,11 +512,8 @@ def create_test_assembly_with_saved_form(title: str, admin_user, test_database):
 def create_test_assembly_with_published_form(title: str, admin_user, test_database):
     """Create an assembly whose saved registration form has been published."""
     registration_page = _create_assembly_with_saved_form(title, admin_user, test_database)
-    publish_registration_page(
-        uow=SqlAlchemyUnitOfWork(test_database),
-        user_id=admin_user.id,
-        page_id=registration_page.id,
-    )
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        publish_registration_page(uow=uow, user_id=admin_user.id, page_id=registration_page.id)
 
 
 @when("I click the Unpublish button")
@@ -803,12 +799,13 @@ def create_test_assembly_with_question(title: str, question: str, admin_user, te
     """Create a test assembly with a question for the admin user."""
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
-    assembly = create_assembly(
-        uow=uow,
-        title=title,
-        question=question,
-        created_by_user_id=admin_user.id,
-    )
+    with uow:
+        assembly = create_assembly(
+            uow=uow,
+            title=title,
+            question=question,
+            created_by_user_id=admin_user.id,
+        )
     _assembly_name_id_cache.add_existing(title, assembly)
 
 
@@ -1044,11 +1041,12 @@ def create_test_assembly_by_admin(title: str, admin_user, test_database):
     """Create a test assembly owned by the admin user."""
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
-    assembly = create_assembly(
-        uow=uow,
-        title=title,
-        created_by_user_id=admin_user.id,
-    )
+    with uow:
+        assembly = create_assembly(
+            uow=uow,
+            title=title,
+            created_by_user_id=admin_user.id,
+        )
     _assembly_name_id_cache.add_existing(title, assembly)
 
 
@@ -1062,13 +1060,14 @@ def assign_current_user_to_assembly(title: str, role: str, normal_user, admin_us
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
     assembly_role = AssemblyRole(role)
-    grant_user_assembly_role(
-        uow=uow,
-        user_id=normal_user.id,
-        assembly_id=assembly_id,
-        role=assembly_role,
-        current_user=admin_user,
-    )
+    with uow:
+        grant_user_assembly_role(
+            uow=uow,
+            user_id=normal_user.id,
+            assembly_id=assembly_id,
+            role=assembly_role,
+            current_user=admin_user,
+        )
 
 
 @given(parsers.parse('"{email}" is assigned to "{title}" as "{role}"'))
@@ -1084,13 +1083,14 @@ def assign_user_to_assembly(email: str, title: str, role: str, admin_user, norma
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
     assembly_role = AssemblyRole(role)
-    grant_user_assembly_role(
-        uow=uow,
-        user_id=user_to_assign.id,
-        assembly_id=assembly_id,
-        role=assembly_role,
-        current_user=admin_user,
-    )
+    with uow:
+        grant_user_assembly_role(
+            uow=uow,
+            user_id=user_to_assign.id,
+            assembly_id=assembly_id,
+            role=assembly_role,
+            current_user=admin_user,
+        )
 
 
 @when(parsers.parse('I click the "{tab_name}" tab'))
@@ -1242,23 +1242,24 @@ def create_gsheet_config_for_assembly(title: str, admin_user, test_database):
 
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
-    add_assembly_gsheet(
-        uow=uow,
-        user_id=admin_user.id,
-        assembly_id=assembly_id,
-        url="https://docs.google.com/spreadsheets/d/test-sheet-id/edit",
-        team="uk",
-        select_registrants_tab="Respondents",
-        select_targets_tab="Categories",
-        replace_registrants_tab="Respondents",
-        replace_targets_tab="Categories",
-        already_selected_tab="Selected",
-        id_column="",
-        check_same_address=False,
-        check_same_address_cols=[],
-        generate_remaining_tab=False,
-        columns_to_keep=[],
-    )
+    with uow:
+        add_assembly_gsheet(
+            uow=uow,
+            user_id=admin_user.id,
+            assembly_id=assembly_id,
+            url="https://docs.google.com/spreadsheets/d/test-sheet-id/edit",
+            team="uk",
+            select_registrants_tab="Respondents",
+            select_targets_tab="Categories",
+            replace_registrants_tab="Respondents",
+            replace_targets_tab="Categories",
+            already_selected_tab="Selected",
+            id_column="",
+            check_same_address=False,
+            check_same_address_cols=[],
+            generate_remaining_tab=False,
+            columns_to_keep=[],
+        )
 
 
 @when(parsers.parse('I visit the assembly data page for "{title}"'))
@@ -1456,12 +1457,13 @@ def create_test_assembly_with_number_to_select_quoted(title: str, number: str, a
     """Create a test assembly with a specific number_to_select for the admin user."""
     session_factory = test_database
     uow = SqlAlchemyUnitOfWork(session_factory)
-    assembly = create_assembly(
-        uow=uow,
-        title=title,
-        created_by_user_id=admin_user.id,
-        number_to_select=int(number),
-    )
+    with uow:
+        assembly = create_assembly(
+            uow=uow,
+            title=title,
+            created_by_user_id=admin_user.id,
+            number_to_select=int(number),
+        )
     _assembly_name_id_cache.add_existing(title, assembly)
 
 

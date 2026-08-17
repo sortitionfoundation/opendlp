@@ -89,12 +89,11 @@ class TestNotConfigured:
 
 
 class TestHappyPath:
-    def test_dispatches_select_polls_and_runs_cleanup(self, temp_env_vars):
+    def test_dispatches_select_polls_and_runs_cleanup(self, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         user_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(user_id))
 
-        uow = FakeUnitOfWork()
         clock = _FakeClock()
 
         select_calls: list[dict[str, Any]] = []
@@ -151,12 +150,11 @@ class TestHappyPath:
 
 
 class TestWrapperTimeout:
-    def test_returns_timeout_when_record_never_finishes(self, temp_env_vars):
+    def test_returns_timeout_when_record_never_finishes(self, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         user_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(user_id))
 
-        uow = FakeUnitOfWork()
         clock = _FakeClock()
         cleanup_calls: list[Any] = []
         health_calls: list[uuid.UUID] = []
@@ -226,12 +224,11 @@ class TestPollLoopAvoidsCeleryResultBackend:
     a worker task does that.
     """
 
-    def test_poll_loop_does_not_touch_celery_result_backend(self, temp_env_vars):
+    def test_poll_loop_does_not_touch_celery_result_backend(self, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         user_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(user_id))
 
-        uow = FakeUnitOfWork()
         clock = _FakeClock()
 
         def spy_select(uow_arg: Any, user_arg: uuid.UUID, assembly_arg: uuid.UUID, **kwargs: Any) -> uuid.UUID:
@@ -282,16 +279,15 @@ class TestCheckMonitorSelection:
         assert result.last_run_at is None
         assert result.cleanup_status == "OK"
 
-    def test_stale_when_no_records(self, temp_env_vars):
+    def test_stale_when_no_records(self, uow, temp_env_vars):
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(uuid.uuid4()), MONITOR_USER_ID=str(uuid.uuid4()))
-        result = check_monitor_selection(FakeUnitOfWork())
+        result = check_monitor_selection(uow)
         assert result.status == "STALE"
         assert "no monitor selection runs" in result.message
 
-    def test_ok_when_recent_completed(self, temp_env_vars):
+    def test_ok_when_recent_completed(self, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
-        uow = FakeUnitOfWork()
         record = SelectionRunRecord(
             assembly_id=assembly_id,
             task_id=uuid.uuid4(),
@@ -306,10 +302,9 @@ class TestCheckMonitorSelection:
         assert result.cleanup_status == "OK"
         assert result.last_run_at == record.created_at
 
-    def test_single_failure_is_degraded_not_failed(self, temp_env_vars):
+    def test_single_failure_is_degraded_not_failed(self, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
-        uow = FakeUnitOfWork()
         uow.selection_run_records.add(
             SelectionRunRecord(
                 assembly_id=assembly_id,
@@ -325,10 +320,9 @@ class TestCheckMonitorSelection:
         assert result.consecutive_failures == 1
         assert "permission denied" in result.message
 
-    def test_cleanup_failure_overrides_ok(self, temp_env_vars):
+    def test_cleanup_failure_overrides_ok(self, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
-        uow = FakeUnitOfWork()
         uow.selection_run_records.add(
             SelectionRunRecord(
                 assembly_id=assembly_id,
@@ -377,11 +371,10 @@ def _completed_select(assembly_id: uuid.UUID, minutes_ago: int) -> SelectionRunR
 
 
 class TestConsecutiveFailures:
-    def test_two_consecutive_failures_stays_degraded(self, temp_env_vars):
+    def test_two_consecutive_failures_stays_degraded(self, uow, temp_env_vars):
         """Two failures in a row is below the threshold, so the check is DEGRADED not FAILED."""
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
-        uow = FakeUnitOfWork()
         uow.selection_run_records.add(_completed_select(assembly_id, minutes_ago=45))
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=30))
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=5))
@@ -390,11 +383,10 @@ class TestConsecutiveFailures:
         assert result.status == "DEGRADED"
         assert result.consecutive_failures == 2
 
-    def test_three_consecutive_failures_go_red(self, temp_env_vars):
+    def test_three_consecutive_failures_go_red(self, uow, temp_env_vars):
         """Three failures in a row hits the threshold and the check goes FAILED."""
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
-        uow = FakeUnitOfWork()
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=35))
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=20))
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=5))
@@ -403,11 +395,10 @@ class TestConsecutiveFailures:
         assert result.status == "FAILED"
         assert result.consecutive_failures == 3
 
-    def test_recent_success_clears_the_streak(self, temp_env_vars):
+    def test_recent_success_clears_the_streak(self, uow, temp_env_vars):
         """A successful latest run resets the failure streak even if older runs failed."""
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
-        uow = FakeUnitOfWork()
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=35))
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=20))
         uow.selection_run_records.add(_completed_select(assembly_id, minutes_ago=5))
@@ -417,11 +408,10 @@ class TestConsecutiveFailures:
         assert result.consecutive_failures == 0
         assert result.recent_failures == []
 
-    def test_recent_failures_report_error_class(self, temp_env_vars):
+    def test_recent_failures_report_error_class(self, uow, temp_env_vars):
         """Each failed run in the streak reports the class name of its error."""
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
-        uow = FakeUnitOfWork()
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=20, error=TimeoutError("slow")))
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=5, error=ValueError("bad")))
 
@@ -430,11 +420,10 @@ class TestConsecutiveFailures:
         # newest first
         assert [f.error_class for f in result.recent_failures] == ["ValueError", "TimeoutError"]
 
-    def test_failure_without_report_error_falls_back_to_status(self, temp_env_vars):
+    def test_failure_without_report_error_falls_back_to_status(self, uow, temp_env_vars):
         """A failed run with no recorded exception still reports an error_class."""
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
-        uow = FakeUnitOfWork()
         uow.selection_run_records.add(_failed_select(assembly_id, minutes_ago=5))
 
         result = check_monitor_selection(uow)
@@ -447,17 +436,16 @@ class TestGetLatestMonitorRun:
         clear_env_vars("MONITOR_ASSEMBLY_ID", "MONITOR_USER_ID")
         assert get_latest_monitor_run(FakeUnitOfWork()) is None
 
-    def test_returns_none_when_no_records(self, temp_env_vars):
+    def test_returns_none_when_no_records(self, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
 
-        assert get_latest_monitor_run(FakeUnitOfWork()) is None
+        assert get_latest_monitor_run(uow) is None
 
-    def test_returns_select_record_by_default(self, temp_env_vars):
+    def test_returns_select_record_by_default(self, uow, temp_env_vars):
         assembly_id = uuid.uuid4()
         temp_env_vars(MONITOR_ASSEMBLY_ID=str(assembly_id), MONITOR_USER_ID=str(uuid.uuid4()))
 
-        uow = FakeUnitOfWork()
         select_record = SelectionRunRecord(
             assembly_id=assembly_id,
             task_id=uuid.uuid4(),

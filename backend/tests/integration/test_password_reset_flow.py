@@ -12,26 +12,23 @@ from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import password_reset_service
 from opendlp.service_layer.exceptions import InvalidResetToken, RateLimitExceeded
 from opendlp.service_layer.security import hash_password
-from tests.fakes import FakeUnitOfWork
 
 
 @pytest.fixture
-def user_with_email():
+def user_with_email(uow):
     """Create a FakeUnitOfWork with a test user with password authentication."""
-    uow = FakeUnitOfWork()
     email_suffix = secrets.token_urlsafe(3)
     email = f"testuser{email_suffix}@example.com"
-    with uow:
-        user = User(
-            email=email,
-            global_role=GlobalRole.USER,
-            password_hash="old_password_hash",  # pragma: allowlist secret
-            first_name="Test",
-            last_name="User",
-        )
-        uow.users.add(user)
-        uow.commit()
-        return {"uow": uow, "user_id": user.id, "email": email}
+    user = User(
+        email=email,
+        global_role=GlobalRole.USER,
+        password_hash="old_password_hash",  # pragma: allowlist secret
+        first_name="Test",
+        last_name="User",
+    )
+    uow.users.add(user)
+    uow.commit()
+    return {"uow": uow, "user_id": user.id, "email": email}
 
 
 @pytest.fixture
@@ -50,12 +47,11 @@ def test_full_password_reset_flow(user_with_email):
     assert success is True
 
     # Step 2: Verify token was created
-    with uow:
-        tokens = list(uow.password_reset_tokens.get_active_tokens_for_user(reset_user_id))
-        assert len(tokens) == 1
-        token = tokens[0].create_detached_copy()
-        assert token.user_id == reset_user_id
-        assert token.is_valid()
+    tokens = list(uow.password_reset_tokens.get_active_tokens_for_user(reset_user_id))
+    assert len(tokens) == 1
+    token = tokens[0].create_detached_copy()
+    assert token.user_id == reset_user_id
+    assert token.is_valid()
 
     # Step 3: Validate the token
     validated_token = password_reset_service.validate_reset_token(uow, token.token)
@@ -76,14 +72,12 @@ def test_full_password_reset_flow(user_with_email):
         assert user.id == reset_user_id
 
     # Step 5: Verify password was changed
-    with uow:
-        updated_user = uow.users.get(reset_user_id)
-        assert updated_user.password_hash == new_password_hash
+    updated_user = uow.users.get(reset_user_id)
+    assert updated_user.password_hash == new_password_hash
 
     # Step 6: Verify token was marked as used
-    with uow:
-        used_token = uow.password_reset_tokens.get_by_token(token.token)
-        assert used_token.is_used()
+    used_token = uow.password_reset_tokens.get_by_token(token.token)
+    assert used_token.is_used()
 
 
 def test_rate_limiting(user_with_email):
@@ -106,16 +100,15 @@ def test_expired_token_cannot_be_used(reset_user):
     user_id = reset_user["user_id"]
 
     # Create an expired token
-    with uow:
-        past_time = datetime.now(UTC) - timedelta(hours=2)
-        token = PasswordResetToken(
-            user_id=user_id,
-            created_at=past_time,
-            expires_at=past_time + timedelta(hours=1),
-            token="expired-token-123",
-        )
-        uow.password_reset_tokens.add(token)
-        uow.commit()
+    past_time = datetime.now(UTC) - timedelta(hours=2)
+    token = PasswordResetToken(
+        user_id=user_id,
+        created_at=past_time,
+        expires_at=past_time + timedelta(hours=1),
+        token="expired-token-123",
+    )
+    uow.password_reset_tokens.add(token)
+    uow.commit()
 
     # Try to validate expired token
     with pytest.raises(InvalidResetToken, match="expired"):
@@ -128,82 +121,73 @@ def test_used_token_cannot_be_reused(reset_user):
     user_id = reset_user["user_id"]
 
     # Create and use a token
-    with uow:
-        token = PasswordResetToken(user_id=user_id, token="used-token-456")
-        token.use()
-        uow.password_reset_tokens.add(token)
-        uow.commit()
+    token = PasswordResetToken(user_id=user_id, token="used-token-456")
+    token.use()
+    uow.password_reset_tokens.add(token)
+    uow.commit()
 
     # Try to validate used token
     with pytest.raises(InvalidResetToken, match="already been used"):
         password_reset_service.validate_reset_token(uow, "used-token-456")
 
 
-def test_nonexistent_email_returns_success_but_no_token():
+def test_nonexistent_email_returns_success_but_no_token(uow):
     """Test that nonexistent emails return success (anti-enumeration)."""
-    uow = FakeUnitOfWork()
 
     # Request reset for nonexistent email
     success = password_reset_service.request_password_reset(uow, "nonexistent@example.com")
     assert success is True
 
     # Verify no tokens were created
-    with uow:
-        all_tokens = list(uow.password_reset_tokens.all())
-        # Filter for tokens that might be for this email (there won't be any)
-        assert len([t for t in all_tokens if t.token == "nonexistent"]) == 0
+    all_tokens = list(uow.password_reset_tokens.all())
+    # Filter for tokens that might be for this email (there won't be any)
+    assert len([t for t in all_tokens if t.token == "nonexistent"]) == 0
 
 
-def test_oauth_user_cannot_reset_password():
+def test_oauth_user_cannot_reset_password(uow):
     """Test that OAuth users cannot request password reset."""
-    uow = FakeUnitOfWork()
 
     # Create OAuth user
-    with uow:
-        oauth_user = User(
-            email="oauth@example.com",
-            global_role=GlobalRole.USER,
-            oauth_provider="google",
-            oauth_id="google123",
-        )
-        uow.users.add(oauth_user)
-        uow.commit()
-        oauth_user_id = oauth_user.id
+    oauth_user = User(
+        email="oauth@example.com",
+        global_role=GlobalRole.USER,
+        oauth_provider="google",
+        oauth_id="google123",
+    )
+    uow.users.add(oauth_user)
+    uow.commit()
+    oauth_user_id = oauth_user.id
 
     # Request reset for OAuth user
     success = password_reset_service.request_password_reset(uow, "oauth@example.com")
     assert success is True  # Returns success (anti-enumeration)
 
     # Verify no token was created
-    with uow:
-        tokens = list(uow.password_reset_tokens.get_active_tokens_for_user(oauth_user_id))
-        assert len(tokens) == 0
+    tokens = list(uow.password_reset_tokens.get_active_tokens_for_user(oauth_user_id))
+    assert len(tokens) == 0
 
 
-def test_inactive_user_cannot_reset_password():
+def test_inactive_user_cannot_reset_password(uow):
     """Test that inactive users cannot request password reset."""
-    uow = FakeUnitOfWork()
 
     # Create inactive user
-    with uow:
-        inactive_user = User(
-            email="inactive@example.com",
-            global_role=GlobalRole.USER,
-            password_hash="password_hash",  # pragma: allowlist secret
-            is_active=False,
-        )
-        uow.users.add(inactive_user)
-        uow.commit()
-        inactive_user_id = inactive_user.id
+    inactive_user = User(
+        email="inactive@example.com",
+        global_role=GlobalRole.USER,
+        password_hash="password_hash",  # pragma: allowlist secret
+        is_active=False,
+    )
+    uow.users.add(inactive_user)
+    uow.commit()
+    inactive_user_id = inactive_user.id
 
     # Request reset for inactive user
     success = password_reset_service.request_password_reset(uow, "inactive@example.com")
     assert success is True  # Returns success (anti-enumeration)
 
     # Verify no token was created
-    with uow:
-        tokens = list(uow.password_reset_tokens.get_active_tokens_for_user(inactive_user_id))
-        assert len(tokens) == 0
+    tokens = list(uow.password_reset_tokens.get_active_tokens_for_user(inactive_user_id))
+    assert len(tokens) == 0
 
 
 def test_token_cleanup(reset_user):
@@ -212,29 +196,27 @@ def test_token_cleanup(reset_user):
     user_id = reset_user["user_id"]
 
     # Create old tokens
-    with uow:
-        old_time = datetime.now(UTC) - timedelta(days=35)
-        old_token = PasswordResetToken(
-            user_id=user_id,
-            created_at=old_time,
-            expires_at=old_time + timedelta(hours=1),
-            token="old-token-789",
-        )
-        uow.password_reset_tokens.add(old_token)
+    old_time = datetime.now(UTC) - timedelta(days=35)
+    old_token = PasswordResetToken(
+        user_id=user_id,
+        created_at=old_time,
+        expires_at=old_time + timedelta(hours=1),
+        token="old-token-789",
+    )
+    uow.password_reset_tokens.add(old_token)
 
-        # Create recent token
-        recent_token = PasswordResetToken(user_id=user_id, token="recent-token-101")
-        uow.password_reset_tokens.add(recent_token)
-        uow.commit()
+    # Create recent token
+    recent_token = PasswordResetToken(user_id=user_id, token="recent-token-101")
+    uow.password_reset_tokens.add(recent_token)
+    uow.commit()
 
     # Clean up tokens older than 30 days
     count = password_reset_service.cleanup_expired_tokens(uow, days_old=30)
     assert count == 1
 
     # Verify old token was deleted, recent one remains
-    with uow:
-        assert uow.password_reset_tokens.get_by_token("old-token-789") is None
-        assert uow.password_reset_tokens.get_by_token("recent-token-101") is not None
+    assert uow.password_reset_tokens.get_by_token("old-token-789") is None
+    assert uow.password_reset_tokens.get_by_token("recent-token-101") is not None
 
 
 def test_invalidate_other_tokens_on_reset(reset_user):
@@ -243,14 +225,13 @@ def test_invalidate_other_tokens_on_reset(reset_user):
     user_id = reset_user["user_id"]
 
     # Create multiple tokens
-    with uow:
-        token1 = PasswordResetToken(user_id=user_id, token="token1")
-        token2 = PasswordResetToken(user_id=user_id, token="token2")
-        token3 = PasswordResetToken(user_id=user_id, token="token3")
-        uow.password_reset_tokens.add(token1)
-        uow.password_reset_tokens.add(token2)
-        uow.password_reset_tokens.add(token3)
-        uow.commit()
+    token1 = PasswordResetToken(user_id=user_id, token="token1")
+    token2 = PasswordResetToken(user_id=user_id, token="token2")
+    token3 = PasswordResetToken(user_id=user_id, token="token3")
+    uow.password_reset_tokens.add(token1)
+    uow.password_reset_tokens.add(token2)
+    uow.password_reset_tokens.add(token3)
+    uow.commit()
 
     # Reset password with token1
     with (
@@ -263,7 +244,6 @@ def test_invalidate_other_tokens_on_reset(reset_user):
         password_reset_service.reset_password_with_token(uow, "token1", "NewPassword123!")
 
     # Verify all tokens are now used
-    with uow:
-        assert uow.password_reset_tokens.get_by_token("token1").is_used()
-        assert uow.password_reset_tokens.get_by_token("token2").is_used()
-        assert uow.password_reset_tokens.get_by_token("token3").is_used()
+    assert uow.password_reset_tokens.get_by_token("token1").is_used()
+    assert uow.password_reset_tokens.get_by_token("token2").is_used()
+    assert uow.password_reset_tokens.get_by_token("token3").is_used()
