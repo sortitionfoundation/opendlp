@@ -111,11 +111,15 @@ check:
   @uv run python scripts/check_uow_convention.py
 
 # Run code quality tools - CI edition
+# Identical to `check` except that detect-secrets is skipped: it gives false
+# positives in CI for some reason, while working fine locally. Skipping the one
+# hook keeps a single pre-commit config - a second, hand-copied config drifted
+# from the first and silently stopped running a hook in CI.
 check-ci:
   @echo "🚀 Checking lock file consistency with 'pyproject.toml'"
   @uv lock --locked
   @echo "🚀 Linting code: Running prek (pre-commit)"
-  @uv tool run prek run --all-files --config ../.pre-commit-config-ci.yaml
+  @uv tool run prek run --all-files --skip detect-secrets
   @echo "🚀 Static type checking: Running mypy"
   @uv run mypy
   @echo "🚀 Checking for obsolete dependencies: Running deptry"
