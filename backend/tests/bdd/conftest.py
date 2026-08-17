@@ -148,7 +148,7 @@ def _validate_existing_server(port: int) -> None:
     """
     url = f"http://localhost:{port}/health/bdd"
     try:
-        response = urllib.request.urlopen(url, timeout=5)  # noqa: S310
+        response = urllib.request.urlopen(url, timeout=5)
         data = json.loads(response.read())
     except Exception as e:
         pytest.fail(
