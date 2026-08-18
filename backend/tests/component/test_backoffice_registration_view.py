@@ -391,6 +391,27 @@ class TestLifecycleFooterControls:
         assert 'value="unpublish"' not in body
         assert "Close registration/my-slug" not in body
 
+    def test_publish_publishes_the_page_and_lands_on_the_list(self, logged_in_admin, fake_store, assembly_id):
+        # Publishing finishes the editor flow, so it dismisses the editor modal:
+        # the redirect goes to the pages list, not back into the editor.
+        page = _seed_page(
+            fake_store,
+            assembly_id,
+            RegistrationPageStatus.TEST,
+            form_html="<form>{{ csrf_form_element }}{{ form_action }}</form>",
+        )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_id}/registration/my-slug/save",
+            data={"action": "publish"},
+        )
+
+        assert response.status_code == 302
+        assert response.location == f"/backoffice/assembly/{assembly_id}/registration"
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+        assert stored.status == RegistrationPageStatus.PUBLISHED
+
     def test_unpublish_returns_page_to_test_and_lands_on_preview(self, logged_in_admin, fake_store, assembly_id):
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
 
@@ -405,7 +426,9 @@ class TestLifecycleFooterControls:
             stored = uow.registration_pages.get(page.id)
         assert stored.status == RegistrationPageStatus.TEST
 
-    def test_close_closes_the_page_and_lands_on_preview(self, logged_in_admin, fake_store, assembly_id):
+    def test_close_closes_the_page_and_lands_on_the_list(self, logged_in_admin, fake_store, assembly_id):
+        # Closing finishes the editor flow, so it dismisses the editor modal:
+        # the redirect goes to the pages list, not back into the editor.
         page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED)
 
         response = logged_in_admin.post(
@@ -414,7 +437,7 @@ class TestLifecycleFooterControls:
         )
 
         assert response.status_code == 302
-        assert "section=preview" in response.location
+        assert response.location == f"/backoffice/assembly/{assembly_id}/registration"
         with FakeUnitOfWork(store=fake_store) as uow:
             stored = uow.registration_pages.get(page.id)
         assert stored.status == RegistrationPageStatus.CLOSED

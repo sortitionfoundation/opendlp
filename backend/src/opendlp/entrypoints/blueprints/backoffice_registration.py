@@ -188,6 +188,27 @@ def _document_to_dict(document: RegistrationDocument, url_slug: str) -> dict[str
     }
 
 
+def _page_rows(pages: list[RegistrationPage], assembly_id: uuid.UUID) -> list[dict[str, Any]]:
+    """Rows for the registration pages list — also rendered behind the editor's modal."""
+    return [
+        {
+            "page": page,
+            # A page created outside the backoffice can lack a slug; it cannot be
+            # opened here until one is set, so it renders without links.
+            "editor_url": _editor_url(assembly_id, page.url_slug) if page.url_slug else "",
+            "close_url": url_for(
+                "backoffice_registration.save_assembly_registration",
+                assembly_id=assembly_id,
+                url_slug=page.url_slug,
+            )
+            if page.url_slug and page.status == RegistrationPageStatus.PUBLISHED
+            else "",
+            "published_at": page.last_published_at(),
+        }
+        for page in pages
+    ]
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration")
 @login_required
 def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -204,23 +225,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 request.args.get("source", ""),
             )
             pages = list_registration_pages(uow, current_user.id, assembly_id)
-        page_rows = [
-            {
-                "page": page,
-                # A page created outside the backoffice can lack a slug; it cannot be
-                # opened here until one is set, so it renders without links.
-                "editor_url": _editor_url(assembly_id, page.url_slug) if page.url_slug else "",
-                "close_url": url_for(
-                    "backoffice_registration.save_assembly_registration",
-                    assembly_id=assembly_id,
-                    url_slug=page.url_slug,
-                )
-                if page.url_slug and page.status == RegistrationPageStatus.PUBLISHED
-                else "",
-                "published_at": page.last_published_at(),
-            }
-            for page in pages
-        ]
+        page_rows = _page_rows(pages, assembly_id)
 
         return render_template(
             "backoffice/assembly_registration_list.html",
@@ -298,6 +303,11 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             # Auto-reply email data — the template (if assigned) plus readiness problems.
             email_template, email_readiness_problems = _load_auto_reply_context(uow, registration_page, assembly_id)
 
+            # The editor renders as a modal over the pages list, so the list rows are
+            # needed here too — they form the (inert) backdrop behind the dialog.
+            all_pages = list_registration_pages(uow, current_user.id, assembly_id)
+        page_rows = _page_rows(all_pages, assembly_id)
+
         # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
         # have no save path so we always keep them read-only regardless of the param.
         edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
@@ -334,6 +344,8 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             email_readiness_problems=email_readiness_problems,
             registration_url_prefix=registration_url_prefix(),
             short_url_prefix=short_url_prefix(),
+            page_rows=page_rows,
+            page_takeover=True,
         ), 200
     except RegistrationPageNotFoundError:
         # An edited or removed slug: land the user on the list to pick a page.
@@ -397,9 +409,10 @@ _LIFECYCLE_ACTIONS = frozenset({"publish", "unpublish", "close", "reopen"})
 
 
 def _post_action_section(action: str) -> str:
-    """Where to land after a successful action: save_and_next advances to the email
-    step, lifecycle actions return to the preview step (where their buttons live),
-    and plain save returns to the form step."""
+    """Where to land after a successful action that stays in the editor:
+    save_and_next advances to the email step, unpublish/reopen return to the
+    preview step (where their buttons live), and plain save returns to the form
+    step. Publish and close never reach this — they leave the editor entirely."""
     if action == "save_and_next":
         return "email"
     if action in _LIFECYCLE_ACTIONS:
@@ -433,9 +446,12 @@ def _apply_page_settings(uow: AbstractUnitOfWork, page: RegistrationPage) -> Reg
 
 
 def _post_save_redirect(assembly_id: uuid.UUID, url_slug: str, action: str) -> str:
-    """Where a successful save lands: back on the list when the list's row menu
-    posted the action (return_to=list), else the editor section for the action."""
-    if request.form.get("return_to") == "list":
+    """Where a successful save lands. The editor is a modal over the pages list,
+    so the actions that finish the flow — publish and close — dismiss it by
+    landing on the list. Unpublish stays in the editor (the user unpublished in
+    order to edit), as do the save actions. ``return_to=list`` (posted by the
+    list's row menu) also lands on the list."""
+    if action in ("publish", "close") or request.form.get("return_to") == "list":
         return _list_url(assembly_id)
     return _editor_url(assembly_id, url_slug, section=_post_action_section(action))
 
@@ -448,11 +464,14 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
     Actions:
       - save            → update HTML; land back in read-only on the form step.
       - save_and_next   → update HTML; advance to the auto-reply email step.
-      - publish         → transition TEST → PUBLISHED. No HTML update.
-      - unpublish       → transition PUBLISHED → TEST (back to test mode).
-      - close           → transition to CLOSED. Terminal from the UI's point of
-                          view: reopen exists only for backwards compatibility
-                          with older POSTs and is not offered anywhere.
+      - publish         → transition TEST → PUBLISHED. No HTML update. Lands on
+                          the pages list — the editor modal is done.
+      - unpublish       → transition PUBLISHED → TEST (back to test mode); stays
+                          in the editor on the preview step.
+      - close           → transition to CLOSED; lands on the pages list. Terminal
+                          from the UI's point of view: reopen exists only for
+                          backwards compatibility with older POSTs and is not
+                          offered anywhere.
 
     A ``return_to=list`` form field sends the user back to the page list after a
     successful lifecycle action — the list's row menu posts it.

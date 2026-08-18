@@ -1,5 +1,6 @@
 ---
 description: Review the code on this branch against the guidelines in the project docs.
+allowed-tools: Bash(git diff:*)
 ---
 
 ## Summary of files changed

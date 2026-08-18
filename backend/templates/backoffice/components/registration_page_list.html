@@ -1,0 +1,141 @@
+{#
+ABOUTME: The registration pages list — heading + create CTA + one row per page
+ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
+#}
+{% from "backoffice/components/button.html" import button %}
+{% macro registration_page_list(assembly, page_rows) %}
+    <div>
+        {# Header row: section title + create CTA, per the Figma list view #}
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration") }}</h2>
+            <form method="post"
+                  action="{{ url_for('backoffice_registration.create_assembly_registration_page', assembly_id=assembly.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                {{ button(_("Create HTML page"), type="submit", variant="primary") }}
+            </form>
+        </div>
+
+        {% if page_rows %}
+            <div class="rounded-lg" style="border: 1px solid var(--color-borders-dividers);">
+                <table class="w-full text-body-sm">
+                    <thead>
+                        <tr style="background-color: var(--color-subtle-background-panels);">
+                            <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Name") }}</th>
+                            <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Status") }}</th>
+                            <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Date of publish") }}</th>
+                            <th scope="col" class="px-3 py-2 text-right">
+                                <span class="sr-only">{{ _("Actions") }}</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in page_rows %}
+                            {% set page = row.page %}
+                            <tr style="background-color: var(--color-tables-cards); border-top: 1px solid var(--color-borders-dividers);">
+                                <td class="px-3 py-3">
+                                    {% if row.editor_url %}
+                                        <a href="{{ row.editor_url }}"
+                                           class="text-label-lg hover:underline"
+                                           style="color: var(--color-links);">{{ page.name }}</a>
+                                    {% else %}
+                                        <span class="text-label-lg" style="color: var(--color-body-text);">{{ page.name }}</span>
+                                    {% endif %}
+                                    {% if page.language %}
+                                        <span class="ml-2 px-2 py-0.5 rounded text-body-xs uppercase"
+                                              style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text); border: 1px solid var(--color-borders-dividers);">{{ page.language }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-3">
+                                    {% if page.status.value == "PUBLISHED" %}
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-body-sm"
+                                              style="background-color: var(--color-success-100); color: var(--color-success-600); border: 1px solid var(--color-success-400);">
+                                            <span class="w-2 h-2 rounded-full" style="background-color: var(--color-success-400);"></span>
+                                            {{ _("Published") }}
+                                        </span>
+                                    {% elif page.status.value == "CLOSED" %}
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-body-sm"
+                                              style="background-color: var(--color-error-100); color: var(--color-error-600); border: 1px solid var(--color-error-400);">
+                                            <span class="w-2 h-2 rounded-full" style="background-color: var(--color-error-400);"></span>
+                                            {{ _("Closed") }}
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-body-sm"
+                                              style="background-color: var(--color-warning-100); color: var(--color-warning-600); border: 1px solid var(--color-warning-400);">
+                                            <span class="w-2 h-2 rounded-full" style="background-color: var(--color-warning-400);"></span>
+                                            {{ _("Test") }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-3" style="color: var(--color-body-text);">
+                                    {% if row.published_at %}
+                                        {{ row.published_at | dateformat }}
+                                    {% else %}
+                                        <span style="color: var(--color-secondary-text);">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-3 py-3 text-right">
+                                    {# Per-row actions menu (kebab), mirroring the dropdown_button component's
+                                       open/close and ARIA behaviour but mixing link and submit items #}
+                                    <div class="relative inline-flex"
+                                         x-data="{ open: false }"
+                                         @keydown.escape.window="open = false">
+                                        <button type="button"
+                                                id="page-actions-{{ loop.index }}-toggle"
+                                                class="p-2 rounded hover:bg-black/5"
+                                                @click="open = !open"
+                                                @click.outside="open = false"
+                                                aria-haspopup="menu"
+                                                x-bind:aria-expanded="open ? 'true' : 'false'"
+                                                aria-controls="page-actions-{{ loop.index }}-menu"
+                                                aria-label="{{ _('Actions for %(name)s', name=page.name) }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color: var(--color-secondary-text);">
+                                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                                            </svg>
+                                        </button>
+                                        <div x-show="open"
+                                             x-cloak
+                                             id="page-actions-{{ loop.index }}-menu"
+                                             role="menu"
+                                             aria-labelledby="page-actions-{{ loop.index }}-toggle"
+                                             class="menu menu--right"
+                                             style="min-width: 14rem;">
+                                            <a role="menuitem"
+                                               class="menu-item"
+                                               href="{{ url_for('backoffice.view_assembly', assembly_id=assembly.id) }}">
+                                                {{ _("See assembly details") }}
+                                            </a>
+                                            {% if row.close_url %}
+                                                {# role="none": a form is not a valid child of role="menu" - the
+                                                   menuitem is the submit button inside it #}
+                                                <form method="post" action="{{ row.close_url }}" role="none">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                    <input type="hidden" name="action" value="close" />
+                                                    <input type="hidden" name="return_to" value="list" />
+                                                    <button type="submit" role="menuitem" class="menu-item w-full text-left">
+                                                        {{ _("Close registration") }}
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            {% if row.editor_url %}
+                                                <a role="menuitem" class="menu-item" href="{{ row.editor_url }}">
+                                                    {{ _("Edit registration") }}
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="rounded-lg p-6"
+                 style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+                <p class="text-body-md" style="color: var(--color-body-text);">
+                    {{ _("This assembly has no registration pages yet. Create one to start collecting registrations — you can add more pages later, for example for language variants or A/B tests.") }}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}

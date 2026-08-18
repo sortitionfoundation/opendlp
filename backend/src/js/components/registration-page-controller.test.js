@@ -12,6 +12,7 @@ const CONFIG = {
   images: [{ id: "image-1", alt: "A logo" }],
   documents: [{ id: "doc-1", label: "Information pack" }],
   urls: {
+    list: "/assembly/1/registration",
     skeleton: "/assembly/1/registration/skeleton",
     uploadImage: "/assembly/1/registration/images",
     imageItem: `/assembly/1/registration/images/${ID_SENTINEL}`,
@@ -31,6 +32,7 @@ const TEMPLATE_API = [
   "closeImageDetailsModalIfAllowed",
   "closeImageUploadModalIfAllowed",
   "closeLeaveModal",
+  "closePageGuarded",
   "closeSkeletonModal",
   "copyDocumentSnippet",
   "copyImageSnippet",
@@ -84,6 +86,12 @@ describe("the composed controller", () => {
     expect(
       registrationPageController({ ...CONFIG, editMode: false }).editMode,
     ).toBe(false);
+  });
+
+  it("carries the list URL through to the guard, for closing the editor modal", () => {
+    expect(registrationPageController(CONFIG).listUrl).toBe(
+      "/assembly/1/registration",
+    );
   });
 
   it("builds per-item URLs from the templates the server rendered", () => {

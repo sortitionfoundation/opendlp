@@ -40,7 +40,7 @@ export function registrationPageController(config) {
       formatBytes: formatBytes,
     },
     registrationToast(messages),
-    registrationEditGuard({ editMode: config.editMode }),
+    registrationEditGuard({ editMode: config.editMode, listUrl: urls.list }),
     registrationSkeleton({
       csrfToken: csrfToken,
       skeletonUrl: urls.skeleton,

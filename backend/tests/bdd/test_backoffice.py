@@ -552,7 +552,10 @@ def confirm_close_registration(page: Page):
 
 @then("the registration should be shown as closed")
 def registration_shown_as_closed(page: Page):
-    expect(page.get_by_role("alert").filter(has_text="Registration closed")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    """Closing finishes the editor flow: it dismisses the editor modal and lands
+    on the pages list, where the page's row carries the Closed status badge."""
+    page.wait_for_url(lambda url: url.rstrip("/").endswith("/registration"), timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.get_by_role("cell", name="Closed", exact=True)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then("the registration should be shown as in test mode")
@@ -591,16 +594,22 @@ def submitting_preview_form_does_nothing(page: Page):
 def _wait_until_scrolled(page: Page, timeout_ms: int = 5000) -> None:
     """Poll window.scrollY (via CDP evaluate) until it is greater than 0.
 
+    The registration editor is a takeover modal whose .dialog-body is the page's
+    scroll container (the window itself is scroll-locked), so that element's
+    scrollTop is what the restore leg writes to; window.scrollY stays the
+    fallback for ordinary pages.
+
     We deliberately avoid page.wait_for_function here: its string predicate is
     compiled with eval in the page's own context, which our strict-dynamic CSP
     (no 'unsafe-eval') rejects. page.evaluate runs in Playwright's utility world,
     so it is not subject to the page CSP.
     """
+    scroller = "document.querySelector('.dialog-panel--takeover .dialog-body')?.scrollTop ?? window.scrollY"
     for _ in range(max(1, timeout_ms // 100)):
-        if page.evaluate("window.scrollY") > 0:
+        if page.evaluate(scroller) > 0:
             return
         page.wait_for_timeout(100)
-    raise AssertionError("window did not scroll (scrollY stayed 0)")
+    raise AssertionError("the page's scroll container did not scroll (stayed at 0)")
 
 
 @when(parsers.parse('I open the read-only registration form view for "{title}" with a saved scroll of {pos:d}'))

@@ -22,8 +22,8 @@ afterEach(() => {
  * The guard reaches for Alpine's $nextTick and $refs, which Alpine supplies at
  * runtime. Driving the returned object directly means supplying them here.
  */
-function guard(editMode) {
-  const state = registrationEditGuard({ editMode: editMode });
+function guard(editMode, listUrl) {
+  const state = registrationEditGuard({ editMode: editMode, listUrl: listUrl });
   state.$nextTick = (callback) => callback();
   state.$refs = {
     keepOpenBtn: { focus: vi.fn() },
@@ -161,6 +161,68 @@ describe("the discard modal", () => {
     state.discardAndLeave();
 
     expect(window.location.assign).not.toHaveBeenCalled();
+  });
+});
+
+describe("closePageGuarded - Esc closes the editor modal", () => {
+  const LIST_URL = "https://example.org/registration";
+
+  it("navigates a clean page straight back to the pages list", () => {
+    guard(false, LIST_URL).closePageGuarded();
+
+    expect(window.location.assign).toHaveBeenCalledWith(LIST_URL);
+  });
+
+  it("does nothing when no list URL was configured", () => {
+    guard(false).closePageGuarded();
+
+    expect(window.location.assign).not.toHaveBeenCalled();
+  });
+
+  it("diverts a dirty page to the discard modal, aimed at the list", () => {
+    const state = guard(true, LIST_URL);
+    state.markEditDirty();
+
+    state.closePageGuarded();
+
+    expect(window.location.assign).not.toHaveBeenCalled();
+    expect(state.leaveModalOpen).toBe(true);
+    expect(state.leaveUrl).toBe(LIST_URL);
+  });
+
+  it("yields while a nested dialog is open - that Esc press belongs to it", () => {
+    const state = guard(false, LIST_URL);
+    state.confirmCloseOpen = true;
+
+    state.closePageGuarded();
+
+    expect(window.location.assign).not.toHaveBeenCalled();
+  });
+
+  it("yields to the discard modal itself, so Esc there means Keep editing", () => {
+    const state = guard(true, LIST_URL);
+    state.markEditDirty();
+    state.closePageGuarded();
+
+    state.closePageGuarded();
+
+    expect(window.location.assign).not.toHaveBeenCalled();
+    expect(state.leaveModalOpen).toBe(true);
+  });
+
+  it("yields while an asset or skeleton dialog is open", () => {
+    [
+      "skeletonModalOpen",
+      "imageUploadModalOpen",
+      "imageDetailsModalOpen",
+    ].forEach((flag) => {
+      const state = guard(false, LIST_URL);
+      state[flag] = true;
+
+      state.closePageGuarded();
+
+      expect(window.location.assign).not.toHaveBeenCalled();
+    });
   });
 });
 

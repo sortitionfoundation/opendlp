@@ -1,6 +1,8 @@
 // ABOUTME: Restores scroll position from the ephemeral ?scroll= parameter, then cleans the URL
 // ABOUTME: The parameter exists only during a transition, so it is removed as soon as it is used
 
+import { setPageScrollTop } from "../lib/page-scroller.js";
+
 /**
  * Restore the scroll position named by ?scroll= and strip the parameter.
  *
@@ -15,7 +17,7 @@ export function restoreScrollFromUrl() {
 
   const restoreScroll = () => {
     // Restore scroll position
-    window.scrollTo(0, parseInt(scrollPos, 10));
+    setPageScrollTop(parseInt(scrollPos, 10));
 
     // Immediately clean URL (remove scroll parameter)
     const url = new URL(window.location.href);

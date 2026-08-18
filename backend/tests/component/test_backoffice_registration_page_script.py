@@ -232,6 +232,7 @@ class TestTheDataBlock:
         urls = _page_data(page_html)["urls"]
 
         assert set(urls) == {
+            "list",
             "skeleton",
             "uploadImage",
             "imageItem",
