@@ -21,7 +21,12 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
         {# Sticky chrome: the top bar and (where present) the page header + tabs
            stay pinned while page content scrolls beneath them. The header uses the
            page background so the sticky page-header slot is opaque. #}
-        <header class="sticky top-0 z-40" style="background-color: var(--color-bg-secondary);">
+        {# page_takeover: set by views whose page_content is only the dimmed, decorative
+           backdrop of a page-level modal (see the page_overlay block below). The header,
+           main and footer are then inert — invisible to keyboard and assistive tech — so
+           the overlay's dialog is the only interactive surface. The floating alerts stay
+           outside the inert regions: flash messages must remain live above the dialog. #}
+        <header class="sticky top-0 z-40" style="background-color: var(--color-bg-secondary);" {% if page_takeover %}inert{% endif %}>
             {# "My account" and "Switch to site admin" are old-design pages; their
                target="new" opens both in one shared tab rather than stacking tabs. #}
             {{ navigation(
@@ -43,15 +48,25 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
             {% block page_header %}{% endblock %}
         </header>
 
-        <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full">
+        <main class="max-w-screen-2xl mx-auto px-6 py-8 flex-1 w-full" {% if page_takeover %}inert{% endif %}>
             {% block page_content %}{% endblock %}
         </main>
 
         {# Flash messages: fixed top-centre overlay. Its z-index (#floating-alerts,
            45) is defined and documented in main.css — above the sticky header
-           (z-40), below modal dialogs (z-50). #}
+           (z-40), below modal dialogs (z-50), but lifted above a page takeover
+           dialog (55) so flashes stay readable over the full-screen panel. #}
         {{ floating_alerts() }}
 
-        {{ footer() }}
+        {% if page_takeover %}
+            <div inert>{{ footer() }}</div>
+        {% else %}
+            {{ footer() }}
+        {% endif %}
+
+        {# Page-level modal overlay — rendered over the inert page when the view
+           sets page_takeover. Fixed-position content, so placement in the flex
+           column does not affect layout. #}
+        {% block page_overlay %}{% endblock %}
     </div>
 {% endblock %}

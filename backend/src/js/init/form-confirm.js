@@ -1,6 +1,7 @@
 // ABOUTME: Alpine magic $confirm and directive x-preserve-scroll-on-submit for form submissions
 // ABOUTME: Confirms before submitting and optionally carries the scroll position into the reload
 
+import { getPageScrollTop } from "../lib/page-scroller.js";
 import { urlSetParam } from "../lib/url-utils.js";
 
 /**
@@ -10,7 +11,7 @@ import { urlSetParam } from "../lib/url-utils.js";
  */
 export function addScrollToFormAction(formElement) {
   var action = formElement.getAttribute("action") || window.location.href;
-  var scrollPos = Math.round(window.scrollY);
+  var scrollPos = Math.round(getPageScrollTop());
   formElement.setAttribute(
     "action",
     urlSetParam(action, "scroll", scrollPos.toString()),

@@ -920,6 +920,7 @@
          modal backdrop (.dialog-backdrop) .... 40
          floating flash alerts (#floating-alerts) 45  (above header/backdrop, below dialog)
          modal dialog (.dialog-positioner) .... 50
+         flash alerts over a takeover panel ... 55  (see .dialog-panel--takeover below)
        ======================================== */
     #floating-alerts {
         z-index: 45;
@@ -1034,6 +1035,49 @@
         padding: 0.75rem 1.5rem;
         border-top: 1px solid var(--color-borders-dividers);
         background-color: var(--color-tables-cards);
+    }
+
+    /* ========================================
+       TAKEOVER PANEL — a page rendered as a near-full-screen modal over its
+       parent page (the registration editor over the pages list). The page
+       behind is inert (see base_page.html's page_takeover); the panel's body
+       becomes the page's scroll container (see lib/page-scroller.js).
+       ======================================== */
+    .dialog-panel--takeover {
+        /* Matches the content column (max-w-screen-2xl) so the editor keeps
+           its working width; the margin leaves the dimmed list visible. */
+        max-width: 96rem;
+        height: calc(100vh - 3rem);
+        margin: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dialog-panel--takeover .dialog-body {
+        flex: 1;
+        max-height: none;
+        padding: 1.5rem;
+    }
+
+    /* Inside the panel the wizard footer still sticks, but the full-viewport
+       breakout (see .wizard-footer-box's stuck styles) would overflow a panel
+       narrower than the viewport — pin the box styling instead. */
+    .dialog-panel--takeover .wizard-footer-box {
+        margin-inline: 0;
+        padding-inline: 1.5rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--color-borders-dividers);
+    }
+
+    /* While a takeover panel is up: the window must not scroll (the panel body
+       scrolls instead), and flash alerts lift above the dialog layer (z-50)
+       so server-side messages stay readable — see the z-index stack above. */
+    body:has(.dialog-panel--takeover) {
+        overflow: hidden;
+    }
+
+    body:has(.dialog-panel--takeover) #floating-alerts {
+        z-index: 55;
     }
 
     /* Alert-dialog text block — title + description stack (Figma: gap 8) */

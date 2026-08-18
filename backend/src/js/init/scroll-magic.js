@@ -1,6 +1,7 @@
 // ABOUTME: Alpine magic $preserveScroll and directive x-scroll-preserve-links
 // ABOUTME: Adds the current scroll position to a URL so it survives a page reload
 
+import { getPageScrollTop } from "../lib/page-scroller.js";
 import { urlSetParam } from "../lib/url-utils.js";
 
 /**
@@ -22,7 +23,7 @@ export function registerScrollMagic() {
     return (url) => {
       if (!url) return url;
 
-      const currentScroll = Math.round(window.scrollY);
+      const currentScroll = Math.round(getPageScrollTop());
       return urlSetParam(url, "scroll", currentScroll.toString());
     };
   });
@@ -57,7 +58,7 @@ export function registerScrollMagic() {
         }
 
         // Add scroll parameter using URL utilities
-        const currentScroll = Math.round(window.scrollY);
+        const currentScroll = Math.round(getPageScrollTop());
         link.setAttribute(
           "href",
           urlSetParam(href, "scroll", currentScroll.toString()),
