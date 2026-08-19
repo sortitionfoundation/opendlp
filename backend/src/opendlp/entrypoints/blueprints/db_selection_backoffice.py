@@ -14,6 +14,7 @@ from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import DbSelectionSettingsForm
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
+    get_assembly_nav_context,
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_or_create_csv_config,
@@ -22,7 +23,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.report_translation import translate_run_report_to_html
-from opendlp.service_layer.respondent_service import reset_selection_status
+from opendlp.service_layer.respondent_service import get_respondent_attribute_columns, reset_selection_status
 from opendlp.service_layer.selection_report import (
     SelectionReportError,
     build_selection_report,
@@ -321,23 +322,34 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            # Get available columns for form validation
-            respondents = uow.respondents.get_by_assembly_id(assembly_id)
-            available_columns: list[str] = []
-            if respondents and respondents[0].attributes:
-                available_columns = sorted(respondents[0].attributes.keys())
+            # Get available columns for form validation (same source as the page's hints)
+            available_columns = get_respondent_attribute_columns(uow, assembly_id)
 
         # Create form with request data for validation
         form = DbSelectionSettingsForm(available_columns=available_columns)
 
         if not form.validate_on_submit():
-            # Re-render the page with validation errors
-            for field_name, errors in form.errors.items():
-                for error in errors:
-                    flash(f"{field_name}: {error}", "error")
-            return redirect_preserving_scroll(
-                url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
-            )
+            # Re-render the page in edit mode so errors appear under the fields
+            # and the user's input is preserved (mirrors save_gsheet_config).
+            # Reuse the UnitOfWork for the sequential reads below.
+            with uow:
+                nav = get_assembly_nav_context(uow, current_user.id, assembly_id, "csv")
+                csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+            return render_template(
+                "backoffice/assembly_data.html",
+                assembly=nav.assembly,
+                data_source="csv",
+                data_source_locked=nav.data_source_locked,
+                gsheet=nav.gsheet,
+                targets_enabled=nav.targets_enabled,
+                respondents_enabled=nav.respondents_enabled,
+                selection_enabled=nav.selection_enabled,
+                csv_status=nav.csv_status,
+                csv_settings_form=form,
+                csv_available_columns=available_columns,
+                csv_mode="edit",
+                csv_config=csv_config,
+            ), 200
 
         # Parse comma-separated columns
         check_same_address_cols = (
