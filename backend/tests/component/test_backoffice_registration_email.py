@@ -348,8 +348,12 @@ class TestLoadAutoReplyContext:
         _seed_page(fake_store, existing_assembly.id, auto_reply_template_id=template.id)
         page = _get_page(fake_store, existing_assembly.id)
 
-        with app.test_request_context(), _patch_current_user(admin_user.id):
-            loaded, problems = be_reg._load_auto_reply_context(page, existing_assembly.id)
+        with (
+            app.test_request_context(),
+            _patch_current_user(admin_user.id),
+            FakeUnitOfWork(store=fake_store) as uow,
+        ):
+            loaded, problems = be_reg._load_auto_reply_context(uow, page, existing_assembly.id)
 
         assert loaded.id == template.id
         assert isinstance(problems, list)
@@ -359,14 +363,19 @@ class TestLoadAutoReplyContext:
         _seed_page(fake_store, existing_assembly.id, auto_reply_template_id=None)
         page = _get_page(fake_store, existing_assembly.id)
 
-        with app.test_request_context(), _patch_current_user(admin_user.id):
-            loaded, problems = be_reg._load_auto_reply_context(page, existing_assembly.id)
+        with (
+            app.test_request_context(),
+            _patch_current_user(admin_user.id),
+            FakeUnitOfWork(store=fake_store) as uow,
+        ):
+            loaded, problems = be_reg._load_auto_reply_context(uow, page, existing_assembly.id)
 
         assert loaded.id == template.id
         assert isinstance(problems, list)
 
     def test_returns_none_when_no_registration_page(self, fake_store, existing_assembly):
-        loaded, problems = be_reg._load_auto_reply_context(None, existing_assembly.id)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            loaded, problems = be_reg._load_auto_reply_context(uow, None, existing_assembly.id)
         assert loaded is None
         assert problems == []
 
@@ -387,8 +396,9 @@ class TestLoadAutoReplyContext:
                 "opendlp.entrypoints.blueprints.backoffice_registration.get_email_template",
                 side_effect=EmailTemplateNotFoundError("gone"),
             ),
+            FakeUnitOfWork(store=fake_store) as uow,
         ):
-            loaded, _problems = be_reg._load_auto_reply_context(page, existing_assembly.id)
+            loaded, _problems = be_reg._load_auto_reply_context(uow, page, existing_assembly.id)
 
         assert loaded.id == fallback.id
 

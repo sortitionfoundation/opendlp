@@ -22,7 +22,7 @@ ABOUTME: Styled to match the standard input component; supports a disabled state
         {% if hint %}
             <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
         {% endif %}
-        <div class="flex items-center rounded-lg overflow-hidden transition-all duration-150"
+        <div class="prefixed-url-input flex items-center rounded-lg overflow-hidden transition-all duration-150"
              style="border: 1px solid var(--color-borders-dividers);
                     background-color: {{ 'var(--color-subtle-background-panels)' if disabled else 'var(--color-page-background)' }};
                     {% if disabled %}opacity: 0.7;{% endif %}">

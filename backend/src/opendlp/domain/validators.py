@@ -11,6 +11,8 @@ from django.core.validators import EmailValidator
 from wtforms import ValidationError
 from wtforms.validators import URL
 
+from opendlp.translations import gettext as _
+
 RESERVED_SLUGS = frozenset({"preview", "submit", "admin", "static", "assets"})
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -49,16 +51,16 @@ class UrlSlugValidator:
 
     def validate(self, value: str) -> str:
         if not value:
-            raise InvalidSlug("empty", "URL slug cannot be empty")
+            raise InvalidSlug("empty", _("URL slug cannot be empty"))
         if len(value) > _SLUG_MAX_LENGTH:
-            raise InvalidSlug("too_long", f"URL slug cannot be longer than {_SLUG_MAX_LENGTH} characters")
+            raise InvalidSlug("too_long", _("URL slug cannot be longer than %(max)s characters", max=_SLUG_MAX_LENGTH))
         if not _SLUG_RE.match(value):
             raise InvalidSlug(
                 "malformed",
-                "URL slug must be lowercase letters, numbers and hyphens, with no leading or trailing hyphen",
+                _("URL slug must be lowercase letters, numbers and hyphens, with no leading or trailing hyphen"),
             )
         if value in RESERVED_SLUGS:
-            raise InvalidSlug("reserved", f"URL slug '{value}' is reserved and cannot be used")
+            raise InvalidSlug("reserved", _("URL slug '%(value)s' is reserved and cannot be used", value=value))
         return value
 
 

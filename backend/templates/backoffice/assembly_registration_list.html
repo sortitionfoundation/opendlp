@@ -6,7 +6,7 @@ ABOUTME: One row per page with status, publish date and a per-row actions menu
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% block title %}{{ assembly.title }} - Registration{% endblock %}
+{% block title %}{{ assembly.title }} - {{ _("Registration") }}{% endblock %}
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(title=assembly.title,
@@ -125,7 +125,9 @@ ABOUTME: One row per page with status, publish date and a per-row actions menu
                                                 {{ _("See assembly details") }}
                                             </a>
                                             {% if row.close_url %}
-                                                <form method="post" action="{{ row.close_url }}">
+                                                {# role="none": a form is not a valid child of role="menu" - the
+                                                   menuitem is the submit button inside it #}
+                                                <form method="post" action="{{ row.close_url }}" role="none">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                                     <input type="hidden" name="action" value="close" />
                                                     <input type="hidden" name="return_to" value="list" />

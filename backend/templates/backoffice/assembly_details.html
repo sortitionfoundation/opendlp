@@ -139,10 +139,9 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
 
             {# Registration pages are managed on the Registration tab; this section is read-only. #}
             <p class="text-body-md mt-6" style="color: var(--color-secondary-text);">
-                {{ _("To create your first registration page, edit an existing one, or add another (for example a language variant), go to the") }}
-                <a href="{{ url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) }}"
-                   class="hover:underline"
-                   style="color: var(--color-links);">{{ _("Registration tab") }}</a>.
+                {{ _("To create your first registration page, edit an existing one, or add another (for example a language variant), go to the %(link_start)sRegistration tab%(link_end)s.",
+                link_start=('<a href="' ~ url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) ~ '" class="hover:underline" style="color: var(--color-links);">')|safe,
+                    link_end=("</a>"|safe)) }}
             </p>
         {% endcall %}
     </div>

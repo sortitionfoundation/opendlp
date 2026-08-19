@@ -87,6 +87,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page,
     update_registration_page_html,
 )
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
 backoffice_registration_bp = Blueprint("backoffice_registration", __name__)
@@ -94,13 +95,13 @@ backoffice_registration_bp = Blueprint("backoffice_registration", __name__)
 logger = structlog.get_logger(__name__)
 
 
-def _first_page(uow: Any, assembly_id: uuid.UUID) -> RegistrationPage | None:
+def _first_page(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> RegistrationPage | None:
     """The assembly's oldest page — only for serialising assembly-scoped asset URLs."""
     pages = list_registration_pages(uow, current_user.id, assembly_id)
     return pages[0] if pages else None
 
 
-def _page_by_slug(uow: Any, assembly_id: uuid.UUID, url_slug: str) -> RegistrationPage:
+def _page_by_slug(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, url_slug: str) -> RegistrationPage:
     """The page the slug-addressed routes act on. Raises RegistrationPageNotFoundError."""
     return get_registration_page_by_slug(uow, current_user.id, assembly_id, url_slug)
 
@@ -192,17 +193,16 @@ def _document_to_dict(document: RegistrationDocument, url_slug: str) -> dict[str
 def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """List the assembly's registration pages with per-page status and actions."""
     try:
-        nav_uow = bootstrap.get_flask_uow()
-        with nav_uow:
+        # One UnitOfWork per request: nav context and page data come from the
+        # same snapshot rather than two sequential read-only transactions.
+        uow = bootstrap.get_flask_uow()
+        with uow:
             nav = get_assembly_nav_context(
-                nav_uow,
+                uow,
                 current_user.id,
                 assembly_id,
                 request.args.get("source", ""),
             )
-
-        uow = bootstrap.get_flask_uow()
-        with uow:
             pages = list_registration_pages(uow, current_user.id, assembly_id)
         page_rows = [
             {
@@ -248,7 +248,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View assembly registration error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
         flash(_("An error occurred while loading registration settings"), "error")
@@ -260,18 +260,19 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Backoffice registration form configuration page for one registration page."""
     try:
-        nav_uow = bootstrap.get_flask_uow()
-        with nav_uow:
+        # One UnitOfWork per request: nav context, page data and the auto-reply
+        # context all come from the same snapshot rather than a run of
+        # sequential read-only transactions.
+        uow = bootstrap.get_flask_uow()
+        with uow:
             nav = get_assembly_nav_context(
-                nav_uow,
+                uow,
                 current_user.id,
                 assembly_id,
                 request.args.get("source", ""),
             )
 
-        # Get registration page and HTML source from service layer
-        uow = bootstrap.get_flask_uow()
-        with uow:
+            # Get registration page and HTML source from service layer
             page = _page_by_slug(uow, assembly_id, url_slug)
             registration_page, html_source = get_registration_page_with_source(uow, current_user.id, page.id)
             html = cast("RegistrationPageHtml", html_source)
@@ -294,6 +295,9 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             stored_documents = list_registration_documents(uow, current_user.id, assembly_id)
             documents = [_document_to_dict(document, registration_page.url_slug) for document in stored_documents]
 
+            # Auto-reply email data — the template (if assigned) plus readiness problems.
+            email_template, email_readiness_problems = _load_auto_reply_context(uow, registration_page, assembly_id)
+
         # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
         # have no save path so we always keep them read-only regardless of the param.
         edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
@@ -302,9 +306,6 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
         active_section = request.args.get("section", "form")
         if active_section not in ("form", "email", "preview"):
             active_section = "form"
-
-        # Auto-reply email data — the template (if assigned) plus readiness problems.
-        email_template, email_readiness_problems = _load_auto_reply_context(registration_page, assembly_id)
 
         return render_template(
             "backoffice/assembly_registration.html",
@@ -354,7 +355,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View registration page error",
             assembly_id=str(assembly_id),
             url_slug=url_slug,
@@ -365,7 +366,9 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
         return redirect(url_for("backoffice.dashboard"))
 
 
-def _handle_registration_action(uow: Any, action: str, user_id: uuid.UUID, page: RegistrationPage) -> str:
+def _handle_registration_action(
+    uow: AbstractUnitOfWork, action: str, user_id: uuid.UUID, page: RegistrationPage
+) -> str:
     """Handle publish/unpublish/close/reopen/save action for registration page. Returns flash message.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
@@ -404,7 +407,7 @@ def _post_action_section(action: str) -> str:
     return "form"
 
 
-def _apply_page_settings(uow: Any, page: RegistrationPage) -> RegistrationPage:
+def _apply_page_settings(uow: AbstractUnitOfWork, page: RegistrationPage) -> RegistrationPage:
     """Persist the name and slug edits posted alongside the HTML.
 
     Lifecycle posts don't carry these fields, so absent fields mean "leave
@@ -527,25 +530,27 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
         return redirect_preserving_scroll(error_redirect_url)
 
 
-def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> tuple[Any, list[dict[str, str]]]:
+def _load_auto_reply_context(
+    uow: AbstractUnitOfWork, registration_page: Any, assembly_id: uuid.UUID
+) -> tuple[Any, list[dict[str, str]]]:
     """Load the auto-reply template and readiness problems for the view route.
 
     Prefers the template currently assigned to the page. When nothing is assigned
     (a legacy state from before the auto-reply became always-on) falls back to the
     first template stored for the assembly, so the editor still shows the
     pre-created copy for the manager to work on.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     email_template = None
     email_readiness_problems: list[dict[str, str]] = []
     if registration_page is None:
         return email_template, email_readiness_problems
 
-    uow = bootstrap.get_flask_uow()
     template_id = registration_page.auto_reply_email_template_id
     if template_id is not None:
         try:
-            with uow:
-                email_template = get_email_template(uow, current_user.id, template_id)
+            email_template = get_email_template(uow, current_user.id, template_id)
         except EmailTemplateNotFoundError:
             logger.debug(
                 "auto_reply_template_load_failed",
@@ -566,8 +571,7 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
 
     if email_template is None:
         try:
-            with uow:
-                templates = list_email_templates(uow, current_user.id, assembly_id)
+            templates = list_email_templates(uow, current_user.id, assembly_id)
             if templates:
                 email_template = templates[0]
         except InsufficientPermissions:
@@ -579,8 +583,7 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
             )
             email_template = None
 
-    with uow:
-        problems = auto_reply_readiness_problems(uow, assembly_id)
+    problems = auto_reply_readiness_problems(uow, assembly_id)
     email_readiness_problems = [{"severity": p.severity.value, "message": p.message} for p in problems]
     return email_template, email_readiness_problems
 

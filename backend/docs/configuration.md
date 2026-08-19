@@ -155,16 +155,18 @@ MAX_IMAGE_UPLOAD_MB=10
 # (default: 2048, clamped to [256, 4096])
 REGISTRATION_IMAGE_MAX_EDGE_PX=2048
 
-# Maximum number of images stored per registration page
-# (default: 10, clamped to [1, 50])
+# Maximum number of images stored per assembly (shared by all of its
+# registration pages; default: 10, clamped to [1, 50]). The legacy name
+# MAX_IMAGES_PER_REGISTRATION_PAGE is still honoured for one release.
 MAX_IMAGES_PER_ASSEMBLY=10
 
 # Maximum size in MB for an uploaded registration PDF document
 # (default: 5, clamped to [1, 25])
 MAX_PDF_UPLOAD_MB=5
 
-# Maximum number of PDF documents stored per registration page
-# (default: 5, clamped to [1, 20])
+# Maximum number of PDF documents stored per assembly (shared by all of its
+# registration pages; default: 5, clamped to [1, 20]). The legacy name
+# MAX_DOCUMENTS_PER_REGISTRATION_PAGE is still honoured for one release.
 MAX_DOCUMENTS_PER_ASSEMBLY=5
 ```
 

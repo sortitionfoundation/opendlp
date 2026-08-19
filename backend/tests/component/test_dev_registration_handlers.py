@@ -58,11 +58,7 @@ def _seed_page(
     return page
 
 
-@pytest.fixture
-def fake_store():
-    return FakeStore()
-
-
+# The fake_store and app fixtures come from tests/component/conftest.py
 @pytest.fixture
 def admin(fake_store):
     return _seed_admin(fake_store)
@@ -71,13 +67,6 @@ def admin(fake_store):
 @pytest.fixture
 def assembly(fake_store):
     return _seed_assembly(fake_store)
-
-
-@pytest.fixture
-def app(fake_store):
-    from opendlp.entrypoints.flask_app import create_app  # noqa: PLC0415
-
-    return create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
 
 
 @pytest.fixture

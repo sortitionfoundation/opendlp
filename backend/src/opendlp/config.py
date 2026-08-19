@@ -348,6 +348,9 @@ def get_max_images_per_assembly() -> int:
     ``MAX_IMAGES_PER_REGISTRATION_PAGE`` still honoured for one release.
     """
     if not os.environ.get("MAX_IMAGES_PER_ASSEMBLY", "") and os.environ.get("MAX_IMAGES_PER_REGISTRATION_PAGE", ""):
+        logger.warning(
+            "MAX_IMAGES_PER_REGISTRATION_PAGE is deprecated and will be removed; use MAX_IMAGES_PER_ASSEMBLY"
+        )
         return _clamped_int_env("MAX_IMAGES_PER_REGISTRATION_PAGE", 10, 1, 50)
     return _clamped_int_env("MAX_IMAGES_PER_ASSEMBLY", 10, 1, 50)
 
@@ -362,6 +365,9 @@ def get_max_documents_per_assembly() -> int:
     if not os.environ.get("MAX_DOCUMENTS_PER_ASSEMBLY", "") and os.environ.get(
         "MAX_DOCUMENTS_PER_REGISTRATION_PAGE", ""
     ):
+        logger.warning(
+            "MAX_DOCUMENTS_PER_REGISTRATION_PAGE is deprecated and will be removed; use MAX_DOCUMENTS_PER_ASSEMBLY"
+        )
         return _clamped_int_env("MAX_DOCUMENTS_PER_REGISTRATION_PAGE", 5, 1, 20)
     return _clamped_int_env("MAX_DOCUMENTS_PER_ASSEMBLY", 5, 1, 20)
 
