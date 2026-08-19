@@ -586,6 +586,46 @@ class TestSaveCsvSettings:
         assert response.status_code == 200
         assert b"Selection settings saved successfully" in response.data
 
+    def test_save_csv_settings_invalid_attribute_rerenders_edit_mode(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        """Invalid attribute names re-render the page in edit mode with the error under the field."""
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            data={
+                "check_same_address": "y",
+                "check_same_address_cols_string": "blabla",
+                "columns_to_keep_string": "Gender",
+            },
+        )
+
+        assert response.status_code == 200
+        assert b"Unrecognised attribute names: blabla" in response.data
+        assert b"Save Settings" in response.data
+        assert b'value="blabla"' in response.data
+        assert b"check_same_address_cols_string:" not in response.data
+
+    def test_save_csv_settings_missing_address_attrs_rerenders_edit_mode(
+        self, logged_in_admin, assembly_with_csv_config_unconfirmed
+    ):
+        """Empty address attributes with check_same_address on re-renders in edit mode with the error."""
+        assembly = assembly_with_csv_config_unconfirmed
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/data/csv/settings",
+            data={
+                "check_same_address": "y",
+                "check_same_address_cols_string": "",
+                "columns_to_keep_string": "",
+            },
+        )
+
+        assert response.status_code == 200
+        assert b"You must specify address attributes" in response.data
+        assert b"Save Settings" in response.data
+
     def test_save_csv_settings_requires_auth(self, client, assembly_with_csv_config_unconfirmed):
         """Save settings endpoint requires authentication."""
         assembly = assembly_with_csv_config_unconfirmed
