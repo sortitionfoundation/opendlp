@@ -97,8 +97,12 @@ from opendlp.service_layer.registration_image_service import (
 from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page,
+    create_registration_page_with_slugs,
+    delete_registration_page,
+    duplicate_registration_page,
     generate_starter_form_html,
     get_registration_page_with_source,
+    list_registration_pages,
     page_for_assembly,
     publish_registration_page,
     reopen_registration_page,
@@ -592,29 +596,100 @@ def _page_id_for_assembly(uow: Any, assembly_id: uuid.UUID) -> uuid.UUID:
     return page.id
 
 
+def _resolve_page_id(uow: Any, params: dict[str, Any]) -> uuid.UUID:
+    """Use an explicit page_id param when given, else the assembly's oldest page."""
+    page_id = params.get("page_id")
+    if page_id:
+        return uuid.UUID(page_id)
+    return _page_id_for_assembly(uow, uuid.UUID(params["assembly_id"]))
+
+
+def _serialise_registration_page(reg_page: Any) -> dict[str, Any]:
+    return {
+        "id": str(reg_page.id),
+        "assembly_id": str(reg_page.assembly_id),
+        "name": reg_page.name,
+        "language": reg_page.language,
+        "url_slug": reg_page.url_slug,
+        "short_url_slug": reg_page.short_url_slug,
+        "status": reg_page.status.value if reg_page.status else None,
+        "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
+    }
+
+
 def _handle_create_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle create_registration_page service call."""
     assembly_id = uuid.UUID(params["assembly_id"])
+    create = create_registration_page_with_slugs if params.get("with_slugs") else create_registration_page
 
     try:
-        reg_page = create_registration_page(
+        reg_page = create(
             uow=uow,
             user_id=current_user.id,
             assembly_id=assembly_id,
-            name=params.get("name", "Registration page"),
+            name=params.get("name", ""),
             language=params.get("language", ""),
         )
         return {
             "status": "success",
-            "registration_page": {
-                "id": str(reg_page.id),
-                "assembly_id": str(reg_page.assembly_id),
-                "url_slug": reg_page.url_slug,
-                "short_url_slug": reg_page.short_url_slug,
-                "status": reg_page.status.value if reg_page.status else None,
-                "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
-            },
+            "registration_page": _serialise_registration_page(reg_page),
         }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    except ValueError as e:
+        return {"status": "error", "error": str(e), "error_type": "ValueError"}
+
+
+def _handle_list_registration_pages(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle list_registration_pages service call."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+
+    try:
+        pages = list_registration_pages(uow, current_user.id, assembly_id)
+        return {
+            "status": "success",
+            "page_count": len(pages),
+            "registration_pages": [_serialise_registration_page(page) for page in pages],
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+
+
+def _handle_duplicate_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle duplicate_registration_page service call."""
+    source_page_id = uuid.UUID(params["source_page_id"])
+
+    try:
+        reg_page = duplicate_registration_page(
+            uow=uow,
+            user_id=current_user.id,
+            source_page_id=source_page_id,
+            name=params.get("name", ""),
+            language=params.get("language", ""),
+        )
+        return {
+            "status": "success",
+            "registration_page": _serialise_registration_page(reg_page),
+        }
+    except InsufficientPermissions as e:
+        return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
+    except NotFoundError as e:
+        return {"status": "error", "error": str(e), "error_type": "NotFoundError"}
+    except ValueError as e:
+        return {"status": "error", "error": str(e), "error_type": "ValueError"}
+
+
+def _handle_delete_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle delete_registration_page service call."""
+    page_id = uuid.UUID(params["page_id"])
+
+    try:
+        delete_registration_page(uow, current_user.id, page_id)
+        return {"status": "success", "deleted_page_id": str(page_id)}
     except InsufficientPermissions as e:
         return {"status": "error", "error": str(e), "error_type": "InsufficientPermissions"}
     except NotFoundError as e:
@@ -625,13 +700,11 @@ def _handle_create_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
 
 def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle get_registration_page_with_source service call."""
-    assembly_id = uuid.UUID(params["assembly_id"])
-
     try:
         result = get_registration_page_with_source(
             uow=uow,
             user_id=current_user.id,
-            page_id=_page_id_for_assembly(uow, assembly_id),
+            page_id=_resolve_page_id(uow, params),
         )
         if result is None:
             return {
@@ -644,14 +717,7 @@ def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str,
         html = cast("RegistrationPageHtml", html_source)
         return {
             "status": "success",
-            "registration_page": {
-                "id": str(reg_page.id),
-                "assembly_id": str(reg_page.assembly_id),
-                "url_slug": reg_page.url_slug,
-                "short_url_slug": reg_page.short_url_slug,
-                "status": reg_page.status.value if reg_page.status else None,
-                "created_at": reg_page.created_at.isoformat() if reg_page.created_at else None,
-            },
+            "registration_page": _serialise_registration_page(reg_page),
             "html_source": {
                 "id": str(html.id),
                 "form_html_preview": html.form_html[:200] + "..." if len(html.form_html) > 200 else html.form_html,
@@ -665,7 +731,6 @@ def _handle_get_registration_page(uow: Any, params: dict[str, Any]) -> dict[str,
 
 def _handle_update_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle update_registration_page service call."""
-    assembly_id = uuid.UUID(params["assembly_id"])
     url_slug = params.get("url_slug")
     short_url_slug = params.get("short_url_slug")
 
@@ -673,7 +738,7 @@ def _handle_update_registration_page(uow: Any, params: dict[str, Any]) -> dict[s
         reg_page = update_registration_page(
             uow=uow,
             user_id=current_user.id,
-            page_id=_page_id_for_assembly(uow, assembly_id),
+            page_id=_resolve_page_id(uow, params),
             url_slug=url_slug,
             short_url_slug=short_url_slug,
         )
@@ -716,14 +781,13 @@ def _handle_generate_starter_html(uow: Any, params: dict[str, Any]) -> dict[str,
 
 def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle update_registration_page_html service call."""
-    assembly_id = uuid.UUID(params["assembly_id"])
     form_html = params.get("form_html", "")
 
     try:
         html_source = update_registration_page_html(
             uow=uow,
             user_id=current_user.id,
-            page_id=_page_id_for_assembly(uow, assembly_id),
+            page_id=_resolve_page_id(uow, params),
             form_html=form_html,
         )
         return {
@@ -745,13 +809,11 @@ def _handle_update_registration_page_html(uow: Any, params: dict[str, Any]) -> d
 
 def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle publish_registration_page service call."""
-    assembly_id = uuid.UUID(params["assembly_id"])
-
     try:
         reg_page = publish_registration_page(
             uow=uow,
             user_id=current_user.id,
-            page_id=_page_id_for_assembly(uow, assembly_id),
+            page_id=_resolve_page_id(uow, params),
         )
         return {
             "status": "success",
@@ -767,13 +829,11 @@ def _handle_publish_registration_page(uow: Any, params: dict[str, Any]) -> dict[
 
 def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle unpublish_registration_page service call."""
-    assembly_id = uuid.UUID(params["assembly_id"])
-
     try:
         reg_page = unpublish_registration_page(
             uow=uow,
             user_id=current_user.id,
-            page_id=_page_id_for_assembly(uow, assembly_id),
+            page_id=_resolve_page_id(uow, params),
         )
         return {
             "status": "success",
@@ -789,13 +849,11 @@ def _handle_unpublish_registration_page(uow: Any, params: dict[str, Any]) -> dic
 
 def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle close_registration_page service call."""
-    assembly_id = uuid.UUID(params["assembly_id"])
-
     try:
         reg_page = close_registration_page(
             uow=uow,
             user_id=current_user.id,
-            page_id=_page_id_for_assembly(uow, assembly_id),
+            page_id=_resolve_page_id(uow, params),
         )
         return {
             "status": "success",
@@ -811,13 +869,11 @@ def _handle_close_registration_page(uow: Any, params: dict[str, Any]) -> dict[st
 
 def _handle_reopen_registration_page(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle reopen_registration_page service call."""
-    assembly_id = uuid.UUID(params["assembly_id"])
-
     try:
         reg_page = reopen_registration_page(
             uow=uow,
             user_id=current_user.id,
-            page_id=_page_id_for_assembly(uow, assembly_id),
+            page_id=_resolve_page_id(uow, params),
         )
         return {
             "status": "success",
@@ -1379,16 +1435,21 @@ def _handle_assign_auto_reply_template(uow: Any, params: dict[str, Any]) -> dict
     assembly_id = uuid.UUID(params["assembly_id"])
     template_id_raw = params.get("template_id")
     template_id = uuid.UUID(template_id_raw) if template_id_raw else None
+    page_id_raw = params.get("page_id")
+    page_id = uuid.UUID(page_id_raw) if page_id_raw else None
     try:
-        assign_auto_reply_template(
+        page = assign_auto_reply_template(
             uow=uow,
             user_id=current_user.id,
             assembly_id=assembly_id,
             template_id=template_id,
+            page_id=page_id,
         )
         return {
             "status": "success",
             "assembly_id": str(assembly_id),
+            "registration_page_id": str(page.id),
+            "registration_page_name": page.name,
             "auto_reply_email_template_id": str(template_id) if template_id else None,
         }
     except EmailTemplateNotFoundError as e:
@@ -1424,6 +1485,9 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "get_assembly_with_permissions": _handle_get_assembly,
     "update_assembly": _handle_update_assembly,
     "create_registration_page": _handle_create_registration_page,
+    "list_registration_pages": _handle_list_registration_pages,
+    "duplicate_registration_page": _handle_duplicate_registration_page,
+    "delete_registration_page": _handle_delete_registration_page,
     "get_registration_page_with_source": _handle_get_registration_page,
     "update_registration_page": _handle_update_registration_page,
     "update_registration_page_html": _handle_update_registration_page_html,
@@ -1471,6 +1535,9 @@ SERVICE_RESPONSE_KEYS: dict[str, str] = {
     "get_assembly_with_permissions": "get_assembly",
     "update_assembly": "update_assembly",
     "create_registration_page": "create_registration_page",
+    "list_registration_pages": "list_registration_pages",
+    "duplicate_registration_page": "duplicate_registration_page",
+    "delete_registration_page": "delete_registration_page",
     "get_registration_page_with_source": "get_registration_page",
     "update_registration_page": "update_registration_page",
     "update_registration_page_html": "update_registration_html",

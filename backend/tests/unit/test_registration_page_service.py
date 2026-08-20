@@ -169,6 +169,39 @@ class TestGetRegistrationPage:
             service.get_registration_page(uow, stranger.id, _page_id(uow, assembly))
 
 
+class TestGetRegistrationPageBySlug:
+    def test_returns_the_assembly_page_with_that_slug(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page_with_slugs(uow, admin.id, assembly.id, name="English")
+        spanish = service.create_registration_page_with_slugs(uow, admin.id, assembly.id, name="Spanish", language="es")
+
+        page = service.get_registration_page_by_slug(uow, admin.id, assembly.id, spanish.url_slug)
+        assert page.id == spanish.id
+
+    def test_raises_for_an_unknown_slug(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+
+        with pytest.raises(RegistrationPageNotFoundError):
+            service.get_registration_page_by_slug(uow, admin.id, assembly.id, "nope")
+
+    def test_raises_when_the_slug_belongs_to_another_assembly(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        other = _assembly(uow)
+        foreign = service.create_registration_page_with_slugs(uow, admin.id, other.id, name="English")
+
+        with pytest.raises(RegistrationPageNotFoundError):
+            service.get_registration_page_by_slug(uow, admin.id, assembly.id, foreign.url_slug)
+
+    def test_stranger_cannot_read(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = service.create_registration_page_with_slugs(uow, admin.id, assembly.id, name="English")
+        stranger = User(email="s2@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(stranger)
+
+        with pytest.raises(RegistrationPageNotFoundError):
+            service.get_registration_page_by_slug(uow, stranger.id, assembly.id, page.url_slug)
+
+
 class TestGetRegistrationPageWithSource:
     def test_raises_for_an_unknown_page(self, uow):
         admin = _admin(uow)

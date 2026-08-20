@@ -7,7 +7,10 @@
 the backend supports many registration pages per assembly, with duplication,
 deletion, bulk status changes, shared assets and per-page attribution. Phase 6
 (backoffice UI) is **blocked** on Q6/Q7, which Chewie is taking to the team.
-Phase 7 (dev handlers, docs, i18n) is not started.
+Of Phase 7, the dev service-docs part is done: the registration tab exposes
+list/duplicate/delete cards, the create card takes name/language and can
+generate slugs, and every per-page card accepts an optional page id (falling
+back to the assembly's oldest page). The docs/i18n sweep of Phase 7 remains.
 
 Until Phase 6 lands the backoffice still shows one page per assembly: the routes
 resolve the assembly's oldest page and pass its id to the now page-addressed

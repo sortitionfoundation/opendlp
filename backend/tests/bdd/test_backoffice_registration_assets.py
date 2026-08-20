@@ -29,6 +29,7 @@ NO_RELOAD_MARKER = "window.__assetsPanelStillLoaded = true"
 
 # Assembly title -> id, filled in by the Given step and read by the When step.
 _assembly_ids: dict[str, str] = {}
+_page_slugs: dict[str, str] = {}
 
 
 def _png_file(tmp_path: Path, name: str) -> str:
@@ -76,20 +77,23 @@ def assembly_with_registration_page(title: str, admin_user, test_database):
             title=title,
             created_by_user_id=admin_user.id,
         )
-        create_registration_page_with_slugs(
+        registration_page = create_registration_page_with_slugs(
             uow=uow,
             user_id=admin_user.id,
             assembly_id=assembly.id,
             name="Registration page",
         )
-        # Read before the block commits and expires the attribute.
+        # Read before the block commits and expires the attributes.
         _assembly_ids[title] = str(assembly.id)
+        _page_slugs[title] = registration_page.url_slug
 
 
 @when(parsers.parse('I visit the registration form editor for "{title}"'))
 def visit_registration_form_editor(page: Page, title: str):
     """Edit mode, because the assets panel is only rendered while editing."""
-    page.goto(f"{Urls.base}/backoffice/assembly/{_assembly_ids[title]}/registration?section=form&edit=1")
+    page.goto(
+        f"{Urls.base}/backoffice/assembly/{_assembly_ids[title]}/registration/{_page_slugs[title]}?section=form&edit=1"
+    )
 
 
 def _panel_upload_button(page: Page, index: int):

@@ -100,3 +100,11 @@ Feature: Backoffice registration HTML editor
     And I choose to discard my changes
     Then I should be on the read-only registration form view
     And the saved registration HTML should not contain "UNSAVED-MARKER-7719"
+
+  Scenario: The registration tab lists the assembly's pages and opens a page's editor
+    Given I am logged in as an admin user
+    And there is an assembly called "List View Assembly" with a registration page
+    When I visit the registration tab for "List View Assembly"
+    Then I should see the registration page list
+    When I open the first registration page from the list
+    Then I should be on the read-only registration form view

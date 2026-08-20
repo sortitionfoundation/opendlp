@@ -806,6 +806,22 @@ class TestHasEverBeenPublished:
         assert page.has_ever_been_published() is True
 
 
+class TestLastPublishedAt:
+    def test_none_when_never_published(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4())
+        assert page.last_published_at() is None
+
+    def test_returns_the_publish_timestamp(self):
+        page = _published_page()
+        assert page.last_published_at() == page.activity[-1].created_at
+
+    def test_returns_the_most_recent_publish(self):
+        page = _published_page()
+        page.unpublish(author_id=uuid.uuid4())
+        page.publish(_StubSource(), author_id=uuid.uuid4())
+        assert page.last_published_at() == page.activity[-1].created_at
+
+
 class TestNameAndLanguage:
     def test_default_to_empty_strings(self):
         """A page created without a name or language carries empty strings."""

@@ -23,6 +23,7 @@ export function serviceDocsEmails() {
     deleteTemplateId: "",
     assignAutoReplyAssemblyId: "",
     assignAutoReplyTemplateId: "",
+    assignAutoReplyPageId: "",
     autoReplyReadinessAssemblyId: "",
 
     executeCreateEmailTemplate: function () {
@@ -68,6 +69,7 @@ export function serviceDocsEmails() {
     executeAssignAutoReplyTemplate: function () {
       return this.executeService("assign_auto_reply_template", {
         assembly_id: this.assignAutoReplyAssemblyId,
+        page_id: this.assignAutoReplyPageId || null,
         // No template chosen means "unassign", which the service spells as null.
         template_id: this.assignAutoReplyTemplateId || null,
       });

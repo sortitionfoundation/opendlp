@@ -169,7 +169,7 @@ class TestAddRegistrationImage:
         assert uow.registration_images.count_by_assembly_id(page.assembly_id) == 1
 
     def test_quota_at_limit_raises(self, uow, monkeypatch):
-        monkeypatch.setenv("MAX_IMAGES_PER_REGISTRATION_PAGE", "1")
+        monkeypatch.setenv("MAX_IMAGES_PER_ASSEMBLY", "1")
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -178,7 +178,7 @@ class TestAddRegistrationImage:
             service.add_registration_image(uow, admin.id, assembly.id, _png((0, 0, 255)))
 
     def test_dedup_at_limit_still_succeeds(self, uow, monkeypatch):
-        monkeypatch.setenv("MAX_IMAGES_PER_REGISTRATION_PAGE", "1")
+        monkeypatch.setenv("MAX_IMAGES_PER_ASSEMBLY", "1")
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
 

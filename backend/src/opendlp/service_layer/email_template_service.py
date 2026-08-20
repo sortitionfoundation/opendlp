@@ -9,6 +9,7 @@ import structlog
 
 from opendlp.config import get_email_template_body_max_bytes
 from opendlp.domain.email_template import EmailTemplate
+from opendlp.domain.registration_page import RegistrationPage
 from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage
 from opendlp.translations import gettext as _
 
@@ -192,17 +193,27 @@ def assign_auto_reply_template(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     template_id: uuid.UUID | None,
-) -> None:
-    """Set (or clear, with None) the registration page's auto-reply template.
+    *,
+    page_id: uuid.UUID | None = None,
+) -> RegistrationPage:
+    """Set (or clear, with None) a registration page's auto-reply template.
+
+    Targets the page_id when given, else the assembly's oldest page. Returns the
+    updated page so callers can see which page was targeted.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(action="assign auto-reply template", required_role=_MANAGE_ROLE)
-    page = page_for_assembly(uow, assembly_id)
-    if page is None:
-        raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
+    if page_id is not None:
+        page = uow.registration_pages.get(page_id)
+        if page is None or page.assembly_id != assembly_id:
+            raise RegistrationPageNotFoundError(f"Registration page {page_id} not found for this assembly")
+    else:
+        page = page_for_assembly(uow, assembly_id)
+        if page is None:
+            raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
     if template_id is not None:
         template = uow.email_templates.get(template_id)
         if template is None or template.assembly_id != assembly_id:
@@ -217,3 +228,4 @@ def assign_auto_reply_template(
                 problem.message,
             )
     page.set_auto_reply_template(template_id)
+    return page.create_detached_copy()

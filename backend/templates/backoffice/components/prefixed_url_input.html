@@ -1,0 +1,45 @@
+{#
+ABOUTME: Prefixed URL input component - a text input with a non-editable URL prefix
+ABOUTME: Styled to match the standard input component; supports a disabled state
+#}
+{% macro prefixed_url_input(name, label, hint, prefix, placeholder="", value="", id="", disabled=false) %}
+    {#
+    Args:
+        name: Input name attribute
+        label: Label text
+        hint: Help text below label
+        prefix: The non-editable URL prefix (e.g., "https://example.com/register/")
+        placeholder: Placeholder for editable part
+        value: Current value of the input
+        id: Optional id (defaults to name)
+        disabled: When true, renders the input disabled
+    #}
+    {% set input_id = id if id else name %}
+    <div class="flex flex-col gap-1.5">
+        <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
+            {{ label }}
+        </label>
+        {% if hint %}
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ hint }}</p>
+        {% endif %}
+        <div class="prefixed-url-input flex items-center rounded-lg overflow-hidden transition-all duration-150"
+             style="border: 1px solid var(--color-borders-dividers);
+                    background-color: {{ 'var(--color-subtle-background-panels)' if disabled else 'var(--color-page-background)' }};
+                    {% if disabled %}opacity: 0.7;{% endif %}">
+            {# Non-editable prefix #}
+            <span class="text-body-md px-4 py-2.5 whitespace-nowrap select-none flex-shrink-0"
+                  style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text); border-right: 1px solid var(--color-borders-dividers);">
+                {{ prefix }}
+            </span>
+            {# Editable input #}
+            <input type="text"
+                   name="{{ name }}"
+                   id="{{ input_id }}"
+                   value="{{ value }}"
+                   placeholder="{{ placeholder }}"
+                   {% if disabled %}disabled aria-disabled="true"{% endif %}
+                   class="text-body-md px-3 py-2.5 flex-grow min-w-0 outline-none"
+                   style="border: none; background: transparent; color: var(--color-body-text); {% if disabled %}cursor: not-allowed;{% endif %}" />
+        </div>
+    </div>
+{% endmacro %}

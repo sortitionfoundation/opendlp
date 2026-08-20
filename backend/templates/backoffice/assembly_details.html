@@ -98,73 +98,51 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
     {# Registration Page Details Section #}
     <div class="mb-8">
         {% call section() %}
-            <h2 class="text-heading-lg mb-6" style="color: var(--color-headings);">{{ _("Registration Page Details") }}</h2>
+            <h2 class="text-heading-lg mb-6" style="color: var(--color-headings);">{{ _("Registration Pages") }}</h2>
 
-            {% if registration_page %}
-                {# Registration page exists - show URLs #}
-                <div class="space-y-6 max-w-2xl">
-                    {# Registration URL (read-only) #}
-                    {{ readonly_url_display(
-                    label=_("Registration URL"),
-                    hint=_("The URL for your registration form"),
-                    url=registration_url
-                    ) }}
-
-                    {# Short URL (read-only) - only shown if configured #}
-                    {% if registration_page.short_url_slug %}
-                        {{ readonly_url_display(
-                        label=_("Short URL"),
-                        hint=_("A shorter URL for QR codes and paper invitations"),
-                        url=short_url
-                        ) }}
-                    {% endif %}
-
-                    {# QR Code - only shown when short URL is configured #}
-                    {% if qr_code_data_url %}
-                        <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers);">
-                            <h3 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("QR Code") }}</h3>
-                            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                                {{ _("Use this QR code on paper invitations") }}
-                            </p>
-
-                            <div class="flex items-start gap-6">
-                                {# QR Code Image #}
-                                <div class="flex-shrink-0 p-4 rounded-lg" style="background-color: white; border: 1px solid var(--color-borders-dividers);">
-                                    <img src="{{ qr_code_data_url }}"
-                                         alt="{{ _('QR code for registration page') }}"
-                                         class="w-40 h-40" />
-                                </div>
-
-                                {# Download Button #}
-                                <div class="flex flex-col gap-2">
-                                    <a href="{{ url_for('backoffice_registration.download_registration_qr_code', assembly_id=assembly.id) }}"
-                                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-button-md transition-colors"
-                                       style="background-color: var(--color-button-secondary-bg); color: var(--color-button-secondary-text); border: 1px solid var(--color-borders-dividers);"
-                                       download>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                        </svg>
-                                        {{ _("Download QR Code") }}
-                                    </a>
-                                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                                        {{ _("PNG format, 400x400 pixels") }}
-                                    </p>
-                                </div>
+            {% if registration_page_rows %}
+                {# Read-only summary: one block per page with its copyable URLs #}
+                <div class="space-y-8 max-w-2xl">
+                    {% for row in registration_page_rows %}
+                        <div {% if not loop.first %}class="pt-6" style="border-top: 1px solid var(--color-borders-dividers);"{% endif %}>
+                            <h3 class="text-heading-sm mb-3" style="color: var(--color-headings);">
+                                {{ row.page.name }}
+                                {% if row.page.language %}
+                                    <span class="ml-1 px-2 py-0.5 rounded text-body-xs uppercase align-middle"
+                                          style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text); border: 1px solid var(--color-borders-dividers);">{{ row.page.language }}</span>
+                                {% endif %}
+                            </h3>
+                            <div class="space-y-4">
+                                {% if row.registration_url %}
+                                    {{ readonly_url_display(
+                                    label=_("Registration URL"),
+                                    hint=_("The URL for this registration form"),
+                                    url=row.registration_url
+                                    ) }}
+                                {% endif %}
+                                {% if row.short_url %}
+                                    {{ readonly_url_display(
+                                    label=_("Short URL"),
+                                    hint=_("A shorter URL for QR codes and paper invitations"),
+                                    url=row.short_url
+                                    ) }}
+                                {% endif %}
                             </div>
                         </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
             {% else %}
-                {# No registration page - show CTA to create one #}
                 <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
                     {{ _("No registration page has been created for this assembly.") }}
                 </p>
-                <form method="POST"
-                      action="{{ url_for('backoffice_registration.create_assembly_registration_page', assembly_id=assembly.id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    {{ button(_("Create Registration Page"), type="submit", variant="primary") }}
-                </form>
             {% endif %}
+
+            {# Registration pages are managed on the Registration tab; this section is read-only. #}
+            <p class="text-body-md mt-6" style="color: var(--color-secondary-text);">
+                {{ _("To create your first registration page, edit an existing one, or add another (for example a language variant), go to the %(link_start)sRegistration tab%(link_end)s.",
+                link_start=('<a href="' ~ url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id) ~ '" class="hover:underline" style="color: var(--color-links);">')|safe,
+                    link_end=("</a>"|safe)) }}
+            </p>
         {% endcall %}
     </div>
 

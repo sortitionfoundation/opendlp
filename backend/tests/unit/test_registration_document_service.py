@@ -162,7 +162,7 @@ class TestAddRegistrationDocument:
         assert uow.registration_documents.count_by_assembly_id(page.assembly_id) == 1
 
     def test_quota_at_limit_raises(self, uow, monkeypatch):
-        monkeypatch.setenv("MAX_DOCUMENTS_PER_REGISTRATION_PAGE", "1")
+        monkeypatch.setenv("MAX_DOCUMENTS_PER_ASSEMBLY", "1")
         admin, assembly = _admin(uow), _assembly(uow)
         _page(uow, assembly)
 
@@ -171,7 +171,7 @@ class TestAddRegistrationDocument:
             service.add_registration_document(uow, admin.id, assembly.id, _pdf(b"two"))
 
     def test_dedup_at_limit_still_succeeds(self, uow, monkeypatch):
-        monkeypatch.setenv("MAX_DOCUMENTS_PER_REGISTRATION_PAGE", "1")
+        monkeypatch.setenv("MAX_DOCUMENTS_PER_ASSEMBLY", "1")
         admin, assembly = _admin(uow), _assembly(uow)
         page = _page(uow, assembly)
 

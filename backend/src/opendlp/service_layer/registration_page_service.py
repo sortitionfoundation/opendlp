@@ -22,6 +22,7 @@ from opendlp.domain.registration_page import (
 from opendlp.domain.registration_page import generate_starter_form_html as _build_starter_html
 from opendlp.domain.registration_page import generate_starter_form_html_govuk as _build_starter_html_govuk
 from opendlp.domain.users import User
+from opendlp.translations import gettext as _
 
 from .exceptions import (
     AssemblyNotFoundError,
@@ -64,9 +65,17 @@ def _load_html_source(uow: AbstractUnitOfWork, page: RegistrationPage) -> Regist
 
 
 def _check_size(html: str, max_bytes: int, label: str) -> None:
+    """``label`` is a translated fragment - the call sites wrap it in ``_()``."""
     size = len(html.encode("utf-8"))
     if size > max_bytes:
-        raise ValueError(f"The {label} must be at most {max_bytes} bytes; got {size}")
+        raise ValueError(
+            _(
+                "The %(label)s must be at most %(max_bytes)s bytes; got %(size)s",
+                label=label,
+                max_bytes=max_bytes,
+                size=size,
+            )
+        )
 
 
 # --- Slug generation utilities ---
@@ -153,13 +162,13 @@ def generate_unique_short_url_slug(uow: AbstractUnitOfWork, max_attempts: int = 
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    for _ in range(max_attempts):
+    for _attempt in range(max_attempts):
         candidate = generate_short_url_slug()
         if uow.registration_pages.get_by_short_url_slug(candidate) is None:
             return candidate
 
     # Very unlikely to reach here, but handle it
-    raise ValueError("Failed to generate unique short URL slug after multiple attempts")
+    raise ValueError(_("Failed to generate unique short URL slug after multiple attempts"))
 
 
 def _load_manageable_page(
@@ -214,10 +223,10 @@ def _validated_name(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, name: str) 
     """
     cleaned = name.strip()
     if not cleaned:
-        raise ValueError("The registration page name is required")
+        raise ValueError(_("The registration page name is required"))
     for existing in uow.registration_pages.list_by_assembly_id(assembly_id):
         if existing.name == cleaned:
-            raise ValueError(f"This assembly already has a registration page named '{cleaned}'")
+            raise ValueError(_("This assembly already has a registration page named '%(name)s'", name=cleaned))
     return cleaned
 
 
@@ -388,9 +397,9 @@ def delete_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_i
     """
     _user, page = _load_manageable_page(uow, user_id, page_id)
     if not page.can_be_deleted():
-        raise ValueError("A registration page that has been published cannot be deleted; close it instead")
+        raise ValueError(_("A registration page that has been published cannot be deleted; close it instead"))
     if uow.respondents.count_by_registration_page(page.assembly_id).get(page.id):
-        raise ValueError("This registration page has registrations, so it cannot be deleted")
+        raise ValueError(_("This registration page has registrations, so it cannot be deleted"))
 
     source = uow.registration_page_html_sources.get_by_page_id(page.id)
     if source is not None:
@@ -417,6 +426,23 @@ def get_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     _user, page = _load_viewable_page(uow, user_id, page_id)
+    return page.create_detached_copy()
+
+
+def get_registration_page_by_slug(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID, url_slug: str
+) -> RegistrationPage:
+    """Return the assembly's registration page with that url_slug.
+
+    Slugs are globally unique, so the assembly check stops a slug from another
+    assembly resolving under this assembly's URLs.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    found = uow.registration_pages.get_by_url_slug(url_slug)
+    if found is None or found.assembly_id != assembly_id:
+        raise RegistrationPageNotFoundError(f"No registration page '{url_slug}' for assembly {assembly_id}")
+    _user, page = _load_viewable_page(uow, user_id, found.id)
     return page.create_detached_copy()
 
 
@@ -453,7 +479,7 @@ def _raise_if_slug_taken(
             raise SlugError(
                 field="url_slug",
                 reason="taken",
-                message=f"The slug '{url_slug}' is already in use by another registration page",
+                message=_("The slug '%(slug)s' is already in use by another registration page", slug=url_slug),
             )
     if short_url_slug:
         clash = uow.registration_pages.get_by_short_url_slug(short_url_slug)
@@ -461,7 +487,7 @@ def _raise_if_slug_taken(
             raise SlugError(
                 field="short_url_slug",
                 reason="taken",
-                message=f"The slug '{short_url_slug}' is already in use by another registration page",
+                message=_("The slug '%(slug)s' is already in use by another registration page", slug=short_url_slug),
             )
 
 
@@ -524,10 +550,10 @@ def rename_registration_page(
     if name is not None and name.strip() != page.name:
         cleaned = name.strip()
         if not cleaned:
-            raise ValueError("The registration page name is required")
+            raise ValueError(_("The registration page name is required"))
         for existing in uow.registration_pages.list_by_assembly_id(page.assembly_id):
             if existing.id != page.id and existing.name == cleaned:
-                raise ValueError(f"This assembly already has a registration page named '{cleaned}'")
+                raise ValueError(_("This assembly already has a registration page named '%(name)s'", name=cleaned))
         changes.append(f"Renamed from '{page.name}' to '{cleaned}'")
         page.rename(cleaned)
     if language is not None and language.strip() != page.language:
@@ -559,7 +585,7 @@ def update_thank_you_html(
     """
     user, page = _load_manageable_page(uow, user_id, page_id)
 
-    _check_size(thank_you_html, get_registration_thank_you_html_max_bytes(), "thank-you HTML")
+    _check_size(thank_you_html, get_registration_thank_you_html_max_bytes(), _("thank-you HTML"))
     if page.thank_you_html != thank_you_html:
         page.update_thank_you_html(thank_you_html)
         page.record_edit(user.id, "Updated thank-you HTML")
@@ -575,7 +601,7 @@ def update_registration_page_html(
     """
     user, page = _load_manageable_page(uow, user_id, page_id)
 
-    _check_size(form_html, get_registration_form_html_max_bytes(), "form HTML")
+    _check_size(form_html, get_registration_form_html_max_bytes(), _("form HTML"))
     source = _load_html_source(uow, page)
     if source.form_html != form_html:
         source.update_html(form_html)

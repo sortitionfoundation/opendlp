@@ -86,10 +86,13 @@ def _seed_page(fake_store, admin_id, assembly_id, *, target_status: Registration
             close_registration_page(uow, admin_id, page.id)
 
 
-def _stored_status(fake_store, admin_id, assembly_id) -> RegistrationPageStatus:
+def _stored_page(fake_store, admin_id, assembly_id):
     with FakeUnitOfWork(store=fake_store) as uow:
-        page = get_registration_page(uow, admin_id, _page_id(fake_store, assembly_id))
-    return page.status
+        return get_registration_page(uow, admin_id, _page_id(fake_store, assembly_id))
+
+
+def _stored_status(fake_store, admin_id, assembly_id) -> RegistrationPageStatus:
+    return _stored_page(fake_store, admin_id, assembly_id).status
 
 
 @pytest.fixture
@@ -104,11 +107,17 @@ def as_admin(app, admin_id):
         yield
 
 
+def _run_action(fake_store, action: str, admin_id, page) -> str:
+    """The route owns the transaction, so the test opens one around the helper."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return _handle_registration_action(uow, action, admin_id, page)
+
+
 class TestHandleRegistrationAction:
     def test_publish_action_publishes_test_page(self, fake_store, admin_id, assembly_id, as_admin):
         _seed_page(fake_store, admin_id, assembly_id, target_status=RegistrationPageStatus.TEST)
 
-        message = _handle_registration_action("publish", admin_id, assembly_id)
+        message = _run_action(fake_store, "publish", admin_id, _stored_page(fake_store, admin_id, assembly_id))
 
         assert "published successfully" in message.lower()
         assert _stored_status(fake_store, admin_id, assembly_id) == RegistrationPageStatus.PUBLISHED
@@ -118,7 +127,7 @@ class TestHandleRegistrationAction:
     ):
         _seed_page(fake_store, admin_id, assembly_id, target_status=RegistrationPageStatus.PUBLISHED)
 
-        message = _handle_registration_action("publish", admin_id, assembly_id)
+        message = _run_action(fake_store, "publish", admin_id, _stored_page(fake_store, admin_id, assembly_id))
 
         assert "html updated" in message.lower()
         assert _stored_status(fake_store, admin_id, assembly_id) == RegistrationPageStatus.PUBLISHED
@@ -126,7 +135,7 @@ class TestHandleRegistrationAction:
     def test_unpublish_action_returns_page_to_test(self, fake_store, admin_id, assembly_id, as_admin):
         _seed_page(fake_store, admin_id, assembly_id, target_status=RegistrationPageStatus.PUBLISHED)
 
-        message = _handle_registration_action("unpublish", admin_id, assembly_id)
+        message = _run_action(fake_store, "unpublish", admin_id, _stored_page(fake_store, admin_id, assembly_id))
 
         assert "unpublished" in message.lower()
         assert _stored_status(fake_store, admin_id, assembly_id) == RegistrationPageStatus.TEST
@@ -134,7 +143,7 @@ class TestHandleRegistrationAction:
     def test_close_action_closes_published_page(self, fake_store, admin_id, assembly_id, as_admin):
         _seed_page(fake_store, admin_id, assembly_id, target_status=RegistrationPageStatus.PUBLISHED)
 
-        message = _handle_registration_action("close", admin_id, assembly_id)
+        message = _run_action(fake_store, "close", admin_id, _stored_page(fake_store, admin_id, assembly_id))
 
         assert "closed" in message.lower()
         assert _stored_status(fake_store, admin_id, assembly_id) == RegistrationPageStatus.CLOSED
@@ -142,7 +151,7 @@ class TestHandleRegistrationAction:
     def test_reopen_action_republishes_closed_page(self, fake_store, admin_id, assembly_id, as_admin):
         _seed_page(fake_store, admin_id, assembly_id, target_status=RegistrationPageStatus.CLOSED)
 
-        message = _handle_registration_action("reopen", admin_id, assembly_id)
+        message = _run_action(fake_store, "reopen", admin_id, _stored_page(fake_store, admin_id, assembly_id))
 
         assert "reopened" in message.lower()
         assert _stored_status(fake_store, admin_id, assembly_id) == RegistrationPageStatus.PUBLISHED
@@ -150,7 +159,7 @@ class TestHandleRegistrationAction:
     def test_save_action_uses_saved_message_for_test_pages(self, fake_store, admin_id, assembly_id, as_admin):
         _seed_page(fake_store, admin_id, assembly_id, target_status=RegistrationPageStatus.TEST)
 
-        message = _handle_registration_action("save", admin_id, assembly_id)
+        message = _run_action(fake_store, "save", admin_id, _stored_page(fake_store, admin_id, assembly_id))
 
         assert "saved" in message.lower()
         assert "republished" not in message.lower()
@@ -161,7 +170,7 @@ class TestHandleRegistrationAction:
     ):
         _seed_page(fake_store, admin_id, assembly_id, target_status=RegistrationPageStatus.PUBLISHED)
 
-        message = _handle_registration_action("save", admin_id, assembly_id)
+        message = _run_action(fake_store, "save", admin_id, _stored_page(fake_store, admin_id, assembly_id))
 
         assert "republished" in message.lower()
         assert _stored_status(fake_store, admin_id, assembly_id) == RegistrationPageStatus.PUBLISHED

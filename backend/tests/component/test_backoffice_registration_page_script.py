@@ -114,7 +114,9 @@ def registration_page(fake_store, admin_user, existing_assembly):
 
 @pytest.fixture
 def page_html(logged_in_admin, registration_page, existing_assembly) -> str:
-    response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration")
+    response = logged_in_admin.get(
+        f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
+    )
     assert response.status_code == 200
     return response.get_data(as_text=True)
 
@@ -127,7 +129,7 @@ def every_view_html(logged_in_admin, fake_store, registration_page, existing_ass
     each renders only its own markup - so a binding lives on exactly one of them,
     and checking the default view alone would miss most of them.
     """
-    base = f"/backoffice/assembly/{existing_assembly.id}/registration"
+    base = f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
     views = [f"{base}?section={section}" for section in ("form", "email", "preview")]
     views.append(f"{base}?section=form&edit=1")
 
@@ -208,8 +210,8 @@ class TestTheBundle:
         )
         assert [body for body in inline_bodies if body.strip()] == []
 
-    def test_is_not_loaded_before_there_is_a_registration_page(self, logged_in_admin, existing_assembly):
-        """Nothing on the create-a-page form is Alpine-driven, so the bundle would be dead weight."""
+    def test_is_not_loaded_on_the_page_list(self, logged_in_admin, existing_assembly):
+        """Nothing on the registration page list is driven by this component, so the bundle would be dead weight."""
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration")
 
         assert response.status_code == 200
@@ -250,7 +252,7 @@ class TestTheDataBlock:
         assert _page_data(page_html)["messages"][key]
 
     def test_says_whether_the_editor_is_unlocked(self, logged_in_admin, registration_page, existing_assembly):
-        url = f"/backoffice/assembly/{existing_assembly.id}/registration"
+        url = f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
 
         read_only = logged_in_admin.get(url).get_data(as_text=True)
         editing = logged_in_admin.get(f"{url}?edit=1").get_data(as_text=True)
@@ -264,7 +266,9 @@ class TestTheDataBlock:
         """The list is mutated in place after load, so it has to start out populated."""
         _seed_image(fake_store, registration_page, alt="Assembly logo")
 
-        html = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration").get_data(as_text=True)
+        html = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
+        ).get_data(as_text=True)
 
         data = _page_data(html)
         assert [image["alt"] for image in data["images"]] == ["Assembly logo"]
@@ -281,7 +285,9 @@ class TestTheDataBlock:
         """
         _seed_image(fake_store, registration_page, alt='</script><script>alert("xss")</script>')
 
-        html = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration").get_data(as_text=True)
+        html = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}"
+        ).get_data(as_text=True)
 
         assert "<script>alert" not in html
         assert _page_data(html)["images"][0]["alt"] == '</script><script>alert("xss")</script>'

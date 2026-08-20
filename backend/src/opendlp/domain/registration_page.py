@@ -204,6 +204,11 @@ class RegistrationPage:
     def has_ever_been_published(self) -> bool:
         return any(a.action == RegistrationPageAction.PUBLISH for a in self.activity)
 
+    def last_published_at(self) -> datetime | None:
+        """When the page most recently went live, or None if never published."""
+        stamps = [a.created_at for a in self.activity if a.action == RegistrationPageAction.PUBLISH]
+        return max(stamps) if stamps else None
+
     def can_be_deleted(self) -> bool:
         """True if the page may be deleted outright rather than closed.
 

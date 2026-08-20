@@ -26,14 +26,18 @@ from opendlp.domain.registration_image import (
     generate_image_html,
 )
 from opendlp.domain.registration_page import (
-    HtmlSource,
     RegistrationPage,
     RegistrationPageHtml,
     RegistrationPageNotReady,
     RegistrationPageStatus,
 )
 from opendlp.domain.uploads import human_size
-from opendlp.entrypoints.blueprints.registration import registration_url, short_url
+from opendlp.entrypoints.blueprints.registration import (
+    registration_url,
+    registration_url_prefix,
+    short_url,
+    short_url_prefix,
+)
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
 from opendlp.service_layer.email_template_service import (
@@ -72,14 +76,18 @@ from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page_with_slugs,
     generate_starter_form_html_variants,
+    get_registration_page_by_slug,
     get_registration_page_with_source,
     list_registration_pages,
     publish_registration_page,
+    rename_registration_page,
     render_registration_form,
     reopen_registration_page,
     unpublish_registration_page,
+    update_registration_page,
     update_registration_page_html,
 )
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
 backoffice_registration_bp = Blueprint("backoffice_registration", __name__)
@@ -87,22 +95,25 @@ backoffice_registration_bp = Blueprint("backoffice_registration", __name__)
 logger = structlog.get_logger(__name__)
 
 
-def _sole_page(uow: Any, assembly_id: uuid.UUID) -> RegistrationPage | None:
-    """The registration page these assembly-scoped routes act on, or None if there is none."""
+def _first_page(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> RegistrationPage | None:
+    """The assembly's oldest page — only for serialising assembly-scoped asset URLs."""
     pages = list_registration_pages(uow, current_user.id, assembly_id)
     return pages[0] if pages else None
 
 
-def _require_page(uow: Any, assembly_id: uuid.UUID) -> RegistrationPage:
-    page = _sole_page(uow, assembly_id)
-    if page is None:
-        raise RegistrationPageNotFoundError(f"Assembly {assembly_id} does not have a registration page")
-    return page
+def _page_by_slug(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, url_slug: str) -> RegistrationPage:
+    """The page the slug-addressed routes act on. Raises RegistrationPageNotFoundError."""
+    return get_registration_page_by_slug(uow, current_user.id, assembly_id, url_slug)
 
 
-def _page_with_source(uow: Any, assembly_id: uuid.UUID) -> tuple[RegistrationPage, HtmlSource] | None:
-    page = _sole_page(uow, assembly_id)
-    return get_registration_page_with_source(uow, current_user.id, page.id) if page else None
+def _list_url(assembly_id: uuid.UUID) -> str:
+    return url_for("backoffice_registration.view_assembly_registration", assembly_id=assembly_id)
+
+
+def _editor_url(assembly_id: uuid.UUID, url_slug: str, **kwargs: Any) -> str:
+    return url_for(
+        "backoffice_registration.view_registration_page", assembly_id=assembly_id, url_slug=url_slug, **kwargs
+    )
 
 
 def _image_to_dict(image: RegistrationImage, url_slug: str) -> dict[str, Any]:
@@ -180,92 +191,46 @@ def _document_to_dict(document: RegistrationDocument, url_slug: str) -> dict[str
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration")
 @login_required
 def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Backoffice registration form configuration page."""
+    """List the assembly's registration pages with per-page status and actions."""
     try:
-        nav_uow = bootstrap.get_flask_uow()
-        with nav_uow:
+        # One UnitOfWork per request: nav context and page data come from the
+        # same snapshot rather than two sequential read-only transactions.
+        uow = bootstrap.get_flask_uow()
+        with uow:
             nav = get_assembly_nav_context(
-                nav_uow,
+                uow,
                 current_user.id,
                 assembly_id,
                 request.args.get("source", ""),
             )
-
-        # Get registration page and HTML source from service layer
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            result = _page_with_source(uow, assembly_id)
-
-            # HTML content
-            has_registration_page = result is not None
-            registration_page = result[0] if result else None
-            if result:
-                html = cast("RegistrationPageHtml", result[1])
-                html_content = html.form_html
-                thank_you_html = result[0].thank_you_html
-                registration_status = result[0].status.value  # "TEST", "PUBLISHED", or "CLOSED"
-            else:
-                html_content = ""
-                thank_you_html = ""
-                registration_status = "TEST"  # Default for new pages
-
-            # Build registration URLs and a QR code for the short URL, when configured
-            registration_page_url = None
-            registration_short_url = None
-            qr_code_data_url = None
-            if registration_page:
-                registration_page_url = registration_url(registration_page.url_slug)
-                if registration_page.short_url_slug:
-                    registration_short_url = short_url(registration_page.short_url_slug)
-                    qr_code_data_url = generate_qr_code_base64(registration_short_url)
-
-            # Load registration images and PDF documents for the Assets panel
-            images: list[dict[str, Any]] = []
-            documents: list[dict[str, Any]] = []
-            if has_registration_page and registration_page:
-                # Reuse the UnitOfWork from the page lookup above.
-                stored_images = list_registration_images(uow, current_user.id, assembly_id)
-                images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
-                stored_documents = list_registration_documents(uow, current_user.id, assembly_id)
-                documents = [_document_to_dict(document, registration_page.url_slug) for document in stored_documents]
-
-        # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
-        # have no save path so we always keep them read-only regardless of the param.
-        edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
-
-        # Sub-section within the Registration tab (stepper). Default to the form editor.
-        active_section = request.args.get("section", "form")
-        if active_section not in ("form", "email", "preview"):
-            active_section = "form"
-
-        # Auto-reply email data — the template (if assigned) plus readiness problems.
-        email_template, email_readiness_problems = _load_auto_reply_context(registration_page, assembly_id)
+            pages = list_registration_pages(uow, current_user.id, assembly_id)
+        page_rows = [
+            {
+                "page": page,
+                # A page created outside the backoffice can lack a slug; it cannot be
+                # opened here until one is set, so it renders without links.
+                "editor_url": _editor_url(assembly_id, page.url_slug) if page.url_slug else "",
+                "close_url": url_for(
+                    "backoffice_registration.save_assembly_registration",
+                    assembly_id=assembly_id,
+                    url_slug=page.url_slug,
+                )
+                if page.url_slug and page.status == RegistrationPageStatus.PUBLISHED
+                else "",
+                "published_at": page.last_published_at(),
+            }
+            for page in pages
+        ]
 
         return render_template(
-            "backoffice/assembly_registration.html",
+            "backoffice/assembly_registration_list.html",
             assembly=nav.assembly,
             data_source=nav.data_source,
             gsheet=nav.gsheet,
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
-            registration_page=registration_page,
-            registration_url=registration_page_url,
-            short_url=registration_short_url,
-            qr_code_data_url=qr_code_data_url,
-            registration_status=registration_status,
-            html_content=html_content,
-            thank_you_html=thank_you_html,
-            has_registration_page=has_registration_page,
-            images=images,
-            documents=documents,
-            max_image_upload_mb=get_max_image_upload_mb(),
-            max_pdf_upload_mb=get_max_pdf_upload_mb(),
-            allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
-            edit_mode=edit_mode,
-            active_section=active_section,
-            email_template=email_template,
-            email_readiness_problems=email_readiness_problems,
+            page_rows=page_rows,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(
@@ -283,34 +248,146 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
-        logger.error(
+        logger.exception(
             "View assembly registration error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
         )
         flash(_("An error occurred while loading registration settings"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
 
-def _handle_registration_action(action: str, user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:
-    """Handle publish/unpublish/close/reopen/save action for registration page. Returns flash message."""
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        if action == "publish":
-            result = _page_with_source(uow, assembly_id)
-            if result and result[0].status == RegistrationPageStatus.TEST:
-                publish_registration_page(uow, user_id, result[0].id)
-                return _("Registration form published successfully")
-            return _("Registration form HTML updated successfully")
-        if action == "unpublish":
-            unpublish_registration_page(uow, user_id, _require_page(uow, assembly_id).id)
-            return _("Registration form unpublished")
-        if action == "close":
-            close_registration_page(uow, user_id, _require_page(uow, assembly_id).id)
-            return _("Registration form closed")
-        if action == "reopen":
-            reopen_registration_page(uow, user_id, _require_page(uow, assembly_id).id)
-            return _("Registration form reopened")
-        result = _page_with_source(uow, assembly_id)
-    if result and result[0].status == RegistrationPageStatus.PUBLISHED:
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>")
+@login_required
+def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
+    """Backoffice registration form configuration page for one registration page."""
+    try:
+        # One UnitOfWork per request: nav context, page data and the auto-reply
+        # context all come from the same snapshot rather than a run of
+        # sequential read-only transactions.
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            nav = get_assembly_nav_context(
+                uow,
+                current_user.id,
+                assembly_id,
+                request.args.get("source", ""),
+            )
+
+            # Get registration page and HTML source from service layer
+            page = _page_by_slug(uow, assembly_id, url_slug)
+            registration_page, html_source = get_registration_page_with_source(uow, current_user.id, page.id)
+            html = cast("RegistrationPageHtml", html_source)
+            html_content = html.form_html
+            thank_you_html = registration_page.thank_you_html
+            registration_status = registration_page.status.value  # "TEST", "PUBLISHED", or "CLOSED"
+
+            # Build registration URLs and a QR code for the short URL, when configured
+            registration_page_url = registration_url(registration_page.url_slug)
+            registration_short_url = None
+            qr_code_data_url = None
+            if registration_page.short_url_slug:
+                registration_short_url = short_url(registration_page.short_url_slug)
+                qr_code_data_url = generate_qr_code_base64(registration_short_url)
+
+            # Load registration images and PDF documents for the Assets panel.
+            # Assets are assembly-scoped and shared by every page of the assembly.
+            stored_images = list_registration_images(uow, current_user.id, assembly_id)
+            images = [_image_to_dict(image, registration_page.url_slug) for image in stored_images]
+            stored_documents = list_registration_documents(uow, current_user.id, assembly_id)
+            documents = [_document_to_dict(document, registration_page.url_slug) for document in stored_documents]
+
+            # Auto-reply email data — the template (if assigned) plus readiness problems.
+            email_template, email_readiness_problems = _load_auto_reply_context(uow, registration_page, assembly_id)
+
+        # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
+        # have no save path so we always keep them read-only regardless of the param.
+        edit_mode = request.args.get("edit") == "1" and registration_status != "CLOSED"
+
+        # Sub-section within the Registration tab (stepper). Default to the form editor.
+        active_section = request.args.get("section", "form")
+        if active_section not in ("form", "email", "preview"):
+            active_section = "form"
+
+        return render_template(
+            "backoffice/assembly_registration.html",
+            assembly=nav.assembly,
+            data_source=nav.data_source,
+            gsheet=nav.gsheet,
+            targets_enabled=nav.targets_enabled,
+            respondents_enabled=nav.respondents_enabled,
+            selection_enabled=nav.selection_enabled,
+            registration_page=registration_page,
+            registration_url=registration_page_url,
+            short_url=registration_short_url,
+            qr_code_data_url=qr_code_data_url,
+            registration_status=registration_status,
+            html_content=html_content,
+            thank_you_html=thank_you_html,
+            has_registration_page=True,
+            images=images,
+            documents=documents,
+            max_image_upload_mb=get_max_image_upload_mb(),
+            max_pdf_upload_mb=get_max_pdf_upload_mb(),
+            allowed_image_formats=sorted(ALLOWED_INPUT_FORMATS),
+            edit_mode=edit_mode,
+            active_section=active_section,
+            email_template=email_template,
+            email_readiness_problems=email_readiness_problems,
+            registration_url_prefix=registration_url_prefix(),
+            short_url_prefix=short_url_prefix(),
+        ), 200
+    except RegistrationPageNotFoundError:
+        # An edited or removed slug: land the user on the list to pick a page.
+        flash(_("That registration page could not be found."), "warning")
+        return redirect(_list_url(assembly_id))
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError as e:
+        logger.warning(
+            "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        logger.exception(
+            "View registration page error",
+            assembly_id=str(assembly_id),
+            url_slug=url_slug,
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("An error occurred while loading registration settings"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
+def _handle_registration_action(
+    uow: AbstractUnitOfWork, action: str, user_id: uuid.UUID, page: RegistrationPage
+) -> str:
+    """Handle publish/unpublish/close/reopen/save action for registration page. Returns flash message.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    if action == "publish":
+        if page.status == RegistrationPageStatus.TEST:
+            publish_registration_page(uow, user_id, page.id)
+            return _("Registration form published successfully")
+        return _("Registration form HTML updated successfully")
+    if action == "unpublish":
+        unpublish_registration_page(uow, user_id, page.id)
+        return _("Registration form unpublished")
+    if action == "close":
+        close_registration_page(uow, user_id, page.id)
+        return _("Registration form closed")
+    if action == "reopen":
+        reopen_registration_page(uow, user_id, page.id)
+        return _("Registration form reopened")
+    if page.status == RegistrationPageStatus.PUBLISHED:
         return _("Registration form saved and republished")
     return _("Registration form saved")
 
@@ -330,9 +407,42 @@ def _post_action_section(action: str) -> str:
     return "form"
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/save", methods=["POST"])
+def _apply_page_settings(uow: AbstractUnitOfWork, page: RegistrationPage) -> RegistrationPage:
+    """Persist the name and slug edits posted alongside the HTML.
+
+    Lifecycle posts don't carry these fields, so absent fields mean "leave
+    alone". Returns the freshest copy of the page — the slug may have changed,
+    and the caller's redirect must use the new one.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    page_name = request.form.get("page_name")
+    if page_name is not None and page_name.strip() != page.name:
+        page = rename_registration_page(uow, current_user.id, page.id, name=page_name)
+    url_slug = request.form.get("url_slug")
+    short_url_slug = request.form.get("short_url_slug")
+    if url_slug is not None or short_url_slug is not None:
+        page = update_registration_page(
+            uow,
+            current_user.id,
+            page.id,
+            url_slug=url_slug,
+            short_url_slug=short_url_slug,
+        )
+    return page
+
+
+def _post_save_redirect(assembly_id: uuid.UUID, url_slug: str, action: str) -> str:
+    """Where a successful save lands: back on the list when the list's row menu
+    posted the action (return_to=list), else the editor section for the action."""
+    if request.form.get("return_to") == "list":
+        return _list_url(assembly_id)
+    return _editor_url(assembly_id, url_slug, section=_post_action_section(action))
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/save", methods=["POST"])
 @login_required
-def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Save the registration HTML and/or trigger a lifecycle transition.
 
     Actions:
@@ -343,17 +453,20 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
       - close           → transition to CLOSED. Terminal from the UI's point of
                           view: reopen exists only for backwards compatibility
                           with older POSTs and is not offered anywhere.
+
+    A ``return_to=list`` form field sends the user back to the page list after a
+    successful lifecycle action — the list's row menu posts it.
     """
     action = request.form.get("action", "save")
     # On failure of a save action, land back in edit mode of the form step so the
     # user can fix and retry. Lifecycle actions come from the read-only preview
     # step, so failure just lands them back on the preview step.
-    error_kwargs: dict[str, Any] = {"assembly_id": assembly_id, "section": "form"}
+    error_kwargs: dict[str, Any] = {"section": "form"}
     if action in _SAVE_ACTIONS:
         error_kwargs["edit"] = "1"
     elif action in _LIFECYCLE_ACTIONS:
         error_kwargs["section"] = "preview"
-    error_redirect_url = url_for("backoffice_registration.view_assembly_registration", **error_kwargs)
+    error_redirect_url = _editor_url(assembly_id, url_slug, **error_kwargs)
     try:
         # Verify user has permission to access this assembly (side effect: raises if unauthorized)
         nav_uow = bootstrap.get_flask_uow()
@@ -365,25 +478,20 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 "",
             )
 
-        # Only save-family actions carry HTML content. Publish/close/etc post from
-        # buttons that don't render the editor, so guard against blanking the HTML.
-        if "html_content" in request.form:
-            uow = bootstrap.get_flask_uow()
-            with uow:
-                update_registration_page_html(
-                    uow, current_user.id, _require_page(uow, assembly_id).id, request.form["html_content"]
-                )
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            page = _page_by_slug(uow, assembly_id, url_slug)
 
-        flash_message = _handle_registration_action(action, current_user.id, assembly_id)
+            # Only save-family actions carry HTML content. Publish/close/etc post from
+            # buttons that don't render the editor, so guard against blanking the HTML.
+            if "html_content" in request.form:
+                update_registration_page_html(uow, current_user.id, page.id, request.form["html_content"])
+            page = _apply_page_settings(uow, page)
+
+            flash_message = _handle_registration_action(uow, action, current_user.id, page)
+
         flash(flash_message, "success")
-        next_section = _post_action_section(action)
-        return redirect_preserving_scroll(
-            url_for(
-                "backoffice_registration.view_assembly_registration",
-                assembly_id=assembly_id,
-                section=next_section,
-            )
-        )
+        return redirect_preserving_scroll(_post_save_redirect(assembly_id, page.url_slug, action))
     except RegistrationPageNotReady as e:
         # Show specific validation errors for publishing
         error_message = "; ".join(e.problems)
@@ -393,9 +501,8 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(error_message, "error")
         return redirect_preserving_scroll(error_redirect_url)
     except RegistrationPageNotFoundError:
-        # Registration page doesn't exist yet - redirect to Details tab to create it
-        flash(_("Please create a registration page first from the Details tab."), "warning")
-        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+        flash(_("That registration page could not be found."), "warning")
+        return redirect(_list_url(assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions for assembly",
@@ -423,25 +530,27 @@ def save_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect_preserving_scroll(error_redirect_url)
 
 
-def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> tuple[Any, list[dict[str, str]]]:
+def _load_auto_reply_context(
+    uow: AbstractUnitOfWork, registration_page: Any, assembly_id: uuid.UUID
+) -> tuple[Any, list[dict[str, str]]]:
     """Load the auto-reply template and readiness problems for the view route.
 
     Prefers the template currently assigned to the page. When nothing is assigned
     (a legacy state from before the auto-reply became always-on) falls back to the
     first template stored for the assembly, so the editor still shows the
     pre-created copy for the manager to work on.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     email_template = None
     email_readiness_problems: list[dict[str, str]] = []
     if registration_page is None:
         return email_template, email_readiness_problems
 
-    uow = bootstrap.get_flask_uow()
     template_id = registration_page.auto_reply_email_template_id
     if template_id is not None:
         try:
-            with uow:
-                email_template = get_email_template(uow, current_user.id, template_id)
+            email_template = get_email_template(uow, current_user.id, template_id)
         except EmailTemplateNotFoundError:
             logger.debug(
                 "auto_reply_template_load_failed",
@@ -462,8 +571,7 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
 
     if email_template is None:
         try:
-            with uow:
-                templates = list_email_templates(uow, current_user.id, assembly_id)
+            templates = list_email_templates(uow, current_user.id, assembly_id)
             if templates:
                 email_template = templates[0]
         except InsufficientPermissions:
@@ -475,8 +583,7 @@ def _load_auto_reply_context(registration_page: Any, assembly_id: uuid.UUID) -> 
             )
             email_template = None
 
-    with uow:
-        problems = auto_reply_readiness_problems(uow, assembly_id)
+    problems = auto_reply_readiness_problems(uow, assembly_id)
     email_readiness_problems = [{"severity": p.severity.value, "message": p.message} for p in problems]
     return email_template, email_readiness_problems
 
@@ -501,15 +608,15 @@ def _default_email_template_content() -> dict[str, str]:
     }
 
 
-def _email_section_url(assembly_id: uuid.UUID, edit: bool = False) -> str:
-    kwargs: dict[str, Any] = {"assembly_id": assembly_id, "section": "email"}
+def _email_section_url(assembly_id: uuid.UUID, url_slug: str, edit: bool = False) -> str:
+    kwargs: dict[str, Any] = {"section": "email"}
     if edit:
         kwargs["edit"] = "1"
-    return url_for("backoffice_registration.view_assembly_registration", **kwargs)
+    return _editor_url(assembly_id, url_slug, **kwargs)
 
 
-def _create_and_assign_default_template(assembly_id: uuid.UUID) -> None:
-    """Create the default auto-reply template and assign it to the assembly's page.
+def _create_and_assign_default_template(assembly_id: uuid.UUID, page_id: uuid.UUID) -> None:
+    """Create the default auto-reply template and assign it to the given page.
 
     The auto-reply is always-on: a created template is an assigned template, and
     this helper is the single place that enforces that invariant.
@@ -525,25 +632,26 @@ def _create_and_assign_default_template(assembly_id: uuid.UUID) -> None:
             subject=defaults["subject"],
             body_html=defaults["body_html"],
         )
-        assign_auto_reply_template(uow, current_user.id, assembly_id, template.id)
+        assign_auto_reply_template(uow, current_user.id, assembly_id, template.id, page_id=page_id)
 
 
-def _handle_email_action_create(assembly_id: uuid.UUID) -> str:
+def _handle_email_action_create(assembly_id: uuid.UUID, page: RegistrationPage) -> str:
     """Create a stub auto-reply template, assign it, and return the redirect URL (edit mode)."""
-    _create_and_assign_default_template(assembly_id)
+    _create_and_assign_default_template(assembly_id, page.id)
     flash(_("Auto-reply email created. Edit it below and click Save."), "success")
-    return _email_section_url(assembly_id, edit=True)
+    return _email_section_url(assembly_id, page.url_slug, edit=True)
 
 
 def _handle_email_action_save(
     assembly_id: uuid.UUID,
+    url_slug: str,
     template_id: uuid.UUID | None,
     *,
     advance: bool = False,
 ) -> str:
     if template_id is None:
         flash(_("There is no auto-reply email to save yet — set one up first."), "warning")
-        return _email_section_url(assembly_id)
+        return _email_section_url(assembly_id, url_slug)
     # Name is intentionally not overwritten here — the UI doesn't expose it yet,
     # so we keep the value that was set at auto-creation time. Once multi-template
     # support ships we'll add name to the form and pass it here.
@@ -558,15 +666,11 @@ def _handle_email_action_save(
         )
     flash(_("Auto-reply email saved."), "success")
     if advance:
-        return url_for(
-            "backoffice_registration.view_assembly_registration",
-            assembly_id=assembly_id,
-            section="preview",
-        )
-    return _email_section_url(assembly_id)
+        return _editor_url(assembly_id, url_slug, section="preview")
+    return _email_section_url(assembly_id, url_slug)
 
 
-def _dispatch_email_action(action: str, assembly_id: uuid.UUID) -> str:
+def _dispatch_email_action(action: str, assembly_id: uuid.UUID, url_slug: str) -> str:
     """Run the requested action and return the URL to redirect to.
 
     Raises the service-layer exceptions the caller handles centrally.
@@ -574,28 +678,27 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID) -> str:
     nav_uow = bootstrap.get_flask_uow()
     with nav_uow:
         get_assembly_nav_context(nav_uow, current_user.id, assembly_id, "")
-        page = _sole_page(nav_uow, assembly_id)
-    if page is None:
-        raise RegistrationPageNotFoundError(f"No registration page for assembly {assembly_id}")
+        page = _page_by_slug(nav_uow, assembly_id, url_slug)
 
     if action == "create":
-        return _handle_email_action_create(assembly_id)
+        return _handle_email_action_create(assembly_id, page)
     if action not in ("save", "save_and_next"):
         flash(_("Unknown action — nothing was changed."), "warning")
-        return _email_section_url(assembly_id)
+        return _email_section_url(assembly_id, url_slug)
     # Save always targets the page's assigned template. The form does not choose a
     # template, so a posted template_id is deliberately ignored — trusting it would
     # let a request update a template belonging to a different assembly.
     return _handle_email_action_save(
         assembly_id,
+        url_slug,
         page.auto_reply_email_template_id,
         advance=(action == "save_and_next"),
     )
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/email/save", methods=["POST"])
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/email/save", methods=["POST"])
 @login_required
-def save_assembly_registration_email(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def save_assembly_registration_email(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Create or update the auto-reply email template.
 
     Action-based POST endpoint:
@@ -610,17 +713,17 @@ def save_assembly_registration_email(assembly_id: uuid.UUID) -> ResponseReturnVa
     """
     action = request.form.get("action", "save")
     try:
-        return redirect_preserving_scroll(_dispatch_email_action(action, assembly_id))
+        return redirect_preserving_scroll(_dispatch_email_action(action, assembly_id, url_slug))
     except EmailTemplateInvalid as e:
         for problem in e.problems:
             flash(problem, "error")
-        return redirect_preserving_scroll(_email_section_url(assembly_id, edit=True))
+        return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug, edit=True))
     except EmailTemplateNotFoundError:
         flash(_("The auto-reply email could not be found."), "error")
-        return redirect_preserving_scroll(_email_section_url(assembly_id))
+        return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
     except RegistrationPageNotFoundError:
-        flash(_("Please create a registration page first from the Details tab."), "warning")
-        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+        flash(_("That registration page could not be found."), "warning")
+        return redirect(_list_url(assembly_id))
     except InsufficientPermissions:
         flash(_("You don't have permission to modify this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
@@ -635,10 +738,10 @@ def save_assembly_registration_email(assembly_id: uuid.UUID) -> ResponseReturnVa
             error=str(e),
         )
         flash(_("An error occurred while saving the auto-reply email"), "error")
-        return redirect_preserving_scroll(_email_section_url(assembly_id))
+        return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
 
 
-def _create_default_auto_reply_template(assembly_id: uuid.UUID) -> None:
+def _create_default_auto_reply_template(assembly_id: uuid.UUID, page_id: uuid.UUID) -> None:
     """Best-effort: seed a default auto-reply email template for a new page.
 
     Not fatal — if this fails (validation, race, etc.) we log and let the manager
@@ -646,7 +749,7 @@ def _create_default_auto_reply_template(assembly_id: uuid.UUID) -> None:
     straight away: the auto-reply is always-on, so a page with a template sends it.
     """
     try:
-        _create_and_assign_default_template(assembly_id)
+        _create_and_assign_default_template(assembly_id, page_id)
     except Exception as e:
         # Non-fatal: log with traceback per code_quality_rules for catch-all blocks.
         logger.exception(
@@ -657,6 +760,17 @@ def _create_default_auto_reply_template(assembly_id: uuid.UUID) -> None:
         )
 
 
+def _default_page_name(existing_names: set[str]) -> str:
+    """A page name that is unique within the assembly, since names must be distinct."""
+    base = _("Registration page")
+    if base not in existing_names:
+        return base
+    counter = 2
+    while f"{base} {counter}" in existing_names:
+        counter += 1
+    return f"{base} {counter}"
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/create", methods=["POST"])
 @login_required
 def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -664,13 +778,18 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            create_registration_page_with_slugs(uow, current_user.id, assembly_id, name=_("Registration page"))
-        _create_default_auto_reply_template(assembly_id)
+            existing_names = {p.name for p in list_registration_pages(uow, current_user.id, assembly_id)}
+            page = create_registration_page_with_slugs(
+                uow, current_user.id, assembly_id, name=_default_page_name(existing_names)
+            )
+        # After the block: the assign below runs in its own transaction and can only
+        # see the page once it is committed.
+        _create_default_auto_reply_template(assembly_id, page.id)
         flash(
             _("Registration page created. URLs have been generated automatically and can be edited below."),
             "success",
         )
-        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+        return redirect(_editor_url(assembly_id, page.url_slug))
     except InsufficientPermissions:
         flash(_("You don't have permission to modify this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
@@ -678,14 +797,13 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except ValueError as e:
-        # Already has a registration page
         logger.warning("Cannot create registration page for assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("This assembly already has a registration page."), "warning")
-        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+        flash(str(e), "error")
+        return redirect(_list_url(assembly_id))
     except Exception as e:
         logger.exception("Error creating registration page for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while creating the registration page"), "error")
-        return redirect(url_for("backoffice.view_assembly", assembly_id=assembly_id))
+        return redirect(_list_url(assembly_id))
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/skeleton")
@@ -706,9 +824,9 @@ def get_registration_skeleton(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return jsonify({"error": _("An error occurred while generating the form skeleton")}), 500
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/form-preview")
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/form-preview")
 @login_required
-def preview_registration_form(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def preview_registration_form(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Read-only render of the saved registration form, embedded in the preview step.
 
     Renders the last saved HTML through the same pipeline as the public route, so
@@ -724,9 +842,7 @@ def preview_registration_form(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            page = _sole_page(uow, assembly_id)
-            if page is None:
-                abort(404)
+            page = _page_by_slug(uow, assembly_id, url_slug)
             rendered_form = render_registration_form(
                 uow,
                 page,
@@ -749,9 +865,9 @@ def preview_registration_form(assembly_id: uuid.UUID) -> ResponseReturnValue:
         abort(500)
 
 
-@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/qr-code.png")
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/qr-code.png")
 @login_required
-def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def download_registration_qr_code(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
     """Download registration QR code as PNG image."""
     try:
         # Verify user has permission to access this assembly
@@ -767,9 +883,8 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
         # The QR code encodes the short URL, so a short slug must be configured
         uow = bootstrap.get_flask_uow()
         with uow:
-            result = _page_with_source(uow, assembly_id)
-        registration_page = result[0] if result else None
-        if not registration_page or not registration_page.short_url_slug:
+            registration_page = _page_by_slug(uow, assembly_id, url_slug)
+        if not registration_page.short_url_slug:
             abort(404)
 
         qr_png = generate_qr_code_png(short_url(registration_page.short_url_slug))
@@ -785,6 +900,9 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
     except HTTPException:
         # abort(404) for a missing short URL should surface as a real 404, not a redirect
         raise
+    except RegistrationPageNotFoundError:
+        # An image URL should 404 for an unknown page rather than redirect
+        abort(404)
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions for assembly",
@@ -807,17 +925,16 @@ def download_registration_qr_code(assembly_id: uuid.UUID) -> ResponseReturnValue
 
 
 def _resolve_page_url_slug(assembly_id: uuid.UUID) -> str:
-    """Look up the registration page's url_slug for serialising image URLs.
+    """Look up a registration page url_slug for serialising asset URLs.
 
-    Returns an empty string when the page doesn't exist yet — the caller can
-    decide whether to omit the public URL.
+    Assets are assembly-scoped, so any page's slug serves them; we use the oldest
+    page's. Returns an empty string when the assembly has no page yet — the
+    caller can decide whether to omit the public URL.
     """
     uow = bootstrap.get_flask_uow()
     with uow:
-        result = _page_with_source(uow, assembly_id)
-    if result is None:
-        return ""
-    return result[0].url_slug
+        page = _first_page(uow, assembly_id)
+    return page.url_slug if page else ""
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/images", methods=["POST"])

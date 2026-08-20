@@ -9,16 +9,32 @@
 export function serviceDocsRegistration() {
   return {
     createRegistrationAssemblyId: "",
+    createRegistrationName: "",
+    createRegistrationLanguage: "",
+    // Checked by default: a page with generated slugs can be published straight away.
+    createRegistrationWithSlugs: true,
+    listPagesAssemblyId: "",
+    duplicateSourcePageId: "",
+    duplicateName: "",
+    duplicateLanguage: "",
+    deletePagePageId: "",
     getRegistrationAssemblyId: "",
+    getRegistrationPageId: "",
     updateRegistrationAssemblyId: "",
+    updateRegistrationPageId: "",
     updateRegistrationUrlSlug: "",
     updateRegistrationShortUrlSlug: "",
     updateHtmlAssemblyId: "",
+    updateHtmlPageId: "",
     updateHtmlContent: "",
     publishAssemblyId: "",
+    publishPageId: "",
     unpublishAssemblyId: "",
+    unpublishPageId: "",
     closeAssemblyId: "",
+    closePageId: "",
     reopenAssemblyId: "",
+    reopenPageId: "",
     generateStarterAssemblyId: "",
     submitRegistrationAssemblyId: "",
     // An empty object rather than an empty string, so the field parses before it is edited.
@@ -28,18 +44,43 @@ export function serviceDocsRegistration() {
     executeCreateRegistrationPage: function () {
       return this.executeService("create_registration_page", {
         assembly_id: this.createRegistrationAssemblyId,
+        name: this.createRegistrationName,
+        language: this.createRegistrationLanguage,
+        with_slugs: this.createRegistrationWithSlugs,
+      });
+    },
+
+    executeListRegistrationPages: function () {
+      return this.executeService("list_registration_pages", {
+        assembly_id: this.listPagesAssemblyId,
+      });
+    },
+
+    executeDuplicateRegistrationPage: function () {
+      return this.executeService("duplicate_registration_page", {
+        source_page_id: this.duplicateSourcePageId,
+        name: this.duplicateName,
+        language: this.duplicateLanguage,
+      });
+    },
+
+    executeDeleteRegistrationPage: function () {
+      return this.executeService("delete_registration_page", {
+        page_id: this.deletePagePageId,
       });
     },
 
     executeGetRegistrationPage: function () {
       return this.executeService("get_registration_page_with_source", {
         assembly_id: this.getRegistrationAssemblyId,
+        page_id: this.getRegistrationPageId,
       });
     },
 
     executeUpdateRegistrationPage: function () {
       return this.executeService("update_registration_page", {
         assembly_id: this.updateRegistrationAssemblyId,
+        page_id: this.updateRegistrationPageId,
         url_slug: this.updateRegistrationUrlSlug,
         short_url_slug: this.updateRegistrationShortUrlSlug,
       });
@@ -48,6 +89,7 @@ export function serviceDocsRegistration() {
     executeUpdateRegistrationHtml: function () {
       return this.executeService("update_registration_page_html", {
         assembly_id: this.updateHtmlAssemblyId,
+        page_id: this.updateHtmlPageId,
         form_html: this.updateHtmlContent,
       });
     },
@@ -55,24 +97,28 @@ export function serviceDocsRegistration() {
     executePublishRegistrationPage: function () {
       return this.executeService("publish_registration_page", {
         assembly_id: this.publishAssemblyId,
+        page_id: this.publishPageId,
       });
     },
 
     executeUnpublishRegistrationPage: function () {
       return this.executeService("unpublish_registration_page", {
         assembly_id: this.unpublishAssemblyId,
+        page_id: this.unpublishPageId,
       });
     },
 
     executeCloseRegistrationPage: function () {
       return this.executeService("close_registration_page", {
         assembly_id: this.closeAssemblyId,
+        page_id: this.closePageId,
       });
     },
 
     executeReopenRegistrationPage: function () {
       return this.executeService("reopen_registration_page", {
         assembly_id: this.reopenAssemblyId,
+        page_id: this.reopenPageId,
       });
     },
 
@@ -109,6 +155,14 @@ export function serviceDocsRegistration() {
 
     copyGetRegistrationResponse: function () {
       return this.copyResponse("get_registration_page");
+    },
+
+    copyListPagesResponse: function () {
+      return this.copyResponse("list_registration_pages");
+    },
+
+    copyDuplicateRegistrationResponse: function () {
+      return this.copyResponse("duplicate_registration_page");
     },
 
     copyGenerateStarterResponse: function () {

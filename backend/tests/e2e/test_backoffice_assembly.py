@@ -39,7 +39,7 @@ class TestBackofficeAssemblyDetails:
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
         assert response.status_code == 200
-        assert b"Registration Page Details" in response.data
+        assert b"Registration Pages" in response.data
         assert b"data-copy-text=" in response.data
         assert b'data-copy-feedback="inline"' in response.data
         # No inline JS expression — incompatible with the CSP-safe build.
@@ -50,9 +50,13 @@ class TestBackofficeAssemblyDetails:
     ):
         """GET .../registration/qr-code.png returns a PNG attachment for the short URL."""
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            create_registration_page_with_slugs(uow, admin_user.id, existing_assembly.id, name="Registration page")
+            page = create_registration_page_with_slugs(
+                uow, admin_user.id, existing_assembly.id, name="Registration page"
+            )
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/qr-code.png")
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/registration/{page.url_slug}/qr-code.png"
+        )
         assert response.status_code == 200
         assert response.mimetype == "image/png"
         # PNG signature: 89 50 4E 47 0D 0A 1A 0A
