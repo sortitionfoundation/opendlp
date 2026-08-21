@@ -13,7 +13,7 @@ Full reasoning behind the cookie conclusions: [docs/agent/656-cookies/research.m
 
 ## Why "personal data" and not "user data"
 
-*User* is a domain term here — `domain/users.py` is an aggregate with roles and passwords.
+_User_ is a domain term here — `domain/users.py` is an aggregate with roles and passwords.
 The most sensitive personal data we hold belongs to **registrants**, who are explicitly not
 `User`s. "Personal data" is the UK/EU GDPR term of art, and it correctly spans cookies
 (device identifiers), log lines, registrants, users, and the IP addresses in our rate-limit
@@ -39,8 +39,8 @@ These are standing constraints, not defaults. Changing one is a decision, not a 
 This is the single fact most likely to be forgotten, and the one most likely to cause an
 error. An EU establishment engages EU law directly. So:
 
-- The UK Data (Use and Access) Act 2025 relaxations — the *statistical purposes* and
-  *appearance* exceptions — are **unavailable to us**.
+- The UK Data (Use and Access) Act 2025 relaxations — the _statistical purposes_ and
+  _appearance_ exceptions — are **unavailable to us**.
 - Every cookie must clear the narrower EU ePrivacy test, which has only two exceptions:
   transmission, and strictly necessary for a service the user explicitly requested.
 - **Any cookie-setting analytics would require prior opt-in consent**, with no UK escape hatch.
@@ -51,21 +51,21 @@ subject to.
 ## Cookies
 
 **This table is the source of truth.** The public cookies page at
-<https://docs.sortitionlab.org/data-and-legal/cookies/> (configured by `HELP_SITE_COOKIES`)
+<https://docs.democraticlottery.org/data-and-legal/cookies/> (configured by `HELP_SITE_COOKIES`)
 is a copy of it written for a lay audience. **If you change this table, update the published
 page too** — nothing fails when they diverge, and an inaccurate cookies page is a compliance
 failure in a way that an inaccurate help page is not.
 
 There are exactly two cookies. Both are first-party and `HttpOnly`.
 
-| Cookie | Set by | When | Lifetime | Purpose |
-|---|---|---|---|---|
-| `session` | Flask-Session | CSRF token generation, `flash()`, `?lang=` selection, 2FA, OAuth start | 7 days | Security (CSRF), sign-in, form messages, language choice |
-| `remember_token` | Flask-Login | Only when the user ticks "keep me signed in" | 7 days in production | Persistent login |
+| Cookie           | Set by        | When                                                                   | Lifetime             | Purpose                                                  |
+| ---------------- | ------------- | ---------------------------------------------------------------------- | -------------------- | -------------------------------------------------------- |
+| `session`        | Flask-Session | CSRF token generation, `flash()`, `?lang=` selection, 2FA, OAuth start | 7 days               | Security (CSRF), sign-in, form messages, language choice |
+| `remember_token` | Flask-Login   | Only when the user ticks "keep me signed in"                           | 7 days in production | Persistent login                                         |
 
 Notes:
 
-- `SESSION_TYPE = "redis"` means the session *payload* lives in Redis, but a browser-side
+- `SESSION_TYPE = "redis"` means the session _payload_ lives in Redis, but a browser-side
   cookie carrying the session id is still set. Server-side sessions do not avoid the cookie.
 - There is **no separate CSRF cookie** — Flask-WTF stores the CSRF secret inside the session.
 - There is **no language cookie** — the choice is stored under the `"language"` key inside
@@ -84,13 +84,13 @@ UK and EU law:
 
 - **`session`** is strictly necessary for security (CSRF), authentication, and recording the
   user's own form input. All are expressly exempt.
-- **`remember_token`** is *not* strictly necessary — but the checkbox **is** the consent. It
+- **`remember_token`** is _not_ strictly necessary — but the checkbox **is** the consent. It
   is a specific, informed, unambiguous, affirmative act, unticked by default. That is textbook
   GDPR-standard consent, and it is why the label names the cookie rather than saying
   "Remember me".
 - **The language choice** rides on the `session` cookie. We rely on the argument that a user
   who clicks "Español" has explicitly requested the service of being shown Spanish, which puts
-  it back inside *strictly necessary*. This is the one place a lawyer might quibble; the
+  it back inside _strictly necessary_. This is the one place a lawyer might quibble; the
   reasoning is set out in [research.md §4.1](agent/656-cookies/research.md).
 
 GOV.UK guidance is explicit that an essential-cookies-only service may skip the banner, but

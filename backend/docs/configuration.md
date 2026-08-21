@@ -240,15 +240,15 @@ External help site URLs linked from base templates (header "Help" link, and the 
 
 ```bash
 # Help site landing page (replaces the in-app support page)
-HELP_SITE_HOME=https://docs.sortitionlab.org/help/
+HELP_SITE_HOME=https://docs.democraticlottery.org/help/
 
 # Data agreement page (replaces the in-app user data agreement page)
-HELP_SITE_DATA_AGREEMENT=https://docs.sortitionlab.org/data-and-legal/data-agreement/
+HELP_SITE_DATA_AGREEMENT=https://docs.democraticlottery.org/data-and-legal/data-agreement/
 
 # Cookies page, linked from the footer of every page including the public
 # registration form. Must accurately list the cookies we set - see
 # docs/personal-data.md, which is the canonical source of that list.
-HELP_SITE_COOKIES=https://docs.sortitionlab.org/data-and-legal/cookies/
+HELP_SITE_COOKIES=https://docs.democraticlottery.org/data-and-legal/cookies/
 
 # Knowledge hub, the target of the top-bar help icon. Not live yet - the URL is
 # a placeholder until the hub is published.
@@ -364,8 +364,8 @@ if has_feature("my_feature"):
 
 **Known flags:**
 
-| Flag | Default | Purpose |
-|------|---------|---------|
+| Flag                   | Default | Purpose                                                                                                                                                                                    |
+| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `FF_REGISTRATION_PAGE` | `false` | Enables the public registration page routes (`/register/<slug>`, `/register/<slug>/thank-you`, `/r/<short_slug>`, `/registration-closed`). When unset or `false`, those routes return 404. |
 
 ## Environment Files

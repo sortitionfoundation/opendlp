@@ -7,10 +7,12 @@ OpenDLP is designed to run behind a reverse proxy (Caddy, Nginx, etc.) in produc
 ### How It Works
 
 When generating absolute URLs (for email links, etc.), Flask needs to know:
-1. The real domain name (e.g., `opendlp.sortitionlab.org`)
+
+1. The real domain name (e.g., `democraticlottery.org`)
 2. The real protocol (e.g., `https`)
 
 The reverse proxy provides this information via HTTP headers:
+
 - `X-Forwarded-Host`: The original host requested by the client
 - `X-Forwarded-Proto`: The original protocol (http or https)
 - `X-Forwarded-For`: The client's real IP address
@@ -20,7 +22,7 @@ The reverse proxy provides this information via HTTP headers:
 Caddy sends the required headers by default:
 
 ```caddyfile
-opendlp.sortitionlab.org {
+democraticlottery.org {
     reverse_proxy localhost:8080 {
         # Caddy automatically sets X-Forwarded-* headers
         # You can also explicitly set them if needed:
@@ -30,13 +32,13 @@ opendlp.sortitionlab.org {
 }
 ```
 
-With this configuration, Flask will automatically generate URLs like `https://opendlp.sortitionlab.org/auth/register/invite-code` instead of `http://localhost:8080/auth/register/invite-code`.
+With this configuration, Flask will automatically generate URLs like `https://democraticlottery.org/auth/register/invite-code` instead of `http://localhost:8080/auth/register/invite-code`.
 
 ### Nginx Configuration
 
 ```nginx
 server {
-    server_name opendlp.sortitionlab.org;
+    server_name democraticlottery.org;
 
     location / {
         proxy_pass http://localhost:8080;
@@ -55,7 +57,7 @@ server {
 http:
   routers:
     opendlp:
-      rule: "Host(`opendlp.sortitionlab.org`)"
+      rule: "Host(`democraticlottery.org`)"
       service: opendlp
       entryPoints:
         - websecure
@@ -76,7 +78,7 @@ In unusual cases where reverse proxy headers are not available, you can set the 
 
 ```bash
 # In .env or docker environment
-SERVER_NAME=opendlp.sortitionlab.org
+SERVER_NAME=democraticlottery.org
 ```
 
 **Important:** Setting `SERVER_NAME` without a reverse proxy may cause issues when accessing the app directly at `localhost:8080` for debugging. Only use this for special deployment scenarios.
