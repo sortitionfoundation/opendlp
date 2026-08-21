@@ -1,7 +1,7 @@
 """ABOUTME: Well-known URL endpoints for robots.txt, security.txt, and change-password redirect.
 ABOUTME: Serves standard well-known URIs as defined by RFC 8615 and related specifications."""
 
-from flask import Blueprint, redirect, send_from_directory, url_for
+from flask import Blueprint, abort, current_app, jsonify, redirect, send_from_directory, url_for
 from flask.typing import ResponseReturnValue
 
 from opendlp import config
@@ -32,6 +32,22 @@ def security_txt() -> ResponseReturnValue:
         mimetype="text/plain",
         max_age=_CACHE_MAX_AGE_SECONDS,
     )
+
+
+@wellknown_bp.route("/.well-known/microsoft-identity-association.json")
+def microsoft_identity_association() -> ResponseReturnValue:
+    """Serve the publisher domain verification file for the Microsoft Entra app.
+
+    Microsoft fetches this to confirm we control the domain the app claims as its
+    publisher domain. Returns 404 when no application ID is configured, rather than
+    publishing a document with an empty applicationId.
+    See https://learn.microsoft.com/en-us/entra/identity-platform/howto-configure-publisher-domain
+    """
+    application_id = current_app.config.get("OAUTH_MICROSOFT_APPLICATION_ID", "")
+    if not application_id:
+        abort(404)
+    payload = {"associatedApplications": [{"applicationId": application_id}]}
+    return jsonify(payload)
 
 
 @wellknown_bp.route("/.well-known/change-password")

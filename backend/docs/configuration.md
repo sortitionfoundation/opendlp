@@ -122,9 +122,24 @@ APPLICATION_URL=https://opendlp.example.com
 # Google OAuth
 OAUTH_GOOGLE_CLIENT_ID=your-google-client-id
 OAUTH_GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# Microsoft OAuth
+OAUTH_MICROSOFT_CLIENT_ID=your-microsoft-application-client-id
+OAUTH_MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
+
+# Optional: expiry date of the Microsoft client secret (YYYY-MM-DD).
+# The /health endpoint warns when it is within 30 days of expiring.
+OAUTH_MICROSOFT_CLIENT_SECRET_EXPIRY=2026-06-15
+
+# Optional: the Microsoft application (client) ID to publish for publisher
+# domain verification. When set, /.well-known/microsoft-identity-association.json
+# serves it so Microsoft can confirm we control this domain. When unset, that
+# URL returns 404. Normally the same value as OAUTH_MICROSOFT_CLIENT_ID.
+OAUTH_MICROSOFT_APPLICATION_ID=your-microsoft-application-client-id
 ```
 
-See `docs/google_service_account.md` for Google Sheets integration setup.
+See `docs/google_service_account.md` for Google Sheets integration setup, and
+`docs/microsoft_oauth_setup.md` for the Microsoft Entra app registration.
 
 ### Task Configuration
 

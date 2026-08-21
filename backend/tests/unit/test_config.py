@@ -120,6 +120,20 @@ class TestFlaskConfigClass:
         assert config.OAUTH_GOOGLE_CLIENT_SECRET == "test-client-secret"  # pragma: allowlist secret
 
 
+class TestMicrosoftApplicationId:
+    """Test OAUTH_MICROSOFT_APPLICATION_ID, used by the publisher domain verification file."""
+
+    def test_defaults_to_empty_string(self, clear_env_vars):
+        clear_env_vars("OAUTH_MICROSOFT_APPLICATION_ID")
+
+        assert FlaskConfig().OAUTH_MICROSOFT_APPLICATION_ID == ""
+
+    def test_loads_from_env_var(self, temp_env_vars):
+        temp_env_vars(OAUTH_MICROSOFT_APPLICATION_ID="11111111-2222-3333-4444-555555555555")
+
+        assert FlaskConfig().OAUTH_MICROSOFT_APPLICATION_ID == "11111111-2222-3333-4444-555555555555"
+
+
 class TestFlaskTestConfig:
     """Test the FlaskTestConfig class."""
 

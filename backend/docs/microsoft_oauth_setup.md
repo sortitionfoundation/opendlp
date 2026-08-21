@@ -295,6 +295,10 @@ Once your Partner Program account is verified:
    - Go to **Branding & properties**
    - Set the **Publisher domain** to match your organization's verified domain
    - This domain must match the email domain used in your CPP account verification
+   - If the domain is not already a verified custom domain in your tenant, Microsoft
+     asks you to prove you control it by serving a JSON file from it. OpenDLP serves
+     that file for you - see [Serving the domain verification file](#serving-the-domain-verification-file)
+     below.
 
 4. **Add Publisher Domain to Tenant** (if needed):
    - Go to **Microsoft Entra ID** > **Custom domain names**
@@ -330,6 +334,47 @@ Once your Partner Program account is verified:
     - Repeat steps 2-8 for any additional app registrations
 
 **Reference**: [Mark an app as publisher verified](https://learn.microsoft.com/en-us/entra/identity-platform/mark-app-as-publisher-verified)
+
+### Serving the Domain Verification File
+
+When you set a publisher domain that is not already a verified custom domain in your
+tenant, Microsoft verifies it by fetching:
+
+```txt
+https://your-domain.example.com/.well-known/microsoft-identity-association.json
+```
+
+and checking that the file names your app. OpenDLP serves that URL itself - there is no
+file to upload to a web server. Set the application (client) ID from
+[Step 3](#step-3-note-your-application-client-id):
+
+```bash
+OAUTH_MICROSOFT_APPLICATION_ID=your-application-client-id
+```
+
+This is normally the same value as `OAUTH_MICROSOFT_CLIENT_ID`. It is a separate setting
+because domain verification and sign-in are separate concerns: an instance may verify a
+domain for an app it does not use for sign-in, or use Microsoft sign-in without owning
+the publisher domain.
+
+Restart OpenDLP, then check the file is being served before clicking **Verify and save**
+in the Azure Portal:
+
+```bash
+curl https://your-domain.example.com/.well-known/microsoft-identity-association.json
+```
+
+You should see:
+
+```json
+{"associatedApplications": [{"applicationId": "your-application-client-id"}]}
+```
+
+If `OAUTH_MICROSOFT_APPLICATION_ID` is unset the URL returns **404**, rather than serving
+a document with an empty application ID that would fail verification anyway. A 404 here is
+the usual cause of Microsoft reporting that it could not verify the domain.
+
+**Reference**: [Configure an application's publisher domain](https://learn.microsoft.com/en-us/entra/identity-platform/howto-configure-publisher-domain)
 
 ### Alternatives to Publisher Verification
 

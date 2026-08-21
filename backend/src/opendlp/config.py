@@ -460,6 +460,7 @@ class FlaskBaseConfig:
         self.OAUTH_MICROSOFT_CLIENT_SECRET: str = os.environ.get("OAUTH_MICROSOFT_CLIENT_SECRET", "")
         # Optional: Microsoft client secret expiry date for monitoring (format: YYYY-MM-DD)
         self.OAUTH_MICROSOFT_CLIENT_SECRET_EXPIRY: str = os.environ.get("OAUTH_MICROSOFT_CLIENT_SECRET_EXPIRY", "")
+        self.OAUTH_MICROSOFT_APPLICATION_ID: str = os.environ.get("OAUTH_MICROSOFT_APPLICATION_ID", "")
 
         # Email configuration
         # Valid values: "smtp", "console"
