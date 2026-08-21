@@ -479,12 +479,12 @@ class FlaskBaseConfig:
         self.SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL", "opendlp-support@sortitionfoundation.org")
 
         # External help site URLs
-        self.HELP_SITE_HOME: str = os.environ.get("HELP_SITE_HOME", "https://docs.sortitionlab.org/help/")
+        self.HELP_SITE_HOME: str = os.environ.get("HELP_SITE_HOME", "https://docs.democraticlottery.org/help/")
         self.HELP_SITE_DATA_AGREEMENT: str = os.environ.get(
-            "HELP_SITE_DATA_AGREEMENT", "https://docs.sortitionlab.org/data-and-legal/data-agreement/"
+            "HELP_SITE_DATA_AGREEMENT", "https://docs.democraticlottery.org/data-and-legal/data-agreement/"
         )
         self.HELP_SITE_COOKIES: str = os.environ.get(
-            "HELP_SITE_COOKIES", "https://docs.sortitionlab.org/data-and-legal/cookies/"
+            "HELP_SITE_COOKIES", "https://docs.democraticlottery.org/data-and-legal/cookies/"
         )
         # Knowledge hub (not live yet) - target of the top-bar help icon
         self.KNOWLEDGE_HUB_URL: str = os.environ.get("KNOWLEDGE_HUB_URL", "https://democraticlottery.org/knowledge-hub")
