@@ -147,7 +147,7 @@ class TestMainBlueprint:
     def test_index_footer_links_to_cookies_page(self, client: FlaskClient) -> None:
         """Test the footer carries a cookies page link, as GOV.UK guidance requires."""
         response = client.get("/")
-        assert b"https://docs.sortitionlab.org/data-and-legal/cookies/" in response.data
+        assert b"https://docs.democraticlottery.org/data-and-legal/cookies/" in response.data
 
     def test_dashboard_requires_login(self, client: FlaskClient) -> None:
         """Test dashboard route requires authentication."""

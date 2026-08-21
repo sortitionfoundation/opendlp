@@ -135,9 +135,11 @@ class TestInjectTemplateGlobals:
         """Test that the context processor exposes help site URLs to templates."""
         context = inject_template_globals()
 
-        assert context["help_site_home"] == "https://docs.sortitionlab.org/help/"
-        assert context["help_site_data_agreement"] == "https://docs.sortitionlab.org/data-and-legal/data-agreement/"
-        assert context["help_site_cookies"] == "https://docs.sortitionlab.org/data-and-legal/cookies/"
+        assert context["help_site_home"] == "https://docs.democraticlottery.org/help/"
+        assert (
+            context["help_site_data_agreement"] == "https://docs.democraticlottery.org/data-and-legal/data-agreement/"
+        )
+        assert context["help_site_cookies"] == "https://docs.democraticlottery.org/data-and-legal/cookies/"
 
 
 class TestGetHelpSiteUrls:
@@ -153,9 +155,9 @@ class TestGetHelpSiteUrls:
         """Test that the URLs are reachable by name, not just by position."""
         urls = get_help_site_urls()
 
-        assert urls.home == "https://docs.sortitionlab.org/help/"
-        assert urls.data_agreement == "https://docs.sortitionlab.org/data-and-legal/data-agreement/"
-        assert urls.cookies == "https://docs.sortitionlab.org/data-and-legal/cookies/"
+        assert urls.home == "https://docs.democraticlottery.org/help/"
+        assert urls.data_agreement == "https://docs.democraticlottery.org/data-and-legal/data-agreement/"
+        assert urls.cookies == "https://docs.democraticlottery.org/data-and-legal/cookies/"
 
     def test_cookies_url_can_be_overridden_by_environment(self):
         """Test that HELP_SITE_COOKIES overrides the default cookies page URL."""

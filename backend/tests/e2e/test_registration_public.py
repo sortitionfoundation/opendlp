@@ -218,8 +218,8 @@ class TestRegistrationFormRendering:
         )
 
         assert b"govuk-footer" in response.data
-        assert b"https://docs.sortitionlab.org/data-and-legal/cookies/" in response.data
-        assert b"https://docs.sortitionlab.org/data-and-legal/data-agreement/" in response.data
+        assert b"https://docs.democraticlottery.org/data-and-legal/cookies/" in response.data
+        assert b"https://docs.democraticlottery.org/data-and-legal/data-agreement/" in response.data
 
 
 class TestRegistrationFormSubmission:
