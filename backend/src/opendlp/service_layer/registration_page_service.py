@@ -386,20 +386,55 @@ def _copy_auto_reply_template(uow: AbstractUnitOfWork, source: RegistrationPage,
     return copy.id
 
 
-def delete_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID) -> None:
-    """Delete a page that was never published and has no registrations.
+def _delete_blocker(page: RegistrationPage, registration_count: int) -> str:
+    """Why this page may not be deleted, or the empty string when it may.
 
     A published page keeps its row so the slugs on invites and QR codes still
     resolve; close it instead. A page in TEST can still have collected test
     submissions, which are equally worth keeping the row for.
+    """
+    if not page.can_be_deleted():
+        return _("A registration page that has been published cannot be deleted; close it instead")
+    if registration_count:
+        return _("This registration page has registrations, so it cannot be deleted")
+    return ""
+
+
+def deletable_registration_page_ids(
+    uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID
+) -> set[uuid.UUID]:
+    """The assembly's pages that ``delete_registration_page`` would accept.
+
+    Lets the list view offer delete only where it would succeed. A user who may
+    view the assembly but not manage it gets the empty set rather than an error,
+    so the list still renders for them - without a destructive action they
+    cannot perform.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user, assembly = _load_user_and_assembly(uow, user_id, assembly_id)
+    if not can_manage_assembly(user, assembly):
+        return set()
+    counts = uow.respondents.count_by_registration_page(assembly_id)
+    return {
+        page.id
+        for page in uow.registration_pages.list_by_assembly_id(assembly_id)
+        if not _delete_blocker(page, counts.get(page.id, 0))
+    }
+
+
+def delete_registration_page(uow: AbstractUnitOfWork, user_id: uuid.UUID, page_id: uuid.UUID) -> None:
+    """Delete a page that was never published and has no registrations.
+
+    The page and its HTML source go for good - there is no archive and no undo.
+    See ``_delete_blocker`` for the two cases this refuses.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     _user, page = _load_manageable_page(uow, user_id, page_id)
-    if not page.can_be_deleted():
-        raise ValueError(_("A registration page that has been published cannot be deleted; close it instead"))
-    if uow.respondents.count_by_registration_page(page.assembly_id).get(page.id):
-        raise ValueError(_("This registration page has registrations, so it cannot be deleted"))
+    blocker = _delete_blocker(page, uow.respondents.count_by_registration_page(page.assembly_id).get(page.id, 0))
+    if blocker:
+        raise ValueError(blocker)
 
     source = uow.registration_page_html_sources.get_by_page_id(page.id)
     if source is not None:

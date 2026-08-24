@@ -374,6 +374,11 @@
         background-color: var(--color-button-tertiary-bg-hover);
     }
 
+    /* Destructive menu item — marks an action that cannot be undone. */
+    .menu-item--danger {
+        color: var(--color-error-600);
+    }
+
     /* Icon wrapper inside buttons — used by leading_icon/trailing_icon/icon
        slots on the button macro. Not to be confused with .btn--icon (variant). */
     .btn-icon {
