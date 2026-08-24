@@ -1,0 +1,97 @@
+{#
+ABOUTME: One form covering every target category and value, for edit-all/save-all
+ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed by save_all_parser
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input %}
+<form method="post"
+      action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}"
+      id="save-all-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    {% for category in target_categories %}
+        {% set cat_prefix = "cat[" ~ category.id ~ "]" %}
+        <div class="mb-8 rounded-lg overflow-hidden p-6"
+             style="background-color: var(--color-tables-cards);
+                    border: 1px solid var(--color-borders-dividers)">
+            <div class="mb-4 flex flex-wrap items-end gap-3">
+                {{ input(name=cat_prefix ~ "[name]",
+                id="bulk-name-" ~ category.id|string,
+                label=_("Category Name"),
+                value=category.name,
+                required=true) }}
+                {{ input(name=cat_prefix ~ "[source_url]",
+                id="bulk-source-" ~ category.id|string,
+                label=_("Source"),
+                value=category.source_url,
+                placeholder="https://") }}
+                {{ input(name=cat_prefix ~ "[comment]",
+                id="bulk-comment-" ~ category.id|string,
+                label=_("Notes"),
+                value=category.comment) }}
+            </div>
+            <table class="w-full text-body-md" style="border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                        <th class="py-3 pr-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Value") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Percentage") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Min") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Max") }}</th>
+                        <th class="py-3 pl-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Notes") }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for val in category.values or [] %}
+                        {% set val_prefix = cat_prefix ~ "[values][" ~ val.value_id ~ "]" %}
+                        <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
+                            <td class="py-3 pr-4">
+                                {{ input(name=val_prefix ~ "[value]",
+                                id="bulk-value-" ~ val.value_id|string,
+                                value=val.value,
+                                required=true) }}
+                            </td>
+                            <td class="py-3 px-4">
+                                {{ input(name=val_prefix ~ "[percentage]",
+                                id="bulk-pct-" ~ val.value_id|string,
+                                type="number",
+                                value=val.percentage_target if val.percentage_target is not none else "",
+                                classes="w-24",
+                                attrs='min="0" max="100" step="0.1"') }}
+                            </td>
+                            <td class="py-3 px-4">
+                                {{ input(name=val_prefix ~ "[min]",
+                                id="bulk-min-" ~ val.value_id|string,
+                                type="number",
+                                value=val.min,
+                                classes="w-20",
+                                attrs='min="0"') }}
+                            </td>
+                            <td class="py-3 px-4">
+                                {{ input(name=val_prefix ~ "[max]",
+                                id="bulk-max-" ~ val.value_id|string,
+                                type="number",
+                                value=val.max,
+                                classes="w-20",
+                                attrs='min="0"') }}
+                            </td>
+                            <td class="py-3 pl-4">
+                                {{ input(name=val_prefix ~ "[comment]",
+                                id="bulk-vcomment-" ~ val.value_id|string,
+                                value=val.comment,
+                                placeholder=_("Why min and max were set by hand")) }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endfor %}
+    <div class="flex items-center gap-3">
+        {{ button(_("Save all"), variant="primary", type="submit") }}
+        {{ button(_("Cancel"), variant="tertiary", attrs='@click="editingAll = false"') }}
+    </div>
+</form>

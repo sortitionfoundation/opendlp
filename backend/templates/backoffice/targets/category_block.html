@@ -6,7 +6,9 @@ ABOUTME: Displays category header, values table, missing values, and add value f
 {% from "backoffice/components/input.html" import input, first_error %}
 {% set has_counts = respondent_counts is defined and respondent_counts %}
 {% set show_selected = has_selected is defined and has_selected and selected_counts is defined and selected_counts %}
-{% set col_count = 3 + (1 if has_counts else 0) + (1 if show_selected else 0) + (1 if can_manage else 0) %}
+{% set col_count = 4 + (1 if has_counts else 0) + (1 if show_selected else 0) + (1 if can_manage else 0) %}
+{% set percentage_total = category.percentage_total() %}
+{% set percentages_plausible = category.percentage_total_is_plausible() %}
 <div class="mb-8 rounded-lg overflow-hidden"
      id="category-{{ category.id }}"
      style="background-color: var(--color-tables-cards);
@@ -18,6 +20,20 @@ ABOUTME: Displays category header, values table, missing values, and add value f
         <div x-show="!editing" class="flex items-center gap-3">
             <h3 class="text-heading-lg" style="color: var(--color-headings);">{{ category.name }}</h3>
             {% if can_manage %}
+                <form method="post"
+                      action="{{ url_for('targets.move_category', assembly_id=assembly_id, category_id=category.id) }}"
+                      style="display: inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="direction" value="up" />
+                    {{ button(_("Move up"), variant="tertiary", type="submit") }}
+                </form>
+                <form method="post"
+                      action="{{ url_for('targets.move_category', assembly_id=assembly_id, category_id=category.id) }}"
+                      style="display: inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="direction" value="down" />
+                    {{ button(_("Move down"), variant="tertiary", type="submit") }}
+                </form>
                 {{ button(_("Rename") , variant="tertiary", attrs='@click="editing = true"') }}
                 <form method="post"
                       action="{{ url_for('targets.remove_category', assembly_id=assembly_id, category_id=category.id) }}"
@@ -43,11 +59,27 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                   class="flex items-center gap-3">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 {{ input(name="name", value=category.name, required=true) }}
+                {{ input(name="source_url", value=category.source_url, placeholder=_("https://... where the percentages came from")) }}
+                {{ input(name="comment", value=category.comment, placeholder=_("Notes")) }}
                 {{ button(_("Save") , variant="primary", type="submit") }}
                 {{ button(_("Cancel") , variant="tertiary", attrs='@click="editing = false"') }}
             </form>
         </div>
     </div>
+    {# ── Source and Notes ─────────────────────────────── #}
+    {% if category.source_url or category.comment %}
+        <div class="px-6 pt-4">
+            {% if category.source_url %}
+                <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
+                    {{ _("Source:") }}
+                    <a href="{{ category.source_url }}" target="_blank" rel="noopener noreferrer">{{ category.source_url }}</a>
+                </p>
+            {% endif %}
+            {% if category.comment %}
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ category.comment | linkify }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
     {# ── Category-level Annotations ──────────────────── #}
     {% if category_annotation_list is defined and category_annotation_list %}
         <div class="px-6 pt-4">
@@ -86,6 +118,7 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                 <col />
                 <col style="width: 8rem;" />
                 <col style="width: 8rem;" />
+                <col style="width: 8rem;" />
                 {% if has_counts %}<col style="width: 8rem;" />{% endif %}
                 {% if show_selected %}<col style="width: 8rem;" />{% endif %}
                 {% if can_manage %}<col style="width: 10rem;" />{% endif %}
@@ -94,6 +127,8 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                 <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
                     <th class="py-3 pr-4 text-left text-label-md"
                         style="color: var(--color-headings)">{{ _("Value") }}</th>
+                    <th class="py-3 px-4 text-right text-label-md"
+                        style="color: var(--color-headings)">{{ _("Percentage") }}</th>
                     <th class="py-3 px-4 text-right text-label-md"
                         style="color: var(--color-headings)">{{ _("Min") }}</th>
                     <th class="py-3 px-4 text-right text-label-md"
@@ -119,7 +154,30 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                             {# ── Display Mode ─── #}
                         <td x-show="!editing"
                             class="py-3 pr-4"
-                            style="color: var(--color-body-text)">{{ val.value }}</td>
+                            style="color: var(--color-body-text)">
+                            {{ val.value }}
+                            {% if val.minmax_manual and val.percentage_target is not none %}
+                                <span class="text-label-md px-1.5 py-0.5 rounded ml-2"
+                                      style="background-color: var(--color-warning-400);
+                                             color: white"
+                                      title="{{ _('Min and max were set by hand, not calculated from the percentage') }}">
+                                    {{ _("Set by hand") }}
+                                </span>
+                            {% endif %}
+                            {% if val.comment %}
+                                <p class="text-body-sm mt-1"
+                                   style="color: var(--color-secondary-text);">{{ val.comment | linkify }}</p>
+                            {% endif %}
+                        </td>
+                        <td x-show="!editing"
+                            class="py-3 px-4 text-right"
+                            style="color: var(--color-body-text)">
+                            {% if val.percentage_target is not none %}
+                                {{ val.percentage_target }}%
+                            {% else %}
+                                <span style="color: var(--color-secondary-text);">&mdash;</span>
+                            {% endif %}
+                        </td>
                         <td x-show="!editing"
                             class="py-3 px-4 text-right"
                             style="color: var(--color-body-text)">{{ val.min }}</td>
@@ -143,6 +201,17 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                         {% if can_manage %}
                             <td x-show="!editing" class="py-3 pl-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
+                                    {% if val.minmax_manual and val.percentage_target is not none %}
+                                        <form method="post"
+                                              action="{{ url_for('targets.relink_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                              style="display: inline"
+                                              hx-post="{{ url_for('targets.relink_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
+                                              hx-target="#category-{{ category.id }}"
+                                              hx-swap="outerHTML">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                            {{ button(_("Use percentage"), variant="tertiary", type="submit") }}
+                                        </form>
+                                    {% endif %}
                                     {{ button(_("Edit") , variant="tertiary", attrs='@click="editing = true"') }}
                                     <form method="post"
                                           action="{{ url_for('targets.remove_value', assembly_id=assembly_id, category_id=category.id, value_id=val.value_id) }}"
@@ -182,13 +251,30 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                             error=first_error(vf.value.errors) if vf else "",
                             attrs='form="' ~ edit_form_id ~ '"',
                             ) }}
+                            {{ input(name="comment",
+                            id="edit-comment-" ~ val.value_id,
+                            value=vf.comment.data if vf and vf.comment.data else val.comment,
+                            placeholder=_("Why min and max were set by hand"),
+                            classes="mt-1",
+                            error=first_error(vf.comment.errors) if vf else "",
+                            attrs='form="' ~ edit_form_id ~ '"',
+                            ) }}
+                        </td>
+                        <td x-show="editing" x-cloak class="py-3 px-4">
+                            {{ input(name="percentage",
+                            type="number",
+                            id="edit-percentage-" ~ val.value_id,
+                            value=vf.percentage.data if vf and vf.percentage.data is not none else (val.percentage_target if val.percentage_target is not none else ""),
+                            classes="w-20",
+                            attrs='min="0" max="100" step="0.1" form="' ~ edit_form_id ~ '"',
+                            error=first_error(vf.percentage.errors) if vf else "",
+                            ) }}
                         </td>
                         <td x-show="editing" x-cloak class="py-3 px-4">
                             {{ input(name="min_count",
                             type="number",
                             id="edit-min-" ~ val.value_id,
                             value=vf.min_count.data if vf and vf.min_count.data is not none else val.min,
-                            required=true,
                             classes="w-20",
                             attrs='min="0" form="' ~ edit_form_id ~ '"',
                             error=first_error(vf.min_count.errors) if vf else "",
@@ -199,7 +285,6 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                             type="number",
                             id="edit-max-" ~ val.value_id,
                             value=vf.max_count.data if vf and vf.max_count.data is not none else val.max,
-                            required=true,
                             classes="w-20",
                             attrs='min="0" form="' ~ edit_form_id ~ '"',
                             error=first_error(vf.max_count.errors) if vf else "",
@@ -297,13 +382,28 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                             required=true,
                             error=first_error(af.value.errors) if af else "",
                             attrs='form="' ~ add_form_id ~ '"') }}
+                            {{ input(name="comment",
+                            id="add-comment-" ~ category.id|string,
+                            value=af.comment.data if af and af.comment.data else "",
+                            placeholder=_("Notes"),
+                            classes="mt-1",
+                            error=first_error(af.comment.errors) if af else "",
+                            attrs='form="' ~ add_form_id ~ '"') }}
+                        </td>
+                        <td class="py-3 px-4">
+                            {{ input(name="percentage",
+                            type="number",
+                            id="add-percentage-" ~ category.id|string,
+                            value=af.percentage.data if af and af.percentage.data is not none else "",
+                            classes="w-20",
+                            attrs='min="0" max="100" step="0.1" form="' ~ add_form_id ~ '"',
+                            error=first_error(af.percentage.errors) if af else "") }}
                         </td>
                         <td class="py-3 px-4">
                             {{ input(name="min_count",
                             type="number",
                             id="add-min-" ~ category.id|string,
                             value=af.min_count.data if af and af.min_count.data is not none else "",
-                            required=true,
                             classes="w-20",
                             attrs='min="0" form="' ~ add_form_id ~ '"',
                             error=first_error(af.min_count.errors) if af else "") }}
@@ -313,7 +413,6 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                             type="number",
                             id="add-max-" ~ category.id|string,
                             value=af.max_count.data if af and af.max_count.data is not none else "",
-                            required=true,
                             classes="w-20",
                             attrs='min="0" form="' ~ add_form_id ~ '"',
                             error=first_error(af.max_count.errors) if af else "") }}
@@ -337,6 +436,14 @@ ABOUTME: Displays category header, values table, missing values, and add value f
                 <tr style="border-top: 2px solid var(--color-borders-dividers);">
                     <th class="py-3 pr-4 text-left text-label-md"
                         style="color: var(--color-headings)">{{ _("Total") }}</th>
+                    <td class="py-3 px-4 text-right text-label-md font-bold"
+                        style="color: {{ 'var(--color-warning-600)' if not percentages_plausible else 'var(--color-headings)' }}">
+                        {% if percentage_total is not none %}
+                            {{ percentage_total }}%
+                        {% else %}
+                            <span style="color: var(--color-secondary-text);">&mdash;</span>
+                        {% endif %}
+                    </td>
                     <td class="py-3 px-4 text-right text-label-md font-bold"
                         style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='min') }}</td>
                     <td class="py-3 px-4 text-right text-label-md font-bold"

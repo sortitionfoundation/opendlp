@@ -10,6 +10,7 @@ from flask_wtf.file import FileAllowed, FileField, FileRequired
 from wtforms import (
     BooleanField,
     DateField,
+    DecimalField,
     EmailField,
     IntegerField,
     PasswordField,
@@ -17,10 +18,19 @@ from wtforms import (
     StringField,
     TextAreaField,
 )
-from wtforms.validators import DataRequired, EqualTo, InputRequired, Length, Optional, ValidationError
+from wtforms.validators import (
+    DataRequired,
+    EqualTo,
+    InputRequired,
+    Length,
+    NumberRange,
+    Optional,
+    ValidationError,
+)
 
 from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.selection_settings import OTHER_TEAM
+from opendlp.domain.targets import MAX_COMMENT_LENGTH, MAX_SOURCE_URL_LENGTH, validate_source_url
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.validators import validate_email as domain_validate_email
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
@@ -90,6 +100,23 @@ class NonNegativeValidator:
     def __call__(self, form: Any, field: Any) -> None:
         if field.data is not None and field.data < 0:
             raise ValidationError(str(self.message))
+
+
+class SourceUrlValidator:
+    """Mirror the domain's http(s)-only rule so the user gets a field error.
+
+    Without this the domain's ValueError would surface as a 500. The domain check
+    is still the one that matters - this is the friendly copy of it, not a
+    replacement.
+    """
+
+    def __call__(self, form: Any, field: Any) -> None:
+        if not field.data:
+            return
+        try:
+            validate_source_url(field.data)
+        except ValueError as e:
+            raise ValidationError(str(e)) from e
 
 
 class LoginForm(FlaskForm):  # type: ignore[no-any-unimported]
@@ -558,11 +585,23 @@ class AddTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
 
 
 class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
-    """Form for editing a target category name."""
+    """Form for editing a target category's name, comment and source."""
 
     name = StringField(
         _l("Category Name"),
         validators=[DataRequired(), Length(min=1, max=255)],
+    )
+
+    comment = TextAreaField(
+        _l("Notes"),
+        validators=[Optional(), Length(max=MAX_COMMENT_LENGTH)],
+        description=_l("Optional - why these targets were chosen"),
+    )
+
+    source_url = StringField(
+        _l("Source"),
+        validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH), SourceUrlValidator()],
+        description=_l("Optional - a link to where the percentages came from"),
     )
 
 
@@ -575,15 +614,36 @@ class TargetValueForm(FlaskForm):  # type: ignore[no-any-unimported]
         description=_l("e.g. Male, Female, 16-29"),
     )
 
+    percentage = DecimalField(
+        _l("Percentage"),
+        validators=[Optional(), NumberRange(min=0, max=100)],
+        places=1,
+        description=_l("Optional - min and max are calculated from this"),
+    )
+
     min_count = IntegerField(
         _l("Min"),
-        validators=[InputRequired(), NonNegativeValidator()],
+        validators=[Optional(), NonNegativeValidator()],
     )
 
     max_count = IntegerField(
         _l("Max"),
-        validators=[InputRequired(), NonNegativeValidator()],
+        validators=[Optional(), NonNegativeValidator()],
     )
+
+    comment = TextAreaField(
+        _l("Notes"),
+        validators=[Optional(), Length(max=MAX_COMMENT_LENGTH)],
+        description=_l("Optional - why min and max were set by hand"),
+    )
+
+
+class SaveAllTargetsForm(FlaskForm):  # type: ignore[no-any-unimported]
+    """CSRF only.
+
+    A page of many categories and values does not fit WTForms' one-form-one-object
+    model, so the fields are parsed out of request.form by save_all_parser.
+    """
 
 
 class UploadRespondentsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]

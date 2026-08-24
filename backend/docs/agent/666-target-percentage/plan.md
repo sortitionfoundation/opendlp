@@ -917,10 +917,21 @@ The explainer is explicit that this never blocks.
 
 ---
 
-## 7. Phase 4 — Entrypoints and UI (sketch only)
+## 7. Phase 4 — Entrypoints and UI (sketch only) ✅ DONE
 
 Enough detail to know the layers below are shaped right. We design this properly
 in a follow-up.
+
+**Done — built to this sketch.** Everything listed below is implemented: the form
+fields, all three new routes, the bulk-save parser, the template changes and the
+`linkify` filter. It is deliberately plain, because this is the part most likely
+to be redesigned by the follow-up plan; the layers underneath do not depend on
+any of these choices. The one addition not sketched here is
+`entrypoints/save_all_parser.py`, which holds the `cat[...][values][...]` parsing
+so the route stays thin, and `templates/backoffice/targets/bulk_edit_form.html`,
+which is the edit-all form as a separate partial rather than a second mode inside
+`category_block.html` — mixing the two sets of field names in one template was
+markedly worse to read.
 
 **Forms** (`entrypoints/forms.py`)
 

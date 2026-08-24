@@ -17,6 +17,7 @@ import opendlp.logging
 from opendlp import bootstrap, config
 from opendlp.entrypoints.context_processors import inject_feature_flags, inject_template_globals
 from opendlp.entrypoints.extensions import init_extensions
+from opendlp.entrypoints.template_filters import register_template_filters
 
 if TYPE_CHECKING:
     from opendlp.adapters.tabular_export import AbstractGSheetExportTarget
@@ -77,6 +78,9 @@ def create_app(config_name: str = "", uow_factory: bootstrap.UowFactory | None =
 
     # Register context processors
     register_context_processors(app)
+
+    # Register template filters
+    register_template_filters(app)
 
     # Register blueprints
     register_blueprints(app)

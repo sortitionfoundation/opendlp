@@ -10,6 +10,8 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.targets import TargetCategory
+from opendlp.entrypoints.save_all_parser import parse_save_all_targets
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
@@ -45,16 +47,47 @@ from opendlp.service_layer.target_service import (
     delete_targets_for_assembly,
     get_targets_for_assembly,
     import_targets_from_csv,
+    relink_target_value_to_percentage,
+    reorder_target_categories,
+    save_all_targets,
     update_target_category,
     update_target_value,
 )
 from opendlp.translations import gettext as _
 
-from ..forms import AddTargetCategoryForm, EditTargetCategoryForm, TargetValueForm, UploadTargetsCsvForm
+from ..forms import (
+    AddTargetCategoryForm,
+    EditTargetCategoryForm,
+    SaveAllTargetsForm,
+    TargetValueForm,
+    UploadTargetsCsvForm,
+)
 
 targets_bp = Blueprint("targets", __name__)
 
 logger = structlog.get_logger(__name__)
+
+
+def _render_category_block(assembly_id: uuid.UUID, category: TargetCategory) -> str:
+    """Render one category block, the partial the HTMX routes swap in."""
+    attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+    counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
+    sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
+    return render_template(
+        "backoffice/targets/category_block.html",
+        assembly_id=assembly_id,
+        category=category,
+        value_form=TargetValueForm(),
+        can_manage=True,
+        respondent_counts=counts,
+        selected_counts=sel_counts,
+        has_selected=bool(sel_counts),
+    )
+
+
+def _percentage_from(form: TargetValueForm) -> float | None:
+    """The submitted percentage as a float, or None when the field was cleared."""
+    return None if form.percentage.data is None else float(form.percentage.data)
 
 
 def _is_htmx() -> bool:
@@ -386,6 +419,8 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
                 assembly_id=assembly_id,
                 category_id=category_id,
                 name=form.name.data,
+                comment=form.comment.data or "",
+                source_url=form.source_url.data or "",
             )
 
         if _is_htmx():
@@ -496,8 +531,10 @@ def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnV
                 assembly_id=assembly_id,
                 category_id=category_id,
                 value=form.value.data,
-                min_count=form.min_count.data,
-                max_count=form.max_count.data,
+                min_count=form.min_count.data or 0,
+                max_count=form.max_count.data or 0,
+                percentage=_percentage_from(form),
+                comment=form.comment.data or "",
             )
 
         if _is_htmx():
@@ -586,8 +623,6 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
         uow = bootstrap.get_flask_uow()
         with uow:
             assert form.value.data is not None
-            assert form.min_count.data is not None
-            assert form.max_count.data is not None
             category = update_target_value(
                 uow=uow,
                 user_id=current_user.id,
@@ -597,6 +632,8 @@ def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UU
                 value=form.value.data,
                 min_count=form.min_count.data,
                 max_count=form.max_count.data,
+                percentage=_percentage_from(form),
+                comment=form.comment.data or "",
             )
 
         if _is_htmx():
@@ -922,4 +959,107 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Error checking targets", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while checking targets"), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+
+@targets_bp.route(
+    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>/move",
+    methods=["POST"],
+)
+@login_required
+def move_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
+    """Move a target category one place up or down.
+
+    Up/down buttons rather than drag-and-drop: they are keyboard-accessible for
+    free. The service takes a full ordering either way, so drag-and-drop can be
+    added later without a service change.
+    """
+    direction = request.form.get("direction", "")
+    if direction not in ("up", "down"):
+        return "", 400
+
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+            order = [c.id for c in categories]
+            if category_id not in order:
+                raise NotFoundError(f"Target category {category_id} not found")
+
+            index = order.index(category_id)
+            swap_with = index - 1 if direction == "up" else index + 1
+            if 0 <= swap_with < len(order):
+                order[index], order[swap_with] = order[swap_with], order[index]
+                reorder_target_categories(uow, current_user.id, assembly_id, order)
+
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+    except (ValueError, NotFoundError) as e:
+        flash(_("Error: %(error)s", error=str(e)), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to reorder these targets"), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+
+@targets_bp.route(
+    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values/<uuid:value_id>/relink",
+    methods=["POST"],
+)
+@login_required
+def relink_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UUID) -> ResponseReturnValue:
+    """Restore percentage-driven min/max for one value."""
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            category = relink_target_value_to_percentage(
+                uow=uow,
+                user_id=current_user.id,
+                assembly_id=assembly_id,
+                category_id=category_id,
+                value_id=value_id,
+            )
+
+        if _is_htmx():
+            return _render_category_block(assembly_id, category)
+
+        flash(_("Min and max are calculated from the percentage again"), "success")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+    except (ValueError, NotFoundError) as e:
+        flash(_("Error: %(error)s", error=str(e)), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit these targets"), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+
+@targets_bp.route("/assembly/<uuid:assembly_id>/targets/save-all", methods=["POST"])
+@login_required
+def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Apply every edit on the targets page in one operation."""
+    form = SaveAllTargetsForm()
+    if not form.validate_on_submit():
+        flash(_("Please try again"), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+    try:
+        edits, errors = parse_save_all_targets(request.form)
+        if errors:
+            for message in errors:
+                flash(message, "error")
+            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            save_all_targets(uow, current_user.id, assembly_id, edits)
+
+        flash(_("Targets saved"), "success")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+
+    except (ValueError, NotFoundError) as e:
+        flash(_("Error: %(error)s", error=str(e)), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit these targets"), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))

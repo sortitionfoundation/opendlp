@@ -125,14 +125,25 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
         {% endif %}
 
         {# ── Category Blocks ─────────────────────────────── #}
-        <div id="target-categories">
-            {% for category in target_categories %}
-                {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
-                {% set selected_counts = all_selected_counts.get(category.name) if all_selected_counts is defined and all_selected_counts else None %}
-                {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
-                {% set category_annotation_list = check_result.category_annotations.get(category.name, []) if check_result is defined and check_result else [] %}
-                {% include "backoffice/targets/category_block.html" %}
-            {% endfor %}
+        {# One flat boolean, per the CSP-safe Alpine rules in patterns.html #}
+        <div x-data="{ editingAll: false }">
+            {% if can_manage and target_categories %}
+                <section class="mb-6" x-show="!editingAll">
+                    {{ button(_("Edit all"), variant="secondary", attrs='@click="editingAll = true"') }}
+                </section>
+                <div x-show="editingAll" x-cloak>
+                    {% include "backoffice/targets/bulk_edit_form.html" %}
+                </div>
+            {% endif %}
+            <div id="target-categories" x-show="!editingAll">
+                {% for category in target_categories %}
+                    {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
+                    {% set selected_counts = all_selected_counts.get(category.name) if all_selected_counts is defined and all_selected_counts else None %}
+                    {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
+                    {% set category_annotation_list = check_result.category_annotations.get(category.name, []) if check_result is defined and check_result else [] %}
+                    {% include "backoffice/targets/category_block.html" %}
+                {% endfor %}
+            </div>
         </div>
 
         {# ── Add Category Form ────────────────────────────── #}

@@ -11,7 +11,9 @@ from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.service_layer.target_service import (
     add_target_value,
     create_target_category,
+    get_targets_for_assembly,
     import_targets_from_csv,
+    update_target_value,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
@@ -305,3 +307,153 @@ class TestRespondentColumns:
 
         assert response.status_code == 200
         assert b"Gender" in response.data
+
+
+class TestMoveCategory:
+    def test_move_down_then_up_restores_the_order(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            first = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            second = create_target_category(uow, admin_user.id, existing_assembly.id, "Age")
+
+        def order():
+            with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+                return [c.name for c in get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)]
+
+        assert order() == ["Gender", "Age"]
+
+        logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{first.id}/move"),
+            data={"direction": "down", "csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
+            follow_redirects=True,
+        )
+        assert order() == ["Age", "Gender"]
+
+        logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{first.id}/move"),
+            data={"direction": "up", "csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
+            follow_redirects=True,
+        )
+        assert order() == ["Gender", "Age"]
+        assert second.id is not None
+
+    def test_moving_the_first_category_up_is_a_no_op(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            first = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            create_target_category(uow, admin_user.id, existing_assembly.id, "Age")
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{first.id}/move"),
+            data={"direction": "up", "csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            names = [c.name for c in get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)]
+        assert names == ["Gender", "Age"]
+
+    def test_an_unknown_direction_is_rejected(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{category.id}/move"),
+            data={"direction": "sideways", "csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
+        )
+
+        assert response.status_code == 400
+
+
+class TestRelinkValue:
+    def test_relink_restores_percentage_driven_minmax(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            reloaded = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
+            value_id = reloaded.values[0].value_id
+            update_target_value(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                category.id,
+                value_id,
+                value="Male",
+                min_count=1,
+                max_count=2,
+            )
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}/relink"),
+            data={"csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            value = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0]
+        assert value.minmax_manual is False
+
+
+class TestSaveAll:
+    def test_saves_every_submitted_field(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            value_id = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0].value_id
+
+        prefix = f"cat[{category.id}]"
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[comment]": "from the census",
+                f"{prefix}[source_url]": "https://www.ons.gov.uk/dataset",
+                f"{prefix}[values][{value_id}][value]": "Male",
+                f"{prefix}[values][{value_id}][percentage]": "60",
+                f"{prefix}[values][{value_id}][comment]": "boosted by 2",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            saved = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
+        assert saved.comment == "from the census"
+        assert saved.source_url == "https://www.ons.gov.uk/dataset"
+        assert saved.values[0].percentage_target == 60.0
+        assert saved.values[0].comment == "boosted by 2"
+
+    def test_an_invalid_source_url_is_a_flash_not_a_500(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"cat[{category.id}][name]": "Gender",
+                f"cat[{category.id}][source_url]": "javascript:alert(1)",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].source_url == ""
