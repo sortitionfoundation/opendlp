@@ -57,11 +57,19 @@ def _pct(numerator: int, denominator: int) -> float:
     return round(numerator / denominator * 100, 1)
 
 
-def _target_pct(target_min: int, target_max: int, number_to_select: int) -> float:
+def _target_pct(value_snapshot: dict[str, Any], number_to_select: int) -> float:
+    """The target percentage the run was configured with.
+
+    Prefers the recorded percentage; falls back to the midpoint of min/max for
+    runs recorded before percentages existed, and for values that never had one.
+    """
+    stored = value_snapshot.get("percentage_target")
+    if stored is not None:
+        return round(float(stored), 1)
     if number_to_select == 0:
         return 0.0
-    midpoint = (target_min + target_max) / 2
-    return round(midpoint / number_to_select * 100, 1)
+    midpoint = (value_snapshot["min"] + value_snapshot["max"]) / 2
+    return round(float(midpoint) / number_to_select * 100, 1)
 
 
 def _attribute_value(respondent: Respondent, category_name: str) -> str:
@@ -113,7 +121,7 @@ def _build_category_report(
             value=v["value"],
             target_min=v["min"],
             target_max=v["max"],
-            target_pct=_target_pct(v["min"], v["max"], number_to_select),
+            target_pct=_target_pct(v, number_to_select),
             pool_count=pool_counts[v["value"]],
             pool_pct=_pct(pool_counts[v["value"]], pool_total),
             selected_count=selected_counts[v["value"]],

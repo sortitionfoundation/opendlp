@@ -366,15 +366,17 @@ def _handle_import_targets(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     replace_existing = params.get("replace_existing", True)
 
     try:
-        categories = import_targets_from_csv(
+        import_result = import_targets_from_csv(
             uow=uow,
             user_id=current_user.id,
             assembly_id=assembly_id,
             csv_content=csv_content,
             replace_existing=replace_existing,
         )
+        categories = import_result.categories
         return {
             "status": "success",
+            "warnings": import_result.warnings,
             "categories_count": len(categories),
             "total_values_count": sum(len(c.values) for c in categories),
             "categories": [

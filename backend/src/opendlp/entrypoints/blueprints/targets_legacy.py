@@ -153,7 +153,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id=assembly_id,
                 csv_content=csv_content,
                 replace_existing=True,
-            )
+            ).categories
 
         total_values = sum(len(c.values) for c in categories)
         flash(

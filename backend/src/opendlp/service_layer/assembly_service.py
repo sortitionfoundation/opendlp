@@ -19,6 +19,7 @@ from opendlp.domain.selection_settings import (
 )
 from opendlp.domain.value_objects import AssemblyStatus
 
+from . import target_service
 from .exceptions import (
     AssemblyNotFoundError,
     GoogleSheetConfigNotFoundError,
@@ -116,9 +117,16 @@ def update_assembly(
         )
 
     # Apply updates
+    previous_number_to_select = assembly.number_to_select
     for field, value in updates.items():
         if hasattr(assembly, field):
             setattr(assembly, field, value)
+
+    # Targets whose min/max are derived from a percentage depend on the seat
+    # count, so they have to move with it. This is the single funnel for both the
+    # assembly edit form and the dedicated update_number_to_select route.
+    if assembly.number_to_select != previous_number_to_select:
+        target_service.recalculate_minmax_for_assembly(uow, assembly_id)
 
     # Explicit typing to satisfy mypy
     updated_assembly: Assembly = assembly

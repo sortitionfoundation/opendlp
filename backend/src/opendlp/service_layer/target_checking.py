@@ -35,6 +35,8 @@ from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 if TYPE_CHECKING:
     from sortition_algorithms.people import People
     from sortition_algorithms.settings import Settings
+
+    from opendlp.domain.targets import TargetCategory
 from opendlp.translations import gettext as _
 
 logger = structlog.get_logger(__name__)
@@ -254,6 +256,30 @@ def _run_feasibility_check(
 
 
 @require_assembly_permission(can_manage_assembly)
+def _annotations_from_percentage_totals(
+    categories: "list[TargetCategory]",
+    category_annotations: CategoryAnnotationsDict,
+) -> None:
+    """Warn when a category's percentages do not add up to about 100.
+
+    Always a warning, never an error: this must not block a selection run.
+    """
+    for category in categories:
+        if category.percentage_total_is_plausible():
+            continue
+        _add_category_annotation(
+            category_annotations,
+            category.name,
+            TargetAnnotation(
+                level="warning",
+                message=_(
+                    "Percentages for this category add up to %(total)s%%, not 100%%",
+                    total=category.percentage_total(),
+                ),
+            ),
+        )
+
+
 def check_targets_detailed(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -271,6 +297,12 @@ def check_targets_detailed(
     )
 
     result = DetailedCheckResult(success=True, global_errors=[])
+
+    # Before anything that can bail out, so a category whose percentages do not add
+    # up is still reported when the library rejects the data for another reason.
+    _annotations_from_percentage_totals(
+        uow.target_categories.get_by_assembly_id(assembly_id), result.category_annotations
+    )
 
     try:
         settings_obj = sel_settings.to_settings(id_column=DB_ID_COLUMN)

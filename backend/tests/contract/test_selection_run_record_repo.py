@@ -63,7 +63,6 @@ class TestTargetsUsedRoundTrip:
         snapshot = [
             {
                 "name": "Gender",
-                "description": "",
                 "sort_order": 0,
                 "values": [
                     {
@@ -73,7 +72,6 @@ class TestTargetsUsedRoundTrip:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 50.0,
-                        "description": "",
                     },
                     {
                         "value": "Woman",
@@ -82,7 +80,6 @@ class TestTargetsUsedRoundTrip:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 50.0,
-                        "description": "",
                     },
                 ],
             },

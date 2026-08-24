@@ -1162,7 +1162,7 @@ class TestStartDbSelectTask:
         assembly.csv = AssemblyCSV(assembly_id=assembly.id)
         assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
         uow.assemblies.add(assembly)
-        gender = TargetCategory(assembly_id=assembly.id, name="Gender", description="men/women", sort_order=1)
+        gender = TargetCategory(assembly_id=assembly.id, name="Gender", comment="men/women", sort_order=1)
         gender.add_value(TargetValue(value="Man", min=1, max=1, percentage_target=50.0))
         gender.add_value(TargetValue(value="Woman", min=1, max=1, percentage_target=50.0))
         uow.target_categories.add(gender)
@@ -1179,8 +1179,9 @@ class TestStartDbSelectTask:
         assert record.targets_used == [
             {
                 "name": "Gender",
-                "description": "men/women",
                 "sort_order": 1,
+                "comment": "men/women",
+                "source_url": "",
                 "values": [
                     {
                         "value": "Man",
@@ -1189,7 +1190,8 @@ class TestStartDbSelectTask:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 50.0,
-                        "description": "",
+                        "comment": "",
+                        "minmax_manual": False,
                     },
                     {
                         "value": "Woman",
@@ -1198,7 +1200,8 @@ class TestStartDbSelectTask:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 50.0,
-                        "description": "",
+                        "comment": "",
+                        "minmax_manual": False,
                     },
                 ],
             },

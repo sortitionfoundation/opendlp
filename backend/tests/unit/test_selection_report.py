@@ -42,7 +42,6 @@ def _gender_snapshot(woman_min: int = 1, woman_max: int = 1) -> list[dict[str, A
     return [
         {
             "name": "Gender",
-            "description": "",
             "sort_order": 0,
             "values": [
                 {
@@ -52,7 +51,6 @@ def _gender_snapshot(woman_min: int = 1, woman_max: int = 1) -> list[dict[str, A
                     "min_flex": 0,
                     "max_flex": -1,
                     "percentage_target": 50.0,
-                    "description": "",
                 },
                 {
                     "value": "Woman",
@@ -61,7 +59,6 @@ def _gender_snapshot(woman_min: int = 1, woman_max: int = 1) -> list[dict[str, A
                     "min_flex": 0,
                     "max_flex": -1,
                     "percentage_target": 50.0,
-                    "description": "",
                 },
             ],
         },
@@ -149,7 +146,9 @@ class TestHappyPath:
         woman = cat.rows[1]
         assert woman.target_min == 1
         assert woman.target_max == 2
-        assert woman.target_pct == pytest.approx(75.0)
+        # The recorded percentage wins over the midpoint, which would give 75.0
+        # for this min/max. The two differing is what proves which branch ran.
+        assert woman.target_pct == pytest.approx(50.0)
 
 
 class TestMultiCategory:
@@ -159,7 +158,6 @@ class TestMultiCategory:
             *_gender_snapshot(),
             {
                 "name": "Age",
-                "description": "",
                 "sort_order": 1,
                 "values": [
                     {
@@ -169,7 +167,6 @@ class TestMultiCategory:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 50.0,
-                        "description": "",
                     },
                     {
                         "value": "30+",
@@ -178,7 +175,6 @@ class TestMultiCategory:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 50.0,
-                        "description": "",
                     },
                 ],
             },
@@ -284,7 +280,9 @@ class TestZeroPool:
             assert row.selected_count == 0
             assert row.pool_pct == 0.0
             assert row.selected_pct == 0.0
-            assert row.target_pct == 0.0
+            # An empty pool says nothing about the target the run was configured
+            # with, which is still the recorded 50%.
+            assert row.target_pct == pytest.approx(50.0)
 
 
 class TestUnknownAttributeRaises:

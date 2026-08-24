@@ -316,7 +316,6 @@ class TestSelectionRunRecordTargetsUsed:
         snapshot = [
             {
                 "name": "Gender",
-                "description": "",
                 "sort_order": 0,
                 "values": [
                     {
@@ -326,7 +325,6 @@ class TestSelectionRunRecordTargetsUsed:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 50.0,
-                        "description": "",
                     },
                 ],
             },

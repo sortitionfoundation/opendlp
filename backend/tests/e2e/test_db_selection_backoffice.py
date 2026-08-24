@@ -324,7 +324,6 @@ class TestSelectionReportDownload:
         snapshot = [
             {
                 "name": "Gender",
-                "description": "",
                 "sort_order": 0,
                 "values": [
                     {
@@ -334,7 +333,6 @@ class TestSelectionReportDownload:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 50.0,
-                        "description": "",
                     },
                     {
                         "value": "Female",
@@ -343,13 +341,11 @@ class TestSelectionReportDownload:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 50.0,
-                        "description": "",
                     },
                 ],
             },
             {
                 "name": "Age",
-                "description": "",
                 "sort_order": 1,
                 "values": [
                     {
@@ -359,7 +355,6 @@ class TestSelectionReportDownload:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 40.0,
-                        "description": "",
                     },
                     {
                         "value": "31-50",
@@ -368,7 +363,6 @@ class TestSelectionReportDownload:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 40.0,
-                        "description": "",
                     },
                     {
                         "value": "51+",
@@ -377,7 +371,6 @@ class TestSelectionReportDownload:
                         "min_flex": 0,
                         "max_flex": -1,
                         "percentage_target": 20.0,
-                        "description": "",
                     },
                 ],
             },

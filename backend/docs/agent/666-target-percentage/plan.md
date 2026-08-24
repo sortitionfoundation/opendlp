@@ -125,7 +125,7 @@ than deleted — removing it is not this branch's job.
 
 ---
 
-## 4. Phase 1 — Domain (`src/opendlp/domain/targets.py`)
+## 4. Phase 1 — Domain (`src/opendlp/domain/targets.py`) ✅ DONE
 
 ### 4.1 `TargetValue` — new and changed fields
 
@@ -350,7 +350,7 @@ will have `description` and none of the new keys, so every reader must use
 
 ---
 
-## 5. Phase 2 — Persistence
+## 5. Phase 2 — Persistence ✅ DONE
 
 ### 5.1 `TargetValue` — no migration, but harden the decoder
 

@@ -1,12 +1,14 @@
 """ABOUTME: SQLAlchemy table definitions and imperative mapping for OpenDLP
 ABOUTME: Defines database schema with proper relationships, indexes, and JSON columns"""
 
+import dataclasses
 import json
 import uuid
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
+import structlog
 from sortition_algorithms.utils import RunReport
 from sqlalchemy import (
     TIMESTAMP,
@@ -135,6 +137,11 @@ class RunReportJSON(TypeDecorator):
                 return RunReport()
 
 
+logger = structlog.get_logger(__name__)
+
+_TARGET_VALUE_FIELDS = {f.name for f in dataclasses.fields(TargetValue)}
+
+
 class TargetValueListJSON(TypeDecorator):
     """Custom type for storing list of TargetValue dataclasses as JSON"""
 
@@ -171,7 +178,15 @@ class TargetValueListJSON(TypeDecorator):
                 # Convert UUID string back to UUID
                 if "value_id" in item and isinstance(item["value_id"], str):
                     item["value_id"] = uuid.UUID(item["value_id"])
-                result.append(TargetValue(**item))
+                # Rows written before a field was removed still carry it, and
+                # TargetValue(**item) raises TypeError on any unknown key - which
+                # would fail the whole category, not just the offending value.
+                kwargs = {k: v for k, v in item.items() if k in _TARGET_VALUE_FIELDS}
+                dropped = sorted(set(item) - _TARGET_VALUE_FIELDS)
+                if dropped:
+                    # Names only, never values: a comment could hold personal data.
+                    logger.debug("target_value_unknown_keys_dropped", keys=dropped)
+                result.append(TargetValue(**kwargs))
             else:
                 result.append(item)
         return result
@@ -516,7 +531,8 @@ target_categories = Table(
         index=True,
     ),
     Column("name", String(255), nullable=False),
-    Column("description", Text, nullable=False, default=""),
+    Column("comment", Text, nullable=False, server_default="", default=""),
+    Column("source_url", Text, nullable=False, server_default="", default=""),
     Column("sort_order", Integer, nullable=False, default=0),
     Column("values", TargetValueListJSON, nullable=False, default=list),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),

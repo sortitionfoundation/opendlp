@@ -202,13 +202,15 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         uow = bootstrap.get_flask_uow()
         with uow:
-            categories = import_targets_from_csv(
+            import_result = import_targets_from_csv(
                 uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
                 csv_content=csv_content,
                 replace_existing=True,
             )
+            categories = import_result.categories
+            import_warnings = import_result.warnings
 
         total_values = sum(len(c.values) for c in categories)
         flash(
@@ -220,6 +222,8 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
             ),
             "success",
         )
+        for warning in import_warnings:
+            flash(warning, "warning")
 
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
@@ -303,8 +307,6 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         uow = bootstrap.get_flask_uow()
         with uow:
-            existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
-            sort_order = len(existing)
             assert form.name.data is not None  # this is basically a type hint
 
             category = create_target_category(
@@ -312,7 +314,6 @@ def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 user_id=current_user.id,
                 assembly_id=assembly_id,
                 name=form.name.data,
-                sort_order=sort_order,
             )
 
         if _is_htmx():
@@ -809,9 +810,6 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # The whole bulk create is one unit of work: either every category the
         # organiser selected lands or none does.
         with uow:
-            existing = get_targets_for_assembly(uow, current_user.id, assembly_id)
-            sort_order = len(existing)
-
             for column_name in selected_columns:
                 try:
                     category = create_target_category(
@@ -819,10 +817,8 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
                         user_id=current_user.id,
                         assembly_id=assembly_id,
                         name=column_name,
-                        sort_order=sort_order,
                     )
                     created.append(column_name)
-                    sort_order += 1
 
                     # Auto-add all distinct values for low-cardinality columns
                     distinct_count = column_distinct_counts.get(column_name, 0)

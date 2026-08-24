@@ -77,12 +77,12 @@ class TestCreateTargetCategory:
             admin_user.id,
             test_assembly.id,
             name="Gender",
-            description="Gender category",
+            comment="Gender category",
             sort_order=0,
         )
 
         assert category.name == "Gender"
-        assert category.description == "Gender category"
+        assert category.comment == "Gender category"
         assert category.assembly_id == test_assembly.id
         assert category.sort_order == 0
 
@@ -183,7 +183,9 @@ Gender,Female,12,17,9,19
 Age,16-29,17,22,14,25
 Age,30-44,5,9,4,10"""
 
-        categories = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        categories = target_service.import_targets_from_csv(
+            uow, admin_user.id, test_assembly.id, csv_content
+        ).categories
 
         assert len(categories) == 2
         assert categories[0].name == "Gender"
@@ -203,7 +205,9 @@ Age,30-44,5,9,4,10"""
 Gender,Male,10,15
 Gender,Female,10,15"""
 
-        categories = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        categories = target_service.import_targets_from_csv(
+            uow, admin_user.id, test_assembly.id, csv_content
+        ).categories
 
         assert len(categories) == 1
         assert categories[0].name == "Gender"
@@ -244,7 +248,7 @@ Age,30-44,5,9"""
 
         categories = target_service.import_targets_from_csv(
             uow, admin_user.id, test_assembly.id, csv2, replace_existing=True
-        )
+        ).categories
 
         assert len(categories) == 1
         assert categories[0].name == "Age"
