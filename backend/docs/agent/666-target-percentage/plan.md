@@ -92,7 +92,7 @@ Agreed before drafting, plus the answers to the first review of this plan.
 
 ---
 
-## 3. Phase 0 — extract `target_service.py` (mechanical, own commit)
+## 3. Phase 0 — extract `target_service.py` (mechanical, own commit) ✅ DONE
 
 `assembly_service.py` is 1227 lines and about 380 of them are target CRUD. This
 change adds roughly another 250. Before touching behaviour, move the target
@@ -115,6 +115,13 @@ Confirm the full list with
 
 Do **not** re-export from `assembly_service` — a shim would leave two names for
 one function. Fix the imports instead.
+
+**Done.** All ten functions moved verbatim; `assembly_service.py` drops from 1228
+to 834 lines. No shim. Callers updated in `blueprints/targets.py`,
+`targets_legacy.py`, `dev.py` and seven test modules. Confirmed dead code as the
+plan suspected: `get_feature_collection_for_assembly` has no caller in `src`,
+only two in `tests/integration/test_assembly_service_targets.py`. Moved rather
+than deleted — removing it is not this branch's job.
 
 ---
 

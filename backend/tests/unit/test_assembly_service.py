@@ -11,7 +11,7 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
-from opendlp.service_layer import assembly_service
+from opendlp.service_layer import assembly_service, target_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     GoogleSheetConfigNotFoundError,
@@ -782,7 +782,7 @@ class TestCreateTargetCategoryAutoPopulate:
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="2", attributes={"Gender": "Female"}))
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="3", attributes={"Gender": "Non-binary"}))
 
-        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="Gender")
+        category = target_service.create_target_category(uow, admin.id, assembly.id, name="Gender")
 
         value_names = sorted(v.value for v in category.values)
         assert value_names == ["Female", "Male", "Non-binary"]
@@ -795,7 +795,7 @@ class TestCreateTargetCategoryAutoPopulate:
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="1", attributes={"Gender": "Male"}))
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="2", attributes={"Gender": "Female"}))
 
-        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="gender")
+        category = target_service.create_target_category(uow, admin.id, assembly.id, name="gender")
 
         value_names = sorted(v.value for v in category.values)
         assert value_names == ["Female", "Male"]
@@ -805,7 +805,7 @@ class TestCreateTargetCategoryAutoPopulate:
         admin, assembly = self._setup(uow)
         uow.respondents.add(Respondent(assembly_id=assembly.id, external_id="1", attributes={"Gender": "Male"}))
 
-        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="Ethnicity")
+        category = target_service.create_target_category(uow, admin.id, assembly.id, name="Ethnicity")
 
         assert category.values == []
 
@@ -813,7 +813,7 @@ class TestCreateTargetCategoryAutoPopulate:
         """No values are added when there are no respondents."""
         admin, assembly = self._setup(uow)
 
-        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="Gender")
+        category = target_service.create_target_category(uow, admin.id, assembly.id, name="Gender")
 
         assert category.values == []
 
@@ -825,6 +825,6 @@ class TestCreateTargetCategoryAutoPopulate:
                 Respondent(assembly_id=assembly.id, external_id=str(i), attributes={"PostCode": f"PC{i:03d}"})
             )
 
-        category = assembly_service.create_target_category(uow, admin.id, assembly.id, name="PostCode")
+        category = target_service.create_target_category(uow, admin.id, assembly.id, name="PostCode")
 
         assert category.values == []

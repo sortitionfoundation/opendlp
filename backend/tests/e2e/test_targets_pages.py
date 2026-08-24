@@ -8,7 +8,7 @@ import pytest
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
-from opendlp.service_layer.assembly_service import (
+from opendlp.service_layer.target_service import (
     add_target_value,
     create_target_category,
     import_targets_from_csv,

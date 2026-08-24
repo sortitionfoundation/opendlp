@@ -9,7 +9,7 @@ from sortition_algorithms.features import MAX_FLEX_UNSET
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer import assembly_service, respondent_service
+from opendlp.service_layer import assembly_service, respondent_service, target_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
@@ -72,7 +72,7 @@ def test_assembly(postgres_session_factory):
 class TestCreateTargetCategory:
     def test_create_category_success(self, uow, admin_user: User, test_assembly: Assembly):
         """Test creating a target category."""
-        category = assembly_service.create_target_category(
+        category = target_service.create_target_category(
             uow,
             admin_user.id,
             test_assembly.id,
@@ -94,7 +94,7 @@ class TestCreateTargetCategory:
     def test_create_category_with_invalid_assembly(self, uow, admin_user: User):
         """Test creating category for non-existent assembly raises error."""
         with pytest.raises(AssemblyNotFoundError):
-            assembly_service.create_target_category(
+            target_service.create_target_category(
                 uow,
                 admin_user.id,
                 uuid.uuid4(),  # Non-existent assembly
@@ -107,11 +107,11 @@ class TestCreateTargetCategory:
         """Test creating a category with the same name raises ValueError."""
         uow1 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow1:
-            assembly_service.create_target_category(uow1, admin_user.id, test_assembly.id, name="Gender")
+            target_service.create_target_category(uow1, admin_user.id, test_assembly.id, name="Gender")
 
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2, pytest.raises(ValueError, match="already exists"):
-            assembly_service.create_target_category(uow2, admin_user.id, test_assembly.id, name="Gender")
+            target_service.create_target_category(uow2, admin_user.id, test_assembly.id, name="Gender")
 
     def test_create_duplicate_category_case_insensitive(
         self, admin_user: User, test_assembly: Assembly, postgres_session_factory
@@ -119,11 +119,11 @@ class TestCreateTargetCategory:
         """Test duplicate check is case-insensitive."""
         uow1 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow1:
-            assembly_service.create_target_category(uow1, admin_user.id, test_assembly.id, name="Gender")
+            target_service.create_target_category(uow1, admin_user.id, test_assembly.id, name="Gender")
 
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2, pytest.raises(ValueError, match="already exists"):
-            assembly_service.create_target_category(uow2, admin_user.id, test_assembly.id, name="gender")
+            target_service.create_target_category(uow2, admin_user.id, test_assembly.id, name="gender")
 
     def test_create_category_without_permission(self, uow, test_assembly: Assembly):
         """Test creating category without permission raises error."""
@@ -134,7 +134,7 @@ class TestCreateTargetCategory:
         uow.commit()
 
         with pytest.raises(InsufficientPermissions):
-            assembly_service.create_target_category(
+            target_service.create_target_category(
                 uow,
                 detached_user.id,
                 test_assembly.id,
@@ -145,17 +145,17 @@ class TestCreateTargetCategory:
 class TestGetTargetsForAssembly:
     def test_get_empty_targets(self, uow, admin_user: User, test_assembly: Assembly):
         """Test getting targets for assembly with no targets."""
-        categories = assembly_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        categories = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
         assert categories == []
 
     def test_get_targets_ordered_by_sort_order(self, uow, admin_user: User, test_assembly: Assembly):
         """Test targets are returned ordered by sort_order."""
         # Create categories in reverse order
-        assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Age", sort_order=2)
-        assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender", sort_order=1)
-        assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Location", sort_order=0)
+        target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Age", sort_order=2)
+        target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender", sort_order=1)
+        target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Location", sort_order=0)
 
-        categories = assembly_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        categories = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
 
         assert len(categories) == 3
         assert categories[0].name == "Location"  # sort_order=0
@@ -171,7 +171,7 @@ class TestGetTargetsForAssembly:
         uow.commit()
 
         with pytest.raises(InsufficientPermissions):
-            assembly_service.get_targets_for_assembly(uow, user_id, test_assembly.id)
+            target_service.get_targets_for_assembly(uow, user_id, test_assembly.id)
 
 
 class TestImportTargetsFromCSV:
@@ -183,7 +183,7 @@ Gender,Female,12,17,9,19
 Age,16-29,17,22,14,25
 Age,30-44,5,9,4,10"""
 
-        categories = assembly_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        categories = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         assert len(categories) == 2
         assert categories[0].name == "Gender"
@@ -203,7 +203,7 @@ Age,30-44,5,9,4,10"""
 Gender,Male,10,15
 Gender,Female,10,15"""
 
-        categories = assembly_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        categories = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         assert len(categories) == 1
         assert categories[0].name == "Gender"
@@ -221,7 +221,7 @@ Gender,Female,10,15"""
 Gender,Male,20,10"""  # Invalid: min > max
 
         with pytest.raises(InvalidSelection):
-            assembly_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+            target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
     def test_import_with_replace_existing(self, uow, admin_user: User, test_assembly: Assembly):
         """Test replacing existing targets with new import."""
@@ -230,10 +230,10 @@ Gender,Male,20,10"""  # Invalid: min > max
 Gender,Male,10,15
 Gender,Female,10,15"""
 
-        assembly_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv1)
+        target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv1)
 
         # Verify first import
-        categories = assembly_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        categories = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
         assert len(categories) == 1
         assert categories[0].name == "Gender"
 
@@ -242,7 +242,7 @@ Gender,Female,10,15"""
 Age,16-29,17,22
 Age,30-44,5,9"""
 
-        categories = assembly_service.import_targets_from_csv(
+        categories = target_service.import_targets_from_csv(
             uow, admin_user.id, test_assembly.id, csv2, replace_existing=True
         )
 
@@ -250,7 +250,7 @@ Age,30-44,5,9"""
         assert categories[0].name == "Age"
 
         # Verify old categories are gone
-        all_cats = assembly_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        all_cats = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
         assert len(all_cats) == 1
         assert all_cats[0].name == "Age"
 
@@ -266,7 +266,7 @@ Age,30-44,5,9"""
 Gender,Male,10,15"""
 
         with pytest.raises(InsufficientPermissions):
-            assembly_service.import_targets_from_csv(uow, user_id, test_assembly.id, csv_content)
+            target_service.import_targets_from_csv(uow, user_id, test_assembly.id, csv_content)
 
 
 class TestGetFeatureCollectionForAssembly:
@@ -276,9 +276,9 @@ class TestGetFeatureCollectionForAssembly:
 Gender,Male,10,15
 Gender,Female,10,15"""
 
-        assembly_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
-        fc, report = assembly_service.get_feature_collection_for_assembly(uow, admin_user.id, test_assembly.id)
+        fc, report = target_service.get_feature_collection_for_assembly(uow, admin_user.id, test_assembly.id)
 
         assert "Gender" in fc
         assert "Male" in fc["Gender"]
@@ -291,7 +291,7 @@ Gender,Female,10,15"""
 
     def test_empty_feature_collection(self, uow, admin_user: User, test_assembly: Assembly):
         """Test getting feature collection when no targets exist."""
-        fc, _ = assembly_service.get_feature_collection_for_assembly(uow, admin_user.id, test_assembly.id)
+        fc, _ = target_service.get_feature_collection_for_assembly(uow, admin_user.id, test_assembly.id)
 
         assert len(fc) == 0
 
@@ -300,10 +300,10 @@ class TestUpdateTargetCategory:
     def test_update_category_name(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2:
-            updated = assembly_service.update_target_category(
+            updated = target_service.update_target_category(
                 uow2, admin_user.id, test_assembly.id, category.id, name="Sex"
             )
         assert updated.name == "Sex"
@@ -313,58 +313,56 @@ class TestUpdateTargetCategory:
     ):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow, pytest.raises(NotFoundError):
-            assembly_service.update_target_category(uow, admin_user.id, test_assembly.id, uuid.uuid4(), name="Nope")
+            target_service.update_target_category(uow, admin_user.id, test_assembly.id, uuid.uuid4(), name="Nope")
 
     def test_update_category_wrong_assembly_raises(
         self, admin_user: User, test_assembly: Assembly, other_assembly: Assembly, postgres_session_factory
     ):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2, pytest.raises(NotFoundError):
-            assembly_service.update_target_category(uow2, admin_user.id, other_assembly.id, category.id, name="Nope")
+            target_service.update_target_category(uow2, admin_user.id, other_assembly.id, category.id, name="Nope")
 
     def test_update_category_insufficient_permissions(
         self, admin_user: User, regular_user: User, test_assembly: Assembly, postgres_session_factory
     ):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2, pytest.raises(InsufficientPermissions):
-            assembly_service.update_target_category(uow2, regular_user.id, test_assembly.id, category.id, name="X")
+            target_service.update_target_category(uow2, regular_user.id, test_assembly.id, category.id, name="X")
 
 
 class TestDeleteTargetCategory:
     def test_delete_category(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2:
-            assembly_service.delete_target_category(uow2, admin_user.id, test_assembly.id, category.id)
+            target_service.delete_target_category(uow2, admin_user.id, test_assembly.id, category.id)
         uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow3:
-            cats = assembly_service.get_targets_for_assembly(uow3, admin_user.id, test_assembly.id)
+            cats = target_service.get_targets_for_assembly(uow3, admin_user.id, test_assembly.id)
         assert len(cats) == 0
 
     def test_delete_nonexistent_raises(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow, pytest.raises(NotFoundError):
-            assembly_service.delete_target_category(uow, admin_user.id, test_assembly.id, uuid.uuid4())
+            target_service.delete_target_category(uow, admin_user.id, test_assembly.id, uuid.uuid4())
 
 
 class TestAddTargetValue:
     def test_add_value_to_category(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2:
-            updated = assembly_service.add_target_value(
-                uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10
-            )
+            updated = target_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
         assert len(updated.values) == 1
         assert updated.values[0].value == "Male"
         assert updated.values[0].min == 5
@@ -375,37 +373,37 @@ class TestAddTargetValue:
     def test_add_duplicate_value_raises(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2:
-            assembly_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
+            target_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
         uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow3, pytest.raises(ValueError, match="already exists"):
-            assembly_service.add_target_value(uow3, admin_user.id, test_assembly.id, category.id, "Male", 3, 7)
+            target_service.add_target_value(uow3, admin_user.id, test_assembly.id, category.id, "Male", 3, 7)
 
     def test_add_value_invalid_min_max_raises(
         self, admin_user: User, test_assembly: Assembly, postgres_session_factory
     ):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2, pytest.raises(ValueError):
-            assembly_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 10, 5)
+            target_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 10, 5)
 
 
 class TestUpdateTargetValue:
     def test_update_value(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2:
-            cat = assembly_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
+            cat = target_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
         value_id = cat.values[0].value_id
         uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow3:
-            updated = assembly_service.update_target_value(
+            updated = target_service.update_target_value(
                 uow3, admin_user.id, test_assembly.id, category.id, value_id, "Female", 6, 12
             )
         assert updated.values[0].value == "Female"
@@ -415,17 +413,17 @@ class TestUpdateTargetValue:
     def test_update_to_duplicate_name_raises(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2:
-            assembly_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
+            target_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
         uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow3:
-            cat = assembly_service.add_target_value(uow3, admin_user.id, test_assembly.id, category.id, "Female", 5, 10)
+            cat = target_service.add_target_value(uow3, admin_user.id, test_assembly.id, category.id, "Female", 5, 10)
         value_id = cat.values[1].value_id
         uow4 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow4, pytest.raises(ValueError, match="already exists"):
-            assembly_service.update_target_value(
+            target_service.update_target_value(
                 uow4, admin_user.id, test_assembly.id, category.id, value_id, "Male", 5, 10
             )
 
@@ -436,7 +434,7 @@ class TestUpdateTargetValue:
         csv_content = "feature,value,min,max\nGender,Male,3,7\nGender,Female,3,7\n"
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            assembly_service.import_targets_from_csv(
+            target_service.import_targets_from_csv(
                 uow=uow,
                 user_id=admin_user.id,
                 assembly_id=test_assembly.id,
@@ -454,7 +452,7 @@ class TestUpdateTargetValue:
 
         uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow3:
-            updated = assembly_service.update_target_value(
+            updated = target_service.update_target_value(
                 uow3, admin_user.id, test_assembly.id, category_id, value_id, "Male", 4, 8
             )
         updated_male = next(v for v in updated.values if v.value == "Male")
@@ -465,10 +463,10 @@ class TestUpdateTargetValue:
     def test_update_nonexistent_value_raises(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2, pytest.raises(NotFoundError):
-            assembly_service.update_target_value(
+            target_service.update_target_value(
                 uow2, admin_user.id, test_assembly.id, category.id, uuid.uuid4(), "Male", 5, 10
             )
 
@@ -477,23 +475,23 @@ class TestDeleteTargetValue:
     def test_delete_value(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2:
-            cat = assembly_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
+            cat = target_service.add_target_value(uow2, admin_user.id, test_assembly.id, category.id, "Male", 5, 10)
         value_id = cat.values[0].value_id
         uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow3:
-            updated = assembly_service.delete_target_value(uow3, admin_user.id, test_assembly.id, category.id, value_id)
+            updated = target_service.delete_target_value(uow3, admin_user.id, test_assembly.id, category.id, value_id)
         assert len(updated.values) == 0
 
     def test_delete_nonexistent_value_raises(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            category = assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2, pytest.raises(NotFoundError):
-            assembly_service.delete_target_value(uow2, admin_user.id, test_assembly.id, category.id, uuid.uuid4())
+            target_service.delete_target_value(uow2, admin_user.id, test_assembly.id, category.id, uuid.uuid4())
 
 
 class TestDeleteTargetsForAssembly:
@@ -501,20 +499,20 @@ class TestDeleteTargetsForAssembly:
         """Test deleting all target categories for an assembly."""
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender", sort_order=0)
+            target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender", sort_order=0)
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2:
-            assembly_service.create_target_category(uow2, admin_user.id, test_assembly.id, "Age", sort_order=1)
+            target_service.create_target_category(uow2, admin_user.id, test_assembly.id, "Age", sort_order=1)
 
         uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow3:
-            count = assembly_service.delete_targets_for_assembly(uow3, admin_user.id, test_assembly.id)
+            count = target_service.delete_targets_for_assembly(uow3, admin_user.id, test_assembly.id)
         assert count == 2
 
         # Verify they're gone
         uow4 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow4:
-            cats = assembly_service.get_targets_for_assembly(uow4, admin_user.id, test_assembly.id)
+            cats = target_service.get_targets_for_assembly(uow4, admin_user.id, test_assembly.id)
         assert len(cats) == 0
 
     def test_delete_targets_returns_zero_when_none_exist(
@@ -523,7 +521,7 @@ class TestDeleteTargetsForAssembly:
         """Test that deleting targets when none exist returns 0."""
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            count = assembly_service.delete_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+            count = target_service.delete_targets_for_assembly(uow, admin_user.id, test_assembly.id)
         assert count == 0
 
     def test_delete_targets_insufficient_permissions(
@@ -532,19 +530,19 @@ class TestDeleteTargetsForAssembly:
         """Test that a regular user cannot delete targets."""
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow, pytest.raises(InsufficientPermissions):
-            assembly_service.delete_targets_for_assembly(uow, regular_user.id, test_assembly.id)
+            target_service.delete_targets_for_assembly(uow, regular_user.id, test_assembly.id)
 
     def test_delete_targets_nonexistent_assembly(self, admin_user: User, postgres_session_factory):
         """Test that deleting targets for a nonexistent assembly raises error."""
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow, pytest.raises(AssemblyNotFoundError):
-            assembly_service.delete_targets_for_assembly(uow, admin_user.id, uuid.uuid4())
+            target_service.delete_targets_for_assembly(uow, admin_user.id, uuid.uuid4())
 
     def test_delete_targets_nonexistent_user(self, test_assembly: Assembly, postgres_session_factory):
         """Test that deleting targets with a nonexistent user raises error."""
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow, pytest.raises(UserNotFoundError):
-            assembly_service.delete_targets_for_assembly(uow, uuid.uuid4(), test_assembly.id)
+            target_service.delete_targets_for_assembly(uow, uuid.uuid4(), test_assembly.id)
 
     def test_delete_targets_does_not_affect_other_assembly(
         self, admin_user: User, test_assembly: Assembly, other_assembly: Assembly, postgres_session_factory
@@ -552,20 +550,20 @@ class TestDeleteTargetsForAssembly:
         """Test that deleting targets for one assembly doesn't affect another."""
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            assembly_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
+            target_service.create_target_category(uow, admin_user.id, test_assembly.id, "Gender")
         uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow2:
-            assembly_service.create_target_category(uow2, admin_user.id, other_assembly.id, "Age")
+            target_service.create_target_category(uow2, admin_user.id, other_assembly.id, "Age")
 
         # Delete only from test_assembly
         uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow3:
-            assembly_service.delete_targets_for_assembly(uow3, admin_user.id, test_assembly.id)
+            target_service.delete_targets_for_assembly(uow3, admin_user.id, test_assembly.id)
 
         # other_assembly targets should still exist
         uow4 = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow4:
-            other_cats = assembly_service.get_targets_for_assembly(uow4, admin_user.id, other_assembly.id)
+            other_cats = target_service.get_targets_for_assembly(uow4, admin_user.id, other_assembly.id)
         assert len(other_cats) == 1
         assert other_cats[0].name == "Age"
 

@@ -12,7 +12,7 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.flask_app import create_app
-from opendlp.service_layer import assembly_service
+from opendlp.service_layer import target_service
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.respondent_service import (
     get_respondent_attribute_value_counts,
@@ -237,7 +237,7 @@ class TestTargetCategoryRespondentCounts:
         # Create a target category matching the attribute name
         uow2 = SqlAlchemyUnitOfWork(uow.session_factory)
         with uow2:
-            assembly_service.create_target_category(uow2, admin_user.id, assembly_id, name="Gender")
+            target_service.create_target_category(uow2, admin_user.id, assembly_id, name="Gender")
 
         # Verify that repository returns correct columns and counts
         uow3 = SqlAlchemyUnitOfWork(uow.session_factory)
@@ -282,7 +282,7 @@ class TestAddCategoriesAutoAddValues:
         # create_target_category auto-adds values for matching low-cardinality columns
         uow3 = SqlAlchemyUnitOfWork(uow.session_factory)
         with uow3:
-            category = assembly_service.create_target_category(uow3, admin_user.id, assembly_id, name="Gender")
+            category = target_service.create_target_category(uow3, admin_user.id, assembly_id, name="Gender")
 
         # Verify values were auto-added
         value_names = sorted(v.value for v in category.values)

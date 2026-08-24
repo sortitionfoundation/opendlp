@@ -13,20 +13,11 @@ from opendlp import bootstrap
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
-    add_target_value,
-    create_target_category,
-    delete_target_category,
-    delete_target_value,
-    delete_targets_for_assembly,
     determine_data_source,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_tab_enabled_states,
-    get_targets_for_assembly,
-    import_targets_from_csv,
-    update_target_category,
-    update_target_value,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.exceptions import (
@@ -45,6 +36,17 @@ from opendlp.service_layer.target_respondent_helpers import (
     get_column_distinct_counts,
     get_respondent_counts_for_category,
     get_selected_counts_for_category,
+)
+from opendlp.service_layer.target_service import (
+    add_target_value,
+    create_target_category,
+    delete_target_category,
+    delete_target_value,
+    delete_targets_for_assembly,
+    get_targets_for_assembly,
+    import_targets_from_csv,
+    update_target_category,
+    update_target_value,
 )
 from opendlp.translations import gettext as _
 

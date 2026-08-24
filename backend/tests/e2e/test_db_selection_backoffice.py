@@ -9,7 +9,7 @@ import pytest
 
 from opendlp.domain.assembly import SelectionRunRecord
 from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
-from opendlp.service_layer import assembly_service, respondent_service
+from opendlp.service_layer import respondent_service, target_service
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.exceptions import InvalidSelection
 from opendlp.service_layer.sortition import CheckDataResult
@@ -55,7 +55,7 @@ def assembly_with_csv_config(postgres_session_factory, admin_user):
     # Upload targets CSV
     targets_csv = "feature,value,min,max\nGender,Male,4,6\nGender,Female,4,6\nAge,18-30,3,5\nAge,31-50,3,5\nAge,51+,2,4"
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        assembly_service.import_targets_from_csv(uow, admin_user.id, assembly_id, targets_csv)
+        target_service.import_targets_from_csv(uow, admin_user.id, assembly_id, targets_csv)
 
     # Upload respondents CSV
     respondents_csv = """external_id,Gender,Age
@@ -111,7 +111,7 @@ def assembly_with_csv_config_unconfirmed(postgres_session_factory, admin_user):
     # Upload targets CSV (needed for data_source detection)
     targets_csv = "feature,value,min,max\nGender,Male,4,6\nGender,Female,4,6"
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-        assembly_service.import_targets_from_csv(uow, admin_user.id, assembly_id, targets_csv)
+        target_service.import_targets_from_csv(uow, admin_user.id, assembly_id, targets_csv)
 
     # Upload respondents CSV (needed for data_source detection)
     respondents_csv = "external_id,Gender\n1,Male\n2,Female"

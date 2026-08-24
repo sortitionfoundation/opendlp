@@ -51,7 +51,6 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_or_create_csv_config,
     get_or_create_selection_settings,
-    import_targets_from_csv,
     update_assembly,
     update_csv_config,
     update_selection_settings,
@@ -121,6 +120,9 @@ from opendlp.service_layer.respondent_service import (
     get_respondents_for_assembly,
     import_respondents_from_csv,
     reset_selection_status,
+)
+from opendlp.service_layer.target_service import (
+    import_targets_from_csv,
 )
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
