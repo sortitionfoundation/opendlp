@@ -3,15 +3,22 @@ ABOUTME: The registration pages list — heading + create CTA + one row per page
 ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/url_display.html" import compact_url_display %}
 {% macro registration_page_list(assembly, page_rows) %}
     <div>
-        {# Header row: section title + create CTA, per the Figma list view #}
+        {# Header row: section title + create CTA, per the Figma list view. The CTA
+           names what it makes; once the assembly has a page, "another" says that
+           this adds to them rather than replacing what is there. #}
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration") }}</h2>
             <form method="post"
                   action="{{ url_for('backoffice_registration.create_assembly_registration_page', assembly_id=assembly.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                {{ button(_("Create HTML page"), type="submit", variant="primary") }}
+                {% if page_rows %}
+                    {{ button(_("Create another registration page"), type="submit", variant="primary") }}
+                {% else %}
+                    {{ button(_("Create registration page"), type="submit", variant="primary") }}
+                {% endif %}
             </form>
         </div>
 
@@ -21,6 +28,8 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                     <thead>
                         <tr style="background-color: var(--color-subtle-background-panels);">
                             <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Name") }}</th>
+                            <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Links") }}</th>
+                            <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("QR code") }}</th>
                             <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Status") }}</th>
                             <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Date of publish") }}</th>
                             <th scope="col" class="px-3 py-2 text-right">
@@ -45,6 +54,41 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                                               style="background-color: var(--color-subtle-background-panels); color: var(--color-secondary-text); border: 1px solid var(--color-borders-dividers);">{{ page.language }}</span>
                                     {% endif %}
                                 </td>
+                                {# The public URLs, so a page can be shared without opening its editor.
+                                   A page with no slug has no public URL at all (see _page_row). #}
+                                <td class="px-3 py-3">
+                                    {% if row.registration_url %}
+                                        <div class="flex flex-col gap-1.5">
+                                            {{ compact_url_display(_("Full URL"),
+                                            row.registration_url,
+                                            _('Copy the full URL for %(name)s', name=page.name)) }}
+                                            {% if row.short_url %}
+                                                {{ compact_url_display(_("Short URL"),
+                                                row.short_url,
+                                                _('Copy the short URL for %(name)s', name=page.name)) }}
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span style="color: var(--color-secondary-text);">{{ _("No URL yet") }}</span>
+                                    {% endif %}
+                                </td>
+                                {# QR code encodes the short URL, as it does in the editor's sharing
+                                   panel. The thumbnail downloads the full-size PNG. #}
+                                <td class="px-3 py-3">
+                                    {% if row.qr_code_data_url %}
+                                        <a href="{{ row.qr_code_url }}"
+                                           download
+                                           class="inline-block p-1 rounded"
+                                           style="background-color: white; border: 1px solid var(--color-borders-dividers);"
+                                           aria-label="{{ _('Download the QR code for %(name)s', name=page.name) }}">
+                                            <img src="{{ row.qr_code_data_url }}"
+                                                 alt="{{ _('QR code for %(name)s', name=page.name) }}"
+                                                 class="w-16 h-16" />
+                                        </a>
+                                    {% else %}
+                                        <span style="color: var(--color-secondary-text);">—</span>
+                                    {% endif %}
+                                </td>
                                 <td class="px-3 py-3">
                                     {% if page.status.value == "PUBLISHED" %}
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-body-sm"
@@ -66,7 +110,9 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                                         </span>
                                     {% endif %}
                                 </td>
-                                <td class="px-3 py-3" style="color: var(--color-body-text);">
+                                <td class="px-3 py-3"
+                                    data-cell="published-at"
+                                    style="color: var(--color-body-text);">
                                     {% if row.published_at %}
                                         {{ row.published_at | dateformat }}
                                     {% else %}
@@ -75,15 +121,18 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                                 </td>
                                 <td class="px-3 py-3 text-right">
                                     {# Per-row actions menu (kebab), mirroring the dropdown_button component's
-                                       open/close and ARIA behaviour but mixing link and submit items #}
+                                       open/close and ARIA behaviour but mixing link and submit items. The row
+                                       component also owns the delete confirmation, which shares this menu's
+                                       state so the two surfaces never overlap. #}
                                     <div class="relative inline-flex"
-                                         x-data="{ open: false }"
-                                         @keydown.escape.window="open = false">
+                                         x-data="registrationPageRow"
+                                         @keydown.escape.window="closeMenu()">
                                         <button type="button"
                                                 id="page-actions-{{ loop.index }}-toggle"
+                                                x-ref="menuToggle"
                                                 class="p-2 rounded hover:bg-black/5"
-                                                @click="open = !open"
-                                                @click.outside="open = false"
+                                                @click="toggleMenu()"
+                                                @click.outside="closeMenu()"
                                                 aria-haspopup="menu"
                                                 x-bind:aria-expanded="open ? 'true' : 'false'"
                                                 aria-controls="page-actions-{{ loop.index }}-menu"
@@ -121,7 +170,52 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                                                     {{ _("Edit registration") }}
                                                 </a>
                                             {% endif %}
+                                            {# Delete is offered only where the service would allow it: a page
+                                               that has never been published and has no registrations. #}
+                                            {% if row.delete_url %}
+                                                <button type="button"
+                                                        role="menuitem"
+                                                        class="menu-item menu-item--danger w-full text-left"
+                                                        @click="openConfirmDelete()">
+                                                    {{ _("Delete registration page") }}
+                                                </button>
+                                            {% endif %}
                                         </div>
+                                        {# Delete confirmation — deleting is permanent, so a stray click on the
+                                           menu item must not be enough. Same single-surface dialog style as the
+                                           editor's close confirmation: the safe action is the primary on the
+                                           right and takes initial focus; the destructive one is a red button. #}
+                                        {% if row.delete_url %}
+                                            <div x-show="confirmDeleteOpen" x-cloak>
+                                                <div class="fixed inset-0 z-40"
+                                                     style="background-color: rgba(0, 0, 0, 0.5)"
+                                                     @click="cancelConfirmDelete()"
+                                                     @keydown.escape.window="cancelConfirmDelete()"></div>
+                                                <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+                                                     role="dialog"
+                                                     aria-modal="true"
+                                                     aria-labelledby="delete-page-{{ loop.index }}-title">
+                                                    <div class="pointer-events-auto w-full max-w-md mx-4 rounded-lg shadow-xl overflow-hidden px-6 py-5 text-left"
+                                                         style="background-color: var(--color-tables-cards);
+                                                                border: 1px solid var(--color-borders-dividers)"
+                                                         @click.stop>
+                                                        <h2 id="delete-page-{{ loop.index }}-title"
+                                                            class="text-heading-lg mb-2"
+                                                            style="color: var(--color-headings)">{{ _("Delete this registration page?") }}</h2>
+                                                        <p class="text-body-md mb-5" style="color: var(--color-body-text);">
+                                                            {{ _("'%(name)s' and the form you built on it will be deleted for good. There is no undo, and the URLs above will stop working.", name=page.name) }}
+                                                        </p>
+                                                        <div class="flex gap-2 justify-end items-center">
+                                                            <form method="post" action="{{ row.delete_url }}">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                                {{ button(_("Delete page"), type="submit", variant="danger") }}
+                                                            </form>
+                                                            {{ button(_("Keep it"), variant="primary", attrs='type="button" x-ref="keepPageBtn" @click="cancelConfirmDelete()"') }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

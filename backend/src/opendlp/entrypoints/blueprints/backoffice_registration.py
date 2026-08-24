@@ -75,6 +75,8 @@ from opendlp.service_layer.registration_image_service import (
 from opendlp.service_layer.registration_page_service import (
     close_registration_page,
     create_registration_page_with_slugs,
+    deletable_registration_page_ids,
+    delete_registration_page,
     generate_starter_form_html_variants,
     get_registration_page_by_slug,
     get_registration_page_with_source,
@@ -188,25 +190,51 @@ def _document_to_dict(document: RegistrationDocument, url_slug: str) -> dict[str
     }
 
 
-def _page_rows(pages: list[RegistrationPage], assembly_id: uuid.UUID) -> list[dict[str, Any]]:
+def _page_row(page: RegistrationPage, assembly_id: uuid.UUID, deletable_ids: set[uuid.UUID]) -> dict[str, Any]:
+    """One row of the registration pages list.
+
+    A page created outside the backoffice can lack a slug; it has no public URL
+    and cannot be opened here until one is set, so it renders without links. The
+    QR code encodes the short URL, matching the editor's sharing panel, so it
+    only exists once a short slug does.
+    """
+    page_short_url = short_url(page.short_url_slug) if page.short_url_slug else ""
+    return {
+        "page": page,
+        "editor_url": _editor_url(assembly_id, page.url_slug) if page.url_slug else "",
+        "close_url": url_for(
+            "backoffice_registration.save_assembly_registration",
+            assembly_id=assembly_id,
+            url_slug=page.url_slug,
+        )
+        if page.url_slug and page.status == RegistrationPageStatus.PUBLISHED
+        else "",
+        "delete_url": url_for(
+            "backoffice_registration.delete_assembly_registration_page",
+            assembly_id=assembly_id,
+            url_slug=page.url_slug,
+        )
+        if page.url_slug and page.id in deletable_ids
+        else "",
+        "registration_url": registration_url(page.url_slug) if page.url_slug else "",
+        "short_url": page_short_url,
+        "qr_code_data_url": generate_qr_code_base64(page_short_url) if page_short_url else "",
+        "qr_code_url": url_for(
+            "backoffice_registration.download_registration_qr_code",
+            assembly_id=assembly_id,
+            url_slug=page.url_slug,
+        )
+        if page_short_url and page.url_slug
+        else "",
+        "published_at": page.last_published_at(),
+    }
+
+
+def _page_rows(
+    pages: list[RegistrationPage], assembly_id: uuid.UUID, deletable_ids: set[uuid.UUID]
+) -> list[dict[str, Any]]:
     """Rows for the registration pages list — also rendered behind the editor's modal."""
-    return [
-        {
-            "page": page,
-            # A page created outside the backoffice can lack a slug; it cannot be
-            # opened here until one is set, so it renders without links.
-            "editor_url": _editor_url(assembly_id, page.url_slug) if page.url_slug else "",
-            "close_url": url_for(
-                "backoffice_registration.save_assembly_registration",
-                assembly_id=assembly_id,
-                url_slug=page.url_slug,
-            )
-            if page.url_slug and page.status == RegistrationPageStatus.PUBLISHED
-            else "",
-            "published_at": page.last_published_at(),
-        }
-        for page in pages
-    ]
+    return [_page_row(page, assembly_id, deletable_ids) for page in pages]
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration")
@@ -225,7 +253,8 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 request.args.get("source", ""),
             )
             pages = list_registration_pages(uow, current_user.id, assembly_id)
-        page_rows = _page_rows(pages, assembly_id)
+            deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
+        page_rows = _page_rows(pages, assembly_id, deletable_ids)
 
         return render_template(
             "backoffice/assembly_registration_list.html",
@@ -306,7 +335,8 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             # The editor renders as a modal over the pages list, so the list rows are
             # needed here too — they form the (inert) backdrop behind the dialog.
             all_pages = list_registration_pages(uow, current_user.id, assembly_id)
-        page_rows = _page_rows(all_pages, assembly_id)
+            deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
+        page_rows = _page_rows(all_pages, assembly_id, deletable_ids)
 
         # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
         # have no save path so we always keep them read-only regardless of the param.
@@ -823,6 +853,55 @@ def create_assembly_registration_page(assembly_id: uuid.UUID) -> ResponseReturnV
         logger.exception("Error creating registration page for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("An error occurred while creating the registration page"), "error")
         return redirect(_list_url(assembly_id))
+
+
+@backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/<url_slug>/delete", methods=["POST"])
+@login_required
+def delete_assembly_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
+    """Delete a registration page outright — no archive, no undo.
+
+    The service refuses a page that has been published or that has collected
+    registrations, so the list only offers this where it will succeed; a refusal
+    reaching here (a page published in another tab, say) becomes a flash and
+    lands back on the list with the page intact.
+    """
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            page = _page_by_slug(uow, assembly_id, url_slug)
+            page_name = page.name
+            delete_registration_page(uow, current_user.id, page.id)
+        flash(_("Registration page '%(name)s' deleted", name=page_name), "success")
+    except RegistrationPageNotFoundError:
+        flash(_("That registration page could not be found."), "warning")
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to modify this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError as e:
+        logger.warning(
+            "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except ValueError as e:
+        # The service's refusals are written for an organiser to read.
+        logger.warning("Cannot delete registration page", assembly_id=str(assembly_id), error=str(e))
+        flash(str(e), "error")
+    except Exception as e:
+        logger.exception(
+            "Delete registration page error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("An error occurred while deleting the registration page"), "error")
+    return redirect(_list_url(assembly_id))
 
 
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration/skeleton")

@@ -214,10 +214,13 @@ class RegistrationPage:
 
         Once a page has been published its slug has been in the world - on
         invites, QR codes and printed materials - so the row must survive to keep
-        those URLs resolving. Callers must additionally check that no respondent
-        registered through the page; that needs repository access.
+        those URLs resolving. Status is checked as well as the activity log: a
+        page that arrived at PUBLISHED or CLOSED without an activity entry (an
+        import, say) is just as public as one that got there through publish().
+        Callers must additionally check that no respondent registered through the
+        page; that needs repository access.
         """
-        return not self.has_ever_been_published()
+        return self.status == RegistrationPageStatus.TEST and not self.has_ever_been_published()
 
     def rename(self, name: str) -> None:
         self.name = name.strip()

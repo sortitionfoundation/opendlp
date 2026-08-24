@@ -424,13 +424,61 @@ def visit_registration_tab(page: Page, title: str, test_database):
 def see_registration_page_list(page: Page):
     """The list shows the table headers and the create CTA."""
     expect(page.get_by_role("columnheader", name="Date of publish")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    expect(page.get_by_role("button", name="Create HTML page")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # The assembly already has a page, so the CTA offers to add another
+    expect(page.get_by_role("button", name="Create another registration page")).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
 
 
 @when("I open the first registration page from the list")
 def open_first_registration_page(page: Page):
     """Follow the first page-name link into that page's editor."""
     page.get_by_role("link", name="Registration page", exact=True).first.click()
+
+
+@when("I choose to delete the first registration page")
+def choose_delete_first_registration_page(page: Page):
+    """Open the first row's actions menu and pick the (permanent) delete item."""
+    page.get_by_role("button", name="Actions for Registration page").first.click()
+    page.get_by_role("menuitem", name="Delete registration page").first.click()
+
+
+@then("I should see the delete registration page confirmation")
+def see_delete_page_confirmation(page: Page):
+    expect(page.locator('[aria-labelledby="delete-page-1-title"]')).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I choose to keep the registration page")
+def choose_keep_registration_page(page: Page):
+    page.get_by_role("button", name="Keep it", exact=True).click()
+
+
+@then("the delete registration page confirmation should be closed")
+def delete_page_confirmation_closed(page: Page):
+    expect(page.locator('[aria-labelledby="delete-page-1-title"]')).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I confirm deleting the registration page")
+def confirm_delete_registration_page(page: Page):
+    """The destructive submit inside the dialog."""
+    dialog = page.locator('[aria-labelledby="delete-page-1-title"]')
+    dialog.get_by_role("button", name="Delete page", exact=True).click()
+
+
+@then(parsers.parse('the assembly "{title}" should still have a registration page'))
+def assembly_still_has_registration_page(title: str, test_database):
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        assert page_for_assembly(uow, assembly_id) is not None
+
+
+@then(parsers.parse('the assembly "{title}" should have no registration pages'))
+def assembly_has_no_registration_pages(page: Page, title: str, test_database):
+    """The delete lands back on the list, so wait for the row to go before checking the database."""
+    expect(page.get_by_role("button", name="Create registration page")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    assembly_id = _assembly_name_id_cache.find_title(title, test_database)
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        assert page_for_assembly(uow, assembly_id) is None
 
 
 @when(parsers.parse('I visit the registration form editor for "{title}"'))

@@ -344,6 +344,64 @@ class TestDeleteRegistrationPage:
             service.delete_registration_page(uow, _stranger(uow).id, page.id)
 
 
+class TestDeletableRegistrationPageIds:
+    """The list view asks which pages it may offer a delete for."""
+
+    def test_a_never_published_page_is_deletable(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="Draft")
+
+        assert service.deletable_registration_page_ids(uow, admin.id, assembly.id) == {page.id}
+
+    def test_a_published_page_is_not_deletable(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = _ready_page(uow, admin, assembly, "English", "climate-en")
+        service.publish_registration_page(uow, admin.id, page.id)
+
+        assert service.deletable_registration_page_ids(uow, admin.id, assembly.id) == set()
+
+    def test_a_page_with_registrations_is_not_deletable(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        page = service.create_registration_page(uow, admin.id, assembly.id, name="Draft")
+        uow.respondents.add(
+            Respondent(
+                assembly_id=assembly.id,
+                external_id="reg-abc",
+                email="ada@example.com",
+                registration_page_id=page.id,
+            )
+        )
+
+        assert service.deletable_registration_page_ids(uow, admin.id, assembly.id) == set()
+
+    def test_only_the_deletable_siblings_come_back(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        live = _ready_page(uow, admin, assembly, "English", "climate-en")
+        service.publish_registration_page(uow, admin.id, live.id)
+        draft = service.create_registration_page(uow, admin.id, assembly.id, name="Draft")
+
+        assert service.deletable_registration_page_ids(uow, admin.id, assembly.id) == {draft.id}
+
+    def test_a_viewer_is_offered_no_deletions(self, uow):
+        admin, assembly = _admin(uow), _assembly(uow)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Draft")
+        viewer = _viewer(uow, assembly)
+
+        assert service.deletable_registration_page_ids(uow, viewer.id, assembly.id) == set()
+
+    def test_every_id_it_returns_can_actually_be_deleted(self, uow):
+        """The contract the list view relies on: offered means it will succeed."""
+        admin, assembly = _admin(uow), _assembly(uow)
+        live = _ready_page(uow, admin, assembly, "English", "climate-en")
+        service.publish_registration_page(uow, admin.id, live.id)
+        service.create_registration_page(uow, admin.id, assembly.id, name="Draft")
+
+        for page_id in service.deletable_registration_page_ids(uow, admin.id, assembly.id):
+            service.delete_registration_page(uow, admin.id, page_id)
+
+        assert [p.id for p in service.list_registration_pages(uow, admin.id, assembly.id)] == [live.id]
+
+
 class TestBulkStatusChanges:
     def test_publish_all_moves_every_ready_page(self, uow):
         admin, assembly = _admin(uow), _assembly(uow)

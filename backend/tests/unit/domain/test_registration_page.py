@@ -882,6 +882,15 @@ class TestCanBeDeleted:
         page.unpublish(author_id=uuid.uuid4())
         assert page.can_be_deleted() is False
 
+    def test_false_for_a_public_status_without_the_matching_activity(self):
+        """A page that arrived at PUBLISHED without going through publish() is still public."""
+        page = RegistrationPage(assembly_id=uuid.uuid4(), status=RegistrationPageStatus.PUBLISHED)
+        assert page.can_be_deleted() is False
+
+    def test_false_for_a_closed_page_without_the_matching_activity(self):
+        page = RegistrationPage(assembly_id=uuid.uuid4(), status=RegistrationPageStatus.CLOSED)
+        assert page.can_be_deleted() is False
+
 
 class TestSlugsFrozen:
     def test_unfrozen_initially(self):

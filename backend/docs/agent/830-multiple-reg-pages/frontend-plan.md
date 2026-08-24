@@ -70,9 +70,10 @@ Implementation notes:
 
 `GET /assembly/<id>/registration` renders the Figma table:
 
-- **Columns:** Name (+ language chip when set) · Status chip (existing status
-  chip styling: TEST amber / PUBLISHED green / CLOSED red) · Date of publish ·
-  kebab menu.
+- **Columns:** Name (+ language chip when set) · Links (full and short URL, each
+  with a copy button) · QR code (thumbnail of the short URL's code, downloading
+  the full-size PNG) · Status chip (existing status chip styling: TEST amber /
+  PUBLISHED green / CLOSED red) · Date of publish · kebab menu.
 - **Date of publish** = timestamp of the page's most recent PUBLISH activity
   entry (`page.activity`), blank for never-published pages. Format with the
   babel date filter (no `.strftime` in templates).
@@ -82,11 +83,15 @@ Implementation notes:
   - *Close registration* → POST to the page's close action; only shown for
     PUBLISHED pages (lifecycle: TEST ⇄ PUBLISHED ⇄ CLOSED, no CLOSED → TEST).
   - *Edit registration* → the page's editor URL.
+  - *Delete registration page* → arms a confirmation dialog that POSTs to
+    `.../registration/<slug>/delete`; only shown where the delete would be
+    allowed (see §6).
 - Row click (name cell) also opens the editor.
-- **Create HTML page** button → existing `POST .../registration/create`,
+- **Create registration page** button → existing `POST .../registration/create`,
   which must now (a) stop rejecting a second page, and (b) generate a unique
   default name ("Registration page", "Registration page 2", …). It redirects
-  to the new page's editor where the name can be changed.
+  to the new page's editor where the name can be changed. Once the assembly has
+  a page the label reads "Create another registration page".
 - Empty state: the table shows a single explanatory row + the create button
   (replaces the old details-tab create CTA).
 
@@ -123,10 +128,13 @@ Implementation notes:
 
 ## 6. Out of scope / open questions
 
-- **Duplicate / Delete rows:** the services exist
-  (`duplicate_registration_page`, `delete_registration_page`) but the Figma
-  menu doesn't include them. Not built in this pass; they slot naturally into
-  the same kebab menu once designed.
+- **Duplicate rows:** the service exists (`duplicate_registration_page`) but the
+  Figma menu doesn't include it. Not built; it slots naturally into the same
+  kebab menu once designed.
+- **Delete rows:** built after review feedback. The kebab offers *Delete
+  registration page* only for pages `delete_registration_page` would accept —
+  never published, no registrations — behind a confirmation dialog. It is a hard
+  delete: no archive, no soft delete, no undelete.
 - Bulk "close all pages" — service exists, no design; deferred.
 - Navigation redesign visible in Figma — explicitly untouched.
 

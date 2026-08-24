@@ -496,8 +496,9 @@ class TestRegistrationListView:
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         # The publish date renders through the babel dateformat filter (not the em dash placeholder)
-        row = body.split("Live", 1)[1]
-        assert "\u2014" not in row.split("</tr>", 1)[0]
+        row = body.split("Live", 1)[1].split("</tr>", 1)[0]
+        date_cell = row.split('data-cell="published-at"', 1)[1].split("</td>", 1)[0]
+        assert "\u2014" not in date_cell
 
     def test_empty_assembly_offers_page_creation(self, logged_in_admin, fake_store, assembly_id):
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
@@ -513,6 +514,110 @@ class TestRegistrationListView:
 
         assert f"/backoffice/assembly/{assembly_id}/registration/live-slug/save" in body
         assert f"/backoffice/assembly/{assembly_id}/registration/draft-slug/save" not in body
+
+    def test_create_button_label_reflects_whether_pages_exist(self, logged_in_admin, fake_store, assembly_id):
+        empty_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
+        populated_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert "Create registration page" in empty_body
+        assert "Create another registration page" not in empty_body
+        assert "Create another registration page" in populated_body
+        assert "Create HTML page" not in populated_body
+
+    def test_each_row_shows_the_full_and_short_urls(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="climate-en", name="English")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.registration_pages.get(page.id).update_slugs(short_url_slug="123456")
+            uow.commit()
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert "/register/climate-en" in body
+        assert "/r/123456" in body
+
+    def test_a_page_without_a_short_url_shows_the_full_url_only(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="climate-en", name="English")
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert "/register/climate-en" in body
+        assert "Short URL" not in body
+
+    def test_the_short_url_row_carries_a_qr_code(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="climate-en", name="English")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.registration_pages.get(page.id).update_slugs(short_url_slug="123456")
+            uow.commit()
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert "data:image/png;base64," in body
+        assert f"/backoffice/assembly/{assembly_id}/registration/climate-en/qr-code.png" in body
+
+
+class TestRegistrationListDeleteAction:
+    def test_delete_offered_for_a_never_published_page(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert f"/backoffice/assembly/{assembly_id}/registration/draft-slug/delete" in body
+        assert "Delete this registration page?" in body
+
+    def test_delete_not_offered_for_a_published_page(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert f"/backoffice/assembly/{assembly_id}/registration/live-slug/delete" not in body
+
+    def test_delete_removes_the_page_and_lands_on_the_list(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
+
+        response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/draft-slug/delete")
+
+        assert response.status_code == 302
+        assert response.location.rstrip("/").endswith(f"/backoffice/assembly/{assembly_id}/registration")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_pages.get(page.id) is None
+            assert uow.registration_page_html_sources.get_by_page_id(page.id) is None
+
+    def test_delete_refuses_a_published_page_and_keeps_it(self, logged_in_admin, fake_store, assembly_id):
+        """The list hides the action, but a page published in another tab can still be posted at."""
+        page = _seed_page(
+            fake_store,
+            assembly_id,
+            RegistrationPageStatus.TEST,
+            url_slug="live-slug",
+            name="Live",
+            form_html="<form>{{ csrf_form_element }} {{ form_action }}</form>",
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.registration_pages.get(page.id)
+            stored.publish(uow.registration_page_html_sources.get_by_page_id(page.id), author_id=uuid.uuid4())
+            uow.commit()
+
+        response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/live-slug/delete")
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_pages.get(page.id) is not None
+
+    def test_delete_of_an_unknown_slug_lands_on_the_list(self, logged_in_admin, fake_store, assembly_id):
+        response = logged_in_admin.post(f"/backoffice/assembly/{assembly_id}/registration/nope/delete")
+
+        assert response.status_code == 302
+        assert response.location.rstrip("/").endswith(f"/backoffice/assembly/{assembly_id}/registration")
+
+    def test_non_member_cannot_delete(self, logged_in_user, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
+
+        response = logged_in_user.post(f"/backoffice/assembly/{assembly_id}/registration/draft-slug/delete")
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.registration_pages.get(page.id) is not None
 
 
 class TestEditorAtSlugUrl:

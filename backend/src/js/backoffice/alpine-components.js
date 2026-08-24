@@ -4,6 +4,7 @@
 import { autocomplete } from "../components/autocomplete.js";
 import { autoDismissAlert } from "../components/auto-dismiss-alert.js";
 import { modal } from "../components/modal.js";
+import { registrationPageRow } from "../components/registration-page-row.js";
 import {
   buttonLoadingDemo,
   progressModalDemo,
@@ -26,6 +27,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("buttonLoadingDemo", buttonLoadingDemo);
   Alpine.data("modal", modal);
   Alpine.data("progressModalDemo", progressModalDemo);
+  Alpine.data("registrationPageRow", registrationPageRow);
   Alpine.data("showcaseNav", showcaseNav);
   Alpine.data("tabsKeyboard", tabsKeyboard);
   Alpine.data("urlSelect", urlSelect);

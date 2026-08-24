@@ -108,3 +108,16 @@ Feature: Backoffice registration HTML editor
     Then I should see the registration page list
     When I open the first registration page from the list
     Then I should be on the read-only registration form view
+
+  Scenario: Deleting a registration page from the list asks for confirmation first
+    Given I am logged in as an admin user
+    And there is an assembly called "Delete Page Assembly" with a registration page
+    When I visit the registration tab for "Delete Page Assembly"
+    And I choose to delete the first registration page
+    Then I should see the delete registration page confirmation
+    When I choose to keep the registration page
+    Then the delete registration page confirmation should be closed
+    And the assembly "Delete Page Assembly" should still have a registration page
+    When I choose to delete the first registration page
+    And I confirm deleting the registration page
+    Then the assembly "Delete Page Assembly" should have no registration pages
