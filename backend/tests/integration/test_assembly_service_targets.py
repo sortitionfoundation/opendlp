@@ -769,6 +769,38 @@ class TestUpdateTargetValueLinkRules:
         after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
         assert after.values[0].minmax_manual is False
 
+    def test_a_new_percentage_with_round_tripped_minmax_does_not_break_the_link(
+        self, uow, admin_user: User, test_assembly: Assembly
+    ):
+        """The submitted min/max are compared against the values as they were on
+        entry, not against the ones the percentage just recalculated.
+
+        A form round-trips the min/max it displayed. If the comparison happened
+        after the percentage was applied, typing a percentage would always look
+        like a min/max edit and break the link on the spot.
+        """
+        category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
+        target_service.add_target_value(uow, admin_user.id, test_assembly.id, category.id, value="Man")
+        reloaded = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        value = reloaded.values[0]
+        assert (value.min, value.max) == (0, 0)
+
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            value.value_id,
+            value="Man",
+            percentage=50.0,
+            min_count=0,
+            max_count=0,
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].minmax_manual is False
+        assert (after.values[0].min, after.values[0].max) == (15, 16)
+
     def test_changed_minmax_breaks_the_link(self, uow, admin_user: User, test_assembly: Assembly):
         category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
         value = category.values[0]

@@ -623,6 +623,12 @@ def _apply_value_numbers(
     Shared by `update_target_value` and `save_all_targets` so there is exactly
     one implementation of the link-breaking rules.
     """
+    # Captured before the percentage is applied. Comparing against the
+    # recalculated numbers instead would break the link every time a form
+    # round-tripped the min/max it had displayed, which is the whole thing the
+    # "identical means leave it alone" rule exists to prevent.
+    submitted_against = (target_value.min, target_value.max)
+
     if percentage is not UNSET:
         target_value.percentage_target = percentage
         target_value.apply_percentage(number_to_select)
@@ -630,9 +636,9 @@ def _apply_value_numbers(
     if min_count is None and max_count is None:
         return
 
-    new_min = target_value.min if min_count is None else min_count
-    new_max = target_value.max if max_count is None else max_count
-    if (new_min, new_max) != (target_value.min, target_value.max):
+    new_min = submitted_against[0] if min_count is None else min_count
+    new_max = submitted_against[1] if max_count is None else max_count
+    if (new_min, new_max) != submitted_against:
         target_value.set_manual_min_max(new_min, new_max)
 
 

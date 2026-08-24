@@ -2,9 +2,8 @@
 
 **Issue:** 666
 **Branch:** `666-target-percentage`
-**Status:** Plan — domain/data/service in detail, UI sketched only. No open
-questions; ready to implement.
-**Date:** 2026-08-21, revised 2026-08-24
+**Status:** ✅ IMPLEMENTED — all phases done, on branch `666-target-percentage`
+**Date:** 2026-08-21, revised 2026-08-24, implemented 2026-08-24
 
 ## Scope of this document
 
@@ -1096,7 +1095,27 @@ shape, which is precisely the shape this migration does not need to handle.
 
 ---
 
-## 9. Suggested commit sequence
+## 9. Suggested commit sequence ✅ DONE
+
+Landed as five commits rather than twelve. The domain, persistence and service
+work went in together because the field changes and the service functions that
+use them do not compile apart; the commit message describes all three. Two
+deviations from the plan are worth recording:
+
+- **`_apply_value_numbers` compares against min/max as they were on entry**, not
+  against the values the percentage has just recalculated. Written the other way
+  first, and a component test caught it: a form that round-trips the min/max it
+  displayed would break the link every time someone typed a percentage, which is
+  exactly what §6.3's "identical means leave it alone" rule exists to prevent.
+  There is now a named regression test for it.
+- **Phase 4 was built to the §7 sketch** rather than deferred. Without it the
+  feature is unreachable from the UI. It is deliberately plain, and §7 records
+  the two structural choices made along the way.
+
+One BDD test fails on this branch —
+`test_a_saved_scroll_position_is_restored_on_load` — and fails identically with
+the branch stashed. It concerns the registration form view, not targets.
+
 
 Docs commit separately from code, per house rule.
 

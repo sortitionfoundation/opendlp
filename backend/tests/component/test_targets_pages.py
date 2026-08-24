@@ -14,7 +14,9 @@ from opendlp.domain.value_objects import AssemblyRole
 from opendlp.service_layer.target_service import (
     add_target_value,
     create_target_category,
+    get_targets_for_assembly,
     import_targets_from_csv,
+    update_target_value,
 )
 from tests.fakes import FakeUnitOfWork
 
@@ -52,6 +54,12 @@ def _import_targets(fake_store, admin_user, assembly_id, csv_content):
 def _create_category(fake_store, admin_user, assembly_id, name):
     with FakeUnitOfWork(store=fake_store) as uow:
         return create_target_category(uow, admin_user.id, assembly_id, name)
+
+
+def _set_number_to_select(fake_store, assembly_id, number_to_select):
+    with FakeUnitOfWork(store=fake_store) as uow:
+        uow.assemblies.get(assembly_id).number_to_select = number_to_select
+        uow.commit()
 
 
 def _add_value(fake_store, admin_user, assembly_id, category_id, value, min_count, max_count):
@@ -388,3 +396,153 @@ class TestViewerPermissions:
         assert b"Male" in response.data
         assert b"Add category" not in response.data
         assert b"Add value" not in response.data
+
+
+class TestPercentageColumn:
+    def test_page_shows_the_percentage_and_its_total(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=48.5)
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Female", percentage=51.5)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert response.status_code == 200
+        assert b"48.5%" in response.data
+        assert b"100.0%" in response.data
+
+    def test_a_hand_set_value_is_marked_and_offers_relinking(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            cat = add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
+        value_id = cat.values[0].value_id
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_target_value(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                category.id,
+                value_id,
+                value="Male",
+                min_count=1,
+                max_count=2,
+                comment="boosted by 2",
+            )
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b"Set by hand" in response.data
+        assert b"boosted by 2" in response.data
+        assert b"Use percentage" in response.data
+
+    def test_a_linked_value_is_not_marked(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b"Set by hand" not in response.data
+        assert b"Use percentage" not in response.data
+
+
+class TestCategorySourceAndComment:
+    def test_source_url_renders_as_a_link(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            "feature,value,min,max,source_url,category_comment\n"
+            "Gender,Male,3,7,https://www.ons.gov.uk/dataset,see https://example.com/notes\n",
+        )
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b'href="https://www.ons.gov.uk/dataset"' in response.data
+        assert b'rel="noopener noreferrer"' in response.data
+        # The comment's own URL is linkified too.
+        assert b'href="https://example.com/notes"' in response.data
+
+
+class TestEditValueWithPercentage:
+    def test_editing_the_percentage_recalculates_min_and_max(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _set_number_to_select(fake_store, existing_assembly.id, 10)
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 0, 0)
+        value_id = cat.values[0].value_id
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}"),
+            data={"value": "Male", "percentage": "50", "min_count": "0", "max_count": "0"},
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 200
+        with FakeUnitOfWork(store=fake_store) as uow:
+            value = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0]
+        assert value.percentage_target == 50.0
+        assert (value.min, value.max) == (5, 6)
+
+    def test_a_percentage_with_no_seat_count_leaves_min_and_max_at_zero(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Zero is the honest answer while number_to_select is unknown."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 0, 0)
+        value_id = cat.values[0].value_id
+
+        logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}"),
+            data={"value": "Male", "percentage": "50", "min_count": "0", "max_count": "0"},
+            headers={"HX-Request": "true"},
+        )
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            value = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0]
+        assert value.percentage_target == 50.0
+        assert (value.min, value.max) == (0, 0)
+
+    def test_an_invalid_percentage_is_a_422_not_a_500(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 0, 0)
+        value_id = cat.values[0].value_id
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}"),
+            data={"value": "Male", "percentage": "150"},
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 422
+
+
+class TestEditCategorySourceUrl:
+    def test_an_invalid_source_url_is_a_422_not_a_500(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{category.id}"),
+            data={"name": "Gender", "source_url": "javascript:alert(1)"},
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 422
+
+
+class TestMoveCategoryPermissions:
+    def test_a_viewer_cannot_reorder(self, logged_in_user, existing_assembly, admin_user, fake_store):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        response = logged_in_user.post(
+            _targets_url(existing_assembly.id, f"/categories/{category.id}/move"),
+            data={"direction": "down"},
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].name == "Gender"
