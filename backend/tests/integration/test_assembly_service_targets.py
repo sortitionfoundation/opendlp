@@ -652,3 +652,482 @@ class TestDeleteRespondentsForAssembly:
             other_resps = uow4.respondents.get_by_assembly_id(other_assembly.id)
             assert len(other_resps) == 1
             assert other_resps[0].external_id == "NB002"
+
+
+def _category_with_percentages(uow, admin_user, assembly, percentages):
+    """A category whose values all carry a percentage and an intact link."""
+    category = target_service.create_target_category(uow, admin_user.id, assembly.id, name="Gender")
+    for name, percentage in percentages.items():
+        target_service.add_target_value(uow, admin_user.id, assembly.id, category.id, value=name, percentage=percentage)
+    return target_service.get_targets_for_assembly(uow, admin_user.id, assembly.id)[0]
+
+
+class TestReorderTargetCategories:
+    def test_reissues_sort_order_in_tens(self, uow, admin_user: User, test_assembly: Assembly):
+        names = ["Gender", "Age", "Region"]
+        created = [target_service.create_target_category(uow, admin_user.id, test_assembly.id, name=n) for n in names]
+
+        target_service.reorder_target_categories(
+            uow, admin_user.id, test_assembly.id, [created[2].id, created[0].id, created[1].id]
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        assert [c.name for c in after] == ["Region", "Gender", "Age"]
+        assert [c.sort_order for c in after] == [10, 20, 30]
+
+    def test_partial_id_set_is_rejected(self, uow, admin_user: User, test_assembly: Assembly):
+        """A stale page must not be able to silently drop a category."""
+        first = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
+        target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Age")
+
+        with pytest.raises(ValueError, match="complete set"):
+            target_service.reorder_target_categories(uow, admin_user.id, test_assembly.id, [first.id])
+
+    def test_id_from_another_assembly_is_rejected(
+        self, uow, admin_user: User, test_assembly: Assembly, other_assembly: Assembly
+    ):
+        mine = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
+        theirs = target_service.create_target_category(uow, admin_user.id, other_assembly.id, name="Gender")
+
+        with pytest.raises(ValueError, match="complete set"):
+            target_service.reorder_target_categories(uow, admin_user.id, test_assembly.id, [mine.id, theirs.id])
+
+    def test_requires_manage_permission(self, uow, regular_user: User, test_assembly: Assembly):
+        with pytest.raises(InsufficientPermissions):
+            target_service.reorder_target_categories(uow, regular_user.id, test_assembly.id, [])
+
+
+class TestCreateCategorySortOrder:
+    def test_new_category_lands_after_the_existing_ones(self, uow, admin_user: User, test_assembly: Assembly):
+        first = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
+        second = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Age")
+
+        assert second.sort_order > first.sort_order
+
+
+class TestRecalculateOnNumberToSelectChange:
+    def test_linked_values_move_and_manual_ones_do_not(self, uow, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0, "Woman": 50.0})
+        manual = category.values[1]
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            manual.value_id,
+            value="Woman",
+            min_count=7,
+            max_count=9,
+        )
+
+        assembly_service.update_assembly(uow, test_assembly.id, admin_user.id, number_to_select=100)
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        linked = after.get_value("Man")
+        untouched = after.get_value("Woman")
+        assert (linked.min, linked.max) == (50, 51)
+        assert (untouched.min, untouched.max) == (7, 9)
+
+    def test_other_assembly_fields_do_not_touch_targets(self, uow, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        before = (category.values[0].min, category.values[0].max)
+
+        assembly_service.update_assembly(uow, test_assembly.id, admin_user.id, title="Renamed")
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert (after.values[0].min, after.values[0].max) == before
+
+    def test_returns_the_values_that_moved(self, uow, admin_user: User, test_assembly: Assembly):
+        _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0, "Woman": 50.0})
+        test_assembly_obj = uow.assemblies.get(test_assembly.id)
+        test_assembly_obj.number_to_select = 100
+
+        changes = target_service.recalculate_minmax_for_assembly(uow, test_assembly.id)
+
+        assert len(changes) == 2
+        assert {c.value for c in changes} == {"Man", "Woman"}
+        assert all(c.new_min == 50 and c.new_max == 51 for c in changes)
+
+
+class TestUpdateTargetValueLinkRules:
+    def test_unchanged_minmax_does_not_break_the_link(self, uow, admin_user: User, test_assembly: Assembly):
+        """The rule the whole bulk-save UI rests on."""
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            value.value_id,
+            value="Man",
+            min_count=value.min,
+            max_count=value.max,
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].minmax_manual is False
+
+    def test_changed_minmax_breaks_the_link(self, uow, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            value.value_id,
+            value="Man",
+            min_count=1,
+            max_count=2,
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].minmax_manual is True
+        assert (after.values[0].min, after.values[0].max) == (1, 2)
+
+    def test_explicit_minmax_wins_over_a_percentage_in_the_same_call(
+        self, uow, admin_user: User, test_assembly: Assembly
+    ):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            value.value_id,
+            value="Man",
+            percentage=25.0,
+            min_count=3,
+            max_count=4,
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].percentage_target == 25.0
+        assert (after.values[0].min, after.values[0].max) == (3, 4)
+        assert after.values[0].minmax_manual is True
+
+    def test_clearing_the_percentage_leaves_minmax_alone(self, uow, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+        before = (value.min, value.max)
+
+        target_service.update_target_value(
+            uow, admin_user.id, test_assembly.id, category.id, value.value_id, value="Man", percentage=None
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].percentage_target is None
+        assert (after.values[0].min, after.values[0].max) == before
+
+
+class TestRelinkTargetValue:
+    def test_restores_auto_calculation(self, uow, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            value.value_id,
+            value="Man",
+            min_count=1,
+            max_count=2,
+        )
+
+        target_service.relink_target_value_to_percentage(
+            uow, admin_user.id, test_assembly.id, category.id, value.value_id
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].minmax_manual is False
+        assert (after.values[0].min, after.values[0].max) == (15, 16)
+
+    def test_a_relinked_value_moves_with_number_to_select(self, uow, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        value = category.values[0]
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            value.value_id,
+            value="Man",
+            min_count=1,
+            max_count=2,
+        )
+        target_service.relink_target_value_to_percentage(
+            uow, admin_user.id, test_assembly.id, category.id, value.value_id
+        )
+
+        assembly_service.update_assembly(uow, test_assembly.id, admin_user.id, number_to_select=100)
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert (after.values[0].min, after.values[0].max) == (50, 51)
+
+    def test_refuses_without_a_percentage(self, uow, admin_user: User, test_assembly: Assembly):
+        category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
+        target_service.add_target_value(
+            uow, admin_user.id, test_assembly.id, category.id, value="Man", min_count=1, max_count=2
+        )
+        reloaded = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+
+        with pytest.raises(ValueError, match="no percentage"):
+            target_service.relink_target_value_to_percentage(
+                uow, admin_user.id, test_assembly.id, category.id, reloaded.values[0].value_id
+            )
+
+    def test_requires_manage_permission(self, uow, regular_user: User, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+
+        with pytest.raises(InsufficientPermissions):
+            target_service.relink_target_value_to_percentage(
+                uow, regular_user.id, test_assembly.id, category.id, category.values[0].value_id
+            )
+
+
+class TestSetTargetValuePercentage:
+    def test_sets_and_recalculates(self, uow, admin_user: User, test_assembly: Assembly):
+        category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
+        target_service.add_target_value(uow, admin_user.id, test_assembly.id, category.id, value="Man")
+        reloaded = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+
+        target_service.set_target_value_percentage(
+            uow, admin_user.id, test_assembly.id, category.id, reloaded.values[0].value_id, 50.0
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].percentage_target == 50.0
+        assert (after.values[0].min, after.values[0].max) == (15, 16)
+
+    def test_requires_manage_permission(self, uow, regular_user: User, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+
+        with pytest.raises(InsufficientPermissions):
+            target_service.set_target_value_percentage(
+                uow, regular_user.id, test_assembly.id, category.id, category.values[0].value_id, 25.0
+            )
+
+
+class TestSaveAllTargets:
+    def test_saves_across_two_categories(self, uow, admin_user: User, test_assembly: Assembly):
+        gender = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0, "Woman": 50.0})
+        age = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Age")
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=gender.id,
+                    name="Gender",
+                    comment="from the census",
+                    source_url="https://www.ons.gov.uk/dataset",
+                    values=[
+                        target_service.TargetValueEdit(
+                            value_id=gender.values[0].value_id, value="Man", percentage=60.0
+                        ),
+                        target_service.TargetValueEdit(
+                            value_id=gender.values[1].value_id, value="Woman", percentage=40.0
+                        ),
+                    ],
+                ),
+                target_service.TargetCategoryEdit(
+                    category_id=age.id,
+                    name="Age",
+                    values=[target_service.TargetValueEdit(value="16-29", percentage=100.0)],
+                ),
+            ],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        by_name = {c.name: c for c in after}
+        assert by_name["Gender"].comment == "from the census"
+        assert by_name["Gender"].source_url == "https://www.ons.gov.uk/dataset"
+        assert [v.percentage_target for v in by_name["Gender"].values] == [60.0, 40.0]
+        assert by_name["Age"].values[0].value == "16-29"
+
+    def test_a_failure_partway_through_commits_nothing(
+        self, postgres_session_factory, admin_user: User, test_assembly: Assembly
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as setup:
+            category = _category_with_percentages(setup, admin_user, test_assembly, {"Man": 50.0})
+            setup.commit()
+
+        # The exception must escape the `with uow:` block, exactly as it would
+        # from a route - that is what makes the UnitOfWork roll back rather than
+        # commit the half-applied edit.
+        with pytest.raises(ValueError), SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [
+                    target_service.TargetCategoryEdit(
+                        category_id=category.id,
+                        name="Renamed",
+                        source_url="javascript:alert(1)",
+                        values=[],
+                    )
+                ],
+            )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as check:
+            after = target_service.get_targets_for_assembly(check, admin_user.id, test_assembly.id)
+            assert after[0].name == "Gender"
+
+    def test_requires_manage_permission(self, uow, regular_user: User, test_assembly: Assembly):
+        with pytest.raises(InsufficientPermissions):
+            target_service.save_all_targets(uow, regular_user.id, test_assembly.id, [])
+
+
+class TestImportTargetsNewColumns:
+    def test_reads_the_optional_columns(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """feature,value,min,max,percentage,comment,category_comment,source_url
+Gender,Male,10,15,48.5,boosted by 2,from the census,https://www.ons.gov.uk/dataset
+Gender,Female,10,15,51.5,,from the census,https://www.ons.gov.uk/dataset"""
+
+        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        category = result.categories[0]
+        assert category.comment == "from the census"
+        assert category.source_url == "https://www.ons.gov.uk/dataset"
+        male = category.get_value("Male")
+        assert male.percentage_target == 48.5
+        assert male.comment == "boosted by 2"
+        assert result.warnings == []
+
+    def test_legacy_headers_work_with_the_new_columns(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """category,name,min,max,percentage
+Gender,Male,10,15,48.5
+Gender,Female,10,15,51.5"""
+
+        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        assert result.categories[0].get_value("Male").percentage_target == 48.5
+
+    def test_imported_values_are_marked_manual(self, uow, admin_user: User, test_assembly: Assembly):
+        """The regression test for silent range-narrowing.
+
+        Imported min/max are always deliberate. If the auto-calculate link were
+        left intact, the first change to number_to_select would recalculate them
+        from the derived percentage and quietly narrow every imported range.
+        """
+        csv_content = """feature,value,min,max
+Gender,Male,10,15
+Gender,Female,10,15"""
+        target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        assembly_service.update_assembly(uow, test_assembly.id, admin_user.id, number_to_select=100)
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert all(v.minmax_manual for v in after.values)
+        assert (after.get_value("Male").min, after.get_value("Male").max) == (10, 15)
+
+    def test_derives_percentage_from_midpoint_when_seats_are_known(
+        self, uow, admin_user: User, test_assembly: Assembly
+    ):
+        csv_content = """feature,value,min,max
+Gender,Male,10,15
+Gender,Female,10,15"""
+
+        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        # test_assembly selects 30, so a midpoint of 12.5 is 41.7%.
+        assert result.categories[0].get_value("Male").percentage_target == 41.7
+
+    def test_derives_percentage_by_ratio_when_seats_are_unknown(self, uow, admin_user: User, postgres_session_factory):
+        assembly = _seed(
+            postgres_session_factory,
+            "assemblies",
+            Assembly(title="No seats yet", question="?", number_to_select=0),
+        )
+        csv_content = """feature,value,min,max
+Gender,Male,10,20
+Gender,Female,30,40"""
+
+        result = target_service.import_targets_from_csv(uow, admin_user.id, assembly.id, csv_content)
+
+        category = result.categories[0]
+        assert category.get_value("Male").percentage_target == 30.0
+        assert category.get_value("Female").percentage_target == 70.0
+        assert category.percentage_total() == pytest.approx(100.0)
+
+    def test_all_zero_minmax_with_no_seats_leaves_percentages_unset(
+        self, uow, admin_user: User, postgres_session_factory
+    ):
+        assembly = _seed(
+            postgres_session_factory,
+            "assemblies",
+            Assembly(title="Nothing to infer", question="?", number_to_select=0),
+        )
+        csv_content = """feature,value,min,max
+Gender,Male,0,0
+Gender,Female,0,0"""
+
+        result = target_service.import_targets_from_csv(uow, admin_user.id, assembly.id, csv_content)
+
+        assert all(v.percentage_target is None for v in result.categories[0].values)
+
+    def test_an_explicit_percentage_is_not_overwritten(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """feature,value,min,max,percentage
+Gender,Male,10,15,48.5
+Gender,Female,10,15,"""
+
+        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        category = result.categories[0]
+        assert category.get_value("Male").percentage_target == 48.5
+        assert category.get_value("Female").percentage_target == 41.7
+
+    def test_disagreeing_source_url_warns_and_takes_the_first(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """feature,value,min,max,source_url
+Gender,Male,10,15,https://www.ons.gov.uk/one
+Gender,Female,10,15,https://www.ons.gov.uk/two"""
+
+        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        assert result.categories[0].source_url == "https://www.ons.gov.uk/one"
+        assert len(result.warnings) == 1
+        assert "source_url" in result.warnings[0]
+        assert "https://www.ons.gov.uk/one" in result.warnings[0]
+
+    def test_disagreeing_category_comment_warns(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """feature,value,min,max,category_comment
+Gender,Male,10,15,census 2021
+Gender,Female,10,15,census 2011"""
+
+        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        assert result.categories[0].comment == "census 2021"
+        assert len(result.warnings) == 1
+        assert "category_comment" in result.warnings[0]
+
+    def test_consistent_rows_produce_no_warnings(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """feature,value,min,max,source_url
+Gender,Male,10,15,https://www.ons.gov.uk/one
+Gender,Female,10,15,https://www.ons.gov.uk/one"""
+
+        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+        assert result.warnings == []
+
+    def test_an_invalid_source_url_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """feature,value,min,max,source_url
+Gender,Male,10,15,javascript:alert(1)"""
+
+        with pytest.raises(ValueError, match="http"):
+            target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+    def test_an_invalid_percentage_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = """feature,value,min,max,percentage
+Gender,Male,10,15,not a number"""
+
+        with pytest.raises(InvalidSelection, match="percentage"):
+            target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)

@@ -6,7 +6,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from opendlp.domain.targets import TargetCategory
+from opendlp.domain.targets import TargetCategory, TargetValue
 
 if TYPE_CHECKING:
     from tests.contract.conftest import ContractBackend
@@ -127,3 +127,43 @@ class TestDeleteAllForAssembly:
 
     def test_returns_zero_when_none_to_delete(self, target_category_backend: ContractBackend):
         assert target_category_backend.repo.delete_all_for_assembly(uuid.uuid4()) == 0
+
+
+class TestNewFieldsRoundTrip:
+    def test_category_comment_and_source_url_survive(self, target_category_backend: ContractBackend):
+        assembly = target_category_backend.make_assembly()
+        cat = TargetCategory(
+            assembly_id=assembly.id,
+            name="Gender",
+            comment="from the census",
+            source_url="https://www.ons.gov.uk/dataset",
+        )
+        target_category_backend.repo.add(cat)
+        target_category_backend.commit()
+
+        fetched = target_category_backend.repo.get(cat.id)
+
+        assert fetched.comment == "from the census"
+        assert fetched.source_url == "https://www.ons.gov.uk/dataset"
+
+    def test_value_percentage_comment_and_manual_flag_survive(self, target_category_backend: ContractBackend):
+        assembly = target_category_backend.make_assembly()
+        cat = TargetCategory(assembly_id=assembly.id, name="Gender")
+        cat.add_value(
+            TargetValue(
+                value="Man",
+                min=30,
+                max=40,
+                percentage_target=48.5,
+                comment="boosted by 2",
+                minmax_manual=True,
+            )
+        )
+        target_category_backend.repo.add(cat)
+        target_category_backend.commit()
+
+        value = target_category_backend.repo.get(cat.id).values[0]
+
+        assert value.percentage_target == 48.5
+        assert value.comment == "boosted by 2"
+        assert value.minmax_manual is True

@@ -2,6 +2,7 @@
 ABOUTME: Tests cascade deletes, JSON serialization, and database constraints."""
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -101,3 +102,70 @@ class TestTargetCategoryRepository:
         # This should raise an integrity error
         with pytest.raises(IntegrityError):
             postgres_session.commit()
+
+
+class TestLegacyStoredValues:
+    """Rows written before `description` was removed must still load."""
+
+    def test_row_whose_json_still_contains_description(
+        self, target_category_repo: SqlAlchemyTargetCategoryRepository, postgres_session: Session, test_assembly
+    ):
+        category = TargetCategory(assembly_id=test_assembly.id, name="Gender")
+        category.add_value(TargetValue(value="Man", min=10, max=15))
+        target_category_repo.add(category)
+        postgres_session.commit()
+        category_id = category.id
+
+        # Put the row back into the shape an older version of the code wrote:
+        # a `description` key the dataclass no longer has.
+        postgres_session.execute(
+            text(
+                """
+                UPDATE target_categories
+                SET "values" = (
+                    SELECT jsonb_agg(elem || '{"description": "legacy"}'::jsonb ORDER BY ord)::json
+                    FROM jsonb_array_elements("values"::jsonb) WITH ORDINALITY AS t(elem, ord)
+                )
+                WHERE id = :id
+                """
+            ),
+            {"id": category_id},
+        )
+        postgres_session.commit()
+        postgres_session.expunge_all()
+
+        reloaded = target_category_repo.get(category_id)
+
+        assert len(reloaded.values) == 1
+        assert reloaded.values[0].value == "Man"
+        assert not hasattr(reloaded.values[0], "description")
+
+    def test_row_missing_the_new_keys_takes_the_defaults(
+        self, target_category_repo: SqlAlchemyTargetCategoryRepository, postgres_session: Session, test_assembly
+    ):
+        category = TargetCategory(assembly_id=test_assembly.id, name="Gender")
+        category.add_value(TargetValue(value="Man", min=10, max=15))
+        target_category_repo.add(category)
+        postgres_session.commit()
+        category_id = category.id
+
+        postgres_session.execute(
+            text(
+                """
+                UPDATE target_categories
+                SET "values" = (
+                    SELECT jsonb_agg((elem - 'comment') - 'minmax_manual' ORDER BY ord)::json
+                    FROM jsonb_array_elements("values"::jsonb) WITH ORDINALITY AS t(elem, ord)
+                )
+                WHERE id = :id
+                """
+            ),
+            {"id": category_id},
+        )
+        postgres_session.commit()
+        postgres_session.expunge_all()
+
+        value = target_category_repo.get(category_id).values[0]
+
+        assert value.comment == ""
+        assert value.minmax_manual is False

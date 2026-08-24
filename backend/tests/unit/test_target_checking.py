@@ -27,6 +27,7 @@ from opendlp.service_layer.target_checking import (
     _annotations_from_infeasible_quotas,
     _annotations_from_parse_errors,
     _annotations_from_people_checks,
+    _annotations_from_percentage_totals,
     check_targets_detailed,
 )
 from tests.fakes import FakeUnitOfWork
@@ -435,3 +436,73 @@ class TestCheckTargetsDetailed:
 
         with pytest.raises(AssemblyNotFoundError):
             check_targets_detailed(uow, admin.id, uuid.uuid4())
+
+
+def _category_with_percentages(name: str, percentages: list[float]) -> TargetCategory:
+    category = TargetCategory(assembly_id=uuid.uuid4(), name=name)
+    for i, percentage in enumerate(percentages):
+        category.add_value(TargetValue(value=f"v{i}", min=0, max=0, percentage_target=percentage))
+    return category
+
+
+class TestAnnotationsFromPercentageTotals:
+    def test_warns_when_the_total_misses_100(self):
+        annotations: dict[str, list[TargetAnnotation]] = {}
+
+        _annotations_from_percentage_totals([_category_with_percentages("gender", [50.0, 30.0])], annotations)
+
+        assert list(annotations) == ["gender"]
+        assert "80.0" in annotations["gender"][0].message
+
+    def test_the_annotation_is_a_warning_not_an_error(self):
+        annotations: dict[str, list[TargetAnnotation]] = {}
+
+        _annotations_from_percentage_totals([_category_with_percentages("gender", [50.0, 30.0])], annotations)
+
+        assert annotations["gender"][0].level == "warning"
+
+    def test_silent_when_the_total_is_within_tolerance(self):
+        annotations: dict[str, list[TargetAnnotation]] = {}
+
+        _annotations_from_percentage_totals([_category_with_percentages("gender", [50.0, 49.9])], annotations)
+
+        assert annotations == {}
+
+    def test_silent_when_no_value_has_a_percentage(self):
+        category = TargetCategory(assembly_id=uuid.uuid4(), name="gender")
+        category.add_value(TargetValue(value="male", min=3, max=7))
+        annotations: dict[str, list[TargetAnnotation]] = {}
+
+        _annotations_from_percentage_totals([category], annotations)
+
+        assert annotations == {}
+
+    def test_does_not_flip_success(self, uow):
+        """The explainer is explicit that this warning never blocks a run."""
+        targets = [
+            TargetCategory(
+                assembly_id=uuid.uuid4(),
+                name="gender",
+                values=[
+                    TargetValue(value="male", min=3, max=7, percentage_target=50.0),
+                    TargetValue(value="female", min=3, max=7, percentage_target=20.0),
+                ],
+            ),
+        ]
+        respondents = [
+            Respondent(
+                assembly_id=uuid.uuid4(),
+                external_id=f"p{i}",
+                attributes={"gender": "male" if i % 2 == 0 else "female"},
+                selection_status=RespondentStatus.POOL,
+            )
+            for i in range(20)
+        ]
+        uow, admin_id, assembly_id = _make_uow_with_targets_and_respondents(
+            uow, target_categories=targets, respondents=respondents
+        )
+
+        result = check_targets_detailed(uow, admin_id, assembly_id)
+
+        assert result.success is True
+        assert result.category_annotations["gender"][0].level == "warning"

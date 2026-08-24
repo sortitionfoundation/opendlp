@@ -541,7 +541,7 @@ database will pass this migration without exercising a single line of the
 
 ---
 
-## 6. Phase 3 — Service layer
+## 6. Phase 3 — Service layer ✅ DONE
 
 All new functions go in `target_service.py`. All follow the house conventions:
 take `uow` as first arg, **never** open a `with uow:` block, permission-check via
@@ -977,7 +977,7 @@ plus vitest for any new JS. To be specified with the UI plan.
 
 ---
 
-## 8. Phase 5 — Tests
+## 8. Phase 5 — Tests ✅ DONE
 
 Every layer, per the no-exceptions policy. Existing files to extend:
 
