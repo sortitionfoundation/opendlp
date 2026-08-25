@@ -1,16 +1,17 @@
 # Splitting up `service_docs/_registration.html`
 
-Deferred options, written up 2026-08-25. Nothing here has been done yet.
+Deferred options, written up 2026-08-25. **Option D was done on 2026-08-25**;
+E and F are still open, and are re-assessed below now that D has landed.
 
 The sibling work on `templates/backoffice/assembly_registration.html` (options A
-and B of the same review) *has* been done — see the commits that introduced
+and B of the same review) has also been done — see the commits that introduced
 `templates/backoffice/registration/` and the controlled-modal macros in
 `components/modal.html`. Those options are not repeated here.
 
 ## The problem
 
-`templates/backoffice/service_docs/_registration.html` is 1904 lines. Unlike the
-assembly registration page, nothing in it is deeply nested — it is the same
+`templates/backoffice/service_docs/_registration.html` was 1904 lines. Unlike
+the assembly registration page, nothing in it is deeply nested — it is the same
 card repeated 13 times, once per documented service:
 
 ```txt
@@ -24,15 +25,11 @@ card(title="publish_registration_page()")
   response <pre>                         ~11 lines
 ```
 
-`publish` / `unpublish` / `close` / `reopen` are ~115 lines each and differ in
-roughly eight strings.
-
-The file already reaches for the fix: it defines a local
-`{% macro page_id_input(model) %}` at the top, the only macro in any of the ten
-`service_docs/` partials.
+`publish` / `unpublish` / `close` / `reopen` were ~115 lines each and differed
+in roughly eight strings.
 
 Scale of the prize: the ten partials in `templates/backoffice/service_docs/`
-total 5994 lines and all share this skeleton, so macros written for the
+totalled 5994 lines and all share this skeleton, so macros written for the
 registration partial pay for themselves several times over.
 
 | Partial | Lines |
@@ -46,7 +43,7 @@ registration partial pay for themselves several times over.
 | `_respondents.html` | 542 |
 | `_fields.html` | 556 |
 | `_emails.html` | 651 |
-| `_registration.html` | **1904** |
+| `_registration.html` | 1904 → **573** |
 
 ## Priority
 
@@ -55,37 +52,55 @@ explicitly holds that area to a lower bar than production code. Do it when
 touching these files for another reason, or when a second partial crosses
 ~1000 lines.
 
-## Option D — extract a `service_doc_card` macro set (recommended)
+## Option D — extract a `service_doc_card` macro set — **DONE**
 
-Add `templates/backoffice/service_docs/_macros.html`:
+`templates/backoffice/service_docs/_macros.html` now holds:
 
 ```jinja
-{% macro doc_card(name, code_ref, permission="", description="") %}
+{% macro doc_card(name, code_ref, permission, description, permission_variant="warning", copy_click="") %}
 {% macro param_table(params) %}          {# params: list of (name, type, required, description) #}
 {% macro returns_block(text) %}
-{% macro error_cases(errors) %}
-{% macro assembly_select(model) %}       {# the ~10-line <select> repeated 13x #}
-{% macro try_it(response_key, execute_fn) %}
+{% macro error_cases(errors) %}          {# errors: list of (exception_name, when) #}
+{% macro assembly_select(model, assemblies) %}
+{% macro text_field(label, model, placeholder="", hint="", code=false) %}
+{% macro textarea_field(label, model, placeholder="", rows=6, help="") %}
+{% macro checkbox_field(id, model, label) %}
+{% macro try_it(key, execute_click, copy_click="", danger=false) %}
 ```
 
-`try_it` covers the panel wrapper, the execute button with its
-`loading.<key>` / `Loading...` spinner pair, and the `x-show="responses.<key>"`
-response `<pre>`; the caller supplies the per-service form fields.
+`_registration.html` went 1904 → 573 lines against 255 lines of shared macros.
 
-Expected outcome: `_registration.html` drops to roughly 600-700 lines, most of
-it actual documentation content rather than markup.
+Notes for whoever applies these elsewhere:
 
-**Caveat that will bite.** The parameter tables currently omit
-`border-bottom` on the final `<tr>` by hand-editing each last row. A macro
-normalises that. Either always emit the border and add a `tr:last-child`
-override in CSS, or pass a loop flag through. Either way the rendered HTML
-shifts slightly, so check:
+- **Keep every `{% call %}` tag on one line, however long it gets.** djhtml
+  cannot track nesting through a block tag whose arguments wrap, so multi-line
+  `{% call %}` tags make it indent the whole rest of the file wrongly — and
+  because it reindents on commit, the damage lands whether you asked for it or
+  not. A one-line `{% call doc_card(...) %}` runs to ~380 characters here and
+  that is the price. Multi-line arguments are fine in `{{ ... }}` expressions
+  such as `param_table([...])`, which are not block tags.
 
-- `tests/component/test_dev_service_docs_page.py`
-- `tests/bdd/test_dev_service_docs.py`
+- **`doc_card` captures its caller block first** (`{% set body_content =
+  caller() %}`) because it nests `{% call card %}{% call card_body %}` inside
+  itself, and `caller()` in there would resolve to `card_body()`'s caller. Same
+  trap, same fix, as `components/modal.html`.
+- **`try_it` emits the response block too.** The panel and the `<pre>` share the
+  service key — the button disables on `loading.<key>` and the response shows on
+  `responses.<key>` — so keeping them in one macro is what stops the pair
+  drifting.
+- **The last-row `border-bottom` caveat resolved itself.** The old tables
+  hand-omitted the border on the final `<tr>`; `param_table` reproduces that from
+  `loop.last`, so no CSS override was needed and the rendered HTML is unchanged.
+- **`assemblies` is passed explicitly** rather than imported `with context`, so
+  the dependency is visible at each call site.
+- **Watch autoescaping when text moves into a macro argument.** Prose that lived
+  as a literal in the template is now a Jinja string, so `"` and `'` come out as
+  `&#34;` / `&#39;` and `<slug>` must be written raw (autoescaping produces the
+  `&lt;slug&gt;` the template used to spell out). Decoded output is identical
+  either way, but a byte-for-byte render diff will show it.
 
-Follow-up worth doing once D lands: apply the same macros to the other nine
-partials.
+**Follow-up worth doing: apply the same macros to the other nine partials**
+(4090 lines between them). Nothing about the macros is registration-specific.
 
 ## Option E — move the content into Python data
 
@@ -105,7 +120,9 @@ Rejected for now, for two reasons:
    checkboxes, multi-field forms — so a per-card escape hatch is needed anyway,
    and once that exists most of the saving evaporates.
 
-Reconsider only if the try-it forms get normalised first.
+D weakens this further: the params/returns/errors arguments are already
+structured data at the call sites, so the remaining prize is mostly the coverage
+test. Reconsider only if the try-it forms get normalised first.
 
 ## Option F — split by service group
 
@@ -114,16 +131,21 @@ get / update / update_html / generate_starter), `_registration_lifecycle.html`
 (publish / unpublish / close / reopen) and `_registration_submit.html`
 (submit_registration).
 
-Only worth doing *combined* with D. On its own it produces three 600-line files
-and removes no duplication.
+Was only worth doing *combined* with D. Now that D has landed and the file is
+626 lines, the case is weak: three ~200-line files buy little, and the partial
+is already skimmable as one list of cards. Leave it.
 
 ## Mechanical notes for whoever picks this up
 
 - New partials need their own `{% from ... import %}` lines rather than
   relying on context inheritance from `service_docs.html`. Inheritance does
-  work — it is how `_registration.html` gets `card` and `card_body` today —
+  work — it is how `_registration.html` used to get `card` and `card_body` —
   but it is invisible coupling.
 - Markdown files do not take the `ABOUTME:` header, but new `.html` partials
   do.
 - `djhtml` (via prek) reindents templates, so run `just check` after moving
   blocks between files.
+- Verify by rendering. Every tab is a GET away
+  (`/backoffice/dev/service-docs?tab=<name>`); dumping all ten before and after
+  and diffing whitespace-normalised output is what proved D changed nothing —
+  and is what caught the three cosmetic regressions it did introduce.

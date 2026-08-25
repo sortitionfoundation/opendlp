@@ -1,0 +1,274 @@
+{#
+ABOUTME: Shared macros for the dev-only service layer documentation console
+ABOUTME: One documented service is a doc_card wrapper plus param_table / returns_block / error_cases / try_it
+#}
+{% from "backoffice/components/card.html" import card, card_body %}
+{% macro doc_card(name, code_ref, permission, description, permission_variant="warning", copy_click="") %}
+    {#
+Wrapper for one documented service: the card, its code reference line, the
+permission badge and the description paragraph. Everything below the
+description - parameters, returns, errors, the "Try it" panel - comes from the
+caller block.
+
+Args:
+  name: The service function name, used as the card title (e.g. "publish_registration_page()")
+  code_ref: module:line reference (e.g. "registration_page_service.py:214")
+  permission: Badge text, including its leading emoji (e.g. "🔒 can_manage_assembly()")
+  description: Prose paragraph, already passed through _()
+  permission_variant: Colour family for the badge - "warning" for restricted, "success" for public
+  copy_click: Optional Alpine handler for a "Copy" button beside the badge
+
+The caller block is captured before the nested {% call card %} opens, because
+inside that block caller() would resolve to card_body()'s caller rather than
+this macro's. Same reason as the modal component's capture-first pattern.
+    #}
+    {% set body_content = caller() %}
+    {% call card(title=name, composed=true) %}
+        {% call card_body() %}
+            {# Code Reference #}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    {{ code_ref }}
+                </code>
+                <div class="flex gap-2">
+                    {# Both colour families are spelled out rather than interpolated into the
+                       token name, so tests/unit/test_design_tokens.py can still see whole
+                       token names in this file - it scans the template source, and a name
+                       half-built by Jinja reads to it as an undefined token. #}
+                    {% set badge_style %}
+                        {%- if permission_variant == "success" -%}
+                            background-color: var(--color-success-100); color: var(--color-success-600)
+                        {%- else -%}
+                            background-color: var(--color-warning-100); color: var(--color-warning-600)
+                        {%- endif -%}
+                    {% endset %}
+                    <span class="text-body-sm px-2 py-1 rounded" style="{{ badge_style }}">{{ permission }}</span>
+                    {% if copy_click %}
+                        <button @click="{{ copy_click }}"
+                                class="text-body-sm px-2 py-1 rounded transition-colors"
+                                style="background-color: var(--color-subtle-background-panels)">📋 Copy</button>
+                    {% endif %}
+                </div>
+            </div>
+            {# Description #}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ description }}
+            </p>
+            {{ body_content }}
+        {% endcall %}
+    {% endcall %}
+{% endmacro %}
+{% macro param_table(params) %}
+    {#
+The Parameters section: a headerless table, one row per argument.
+
+Args:
+  params: list of (name, type, required, description) tuples, where required is
+          a boolean rendered as a tick or a cross
+
+The final row carries no bottom border, so the table's own border is the last
+line the eye meets. That used to be hand-edited into every table; here it falls
+out of loop.last. The divider is built with a block {% set %}, which is marked
+safe under autoescaping - that is what lets it carry the whole attribute rather
+than just the value, so the last row emits no style attribute at all.
+    #}
+    <div class="mb-6">
+        <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+        <div class="overflow-x-auto">
+            <table class="w-full text-body-sm"
+                   style="border: 1px solid var(--color-borders-dividers)">
+                <tbody>
+                    {% for name, param_type, required, description in params %}
+                        {% set divider %}{% if not loop.last %} style="border-bottom: 1px solid var(--color-borders-dividers)"{% endif %}{% endset %}
+                        <tr>
+                            <td class="px-3 py-2 text-code"{{ divider }}>
+                                {{ name }}
+                            </td>
+                            <td class="px-3 py-2"{{ divider }}>{{ param_type }}</td>
+                            <td class="px-3 py-2"{{ divider }}>{{ "✅" if required else "❌" }}</td>
+                            <td class="px-3 py-2"{{ divider }}>
+                                {{ description }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endmacro %}
+{% macro returns_block(text) %}
+    {#
+The Returns section: one line of "type  →  what you get back".
+
+Args:
+  text: The whole line, arrow included
+    #}
+    <div class="mb-6">
+        <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+        <code class="text-body-sm px-2 py-1 rounded block"
+              style="background-color: var(--color-subtle-background-panels)">
+            {{ text }}
+        </code>
+    </div>
+{% endmacro %}
+{% macro error_cases(errors) %}
+    {#
+The Error Cases section: the exceptions a service raises and when.
+
+Args:
+  errors: list of (exception_name, when) tuples
+    #}
+    <div class="mb-6">
+        <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Error Cases") }}</h4>
+        <ul class="list-disc list-inside text-body-sm space-y-1"
+            style="color: var(--color-body-text)">
+            {% for name, when in errors %}
+                <li>
+                    <code class="px-1 rounded"
+                          style="background-color: var(--color-error-100)">{{ name }}</code> — {{ when }}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endmacro %}
+{% macro assembly_select(model, assemblies) %}
+    {#
+The assembly picker every "Try it" form opens with.
+
+Args:
+  model: Alpine property to bind with x-model
+  assemblies: The page's assembly list, passed in rather than read from context
+              so the dependency is visible at the call site
+    #}
+    <div>
+        <label class="text-label-md block mb-1">Assembly</label>
+        <select x-model="{{ model }}"
+                class="w-full px-3 py-2 rounded text-body-sm"
+                style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);">
+            <option value="">Select an assembly...</option>
+            {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+        </select>
+    </div>
+{% endmacro %}
+{% macro text_field(label, model, placeholder="", hint="", code=false) %}
+    {#
+A single-line "Try it" input.
+
+Args:
+  label: Field label
+  model: Alpine property to bind with x-model
+  placeholder: Example value
+  hint: Optional parenthetical shown next to the label, e.g. "(optional)"
+  code: True for values that are identifiers or markup, so they get the mono face
+    #}
+    <div>
+        <label class="text-label-md block mb-1">
+            {{- label }}{% if hint %} <span class="text-body-xs" style="color: var(--color-secondary-text);">{{ hint }}</span>{% endif -%}
+        </label>
+        <input type="text"
+               x-model="{{ model }}"
+               placeholder="{{ placeholder }}"
+               class="w-full px-3 py-2 rounded {{ 'text-code' if code else 'text-body-sm' }}"
+               style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);" />
+    </div>
+{% endmacro %}
+{% macro textarea_field(label, model, placeholder="", rows=6, help="") %}
+    {#
+A multi-line "Try it" input, always monospaced - every use so far is HTML or JSON.
+
+Args:
+  label: Field label
+  model: Alpine property to bind with x-model
+  placeholder: Example value
+  rows: Visible rows
+  help: Optional explanatory line below the field
+    #}
+    <div>
+        <label class="text-label-md block mb-1">{{ label }}</label>
+        <textarea x-model="{{ model }}"
+                  rows="{{ rows }}"
+                  placeholder="{{ placeholder }}"
+                  class="w-full px-3 py-2 rounded text-code"
+                  style="border: 1px solid var(--color-borders-dividers); background: var(--color-page-background);"></textarea>
+        {% if help %}
+            <p class="text-body-xs mt-1" style="color: var(--color-secondary-text);">
+                {{ help }}
+            </p>
+        {% endif %}
+    </div>
+{% endmacro %}
+{% macro checkbox_field(id, model, label) %}
+    {#
+A "Try it" checkbox.
+
+Args:
+  id: Element id, also the label's for target
+  model: Alpine property to bind with x-model
+  label: Label text
+    #}
+    <div class="flex items-center gap-2">
+        <input type="checkbox"
+               id="{{ id }}"
+               x-model="{{ model }}"
+               class="rounded"
+               style="border: 1px solid var(--color-borders-dividers);">
+        <label for="{{ id }}" class="text-body-sm">{{ label }}</label>
+    </div>
+{% endmacro %}
+{% macro try_it(key, execute_click, copy_click="", danger=false) %}
+    {#
+The "Try it" panel and the response it produces.
+
+The two belong to one macro because they share the service key: the panel's
+button disables on loading.<key> and the response block shows on
+responses.<key>. Splitting them would mean passing the same key twice and
+leaving the pair free to drift.
+
+Args:
+  key: Service response key, matching dev.py's SERVICE_RESPONSE_KEYS values
+  execute_click: Alpine handler the Execute button calls
+  copy_click: Optional Alpine handler for a "Copy" button beside the response heading
+  danger: True for destructive services, which get a red Execute button
+
+The caller block supplies the form fields, above the Execute button.
+    #}
+    <div class="p-4 rounded-lg mb-4"
+         style="background-color: var(--color-subtle-background-panels);
+                border: 1px solid var(--color-borders-dividers)">
+        <h4 class="text-heading-sm mb-3" style="color: var(--color-headings);">{{ _("Try it") }}</h4>
+        <div class="space-y-3">
+            {{ caller() }}
+            {# Spelled out rather than interpolated, for the same reason as the badge above. #}
+            {% set execute_style %}
+                {%- if danger -%}
+                    background-color: var(--color-error-600); color: white;
+                {%- else -%}
+                    background-color: var(--color-primary-action); color: white;
+                {%- endif -%}
+            {% endset %}
+            <button @click="{{ execute_click }}"
+                    class="px-4 py-2 rounded text-button-sm"
+                    style="{{ execute_style }}"
+                    :disabled="loading.{{ key }}">
+                <span x-show="!loading.{{ key }}">Execute</span>
+                <span x-show="loading.{{ key }}">Loading...</span>
+            </button>
+        </div>
+    </div>
+    {# Response #}
+    <div x-show="responses.{{ key }}" x-cloak>
+        <div class="flex items-center justify-between mb-2">
+            <h4 class="text-heading-sm" style="color: var(--color-headings);">{{ _("Response") }}</h4>
+            {% if copy_click %}
+                <button @click="{{ copy_click }}"
+                        class="text-body-sm px-2 py-1 rounded"
+                        style="background-color: var(--color-subtle-background-panels)">📋 Copy</button>
+            {% endif %}
+        </div>
+        <pre class="p-3 rounded text-body-sm overflow-x-auto"
+             style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);"
+             x-text="formatResponse('{{ key }}')"></pre>
+    </div>
+{% endmacro %}
