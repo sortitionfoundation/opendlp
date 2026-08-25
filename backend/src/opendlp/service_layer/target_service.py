@@ -28,6 +28,7 @@ from .exceptions import (
     InsufficientPermissions,
     InvalidSelection,
     NotFoundError,
+    ServiceLayerError,
     UserNotFoundError,
 )
 from .permissions import can_manage_assembly, can_view_assembly
@@ -64,7 +65,13 @@ class TargetImportResult(NamedTuple):
 
 @dataclass
 class TargetValueEdit:
-    """One value in a bulk save. `value_id` of None means a new value."""
+    """One value in a bulk save. `value_id` of None means a new value.
+
+    `form_id` is the id the row was submitted under, which is what ties an error
+    back to the field that caused it. It is not the same as `value_id`: a row the
+    user has just added has no `value_id` at all, and two of them would otherwise
+    be indistinguishable.
+    """
 
     value: str
     value_id: uuid.UUID | None = None
@@ -74,6 +81,7 @@ class TargetValueEdit:
     comment: str = ""
     deleted: bool = False
     relink: bool = False
+    form_id: str = ""
 
 
 @dataclass
@@ -81,7 +89,8 @@ class TargetCategoryEdit:
     """One category in a bulk save, with all of its submitted values.
 
     A `category_id` of None means a category the user added in the form and that
-    does not exist yet.
+    does not exist yet. `form_id` is the id it was submitted under - see
+    `TargetValueEdit`.
     """
 
     category_id: uuid.UUID | None
@@ -91,6 +100,35 @@ class TargetCategoryEdit:
     values: list[TargetValueEdit] = field(default_factory=list)
     deleted: bool = False
     sort_order: int | None = None
+    form_id: str = ""
+
+
+@dataclass
+class TargetEditError:
+    """One problem with a submitted edit, tied to the field that caused it.
+
+    The ids are the submitted `form_id`s and `field` is a bare name like "max".
+    Turning those into a form field name is the entrypoint's job: the service
+    knows which value is wrong, not what the input was called.
+    """
+
+    message: str
+    category_form_id: str = ""
+    value_form_id: str = ""
+    field: str = ""
+
+
+class TargetsNotSaved(ServiceLayerError):
+    """Nothing was saved, because one or more edits are invalid.
+
+    Carries every error found rather than the first, so a page of edits can be
+    fixed in one pass instead of one round trip per mistake. Raising rolls the
+    unit of work back, which is what makes "nothing was saved" true.
+    """
+
+    def __init__(self, errors: list[TargetEditError]) -> None:
+        super().__init__("targets not saved")
+        self.errors = errors
 
 
 def _load_user_and_assembly(
@@ -903,6 +941,7 @@ def save_all_targets(
     naming = _CategoryNaming(uow, assembly_id, edits)
 
     saved = []
+    errors: list[TargetEditError] = []
     now = datetime.now(UTC)
     for category_edit in edits:
         if category_edit.deleted:
@@ -910,26 +949,57 @@ def save_all_targets(
                 uow.target_categories.delete(_get_category(uow, assembly_id, category_edit.category_id))
             continue
 
+        category = _save_one_category(uow, assembly_id, category_edit, naming, number_to_select, now, errors)
+        if category is not None:
+            saved.append(category)
+
+    if errors:
+        raise TargetsNotSaved(errors)
+    return saved
+
+
+def _save_one_category(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    category_edit: TargetCategoryEdit,
+    naming: "_CategoryNaming",
+    number_to_select: int,
+    now: datetime,
+    errors: list[TargetEditError],
+) -> TargetCategory | None:
+    """Apply one category edit, recording rather than raising what goes wrong.
+
+    Carrying on after a bad category is what lets the whole form come back
+    annotated in one pass. `save_all_targets` raises at the end, so none of the
+    work done here survives when anything failed.
+    """
+    try:
         naming.claim(category_edit.name, category_edit.category_id)
-        is_new = category_edit.category_id is None
-        if is_new:
+    except ValueError as e:
+        errors.append(TargetEditError(str(e), category_edit.form_id, field="name"))
+        return None
+
+    is_new = category_edit.category_id is None
+    if is_new:
+        try:
             category = TargetCategory(
                 assembly_id=assembly_id,
                 name=category_edit.name.strip(),
                 sort_order=naming.next_sort_order(),
             )
-            uow.target_categories.add(category)
-        else:
-            category = _get_category(uow, assembly_id, cast("uuid.UUID", category_edit.category_id))
+        except ValueError as e:
+            errors.append(TargetEditError(str(e), category_edit.form_id, field="name"))
+            return None
+        uow.target_categories.add(category)
+    else:
+        category = _get_category(uow, assembly_id, cast("uuid.UUID", category_edit.category_id))
 
-        _apply_category_edit(category, category_edit, number_to_select)
-        category.updated_at = now
-        if not is_new:
-            # A category being inserted has no stored JSON to mark dirty.
-            flag_modified(category, "values")
-        saved.append(category.create_detached_copy())
-
-    return saved
+    _apply_category_edit(category, category_edit, number_to_select, errors)
+    category.updated_at = now
+    if not is_new:
+        # A category being inserted has no stored JSON to mark dirty.
+        flag_modified(category, "values")
+    return category.create_detached_copy()
 
 
 class _CategoryNaming:
@@ -975,19 +1045,67 @@ def _apply_category_edit(
     category: TargetCategory,
     category_edit: TargetCategoryEdit,
     number_to_select: int,
+    errors: list[TargetEditError],
 ) -> None:
     """Apply one category's own fields and every value edit beneath it."""
     category.name = category_edit.name.strip()
-    category.comment = validate_comment(category_edit.comment)
-    category.source_url = validate_source_url(category_edit.source_url)
+    try:
+        category.comment = validate_comment(category_edit.comment)
+    except ValueError as e:
+        errors.append(TargetEditError(str(e), category_edit.form_id, field="comment"))
+    try:
+        category.source_url = validate_source_url(category_edit.source_url)
+    except ValueError as e:
+        errors.append(TargetEditError(str(e), category_edit.form_id, field="source_url"))
     if category_edit.sort_order is not None:
         category.sort_order = category_edit.sort_order
 
     for value_edit in category_edit.values:
-        _apply_value_edit(category, value_edit, number_to_select)
+        _apply_value_edit(category, value_edit, number_to_select, category_edit.form_id, errors)
+
+
+def _value_problem(value_edit: TargetValueEdit) -> tuple[str, str] | None:
+    """The first problem with a submitted value that we can pin to one field.
+
+    The domain enforces all of these, but it raises on the first one it meets
+    with a message written for a developer. Naming them here is what lets the
+    form say which box is wrong, in words aimed at the person filling it in.
+    """
+    if value_edit.deleted or value_edit.relink:
+        return None
+    if value_edit.min is not None and value_edit.min < 0:
+        return "min", _("Min cannot be negative")
+    if value_edit.max is not None and value_edit.max < 0:
+        return "max", _("Max cannot be negative")
+    if value_edit.min is not None and value_edit.max is not None and value_edit.max < value_edit.min:
+        return "max", _("Max must be at least the min")
+    if value_edit.percentage is not None and not 0 <= value_edit.percentage <= 100:
+        return "percentage", _("Population share must be between 0 and 100")
+    return None
 
 
 def _apply_value_edit(
+    category: TargetCategory,
+    value_edit: TargetValueEdit,
+    number_to_select: int,
+    category_form_id: str,
+    errors: list[TargetEditError],
+) -> None:
+    """Add, update or remove one value, recording rather than raising a problem."""
+    problem = _value_problem(value_edit)
+    if problem is not None:
+        errors.append(TargetEditError(problem[1], category_form_id, value_edit.form_id, problem[0]))
+        return
+
+    try:
+        _write_value_edit(category, value_edit, number_to_select)
+    except (ValueError, TypeError) as e:
+        # Whatever `_value_problem` did not anticipate. Without a field to blame
+        # it goes against the row, which is still where the reader needs it.
+        errors.append(TargetEditError(str(e), category_form_id, value_edit.form_id))
+
+
+def _write_value_edit(
     category: TargetCategory,
     value_edit: TargetValueEdit,
     number_to_select: int,

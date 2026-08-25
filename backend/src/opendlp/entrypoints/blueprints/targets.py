@@ -3,6 +3,7 @@ ABOUTME: Provides target viewing, editing, CSV upload, and deletion under /backo
 
 import contextlib
 import uuid
+from typing import Any
 
 import structlog
 from flask import Blueprint, flash, make_response, redirect, render_template, request, url_for
@@ -11,7 +12,7 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.domain.targets import TargetCategory
-from opendlp.entrypoints.save_all_parser import parse_save_all_targets
+from opendlp.entrypoints.save_all_parser import errors_by_field, parse_save_all_targets, pending_categories
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
@@ -40,6 +41,8 @@ from opendlp.service_layer.target_respondent_helpers import (
     get_selected_counts_for_category,
 )
 from opendlp.service_layer.target_service import (
+    TargetEditError,
+    TargetsNotSaved,
     add_target_value,
     create_target_category,
     delete_target_category,
@@ -1034,6 +1037,44 @@ def relink_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
 
+def _render_targets_edit_errors(
+    assembly_id: uuid.UUID,
+    form_data: Any,
+    errors: list[TargetEditError],
+) -> ResponseReturnValue:
+    """Re-render the bulk edit form as submitted, each error against its field.
+
+    Redirecting instead would land the user on the read-only page having thrown
+    away every edit they had made, leaving the message in a toast with nothing
+    to point at.
+    """
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+        target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+
+    attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+    context = _get_assembly_context(assembly_id)
+
+    flash(_("Your targets were not saved. Please correct the errors below."), "error")
+    return render_template(
+        "backoffice/assembly_targets.html",
+        assembly=assembly,
+        assembly_id=assembly_id,
+        target_categories=target_categories,
+        pending_categories=pending_categories(form_data),
+        field_errors=errors_by_field(errors),
+        editing_all=True,
+        form=UploadTargetsCsvForm(),
+        add_category_form=AddTargetCategoryForm(),
+        value_form=TargetValueForm(),
+        can_manage=_can_manage(assembly_id),
+        respondent_attribute_columns=attribute_columns,
+        all_respondent_counts=build_respondent_counts(assembly_id, target_categories, attribute_columns),
+        **context,
+    ), 200
+
+
 @targets_bp.route("/assembly/<uuid:assembly_id>/targets/save-all", methods=["POST"])
 @login_required
 def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -1046,9 +1087,7 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
     try:
         edits, errors = parse_save_all_targets(request.form)
         if errors:
-            for message in errors:
-                flash(message, "error")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+            return _render_targets_edit_errors(assembly_id, request.form, errors)
 
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -1059,6 +1098,8 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
         # runs it, so its annotations arrive without anyone asking for them.
         return redirect(url_for("targets.check_targets", assembly_id=assembly_id))
 
+    except TargetsNotSaved as e:
+        return _render_targets_edit_errors(assembly_id, request.form, e.errors)
     except (ValueError, NotFoundError) as e:
         flash(_("Error: %(error)s", error=str(e)), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))

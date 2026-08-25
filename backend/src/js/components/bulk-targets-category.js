@@ -19,6 +19,8 @@ var PERCENTAGE_TOLERANCE = 1.0;
  * @param {Object} [options] - configuration
  * @param {string} [options.emptyLabel="—"] - shown when no value has a percentage
  * @param {boolean} [options.isNew=false] - whether the user added this block client-side
+ * @param {boolean} [options.deleted=false] - whether the block is already marked
+ *   for deletion, as it is when a rejected save redisplays the form
  * @returns {Object} Alpine component state
  */
 export function bulkTargetsCategory(options) {
@@ -26,7 +28,7 @@ export function bulkTargetsCategory(options) {
   var isNew = Boolean(options && options.isNew);
 
   return {
-    deleted: false,
+    deleted: Boolean(options && options.deleted),
     isNew: isNew,
     missingAdded: false,
     newRowCount: 0,

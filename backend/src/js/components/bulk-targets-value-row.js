@@ -11,13 +11,15 @@
  *
  * @param {Object} [options] - configuration
  * @param {boolean} [options.isNew=false] - whether this row was added client-side
+ * @param {boolean} [options.deleted=false] - whether the row is already marked
+ *   for deletion, as it is when a rejected save redisplays the form
  * @returns {Object} Alpine component state
  */
 export function bulkTargetsValueRow(options) {
   var isNew = Boolean(options && options.isNew);
 
   return {
-    deleted: false,
+    deleted: Boolean(options && options.deleted),
     relink: false,
     isNew: isNew,
 

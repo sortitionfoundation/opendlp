@@ -34,6 +34,17 @@ Feature: Target percentages, notes and ordering
     When I save all targets
     Then I should see "Targets saved"
 
+  Scenario: A rejected save comes back as the form, with the error on its field
+    Given there is an assembly with targets called "Bad Numbers Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Bad Numbers Demo"
+    And I choose to edit all targets
+    And I set the "Male" min to "9" and max to "2"
+    And I save all targets
+    Then I should see the bulk edit form
+    And the "Male" edit row should show min "9" and max "2"
+    And the "Male" edit row should show the error "Max must be at least the min"
+
   Scenario: Saving the targets runs the detailed check
     Given there is an assembly with targets called "Check On Save Demo"
     And I am signed in as an admin user

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { bulkTargetsValueRow } from "./bulk-targets-value-row.js";
 
-function rowState({ isNew = false } = {}) {
+function rowState({ isNew = false, deleted = false } = {}) {
   document.body.innerHTML = `
     <table><tbody id="rows">
       <tr id="row" data-value-row="true" data-deleted="false">
@@ -15,7 +15,7 @@ function rowState({ isNew = false } = {}) {
         </td>
       </tr>
     </tbody></table>`;
-  const state = bulkTargetsValueRow({ isNew: isNew });
+  const state = bulkTargetsValueRow({ isNew: isNew, deleted: deleted });
   state.$root = document.getElementById("row");
   state.$refs = {
     deletedField: document.getElementById("deleted"),
@@ -34,6 +34,13 @@ describe("bulkTargetsValueRow", () => {
     expect(state.deleted).toBe(false);
     expect(state.relink).toBe(false);
     expect(state.rowClass).toBe("");
+  });
+
+  it("starts deleted when the redisplayed form says it was", () => {
+    // A rejected save must not quietly undo the deletions it came back with.
+    const state = rowState({ deleted: true });
+    expect(state.deleted).toBe(true);
+    expect(state.rowClass).toBe("is-pending-delete");
   });
 
   it("marks an existing row for deletion rather than removing it", () => {

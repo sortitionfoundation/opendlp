@@ -1,11 +1,12 @@
 """ABOUTME: Parses the bulk targets edit form into service-layer edit dataclasses.
-ABOUTME: WTForms models one form per object, which does not fit a page of many categories."""
+ABOUTME: Also maps a submission back to the shape the template renders, for redisplay after an error."""
 
 import re
 import uuid
+from dataclasses import dataclass, field
 from typing import Any
 
-from opendlp.service_layer.target_service import TargetCategoryEdit, TargetValueEdit
+from opendlp.service_layer.target_service import TargetCategoryEdit, TargetEditError, TargetValueEdit
 from opendlp.translations import gettext as _
 
 # cat[<category_id>][name] and cat[<category_id>][values][<value_id>][percentage].
@@ -30,7 +31,13 @@ def _submitted_id(raw: str) -> uuid.UUID | None:
     return None if raw.startswith("new-") else uuid.UUID(raw)
 
 
-def _parse_number(raw: str, field: str, errors: list[str]) -> Any:
+def _parse_number(
+    raw: str,
+    field: str,
+    errors: list[TargetEditError],
+    category_form_id: str = "",
+    value_form_id: str = "",
+) -> Any:
     """Parse an optional numeric cell, recording a message rather than raising."""
     text = raw.strip()
     if not text:
@@ -38,7 +45,14 @@ def _parse_number(raw: str, field: str, errors: list[str]) -> Any:
     try:
         return float(text) if field == "percentage" else int(text)
     except ValueError:
-        errors.append(_('"%(value)s" is not a valid %(field)s', value=text[:40], field=field))
+        errors.append(
+            TargetEditError(
+                _('"%(value)s" is not a valid %(field)s', value=text[:40], field=field),
+                category_form_id,
+                value_form_id,
+                field,
+            )
+        )
         return None
 
 
@@ -64,34 +78,46 @@ def _collect_fields(form_data: Any) -> tuple[dict[str, dict[str, Any]], dict[tup
     return categories, values
 
 
-def _value_edit(value_id: str, cells: dict[str, str], errors: list[str]) -> TargetValueEdit | None:
-    """Build one value edit, or None when the row is unusable."""
+def _value_edit(
+    category_id: str,
+    value_id: str,
+    cells: dict[str, str],
+    errors: list[TargetEditError],
+) -> TargetValueEdit:
+    """Build one value edit, recording anything wrong with the cells it came from.
+
+    A bad row still produces an edit. Dropping it would take the row off the page
+    when the form is redisplayed, which loses the very thing the user has to fix.
+    """
     deleted = _is_true(cells.get("deleted", ""))
     name = cells.get("value", "").strip()
     if not name and not deleted:
-        errors.append(_("Every target value needs a name"))
-        return None
+        errors.append(TargetEditError(_("Every target value needs a name"), category_id, value_id, "value"))
 
     return TargetValueEdit(
         value=name,
         value_id=_submitted_id(value_id),
-        percentage=_parse_number(cells.get("percentage", ""), "percentage", errors),
-        min=_parse_number(cells.get("min", ""), "min", errors),
-        max=_parse_number(cells.get("max", ""), "max", errors),
+        percentage=_parse_number(cells.get("percentage", ""), "percentage", errors, category_id, value_id),
+        min=_parse_number(cells.get("min", ""), "min", errors, category_id, value_id),
+        max=_parse_number(cells.get("max", ""), "max", errors, category_id, value_id),
         comment=cells.get("comment", "").strip(),
         deleted=deleted,
         relink=_is_true(cells.get("relink", "")),
+        form_id=value_id,
     )
 
 
-def parse_save_all_targets(form_data: Any) -> tuple[list[TargetCategoryEdit], list[str]]:
+def parse_save_all_targets(form_data: Any) -> tuple[list[TargetCategoryEdit], list[TargetEditError]]:
     """Turn a submitted bulk-edit form into edit dataclasses.
 
-    Returns the edits and a list of already-translated error messages. Field names
-    that do not match the expected shape are ignored rather than rejected: the form
-    also carries the CSRF token and whatever else the page needs.
+    Returns the edits and every error found, each tied to the field that caused
+    it. Field names that do not match the expected shape are ignored rather than
+    rejected: the form also carries the CSRF token and whatever else the page needs.
+
+    A category with a problem still produces an edit, so the redisplayed form has
+    every row the user submitted, including the broken ones.
     """
-    errors: list[str] = []
+    errors: list[TargetEditError] = []
     categories, values = _collect_fields(form_data)
 
     edits = []
@@ -101,14 +127,11 @@ def parse_save_all_targets(form_data: Any) -> tuple[list[TargetCategoryEdit], li
         value_edits = []
         if not deleted:
             if not fields.get("name", "").strip():
-                errors.append(_("Every target needs a name"))
-                continue
+                errors.append(TargetEditError(_("Every target needs a name"), category_id, field="name"))
             for (owner, value_id), cells in values.items():
                 if owner != category_id:
                     continue
-                edit = _value_edit(value_id, cells, errors)
-                if edit is not None:
-                    value_edits.append(edit)
+                value_edits.append(_value_edit(category_id, value_id, cells, errors))
 
         edits.append(
             TargetCategoryEdit(
@@ -118,8 +141,98 @@ def parse_save_all_targets(form_data: Any) -> tuple[list[TargetCategoryEdit], li
                 source_url=fields.get("source_url", "").strip(),
                 values=value_edits,
                 deleted=deleted,
-                sort_order=_parse_number(fields.get("sort_order", ""), "sort order", errors),
+                sort_order=_parse_number(fields.get("sort_order", ""), "sort order", errors, category_id),
+                form_id=category_id,
             )
         )
 
     return edits, errors
+
+
+@dataclass
+class PendingValue:
+    """One submitted value row, shaped like a `TargetValue` for the bulk form.
+
+    Built from the raw cells rather than from the parsed edit, so a redisplayed
+    form shows exactly what was typed - including a number the parser could not
+    read, which is precisely the one the user has to go back and correct.
+    """
+
+    value_id: str
+    value: str = ""
+    percentage_target: str = ""
+    min: str = ""
+    max: str = ""
+    comment: str = ""
+    deleted: bool = False
+    relink: bool = False
+    minmax_manual: bool = False
+
+
+@dataclass
+class PendingCategory:
+    """One submitted category, shaped like a `TargetCategory` for the bulk form."""
+
+    id: str
+    name: str = ""
+    comment: str = ""
+    source_url: str = ""
+    sort_order: str = ""
+    values: list[PendingValue] = field(default_factory=list)
+    deleted: bool = False
+
+
+def pending_categories(form_data: Any) -> list[PendingCategory]:
+    """Rebuild the submitted form as the objects the bulk edit template renders."""
+    categories, values = _collect_fields(form_data)
+
+    pending = []
+    for category_id, fields in categories.items():
+        rows = [
+            PendingValue(
+                value_id=value_id,
+                value=cells.get("value", ""),
+                percentage_target=cells.get("percentage", "").strip(),
+                min=cells.get("min", "").strip(),
+                max=cells.get("max", "").strip(),
+                comment=cells.get("comment", ""),
+                deleted=_is_true(cells.get("deleted", "")),
+                relink=_is_true(cells.get("relink", "")),
+            )
+            for (owner, value_id), cells in values.items()
+            if owner == category_id
+        ]
+        pending.append(
+            PendingCategory(
+                id=category_id,
+                name=fields.get("name", ""),
+                comment=fields.get("comment", ""),
+                source_url=fields.get("source_url", ""),
+                sort_order=fields.get("sort_order", "").strip(),
+                values=rows,
+                deleted=_is_true(fields.get("deleted", "")),
+            )
+        )
+    return pending
+
+
+def _field_key(error: TargetEditError) -> str:
+    """The form field name an error belongs against."""
+    key = f"cat[{error.category_form_id}]"
+    if error.value_form_id:
+        key += f"[values][{error.value_form_id}]"
+    if error.field:
+        key += f"[{error.field}]"
+    return key
+
+
+def errors_by_field(errors: list[TargetEditError]) -> dict[str, str]:
+    """Group error messages by form field name, as the template looks them up.
+
+    Several messages against one field are joined with newlines: the input
+    component renders its error with `white-space: pre-line`, so they stack.
+    """
+    grouped: dict[str, list[str]] = {}
+    for error in errors:
+        grouped.setdefault(_field_key(error), []).append(error.message)
+    return {key: "\n".join(messages) for key, messages in grouped.items()}

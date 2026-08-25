@@ -173,6 +173,12 @@ describe("bulkTargetsCategory adding rows", () => {
 });
 
 describe("bulkTargetsCategory deletion", () => {
+  it("starts deleted when the redisplayed form says it was", () => {
+    // A rejected save must not quietly undo the deletions it came back with.
+    const state = bulkTargetsCategory({ emptyLabel: "None", deleted: true });
+    expect(state.deleted).toBe(true);
+  });
+
   it("marks the whole category for deletion", () => {
     const state = categoryState("");
     state.markDeleted();

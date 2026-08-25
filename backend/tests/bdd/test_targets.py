@@ -164,6 +164,26 @@ def set_percentage_in_bulk_form(admin_logged_in_page: Page, value: str, percenta
     _edit_row_for(admin_logged_in_page, value).locator('[data-field="percentage"]').fill(percentage)
 
 
+@when(parsers.parse('I set the "{value}" min to "{minimum}" and max to "{maximum}"'))
+def set_min_max_in_bulk_form(admin_logged_in_page: Page, value: str, minimum: str, maximum: str) -> None:
+    row = _edit_row_for(admin_logged_in_page, value)
+    row.locator('[data-field="min"]').fill(minimum)
+    row.locator('[data-field="max"]').fill(maximum)
+
+
+@then(parsers.parse('the "{value}" edit row should show min "{minimum}" and max "{maximum}"'))
+def edit_row_shows_min_max(admin_logged_in_page: Page, value: str, minimum: str, maximum: str) -> None:
+    row = _edit_row_for(admin_logged_in_page, value)
+    expect(row.locator('[data-field="min"]')).to_have_value(minimum, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(row.locator('[data-field="max"]')).to_have_value(maximum, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{value}" edit row should show the error "{message}"'))
+def edit_row_shows_error(admin_logged_in_page: Page, value: str, message: str) -> None:
+    row = _edit_row_for(admin_logged_in_page, value)
+    expect(row.get_by_text(message)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @then(parsers.parse('I should see the percentage total "{total}"'))
 def see_percentage_total(admin_logged_in_page: Page, total: str) -> None:
     expect(_visible(admin_logged_in_page, total).first).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)

@@ -79,7 +79,7 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
 
         {# One flat boolean, per the CSP-safe Alpine rules in patterns.html. It
            spans the heading, because the actions beside it reveal the form below. #}
-        <div x-data="{ editingAll: false }">
+        <div x-data="{ editingAll: {{ "true" if editing_all is defined and editing_all else "false" }} }">
             {# ── Targets Heading and Actions ──────────────── #}
             <section class="mb-6 flex items-start justify-between gap-4">
                 <div>
@@ -133,7 +133,7 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
             {% endif %}
 
             {# ── Category Blocks ─────────────────────────────── #}
-            {% if can_manage and target_categories %}
+            {% if can_manage and (target_categories or pending_categories is defined and pending_categories) %}
                 <div x-show="editingAll" x-cloak>
                     {% include "backoffice/targets/bulk_edit_form.html" %}
                 </div>

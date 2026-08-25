@@ -995,7 +995,10 @@ class TestSaveAllTargets:
         # The exception must escape the `with uow:` block, exactly as it would
         # from a route - that is what makes the UnitOfWork roll back rather than
         # commit the half-applied edit.
-        with pytest.raises(ValueError), SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+        with (
+            pytest.raises(target_service.TargetsNotSaved),
+            SqlAlchemyUnitOfWork(postgres_session_factory) as uow,
+        ):
             target_service.save_all_targets(
                 uow,
                 admin_user.id,
@@ -1260,13 +1263,16 @@ class TestSaveAllTargets:
     def test_refuses_a_name_another_category_already_has(self, uow, admin_user: User, test_assembly: Assembly):
         _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
 
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(target_service.TargetsNotSaved) as caught:
             target_service.save_all_targets(
                 uow,
                 admin_user.id,
                 test_assembly.id,
-                [target_service.TargetCategoryEdit(category_id=None, name="gender")],
+                [target_service.TargetCategoryEdit(category_id=None, name="gender", form_id="new-1")],
             )
+
+        assert "already exists" in caught.value.errors[0].message
+        assert (caught.value.errors[0].category_form_id, caught.value.errors[0].field) == ("new-1", "name")
 
     def test_refuses_a_name_this_save_is_deleting(self, uow, admin_user: User, test_assembly: Assembly):
         """A ValueError beats the IntegrityError the unique index would otherwise raise.
@@ -1276,7 +1282,7 @@ class TestSaveAllTargets:
         """
         gender = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
 
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(target_service.TargetsNotSaved) as caught:
             target_service.save_all_targets(
                 uow,
                 admin_user.id,
@@ -1286,6 +1292,8 @@ class TestSaveAllTargets:
                     target_service.TargetCategoryEdit(category_id=None, name="Gender"),
                 ],
             )
+
+        assert "already exists" in caught.value.errors[0].message
 
     def test_allows_a_category_to_keep_its_own_name(self, uow, admin_user: User, test_assembly: Assembly):
         """Every save round-trips the name, so its own name must not count against it."""
@@ -1302,7 +1310,7 @@ class TestSaveAllTargets:
         assert after[0].comment == "unchanged"
 
     def test_refuses_two_new_categories_with_the_same_name(self, uow, admin_user: User, test_assembly: Assembly):
-        with pytest.raises(ValueError, match="already exists"):
+        with pytest.raises(target_service.TargetsNotSaved) as caught:
             target_service.save_all_targets(
                 uow,
                 admin_user.id,
@@ -1312,6 +1320,45 @@ class TestSaveAllTargets:
                     target_service.TargetCategoryEdit(category_id=None, name="age"),
                 ],
             )
+
+        assert "already exists" in caught.value.errors[0].message
+
+    def test_reports_every_bad_value_against_its_own_field(self, uow, admin_user: User, test_assembly: Assembly):
+        """All of them at once, each tied to the row it came from.
+
+        Raising on the first would send the user round the loop once per mistake,
+        and a bare message could not say which of the two rows it was about.
+        """
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0, "Woman": 50.0})
+        man, woman = category.get_value("Man"), category.get_value("Woman")
+
+        with pytest.raises(target_service.TargetsNotSaved) as caught:
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [
+                    target_service.TargetCategoryEdit(
+                        category_id=category.id,
+                        name="Gender",
+                        form_id=str(category.id),
+                        values=[
+                            target_service.TargetValueEdit(
+                                value="Man", value_id=man.value_id, min=9, max=2, form_id=str(man.value_id)
+                            ),
+                            target_service.TargetValueEdit(
+                                value="Woman", value_id=woman.value_id, min=8, max=1, form_id=str(woman.value_id)
+                            ),
+                        ],
+                    )
+                ],
+            )
+
+        errors = caught.value.errors
+        assert len(errors) == 2
+        assert {e.value_form_id for e in errors} == {str(man.value_id), str(woman.value_id)}
+        assert {e.field for e in errors} == {"max"}
+        assert {e.category_form_id for e in errors} == {str(category.id)}
 
     def test_requires_manage_permission(self, uow, regular_user: User, test_assembly: Assembly):
         with pytest.raises(InsufficientPermissions):

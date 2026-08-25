@@ -89,7 +89,12 @@ class TestParseSaveAllTargets:
         )
 
         assert len(errors) == 1
-        assert "ten" in errors[0]
+        assert "ten" in errors[0].message
+        assert (errors[0].category_form_id, errors[0].value_form_id, errors[0].field) == (
+            str(CATEGORY_ID),
+            str(VALUE_ID),
+            "min",
+        )
         assert edits[0].values[0].min is None
 
     def test_a_value_with_no_name_is_reported(self):
@@ -205,13 +210,16 @@ class TestNewCategories:
     def test_a_category_with_no_name_is_reported(self):
         _edits, errors = parse_save_all_targets({f"cat[{CATEGORY_ID}][name]": "   "})
 
-        assert errors == [_NAME_REQUIRED]
+        assert [e.message for e in errors] == [_NAME_REQUIRED]
+        assert (errors[0].category_form_id, errors[0].field) == (str(CATEGORY_ID), "name")
 
-    def test_a_nameless_category_produces_no_edit(self):
-        """Better a reported error than a category renamed to nothing."""
-        edits, _errors = parse_save_all_targets({f"cat[{CATEGORY_ID}][name]": ""})
+    def test_a_nameless_category_still_produces_an_edit(self):
+        """The error stops the save; the edit is what puts the row back on the page to fix."""
+        edits, errors = parse_save_all_targets({f"cat[{CATEGORY_ID}][name]": ""})
 
-        assert edits == []
+        assert errors
+        assert len(edits) == 1
+        assert edits[0].name == ""
 
     def test_a_deleted_category_still_needs_no_name(self):
         edits, errors = parse_save_all_targets({

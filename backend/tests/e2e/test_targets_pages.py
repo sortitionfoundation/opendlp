@@ -624,6 +624,71 @@ class TestSaveAll:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assert get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].name == "Gender"
 
+    def test_a_rejected_save_writes_nothing_at_all(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """The good half of a rejected save must not land either."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", 3, 7)
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            value_id = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0].value_id
+
+        prefix = f"cat[{category.id}]"
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[comment]": "from the census",
+                f"{prefix}[values][{value_id}][value]": "Male",
+                f"{prefix}[values][{value_id}][min]": "9",
+                f"{prefix}[values][{value_id}][max]": "2",
+            },
+        )
+
+        assert response.status_code == 200
+        assert b"Max must be at least the min" in response.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            saved = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
+        assert saved.comment == "", "the category comment was written despite the rejected save"
+        assert (saved.values[0].min, saved.values[0].max) == (3, 7)
+
+    def test_every_error_comes_back_at_once(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """One round trip per mistake is what makes a bulk form miserable."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", 3, 7)
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Female", 3, 7)
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            values = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values
+        male_id, female_id = values[0].value_id, values[1].value_id
+
+        prefix = f"cat[{category.id}]"
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[source_url]": "javascript:alert(1)",
+                f"{prefix}[values][{male_id}][value]": "Male",
+                f"{prefix}[values][{male_id}][min]": "9",
+                f"{prefix}[values][{male_id}][max]": "2",
+                f"{prefix}[values][{female_id}][value]": "Female",
+                f"{prefix}[values][{female_id}][min]": "8",
+                f"{prefix}[values][{female_id}][max]": "1",
+            },
+        )
+
+        html = response.data.decode()
+        assert html.count("Max must be at least the min") == 2
+        assert "source URL must be a full http:// or https:// address" in html
+
     def test_saving_runs_the_detailed_check(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):

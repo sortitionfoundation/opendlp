@@ -672,6 +672,73 @@ class TestViewIsReadOnly:
         assert b"Edit targets" not in response.data
 
 
+def _bulk_row_for(html_text, value):
+    """The bulk-edit table row whose value input holds this target value."""
+    rows = re.findall(r"<tr [^>]*data-value-row[^>]*>(.*?)</tr>", html_text, re.DOTALL)
+    return next(r for r in rows if f'value="{value}"' in r)
+
+
+class TestSaveAllValidationErrors:
+    """A rejected save must come back as the form the user was filling in.
+
+    Redirecting to the read-only page throws away every edit on it and leaves
+    the message floating in a toast with nothing to point at.
+    """
+
+    def _post_min_above_max(self, client, assembly_id, category_id, value_id):
+        prefix = f"cat[{category_id}]"
+        return client.post(
+            _targets_url(assembly_id, "/save-all"),
+            data={
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[comment]": "from the census",
+                f"{prefix}[values][{value_id}][value]": "Male",
+                f"{prefix}[values][{value_id}][min]": "9",
+                f"{prefix}[values][{value_id}][max]": "2",
+            },
+        )
+
+    def test_a_min_above_max_comes_back_as_the_form(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
+        value_id = cat.values[0].value_id
+
+        response = self._post_min_above_max(logged_in_admin, existing_assembly.id, category.id, value_id)
+
+        assert response.status_code == 200, "a rejected save should re-render, not redirect"
+
+    def test_the_submitted_values_are_still_in_the_form(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
+        value_id = cat.values[0].value_id
+
+        response = self._post_min_above_max(logged_in_admin, existing_assembly.id, category.id, value_id)
+
+        html = response.data.decode()
+        row = _bulk_row_for(html, "Male")
+        assert 'value="9"' in row, "the min they typed is gone"
+        assert 'value="2"' in row, "the max they typed is gone"
+        assert 'value="from the census"' in html, "the category comment they typed is gone"
+
+    def test_the_error_sits_on_the_field_that_caused_it(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
+        value_id = cat.values[0].value_id
+
+        response = self._post_min_above_max(logged_in_admin, existing_assembly.id, category.id, value_id)
+
+        row = _bulk_row_for(response.data.decode(), "Male")
+        assert "Max must be at least the min" in row
+
+    # "nothing was saved" is asserted in tests/e2e: FakeUnitOfWork snapshots the
+    # repository lists, not the objects in them, so it cannot roll back a field
+    # written in place. Only a real transaction proves that claim.
+
+
 class TestBulkEditForm:
     def test_offers_adding_and_deleting_rows(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")

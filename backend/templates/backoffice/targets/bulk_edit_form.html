@@ -5,28 +5,38 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input %}
 
-{% macro value_row(category_id, row_id, val=None, is_new=false, prefill="") %}
+{% macro value_row(category_id, row_id, val=None, is_new=false, prefill="", errors={}) %}
     {% set val_prefix = "cat[" ~ category_id ~ "][values][" ~ row_id ~ "]" %}
     {% set field_id = "bulk-" ~ category_id ~ "-" ~ row_id %}
     {% set can_relink = val and val.minmax_manual and val.percentage_target is not none %}
+    {# A row redisplayed after a rejected save carries the pending deletion it
+       was submitted with, or saving again would quietly undo it. #}
+    {% set row_deleted = "true" if val and val.deleted else "false" %}
+    {% set row_error = errors.get(val_prefix, "") %}
     <tr data-value-row="true"
-        data-deleted="false"
-        x-data="bulkTargetsValueRow{{ '({ isNew: true })' if is_new else '()' }}"
+        data-deleted="{{ row_deleted }}"
+        x-data="bulkTargetsValueRow({ isNew: {{ 'true' if is_new else 'false' }}, deleted: {{ row_deleted }} })"
         :class="rowClass"
         style="border-bottom: 1px solid var(--color-borders-dividers)">
         <td class="py-3 pr-4">
             <input type="hidden"
                    name="{{ val_prefix }}[deleted]"
-                   value="false"
+                   value="{{ row_deleted }}"
                    x-ref="deletedField" />
             <input type="hidden"
                    name="{{ val_prefix }}[relink]"
-                   value="false"
+                   value="{{ "true" if val and val.relink else "false" }}"
                    x-ref="relinkField" />
             {{ input(name=val_prefix ~ "[value]",
             id=field_id ~ "-value",
             value=val.value if val else prefill,
+            error=errors.get(val_prefix ~ "[value]", ""),
             required=true) }}
+            {% if row_error %}
+                <p class="text-body-sm mt-1"
+                   style="color: var(--color-primary-action);
+                          white-space: pre-line">{{ row_error }}</p>
+            {% endif %}
             {% if can_relink %}
                 <span class="text-label-md px-1.5 py-0.5 rounded inline-block mt-1"
                       x-show="!relink"
@@ -46,6 +56,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         <td class="py-3 px-4">
             {{ input(name=val_prefix ~ "[percentage]",
             id=field_id ~ "-pct",
+            error=errors.get(val_prefix ~ "[percentage]", ""),
             type="number",
             value=val.percentage_target if val and val.percentage_target is not none else "",
             classes="w-24",
@@ -54,6 +65,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         <td class="py-3 px-4">
             {{ input(name=val_prefix ~ "[min]",
             id=field_id ~ "-min",
+            error=errors.get(val_prefix ~ "[min]", ""),
             type="number",
             value=val.min if val else "",
             classes="w-20",
@@ -62,6 +74,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         <td class="py-3 px-4">
             {{ input(name=val_prefix ~ "[max]",
             id=field_id ~ "-max",
+            error=errors.get(val_prefix ~ "[max]", ""),
             type="number",
             value=val.max if val else "",
             classes="w-20",
@@ -70,6 +83,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         <td class="py-3 px-4">
             {{ input(name=val_prefix ~ "[comment]",
             id=field_id ~ "-comment",
+            error=errors.get(val_prefix ~ "[comment]", ""),
             value=val.comment if val else "",
             placeholder=_("Why min and max were set by hand")) }}
         </td>
@@ -91,12 +105,14 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     </tr>
 {% endmacro %}
 
-{% macro category_block(cat_id, category=None, missing_values=None) %}
+{% macro category_block(cat_id, category=None, missing_values=None, errors={}) %}
     {% set cat_prefix = "cat[" ~ cat_id ~ "]" %}
+    {% set block_deleted = "true" if category and category.deleted else "false" %}
+    {% set block_error = errors.get(cat_prefix, "") %}
     <div class="mb-8 rounded-lg overflow-hidden p-6"
          id="bulk-category-{{ cat_id }}"
          {% if category %}
-             x-data="bulkTargetsCategory({ emptyLabel: '{{ _('None') }}' })"
+             x-data="bulkTargetsCategory({ emptyLabel: '{{ _('None') }}', deleted: {{ block_deleted }} })"
          {% else %}
              x-data="bulkTargetsCategory({ emptyLabel: '{{ _('None') }}', isNew: true })"
          {% endif %}
@@ -106,7 +122,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 border: 1px solid var(--color-borders-dividers)">
         <input type="hidden"
                name="{{ cat_prefix }}[deleted]"
-               value="false"
+               value="{{ block_deleted }}"
                x-ref="deletedField" />
         <input type="hidden"
                name="{{ cat_prefix }}[sort_order]"
@@ -126,20 +142,28 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             {{ button(_("Undo"), variant="tertiary", attrs='@click="undoDelete()"') }}
         </div>
         <div x-show="!deleted">
+            {% if block_error %}
+                <p class="text-body-sm mb-2"
+                   style="color: var(--color-primary-action);
+                          white-space: pre-line">{{ block_error }}</p>
+            {% endif %}
             <div class="mb-4 flex flex-wrap items-end gap-3">
                 {{ input(name=cat_prefix ~ "[name]",
                 id="bulk-name-" ~ cat_id|string,
+                error=errors.get(cat_prefix ~ "[name]", ""),
                 label=_("Category Name"),
                 value=category.name if category else "",
                 required=true,
                 attrs='data-category-name="true"') }}
                 {{ input(name=cat_prefix ~ "[source_url]",
                 id="bulk-source-" ~ cat_id|string,
+                error=errors.get(cat_prefix ~ "[source_url]", ""),
                 label=_("Source"),
                 value=category.source_url if category else "",
                 placeholder="https://") }}
                 {{ input(name=cat_prefix ~ "[comment]",
                 id="bulk-comment-" ~ cat_id|string,
+                error=errors.get(cat_prefix ~ "[comment]", ""),
                 label=_("Notes"),
                 value=category.comment if category else "") }}
                 <div class="flex items-center gap-2">
@@ -167,7 +191,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 </thead>
                 <tbody x-ref="rows">
                     {% for val in (category.values if category else []) or [] %}
-                        {{ value_row(cat_id, val.value_id, val=val) }}
+                        {{ value_row(cat_id, val.value_id, val=val, errors=errors) }}
                     {% endfor %}
                     {# Blank rows are cloned from here, so the markup has exactly
                        one definition. __ID__ becomes new-<n> on the way in. #}
@@ -218,6 +242,10 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     </div>
 {% endmacro %}
 
+{# A rejected save re-renders from what was submitted rather than from the
+   database, so nothing typed into the form is lost while it is being fixed. #}
+{% set form_categories = pending_categories if pending_categories is defined and pending_categories else target_categories %}
+{% set errors = field_errors if field_errors is defined and field_errors else {} %}
 <form method="post"
       action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}"
       id="save-all-form"
@@ -228,7 +256,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
         {{ button(_("Save all"), variant="primary", type="submit") }}
     </div>
     <div id="bulk-categories" x-ref="categories">
-        {% for category in target_categories %}
+        {% for category in form_categories %}
             {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
             {% set target_value_names = (category.values or []) | map(attribute='value') | list %}
             {% set missing_values = [] %}
@@ -239,7 +267,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     {% endif %}
                 {% endfor %}
             {% endif %}
-            {{ category_block(category.id, category=category, missing_values=missing_values) }}
+            {{ category_block(category.id, category=category, missing_values=missing_values, errors=errors) }}
         {% endfor %}
     </div>
     {# ── Add Target ───────────────────────────────────── #}

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-28 12:56+0100\n"
+"POT-Creation-Date: 2026-08-28 12:57+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -192,7 +192,7 @@ msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 #: templates/backoffice/assembly_view_respondent.html:58
 #: templates/backoffice/assembly_view_respondent.html:67
 #: templates/backoffice/assembly_view_respondent.html:162
-#: templates/backoffice/components/input.html:327
+#: templates/backoffice/components/input.html:333
 #: templates/backoffice/components/table.html:246
 #: templates/backoffice/patterns/_custom.html:78
 #: templates/backoffice/patterns/_custom.html:83
@@ -208,7 +208,7 @@ msgstr ""
 #: templates/backoffice/assembly_view_respondent.html:58
 #: templates/backoffice/assembly_view_respondent.html:67
 #: templates/backoffice/assembly_view_respondent.html:163
-#: templates/backoffice/components/input.html:327
+#: templates/backoffice/components/input.html:333
 #: templates/backoffice/components/table.html:248
 #: templates/backoffice/patterns/_custom.html:98
 #: templates/backoffice/patterns/_custom.html:103
@@ -653,7 +653,7 @@ msgid "Select a CSV file containing target categories"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:581 src/opendlp/entrypoints/forms.py:591
-#: templates/backoffice/targets/bulk_edit_form.html:132
+#: templates/backoffice/targets/bulk_edit_form.html:154
 #, fuzzy
 msgid "Category Name"
 msgstr "Kategóriákat tartalmazó lapful neve"
@@ -663,8 +663,8 @@ msgid "e.g. Gender, Age, Ethnicity"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:596 src/opendlp/entrypoints/forms.py:635
-#: templates/backoffice/targets/bulk_edit_form.html:143
-#: templates/backoffice/targets/bulk_edit_form.html:163
+#: templates/backoffice/targets/bulk_edit_form.html:167
+#: templates/backoffice/targets/bulk_edit_form.html:187
 #: templates/backoffice/targets/category_block.html:87
 #, fuzzy
 msgid "Notes"
@@ -675,7 +675,7 @@ msgid "Optional - why these targets were chosen"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:602
-#: templates/backoffice/targets/bulk_edit_form.html:138
+#: templates/backoffice/targets/bulk_edit_form.html:161
 #: templates/respondents/view_respondents.html:167
 #, fuzzy
 msgid "Source"
@@ -686,7 +686,7 @@ msgid "Optional - a link to where the percentages came from"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:612
-#: templates/backoffice/targets/bulk_edit_form.html:155
+#: templates/backoffice/targets/bulk_edit_form.html:179
 #: templates/backoffice/targets/category_block.html:79
 #: templates/targets/components/category_block.html:69
 #: templates/targets/components/category_block.html:136
@@ -709,7 +709,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:625
 #: src/opendlp/service_layer/selection_report.py:231
-#: templates/backoffice/targets/bulk_edit_form.html:159
+#: templates/backoffice/targets/bulk_edit_form.html:183
 #: templates/backoffice/targets/category_block.html:83
 #: templates/targets/components/category_block.html:70
 #: templates/targets/components/category_block.html:147
@@ -719,7 +719,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:630
 #: src/opendlp/service_layer/selection_report.py:232
-#: templates/backoffice/targets/bulk_edit_form.html:161
+#: templates/backoffice/targets/bulk_edit_form.html:185
 #: templates/backoffice/targets/category_block.html:85
 #: templates/targets/components/category_block.html:71
 #: templates/targets/components/category_block.html:158
@@ -787,16 +787,16 @@ msgstr ""
 msgid "Unrecognised attribute names: %(names)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/save_all_parser.py:41
+#: src/opendlp/entrypoints/save_all_parser.py:50
 #, python-format
 msgid "\"%(value)s\" is not a valid %(field)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/save_all_parser.py:72
+#: src/opendlp/entrypoints/save_all_parser.py:95
 msgid "Every target value needs a name"
 msgstr ""
 
-#: src/opendlp/entrypoints/save_all_parser.py:104
+#: src/opendlp/entrypoints/save_all_parser.py:130
 #, fuzzy
 msgid "Every target needs a name"
 msgstr "Vezetéknév"
@@ -1207,8 +1207,8 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/respondents.py:813
 #: src/opendlp/entrypoints/blueprints/respondents.py:969
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
-#: src/opendlp/entrypoints/blueprints/targets.py:190
-#: src/opendlp/entrypoints/blueprints/targets.py:957
+#: src/opendlp/entrypoints/blueprints/targets.py:193
+#: src/opendlp/entrypoints/blueprints/targets.py:960
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:109
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:757
 msgid "You don't have permission to view this assembly"
@@ -1282,10 +1282,10 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
-#: src/opendlp/entrypoints/blueprints/targets.py:181
-#: src/opendlp/entrypoints/blueprints/targets.py:268
-#: src/opendlp/entrypoints/blueprints/targets.py:313
-#: src/opendlp/entrypoints/blueprints/targets.py:954
+#: src/opendlp/entrypoints/blueprints/targets.py:184
+#: src/opendlp/entrypoints/blueprints/targets.py:271
+#: src/opendlp/entrypoints/blueprints/targets.py:316
+#: src/opendlp/entrypoints/blueprints/targets.py:957
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:106
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:176
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:754
@@ -2589,7 +2589,7 @@ msgid "%(count)s rows were skipped: %(errors)s"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:167
-#: src/opendlp/entrypoints/blueprints/targets.py:265
+#: src/opendlp/entrypoints/blueprints/targets.py:268
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:173
 #, fuzzy, python-format
 msgid "CSV import failed: %(error)s"
@@ -2601,24 +2601,24 @@ msgid "You don't have permission to import respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:176
-#: src/opendlp/entrypoints/blueprints/targets.py:274
+#: src/opendlp/entrypoints/blueprints/targets.py:277
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:182
 msgid "Could not read CSV file. Please ensure it is UTF-8 encoded."
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:180
-#: src/opendlp/entrypoints/blueprints/targets.py:278
+#: src/opendlp/entrypoints/blueprints/targets.py:281
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:186
 #, fuzzy
 msgid "An unexpected error occurred during import"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:196
+#: src/opendlp/entrypoints/blueprints/targets.py:199
 #, fuzzy
 msgid "An error occurred while loading assembly targets"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:251
+#: src/opendlp/entrypoints/blueprints/targets.py:254
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:161
 #, python-format
 msgid ""
@@ -2626,31 +2626,31 @@ msgid ""
 "%(file)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:271
+#: src/opendlp/entrypoints/blueprints/targets.py:274
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:179
 #, fuzzy
 msgid "You don't have permission to import targets"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:295
+#: src/opendlp/entrypoints/blueprints/targets.py:298
 #, python-format
 msgid "Targets deleted: %(count)d categories removed"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:307
+#: src/opendlp/entrypoints/blueprints/targets.py:310
 #, fuzzy
 msgid "You don't have permission to delete targets"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:319
+#: src/opendlp/entrypoints/blueprints/targets.py:322
 #, fuzzy
 msgid "An error occurred while deleting targets"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:338
-#: src/opendlp/entrypoints/blueprints/targets.py:410
-#: src/opendlp/entrypoints/blueprints/targets.py:520
-#: src/opendlp/entrypoints/blueprints/targets.py:620
+#: src/opendlp/entrypoints/blueprints/targets.py:341
+#: src/opendlp/entrypoints/blueprints/targets.py:413
+#: src/opendlp/entrypoints/blueprints/targets.py:523
+#: src/opendlp/entrypoints/blueprints/targets.py:623
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:202
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:271
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:369
@@ -2658,19 +2658,19 @@ msgstr "Hiba történt a gyűlés frissítése közben"
 msgid "Please correct the errors below"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:374
+#: src/opendlp/entrypoints/blueprints/targets.py:377
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:236
 #, python-format
 msgid "Category '%(name)s' added"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:385
-#: src/opendlp/entrypoints/blueprints/targets.py:455
-#: src/opendlp/entrypoints/blueprints/targets.py:582
-#: src/opendlp/entrypoints/blueprints/targets.py:681
-#: src/opendlp/entrypoints/blueprints/targets.py:998
-#: src/opendlp/entrypoints/blueprints/targets.py:1030
-#: src/opendlp/entrypoints/blueprints/targets.py:1063
+#: src/opendlp/entrypoints/blueprints/targets.py:388
+#: src/opendlp/entrypoints/blueprints/targets.py:458
+#: src/opendlp/entrypoints/blueprints/targets.py:585
+#: src/opendlp/entrypoints/blueprints/targets.py:684
+#: src/opendlp/entrypoints/blueprints/targets.py:1001
+#: src/opendlp/entrypoints/blueprints/targets.py:1033
+#: src/opendlp/entrypoints/blueprints/targets.py:1104
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:247
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:311
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:423
@@ -2679,103 +2679,107 @@ msgstr ""
 msgid "Error: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:442
+#: src/opendlp/entrypoints/blueprints/targets.py:445
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:298
 #, python-format
 msgid "Category renamed to '%(name)s'"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:481
+#: src/opendlp/entrypoints/blueprints/targets.py:484
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:334
 #, fuzzy
 msgid "Category deleted"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:556
+#: src/opendlp/entrypoints/blueprints/targets.py:559
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:400
 #, python-format
 msgid "Value '%(value)s' added"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:655
+#: src/opendlp/entrypoints/blueprints/targets.py:658
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:489
 #, fuzzy
 msgid "Value updated"
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:719
+#: src/opendlp/entrypoints/blueprints/targets.py:722
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:546
 #, fuzzy
 msgid "Value deleted"
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:737
+#: src/opendlp/entrypoints/blueprints/targets.py:740
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:564
 msgid "No values to add"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:785
+#: src/opendlp/entrypoints/blueprints/targets.py:788
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:609
 #, python-format
 msgid "Added %(count)s values"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:838
+#: src/opendlp/entrypoints/blueprints/targets.py:841
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:629
 #, fuzzy
 msgid "No columns selected"
 msgstr "Táblázat lapfülei"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:883
+#: src/opendlp/entrypoints/blueprints/targets.py:886
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:684
 #, python-format
 msgid "Created %(count)s categories with %(values)s values: %(names)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:892
+#: src/opendlp/entrypoints/blueprints/targets.py:895
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:693
 #, python-format
 msgid "Created %(count)s categories: %(names)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:896
+#: src/opendlp/entrypoints/blueprints/targets.py:899
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:697
 #, fuzzy
 msgid "No new categories were created"
 msgstr "Feladat állapota"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:961
+#: src/opendlp/entrypoints/blueprints/targets.py:964
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:761
 #, fuzzy
 msgid "An unexpected error occurred while checking targets"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:1001
+#: src/opendlp/entrypoints/blueprints/targets.py:1004
 #, fuzzy
 msgid "You don't have permission to reorder these targets"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:1026
+#: src/opendlp/entrypoints/blueprints/targets.py:1029
 msgid "Min and max are calculated from the percentage again"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:1033
-#: src/opendlp/entrypoints/blueprints/targets.py:1066
+#: src/opendlp/entrypoints/blueprints/targets.py:1036
+#: src/opendlp/entrypoints/blueprints/targets.py:1107
 #, fuzzy
 msgid "You don't have permission to edit these targets"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:1043
+#: src/opendlp/entrypoints/blueprints/targets.py:1059
+msgid "Your targets were not saved. Please correct the errors below."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/targets.py:1084
 #, fuzzy
 msgid "Please try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:1057
+#: src/opendlp/entrypoints/blueprints/targets.py:1096
 #, fuzzy
 msgid "Targets saved"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:1074
+#: src/opendlp/entrypoints/blueprints/targets.py:1115
 #, fuzzy
 msgid "An error occurred while saving the targets"
 msgstr "Hiba történt a gyűlés frissítése közben"
@@ -3434,11 +3438,27 @@ msgstr ""
 msgid "Percentages for this category add up to %(total)s%%, not 100%%"
 msgstr ""
 
-#: src/opendlp/service_layer/target_service.py:303
+#: src/opendlp/service_layer/target_service.py:341
 #, python-format
 msgid ""
 "Rows for \"%(category)s\" gave different values for %(column)s. Using "
 "\"%(used)s\" and ignoring %(count)s other value(s)."
+msgstr ""
+
+#: src/opendlp/service_layer/target_service.py:1077
+msgid "Min cannot be negative"
+msgstr ""
+
+#: src/opendlp/service_layer/target_service.py:1079
+msgid "Max cannot be negative"
+msgstr ""
+
+#: src/opendlp/service_layer/target_service.py:1081
+msgid "Max must be at least the min"
+msgstr ""
+
+#: src/opendlp/service_layer/target_service.py:1083
+msgid "Population share must be between 0 and 100"
 msgstr ""
 
 #: src/opendlp/service_layer/two_factor_service.py:51
@@ -3670,7 +3690,7 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/backoffice/respondents/confirm_upload_diff.html:98
 #: templates/backoffice/respondents/export_modal.html:77
 #: templates/backoffice/showcase/modal_component.html:25
-#: templates/backoffice/targets/bulk_edit_form.html:227
+#: templates/backoffice/targets/bulk_edit_form.html:255
 #: templates/backoffice/targets/category_name_edit.html:23
 #: templates/db_selection/select.html:113
 #: templates/db_selection/settings.html:76
@@ -3916,7 +3936,7 @@ msgstr ""
 #: templates/backoffice/assembly_selection.html:363
 #: templates/backoffice/components/registration_page_list.html:36
 #: templates/backoffice/respondent_field_schema/view.html:138
-#: templates/backoffice/targets/bulk_edit_form.html:165
+#: templates/backoffice/targets/bulk_edit_form.html:189
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
 #: templates/targets/components/category_block.html:76
@@ -4022,8 +4042,8 @@ msgid "View details"
 msgstr "Meghívó kód"
 
 #: templates/admin/user_2fa_audit_log.html:82
-#: templates/backoffice/targets/bulk_edit_form.html:99
-#: templates/backoffice/targets/bulk_edit_form.html:101
+#: templates/backoffice/targets/bulk_edit_form.html:115
+#: templates/backoffice/targets/bulk_edit_form.html:117
 #: templates/main/view_assembly_data.html:105
 msgid "None"
 msgstr ""
@@ -6206,11 +6226,11 @@ msgstr "Irányító pult"
 msgid "Version"
 msgstr ""
 
-#: templates/backoffice/components/input.html:551
+#: templates/backoffice/components/input.html:557
 msgid "On"
 msgstr ""
 
-#: templates/backoffice/components/input.html:551
+#: templates/backoffice/components/input.html:557
 msgid "Off"
 msgstr ""
 
@@ -8575,12 +8595,12 @@ msgid "On registration form for %(key)s"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/respondent_field_schema/view.html:213
-#: templates/backoffice/targets/bulk_edit_form.html:146
+#: templates/backoffice/targets/bulk_edit_form.html:170
 msgid "Move up"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/view.html:222
-#: templates/backoffice/targets/bulk_edit_form.html:147
+#: templates/backoffice/targets/bulk_edit_form.html:171
 msgid "Move down"
 msgstr ""
 
@@ -9679,7 +9699,7 @@ msgid "New category name"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
 #: templates/backoffice/targets/add_category_form.html:22
-#: templates/backoffice/targets/bulk_edit_form.html:250
+#: templates/backoffice/targets/bulk_edit_form.html:278
 #: templates/targets/components/add_category_form.html:19
 #, fuzzy
 msgid "e.g. Gender"
@@ -9691,87 +9711,87 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 msgid "Add category"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:35
+#: templates/backoffice/targets/bulk_edit_form.html:45
 #: templates/backoffice/targets/category_block.html:107
 msgid "Min and max were set by hand, not calculated from the percentage"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:36
+#: templates/backoffice/targets/bulk_edit_form.html:46
 #: templates/backoffice/targets/category_block.html:108
 msgid "Set by hand"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:42
+#: templates/backoffice/targets/bulk_edit_form.html:52
 msgid "Min and max will be recalculated when you save."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:74
+#: templates/backoffice/targets/bulk_edit_form.html:88
 msgid "Why min and max were set by hand"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:80
+#: templates/backoffice/targets/bulk_edit_form.html:94
 #, fuzzy
 msgid "Use percentage"
 msgstr "Elkezdve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:84
+#: templates/backoffice/targets/bulk_edit_form.html:98
 #, fuzzy
 msgid "Delete value"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/targets/bulk_edit_form.html:87
-#: templates/backoffice/targets/bulk_edit_form.html:126
+#: templates/backoffice/targets/bulk_edit_form.html:101
+#: templates/backoffice/targets/bulk_edit_form.html:142
 msgid "Undo"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:123
+#: templates/backoffice/targets/bulk_edit_form.html:139
 #, python-format
 msgid "\"%(name)s\" and all its values will be deleted when you save."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:148
+#: templates/backoffice/targets/bulk_edit_form.html:172
 #, fuzzy
 msgid "Delete target"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/targets/bulk_edit_form.html:157
+#: templates/backoffice/targets/bulk_edit_form.html:181
 #: templates/backoffice/targets/category_block.html:81
 #, fuzzy, python-format
 msgid "Population (%%)"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/targets/bulk_edit_form.html:190
+#: templates/backoffice/targets/bulk_edit_form.html:214
 #: templates/targets/components/category_block.html:247
 msgid "Add value"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:193
+#: templates/backoffice/targets/bulk_edit_form.html:217
 #, fuzzy
 msgid "Add values found in respondent data"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:196
+#: templates/backoffice/targets/bulk_edit_form.html:220
 #, python-format
 msgid "Not yet targeted: %(values)s"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:206
+#: templates/backoffice/targets/bulk_edit_form.html:230
 #: templates/backoffice/targets/category_block.html:173
 #: templates/targets/components/category_block.html:195
 msgid "Total"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:228
+#: templates/backoffice/targets/bulk_edit_form.html:256
 #, fuzzy
 msgid "Save all"
 msgstr "Elkezdve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:249
+#: templates/backoffice/targets/bulk_edit_form.html:277
 #, fuzzy
 msgid "New target name"
 msgstr "Vezetéknév"
 
-#: templates/backoffice/targets/bulk_edit_form.html:252
+#: templates/backoffice/targets/bulk_edit_form.html:280
 #, fuzzy
 msgid "Add target"
 msgstr "Kezdés dátuma"
