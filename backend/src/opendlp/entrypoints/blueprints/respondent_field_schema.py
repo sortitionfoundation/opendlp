@@ -5,7 +5,7 @@ import contextlib
 import uuid
 
 import structlog
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -49,6 +49,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     update_choice_option,
     update_field,
 )
+from opendlp.service_layer.respondent_field_spec_service import build_field_spec
 from opendlp.translations import gettext as _
 
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
@@ -171,6 +172,34 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning("Insufficient permissions for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
+
+
+@respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema.json")
+@login_required
+def field_spec_json(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Return the assembly's full respondent field spec as JSON.
+
+    Deliberately not linked from anywhere in the UI. It exists so a script
+    outside the app — a test-data generator, for one — can discover an
+    assembly's CSV columns and their valid values without scraping the schema
+    page. See docs/respondent_field_spec.md for the shape.
+    """
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            spec = build_field_spec(uow, current_user.id, assembly_id)
+    except NotFoundError as e:
+        logger.warning(
+            "Assembly not found for field spec",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        return jsonify({"error": _("Assembly not found")}), 404
+    except InsufficientPermissions as e:
+        logger.warning("Insufficient permissions for field spec", assembly_id=str(assembly_id), error=str(e))
+        return jsonify({"error": _("You don't have permission to view this assembly")}), 403
+    return jsonify(spec), 200
 
 
 @respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema/initialise", methods=["POST"])

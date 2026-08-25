@@ -1,0 +1,196 @@
+{
+  "assembly": {
+    "id": "00000000-0000-4000-8000-000000000000",
+    "number_to_select": 0,
+    "title": "Existing Assembly"
+  },
+  "csv": {
+    "columns": [
+      "external_id",
+      "eligible",
+      "can_attend",
+      "email",
+      "first_name",
+      "postcode",
+      "gender",
+      "consent",
+      "stay_on_db"
+    ],
+    "id_column": "external_id",
+    "internal_columns_ignored_on_import": [
+      "selection_status",
+      "selection_run_id",
+      "source_type",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  "fields": [
+    {
+      "derivation_kind": "",
+      "derived_from": null,
+      "field_key": "eligible",
+      "field_type": "bool_or_none",
+      "group": "eligibility",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": true,
+      "label": "Eligible",
+      "on_registration_page": "yes_required",
+      "options": null,
+      "sort_order": 10,
+      "target_values": null
+    },
+    {
+      "derivation_kind": "",
+      "derived_from": null,
+      "field_key": "can_attend",
+      "field_type": "bool_or_none",
+      "group": "eligibility",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": true,
+      "label": "Can attend",
+      "on_registration_page": "yes_required",
+      "options": null,
+      "sort_order": 20,
+      "target_values": null
+    },
+    {
+      "derivation_kind": "",
+      "derived_from": null,
+      "field_key": "email",
+      "field_type": "email",
+      "group": "name_and_contact",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": true,
+      "label": "Email",
+      "on_registration_page": "yes_required",
+      "options": null,
+      "sort_order": 10,
+      "target_values": null
+    },
+    {
+      "derivation_kind": "",
+      "derived_from": null,
+      "field_key": "first_name",
+      "field_type": "text",
+      "group": "name_and_contact",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": false,
+      "label": "First name",
+      "on_registration_page": "yes_required",
+      "options": null,
+      "sort_order": 20,
+      "target_values": null
+    },
+    {
+      "derivation_kind": "",
+      "derived_from": null,
+      "field_key": "postcode",
+      "field_type": "text",
+      "group": "address",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": false,
+      "label": "Postcode",
+      "on_registration_page": "yes_required",
+      "options": null,
+      "sort_order": 10,
+      "target_values": null
+    },
+    {
+      "derivation_kind": "",
+      "derived_from": null,
+      "field_key": "gender",
+      "field_type": "choice_radio",
+      "group": "about_you",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": false,
+      "label": "Gender",
+      "on_registration_page": "yes_required",
+      "options": [
+        {
+          "help_text": "",
+          "value": "Male"
+        },
+        {
+          "help_text": "Includes trans women",
+          "value": "Female"
+        }
+      ],
+      "sort_order": 10,
+      "target_values": [
+        {
+          "description": "",
+          "max": 22,
+          "max_flex": -1,
+          "min": 18,
+          "min_flex": 0,
+          "percentage_target": null,
+          "value": "Male"
+        },
+        {
+          "description": "",
+          "max": 22,
+          "max_flex": -1,
+          "min": 18,
+          "min_flex": 0,
+          "percentage_target": null,
+          "value": "Female"
+        }
+      ]
+    },
+    {
+      "derivation_kind": "",
+      "derived_from": null,
+      "field_key": "consent",
+      "field_type": "bool_or_none",
+      "group": "consent",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": true,
+      "label": "Consent",
+      "on_registration_page": "yes_required",
+      "options": null,
+      "sort_order": 10,
+      "target_values": null
+    },
+    {
+      "derivation_kind": "",
+      "derived_from": null,
+      "field_key": "stay_on_db",
+      "field_type": "bool_or_none",
+      "group": "consent",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": true,
+      "label": "Stay on database",
+      "on_registration_page": "yes_optional",
+      "options": null,
+      "sort_order": 20,
+      "target_values": null
+    }
+  ],
+  "spec_version": 1,
+  "unmatched_target_categories": [
+    {
+      "description": "No respondent column carries this yet",
+      "name": "education",
+      "values": [
+        {
+          "description": "",
+          "max": 14,
+          "max_flex": -1,
+          "min": 10,
+          "min_flex": 0,
+          "percentage_target": null,
+          "value": "Degree"
+        }
+      ]
+    }
+  ]
+}

@@ -300,6 +300,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Command Line Interface](docs/cli.md) - System administration CLI commands
 - [Background Tasks](docs/background_tasks.md) - Task system architecture and monitoring
 - [Monitoring](docs/monitoring.md) - Health endpoints and end-to-end monitor selection feature
+- [Respondent Field Spec](docs/respondent_field_spec.md) - Hidden JSON endpoint describing an assembly's respondent columns and their valid values
 - [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
 - [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup
 - [Translation Management](docs/translations.md) - i18n workflow for application strings

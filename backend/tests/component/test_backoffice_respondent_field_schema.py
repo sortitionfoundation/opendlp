@@ -1,13 +1,17 @@
 # ABOUTME: Component tests for the respondent field schema management UI over a FakeUnitOfWork
 # ABOUTME: Drives the real backoffice schema routes + services against a seeded fake store (no PostgreSQL)
 
+import uuid
+
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldGroup,
 )
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.service_layer import respondent_field_schema_service
+from opendlp.service_layer.respondent_field_spec_service import SPEC_VERSION
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from tests.fakes import FakeUnitOfWork
 
@@ -419,3 +423,83 @@ class TestFieldTypeAndOptions:
         email_field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "email")
         # Still EMAIL — the attempt was refused.
         assert email_field.field_type == FieldType.EMAIL
+
+
+class TestFieldSpecJson:
+    """The hidden JSON endpoint a CSV generator reads before writing a file."""
+
+    def test_redirects_when_not_logged_in(self, client, existing_assembly):
+        response = client.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_user_without_access_gets_403_and_no_schema(self, logged_in_user, existing_assembly):
+        response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+        assert response.status_code == 403
+        body = response.get_json()
+        assert "fields" not in body
+        assert body["error"]
+
+    def test_unknown_assembly_gets_404(self, logged_in_admin):
+        response = logged_in_admin.get(f"/backoffice/assembly/{uuid.uuid4()}/respondent-schema.json")
+        assert response.status_code == 404
+        assert response.get_json()["error"]
+
+    def test_returns_the_columns_of_the_imported_csv(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+
+        assert response.status_code == 200
+        assert response.mimetype == "application/json"
+        body = response.get_json()
+        assert body["spec_version"] == SPEC_VERSION
+        assert body["assembly"]["id"] == str(existing_assembly.id)
+        assert body["csv"]["id_column"] == "external_id"
+        # Every column of the seeded import round-trips into the spec.
+        assert set(body["csv"]["columns"]) >= {
+            "external_id",
+            "first_name",
+            "last_name",
+            "gender",
+            "postcode",
+            "custom_notes",
+        }
+        assert body["csv"]["columns"][0] == "external_id"
+
+    def test_reports_choice_options_and_target_values(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        gender = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                gender.id,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            )
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="gender",
+                    values=[
+                        TargetValue(value="Male", min=18, max=22),
+                        TargetValue(value="Female", min=18, max=22),
+                    ],
+                )
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+
+        assert response.status_code == 200
+        body = response.get_json()
+        gender_field = next(f for f in body["fields"] if f["field_key"] == "gender")
+        assert gender_field["field_type"] == "choice_radio"
+        assert [o["value"] for o in gender_field["options"]] == ["Male", "Female"]
+        assert [v["value"] for v in gender_field["target_values"]] == ["Male", "Female"]
+        assert gender_field["target_values"][0]["min"] == 18
+        assert body["unmatched_target_categories"] == []

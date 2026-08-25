@@ -9,6 +9,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldGroup,
 )
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.service_layer import respondent_field_schema_service
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -255,3 +256,31 @@ class TestFieldTypeAndOptions:
             schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
             voted = next(f for f in schema if f.field_key == "voted")
             assert voted.field_type == FieldType.BOOL_OR_NONE
+
+
+class TestFieldSpecJson:
+    def test_returns_the_spec_for_an_assembly_stored_in_postgres(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="gender",
+                    values=[TargetValue(value="Female", min=18, max=22)],
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+
+        assert response.status_code == 200
+        body = response.get_json()
+        assert body["assembly"]["id"] == str(existing_assembly.id)
+        assert body["csv"]["columns"][0] == "external_id"
+        assert "custom_notes" in body["csv"]["columns"]
+        # The JSON column holding options and the target join both survive a real round trip.
+        gender = next(f for f in body["fields"] if f["field_key"] == "gender")
+        assert [v["value"] for v in gender["target_values"]] == ["Female"]
+        assert body["unmatched_target_categories"] == []

@@ -109,7 +109,7 @@ def build_respondent_table(
     return TabularData(headers=headers, rows=rows)
 
 
-def _resolve_id_column_header(assembly: Assembly) -> str:
+def resolve_id_column_header(assembly: Assembly) -> str:
     if assembly.csv is not None and assembly.csv.csv_id_column:
         return str(assembly.csv.csv_id_column)
     return "external_id"
@@ -158,7 +158,7 @@ def _write_export(
     uow and an already-authorised caller."""
     respondents = _fetch_respondents(uow, assembly_id, status_filter)
     schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-    id_column_header = _resolve_id_column_header(assembly)
+    id_column_header = resolve_id_column_header(assembly)
     table = build_respondent_table(respondents, schema, id_column_header)
     target.write_sheet(sheet_title, table)
 

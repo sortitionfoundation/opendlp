@@ -12,6 +12,7 @@ const FIXTURE_SCHEMAS = {
   "registration-image-alt-update": "registration-image",
   "registration-document-upload": "registration-document",
   "image-upload-error": "error",
+  "respondent-field-spec": "respondent-field-spec",
 };
 
 describe("every recorded fixture", () => {

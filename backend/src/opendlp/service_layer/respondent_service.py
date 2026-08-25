@@ -34,7 +34,7 @@ from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 # Internal, export-only columns recognised and skipped on import. They mirror
 # the extra columns build_respondent_table appends, so an exported file
 # re-imports without colliding with reserved Respondent field names.
-_INTERNAL_IMPORT_SKIP_COLUMNS = ("selection_status", "selection_run_id", "source_type", "created_at", "updated_at")
+INTERNAL_IMPORT_SKIP_COLUMNS = ("selection_status", "selection_run_id", "source_type", "created_at", "updated_at")
 
 
 def create_respondent(
@@ -168,7 +168,7 @@ def import_respondents_from_rows(  # noqa: C901
     # Internal export-only columns are recognised and skipped so that a
     # previously-exported file re-imports cleanly (they would otherwise
     # collide with reserved Respondent field names). Report each once.
-    skip_normalised = {normalise_field_name(c) for c in _INTERNAL_IMPORT_SKIP_COLUMNS}
+    skip_normalised = {normalise_field_name(c) for c in INTERNAL_IMPORT_SKIP_COLUMNS}
     errors.extend(
         f"Ignored internal column not imported: {header}"
         for header in headers
@@ -262,7 +262,7 @@ def respondent_from_row(
 
     # Discard internal export-only columns before constructing the
     # Respondent so they never land in attributes.
-    for skip_column in _INTERNAL_IMPORT_SKIP_COLUMNS:
+    for skip_column in INTERNAL_IMPORT_SKIP_COLUMNS:
         pop_normalised(attributes, skip_column)
 
     respondent = Respondent(

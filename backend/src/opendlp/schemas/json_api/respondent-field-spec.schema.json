@@ -1,0 +1,303 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opendlp.sortitionfoundation.org/schemas/json_api/respondent-field-spec.schema.json",
+  "title": "Respondent field spec response",
+  "description": "Returned by GET /backoffice/assembly/<assembly_id>/respondent-schema.json. Describes an assembly's respondent columns and the valid values for each, so a script outside the app can generate a loadable respondent CSV. Documented in docs/respondent_field_spec.md.",
+  "type": "object",
+  "properties": {
+    "spec_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Bumped when the shape changes in a way a consumer has to notice."
+    },
+    "assembly": {
+      "$ref": "#/$defs/assembly"
+    },
+    "csv": {
+      "$ref": "#/$defs/csv"
+    },
+    "fields": {
+      "type": "array",
+      "description": "The whole field schema, in the order the schema page and the CSV export use: GROUP_DISPLAY_ORDER, then sort_order within each group.",
+      "items": {
+        "$ref": "#/$defs/field"
+      }
+    },
+    "unmatched_target_categories": {
+      "type": "array",
+      "description": "Target categories whose name matches no field_key exactly. Selection pairs a category with a respondent column by exact string match, so these have no column to select on as things stand.",
+      "items": {
+        "$ref": "#/$defs/target_category"
+      }
+    }
+  },
+  "required": [
+    "spec_version",
+    "assembly",
+    "csv",
+    "fields",
+    "unmatched_target_categories"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "assembly": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "title": {
+          "type": "string"
+        },
+        "number_to_select": {
+          "type": "integer",
+          "description": "How many respondents the selection is to pick. A sensible lower bound on how many rows to generate."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "number_to_select"
+      ],
+      "additionalProperties": false
+    },
+    "csv": {
+      "type": "object",
+      "properties": {
+        "id_column": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The assembly's configured csv_id_column, else \"external_id\". Its value becomes Respondent.external_id and must be unique."
+        },
+        "columns": {
+          "type": "array",
+          "description": "The header row to write, in order: the id column, then every non-derived field key. Import treats the first column as the id column when none is named, so keeping this order means the file loads either way.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "internal_columns_ignored_on_import": {
+          "type": "array",
+          "description": "Export-only columns that import recognises and skips, reporting each once. Present so a generator knows not to emit them; an exported file re-imports cleanly because of them.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "id_column",
+        "columns",
+        "internal_columns_ignored_on_import"
+      ],
+      "additionalProperties": false
+    },
+    "field": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "field_key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The CSV column header, and the Respondent.attributes key (or reserved top-level field name when is_fixed)."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Organiser-facing display label. Not translated - it is typed by the organiser."
+        },
+        "group": {
+          "type": "string",
+          "enum": [
+            "eligibility",
+            "name_and_contact",
+            "address",
+            "about_you",
+            "consent",
+            "other"
+          ]
+        },
+        "sort_order": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "is_fixed": {
+          "type": "boolean",
+          "description": "A reserved top-level Respondent field (email, eligible, can_attend, consent, stay_on_db). Its type and options cannot be edited."
+        },
+        "is_derived": {
+          "type": "boolean",
+          "description": "Computed from other fields, never collected. Excluded from csv.columns."
+        },
+        "derived_from": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Field keys this one is computed from. Null unless is_derived."
+        },
+        "derivation_kind": {
+          "type": "string",
+          "description": "How the derivation is done. Empty unless is_derived."
+        },
+        "field_type": {
+          "type": "string",
+          "enum": [
+            "text",
+            "longtext",
+            "bool",
+            "bool_or_none",
+            "choice_radio",
+            "choice_dropdown",
+            "integer",
+            "email"
+          ],
+          "description": "The effective type: for a fixed field the hardcoded FIXED_FIELD_TYPES entry wins over the stored one."
+        },
+        "options": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/choice_option"
+          },
+          "description": "The permitted values for a choice field. Non-empty for choice_radio and choice_dropdown; null for every other type."
+        },
+        "on_registration_page": {
+          "type": "string",
+          "enum": [
+            "no",
+            "yes_optional",
+            "yes_required"
+          ],
+          "description": "Whether the public registration form collects this field, and how strictly. Governs the form, not CSV import - import accepts any column."
+        },
+        "target_values": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/target_value"
+          },
+          "description": "The values and quotas of the TargetCategory whose name equals this field_key. Null when no category matches. These are the values selection will stratify on, so generated data should draw from them."
+        }
+      },
+      "required": [
+        "id",
+        "field_key",
+        "label",
+        "group",
+        "sort_order",
+        "is_fixed",
+        "is_derived",
+        "derived_from",
+        "derivation_kind",
+        "field_type",
+        "options",
+        "on_registration_page",
+        "target_values"
+      ],
+      "additionalProperties": false
+    },
+    "choice_option": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "help_text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "help_text"
+      ],
+      "additionalProperties": false
+    },
+    "target_category": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/target_value"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "values"
+      ],
+      "additionalProperties": false
+    },
+    "target_value": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The cell value a respondent must carry to count towards this quota. Compared exactly."
+        },
+        "min": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "min_flex": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Selection tolerance below min. Not a constraint on generated data."
+        },
+        "max_flex": {
+          "type": "integer",
+          "description": "Selection tolerance above max. -1 means unset, and the library calculates a safe default."
+        },
+        "percentage_target": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "min",
+        "max",
+        "min_flex",
+        "max_flex",
+        "percentage_target",
+        "description"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -6,7 +6,11 @@ from io import BytesIO
 import pytest
 from PIL import Image
 
+from opendlp.domain.respondent_field_schema import ChoiceOption, FieldType
+from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.service_layer import respondent_field_schema_service
 from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
+from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from tests.api_fixtures import assert_matches_schema, check_api_fixture, normalise
 from tests.fakes import FakeUnitOfWork
 
@@ -167,3 +171,65 @@ class TestNormalise:
 
     def test_leaves_keys_alone_so_a_rename_still_shows_as_a_diff(self):
         assert normalise({"6d1f9e0c-1111-4111-8111-111111111111": "x"}) == {"6d1f9e0c-1111-4111-8111-111111111111": "x"}
+
+
+class TestRespondentFieldSpecFixtures:
+    def test_field_spec_matches_schema_and_fixture(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """The shape a CSV generator outside this repo reads to learn the columns.
+
+        Seeded to exercise every branch at once: fixed rows, a plain text column,
+        a choice column with options, a target category joined onto a field, and
+        one that matches no field.
+        """
+        with FakeUnitOfWork(store=fake_store) as uow:
+            import_respondents_from_csv(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                "external_id,first_name,gender,postcode\nR001,Alice,Female,SW1A 1AA\n",
+                replace_existing=True,
+            )
+            gender = next(
+                f
+                for f in respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+                if f.field_key == "gender"
+            )
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                gender.id,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Male"), ChoiceOption(value="Female", help_text="Includes trans women")],
+            )
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="gender",
+                    values=[TargetValue(value="Male", min=18, max=22), TargetValue(value="Female", min=18, max=22)],
+                )
+            )
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="education",
+                    description="No respondent column carries this yet",
+                    values=[TargetValue(value="Degree", min=10, max=14)],
+                )
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+
+        assert response.status_code == 200
+        check_api_fixture(
+            "respondent-field-spec",
+            response.get_json(),
+            schema_name="respondent-field-spec",
+        )
+
+    def test_permission_error_matches_the_error_envelope(self, logged_in_user, existing_assembly):
+        """A refused spec request uses the standard envelope, and carries no schema."""
+        response = logged_in_user.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema.json")
+
+        assert response.status_code == 403
+        assert_matches_schema(response.get_json(), "error")
