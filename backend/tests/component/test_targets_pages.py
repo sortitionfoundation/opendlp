@@ -588,17 +588,26 @@ class TestViewIsReadOnly:
         assert b"Edit targets" in response.data
         assert b"Add category" in response.data
 
-    def test_the_page_actions_sit_level_with_the_title(
+    def test_the_page_actions_sit_level_with_the_targets_heading(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """In the header's actions slot, not stacked in a band above the categories."""
+        """Beside the <h2>, not stacked in a band beneath it."""
         _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
 
         html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
-        header = html[html.index("<h1") : html.index("</header>")]
+        heading_section = html[html.index("<h2") : html.index("</section>", html.index("<h2"))]
 
-        assert "Edit targets" in header
-        assert "Check targets in detail" in header
+        assert "Edit targets" in heading_section
+        assert "Check targets in detail" in heading_section
+
+    def test_the_heading_says_targets(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+        heading = html[html.index("<h2") : html.index("</h2>")]
+
+        assert ">Targets" in heading
+        assert "Target Categories" not in heading
 
     def test_a_google_sheet_assembly_gets_no_target_actions(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -614,11 +623,10 @@ class TestViewIsReadOnly:
                 team="uk",
             )
 
-        html = logged_in_admin.get(_targets_url(existing_assembly.id) + "?source=gsheet").data.decode()
-        header = html[html.index("<h1") : html.index("</header>")]
+        response = logged_in_admin.get(_targets_url(existing_assembly.id) + "?source=gsheet")
 
-        assert "Edit targets" not in header
-        assert "Check targets in detail" not in header
+        assert b"Edit targets" not in response.data
+        assert b"Check targets in detail" not in response.data
 
 
 class TestBulkEditForm:

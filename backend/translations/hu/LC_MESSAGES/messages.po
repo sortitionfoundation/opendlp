@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-28 12:55+0100\n"
+"POT-Creation-Date: 2026-08-28 12:56+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -635,7 +635,7 @@ msgstr "Új jelszó"
 #: src/opendlp/entrypoints/forms.py:568 src/opendlp/entrypoints/forms.py:653
 #: templates/backoffice/assembly_data.html:334
 #: templates/backoffice/assembly_data.html:386
-#: templates/backoffice/assembly_targets.html:207
+#: templates/backoffice/assembly_targets.html:208
 #: templates/backoffice/patterns/_file_upload.html:37
 msgid "CSV File"
 msgstr ""
@@ -3514,7 +3514,7 @@ msgstr ""
 msgid "My Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/backoffice/base_page.html:44 templates/base.html:79
+#: templates/backoffice/base_page.html:46 templates/base.html:79
 msgid "Sign out"
 msgstr "Kilépés"
 
@@ -3537,7 +3537,7 @@ msgstr "Hozzon létre fiókot"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_form.html:21
-#: templates/backoffice/assembly_targets.html:187 templates/base.html:127
+#: templates/backoffice/assembly_targets.html:188 templates/base.html:127
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -3555,7 +3555,7 @@ msgstr "Sikerült"
 msgid "Important"
 msgstr "Fontos"
 
-#: templates/backoffice/base_page.html:42 templates/base.html:176
+#: templates/backoffice/base_page.html:44 templates/base.html:176
 #: templates/base_public.html:40
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
@@ -4810,6 +4810,7 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:298
 #: templates/backoffice/assembly_targets.html:12
+#: templates/backoffice/assembly_targets.html:86
 #: templates/backoffice/components/assembly_tabs.html:48
 #: templates/backoffice/service_docs.html:35
 #: templates/main/view_assembly_base.html:36
@@ -5539,81 +5540,75 @@ msgstr "Kezdeti/Teszt kiválasztás"
 msgid "Replacement Categories Tab:"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: templates/backoffice/assembly_targets.html:82
-#: templates/targets/view_targets.html:4
-#, fuzzy
-msgid "Target Categories"
-msgstr "Feladat állapota"
-
-#: templates/backoffice/assembly_targets.html:85
+#: templates/backoffice/assembly_targets.html:89
 #: templates/targets/view_targets.html:6
 #, python-format
 msgid "%(count)s categories defined."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:89
+#: templates/backoffice/assembly_targets.html:93
 #: templates/targets/view_targets.html:8
 #, fuzzy
 msgid "No target categories defined yet."
 msgstr "Feladat állapota"
 
-#: templates/backoffice/assembly_targets.html:97
+#: templates/backoffice/assembly_targets.html:99
 #: templates/targets/view_targets.html:18
 #, fuzzy
 msgid "Check targets in detail"
 msgstr "Feladat állapota"
 
-#: templates/backoffice/assembly_targets.html:107
+#: templates/backoffice/assembly_targets.html:102
+#, fuzzy
+msgid "Edit targets"
+msgstr "Kezdés dátuma"
+
+#: templates/backoffice/assembly_targets.html:113
 #, python-format
 msgid ""
 "All checks passed. Found %(num_features)s target categories and "
 "%(num_people)s eligible respondents. Targets are ready for selection."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:116
+#: templates/backoffice/assembly_targets.html:122
 #: templates/targets/view_targets.html:41
 #: templates/targets/view_targets.html:52
 #: templates/targets/view_targets.html:61
 msgid "Target check found problems"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:124
+#: templates/backoffice/assembly_targets.html:130
 msgid ""
 "Target check found problems. See details below next to the affected "
 "targets."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:135
-#, fuzzy
-msgid "Edit targets"
-msgstr "Kezdés dátuma"
-
-#: templates/backoffice/assembly_targets.html:170
+#: templates/backoffice/assembly_targets.html:171
 #: templates/targets/view_targets.html:198
 msgid "Import from CSV"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:174
+#: templates/backoffice/assembly_targets.html:175
 #: templates/targets/view_targets.html:202
 msgid "Upload a CSV file with columns either:"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:177
+#: templates/backoffice/assembly_targets.html:178
 #: templates/targets/view_targets.html:204
 msgid "category, name, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:178
+#: templates/backoffice/assembly_targets.html:179
 #: templates/targets/view_targets.html:206
 msgid "feature, value, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:181
+#: templates/backoffice/assembly_targets.html:182
 #: templates/targets/view_targets.html:213
 msgid "Uploading a CSV will replace all existing target categories."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:209
+#: templates/backoffice/assembly_targets.html:210
 #: templates/respondents/view_respondents.html:78
 #: templates/targets/view_targets.html:252
 msgid "Upload CSV"
@@ -5752,16 +5747,16 @@ msgstr "Új jelszó"
 msgid "Back to Respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/base_page.html:35
+#: templates/backoffice/base_page.html:37
 msgid "Help (knowledge hub)"
 msgstr ""
 
-#: templates/backoffice/base_page.html:39
+#: templates/backoffice/base_page.html:41
 #, fuzzy
 msgid "My account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/backoffice/base_page.html:40
+#: templates/backoffice/base_page.html:42
 msgid "Switch to site admin"
 msgstr ""
 
@@ -11223,6 +11218,11 @@ msgstr ""
 #: templates/respondents/view_respondents.html:244
 msgid "No respondents imported yet. Upload a CSV file to get started."
 msgstr ""
+
+#: templates/targets/view_targets.html:4
+#, fuzzy
+msgid "Target Categories"
+msgstr "Feladat állapota"
 
 #: templates/targets/view_targets.html:27
 msgid "All checks passed"

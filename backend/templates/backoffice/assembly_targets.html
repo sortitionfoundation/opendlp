@@ -11,30 +11,12 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
 
 {% block title %}{{ _("Targets") }} - {{ assembly.title }}{% endblock %}
 
-{# One flat boolean, per the CSP-safe Alpine rules in patterns.html. It lives on
-   the page wrapper because the "Edit targets" button sits in the header and the
-   form it reveals sits in the content. #}
-{% block page_alpine %}x-data="{ editingAll: false }"{% endblock %}
-
 {% block page_header %}
-    {% set targets_editable = not (data_source == "gsheet" and gsheet) %}
-    {% set header_actions %}
-        {% if targets_editable and target_categories %}
-            <span x-show="!editingAll" class="flex items-center gap-2">
-                {{ button(_("Check targets in detail"), variant="secondary",
-                href=url_for('targets.check_targets', assembly_id=assembly.id)) }}
-                {% if can_manage %}
-                    {{ button(_("Edit targets"), variant="secondary", attrs='@click="editingAll = true"') }}
-                {% endif %}
-            </span>
-        {% endif %}
-    {% endset %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard"),
-        actions=header_actions
+        back_label=_("Back to dashboard")
         ) }}
         <p class="text-body-md mt-2" style="color: var(--color-secondary-text);">
             {{ _("Number to select: %(number)s", number=assembly.number_to_select) }}
@@ -95,70 +77,85 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
     {% else %}
         {# CSV source, no source yet, or targets exist - show full editor #}
 
-        {# ── Target Categories Heading ───────────────────── #}
-        <section class="mb-6">
-            <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Target Categories") }}</h2>
-            {% if target_categories %}
-                <p class="text-body-md" style="color: var(--color-secondary-text);">
-                    {{ _("%(count)s categories defined.", count=target_categories|length) }}
-                </p>
-            {% else %}
-                <p class="text-body-md" style="color: var(--color-secondary-text);">
-                    {{ _("No target categories defined yet.") }}
-                </p>
-            {% endif %}
-        </section>
-
-        {# ── Check Result Display ────────────────────────── #}
-        {% if check_result is defined and check_result %}
-            <section class="mb-6">
-                {% if check_result.success %}
-                    {{ alert(
-                    _("All checks passed. Found %(num_features)s target categories and %(num_people)s eligible respondents. Targets are ready for selection.",
-                    num_features=check_result.num_features,
-                    num_people=check_result.num_people),
-                    variant="success"
-                    ) }}
-                {% else %}
-                    {% if check_result.global_errors %}
-                        <div class="mb-4 rounded-lg p-4"
-                             style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
-                            <h3 class="text-heading-md mb-2" style="color: var(--color-error-600);">{{ _("Target check found problems") }}</h3>
-                            <ul class="list-disc pl-5">
-                                {% for error_msg in check_result.global_errors %}
-                                    <li class="text-body-md mb-1" style="color: var(--color-error-600);">{{ error_msg }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
+        {# One flat boolean, per the CSP-safe Alpine rules in patterns.html. It
+           spans the heading, because the actions beside it reveal the form below. #}
+        <div x-data="{ editingAll: false }">
+            {# ── Targets Heading and Actions ──────────────── #}
+            <section class="mb-6 flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h2>
+                    {% if target_categories %}
+                        <p class="text-body-md" style="color: var(--color-secondary-text);">
+                            {{ _("%(count)s categories defined.", count=target_categories|length) }}
+                        </p>
                     {% else %}
-                        {{ alert(_("Target check found problems. See details below next to the affected targets."), variant="error") }}
+                        <p class="text-body-md" style="color: var(--color-secondary-text);">
+                            {{ _("No target categories defined yet.") }}
+                        </p>
                     {% endif %}
+                </div>
+                {% if target_categories %}
+                    <span x-show="!editingAll" class="flex items-center gap-2 shrink-0">
+                        {{ button(_("Check targets in detail"), variant="secondary",
+                        href=url_for('targets.check_targets', assembly_id=assembly.id)) }}
+                        {% if can_manage %}
+                            {{ button(_("Edit targets"), variant="secondary", attrs='@click="editingAll = true"') }}
+                        {% endif %}
+                    </span>
                 {% endif %}
             </section>
-        {% endif %}
 
-        {# ── Category Blocks ─────────────────────────────── #}
-        {% if can_manage and target_categories %}
-            <div x-show="editingAll" x-cloak>
-                {% include "backoffice/targets/bulk_edit_form.html" %}
+            {# ── Check Result Display ────────────────────────── #}
+            {% if check_result is defined and check_result %}
+                <section class="mb-6">
+                    {% if check_result.success %}
+                        {{ alert(
+                        _("All checks passed. Found %(num_features)s target categories and %(num_people)s eligible respondents. Targets are ready for selection.",
+                        num_features=check_result.num_features,
+                        num_people=check_result.num_people),
+                        variant="success"
+                        ) }}
+                    {% else %}
+                        {% if check_result.global_errors %}
+                            <div class="mb-4 rounded-lg p-4"
+                                 style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
+                                <h3 class="text-heading-md mb-2" style="color: var(--color-error-600);">{{ _("Target check found problems") }}</h3>
+                                <ul class="list-disc pl-5">
+                                    {% for error_msg in check_result.global_errors %}
+                                        <li class="text-body-md mb-1" style="color: var(--color-error-600);">{{ error_msg }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% else %}
+                            {{ alert(_("Target check found problems. See details below next to the affected targets."), variant="error") }}
+                        {% endif %}
+                    {% endif %}
+                </section>
+            {% endif %}
+
+            {# ── Category Blocks ─────────────────────────────── #}
+            {% if can_manage and target_categories %}
+                <div x-show="editingAll" x-cloak>
+                    {% include "backoffice/targets/bulk_edit_form.html" %}
+                </div>
+            {% endif %}
+            <div id="target-categories" x-show="!editingAll">
+                {% for category in target_categories %}
+                    {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
+                    {% set selected_counts = all_selected_counts.get(category.name) if all_selected_counts is defined and all_selected_counts else None %}
+                    {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
+                    {% set category_annotation_list = check_result.category_annotations.get(category.name, []) if check_result is defined and check_result else [] %}
+                    {% include "backoffice/targets/category_block.html" %}
+                {% endfor %}
             </div>
-        {% endif %}
-        <div id="target-categories" x-show="!editingAll">
-            {% for category in target_categories %}
-                {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
-                {% set selected_counts = all_selected_counts.get(category.name) if all_selected_counts is defined and all_selected_counts else None %}
-                {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
-                {% set category_annotation_list = check_result.category_annotations.get(category.name, []) if check_result is defined and check_result else [] %}
-                {% include "backoffice/targets/category_block.html" %}
-            {% endfor %}
+
+            {# ── Add Category Form ────────────────────────── #}
+            {% if can_manage %}
+                <div x-show="!editingAll">
+                    {% include "backoffice/targets/add_category_form.html" %}
+                </div>
+            {% endif %}
         </div>
-
-        {# ── Add Category Form ────────────────────────────── #}
-        {% if can_manage %}
-            <div x-show="!editingAll">
-                {% include "backoffice/targets/add_category_form.html" %}
-            </div>
-        {% endif %}
 
         {# ── Respondent Attribute Columns ─────────────────── #}
         {% include "backoffice/targets/respondent_columns.html" %}
