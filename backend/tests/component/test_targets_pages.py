@@ -325,16 +325,12 @@ class TestAddCategoriesFromColumns:
 
 
 class TestCheckTargets:
-    def test_check_button_visible_when_targets_exist(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_the_page_offers_no_check_button(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """Saving runs the check, so there is nothing left for a button to do."""
         _import_targets(
             fake_store, admin_user, existing_assembly.id, "feature,value,min,max\nGender,Male,3,7\nGender,Female,3,7\n"
         )
 
-        response = logged_in_admin.get(_targets_url(existing_assembly.id))
-        assert response.status_code == 200
-        assert b"Check targets in detail" in response.data
-
-    def test_check_button_hidden_when_no_targets(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
         assert response.status_code == 200
         assert b"Check targets in detail" not in response.data
@@ -647,7 +643,6 @@ class TestViewIsReadOnly:
         heading_section = html[html.index("<h2") : html.index("</section>", html.index("<h2"))]
 
         assert "Edit targets" in heading_section
-        assert "Check targets in detail" in heading_section
 
     def test_the_heading_says_targets(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
@@ -661,7 +656,7 @@ class TestViewIsReadOnly:
     def test_a_google_sheet_assembly_gets_no_target_actions(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """Its targets live in the spreadsheet, so there is nothing here to edit or check."""
+        """Its targets live in the spreadsheet, so there is nothing here to edit."""
         _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
         with FakeUnitOfWork(store=fake_store) as uow:
             add_assembly_gsheet(
@@ -675,7 +670,6 @@ class TestViewIsReadOnly:
         response = logged_in_admin.get(_targets_url(existing_assembly.id) + "?source=gsheet")
 
         assert b"Edit targets" not in response.data
-        assert b"Check targets in detail" not in response.data
 
 
 class TestBulkEditForm:

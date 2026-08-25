@@ -624,6 +624,37 @@ class TestSaveAll:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assert get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].name == "Gender"
 
+    def test_saving_runs_the_detailed_check(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """No separate "check targets" button: the save lands on the check itself."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=30.0)
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            value_id = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0].value_id
+
+        prefix = f"cat[{category.id}]"
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[values][{value_id}][value]": "Male",
+                f"{prefix}[values][{value_id}][percentage]": "30",
+            },
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith("/targets/check")
+
+        landed = logged_in_admin.get(response.location)
+        assert landed.status_code == 200
+        assert b"Targets saved" in landed.data
+        # The percentages come to 30, so the check's warning is on the page.
+        assert b"add up to" in landed.data
+
     def test_an_invalid_source_url_is_a_flash_not_a_500(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):

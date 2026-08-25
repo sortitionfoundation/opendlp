@@ -1055,7 +1055,9 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
             save_all_targets(uow, current_user.id, assembly_id, edits)
 
         flash(_("Targets saved"), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        # The detailed check is the whole point of saving: land on the page that
+        # runs it, so its annotations arrive without anyone asking for them.
+        return redirect(url_for("targets.check_targets", assembly_id=assembly_id))
 
     except (ValueError, NotFoundError) as e:
         flash(_("Error: %(error)s", error=str(e)), "error")

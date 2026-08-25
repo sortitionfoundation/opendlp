@@ -94,13 +94,12 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
                         </p>
                     {% endif %}
                 </div>
-                {% if target_categories %}
+                {# No "check targets" button: saving runs the detailed check and
+                   lands back here with its annotations, so there is nothing left
+                   for a separate button to do. #}
+                {% if target_categories and can_manage %}
                     <span x-show="!editingAll" class="flex items-center gap-2 shrink-0">
-                        {{ button(_("Check targets in detail"), variant="secondary",
-                        href=url_for('targets.check_targets', assembly_id=assembly.id)) }}
-                        {% if can_manage %}
-                            {{ button(_("Edit targets"), variant="primary", attrs='@click="editingAll = true"') }}
-                        {% endif %}
+                        {{ button(_("Edit targets"), variant="primary", attrs='@click="editingAll = true"') }}
                     </span>
                 {% endif %}
             </section>

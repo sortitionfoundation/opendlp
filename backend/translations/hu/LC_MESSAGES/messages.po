@@ -635,7 +635,7 @@ msgstr "Új jelszó"
 #: src/opendlp/entrypoints/forms.py:568 src/opendlp/entrypoints/forms.py:653
 #: templates/backoffice/assembly_data.html:334
 #: templates/backoffice/assembly_data.html:386
-#: templates/backoffice/assembly_targets.html:208
+#: templates/backoffice/assembly_targets.html:207
 #: templates/backoffice/patterns/_file_upload.html:37
 msgid "CSV File"
 msgstr ""
@@ -2670,7 +2670,7 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/targets.py:681
 #: src/opendlp/entrypoints/blueprints/targets.py:998
 #: src/opendlp/entrypoints/blueprints/targets.py:1030
-#: src/opendlp/entrypoints/blueprints/targets.py:1061
+#: src/opendlp/entrypoints/blueprints/targets.py:1063
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:247
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:311
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:423
@@ -2760,7 +2760,7 @@ msgid "Min and max are calculated from the percentage again"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/targets.py:1033
-#: src/opendlp/entrypoints/blueprints/targets.py:1064
+#: src/opendlp/entrypoints/blueprints/targets.py:1066
 #, fuzzy
 msgid "You don't have permission to edit these targets"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
@@ -2775,7 +2775,7 @@ msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 msgid "Targets saved"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:1072
+#: src/opendlp/entrypoints/blueprints/targets.py:1074
 #, fuzzy
 msgid "An error occurred while saving the targets"
 msgstr "Hiba történt a gyűlés frissítése közben"
@@ -3546,7 +3546,7 @@ msgstr "Hozzon létre fiókot"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_form.html:21
-#: templates/backoffice/assembly_targets.html:188 templates/base.html:127
+#: templates/backoffice/assembly_targets.html:187 templates/base.html:127
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -5562,63 +5562,57 @@ msgstr ""
 msgid "No target categories defined yet."
 msgstr "Feladat állapota"
 
-#: templates/backoffice/assembly_targets.html:99
-#: templates/targets/view_targets.html:18
-#, fuzzy
-msgid "Check targets in detail"
-msgstr "Feladat állapota"
-
 #: templates/backoffice/assembly_targets.html:102
 #, fuzzy
 msgid "Edit targets"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_targets.html:113
+#: templates/backoffice/assembly_targets.html:112
 #, python-format
 msgid ""
 "All checks passed. Found %(num_features)s target categories and "
 "%(num_people)s eligible respondents. Targets are ready for selection."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:122
+#: templates/backoffice/assembly_targets.html:121
 #: templates/targets/view_targets.html:41
 #: templates/targets/view_targets.html:52
 #: templates/targets/view_targets.html:61
 msgid "Target check found problems"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:130
+#: templates/backoffice/assembly_targets.html:129
 msgid ""
 "Target check found problems. See details below next to the affected "
 "targets."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:171
+#: templates/backoffice/assembly_targets.html:170
 #: templates/targets/view_targets.html:198
 msgid "Import from CSV"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:175
+#: templates/backoffice/assembly_targets.html:174
 #: templates/targets/view_targets.html:202
 msgid "Upload a CSV file with columns either:"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:178
+#: templates/backoffice/assembly_targets.html:177
 #: templates/targets/view_targets.html:204
 msgid "category, name, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:179
+#: templates/backoffice/assembly_targets.html:178
 #: templates/targets/view_targets.html:206
 msgid "feature, value, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:182
+#: templates/backoffice/assembly_targets.html:181
 #: templates/targets/view_targets.html:213
 msgid "Uploading a CSV will replace all existing target categories."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:210
+#: templates/backoffice/assembly_targets.html:209
 #: templates/respondents/view_respondents.html:78
 #: templates/targets/view_targets.html:252
 msgid "Upload CSV"
@@ -11249,6 +11243,11 @@ msgstr ""
 #: templates/targets/view_targets.html:4
 #, fuzzy
 msgid "Target Categories"
+msgstr "Feladat állapota"
+
+#: templates/targets/view_targets.html:18
+#, fuzzy
+msgid "Check targets in detail"
 msgstr "Feladat állapota"
 
 #: templates/targets/view_targets.html:27

@@ -34,6 +34,16 @@ Feature: Target percentages, notes and ordering
     When I save all targets
     Then I should see "Targets saved"
 
+  Scenario: Saving the targets runs the detailed check
+    Given there is an assembly with targets called "Check On Save Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Check On Save Demo"
+    Then I should not see the "Check targets in detail" button
+    When I choose to edit all targets
+    And I save all targets
+    Then I should see "Targets saved"
+    And I should see "Target check found problems"
+
   Scenario: The view page offers no way to change a target on the spot
     Given there is an assembly with targets called "Read Only Demo"
     And I am signed in as an admin user
