@@ -11,6 +11,7 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole
+from opendlp.service_layer.assembly_service import add_assembly_gsheet
 from opendlp.service_layer.target_service import (
     add_target_value,
     create_target_category,
@@ -586,6 +587,38 @@ class TestViewIsReadOnly:
 
         assert b"Edit targets" in response.data
         assert b"Add category" in response.data
+
+    def test_the_page_actions_sit_level_with_the_title(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """In the header's actions slot, not stacked in a band above the categories."""
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+        header = html[html.index("<h1") : html.index("</header>")]
+
+        assert "Edit targets" in header
+        assert "Check targets in detail" in header
+
+    def test_a_google_sheet_assembly_gets_no_target_actions(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Its targets live in the spreadsheet, so there is nothing here to edit or check."""
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_assembly_gsheet(
+                uow=uow,
+                assembly_id=existing_assembly.id,
+                user_id=admin_user.id,
+                url="https://docs.google.com/spreadsheets/d/1234567890abcdef/edit",
+                team="uk",
+            )
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id) + "?source=gsheet").data.decode()
+        header = html[html.index("<h1") : html.index("</header>")]
+
+        assert "Edit targets" not in header
+        assert "Check targets in detail" not in header
 
 
 class TestBulkEditForm:

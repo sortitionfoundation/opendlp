@@ -11,12 +11,30 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
 
 {% block title %}{{ _("Targets") }} - {{ assembly.title }}{% endblock %}
 
+{# One flat boolean, per the CSP-safe Alpine rules in patterns.html. It lives on
+   the page wrapper because the "Edit targets" button sits in the header and the
+   form it reveals sits in the content. #}
+{% block page_alpine %}x-data="{ editingAll: false }"{% endblock %}
+
 {% block page_header %}
+    {% set targets_editable = not (data_source == "gsheet" and gsheet) %}
+    {% set header_actions %}
+        {% if targets_editable and target_categories %}
+            <span x-show="!editingAll" class="flex items-center gap-2">
+                {{ button(_("Check targets in detail"), variant="secondary",
+                href=url_for('targets.check_targets', assembly_id=assembly.id)) }}
+                {% if can_manage %}
+                    {{ button(_("Edit targets"), variant="secondary", attrs='@click="editingAll = true"') }}
+                {% endif %}
+            </span>
+        {% endif %}
+    {% endset %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to dashboard"),
+        actions=header_actions
         ) }}
         <p class="text-body-md mt-2" style="color: var(--color-secondary-text);">
             {{ _("Number to select: %(number)s", number=assembly.number_to_select) }}
@@ -91,14 +109,6 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
             {% endif %}
         </section>
 
-        {# ── Check Targets Button ────────────────────────── #}
-        {% if target_categories %}
-            <section class="mb-6">
-                {{ button(_("Check targets in detail"), variant="secondary",
-                href=url_for('targets.check_targets', assembly_id=assembly.id)) }}
-            </section>
-        {% endif %}
-
         {# ── Check Result Display ────────────────────────── #}
         {% if check_result is defined and check_result %}
             <section class="mb-6">
@@ -128,33 +138,27 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
         {% endif %}
 
         {# ── Category Blocks ─────────────────────────────── #}
-        {# One flat boolean, per the CSP-safe Alpine rules in patterns.html #}
-        <div x-data="{ editingAll: false }">
-            {% if can_manage and target_categories %}
-                <section class="mb-6" x-show="!editingAll">
-                    {{ button(_("Edit targets"), variant="secondary", attrs='@click="editingAll = true"') }}
-                </section>
-                <div x-show="editingAll" x-cloak>
-                    {% include "backoffice/targets/bulk_edit_form.html" %}
-                </div>
-            {% endif %}
-            <div id="target-categories" x-show="!editingAll">
-                {% for category in target_categories %}
-                    {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
-                    {% set selected_counts = all_selected_counts.get(category.name) if all_selected_counts is defined and all_selected_counts else None %}
-                    {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
-                    {% set category_annotation_list = check_result.category_annotations.get(category.name, []) if check_result is defined and check_result else [] %}
-                    {% include "backoffice/targets/category_block.html" %}
-                {% endfor %}
+        {% if can_manage and target_categories %}
+            <div x-show="editingAll" x-cloak>
+                {% include "backoffice/targets/bulk_edit_form.html" %}
             </div>
-
-            {# ── Add Category Form ────────────────────────── #}
-            {% if can_manage %}
-                <div x-show="!editingAll">
-                    {% include "backoffice/targets/add_category_form.html" %}
-                </div>
-            {% endif %}
+        {% endif %}
+        <div id="target-categories" x-show="!editingAll">
+            {% for category in target_categories %}
+                {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
+                {% set selected_counts = all_selected_counts.get(category.name) if all_selected_counts is defined and all_selected_counts else None %}
+                {% set value_annotations = check_result.annotations.get(category.name, {}) if check_result is defined and check_result else {} %}
+                {% set category_annotation_list = check_result.category_annotations.get(category.name, []) if check_result is defined and check_result else [] %}
+                {% include "backoffice/targets/category_block.html" %}
+            {% endfor %}
         </div>
+
+        {# ── Add Category Form ────────────────────────────── #}
+        {% if can_manage %}
+            <div x-show="!editingAll">
+                {% include "backoffice/targets/add_category_form.html" %}
+            </div>
+        {% endif %}
 
         {# ── Respondent Attribute Columns ─────────────────── #}
         {% include "backoffice/targets/respondent_columns.html" %}
