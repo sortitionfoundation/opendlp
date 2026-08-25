@@ -93,6 +93,29 @@ Feature: Target percentages, notes and ordering
     When I set the "Male" percentage to "30"
     Then the bulk edit total should show "80%"
 
+  Scenario: Adding a target while editing every target at once
+    Given there is an assembly with targets called "Add Target Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Add Target Demo"
+    And I choose to edit all targets
+    And I add a target called "Age"
+    And I add a target value called "16-29" with percentage "100"
+    And I save all targets
+    Then I should see "Targets saved"
+    And the "Age" category should appear after the "Gender" category
+    And the "16-29" target should show min "20" and max "20"
+
+  Scenario: A target added by mistake can be taken straight back out
+    Given there is an assembly with targets called "Undo Add Target Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Undo Add Target Demo"
+    And I choose to edit all targets
+    And I add a target called "Age"
+    And I delete the "Age" category
+    And I save all targets
+    Then I should see "Targets saved"
+    And there should be no "Age" category
+
   Scenario: Reordering the target categories
     Given there is an assembly with two target categories called "Reorder Demo"
     And I am signed in as an admin user

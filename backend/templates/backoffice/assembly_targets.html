@@ -99,7 +99,7 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
                         {{ button(_("Check targets in detail"), variant="secondary",
                         href=url_for('targets.check_targets', assembly_id=assembly.id)) }}
                         {% if can_manage %}
-                            {{ button(_("Edit targets"), variant="secondary", attrs='@click="editingAll = true"') }}
+                            {{ button(_("Edit targets"), variant="primary", attrs='@click="editingAll = true"') }}
                         {% endif %}
                     </span>
                 {% endif %}

@@ -8,9 +8,12 @@ from typing import Any
 from opendlp.service_layer.target_service import TargetCategoryEdit, TargetValueEdit
 from opendlp.translations import gettext as _
 
-# cat[<category_id>][name] and cat[<category_id>][values][<value_id>][percentage]
-CATEGORY_FIELD = re.compile(r"^cat\[([0-9a-fA-F-]{36})\]\[(name|comment|source_url|deleted|sort_order)\]$")
-VALUE_FIELD = re.compile(r"^cat\[([0-9a-fA-F-]{36})\]\[values\]\[([0-9a-fA-F-]{36}|new-\d+)\]\[(\w+)\]$")
+# cat[<category_id>][name] and cat[<category_id>][values][<value_id>][percentage].
+# Either id may be "new-<n>" instead of a UUID: something the user added in the
+# form, which does not exist until the save goes through.
+ID = r"[0-9a-fA-F-]{36}|new-\d+"
+CATEGORY_FIELD = re.compile(rf"^cat\[({ID})\]\[(name|comment|source_url|deleted|sort_order)\]$")
+VALUE_FIELD = re.compile(rf"^cat\[({ID})\]\[values\]\[({ID})\]\[(\w+)\]$")
 
 VALUE_FIELDS = ("value", "percentage", "min", "max", "comment", "deleted", "relink")
 
@@ -20,6 +23,11 @@ TRUTHY = frozenset({"true", "1", "on", "yes"})
 def _is_true(raw: str) -> bool:
     """Whether a checkbox-style hidden field says yes."""
     return raw.strip().lower() in TRUTHY
+
+
+def _submitted_id(raw: str) -> uuid.UUID | None:
+    """The id of a submitted category or value, or None when it is a new one."""
+    return None if raw.startswith("new-") else uuid.UUID(raw)
 
 
 def _parse_number(raw: str, field: str, errors: list[str]) -> Any:
@@ -66,7 +74,7 @@ def _value_edit(value_id: str, cells: dict[str, str], errors: list[str]) -> Targ
 
     return TargetValueEdit(
         value=name,
-        value_id=None if value_id.startswith("new-") else uuid.UUID(value_id),
+        value_id=_submitted_id(value_id),
         percentage=_parse_number(cells.get("percentage", ""), "percentage", errors),
         min=_parse_number(cells.get("min", ""), "min", errors),
         max=_parse_number(cells.get("max", ""), "max", errors),
@@ -92,6 +100,9 @@ def parse_save_all_targets(form_data: Any) -> tuple[list[TargetCategoryEdit], li
         # A category on its way out is not held to its own or its values' rules.
         value_edits = []
         if not deleted:
+            if not fields.get("name", "").strip():
+                errors.append(_("Every target needs a name"))
+                continue
             for (owner, value_id), cells in values.items():
                 if owner != category_id:
                     continue
@@ -101,7 +112,7 @@ def parse_save_all_targets(form_data: Any) -> tuple[list[TargetCategoryEdit], li
 
         edits.append(
             TargetCategoryEdit(
-                category_id=uuid.UUID(category_id),
+                category_id=_submitted_id(category_id),
                 name=fields.get("name", "").strip(),
                 comment=fields.get("comment", "").strip(),
                 source_url=fields.get("source_url", "").strip(),

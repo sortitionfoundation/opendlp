@@ -555,6 +555,75 @@ class TestSaveAll:
             names = [c.name for c in get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)]
         assert names == ["Age", "Gender"]
 
+    def test_adding_a_category_the_user_typed_into_the_form(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.assemblies.get(existing_assembly.id).number_to_select = 20
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"cat[{category.id}][name]": "Gender",
+                f"cat[{category.id}][sort_order]": "10",
+                "cat[new-1][name]": "Age",
+                "cat[new-1][sort_order]": "20",
+                "cat[new-1][values][new-1][value]": "16-29",
+                "cat[new-1][values][new-1][percentage]": "50",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            saved = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)
+        assert [c.name for c in saved] == ["Gender", "Age"]
+        assert [v.value for v in saved[1].values] == ["16-29"]
+        assert (saved[1].values[0].min, saved[1].values[0].max) == (10, 11)
+
+    def test_a_duplicate_category_name_is_a_flash_not_a_500(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """The unique index on (assembly_id, name) would otherwise be an IntegrityError."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"cat[{category.id}][name]": "Gender",
+                "cat[new-1][name]": "gender",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"already exists" in response.data
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert len(get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)) == 1
+
+    def test_a_category_with_no_name_is_a_flash_not_a_rename_to_nothing(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"cat[{category.id}][name]": "   ",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].name == "Gender"
+
     def test_an_invalid_source_url_is_a_flash_not_a_500(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):

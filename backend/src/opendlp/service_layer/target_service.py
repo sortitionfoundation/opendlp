@@ -78,9 +78,13 @@ class TargetValueEdit:
 
 @dataclass
 class TargetCategoryEdit:
-    """One category in a bulk save, with all of its submitted values."""
+    """One category in a bulk save, with all of its submitted values.
 
-    category_id: uuid.UUID
+    A `category_id` of None means a category the user added in the form and that
+    does not exist yet.
+    """
+
+    category_id: uuid.UUID | None
     name: str
     comment: str = ""
     source_url: str = ""
@@ -887,25 +891,84 @@ def save_all_targets(
     Absence from the payload still means "leave alone", so a partial submission
     cannot silently destroy anything.
 
+    An edit with no `category_id` creates a category. Unlike
+    `create_target_category` this does not auto-populate values from a matching
+    respondent column: the user is looking at the form where they would add them,
+    and rows appearing under a name they had just typed would be a surprise.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     assembly = _load_user_and_assembly(uow, user_id, assembly_id, "save targets")
     number_to_select = assembly.number_to_select
+    naming = _CategoryNaming(uow, assembly_id, edits)
 
     saved = []
     now = datetime.now(UTC)
     for category_edit in edits:
-        category = _get_category(uow, assembly_id, category_edit.category_id)
         if category_edit.deleted:
-            uow.target_categories.delete(category)
+            if category_edit.category_id is not None:
+                uow.target_categories.delete(_get_category(uow, assembly_id, category_edit.category_id))
             continue
+
+        naming.claim(category_edit.name, category_edit.category_id)
+        is_new = category_edit.category_id is None
+        if is_new:
+            category = TargetCategory(
+                assembly_id=assembly_id,
+                name=category_edit.name.strip(),
+                sort_order=naming.next_sort_order(),
+            )
+            uow.target_categories.add(category)
+        else:
+            category = _get_category(uow, assembly_id, cast("uuid.UUID", category_edit.category_id))
 
         _apply_category_edit(category, category_edit, number_to_select)
         category.updated_at = now
-        flag_modified(category, "values")
+        if not is_new:
+            # A category being inserted has no stored JSON to mark dirty.
+            flag_modified(category, "values")
         saved.append(category.create_detached_copy())
 
     return saved
+
+
+class _CategoryNaming:
+    """Guards category names and hands out sort orders during a bulk save.
+
+    `(assembly_id, name)` carries a unique index, so a clash is a database error
+    rather than a mistake we can shrug at. Checking here turns it into a
+    `ValueError` the route can flash.
+
+    A name in use at the start of the save stays claimed for its own category
+    even when this save deletes or renames it away. Freeing it properly would
+    mean flushing the deletes before the inserts, and SQLAlchemy orders an INSERT
+    ahead of the DELETE that would make room for it. So deleting "Gender" and
+    adding a new "Gender" in one go is refused; do it in two saves.
+    """
+
+    def __init__(
+        self,
+        uow: AbstractUnitOfWork,
+        assembly_id: uuid.UUID,
+        edits: list[TargetCategoryEdit],
+    ) -> None:
+        existing = uow.target_categories.get_by_assembly_id(assembly_id)
+        self._taken = {c.name.strip().lower() for c in existing}
+        self._own: dict[uuid.UUID | None, str] = {c.id: c.name.strip().lower() for c in existing}
+        self._next = max((c.sort_order for c in existing), default=0) + SORT_ORDER_STEP
+
+    def claim(self, name: str, category_id: uuid.UUID | None) -> None:
+        """Reserve a name, refusing one that belongs to a different category."""
+        key = name.strip().lower()
+        if key in self._taken and key != self._own.get(category_id):
+            raise ValueError(f"A category named '{name.strip()}' already exists")
+        self._taken.add(key)
+
+    def next_sort_order(self) -> int:
+        """The next free sort order, placing new categories after the existing ones."""
+        value = self._next
+        self._next += SORT_ORDER_STEP
+        return value
 
 
 def _apply_category_edit(

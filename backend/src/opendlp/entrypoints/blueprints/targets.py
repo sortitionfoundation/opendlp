@@ -1063,3 +1063,11 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except InsufficientPermissions:
         flash(_("You don't have permission to edit these targets"), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+    except Exception as e:
+        # A whole page of edits is at stake, so an unexpected failure gets a
+        # flash and the page back, not a stack trace.
+        logger.exception(
+            "Save all targets error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
+        flash(_("An error occurred while saving the targets"), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))

@@ -1,7 +1,11 @@
 // ABOUTME: Alpine component for one category block in the bulk targets editor
 // ABOUTME: Keeps the totals row live, adds and deletes value rows, and reorders categories
 
-var SORT_ORDER_STEP = 10;
+import {
+  applyPlaceholder,
+  renumberSortOrder,
+} from "../lib/bulk-targets-dom.js";
+
 // Matches PERCENTAGE_TOLERANCE in domain/targets.py: the totals row flags the
 // same near-100 window the server treats as plausible.
 var PERCENTAGE_TOLERANCE = 1.0;
@@ -14,13 +18,16 @@ var PERCENTAGE_TOLERANCE = 1.0;
  *
  * @param {Object} [options] - configuration
  * @param {string} [options.emptyLabel="—"] - shown when no value has a percentage
+ * @param {boolean} [options.isNew=false] - whether the user added this block client-side
  * @returns {Object} Alpine component state
  */
 export function bulkTargetsCategory(options) {
   var emptyLabel = (options && options.emptyLabel) || "—";
+  var isNew = Boolean(options && options.isNew);
 
   return {
     deleted: false,
+    isNew: isNew,
     missingAdded: false,
     newRowCount: 0,
     percentageTotal: emptyLabel,
@@ -37,6 +44,13 @@ export function bulkTargetsCategory(options) {
     },
 
     markDeleted: function () {
+      if (this.isNew) {
+        // Never saved, so there is nothing to mark and nothing to undo.
+        var container = this.$root.parentElement;
+        this.$root.remove();
+        renumberSortOrder(container);
+        return;
+      }
       this.deleted = true;
       if (this.$refs.deletedField) this.$refs.deletedField.value = "true";
     },
@@ -58,17 +72,8 @@ export function bulkTargetsCategory(options) {
       this.renumber();
     },
 
-    /**
-     * Re-issue sort_order across every category, so the server stores the order
-     * now shown. Sent for all of them because the service requires the complete
-     * set - a partial ordering would let a stale block drift.
-     */
     renumber: function () {
-      var blocks = this.$root.parentElement.children;
-      for (var i = 0; i < blocks.length; i++) {
-        var field = blocks[i].querySelector("[data-sort-order]");
-        if (field) field.value = String((i + 1) * SORT_ORDER_STEP);
-      }
+      renumberSortOrder(this.$root.parentElement);
     },
 
     addValue: function () {
@@ -102,7 +107,7 @@ export function bulkTargetsCategory(options) {
       var self = this;
       rows.forEach(function (row) {
         self.newRowCount += 1;
-        applyRowId(row, "new-" + self.newRowCount);
+        applyPlaceholder(row, "__ID__", "new-" + self.newRowCount);
       });
       this.$refs.rows.appendChild(fragment);
       return rows.length ? rows[rows.length - 1] : null;
@@ -142,21 +147,6 @@ export function bulkTargetsCategory(options) {
       this.maxTotal = String(max);
     },
   };
-}
-
-/**
- * Point every name and id in a cloned row at the row's own new id.
- *
- * @param {Element} row - the cloned row
- * @param {string} id - the id to substitute for the __ID__ placeholder
- */
-function applyRowId(row, id) {
-  row.querySelectorAll("[name]").forEach(function (el) {
-    el.name = el.name.replace("__ID__", id);
-  });
-  row.querySelectorAll("[id]").forEach(function (el) {
-    el.id = el.id.replace("__ID__", id);
-  });
 }
 
 /**

@@ -187,6 +187,22 @@ describe("bulkTargetsCategory deletion", () => {
     expect(state.deleted).toBe(false);
     expect(state.$refs.deletedField.value).toBe("false");
   });
+
+  it("takes a category the user just added straight out of the DOM", () => {
+    document.body.innerHTML = `
+      <div id="categories">
+        <div id="block-a"><input type="hidden" data-sort-order="true" value="10" /></div>
+        <div id="block-b"><input type="hidden" data-sort-order="true" value="20" /></div>
+      </div>`;
+    const state = bulkTargetsCategory({ isNew: true });
+    state.$root = document.getElementById("block-b");
+    state.$refs = {};
+
+    state.markDeleted();
+
+    expect(document.getElementById("block-b")).toBeNull();
+    expect(document.querySelector("[data-sort-order]").value).toBe("10");
+  });
 });
 
 describe("bulkTargetsCategory reordering", () => {

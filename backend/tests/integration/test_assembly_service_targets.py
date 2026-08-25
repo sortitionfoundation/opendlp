@@ -1204,6 +1204,115 @@ class TestSaveAllTargets:
         after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
         assert after.sort_order == before
 
+    def test_creates_a_category_with_no_id(self, uow, admin_user: User, test_assembly: Assembly):
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=None,
+                    name="Age",
+                    comment="from the census",
+                    values=[target_service.TargetValueEdit(value="16-29", percentage=50.0)],
+                )
+            ],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        assert [c.name for c in after] == ["Age"]
+        assert after[0].comment == "from the census"
+        assert [v.value for v in after[0].values] == ["16-29"]
+        assert (after[0].values[0].min, after[0].values[0].max) == (15, 16)
+
+    def test_a_created_category_goes_after_the_existing_ones(self, uow, admin_user: User, test_assembly: Assembly):
+        _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [target_service.TargetCategoryEdit(category_id=None, name="Age")],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        assert [c.name for c in after] == ["Gender", "Age"]
+
+    def test_a_created_category_does_not_auto_populate_from_respondents(
+        self, uow, admin_user: User, test_assembly: Assembly
+    ):
+        """create_target_category does; here the user is looking at the rows already."""
+        for external_id, bracket in (("R1", "16-29"), ("R2", "30-44")):
+            respondent_service.create_respondent(
+                uow, admin_user.id, test_assembly.id, external_id=external_id, attributes={"Age": bracket}
+            )
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [target_service.TargetCategoryEdit(category_id=None, name="Age")],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        assert after[0].values == []
+
+    def test_refuses_a_name_another_category_already_has(self, uow, admin_user: User, test_assembly: Assembly):
+        _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
+
+        with pytest.raises(ValueError, match="already exists"):
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [target_service.TargetCategoryEdit(category_id=None, name="gender")],
+            )
+
+    def test_refuses_a_name_this_save_is_deleting(self, uow, admin_user: User, test_assembly: Assembly):
+        """A ValueError beats the IntegrityError the unique index would otherwise raise.
+
+        Freeing the name would need the DELETE flushed before the INSERT, and
+        SQLAlchemy orders them the other way round.
+        """
+        gender = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
+
+        with pytest.raises(ValueError, match="already exists"):
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [
+                    target_service.TargetCategoryEdit(category_id=gender.id, name="Gender", deleted=True),
+                    target_service.TargetCategoryEdit(category_id=None, name="Gender"),
+                ],
+            )
+
+    def test_allows_a_category_to_keep_its_own_name(self, uow, admin_user: User, test_assembly: Assembly):
+        """Every save round-trips the name, so its own name must not count against it."""
+        gender = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [target_service.TargetCategoryEdit(category_id=gender.id, name="Gender", comment="unchanged")],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        assert after[0].comment == "unchanged"
+
+    def test_refuses_two_new_categories_with_the_same_name(self, uow, admin_user: User, test_assembly: Assembly):
+        with pytest.raises(ValueError, match="already exists"):
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [
+                    target_service.TargetCategoryEdit(category_id=None, name="Age"),
+                    target_service.TargetCategoryEdit(category_id=None, name="age"),
+                ],
+            )
+
     def test_requires_manage_permission(self, uow, regular_user: User, test_assembly: Assembly):
         with pytest.raises(InsufficientPermissions):
             target_service.save_all_targets(uow, regular_user.id, test_assembly.id, [])

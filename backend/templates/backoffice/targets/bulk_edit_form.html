@@ -91,13 +91,144 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     </tr>
 {% endmacro %}
 
+{% macro category_block(cat_id, category=None, missing_values=None) %}
+    {% set cat_prefix = "cat[" ~ cat_id ~ "]" %}
+    <div class="mb-8 rounded-lg overflow-hidden p-6"
+         id="bulk-category-{{ cat_id }}"
+         {% if category %}
+             x-data="bulkTargetsCategory({ emptyLabel: '{{ _('None') }}' })"
+         {% else %}
+             x-data="bulkTargetsCategory({ emptyLabel: '{{ _('None') }}', isNew: true })"
+         {% endif %}
+         @input="recalculate()"
+         @targets-changed="recalculate()"
+         style="background-color: var(--color-tables-cards);
+                border: 1px solid var(--color-borders-dividers)">
+        <input type="hidden"
+               name="{{ cat_prefix }}[deleted]"
+               value="false"
+               x-ref="deletedField" />
+        <input type="hidden"
+               name="{{ cat_prefix }}[sort_order]"
+               value="{{ category.sort_order if category else '' }}"
+               data-sort-order="true" />
+        {# ── Pending Deletion Banner ──────────────── #}
+        <div x-show="deleted"
+             x-cloak
+             class="rounded-lg p-3 flex items-center gap-3"
+             style="background-color: var(--color-warning-100);
+                    border: 1px solid var(--color-warning-400)">
+            <span style="color: var(--color-warning-600);">
+                {% if category %}
+                    {{ _('"%(name)s" and all its values will be deleted when you save.', name=category.name) }}
+                {% endif %}
+            </span>
+            {{ button(_("Undo"), variant="tertiary", attrs='@click="undoDelete()"') }}
+        </div>
+        <div x-show="!deleted">
+            <div class="mb-4 flex flex-wrap items-end gap-3">
+                {{ input(name=cat_prefix ~ "[name]",
+                id="bulk-name-" ~ cat_id|string,
+                label=_("Category Name"),
+                value=category.name if category else "",
+                required=true,
+                attrs='data-category-name="true"') }}
+                {{ input(name=cat_prefix ~ "[source_url]",
+                id="bulk-source-" ~ cat_id|string,
+                label=_("Source"),
+                value=category.source_url if category else "",
+                placeholder="https://") }}
+                {{ input(name=cat_prefix ~ "[comment]",
+                id="bulk-comment-" ~ cat_id|string,
+                label=_("Notes"),
+                value=category.comment if category else "") }}
+                <div class="flex items-center gap-2">
+                    {{ button(_("Move up"), variant="tertiary", attrs='@click="moveUp()"') }}
+                    {{ button(_("Move down"), variant="tertiary", attrs='@click="moveDown()"') }}
+                    {{ button(_("Delete target"), variant="danger", attrs='@click="markDeleted()"') }}
+                </div>
+            </div>
+            <table class="w-full text-body-md" style="border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                        <th class="py-3 pr-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Value") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Percentage") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Min") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Max") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Notes") }}</th>
+                        <th class="py-3 pl-4 text-right text-label-md"
+                            style="color: var(--color-headings)">{{ _("Actions") }}</th>
+                    </tr>
+                </thead>
+                <tbody x-ref="rows">
+                    {% for val in (category.values if category else []) or [] %}
+                        {{ value_row(cat_id, val.value_id, val=val) }}
+                    {% endfor %}
+                    {# Blank rows are cloned from here, so the markup has exactly
+                       one definition. __ID__ becomes new-<n> on the way in. #}
+                    <template x-ref="rowTemplate">
+                        {{ value_row(cat_id, "__ID__", is_new=true) }}
+                    </template>
+                    {% if missing_values %}
+                        <template x-ref="missingTemplate">
+                            {% for mv in missing_values %}
+                                {{ value_row(cat_id, "__ID__", is_new=true, prefill=mv) }}
+                            {% endfor %}
+                        </template>
+                    {% endif %}
+                </tbody>
+                {# ── Add Value Row ─────────────────────────── #}
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
+                        <td colspan="6" class="py-3">
+                            <div class="flex items-center gap-3">
+                                {{ button(_("Add value"), variant="secondary", attrs='@click="addValue()"') }}
+                                {% if missing_values %}
+                                    <span x-show="!missingAdded">
+                                        {{ button(_("Add values found in respondent data"), variant="secondary", attrs='@click="addMissingValues()"') }}
+                                    </span>
+                                    <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                                        {{ _("Not yet targeted: %(values)s", values=missing_values | join(", ")) }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr style="border-top: 2px solid var(--color-borders-dividers);">
+                        <th class="py-3 pr-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Total") }}</th>
+                        <td class="py-3 px-4 text-label-md font-bold targets-total"
+                            :class="percentageTotalClass"
+                            x-text="percentageTotal"></td>
+                        <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="minTotal"></td>
+                        <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="maxTotal"></td>
+                        <td class="py-3 px-4"></td>
+                        <td class="py-3 pl-4"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+{% endmacro %}
+
 <form method="post"
       action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}"
-      id="save-all-form">
+      id="save-all-form"
+      x-data="bulkTargetsForm()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <div id="bulk-categories">
+    <div class="mb-6 flex items-center justify-end gap-3">
+        {{ button(_("Cancel"), variant="tertiary", attrs='@click="editingAll = false"') }}
+        {{ button(_("Save all"), variant="primary", type="submit") }}
+    </div>
+    <div id="bulk-categories" x-ref="categories">
         {% for category in target_categories %}
-            {% set cat_prefix = "cat[" ~ category.id ~ "]" %}
             {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
             {% set target_value_names = (category.values or []) | map(attribute='value') | list %}
             {% set missing_values = [] %}
@@ -108,119 +239,18 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     {% endif %}
                 {% endfor %}
             {% endif %}
-            <div class="mb-8 rounded-lg overflow-hidden p-6"
-                 id="bulk-category-{{ category.id }}"
-                 x-data="bulkTargetsCategory({ emptyLabel: '{{ _('None') }}' })"
-                 @input="recalculate()"
-                 @targets-changed="recalculate()"
-                 style="background-color: var(--color-tables-cards);
-                        border: 1px solid var(--color-borders-dividers)">
-                <input type="hidden"
-                       name="{{ cat_prefix }}[deleted]"
-                       value="false"
-                       x-ref="deletedField" />
-                <input type="hidden"
-                       name="{{ cat_prefix }}[sort_order]"
-                       value="{{ category.sort_order }}"
-                       data-sort-order="true" />
-                {# ── Pending Deletion Banner ──────────────── #}
-                <div x-show="deleted"
-                     x-cloak
-                     class="rounded-lg p-3 flex items-center gap-3"
-                     style="background-color: var(--color-warning-100);
-                            border: 1px solid var(--color-warning-400)">
-                    <span style="color: var(--color-warning-600);">
-                        {{ _('"%(name)s" and all its values will be deleted when you save.', name=category.name) }}
-                    </span>
-                    {{ button(_("Undo"), variant="tertiary", attrs='@click="undoDelete()"') }}
-                </div>
-                <div x-show="!deleted">
-                    <div class="mb-4 flex flex-wrap items-end gap-3">
-                        {{ input(name=cat_prefix ~ "[name]",
-                        id="bulk-name-" ~ category.id|string,
-                        label=_("Category Name"),
-                        value=category.name,
-                        required=true) }}
-                        {{ input(name=cat_prefix ~ "[source_url]",
-                        id="bulk-source-" ~ category.id|string,
-                        label=_("Source"),
-                        value=category.source_url,
-                        placeholder="https://") }}
-                        {{ input(name=cat_prefix ~ "[comment]",
-                        id="bulk-comment-" ~ category.id|string,
-                        label=_("Notes"),
-                        value=category.comment) }}
-                        <div class="flex items-center gap-2">
-                            {{ button(_("Move up"), variant="tertiary", attrs='@click="moveUp()"') }}
-                            {{ button(_("Move down"), variant="tertiary", attrs='@click="moveDown()"') }}
-                            {{ button(_("Delete target"), variant="danger", attrs='@click="markDeleted()"') }}
-                        </div>
-                    </div>
-                    <table class="w-full text-body-md" style="border-collapse: collapse;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
-                                <th class="py-3 pr-4 text-left text-label-md"
-                                    style="color: var(--color-headings)">{{ _("Value") }}</th>
-                                <th class="py-3 px-4 text-left text-label-md"
-                                    style="color: var(--color-headings)">{{ _("Percentage") }}</th>
-                                <th class="py-3 px-4 text-left text-label-md"
-                                    style="color: var(--color-headings)">{{ _("Min") }}</th>
-                                <th class="py-3 px-4 text-left text-label-md"
-                                    style="color: var(--color-headings)">{{ _("Max") }}</th>
-                                <th class="py-3 px-4 text-left text-label-md"
-                                    style="color: var(--color-headings)">{{ _("Notes") }}</th>
-                                <th class="py-3 pl-4 text-right text-label-md"
-                                    style="color: var(--color-headings)">{{ _("Actions") }}</th>
-                            </tr>
-                        </thead>
-                        <tbody x-ref="rows">
-                            {% for val in category.values or [] %}
-                                {{ value_row(category.id, val.value_id, val=val) }}
-                            {% endfor %}
-                            {# Blank rows are cloned from here, so the markup has exactly
-                               one definition. __ID__ becomes new-<n> on the way in. #}
-                            <template x-ref="rowTemplate">
-                                {{ value_row(category.id, "__ID__", is_new=true) }}
-                            </template>
-                            {% if missing_values %}
-                                <template x-ref="missingTemplate">
-                                    {% for mv in missing_values %}
-                                        {{ value_row(category.id, "__ID__", is_new=true, prefill=mv) }}
-                                    {% endfor %}
-                                </template>
-                            {% endif %}
-                        </tbody>
-                        <tfoot>
-                            <tr style="border-top: 2px solid var(--color-borders-dividers);">
-                                <th class="py-3 pr-4 text-left text-label-md"
-                                    style="color: var(--color-headings)">{{ _("Total") }}</th>
-                                <td class="py-3 px-4 text-label-md font-bold targets-total"
-                                    :class="percentageTotalClass"
-                                    x-text="percentageTotal"></td>
-                                <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="minTotal"></td>
-                                <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="maxTotal"></td>
-                                <td class="py-3 px-4"></td>
-                                <td class="py-3 pl-4"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                    <div class="mt-4 flex items-center gap-3">
-                        {{ button(_("Add value"), variant="secondary", attrs='@click="addValue()"') }}
-                        {% if missing_values %}
-                            <span x-show="!missingAdded">
-                                {{ button(_("Add values found in respondent data"), variant="secondary", attrs='@click="addMissingValues()"') }}
-                            </span>
-                            <span class="text-body-sm" style="color: var(--color-secondary-text);">
-                                {{ _("Not yet targeted: %(values)s", values=missing_values | join(", ")) }}
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+            {{ category_block(category.id, category=category, missing_values=missing_values) }}
         {% endfor %}
     </div>
-    <div class="flex items-center gap-3">
-        {{ button(_("Save all"), variant="primary", type="submit") }}
-        {{ button(_("Cancel"), variant="tertiary", attrs='@click="editingAll = false"') }}
+    {# ── Add Target ───────────────────────────────────── #}
+    <div class="flex items-end gap-3">
+        {{ input(name="new-category-name",
+        id="bulk-new-category-name",
+        label=_("New target name"),
+        placeholder=_("e.g. Gender"),
+        attrs='x-model="newCategoryName" @keydown.enter.prevent="addCategory()"') }}
+        {{ button(_("Add target"), variant="secondary", attrs='@click="addCategory()"') }}
     </div>
+    {# Blank category blocks are cloned from here; __CAT__ becomes new-<n>. #}
+    <template x-ref="categoryTemplate">{{ category_block("__CAT__") }}</template>
 </form>

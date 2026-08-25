@@ -6,6 +6,7 @@ import uuid
 from opendlp.entrypoints.save_all_parser import parse_save_all_targets
 
 CATEGORY_ID = uuid.uuid4()
+_NAME_REQUIRED = "Every target needs a name"
 VALUE_ID = uuid.uuid4()
 
 
@@ -182,3 +183,41 @@ class TestDeletionAndRelinking:
         edits, _errors = parse_save_all_targets(_form())
 
         assert edits[0].sort_order is None
+
+
+class TestNewCategories:
+    def test_a_new_category_has_no_category_id(self):
+        edits, errors = parse_save_all_targets({
+            "cat[new-1][name]": "Age",
+            "cat[new-1][sort_order]": "30",
+            "cat[new-1][values][new-1][value]": "16-29",
+            "cat[new-1][values][new-1][percentage]": "25",
+        })
+
+        assert errors == []
+        assert len(edits) == 1
+        assert edits[0].category_id is None
+        assert edits[0].name == "Age"
+        assert edits[0].sort_order == 30
+        assert edits[0].values[0].value_id is None
+        assert edits[0].values[0].value == "16-29"
+
+    def test_a_category_with_no_name_is_reported(self):
+        _edits, errors = parse_save_all_targets({f"cat[{CATEGORY_ID}][name]": "   "})
+
+        assert errors == [_NAME_REQUIRED]
+
+    def test_a_nameless_category_produces_no_edit(self):
+        """Better a reported error than a category renamed to nothing."""
+        edits, _errors = parse_save_all_targets({f"cat[{CATEGORY_ID}][name]": ""})
+
+        assert edits == []
+
+    def test_a_deleted_category_still_needs_no_name(self):
+        edits, errors = parse_save_all_targets({
+            f"cat[{CATEGORY_ID}][name]": "",
+            f"cat[{CATEGORY_ID}][deleted]": "true",
+        })
+
+        assert errors == []
+        assert edits[0].deleted is True

@@ -588,6 +588,17 @@ class TestViewIsReadOnly:
         assert b"Edit targets" in response.data
         assert b"Add category" in response.data
 
+    def test_the_edit_targets_button_is_the_primary_action(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+        heading_section = html[html.index("<h2") : html.index("</section>", html.index("<h2"))]
+        edit_button = heading_section[: heading_section.index("Edit targets")].rsplit("<button", 1)[-1]
+
+        assert "btn--primary" in edit_button
+
     def test_the_page_actions_sit_level_with_the_targets_heading(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
@@ -684,6 +695,49 @@ class TestBulkEditForm:
         assert b'x-ref="missingTemplate"' in response.data
         assert b"Add values found in respondent data" in response.data
         assert b"Non-binary" in response.data
+
+    def test_save_and_cancel_come_before_the_categories(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """At the top of the form, so a long page need not be scrolled to save."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=100.0)
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert html.index("Save all") < html.index('id="bulk-categories"')
+        assert html.index("Cancel") < html.index("Save all")
+
+    def test_add_value_sits_between_the_last_value_and_the_total(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=100.0)
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert html.index("Add value") < html.index("<tfoot>")
+        assert html.index("</tbody>") < html.index("Add value")
+
+    def test_offers_a_box_for_adding_a_target(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert 'x-model="newCategoryName"' in html
+        assert "Add target" in html
+
+    def test_carries_a_blank_category_template(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """Cloned client-side; __CAT__ becomes new-<n> on the way in."""
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert 'x-ref="categoryTemplate"' in html
+        assert "cat[__CAT__][name]" in html
+        assert "cat[__CAT__][values][__ID__][value]" in html
 
     def test_a_viewer_is_not_given_the_form_at_all(self, logged_in_user, existing_assembly, admin_user, fake_store):
         _create_category(fake_store, admin_user, existing_assembly.id, "Gender")

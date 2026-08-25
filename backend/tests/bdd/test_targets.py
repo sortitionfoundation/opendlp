@@ -128,9 +128,16 @@ def move_category_down(admin_logged_in_page: Page, name: str) -> None:
     _edit_block_for(admin_logged_in_page, name).get_by_role("button", name="Move down").first.click()
 
 
+@when(parsers.parse('I add a target called "{name}"'))
+def add_category_in_bulk_form(admin_logged_in_page: Page, name: str) -> None:
+    admin_logged_in_page.locator("#bulk-new-category-name").fill(name)
+    admin_logged_in_page.get_by_role("button", name="Add target").click()
+
+
 @when(parsers.parse('I add a target value called "{value}" with percentage "{percentage}"'))
 def add_target_value_in_bulk_form(admin_logged_in_page: Page, value: str, percentage: str) -> None:
-    block = admin_logged_in_page.locator("#bulk-categories > div").first
+    """Into the last category block, which is the one most recently added."""
+    block = admin_logged_in_page.locator("#bulk-categories > div").last
     block.get_by_role("button", name="Add value", exact=True).click()
     row = block.locator("tr[data-value-row]").last
     row.locator('input[name$="[value]"]').fill(value)
@@ -213,6 +220,11 @@ def bulk_edit_total(admin_logged_in_page: Page, total: str) -> None:
 @then("I should see the bulk edit form")
 def see_bulk_edit_form(admin_logged_in_page: Page) -> None:
     expect(admin_logged_in_page.locator("#save-all-form")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{second}" category should appear after the "{first}" category'))
+def category_order_after(admin_logged_in_page: Page, first: str, second: str) -> None:
+    category_order(admin_logged_in_page, first, second)
 
 
 @then(parsers.parse('the "{first}" category should appear before the "{second}" category'))

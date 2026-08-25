@@ -4,6 +4,7 @@
 import { autocomplete } from "../components/autocomplete.js";
 import { autoDismissAlert } from "../components/auto-dismiss-alert.js";
 import { bulkTargetsCategory } from "../components/bulk-targets-category.js";
+import { bulkTargetsForm } from "../components/bulk-targets-form.js";
 import { bulkTargetsValueRow } from "../components/bulk-targets-value-row.js";
 import { modal } from "../components/modal.js";
 import { registrationPageRow } from "../components/registration-page-row.js";
@@ -27,6 +28,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("autocomplete", autocomplete);
   Alpine.data("autoDismissAlert", autoDismissAlert);
   Alpine.data("bulkTargetsCategory", bulkTargetsCategory);
+  Alpine.data("bulkTargetsForm", bulkTargetsForm);
   Alpine.data("bulkTargetsValueRow", bulkTargetsValueRow);
   Alpine.data("buttonLoadingDemo", buttonLoadingDemo);
   Alpine.data("modal", modal);
