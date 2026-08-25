@@ -1016,11 +1016,20 @@ complete. The follow-up makes the division absolute.
   found in respondent data**.
 - Both views show the assembly's `number_to_select` under the title. Every
   percentage on the page is a share of that number, and it was nowhere on screen.
-- **"Check targets in detail" and "Edit targets" sit beside the `<h2>`**,
-  right-aligned on the heading row rather than stacked in a band beneath it. The
-  heading itself reads "Targets", not "Target Categories". Both actions are
-  hidden while editing: one would navigate away from unsaved edits, and the other
-  is what got you there.
+- **"Edit targets" sits beside the `<h2>`**, right-aligned on the heading row
+  rather than stacked in a band beneath it. The heading itself reads "Targets",
+  not "Target Categories". It is hidden while editing, being what got you there.
+- **There is no "Check targets in detail" button.** `save_all` redirects to
+  `targets.check_targets` rather than back to the plain view, so the detailed
+  check runs on every save and its annotations are already on the page you land
+  on. The route stays — it is the redirect target — but nothing links to it.
+  Two consequences worth knowing:
+  - Every save now pays for the check, which loads the whole respondent pool and
+    runs an LP feasibility solve. Saving is deliberate and infrequent, so this is
+    the right place for it; a page _view_ would not be.
+  - Saving targets before any respondents are uploaded shows "No eligible
+    respondents found for selection". That is the check working, and the message
+    says what to do, but it does arrive in an error banner during ordinary setup.
 
 **Deletion and addition are provisional.** A per-row request would throw away
 every other unsaved edit on the page, so instead a deleted row stays in place,
