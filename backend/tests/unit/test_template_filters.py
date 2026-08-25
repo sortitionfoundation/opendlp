@@ -1,5 +1,5 @@
 """ABOUTME: Unit tests for the linkify Jinja filter
-ABOUTME: The escaping order is the security-relevant part, so it is tested directly"""
+ABOUTME: The escaping and the restriction to http(s) are the security-relevant parts"""
 
 import pytest
 
@@ -15,7 +15,7 @@ class TestLinkify:
         assert 'target="_blank"' in result
 
     def test_escapes_markup_in_the_surrounding_text(self):
-        """Escape first, then linkify - the other order lets a comment inject markup."""
+        """Escaped output, not raw input marked safe - the other way lets a comment inject markup."""
         result = str(linkify("<script>alert(1)</script> and https://ok.com"))
 
         assert "<script>" not in result
@@ -31,12 +31,34 @@ class TestLinkify:
         result = str(linkify('https://x.com/"onmouseover="alert(1)'))
 
         assert 'onmouseover="alert' not in result
-        assert "&#34;" in result
+        assert '<a href="https://x.com/"' in result
+        assert "&quot;onmouseover=&quot;" in result
 
     def test_trailing_punctuation_stays_outside_the_link(self):
         result = str(linkify("see https://example.com/a."))
 
         assert ">https://example.com/a</a>." in result
+
+    def test_a_wrapping_bracket_stays_outside_the_link(self):
+        result = str(linkify("the source (https://example.com/a) says so"))
+
+        assert '(<a href="https://example.com/a"' in result
+        assert "</a>)" in result
+
+    def test_an_email_address_becomes_a_mailto_link(self):
+        result = str(linkify("ask stats@example.org about it"))
+
+        assert '<a href="mailto:stats@example.org"' in result
+
+    def test_a_bare_domain_is_left_as_text(self):
+        """Only what is explicitly http or https is linked, as for source URLs.
+
+        Django would link this by consulting a Django setting, which a Flask app
+        has none of; `_NewTabUrlizer` disables that branch.
+        """
+        result = str(linkify("see www.example.com and example.com"))
+
+        assert "<a href" not in result
 
     def test_plain_text_is_unchanged(self):
         assert str(linkify("no urls here")) == "no urls here"

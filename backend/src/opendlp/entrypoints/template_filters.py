@@ -1,43 +1,50 @@
 """ABOUTME: Jinja filters for rendering user-supplied text safely.
-ABOUTME: Currently just linkify, which turns http(s) URLs in escaped text into links."""
+ABOUTME: Currently just linkify, which turns URLs in free text into links."""
 
 import re
 
+from django.utils.html import Urlizer
 from flask import Flask
-from markupsafe import Markup, escape
+from markupsafe import Markup
 
-# Matched against text that has *already* been escaped, so the surrounding markup
-# cannot be part of a URL. Stops at the first character that cannot appear in one.
-URL_PATTERN = re.compile(r"https?://[^\s<>\"']+")
 
-# Trailing punctuation is far more likely to be a sentence ending than part of
-# the URL, so it is left outside the link.
-TRAILING_PUNCTUATION = ".,;:!?)]}"
+class _NewTabUrlizer(Urlizer):  # type: ignore[no-any-unimported]
+    """Django's urlize, restricted to explicit http(s) URLs and opening in a new tab.
+
+    Subclassed rather than reimplemented: getting this right means handling
+    wrapping and trailing punctuation, unicode and IDN quoting, and length
+    limits, all of which Django has already done and tested.
+    """
+
+    # `simple_url_2_re` is the branch that links bare `www.example.com` and gTLD
+    # hostnames. Django builds those links by reading settings.URLIZE_ASSUME_HTTPS,
+    # and this is a Flask app with no Django settings configured, so the branch
+    # raises ImproperlyConfigured on any comment containing one. `(?!)` never
+    # matches, which disables it. Doing so also keeps the rule the domain applies
+    # to source URLs: only what is explicitly http or https becomes a link.
+    # Django 7.0 drops the setting, at which point this override can go.
+    simple_url_2_re = re.compile(r"(?!)")
+
+    # Comments are read alongside the targets they explain, so a source opens
+    # beside the page rather than replacing it.
+    url_template = '<a href="{href}" target="_blank" rel="noopener noreferrer"{attrs}>{url}</a>'
+
+
+_urlize = _NewTabUrlizer()
 
 
 def linkify(text: str) -> Markup:
-    """Turn http(s) URLs in free text into links, escaping everything first.
+    """Turn URLs in free text into links, escaping everything else.
 
-    Order matters and is the whole point: the text is escaped, *then* links are
-    inserted into the escaped result. Building links from raw input and marking
-    the result safe would let a comment inject markup.
+    `autoescape=True` is not the default and is the security-relevant part: the
+    text around a URL is escaped, and so is the href. Without it a comment could
+    inject markup.
 
-    Only http and https are linked. Anything else - `javascript:`, `data:` - stays
-    inert text, matching the domain's rule for source URLs.
+    Only http and https are linked, matching the domain's rule for source URLs;
+    `javascript:` and `data:` stay inert text. Email addresses become `mailto:`
+    links.
     """
-    escaped = str(escape(text))
-
-    def replace(match: re.Match[str]) -> str:
-        url = match.group(0)
-        trailing = ""
-        while url and url[-1] in TRAILING_PUNCTUATION:
-            trailing = url[-1] + trailing
-            url = url[:-1]
-        if not url:
-            return trailing
-        return f'<a href="{url}" target="_blank" rel="noopener noreferrer">{url}</a>{trailing}'
-
-    return Markup(URL_PATTERN.sub(replace, escaped))  # noqa: S704
+    return Markup(_urlize(text, autoescape=True))  # noqa: S704
 
 
 def register_template_filters(app: Flask) -> None:
