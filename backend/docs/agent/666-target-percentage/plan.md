@@ -985,6 +985,56 @@ markedly worse to read.
 new `features/targets.feature` BDD scenario for edit-all → save-all → reorder,
 plus vitest for any new JS. To be specified with the UI plan.
 
+### 7.1 Follow-up — all editing moved into the bulk form
+
+The sketch above left mutation controls on the read-only page and put only field
+edits in the bulk form. That split does not survive contact with use: the two
+surfaces offer overlapping ways to change the same thing, and neither is
+complete. The follow-up makes the division absolute.
+
+- The read-only page offers **"Add category" and "Edit targets", and nothing
+  else**. Rename, reorder, add value, delete value and delete category are gone
+  from it, along with the per-row "Edit" and the "Add all missing values" button.
+  The missing-values panel stays as information, pointing at "Edit targets".
+- The bulk form gains all of them: per-row **Delete value**, per-category
+  **Delete target**, **Move up** / **Move down**, **Add value**, and **Add values
+  found in respondent data**.
+- Both views show the assembly's `number_to_select` under the title. Every
+  percentage on the page is a share of that number, and it was nowhere on screen.
+
+**Deletion and addition are provisional.** A per-row request would throw away
+every other unsaved edit on the page, so instead a deleted row stays in place,
+struck through, with its own undo, and carries a hidden `[deleted]` flag; a row
+the user added and then deleted simply leaves the DOM. Nothing is destroyed
+until "Save all". `save_all_targets` therefore deletes only what is explicitly
+marked: absence from the payload still means "leave alone", so a partial
+submission cannot destroy anything.
+
+Reordering works the same way — moving a block reorders the DOM and re-issues
+every category's hidden `sort_order`, sent as a complete set because
+`reorder_target_categories` requires one.
+
+**Re-linking** is a per-row `[relink]` flag rather than its own request. When set,
+the submitted min/max are ignored entirely: the point of re-linking is that the
+seat counts stop being the user's to type.
+
+**The totals row is now in both views.** In the bulk form the browser keeps it up
+to date as the numbers are typed (`bulk-targets-category.js`). It previews what
+is entered rather than predicting what will be stored: a re-linked row still
+shows the seat counts it holds now, because recalculating them is the server's
+job, and duplicating `min_max_for_percentage` in JavaScript would put the rule in
+two places. Live min/max preview is a possible follow-up, and would need that
+duplication weighed against it.
+
+**Parser and service additions:** `save_all_parser` reads `[deleted]` and
+`[sort_order]` on a category and `[deleted]` and `[relink]` on a value; a deleted
+category carries no value edits, and a deleted row needs no name.
+`save_all_targets` splits into `_apply_category_edit` and `_apply_value_edit`.
+
+**New JS:** `bulk-targets-category.js` (live totals, add rows from a `<template>`,
+reorder, mark deleted) and `bulk-targets-value-row.js` (one row's pending-delete
+and re-link flags), both with vitest coverage.
+
 ---
 
 ## 8. Phase 5 — Tests ✅ DONE
