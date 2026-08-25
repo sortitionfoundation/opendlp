@@ -971,9 +971,14 @@ markedly worse to read.
   broken link is already being shown.
 - Category header shows `source_url` as a link (`target="_blank"`,
   `rel="noopener noreferrer"`) and the category comment.
-- Comments render with URLs linkified. **Do this in a Jinja filter over
-  already-escaped text**, not with `|safe` on raw user input, and emit only
-  `http`/`https` links. Check `docs/frontend_security.md` first.
+- Comments render with URLs linkified. **Escape, do not `|safe` raw user
+  input**, and emit only `http`/`https` links. Check `docs/frontend_security.md`
+  first. The filter subclasses Django's `Urlizer` (Django is already a
+  dependency, and already borrowed from for password and email validation)
+  rather than carrying its own regex — punctuation, IDN quoting and length
+  limits are all handled there. Its bare-`www.` branch reads a Django setting,
+  which a Flask app has none of, so that branch is disabled; the effect is the
+  http/https-only rule we wanted anyway.
 - "Edit all" / "Save all": one Alpine `x-data` at page level holding a flat
   `editingAll` boolean (Alpine here is CSP-constrained — flat `x-model`
   properties only, no string arguments in `@click`; see
