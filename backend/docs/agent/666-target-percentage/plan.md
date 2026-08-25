@@ -1031,14 +1031,40 @@ job, and duplicating `min_max_for_percentage` in JavaScript would put the rule i
 two places. Live min/max preview is a possible follow-up, and would need that
 duplication weighed against it.
 
+**Adding a target is provisional too.** A text box and "Add target" at the foot
+of the form clone a blank category block under a `new-<n>` id — the same shape
+`new-<n>` value rows use — and `save_all_targets` creates a category for any edit
+with no `category_id`. Unlike `create_target_category` it does not auto-populate
+values from a matching respondent column: the user is looking at the form where
+they would add them, and rows appearing under a name they had just typed would be
+a surprise.
+
+`(assembly_id, name)` carries a unique index, so `_CategoryNaming` checks names
+during the save and raises a `ValueError` the route can flash. It keeps a name
+claimed for its own category even when the save deletes or renames it away:
+freeing it would need the DELETE flushed before the INSERT, and SQLAlchemy orders
+those the other way round. Deleting "Gender" and adding a new "Gender" in one go
+is therefore refused — do it in two saves. `save_all` also gained a catch-all
+handler, because a whole page of edits should not be lost to a stack trace.
+
+**Layout:** "Save all" and "Cancel" sit at the top right of the form, with "Save
+all" primary and to the right; "Add value" sits inside the table between the last
+value and the totals row. "Edit targets" on the view page is the primary action.
+
 **Parser and service additions:** `save_all_parser` reads `[deleted]` and
-`[sort_order]` on a category and `[deleted]` and `[relink]` on a value; a deleted
-category carries no value edits, and a deleted row needs no name.
+`[sort_order]` on a category and `[deleted]` and `[relink]` on a value; either id
+may be `new-<n>`; a deleted category carries no value edits, a deleted row needs
+no name, and a category that is staying needs one — which also closes a hole
+where an existing category could be renamed to the empty string.
 `save_all_targets` splits into `_apply_category_edit` and `_apply_value_edit`.
 
 **New JS:** `bulk-targets-category.js` (live totals, add rows from a `<template>`,
-reorder, mark deleted) and `bulk-targets-value-row.js` (one row's pending-delete
-and re-link flags), both with vitest coverage.
+reorder, mark deleted), `bulk-targets-value-row.js` (one row's pending-delete and
+re-link flags) and `bulk-targets-form.js` (add a category), over shared helpers in
+`lib/bulk-targets-dom.js`. Placeholder substitution has to descend into nested
+`<template>` elements — a cloned category carries the template its own rows come
+from — and to rewrite `for` alongside `name` and `id`, or a cloned block's labels
+point at an id that never existed.
 
 ---
 
