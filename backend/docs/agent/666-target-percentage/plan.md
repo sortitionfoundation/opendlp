@@ -1031,6 +1031,35 @@ complete. The follow-up makes the division absolute.
     respondents found for selection". That is the check working, and the message
     says what to do, but it does arrive in an error banner during ordinary setup.
 
+**A rejected save comes back as the form, not as a toast.** `save_all` re-renders
+`assembly_targets.html` with `editing_all` true, the bulk form rebuilt from the
+submission, and each message against the input that caused it. Redirecting - what
+it used to do - threw away every edit on the page and left the message pointing
+at nothing. Four things this needs:
+
+- `save_all_targets` **collects** errors instead of raising on the first, and
+  raises `TargetsNotSaved` at the end. One round trip per mistake is what makes a
+  bulk form miserable. Raising is still what rolls the unit of work back, so
+  "nothing was saved" stays true - including the half of the save that was fine.
+- Errors carry the **form ids** of the category and value they belong to, so the
+  edit dataclasses gain `form_id`. `value_id` will not do: two rows the user has
+  just added both have `value_id` of `None`. The entrypoint turns those ids into
+  a form field name (`errors_by_field`); the service knows which value is wrong,
+  not what its input was called.
+- The redisplayed form is built from the **raw submission** (`pending_categories`),
+  not from the parsed edits, so a number the parser could not read comes back as
+  typed - which is exactly the one that has to be corrected. A bad row still
+  produces an edit for the same reason: dropping it would take it off the page.
+- Pending **deletions and relink requests** ride in the hidden fields and are
+  seeded into the Alpine components (`deleted:` on both), or saving again would
+  quietly undo them.
+
+`_value_problem` names the cases we can phrase well - min above max, a negative,
+a percentage outside 0-100 - so the form says which box is wrong in words aimed
+at the person filling it in. The domain still enforces all of them; it just
+raises on the first with a message written for a developer. Anything the named
+checks miss falls through to the generic catch and lands on the row.
+
 **Deletion and addition are provisional.** A per-row request would throw away
 every other unsaved edit on the page, so instead a deleted row stays in place,
 struck through, with its own undo, and carries a hidden `[deleted]` flag; a row
