@@ -961,12 +961,19 @@ markedly worse to read.
 
 **Template** (`templates/backoffice/targets/category_block.html`)
 
-- New `Percentage` column between `Value` and `Min`.
+- New percentage column between `Value` and `Min`, headed `Population (%)`.
+  Written in the template as `Population (%%)`: flask-babel applies percent
+  formatting to every translated string, so a lone `%` raises `ValueError`. A
+  test asserts what actually reaches the page, since the escaping is invisible
+  in the rendered output.
 - `tfoot` gains a percentage total, styled as a warning when
   `percentage_total_is_plausible()` is false.
-- A visual marker on rows where `minmax_manual` is true, with the comment
-  inline next to it — not in a tooltip. The explainer's whole argument for the
-  comment field is that a hand-set number needs its reason _visible_.
+- A visual marker on rows where `minmax_manual` is true, and a `Notes` column
+  after `Max` carrying the comment — not a tooltip, and not tucked under the
+  value. The explainer's whole argument for the comment field is that a
+  hand-set number needs its reason _visible_, and a column of its own is what
+  makes a table of reasons readable down the page. The column order matches
+  the bulk edit form, so both tables read the same left to right.
 - The re-link control belongs on those same rows: it is the one place where a
   broken link is already being shown.
 - Category header shows `source_url` as a link (`target="_blank"`,
@@ -978,7 +985,10 @@ markedly worse to read.
   rather than carrying its own regex — punctuation, IDN quoting and length
   limits are all handled there. Its bare-`www.` branch reads a Django setting,
   which a Flask app has none of, so that branch is disabled; the effect is the
-  http/https-only rule we wanted anyway.
+  http/https-only rule we wanted anyway. Link _text_ is trimmed to
+  `MAX_URL_TEXT_LENGTH` (40) with an ellipsis — a real source URL in our data
+  is 170 characters, which wraps over several lines and buries the value it
+  explains. The `href` keeps the whole URL.
 - "Edit all" / "Save all": one Alpine `x-data` at page level holding a flat
   `editingAll` boolean (Alpine here is CSP-constrained — flat `x-model`
   properties only, no string arguments in `@click`; see
