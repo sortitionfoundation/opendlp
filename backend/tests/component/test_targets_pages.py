@@ -2,6 +2,7 @@
 # ABOUTME: Drives the real targets routes + services (render, validation, HTMX fragments, auth, permissions)
 
 import io
+import re
 
 import pytest
 
@@ -438,6 +439,15 @@ class TestPercentageColumn:
         assert b"boosted by 2" in response.data
         assert b"Use percentage" in response.data
 
+    def test_the_column_heading_reads_population(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """The heading is escaped as `%%` for gettext, so check what actually reaches the page."""
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b"Population (%)" in response.data
+        assert b"Population (%%)" not in response.data
+
     def test_a_linked_value_is_not_marked(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
         with FakeUnitOfWork(store=fake_store) as uow:
@@ -465,6 +475,34 @@ class TestCategorySourceAndComment:
         assert b'rel="noopener noreferrer"' in response.data
         # The comment's own URL is linkified too.
         assert b'href="https://example.com/notes"' in response.data
+
+
+def _read_only_row_cells(html_text, value):
+    """The cells of the read-only value row for `value`, in column order."""
+    rows = re.findall(r"<tr[^>]*>(.*?)</tr>", html_text, re.DOTALL)
+    row = next(r for r in rows if re.search(rf">\s*{re.escape(value)}\s*<", r))
+    return re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)
+
+
+class TestValueNotesColumn:
+    def test_a_value_comment_renders_in_its_own_column(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            "feature,value,min,max,comment\nGender,Woman,3,7,boosted by 2\n",
+        )
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b"Notes" in response.data
+        cells = _read_only_row_cells(response.data.decode(), "Woman")
+        # Value, Population (%), Min, Max, Notes
+        assert len(cells) == 5
+        assert "boosted by 2" not in cells[0]
+        assert "boosted by 2" in cells[4]
 
 
 class TestEditValueWithPercentage:

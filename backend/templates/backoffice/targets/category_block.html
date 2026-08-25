@@ -4,7 +4,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
 #}
 {% set has_counts = respondent_counts is defined and respondent_counts %}
 {% set show_selected = has_selected is defined and has_selected and selected_counts is defined and selected_counts %}
-{% set col_count = 4 + (1 if has_counts else 0) + (1 if show_selected else 0) %}
+{% set col_count = 5 + (1 if has_counts else 0) + (1 if show_selected else 0) %}
 {% set percentage_total = category.percentage_total() %}
 {% set percentages_plausible = category.percentage_total_is_plausible() %}
 <div class="mb-8 rounded-lg overflow-hidden"
@@ -69,6 +69,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                 <col style="width: 8rem;" />
                 <col style="width: 8rem;" />
                 <col style="width: 8rem;" />
+                <col />
                 {% if has_counts %}<col style="width: 8rem;" />{% endif %}
                 {% if show_selected %}<col style="width: 8rem;" />{% endif %}
             </colgroup>
@@ -77,11 +78,13 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                     <th class="py-3 pr-4 text-left text-label-md"
                         style="color: var(--color-headings)">{{ _("Value") }}</th>
                     <th class="py-3 px-4 text-right text-label-md"
-                        style="color: var(--color-headings)">{{ _("Percentage") }}</th>
+                        style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
                     <th class="py-3 px-4 text-right text-label-md"
                         style="color: var(--color-headings)">{{ _("Min") }}</th>
                     <th class="py-3 px-4 text-right text-label-md"
                         style="color: var(--color-headings)">{{ _("Max") }}</th>
+                    <th class="py-3 px-4 text-left text-label-md"
+                        style="color: var(--color-headings)">{{ _("Notes") }}</th>
                     {% if has_counts %}
                         <th class="py-3 px-4 text-right text-label-md"
                             style="color: var(--color-headings)">{{ _("Respondents") }}</th>
@@ -105,10 +108,6 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                                     {{ _("Set by hand") }}
                                 </span>
                             {% endif %}
-                            {% if val.comment %}
-                                <p class="text-body-sm mt-1"
-                                   style="color: var(--color-secondary-text);">{{ val.comment | linkify }}</p>
-                            {% endif %}
                         </td>
                         <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
                             {% if val.percentage_target is not none %}
@@ -119,6 +118,11 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                         </td>
                         <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ val.min }}</td>
                         <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ val.max }}</td>
+                        <td class="py-3 px-4 text-body-sm"
+                            style="color: var(--color-secondary-text);
+                                   overflow-wrap: anywhere">
+                            {% if val.comment %}{{ val.comment | linkify }}{% endif %}
+                        </td>
                         {% if has_counts %}
                             <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
                                 {{ respondent_counts.get(val.value, 0) }}
@@ -179,6 +183,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                         style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='min') }}</td>
                     <td class="py-3 px-4 text-right text-label-md font-bold"
                         style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='max') }}</td>
+                    <td class="py-3 px-4"></td>
                     {% if has_counts %}
                         <td class="py-3 px-4 text-right text-label-md font-bold"
                             style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>

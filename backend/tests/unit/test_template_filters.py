@@ -3,7 +3,7 @@ ABOUTME: The escaping and the restriction to http(s) are the security-relevant p
 
 import pytest
 
-from opendlp.entrypoints.template_filters import linkify
+from opendlp.entrypoints.template_filters import MAX_URL_TEXT_LENGTH, linkify
 
 
 class TestLinkify:
@@ -59,6 +59,22 @@ class TestLinkify:
         result = str(linkify("see www.example.com and example.com"))
 
         assert "<a href" not in result
+
+    def test_a_long_url_is_shortened_in_the_link_text(self):
+        """Real source URLs run past 170 characters, which swamps the comment."""
+        long_url = "https://www.ons.gov.uk/peoplepopulationandcommunity/" + "a" * 120
+        result = str(linkify(f"source {long_url} here"))
+
+        assert f'href="{long_url}"' in result
+        link_text = result.split(">", 2)[1].split("<", maxsplit=1)[0]
+        assert len(link_text) == MAX_URL_TEXT_LENGTH
+        assert link_text.endswith("\u2026")
+
+    def test_a_short_url_keeps_its_full_text(self):
+        short_url = "https://ons.gov.uk/data"
+        result = str(linkify(short_url))
+
+        assert f">{short_url}</a>" in result
 
     def test_plain_text_is_unchanged(self):
         assert str(linkify("no urls here")) == "no urls here"

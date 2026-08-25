@@ -665,6 +665,7 @@ msgstr ""
 #: src/opendlp/entrypoints/forms.py:596 src/opendlp/entrypoints/forms.py:635
 #: templates/backoffice/targets/bulk_edit_form.html:143
 #: templates/backoffice/targets/bulk_edit_form.html:163
+#: templates/backoffice/targets/category_block.html:87
 #, fuzzy
 msgid "Notes"
 msgstr "Kezdés dátuma"
@@ -686,7 +687,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:612
 #: templates/backoffice/targets/bulk_edit_form.html:155
-#: templates/backoffice/targets/category_block.html:78
+#: templates/backoffice/targets/category_block.html:79
 #: templates/targets/components/category_block.html:69
 #: templates/targets/components/category_block.html:136
 #: templates/targets/components/category_block.html:263
@@ -698,8 +699,6 @@ msgid "e.g. Male, Female, 16-29"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:618
-#: templates/backoffice/targets/bulk_edit_form.html:157
-#: templates/backoffice/targets/category_block.html:80
 #, fuzzy
 msgid "Percentage"
 msgstr "Vezetéknév"
@@ -711,7 +710,7 @@ msgstr ""
 #: src/opendlp/entrypoints/forms.py:625
 #: src/opendlp/service_layer/selection_report.py:231
 #: templates/backoffice/targets/bulk_edit_form.html:159
-#: templates/backoffice/targets/category_block.html:82
+#: templates/backoffice/targets/category_block.html:83
 #: templates/targets/components/category_block.html:70
 #: templates/targets/components/category_block.html:147
 #: templates/targets/components/category_block.html:275
@@ -721,7 +720,7 @@ msgstr ""
 #: src/opendlp/entrypoints/forms.py:630
 #: src/opendlp/service_layer/selection_report.py:232
 #: templates/backoffice/targets/bulk_edit_form.html:161
-#: templates/backoffice/targets/category_block.html:84
+#: templates/backoffice/targets/category_block.html:85
 #: templates/targets/components/category_block.html:71
 #: templates/targets/components/category_block.html:158
 #: templates/targets/components/category_block.html:286
@@ -2456,7 +2455,7 @@ msgstr ""
 #: templates/backoffice/assembly_view_respondent.html:226
 #: templates/backoffice/components/table.html:206
 #: templates/backoffice/patterns/_file_upload.html:56
-#: templates/backoffice/targets/category_block.html:91
+#: templates/backoffice/targets/category_block.html:94
 #: templates/respondents/view_respondents.html:132
 #, fuzzy
 msgid "Selected"
@@ -3813,7 +3812,7 @@ msgstr ""
 
 #: templates/admin/invite_view.html:110 templates/admin/user_edit.html:107
 #: templates/backoffice/patterns/_floating_alerts.html:131
-#: templates/backoffice/targets/category_block.html:150
+#: templates/backoffice/targets/category_block.html:154
 #: templates/db_selection/components/progress.html:91
 #: templates/db_selection/select.html:24 templates/db_selection/select.html:54
 #: templates/gsheets/components/progress.html:101
@@ -5169,7 +5168,7 @@ msgstr ""
 #: templates/backoffice/components/assembly_tabs.html:61
 #: templates/backoffice/respondents/export_modal.html:65
 #: templates/backoffice/service_docs.html:34
-#: templates/backoffice/targets/category_block.html:87
+#: templates/backoffice/targets/category_block.html:90
 #: templates/db_selection/select.html:43
 #: templates/main/view_assembly_base.html:42
 #: templates/respondents/view_respondents.html:2
@@ -9699,12 +9698,12 @@ msgid "Add category"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
 #: templates/backoffice/targets/bulk_edit_form.html:35
-#: templates/backoffice/targets/category_block.html:104
+#: templates/backoffice/targets/category_block.html:107
 msgid "Min and max were set by hand, not calculated from the percentage"
 msgstr ""
 
 #: templates/backoffice/targets/bulk_edit_form.html:36
-#: templates/backoffice/targets/category_block.html:105
+#: templates/backoffice/targets/category_block.html:108
 msgid "Set by hand"
 msgstr ""
 
@@ -9741,6 +9740,12 @@ msgstr ""
 msgid "Delete target"
 msgstr "Kezdés dátuma"
 
+#: templates/backoffice/targets/bulk_edit_form.html:157
+#: templates/backoffice/targets/category_block.html:81
+#, fuzzy, python-format
+msgid "Population (%%)"
+msgstr "Kiválasztás"
+
 #: templates/backoffice/targets/bulk_edit_form.html:190
 #: templates/targets/components/category_block.html:247
 msgid "Add value"
@@ -9757,7 +9762,7 @@ msgid "Not yet targeted: %(values)s"
 msgstr ""
 
 #: templates/backoffice/targets/bulk_edit_form.html:206
-#: templates/backoffice/targets/category_block.html:169
+#: templates/backoffice/targets/category_block.html:173
 #: templates/targets/components/category_block.html:195
 msgid "Total"
 msgstr ""
@@ -9783,24 +9788,24 @@ msgid "Source:"
 msgstr "Sikerült"
 
 #: templates/backoffice/targets/category_block.html:55
-#: templates/backoffice/targets/category_block.html:144
+#: templates/backoffice/targets/category_block.html:148
 #: templates/targets/components/category_block.html:59
 #: templates/targets/components/category_block.html:183
 #, fuzzy
 msgid "Suggestion"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/targets/category_block.html:162
+#: templates/backoffice/targets/category_block.html:166
 #: templates/targets/components/category_block.html:208
 msgid "No values defined."
 msgstr ""
 
-#: templates/backoffice/targets/category_block.html:207
+#: templates/backoffice/targets/category_block.html:212
 #: templates/targets/components/category_block.html:223
 msgid "Values in respondent data not yet targeted:"
 msgstr ""
 
-#: templates/backoffice/targets/category_block.html:209
+#: templates/backoffice/targets/category_block.html:214
 msgid "Add them under \"Edit targets\"."
 msgstr ""
 

@@ -32,6 +32,11 @@ class _NewTabUrlizer(Urlizer):  # type: ignore[no-any-unimported]
 
 _urlize = _NewTabUrlizer()
 
+# Real source URLs run to 170 characters and more, which wraps over several
+# lines and buries the value the comment is about. Longer link text is cut to
+# this many characters, the last of which is an ellipsis. The href is untouched.
+MAX_URL_TEXT_LENGTH = 40
+
 
 def linkify(text: str) -> Markup:
     """Turn URLs in free text into links, escaping everything else.
@@ -44,7 +49,7 @@ def linkify(text: str) -> Markup:
     `javascript:` and `data:` stay inert text. Email addresses become `mailto:`
     links.
     """
-    return Markup(_urlize(text, autoescape=True))  # noqa: S704
+    return Markup(_urlize(text, trim_url_limit=MAX_URL_TEXT_LENGTH, autoescape=True))  # noqa: S704
 
 
 def register_template_filters(app: Flask) -> None:
