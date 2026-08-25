@@ -1001,6 +1001,12 @@ complete. The follow-up makes the division absolute.
   found in respondent data**.
 - Both views show the assembly's `number_to_select` under the title. Every
   percentage on the page is a share of that number, and it was nowhere on screen.
+- **"Check targets in detail" and "Edit targets" move into the page header**,
+  right-aligned level with the title, in `page_header`'s `actions` slot. That
+  needs the `editingAll` flag on a common ancestor of the header and the content,
+  which are siblings in `base_page.html` — hence the new `page_alpine` block on
+  the page wrapper. Both are hidden while editing: one would navigate away from
+  unsaved edits, and the other is what got you there.
 
 **Deletion and addition are provisional.** A per-row request would throw away
 every other unsaved edit on the page, so instead a deleted row stays in place,
