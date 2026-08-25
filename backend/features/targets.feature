@@ -9,6 +9,7 @@ Feature: Target percentages, notes and ordering
     When I open the targets page for "Percentage Demo"
     Then I should see the percentage total "100.0%"
     And the "Male" target should show min "10" and max "11"
+    And the "Male" target should be marked as auto calculated
     And I should see "Number to select: 20"
 
   Scenario: A hand-set target is marked, with its reason visible, and can be linked back
@@ -16,13 +17,13 @@ Feature: Target percentages, notes and ordering
     And I am signed in as an admin user
     And the "Male" target was set by hand with the note "boosted by 2 for the callback rate"
     When I open the targets page for "Relink Demo"
-    Then I should see "Set by hand"
+    Then the "Male" target should be marked as manually modified
     And I should see "boosted by 2 for the callback rate"
     And the "Male" target should show min "12" and max "13"
     When I choose to edit all targets
     And I link the "Male" target back to its percentage
     And I save all targets
-    Then I should not see "Set by hand"
+    Then the "Male" target should be marked as auto calculated
     And the "Male" target should show min "10" and max "11"
 
   Scenario: Editing every target at once

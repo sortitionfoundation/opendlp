@@ -196,6 +196,23 @@ def target_shows_min_max(admin_logged_in_page: Page, value: str, minimum: str, m
     expect(row).to_contain_text(maximum, timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@then(parsers.parse('the "{value}" target should be marked as manually modified'))
+def target_marked_manual(admin_logged_in_page: Page, value: str) -> None:
+    _expect_provenance(admin_logged_in_page, value, "Manually modified", "Auto calculated")
+
+
+@then(parsers.parse('the "{value}" target should be marked as auto calculated'))
+def target_marked_automatic(admin_logged_in_page: Page, value: str) -> None:
+    _expect_provenance(admin_logged_in_page, value, "Auto calculated", "Manually modified")
+
+
+def _expect_provenance(page: Page, value: str, wanted: str, unwanted: str) -> None:
+    """Both the min and the max cell of this row carry the one mark, and not the other."""
+    row = _row_for(page, value)
+    expect(row.locator(f'[title="{wanted}"]')).to_have_count(2, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(row.locator(f'[title="{unwanted}"]')).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @then(parsers.parse('I should see "{text}"'))
 def should_see(admin_logged_in_page: Page, text: str) -> None:
     expect(_visible(admin_logged_in_page, text).first).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)

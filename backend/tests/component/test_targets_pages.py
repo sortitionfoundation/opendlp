@@ -409,7 +409,7 @@ class TestPercentageColumn:
         assert b"48.5%" in response.data
         assert b"100.0%" in response.data
 
-    def test_a_hand_set_value_is_marked_and_offers_relinking(
+    def test_a_hand_set_value_keeps_its_note_and_offers_relinking(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
@@ -431,7 +431,6 @@ class TestPercentageColumn:
 
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
-        assert b"Set by hand" in response.data
         assert b"boosted by 2" in response.data
         assert b"Use percentage" in response.data
 
@@ -444,14 +443,13 @@ class TestPercentageColumn:
         assert b"Population (%)" in response.data
         assert b"Population (%%)" not in response.data
 
-    def test_a_linked_value_is_not_marked(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_a_linked_value_is_not_offered_relinking(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
         with FakeUnitOfWork(store=fake_store) as uow:
             add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
 
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
-        assert b"Set by hand" not in response.data
         assert b"Use percentage" not in response.data
 
 
@@ -499,6 +497,81 @@ class TestValueNotesColumn:
         assert len(cells) == 5
         assert "boosted by 2" not in cells[0]
         assert "boosted by 2" in cells[4]
+
+
+class TestMinMaxProvenance:
+    """Min and max say where they came from, in the cells themselves.
+
+    The read-only row is what these assert against: the bulk edit form is on the
+    same page, hidden, and carries its own copy of every value.
+    """
+
+    def _hand_set_row(self, admin_user, existing_assembly, fake_store):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            cat = add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
+        value_id = cat.values[0].value_id
+        with FakeUnitOfWork(store=fake_store) as uow:
+            update_target_value(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                category.id,
+                value_id,
+                value="Male",
+                min_count=1,
+                max_count=2,
+            )
+
+    def test_hand_set_min_and_max_are_marked_as_manual(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        min_cell, max_cell = _read_only_row_cells(response.data.decode(), "Male")[2:4]
+        for cell in (min_cell, max_cell):
+            assert "var(--color-warning-100)" in cell
+            assert "Manually modified" in cell
+            assert "Auto calculated" not in cell
+
+    def test_the_value_cell_carries_no_badge_of_its_own(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._hand_set_row(admin_user, existing_assembly, fake_store)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert "Set by hand" not in _read_only_row_cells(response.data.decode(), "Male")[0]
+
+    def test_calculated_min_and_max_are_marked_as_automatic(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        min_cell, max_cell = _read_only_row_cells(response.data.decode(), "Male")[2:4]
+        for cell in (min_cell, max_cell):
+            assert "var(--color-info-100)" in cell
+            assert "Auto calculated" in cell
+            assert "Manually modified" not in cell
+
+    def test_a_value_with_no_percentage_is_left_plain(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """With nothing to calculate from, neither reading applies."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        min_cell, max_cell = _read_only_row_cells(response.data.decode(), "Male")[2:4]
+        for cell in (min_cell, max_cell):
+            assert "background-color: transparent" in cell
+            assert "Auto calculated" not in cell
+            assert "Manually modified" not in cell
 
 
 class TestEditValueWithPercentage:

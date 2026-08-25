@@ -2,6 +2,51 @@
 ABOUTME: HTMX partial for a single target category block in the backoffice
 ABOUTME: Read-only view of one category - every change is made through "Edit targets"
 #}
+{% macro provenance_icon(manual) %}
+    {% if manual %}
+        <span class="inline-flex shrink-0"
+              title="{{ _('Manually modified') }}"
+              style="color: var(--color-warning-400)">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/>
+                <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/>
+                <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/>
+                <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+            </svg>
+            <span class="sr-only">{{ _("Manually modified") }}</span>
+        </span>
+    {% else %}
+        <span class="inline-flex shrink-0"
+              title="{{ _('Auto calculated') }}"
+              style="color: var(--color-info-600)">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                <path d="M20 3v4"/>
+                <path d="M22 5h-4"/>
+                <path d="M4 17v2"/>
+                <path d="M5 18H3"/>
+            </svg>
+            <span class="sr-only">{{ _("Auto calculated") }}</span>
+        </span>
+    {% endif %}
+{% endmacro %}
+
+{#
+    A min or max cell, tinted to say where the number came from: calculated from
+    the percentage, or typed in by hand. A value with no percentage has nothing
+    to calculate from, so neither reading applies and its cell stays plain.
+#}
+{% macro minmax_cell(number, manual, has_percentage) %}
+    {% set tint = ("var(--color-warning-100)" if manual else "var(--color-info-100)") if has_percentage else "transparent" %}
+    <td class="py-2" style="color: var(--color-body-text)">
+        <span class="flex items-center justify-between gap-2 px-4 py-1"
+              style="background-color: {{ tint }}">
+            <span>{{ number }}</span>
+            {% if has_percentage %}{{ provenance_icon(manual) }}{% endif %}
+        </span>
+    </td>
+{% endmacro %}
+
 {% set has_counts = respondent_counts is defined and respondent_counts %}
 {% set show_selected = has_selected is defined and has_selected and selected_counts is defined and selected_counts %}
 {% set col_count = 5 + (1 if has_counts else 0) + (1 if show_selected else 0) %}
@@ -79,9 +124,9 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                         style="color: var(--color-headings)">{{ _("Value") }}</th>
                     <th class="py-3 px-4 text-right text-label-md"
                         style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
-                    <th class="py-3 px-4 text-right text-label-md"
+                    <th class="py-3 px-4 text-left text-label-md"
                         style="color: var(--color-headings)">{{ _("Min") }}</th>
-                    <th class="py-3 px-4 text-right text-label-md"
+                    <th class="py-3 px-4 text-left text-label-md"
                         style="color: var(--color-headings)">{{ _("Max") }}</th>
                     <th class="py-3 px-4 text-left text-label-md"
                         style="color: var(--color-headings)">{{ _("Notes") }}</th>
@@ -98,17 +143,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
             <tbody>
                 {% for val in category.values or [] %}
                     <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
-                        <td class="py-3 pr-4" style="color: var(--color-body-text)">
-                            {{ val.value }}
-                            {% if val.minmax_manual and val.percentage_target is not none %}
-                                <span class="text-label-md px-1.5 py-0.5 rounded ml-2"
-                                      style="background-color: var(--color-warning-400);
-                                             color: white"
-                                      title="{{ _('Min and max were set by hand, not calculated from the percentage') }}">
-                                    {{ _("Set by hand") }}
-                                </span>
-                            {% endif %}
-                        </td>
+                        <td class="py-3 pr-4" style="color: var(--color-body-text)">{{ val.value }}</td>
                         <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
                             {% if val.percentage_target is not none %}
                                 {{ val.percentage_target }}%
@@ -116,8 +151,9 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                                 <span style="color: var(--color-secondary-text);">&mdash;</span>
                             {% endif %}
                         </td>
-                        <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ val.min }}</td>
-                        <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ val.max }}</td>
+                        {% set has_percentage = val.percentage_target is not none %}
+                        {{ minmax_cell(val.min, val.minmax_manual, has_percentage) }}
+                        {{ minmax_cell(val.max, val.minmax_manual, has_percentage) }}
                         <td class="py-3 px-4 text-body-sm"
                             style="color: var(--color-secondary-text);
                                    overflow-wrap: anywhere">
@@ -179,9 +215,9 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                             <span style="color: var(--color-secondary-text);">&mdash;</span>
                         {% endif %}
                     </td>
-                    <td class="py-3 px-4 text-right text-label-md font-bold"
+                    <td class="py-3 px-4 text-left text-label-md font-bold"
                         style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='min') }}</td>
-                    <td class="py-3 px-4 text-right text-label-md font-bold"
+                    <td class="py-3 px-4 text-left text-label-md font-bold"
                         style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='max') }}</td>
                     <td class="py-3 px-4"></td>
                     {% if has_counts %}
