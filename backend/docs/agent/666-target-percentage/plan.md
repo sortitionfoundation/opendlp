@@ -1060,6 +1060,24 @@ at the person filling it in. The domain still enforces all of them; it just
 raises on the first with a message written for a developer. Anything the named
 checks miss falls through to the generic catch and lands on the row.
 
+**Where min and max came from is shown in the cells themselves.** The read-only
+table used to carry a "Set by hand" badge in the value cell, which said nothing
+about the values that were calculated and nothing about where either number
+lives. Instead each min and max cell is tinted: `--color-warning-100` with a
+raised-hand icon for a number typed in by hand, `--color-info-100` with a
+sparkles icon for one calculated from the percentage. A value with no percentage
+has nothing to calculate from, so neither reading applies and its cell stays
+plain. This follows the Figma at node `4686-9425`, which uses our own tokens.
+
+Two things worth knowing about the markup. The icon carries the wording as a
+`title` for the hover and as `sr-only` text for anything not looking at the
+screen - a tint and a glyph on their own say nothing to a screen reader.
+`sr-only` rather than `govuk-visually-hidden`, because the backoffice ships
+Tailwind and the govuk stylesheet is not loaded there; the govuk class renders
+as ordinary visible text. The min and max columns are left-aligned so the
+number sits at the left of its tinted block and the icon at the right, which is
+also what puts the heading and the total in line with the values.
+
 **Deletion and addition are provisional.** A per-row request would throw away
 every other unsaved edit on the page, so instead a deleted row stays in place,
 struck through, with its own undo, and carries a hidden `[deleted]` flag; a row
