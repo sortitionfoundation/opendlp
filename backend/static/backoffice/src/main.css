@@ -1171,3 +1171,34 @@
 body {
     overflow-x: clip;
 }
+
+/* ========================================
+   BULK TARGETS EDITOR
+   ======================================== */
+
+/*
+ * Deleting in the bulk targets editor is provisional: nothing goes until the
+ * whole form is saved. So a row or block marked for deletion stays in place,
+ * dimmed and struck through, with its own undo — the user can see exactly what
+ * they are about to lose, and change their mind for free.
+ */
+@layer components {
+    .is-pending-delete {
+        opacity: 0.5;
+        text-decoration: line-through;
+    }
+
+    .is-pending-delete input {
+        text-decoration: line-through;
+    }
+
+    .targets-total {
+        color: var(--color-headings);
+    }
+
+    /* Percentages that do not add up to roughly 100 - a warning, not an error:
+       the targets still work, they just probably do not say what was meant. */
+    .targets-total--implausible {
+        color: var(--color-warning-600);
+    }
+}

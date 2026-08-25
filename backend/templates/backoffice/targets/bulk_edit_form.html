@@ -4,92 +4,221 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input %}
+
+{% macro value_row(category_id, row_id, val=None, is_new=false, prefill="") %}
+    {% set val_prefix = "cat[" ~ category_id ~ "][values][" ~ row_id ~ "]" %}
+    {% set field_id = "bulk-" ~ category_id ~ "-" ~ row_id %}
+    {% set can_relink = val and val.minmax_manual and val.percentage_target is not none %}
+    <tr data-value-row="true"
+        data-deleted="false"
+        x-data="bulkTargetsValueRow{{ '({ isNew: true })' if is_new else '()' }}"
+        :class="rowClass"
+        style="border-bottom: 1px solid var(--color-borders-dividers)">
+        <td class="py-3 pr-4">
+            <input type="hidden"
+                   name="{{ val_prefix }}[deleted]"
+                   value="false"
+                   x-ref="deletedField" />
+            <input type="hidden"
+                   name="{{ val_prefix }}[relink]"
+                   value="false"
+                   x-ref="relinkField" />
+            {{ input(name=val_prefix ~ "[value]",
+            id=field_id ~ "-value",
+            value=val.value if val else prefill,
+            required=true) }}
+            {% if can_relink %}
+                <span class="text-label-md px-1.5 py-0.5 rounded inline-block mt-1"
+                      x-show="!relink"
+                      style="background-color: var(--color-warning-400);
+                             color: white"
+                      title="{{ _('Min and max were set by hand, not calculated from the percentage') }}">
+                    {{ _("Set by hand") }}
+                </span>
+                <span class="text-body-sm inline-block mt-1"
+                      x-show="relink"
+                      x-cloak
+                      style="color: var(--color-secondary-text);">
+                    {{ _("Min and max will be recalculated when you save.") }}
+                </span>
+            {% endif %}
+        </td>
+        <td class="py-3 px-4">
+            {{ input(name=val_prefix ~ "[percentage]",
+            id=field_id ~ "-pct",
+            type="number",
+            value=val.percentage_target if val and val.percentage_target is not none else "",
+            classes="w-24",
+            attrs='min="0" max="100" step="0.1" data-field="percentage"') }}
+        </td>
+        <td class="py-3 px-4">
+            {{ input(name=val_prefix ~ "[min]",
+            id=field_id ~ "-min",
+            type="number",
+            value=val.min if val else "",
+            classes="w-20",
+            attrs='min="0" data-field="min" :disabled="relink"') }}
+        </td>
+        <td class="py-3 px-4">
+            {{ input(name=val_prefix ~ "[max]",
+            id=field_id ~ "-max",
+            type="number",
+            value=val.max if val else "",
+            classes="w-20",
+            attrs='min="0" data-field="max" :disabled="relink"') }}
+        </td>
+        <td class="py-3 px-4">
+            {{ input(name=val_prefix ~ "[comment]",
+            id=field_id ~ "-comment",
+            value=val.comment if val else "",
+            placeholder=_("Why min and max were set by hand")) }}
+        </td>
+        <td class="py-3 pl-4 text-right">
+            <div class="flex items-center justify-end gap-2">
+                {% if can_relink %}
+                    <span x-show="!relink">
+                        {{ button(_("Use percentage"), variant="tertiary", attrs='@click="usePercentage()"') }}
+                    </span>
+                {% endif %}
+                <span x-show="!deleted">
+                    {{ button(_("Delete value"), variant="danger", attrs='@click="remove()"') }}
+                </span>
+                <span x-show="deleted" x-cloak>
+                    {{ button(_("Undo"), variant="tertiary", attrs='@click="undoRemove()"') }}
+                </span>
+            </div>
+        </td>
+    </tr>
+{% endmacro %}
+
 <form method="post"
       action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}"
       id="save-all-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    {% for category in target_categories %}
-        {% set cat_prefix = "cat[" ~ category.id ~ "]" %}
-        <div class="mb-8 rounded-lg overflow-hidden p-6"
-             style="background-color: var(--color-tables-cards);
-                    border: 1px solid var(--color-borders-dividers)">
-            <div class="mb-4 flex flex-wrap items-end gap-3">
-                {{ input(name=cat_prefix ~ "[name]",
-                id="bulk-name-" ~ category.id|string,
-                label=_("Category Name"),
-                value=category.name,
-                required=true) }}
-                {{ input(name=cat_prefix ~ "[source_url]",
-                id="bulk-source-" ~ category.id|string,
-                label=_("Source"),
-                value=category.source_url,
-                placeholder="https://") }}
-                {{ input(name=cat_prefix ~ "[comment]",
-                id="bulk-comment-" ~ category.id|string,
-                label=_("Notes"),
-                value=category.comment) }}
+    <div id="bulk-categories">
+        {% for category in target_categories %}
+            {% set cat_prefix = "cat[" ~ category.id ~ "]" %}
+            {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
+            {% set target_value_names = (category.values or []) | map(attribute='value') | list %}
+            {% set missing_values = [] %}
+            {% if respondent_counts %}
+                {% for rv in respondent_counts.keys() %}
+                    {% if rv not in target_value_names %}
+                        {% if missing_values.append(rv) %}{% endif %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            <div class="mb-8 rounded-lg overflow-hidden p-6"
+                 id="bulk-category-{{ category.id }}"
+                 x-data="bulkTargetsCategory({ emptyLabel: '{{ _('None') }}' })"
+                 @input="recalculate()"
+                 @targets-changed="recalculate()"
+                 style="background-color: var(--color-tables-cards);
+                        border: 1px solid var(--color-borders-dividers)">
+                <input type="hidden"
+                       name="{{ cat_prefix }}[deleted]"
+                       value="false"
+                       x-ref="deletedField" />
+                <input type="hidden"
+                       name="{{ cat_prefix }}[sort_order]"
+                       value="{{ category.sort_order }}"
+                       data-sort-order="true" />
+                {# ── Pending Deletion Banner ──────────────── #}
+                <div x-show="deleted"
+                     x-cloak
+                     class="rounded-lg p-3 flex items-center gap-3"
+                     style="background-color: var(--color-warning-100);
+                            border: 1px solid var(--color-warning-400)">
+                    <span style="color: var(--color-warning-600);">
+                        {{ _('"%(name)s" and all its values will be deleted when you save.', name=category.name) }}
+                    </span>
+                    {{ button(_("Undo"), variant="tertiary", attrs='@click="undoDelete()"') }}
+                </div>
+                <div x-show="!deleted">
+                    <div class="mb-4 flex flex-wrap items-end gap-3">
+                        {{ input(name=cat_prefix ~ "[name]",
+                        id="bulk-name-" ~ category.id|string,
+                        label=_("Category Name"),
+                        value=category.name,
+                        required=true) }}
+                        {{ input(name=cat_prefix ~ "[source_url]",
+                        id="bulk-source-" ~ category.id|string,
+                        label=_("Source"),
+                        value=category.source_url,
+                        placeholder="https://") }}
+                        {{ input(name=cat_prefix ~ "[comment]",
+                        id="bulk-comment-" ~ category.id|string,
+                        label=_("Notes"),
+                        value=category.comment) }}
+                        <div class="flex items-center gap-2">
+                            {{ button(_("Move up"), variant="tertiary", attrs='@click="moveUp()"') }}
+                            {{ button(_("Move down"), variant="tertiary", attrs='@click="moveDown()"') }}
+                            {{ button(_("Delete target"), variant="danger", attrs='@click="markDeleted()"') }}
+                        </div>
+                    </div>
+                    <table class="w-full text-body-md" style="border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                                <th class="py-3 pr-4 text-left text-label-md"
+                                    style="color: var(--color-headings)">{{ _("Value") }}</th>
+                                <th class="py-3 px-4 text-left text-label-md"
+                                    style="color: var(--color-headings)">{{ _("Percentage") }}</th>
+                                <th class="py-3 px-4 text-left text-label-md"
+                                    style="color: var(--color-headings)">{{ _("Min") }}</th>
+                                <th class="py-3 px-4 text-left text-label-md"
+                                    style="color: var(--color-headings)">{{ _("Max") }}</th>
+                                <th class="py-3 px-4 text-left text-label-md"
+                                    style="color: var(--color-headings)">{{ _("Notes") }}</th>
+                                <th class="py-3 pl-4 text-right text-label-md"
+                                    style="color: var(--color-headings)">{{ _("Actions") }}</th>
+                            </tr>
+                        </thead>
+                        <tbody x-ref="rows">
+                            {% for val in category.values or [] %}
+                                {{ value_row(category.id, val.value_id, val=val) }}
+                            {% endfor %}
+                            {# Blank rows are cloned from here, so the markup has exactly
+                               one definition. __ID__ becomes new-<n> on the way in. #}
+                            <template x-ref="rowTemplate">
+                                {{ value_row(category.id, "__ID__", is_new=true) }}
+                            </template>
+                            {% if missing_values %}
+                                <template x-ref="missingTemplate">
+                                    {% for mv in missing_values %}
+                                        {{ value_row(category.id, "__ID__", is_new=true, prefill=mv) }}
+                                    {% endfor %}
+                                </template>
+                            {% endif %}
+                        </tbody>
+                        <tfoot>
+                            <tr style="border-top: 2px solid var(--color-borders-dividers);">
+                                <th class="py-3 pr-4 text-left text-label-md"
+                                    style="color: var(--color-headings)">{{ _("Total") }}</th>
+                                <td class="py-3 px-4 text-label-md font-bold targets-total"
+                                    :class="percentageTotalClass"
+                                    x-text="percentageTotal"></td>
+                                <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="minTotal"></td>
+                                <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="maxTotal"></td>
+                                <td class="py-3 px-4"></td>
+                                <td class="py-3 pl-4"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div class="mt-4 flex items-center gap-3">
+                        {{ button(_("Add value"), variant="secondary", attrs='@click="addValue()"') }}
+                        {% if missing_values %}
+                            <span x-show="!missingAdded">
+                                {{ button(_("Add values found in respondent data"), variant="secondary", attrs='@click="addMissingValues()"') }}
+                            </span>
+                            <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                                {{ _("Not yet targeted: %(values)s", values=missing_values | join(", ")) }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <table class="w-full text-body-md" style="border-collapse: collapse;">
-                <thead>
-                    <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
-                        <th class="py-3 pr-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Value") }}</th>
-                        <th class="py-3 px-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Percentage") }}</th>
-                        <th class="py-3 px-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Min") }}</th>
-                        <th class="py-3 px-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Max") }}</th>
-                        <th class="py-3 pl-4 text-left text-label-md"
-                            style="color: var(--color-headings)">{{ _("Notes") }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for val in category.values or [] %}
-                        {% set val_prefix = cat_prefix ~ "[values][" ~ val.value_id ~ "]" %}
-                        <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
-                            <td class="py-3 pr-4">
-                                {{ input(name=val_prefix ~ "[value]",
-                                id="bulk-value-" ~ val.value_id|string,
-                                value=val.value,
-                                required=true) }}
-                            </td>
-                            <td class="py-3 px-4">
-                                {{ input(name=val_prefix ~ "[percentage]",
-                                id="bulk-pct-" ~ val.value_id|string,
-                                type="number",
-                                value=val.percentage_target if val.percentage_target is not none else "",
-                                classes="w-24",
-                                attrs='min="0" max="100" step="0.1"') }}
-                            </td>
-                            <td class="py-3 px-4">
-                                {{ input(name=val_prefix ~ "[min]",
-                                id="bulk-min-" ~ val.value_id|string,
-                                type="number",
-                                value=val.min,
-                                classes="w-20",
-                                attrs='min="0"') }}
-                            </td>
-                            <td class="py-3 px-4">
-                                {{ input(name=val_prefix ~ "[max]",
-                                id="bulk-max-" ~ val.value_id|string,
-                                type="number",
-                                value=val.max,
-                                classes="w-20",
-                                attrs='min="0"') }}
-                            </td>
-                            <td class="py-3 pl-4">
-                                {{ input(name=val_prefix ~ "[comment]",
-                                id="bulk-vcomment-" ~ val.value_id|string,
-                                value=val.comment,
-                                placeholder=_("Why min and max were set by hand")) }}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endfor %}
+        {% endfor %}
+    </div>
     <div class="flex items-center gap-3">
         {{ button(_("Save all"), variant="primary", type="submit") }}
         {{ button(_("Cancel"), variant="tertiary", attrs='@click="editingAll = false"') }}

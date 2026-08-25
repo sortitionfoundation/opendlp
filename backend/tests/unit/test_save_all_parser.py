@@ -108,3 +108,77 @@ class TestParseSaveAllTargets:
 
         assert edits == []
         assert errors == []
+
+
+class TestDeletionAndRelinking:
+    def test_a_value_marked_deleted_is_flagged(self):
+        edits, errors = parse_save_all_targets(
+            _form(**{
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][deleted]": "true",
+            })
+        )
+
+        assert errors == []
+        assert edits[0].values[0].deleted is True
+
+    def test_a_value_not_marked_deleted_is_not_flagged(self):
+        edits, _errors = parse_save_all_targets(
+            _form(**{
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][deleted]": "false",
+            })
+        )
+
+        assert edits[0].values[0].deleted is False
+
+    def test_a_deleted_value_needs_no_name(self):
+        """The name field of a row on its way out is nobody's business."""
+        edits, errors = parse_save_all_targets(
+            _form(**{
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][deleted]": "true",
+            })
+        )
+
+        assert errors == []
+        assert edits[0].values[0].deleted is True
+
+    def test_a_category_marked_deleted_is_flagged(self):
+        edits, errors = parse_save_all_targets(_form(**{f"cat[{CATEGORY_ID}][deleted]": "true"}))
+
+        assert errors == []
+        assert edits[0].deleted is True
+
+    def test_a_deleted_category_carries_no_value_edits(self):
+        """Its values go with it, so validating or applying them is pointless."""
+        edits, errors = parse_save_all_targets(
+            _form(**{
+                f"cat[{CATEGORY_ID}][deleted]": "true",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "",
+            })
+        )
+
+        assert errors == []
+        assert edits[0].values == []
+
+    def test_a_relink_request_is_flagged(self):
+        edits, _errors = parse_save_all_targets(
+            _form(**{
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][relink]": "true",
+            })
+        )
+
+        assert edits[0].values[0].relink is True
+
+    def test_sort_order_is_parsed_as_a_number(self):
+        edits, errors = parse_save_all_targets(_form(**{f"cat[{CATEGORY_ID}][sort_order]": "30"}))
+
+        assert errors == []
+        assert edits[0].sort_order == 30
+
+    def test_a_missing_sort_order_means_leave_it_alone(self):
+        edits, _errors = parse_save_all_targets(_form())
+
+        assert edits[0].sort_order is None

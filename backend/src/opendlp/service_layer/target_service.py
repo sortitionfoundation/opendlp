@@ -72,6 +72,8 @@ class TargetValueEdit:
     min: int | None = None
     max: int | None = None
     comment: str = ""
+    deleted: bool = False
+    relink: bool = False
 
 
 @dataclass
@@ -83,6 +85,8 @@ class TargetCategoryEdit:
     comment: str = ""
     source_url: str = ""
     values: list[TargetValueEdit] = field(default_factory=list)
+    deleted: bool = False
+    sort_order: int | None = None
 
 
 def _load_user_and_assembly(
@@ -879,8 +883,9 @@ def save_all_targets(
     Reuses the per-value logic from `update_target_value`, so the link-breaking
     rules have exactly one implementation.
 
-    Deletion is not part of this: values absent from the payload are left alone,
-    not removed.
+    Deletion is explicit: a category or value goes only when its edit says so.
+    Absence from the payload still means "leave alone", so a partial submission
+    cannot silently destroy anything.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -891,37 +896,70 @@ def save_all_targets(
     now = datetime.now(UTC)
     for category_edit in edits:
         category = _get_category(uow, assembly_id, category_edit.category_id)
-        category.name = category_edit.name.strip()
-        category.comment = validate_comment(category_edit.comment)
-        category.source_url = validate_source_url(category_edit.source_url)
+        if category_edit.deleted:
+            uow.target_categories.delete(category)
+            continue
 
-        for value_edit in category_edit.values:
-            if value_edit.value_id is None:
-                target_value = TargetValue(
-                    value=value_edit.value,
-                    min=value_edit.min or 0,
-                    max=value_edit.max or 0,
-                    percentage_target=value_edit.percentage,
-                    comment=value_edit.comment,
-                )
-                target_value.apply_percentage(number_to_select)
-                category.add_value(target_value)
-                continue
-
-            target_value = _get_value(category, value_edit.value_id)
-            target_value.value = value_edit.value.strip()
-            target_value.comment = value_edit.comment
-            _apply_value_numbers(
-                target_value,
-                value_edit.min,
-                value_edit.max,
-                value_edit.percentage,
-                number_to_select,
-            )
-            target_value._validate()
-
+        _apply_category_edit(category, category_edit, number_to_select)
         category.updated_at = now
         flag_modified(category, "values")
         saved.append(category.create_detached_copy())
 
     return saved
+
+
+def _apply_category_edit(
+    category: TargetCategory,
+    category_edit: TargetCategoryEdit,
+    number_to_select: int,
+) -> None:
+    """Apply one category's own fields and every value edit beneath it."""
+    category.name = category_edit.name.strip()
+    category.comment = validate_comment(category_edit.comment)
+    category.source_url = validate_source_url(category_edit.source_url)
+    if category_edit.sort_order is not None:
+        category.sort_order = category_edit.sort_order
+
+    for value_edit in category_edit.values:
+        _apply_value_edit(category, value_edit, number_to_select)
+
+
+def _apply_value_edit(
+    category: TargetCategory,
+    value_edit: TargetValueEdit,
+    number_to_select: int,
+) -> None:
+    """Add, update or remove one value, per its edit."""
+    if value_edit.value_id is None:
+        if value_edit.deleted:
+            return
+        target_value = TargetValue(
+            value=value_edit.value,
+            min=value_edit.min or 0,
+            max=value_edit.max or 0,
+            percentage_target=value_edit.percentage,
+            comment=value_edit.comment,
+        )
+        target_value.apply_percentage(number_to_select)
+        category.add_value(target_value)
+        return
+
+    if value_edit.deleted:
+        category.remove_value(value_edit.value_id)
+        return
+
+    target_value = _get_value(category, value_edit.value_id)
+    target_value.value = value_edit.value.strip()
+    target_value.comment = value_edit.comment
+    if value_edit.relink:
+        target_value.percentage_target = value_edit.percentage
+        target_value.relink_to_percentage(number_to_select)
+    else:
+        _apply_value_numbers(
+            target_value,
+            value_edit.min,
+            value_edit.max,
+            value_edit.percentage,
+            number_to_select,
+        )
+    target_value._validate()

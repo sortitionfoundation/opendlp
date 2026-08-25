@@ -31,8 +31,27 @@ def _targets_url(assembly_id: str) -> str:
 
 
 def _row_for(page: Page, value: str):
-    """The table row whose first cell is this target value."""
-    return page.locator("tr").filter(has=page.get_by_role("cell", name=value, exact=False)).first
+    """The read-only table row whose first cell is this target value."""
+    return page.locator("#target-categories tr").filter(has=page.get_by_role("cell", name=value, exact=False)).first
+
+
+def _edit_row_for(page: Page, value: str):
+    """The bulk-edit row whose value input holds this target value."""
+    return page.locator("tr[data-value-row]").filter(has=page.locator(f'input[value="{value}"]')).first
+
+
+def _edit_block_for(page: Page, name: str):
+    """The bulk-edit category block whose name input holds this category name."""
+    return page.locator("#bulk-categories > div").filter(has=page.locator(f'input[value="{name}"]')).first
+
+
+def _visible(page: Page, text: str):
+    """Matches of this text that are actually on screen.
+
+    The page carries both the read-only view and the bulk edit form at once,
+    with one of them hidden, so an unqualified text match finds the wrong copy.
+    """
+    return page.get_by_text(text).filter(visible=True)
 
 
 @given(parsers.parse('there is an assembly with targets called "{title}"'))
@@ -91,7 +110,7 @@ def open_targets_page(admin_logged_in_page: Page, title: str) -> None:
 
 @when("I choose to edit all targets")
 def choose_edit_all(admin_logged_in_page: Page) -> None:
-    admin_logged_in_page.get_by_role("button", name="Edit all").click()
+    admin_logged_in_page.get_by_role("button", name="Edit targets").click()
 
 
 @when("I save all targets")
@@ -101,19 +120,46 @@ def save_all(admin_logged_in_page: Page) -> None:
 
 @when(parsers.parse('I link the "{value}" target back to its percentage'))
 def relink_target(admin_logged_in_page: Page, value: str) -> None:
-    _row_for(admin_logged_in_page, value).get_by_role("button", name="Use percentage").click()
+    _edit_row_for(admin_logged_in_page, value).get_by_role("button", name="Use percentage").click()
 
 
 @when(parsers.parse('I move the "{name}" category down'))
 def move_category_down(admin_logged_in_page: Page, name: str) -> None:
-    heading = admin_logged_in_page.get_by_role("heading", name=name, exact=True)
-    block = admin_logged_in_page.locator("div").filter(has=heading).last
-    block.get_by_role("button", name="Move down").first.click()
+    _edit_block_for(admin_logged_in_page, name).get_by_role("button", name="Move down").first.click()
+
+
+@when(parsers.parse('I add a target value called "{value}" with percentage "{percentage}"'))
+def add_target_value_in_bulk_form(admin_logged_in_page: Page, value: str, percentage: str) -> None:
+    block = admin_logged_in_page.locator("#bulk-categories > div").first
+    block.get_by_role("button", name="Add value", exact=True).click()
+    row = block.locator("tr[data-value-row]").last
+    row.locator('input[name$="[value]"]').fill(value)
+    row.locator('[data-field="percentage"]').fill(percentage)
+
+
+@when(parsers.parse('I delete the "{value}" target value'))
+def delete_target_value_in_bulk_form(admin_logged_in_page: Page, value: str) -> None:
+    _edit_row_for(admin_logged_in_page, value).get_by_role("button", name="Delete value").click()
+
+
+@when(parsers.parse('I take back the deletion of the "{value}" target value'))
+def undo_delete_target_value(admin_logged_in_page: Page, value: str) -> None:
+    _edit_row_for(admin_logged_in_page, value).get_by_role("button", name="Undo").click()
+
+
+@when(parsers.parse('I delete the "{name}" category'))
+def delete_category_in_bulk_form(admin_logged_in_page: Page, name: str) -> None:
+    _edit_block_for(admin_logged_in_page, name).get_by_role("button", name="Delete target").click()
+
+
+@when(parsers.parse('I set the "{value}" percentage to "{percentage}"'))
+def set_percentage_in_bulk_form(admin_logged_in_page: Page, value: str, percentage: str) -> None:
+    _edit_row_for(admin_logged_in_page, value).locator('[data-field="percentage"]').fill(percentage)
 
 
 @then(parsers.parse('I should see the percentage total "{total}"'))
 def see_percentage_total(admin_logged_in_page: Page, total: str) -> None:
-    expect(admin_logged_in_page.get_by_text(total).first).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_visible(admin_logged_in_page, total).first).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the "{value}" target should show min "{minimum}" and max "{maximum}"'))
@@ -125,12 +171,43 @@ def target_shows_min_max(admin_logged_in_page: Page, value: str, minimum: str, m
 
 @then(parsers.parse('I should see "{text}"'))
 def should_see(admin_logged_in_page: Page, text: str) -> None:
-    expect(admin_logged_in_page.get_by_text(text).first).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_visible(admin_logged_in_page, text).first).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('I should not see "{text}"'))
 def should_not_see(admin_logged_in_page: Page, text: str) -> None:
-    expect(admin_logged_in_page.get_by_text(text)).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_visible(admin_logged_in_page, text)).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('I should see the "{label}" button'))
+def should_see_button(admin_logged_in_page: Page, label: str) -> None:
+    button = admin_logged_in_page.get_by_role("button", name=label, exact=True).filter(visible=True)
+    expect(button.first).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('I should not see the "{label}" button'))
+def should_not_see_button(admin_logged_in_page: Page, label: str) -> None:
+    button = admin_logged_in_page.get_by_role("button", name=label, exact=True).filter(visible=True)
+    expect(button).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('there should be no "{value}" target value'))
+def no_such_target_value(admin_logged_in_page: Page, value: str) -> None:
+    cells = admin_logged_in_page.locator("#target-categories").get_by_role("cell", name=value, exact=True)
+    expect(cells).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('there should be no "{name}" category'))
+def no_such_category(admin_logged_in_page: Page, name: str) -> None:
+    headings = admin_logged_in_page.locator("#target-categories").get_by_role("heading", name=name, exact=True)
+    expect(headings).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the bulk edit total should show "{total}"'))
+def bulk_edit_total(admin_logged_in_page: Page, total: str) -> None:
+    expect(admin_logged_in_page.locator("#bulk-categories tfoot").first).to_contain_text(
+        total, timeout=PLAYWRIGHT_TIMEOUT
+    )
 
 
 @then("I should see the bulk edit form")

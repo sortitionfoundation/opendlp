@@ -1014,6 +1014,196 @@ class TestSaveAllTargets:
             after = target_service.get_targets_for_assembly(check, admin_user.id, test_assembly.id)
             assert after[0].name == "Gender"
 
+    def test_deletes_a_value_that_is_marked_for_it(self, uow, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0, "Woman": 50.0})
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=category.id,
+                    name="Gender",
+                    values=[
+                        target_service.TargetValueEdit(
+                            value_id=category.values[0].value_id, value="Man", percentage=50.0
+                        ),
+                        target_service.TargetValueEdit(
+                            value_id=category.values[1].value_id, value="Woman", percentage=50.0, deleted=True
+                        ),
+                    ],
+                )
+            ],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert [v.value for v in after.values] == ["Man"]
+
+    def test_leaves_a_value_absent_from_the_payload_alone(self, uow, admin_user: User, test_assembly: Assembly):
+        """Absence still means "not submitted", so a partial form destroys nothing."""
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0, "Woman": 50.0})
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=category.id,
+                    name="Gender",
+                    values=[
+                        target_service.TargetValueEdit(
+                            value_id=category.values[0].value_id, value="Man", percentage=50.0
+                        )
+                    ],
+                )
+            ],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert [v.value for v in after.values] == ["Man", "Woman"]
+
+    def test_a_new_value_deleted_before_saving_is_never_created(self, uow, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=category.id,
+                    name="Gender",
+                    values=[
+                        target_service.TargetValueEdit(
+                            value_id=category.values[0].value_id, value="Man", percentage=100.0
+                        ),
+                        target_service.TargetValueEdit(value="Woman", percentage=50.0, deleted=True),
+                    ],
+                )
+            ],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert [v.value for v in after.values] == ["Man"]
+
+    def test_deletes_a_category_that_is_marked_for_it(self, uow, admin_user: User, test_assembly: Assembly):
+        gender = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
+        age = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Age")
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(category_id=gender.id, name="Gender", values=[]),
+                target_service.TargetCategoryEdit(category_id=age.id, name="Age", deleted=True),
+            ],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        assert [c.name for c in after] == ["Gender"]
+
+    def test_re_links_a_hand_set_value_to_its_percentage(self, uow, admin_user: User, test_assembly: Assembly):
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+        target_service.update_target_value(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            category.id,
+            category.values[0].value_id,
+            value="Man",
+            min_count=20,
+            max_count=25,
+        )
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=category.id,
+                    name="Gender",
+                    values=[
+                        target_service.TargetValueEdit(
+                            value_id=category.values[0].value_id,
+                            value="Man",
+                            percentage=50.0,
+                            min=20,
+                            max=25,
+                            relink=True,
+                        )
+                    ],
+                )
+            ],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.values[0].minmax_manual is False
+        assert (after.values[0].min, after.values[0].max) == (15, 16)
+
+    def test_re_linking_ignores_the_submitted_min_and_max(self, uow, admin_user: User, test_assembly: Assembly):
+        """The point of re-linking is that the seat counts stop being the user's to type."""
+        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=category.id,
+                    name="Gender",
+                    values=[
+                        target_service.TargetValueEdit(
+                            value_id=category.values[0].value_id,
+                            value="Man",
+                            percentage=50.0,
+                            min=1,
+                            max=2,
+                            relink=True,
+                        )
+                    ],
+                )
+            ],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert (after.values[0].min, after.values[0].max) == (15, 16)
+
+    def test_applies_a_submitted_sort_order(self, uow, admin_user: User, test_assembly: Assembly):
+        gender = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
+        age = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Age")
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(category_id=gender.id, name="Gender", sort_order=20),
+                target_service.TargetCategoryEdit(category_id=age.id, name="Age", sort_order=10),
+            ],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+        assert [c.name for c in after] == ["Age", "Gender"]
+
+    def test_leaves_sort_order_alone_when_none_is_submitted(self, uow, admin_user: User, test_assembly: Assembly):
+        gender = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 100.0})
+        before = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0].sort_order
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [target_service.TargetCategoryEdit(category_id=gender.id, name="Gender")],
+        )
+
+        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+        assert after.sort_order == before
+
     def test_requires_manage_permission(self, uow, regular_user: User, test_assembly: Assembly):
         with pytest.raises(InsufficientPermissions):
             target_service.save_all_targets(uow, regular_user.id, test_assembly.id, [])

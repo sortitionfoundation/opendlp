@@ -438,6 +438,123 @@ class TestSaveAll:
         assert saved.values[0].percentage_target == 60.0
         assert saved.values[0].comment == "boosted by 2"
 
+    def test_deleting_a_value_and_adding_another_in_one_save(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.assemblies.get(existing_assembly.id).number_to_select = 20
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Female", percentage=50.0)
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            values = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values
+        male_id, female_id = values[0].value_id, values[1].value_id
+
+        prefix = f"cat[{category.id}]"
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[values][{male_id}][value]": "Male",
+                f"{prefix}[values][{male_id}][percentage]": "50",
+                f"{prefix}[values][{female_id}][value]": "Female",
+                f"{prefix}[values][{female_id}][deleted]": "true",
+                f"{prefix}[values][new-1][value]": "Non-binary",
+                f"{prefix}[values][new-1][percentage]": "10",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            saved = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
+        assert [v.value for v in saved.values] == ["Male", "Non-binary"]
+        assert (saved.values[1].min, saved.values[1].max) == (2, 3)
+
+    def test_deleting_a_whole_category(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=100.0)
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"cat[{category.id}][name]": "Gender",
+                f"cat[{category.id}][deleted]": "true",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert get_targets_for_assembly(uow, admin_user.id, existing_assembly.id) == []
+
+    def test_re_linking_a_value_from_the_bulk_form(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.assemblies.get(existing_assembly.id).number_to_select = 20
+            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            add_target_value(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                category.id,
+                "Male",
+                min_count=17,
+                max_count=18,
+                percentage=50.0,
+            )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            value_id = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0].value_id
+
+        prefix = f"cat[{category.id}]"
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[values][{value_id}][value]": "Male",
+                f"{prefix}[values][{value_id}][percentage]": "50",
+                f"{prefix}[values][{value_id}][relink]": "true",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            value = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0]
+        assert value.minmax_manual is False
+        assert (value.min, value.max) == (10, 11)
+
+    def test_a_submitted_sort_order_reorders_the_categories(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            gender = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
+            age = create_target_category(uow, admin_user.id, existing_assembly.id, "Age")
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
+                f"cat[{gender.id}][name]": "Gender",
+                f"cat[{gender.id}][sort_order]": "20",
+                f"cat[{age.id}][name]": "Age",
+                f"cat[{age.id}][sort_order]": "10",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            names = [c.name for c in get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)]
+        assert names == ["Age", "Gender"]
+
     def test_an_invalid_source_url_is_a_flash_not_a_500(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):

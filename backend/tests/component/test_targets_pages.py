@@ -546,3 +546,108 @@ class TestMoveCategoryPermissions:
         assert response.status_code == 200
         with FakeUnitOfWork(store=fake_store) as uow:
             assert get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].name == "Gender"
+
+
+class TestViewIsReadOnly:
+    def test_the_page_shows_the_number_to_select(self, logged_in_admin, existing_assembly, fake_store):
+        _set_number_to_select(fake_store, existing_assembly.id, 42)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b"Number to select: 42" in response.data
+
+    def test_the_category_block_offers_no_way_to_change_anything(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Every change goes through "Edit targets", so the read-only block has no controls.
+
+        Asserted against the HTMX partial rather than the whole page, because the
+        page also carries the bulk edit form, where all of these do belong.
+        """
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, f"/categories/{category.id}/values"),
+            data={"value": "Male", "min_count": 1, "max_count": 2},
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 200
+        assert b"Male" in response.data
+        for control in (b"Add value", b"Delete", b"Move up", b"Move down", b"Rename", b"Use percentage"):
+            assert control not in response.data, control
+
+    def test_the_page_offers_editing_and_adding_a_category(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b"Edit targets" in response.data
+        assert b"Add category" in response.data
+
+
+class TestBulkEditForm:
+    def test_offers_adding_and_deleting_rows(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=100.0)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b"Add value" in response.data
+        assert b"Delete value" in response.data
+        assert b"Delete target" in response.data
+
+    def test_carries_a_totals_row_for_the_browser_to_fill_in(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=100.0)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b'x-text="percentageTotal"' in response.data
+        assert b'x-text="minTotal"' in response.data
+        assert b'x-text="maxTotal"' in response.data
+
+    def test_carries_a_blank_row_template_for_adding_values(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The template is cloned client-side; __ID__ becomes new-<n> on the way in."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=100.0)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b'x-ref="rowTemplate"' in response.data
+        assert f"cat[{category.id}][values][__ID__][value]".encode() in response.data
+
+    def test_offers_the_values_found_in_the_respondent_data(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=100.0)
+        _add_respondents(
+            fake_store,
+            existing_assembly.id,
+            [("r1", {"Gender": "Male"}), ("r2", {"Gender": "Non-binary"})],
+        )
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        assert b'x-ref="missingTemplate"' in response.data
+        assert b"Add values found in respondent data" in response.data
+        assert b"Non-binary" in response.data
+
+    def test_a_viewer_is_not_given_the_form_at_all(self, logged_in_user, existing_assembly, admin_user, fake_store):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        response = logged_in_user.get(_targets_url(existing_assembly.id))
+
+        assert b"save-all-form" not in response.data
+        assert b"Edit targets" not in response.data
