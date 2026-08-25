@@ -219,7 +219,7 @@ class TestDeleteRoute:
 
 
 class TestImageDetailsModalTemplate:
-    """Structural assertions on the Image Details modal in assembly_registration.html.
+    """Structural assertions on the Image Details modal in registration/_modals.html.
 
     The modal HTML lives inline in the registration template, gated by
     ``<template x-if="imageDetailsModalOpen && editingImage">`` so Alpine controls
@@ -235,7 +235,7 @@ class TestImageDetailsModalTemplate:
     @pytest.fixture
     def modal_block(self) -> str:
         """Return only the Image Details modal subsection of the template."""
-        path = Path(__file__).resolve().parents[2] / "templates/backoffice/assembly_registration.html"
+        path = Path(__file__).resolve().parents[2] / "templates/backoffice/registration/_modals.html"
         text = path.read_text(encoding="utf-8")
         start_marker = "{# Image Details / Edit Alt Modal #}"
         end_marker = "{# Toast notification #}"

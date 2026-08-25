@@ -1,0 +1,212 @@
+{#
+ABOUTME: Step 2 of the registration editor - the auto-reply email template
+ABOUTME: Included by assembly_registration.html when ?section=email
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import checkbox, input, textarea %}
+<div id="reg-steps-panel-email"
+     role="tabpanel"
+     aria-labelledby="reg-steps-tab-email"
+     tabindex="0"
+     class="space-y-4">
+    {% set email_save_url = url_for('backoffice_registration.save_assembly_registration_email', assembly_id=assembly.id, url_slug=registration_page.url_slug) %}
+    {% set email_edit_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='email', edit='1') %}
+    {% set email_view_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='email') %}
+    {% set preview_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='preview') %}
+    {% set back_to_form_url = url_for('backoffice_registration.view_registration_page', assembly_id=assembly.id, url_slug=registration_page.url_slug, section='form') %}
+                    {# Readiness banner — surfaces problems that would stop the auto-reply from actually being delivered #}
+    {% for problem in email_readiness_problems %}
+        {% set is_error = problem.severity == "error" %}
+        <div class="rounded-lg p-4"
+             role="alert"
+             style="background-color: var({{ '--color-error-100' if is_error else '--color-warning-100' }});
+                    border: 1px solid var({{ '--color-error-400' if is_error else '--color-warning-400' }});
+                    color: var({{ '--color-error-600' if is_error else '--color-warning-600' }})">
+            <p class="text-body-md">
+                <span class="font-semibold">{% if is_error %}⛔ {{ _("Auto-reply cannot be sent") }}:{% else %}⚠️ {{ _("Heads up") }}:{% endif %}</span>
+                {{ problem.message }}
+            </p>
+        </div>
+    {% endfor %}
+    {% if not email_template %}
+                        {# Empty state — no template exists yet. One button to create + assign + enter edit mode. #}
+        <section class="rounded-lg p-6"
+                 style="background-color: var(--color-tables-cards);
+                        border: 1px solid var(--color-borders-dividers)">
+            <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Auto-reply email") }}</h2>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Automatically send a confirmation email to people after they register. Templates support variables like the respondent's first name and the assembly title.") }}
+            </p>
+            <form method="post"
+                  action="{{ email_save_url }}"
+                  x-data
+                  x-preserve-scroll-on-submit>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="action" value="create" />
+                {{ button(_("Set up auto-reply email"), type="submit", variant="primary") }}
+            </form>
+        </section>
+                        {# Sticky wizard footer — the auto-reply email is optional, so Back/Next stay
+                           available even before a template exists. #}
+        <div class="wizard-footer" x-scroll-preserve-links>
+            <div class="wizard-footer-box">
+                <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
+                {{ button(_("Next →"), variant="primary", href=preview_url) }}
+            </div>
+        </div>
+    {% else %}
+                        {# Two-box layout mirroring the form section: editor on the left (2/3), variables reference
+                           on the right (1/3, sticky). The form wraps both columns and the CTA row so the CTAs
+                           align to the far right of the whole layout and the sticky aside unsticks at the
+                           flex-row's bottom. #}
+                        {# The action name comes from the clicked submit button (Save / Save and next).
+                           A hidden <input name="action"> here would be sent as a duplicate and would win
+                           over the button value because request.form.get() returns the first entry. #}
+        <form method="post"
+              action="{{ email_save_url }}"
+              x-data
+              x-preserve-scroll-on-submit
+              {% if edit_mode %}@input="markEditDirty()" @change="markEditDirty()" @submit="allowLeave()"{% endif %}>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="flex flex-col lg:flex-row gap-6">
+                <div class="flex-1 min-w-0">
+                    <section class="rounded-lg p-6"
+                             style="background-color: var(--color-tables-cards);
+                                    border: 1px solid var(--color-borders-dividers)">
+                        <div class="flex items-center justify-between mb-4 gap-4">
+                            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Auto-reply email template") }}</h2>
+                                            {# Header right: the always-on indicator plus the editorial controls — Edit
+                                               swaps in place to Cancel/Save, mirroring the form step. The checkbox is
+                                               deliberately checked and disabled: the auto-reply is always sent in the
+                                               current version of the product. When a real need to switch it off
+                                               emerges, a proper service-layer enable/disable gets built and this
+                                               checkbox gets wired to it. x-scroll-preserve-links keeps the scroll
+                                               position across the Edit/Cancel page reloads, matching the form step. #}
+                            <div class="flex items-center gap-4" x-scroll-preserve-links>
+                                {{ checkbox(name="auto_reply_enabled",
+                                label=_("Send auto-reply email"),
+                                checked=true,
+                                disabled=true) }}
+                                {% if edit_mode %}
+                                    {{ button(_("Cancel"), variant="secondary", href=email_view_url, attrs='@click="guardLeave($event)"') }}
+                                    {{ button(_("Save") , type="submit", variant="primary", attrs='name="action" value="save"') }}
+                                {% elif registration_status != "CLOSED" %}
+                                    {{ button(_("Edit"), variant="secondary", href=email_edit_url) }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            {% set common_input_attrs %}{% if not edit_mode %}readonly aria-readonly="true" style="background-color: var(--color-subtle-background-panels); cursor: default;"{% endif %}{% endset %}
+                                            {# Template name is not exposed yet — one template per page, always called "Registration
+auto-reply". When multi-template support ships this becomes a visible input. #}
+                            {{ input(name="template_subject",
+                            label=_("Email subject"),
+                            value=email_template.subject,
+                            hint=_("Jinja variables allowed, e.g. {{ assembly.title }}."),
+                            required=true,
+                            attrs=common_input_attrs|trim) }}
+                            {% set body_attrs %}
+                                {% if not edit_mode %}readonly aria-readonly="true"{% endif %} style="font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 0.875rem; line-height: 1.5; resize: vertical;{% if not edit_mode %} background-color: var(--color-subtle-background-panels); cursor: default;{% endif %}"
+                            {% endset %}
+                            {{ textarea(name="template_body_html",
+                            label=_("HTML body"),
+                            value=email_template.body_html,
+                            hint=_("Jinja + HTML. A plain-text version is generated automatically for email clients that need it."),
+                            required=true,
+                            rows=18,
+                            code_editor=true,
+                            attrs=body_attrs|trim) }}
+                        </div>
+                    </section>
+                </div>
+                                {# Variables reference sidebar — rendered only in edit mode: it's an authoring
+                                   aid, and hiding it keeps the read-only view a clean, full-width review of the
+                                   email. The aside carries the visual box so it stretches to match the editor's
+                                   height, and only the inner content sticks on scroll (same trick as the S1
+                                   Assets panel). #}
+                {% if edit_mode %}
+                    <aside class="lg:flex-shrink-0 w-full lg:w-[400px] rounded-lg"
+                           style="background-color: var(--color-tables-cards);
+                                  border: 1px solid var(--color-borders-dividers)">
+                        <div class="p-6 sticky top-4 w-full">
+                            <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Available variables") }}</h2>
+                            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                {{ _("Click a variable to select it, then copy and paste into the subject or body. Missing values render as an empty string.") }}
+                            </p>
+                            {% set variables = [
+                            {"expr": "{{ assembly.title }}", "label": _("Assembly title")},
+                            {"expr": "{{ assembly.question }}", "label": _("Assembly question")},
+                            {"expr": "{{ assembly.first_assembly_date }}", "label": _("First assembly date (ISO)")},
+                            {"expr": "{{ respondent.first_name }}", "label": _("Respondent first name")},
+                            {"expr": "{{ respondent.first_name_or_friend }}", "label": _("First name, or 'Friend' as a fallback")},
+                            {"expr": "{{ respondent.full_name }}", "label": _("Respondent full name")},
+                            {"expr": "{{ respondent.email }}", "label": _("Respondent email address")}
+                            ] %}
+                            <ul class="space-y-3">
+                                {% for variable in variables %}
+                                    <li>
+                                        <label for="variable-{{ loop.index0 }}"
+                                               class="text-body-sm font-medium block mb-1"
+                                               style="color: var(--color-headings)">
+                                            {{ variable.label }}
+                                        </label>
+                                        <div class="flex gap-2">
+                                                            {# readonly + aria-readonly: some screen readers still announce "edit text"
+                                                           for a readonly input, so we set aria-readonly explicitly. #}
+                                            <input type="text"
+                                                   id="variable-{{ loop.index0 }}"
+                                                   readonly
+                                                   aria-readonly="true"
+                                                   value="{{ variable.expr }}"
+                                                   @click="$event.target.select()"
+                                                   class="flex-1 min-w-0 px-3 py-2 rounded-md text-body-sm font-mono"
+                                                   style="border: 1px solid var(--color-borders-dividers);
+                                                          background: var(--color-page-background)" />
+                                            <button type="button"
+                                                    data-copy-text="{{ variable.expr }}"
+                                                    data-copy-msg="{{ _('Variable copied to clipboard') }}"
+                                                    @click="copyToClipboard($el)"
+                                                    class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
+                                                    style="border: 1px solid var(--color-borders-dividers);
+                                                           color: var(--color-secondary-text)"
+                                                    aria-label="{{ _('Copy %(label)s variable', label=variable.label) }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="h-4 w-4"
+                                                     fill="none"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor"
+                                                     stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </aside>
+                {% endif %}
+            </div>
+        </form>
+                        {# Sticky wizard footer — navigation only (Edit/Cancel/Save live in the card header).
+                           While editing, navigation is locked so unsaved changes can't be silently left behind. #}
+        <div class="wizard-footer" x-scroll-preserve-links>
+            <div class="wizard-footer-box">
+                {% if edit_mode %}
+                    <span class="mr-auto flex items-center gap-3">
+                        {{ button(_("← Back"), variant="tertiary", disabled=true, aria_describedby="editing-nav-hint") }}
+                        <span id="editing-nav-hint"
+                              class="text-body-sm"
+                              style="color: var(--color-secondary-text)">
+                            {{ _("Editing in progress — save or cancel to continue") }}
+                        </span>
+                    </span>
+                    {{ button(_("Next →"), variant="primary", disabled=true, aria_describedby="editing-nav-hint") }}
+                {% else %}
+                    <span class="mr-auto">{{ button(_("← Back"), variant="tertiary", href=back_to_form_url) }}</span>
+                    {{ button(_("Next →"), variant="primary", href=preview_url) }}
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
