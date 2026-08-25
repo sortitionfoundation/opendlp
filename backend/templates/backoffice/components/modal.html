@@ -114,6 +114,98 @@ Requires wrapping element with x-data="modal({...})" Alpine component:
     </div>
 {% endmacro %}
 {# ============================================================================
+   CONTROLLED DIALOGS — for a page whose dialogs' open/close state lives on a
+   controller the page already owns, rather than on a per-dialog
+   x-data="modal({...})".
+
+   modal() and alert_dialog() above bind to the fixed names the modal() Alpine
+   component exposes (isOpen, close(), canClose). A page driving several
+   dialogs from one controller has a different flag and a different closer for
+   each of them, so it passes those expressions in instead.
+
+   Both use <template x-if> rather than x-show, so a closed dialog has no DOM
+   and a reopened one mounts fresh — which is what lets a code editor inside
+   the body re-read its textarea every time it opens.
+============================================================================ #}
+{% macro controlled_modal(id, title, open_expr, close_expr, panel_classes="dialog-panel--default", close_disabled_expr="") %}
+    {#
+Args:
+  id: Element id stem. The title gets "{id}-title" and names the dialog.
+  title: Header title
+  open_expr: Alpine expression that is truthy while the dialog is open
+  close_expr: Alpine expression that closes it — used by the X, the backdrop and Escape
+  panel_classes: Size modifier for the panel (a dialog-panel--* class, or a max-w-* utility)
+  close_disabled_expr: Alpine expression that disables the close X (e.g. while uploading)
+
+An expression containing && renders as &amp;&amp;. That is correct HTML and
+Alpine reads the decoded value back, so it is left escaped rather than marked
+safe — these attributes should never carry anything that has to bypass
+autoescaping.
+
+The caller supplies the body and footer, so that the footer stays optional:
+  {% call controlled_modal(id="x", title="X", open_expr="xOpen", close_expr="closeX()") %}
+    <div class="dialog-body">...</div>
+    <div class="dialog-footer">...</div>
+  {% endcall %}
+    #}
+    <template x-if="{{ open_expr }}">
+        <div x-cloak>
+            <div class="dialog-backdrop dialog-backdrop--clickable"
+                 @click="{{ close_expr }}"
+                 @keydown.escape.window="{{ close_expr }}"></div>
+            <div class="dialog-positioner"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="{{ id }}-title">
+                <div class="dialog-panel {{ panel_classes }}" @click.stop>
+                    {% call dialog_header(title=title, title_id=id ~ '-title') %}
+                        <button type="button"
+                                @click="{{ close_expr }}"
+                                {% if close_disabled_expr %}:disabled="{{ close_disabled_expr }}"{% endif %}
+                                class="dialog-close-btn"
+                                aria-label="{{ _('Close') }}">
+                            {{ dialog_close_icon() }}
+                        </button>
+                    {% endcall %}
+                    {{ caller() }}
+                </div>
+            </div>
+        </div>
+    </template>
+{% endmacro %}
+{% macro controlled_alert_dialog(id, title, description, open_expr, close_expr) %}
+    {#
+Compact confirmation on the same surface as alert_dialog(), driven by the
+page's own controller. The caller supplies the action buttons.
+
+Args:
+  id: Element id stem. The title gets "{id}-title" and names the dialog.
+  title: Bold title text
+  description: Supporting text
+  open_expr: Alpine expression that is truthy while the dialog is open
+  close_expr: Alpine expression that dismisses it without acting
+    #}
+    <template x-if="{{ open_expr }}">
+        <div x-cloak>
+            <div class="dialog-backdrop dialog-backdrop--clickable"
+                 @click="{{ close_expr }}"
+                 @keydown.escape.window="{{ close_expr }}"></div>
+            <div class="dialog-positioner"
+                 role="alertdialog"
+                 aria-modal="true"
+                 aria-labelledby="{{ id }}-title">
+                <div class="dialog-panel dialog-panel--alert" @click.stop>
+                    <div class="dialog-text-stack">
+                        <p class="dialog-text-stack__title" id="{{ id }}-title">{{ title }}</p>
+                        <p class="dialog-text-stack__description">{{ description }}</p>
+                    </div>
+                    <div class="dialog-actions">{{ caller() }}</div>
+                </div>
+            </div>
+        </div>
+    </template>
+{% endmacro %}
+{# ============================================================================
    PROGRESS MODAL — HTMX-polled task viewer (no Alpine)
    IDs and .progress-modal class are consumed by utilities.js.
 ============================================================================ #}

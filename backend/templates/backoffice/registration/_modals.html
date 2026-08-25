@@ -3,786 +3,252 @@ ABOUTME: The registration editor dialogs - skeleton, asset upload/details, confi
 ABOUTME: Included by assembly_registration.html inside the registrationPageController scope
 #}
 {% from "backoffice/components/button.html" import button %}
-{# Form Skeleton Modal #}
-<template x-if="skeletonModalOpen">
-    <div x-cloak>
-                    {# Backdrop overlay #}
-        <div class="fixed inset-0 z-40"
-             style="background-color: rgba(0, 0, 0, 0.5)"
-             @click="closeSkeletonModal()"
-             @keydown.escape.window="closeSkeletonModal()"></div>
-                    {# Modal panel #}
-        <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="skeleton-modal-title">
-            <div class="pointer-events-auto w-full max-w-4xl mx-4 rounded-lg shadow-xl overflow-hidden"
-                 style="background-color: var(--color-tables-cards);
-                        border: 1px solid var(--color-borders-dividers)"
-                 @click.stop>
-                            {# Header #}
-                <div class="px-6 py-4 flex items-center justify-between"
-                     style="border-bottom: 1px solid var(--color-borders-dividers)">
-                    <h2 id="skeleton-modal-title"
-                        class="text-heading-lg"
-                        style="color: var(--color-headings)">{{ _("Form Skeleton") }}</h2>
-                    <button type="button"
-                            @click="closeSkeletonModal()"
-                            class="p-2 rounded-lg transition-colors hover:bg-gray-100"
-                            style="color: var(--color-secondary-text)"
-                            aria-label="{{ _('Close') }}">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="h-5 w-5"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                            {# Content #}
-                <div class="px-6 py-4">
-                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form. Then edit to add extra HTML as required.") }}
-                    </p>
-                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("The Plain HTML version is the minimal version, for you to enhance. The GOV.UK styled version uses the %(link_start)sGOV.UK Design System%(link_end)s - which has high web accessibility.",
-                        link_start=('<a href="https://design-system.service.gov.uk/"
-                                        class="text-body-md underline break-all"
-                                        style="color: var(--color-link-text)">'|safe),
-                            link_end=("</a>"|safe)) }}
-                    </p>
-                                {# Plain/GOV.UK toggle. Hand-rolled rather than the button() macro: the
-                                   macro's variant classes are fixed at Jinja render time, but which
-                                   button is "active" here can only be known at runtime. #}
-                    <div class="flex gap-2 mb-4"
-                         role="group"
-                         aria-label="{{ _('Form skeleton style') }}">
-                        <button type="button"
-                                class="btn"
-                                :class="skeletonView === 'plain' ? 'btn--primary' : 'btn--tertiary'"
-                                :aria-pressed="skeletonView === 'plain' ? 'true' : 'false'"
-                                @click="showPlainSkeleton()">{{ _("Plain HTML") }}</button>
-                        <button type="button"
-                                class="btn"
-                                :class="skeletonView === 'styled' ? 'btn--primary' : 'btn--tertiary'"
-                                :aria-pressed="skeletonView === 'styled' ? 'true' : 'false'"
-                                @click="showStyledSkeleton()">{{ _("GOV.UK styled") }}</button>
-                    </div>
-                                {# Two separate x-if'd textareas, not one x-text-bound textarea switched by
-                                   x-show: html-editor.js mounts a CodeMirror view over the textarea once,
-                                   reading its value at mount time only, so changing x-text on an
-                                   already-mounted textarea would not update the visible editor. x-if
-                                   destroys and recreates the element on toggle, so it remounts fresh.
-                                   Each textarea is wrapped in its own div: CodeMirror inserts its editor
-                                   DOM as a sibling of the textarea via plain insertBefore(), outside
-                                   Alpine's tracking, so without the wrapper x-if would remove only the
-                                   textarea it created and leave the CodeMirror instance orphaned. #}
-                    <template x-if="skeletonView === 'plain'">
-                        <div>
-                            <textarea readonly
-                                      data-code-editor
-                                      aria-label="{{ _('Form skeleton preview') }}"
-                                      x-text="skeletonHtmlPlain"
-                                      class="w-full rounded-lg p-4"
-                                      rows="18"
-                                      style="font-family: var(--font-mono);
-                                             font-size: 0.875rem;
-                                             line-height: 1.5;
-                                             background-color: var(--color-subtle-background-panels);
-                                             border: 1px solid var(--color-borders-dividers);
-                                             color: var(--color-body-text);
-                                             resize: none"></textarea>
-                        </div>
-                    </template>
-                    <template x-if="skeletonView === 'styled'">
-                        <div>
-                            <textarea readonly
-                                      data-code-editor
-                                      aria-label="{{ _('Form skeleton preview (GOV.UK styled)') }}"
-                                      x-text="skeletonHtmlStyled"
-                                      class="w-full rounded-lg p-4"
-                                      rows="18"
-                                      style="font-family: var(--font-mono);
-                                             font-size: 0.875rem;
-                                             line-height: 1.5;
-                                             background-color: var(--color-subtle-background-panels);
-                                             border: 1px solid var(--color-borders-dividers);
-                                             color: var(--color-body-text);
-                                             resize: none"></textarea>
-                        </div>
-                    </template>
-                </div>
-                            {# Footer #}
-                <div class="px-6 py-3 flex gap-2 justify-end"
-                     style="border-top: 1px solid var(--color-borders-dividers);
-                            background-color: var(--color-tables-cards)">
-                    {{ button(_("Copy All"), variant="secondary", attrs='@click="copySkeletonToClipboard()"') }}
-                </div>
-            </div>
-        </div>
+{% from "backoffice/components/modal.html" import controlled_modal, controlled_alert_dialog %}
+{% from "backoffice/registration/_assets.html" import asset_upload_modal, asset_details_modal, asset_original_filename_row, asset_file_size_row %}
+{# Form skeleton — generated from the assembly's field definitions, for pasting into the editor. #}
+{% call controlled_modal(id="skeleton-modal",
+title=_("Form Skeleton"),
+open_expr="skeletonModalOpen",
+close_expr="closeSkeletonModal()",
+panel_classes="max-w-4xl") %}
+<div class="dialog-body">
+    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+        {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form. Then edit to add extra HTML as required.") }}
+    </p>
+    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+        {{ _("The Plain HTML version is the minimal version, for you to enhance. The GOV.UK styled version uses the %(link_start)sGOV.UK Design System%(link_end)s - which has high web accessibility.",
+        link_start=('<a href="https://design-system.service.gov.uk/"
+                        class="text-body-md underline break-all"
+                        style="color: var(--color-link-text)">'|safe),
+            link_end=("</a>"|safe)) }}
+    </p>
+        {# Plain/GOV.UK toggle. Hand-rolled rather than the button() macro: the
+           macro's variant classes are fixed at Jinja render time, but which
+           button is "active" here can only be known at runtime. #}
+    <div class="flex gap-2 mb-4"
+         role="group"
+         aria-label="{{ _('Form skeleton style') }}">
+        <button type="button"
+                class="btn"
+                :class="skeletonView === 'plain' ? 'btn--primary' : 'btn--tertiary'"
+                :aria-pressed="skeletonView === 'plain' ? 'true' : 'false'"
+                @click="showPlainSkeleton()">{{ _("Plain HTML") }}</button>
+        <button type="button"
+                class="btn"
+                :class="skeletonView === 'styled' ? 'btn--primary' : 'btn--tertiary'"
+                :aria-pressed="skeletonView === 'styled' ? 'true' : 'false'"
+                @click="showStyledSkeleton()">{{ _("GOV.UK styled") }}</button>
     </div>
-</template>
-            {# Image Upload Modal #}
-<template x-if="imageUploadModalOpen">
-    <div x-cloak>
-                    {# Backdrop overlay #}
-        <div class="fixed inset-0 z-40"
-             style="background-color: rgba(0, 0, 0, 0.5)"
-             @click="closeImageUploadModalIfAllowed()"
-             @keydown.escape.window="closeImageUploadModalIfAllowed()"></div>
-                    {# Modal panel #}
-        <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="image-upload-modal-title">
-            <div class="pointer-events-auto w-full max-w-lg mx-4 rounded-lg shadow-xl overflow-hidden"
-                 style="background-color: var(--color-tables-cards);
-                        border: 1px solid var(--color-borders-dividers)"
-                 @click.stop>
-                            {# Header #}
-                <div class="px-6 py-4 flex items-center justify-between"
-                     style="border-bottom: 1px solid var(--color-borders-dividers)">
-                    <h2 id="image-upload-modal-title"
-                        class="text-heading-lg"
-                        style="color: var(--color-headings)">{{ _("Upload image") }}</h2>
-                    <button type="button"
-                            @click="closeImageUploadModalIfAllowed()"
-                            :disabled="imageUploading"
-                            class="p-2 rounded-lg transition-colors hover:bg-gray-100 disabled:opacity-50"
-                            style="color: var(--color-secondary-text)"
-                            aria-label="{{ _('Close') }}">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="h-5 w-5"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                            {# Content #}
-                <div class="px-6 py-4">
-                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image. Files are downscaled and re-encoded to PNG on upload.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb) }}
-                    </p>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="image-upload-file"
-                                   class="text-label-md block mb-1"
-                                   style="color: var(--color-headings)">{{ _("Image file") }}</label>
-                            <input type="file"
-                                   id="image-upload-file"
-                                   x-ref="imageFileInput"
-                                   accept="image/png,image/jpeg,image/webp"
-                                   @change="onImageFileSelected($event)"
-                                   :disabled="imageUploading"
-                                   class="w-full px-3 py-2 rounded-md text-body-sm"
-                                   style="border: 1px solid var(--color-borders-dividers);
-                                          background: var(--color-page-background)" />
-                            <p x-show="imageFileName"
-                               x-cloak
-                               class="text-body-sm mt-1"
-                               style="color: var(--color-secondary-text)">
-                                <span x-text="imageFileName"></span>
-                            </p>
-                        </div>
-                        <div>
-                            <label for="image-upload-alt"
-                                   class="text-label-md block mb-1"
-                                   style="color: var(--color-headings)">
-                                {{ _("Alt text") }}
-                                <span aria-hidden="true" style="color: var(--color-error-600);">*</span>
-                            </label>
-                            <input type="text"
-                                   id="image-upload-alt"
-                                   x-model="imageAlt"
-                                   :disabled="imageUploading"
-                                   required
-                                   aria-required="true"
-                                   class="w-full px-3 py-2 rounded-md text-body-sm"
-                                   style="border: 1px solid var(--color-borders-dividers);
-                                          background: var(--color-page-background)" />
-                            <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
-                                {{ _("Describes the image for screen-reader users and is used as the file's display name in the asset list.") }}
-                            </p>
-                        </div>
-                                    {# Inline error #}
-                        <div x-show="imageUploadError"
-                             x-cloak
-                             class="rounded-md p-3"
-                             style="background-color: var(--color-error-100);
-                                    border: 1px solid var(--color-error-400)">
-                            <p class="text-body-sm"
-                               style="color: var(--color-error-600)"
-                               x-text="imageUploadError"></p>
-                        </div>
-                    </div>
-                </div>
-                            {# Footer #}
-                <div class="px-6 py-3 flex gap-2 justify-end"
-                     style="border-top: 1px solid var(--color-borders-dividers);
-                            background-color: var(--color-tables-cards)">
-                    {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="closeImageUploadModalIfAllowed()"', alpine_disabled="imageUploading") }}
-                    {{ button(_("Upload"), variant="primary", attrs='type="button" @click="submitImageUpload()"', alpine_disabled="!imageFile || !imageAlt.trim() || imageUploading") }}
-                </div>
-            </div>
-        </div>
-    </div>
-</template>
-            {# Image Details / Edit Alt Modal #}
-<template x-if="imageDetailsModalOpen && editingImage">
-    <div x-cloak>
-                    {# Backdrop overlay #}
-        <div class="fixed inset-0 z-40"
-             style="background-color: rgba(0, 0, 0, 0.5)"
-             @click="closeImageDetailsModalIfAllowed()"
-             @keydown.escape.window="closeImageDetailsModalIfAllowed()"></div>
-                    {# Modal panel #}
-        <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="image-details-modal-title">
-            <div class="pointer-events-auto w-full max-w-lg mx-4 rounded-lg shadow-xl overflow-hidden"
-                 style="background-color: var(--color-tables-cards);
-                        border: 1px solid var(--color-borders-dividers)"
-                 @click.stop>
-                            {# Header #}
-                <div class="px-6 py-4 flex items-center justify-between"
-                     style="border-bottom: 1px solid var(--color-borders-dividers)">
-                    <h2 id="image-details-modal-title"
-                        class="text-heading-lg"
-                        style="color: var(--color-headings)">{{ _("Image details") }}</h2>
-                    <button type="button"
-                            @click="closeImageDetailsModalIfAllowed()"
-                            :disabled="imageEditing"
-                            class="p-2 rounded-lg transition-colors hover:bg-gray-100 disabled:opacity-50"
-                            style="color: var(--color-secondary-text)"
-                            aria-label="{{ _('Close') }}">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="h-5 w-5"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                            {# Content #}
-                <div class="px-6 py-4">
-                                {# Thumbnail + compact metadata #}
-                    <div class="rounded-md p-3 mb-4 flex gap-3"
-                         style="background-color: var(--color-subtle-background-panels)">
-                        <div class="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden flex items-center justify-center"
-                             style="background-color: var(--color-page-background);
-                                    border: 1px solid var(--color-borders-dividers)">
-                            <template x-if="editingImage.public_url">
-                                <img :src="editingImage.public_url"
-                                     :alt="editingImage.alt || ''"
-                                     class="max-w-full max-h-full object-contain" />
-                            </template>
-                            <template x-if="!editingImage.public_url">
-                                <span class="text-body-sm text-center px-1 leading-tight"
-                                      style="color: var(--color-placeholder-text)">{{ _("No preview") }}</span>
-                            </template>
-                        </div>
-                        <div class="flex-1 min-w-0 grid gap-y-1 gap-x-3 text-body-sm content-center"
-                             style="grid-template-columns: auto 1fr">
-                            <template x-if="editingImage.original_filename">
-                                <span class="contents">
-                                    <span class="text-label-lg whitespace-nowrap"
-                                          style="color: var(--color-headings)">{{ _("Original filename") }}</span>
-                                    <span class="min-w-0 truncate text-code"
-                                          style="color: var(--color-body-text)"
-                                          :title="editingImage.original_filename"
-                                          x-text="editingImage.original_filename"></span>
-                                </span>
-                            </template>
-                            <span class="text-label-lg whitespace-nowrap"
-                                  style="color: var(--color-headings)">{{ _("Dimensions") }}</span>
-                            <span class="min-w-0" style="color: var(--color-body-text);">
-                                <span x-text="editingImage.width"></span>
-                                ×
-                                <span x-text="editingImage.height"></span>
-                                {{ _("px") }}
-                            </span>
-                            <span class="text-label-lg whitespace-nowrap"
-                                  style="color: var(--color-headings)">{{ _("File size") }}</span>
-                            <span class="min-w-0"
-                                  style="color: var(--color-body-text)"
-                                  x-text="formatBytes(editingImage.byte_size)"></span>
-                        </div>
-                    </div>
-                                {# File name (read-only + copy) #}
-                    <div class="mb-3">
-                        <label for="image-details-filename"
-                               class="text-label-md block mb-1"
-                               style="color: var(--color-headings)">{{ _("File name") }}</label>
-                        <div class="flex gap-2">
-                            <input type="text"
-                                   id="image-details-filename"
-                                   readonly
-                                   :value="editingImage.file_name"
-                                   @click="$event.target.select()"
-                                   class="flex-1 min-w-0 px-3 py-2 rounded-md text-code"
-                                   style="border: 1px solid var(--color-borders-dividers);
-                                          background: var(--color-page-background)" />
-                                        {# :data-copy-text is bound reactively so it tracks editingImage.file_name #}
-                            <button type="button"
-                                    :data-copy-text="editingImage.file_name"
-                                    data-copy-msg="{{ _('File name copied to clipboard') }}"
-                                    @click="copyToClipboard($el)"
-                                    class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
-                                    style="border: 1px solid var(--color-borders-dividers);
-                                           color: var(--color-secondary-text)"
-                                    aria-label="{{ _('Copy file name') }}">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-4 w-4"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor"
-                                     stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                                {# <img> snippet (read-only + copy) — hidden when there's no public URL yet #}
-                    <div class="mb-3" x-show="editingImage.img_snippet">
-                        <label for="image-details-snippet"
-                               class="text-label-md block mb-1"
-                               style="color: var(--color-headings)">{{ _("Image snippet") }}</label>
-                        <div class="flex gap-2">
-                            <input type="text"
-                                   id="image-details-snippet"
-                                   readonly
-                                   :value="editingImage.img_snippet"
-                                   @click="$event.target.select()"
-                                   class="flex-1 min-w-0 px-3 py-2 rounded-md text-code"
-                                   style="border: 1px solid var(--color-borders-dividers);
-                                          background: var(--color-page-background)" />
-                            <button type="button"
-                                    @click="copyImageSnippet(editingImage)"
-                                    class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
-                                    style="border: 1px solid var(--color-borders-dividers);
-                                           color: var(--color-secondary-text)"
-                                    aria-label="{{ _('Copy image snippet') }}">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-4 w-4"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor"
-                                     stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="image-edit-alt"
-                               class="text-label-md block mb-1"
-                               style="color: var(--color-headings)">
-                            {{ _("Alt text") }}
-                            <span aria-hidden="true" style="color: var(--color-error-600);">*</span>
-                        </label>
-                        <input type="text"
-                               id="image-edit-alt"
-                               x-model="editingImageAlt"
-                               :disabled="imageEditing"
-                               required
-                               aria-required="true"
-                               class="w-full px-3 py-2 rounded-md text-body-sm"
-                               style="border: 1px solid var(--color-borders-dividers);
-                                      background: var(--color-page-background)" />
-                        <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
-                            {{ _("Describes the image for screen-reader users and is used as the file's display name in the asset list.") }}
-                        </p>
-                    </div>
-                                {# Inline error #}
-                    <div x-show="imageEditError"
-                         x-cloak
-                         class="rounded-md p-3 mt-3"
-                         style="background-color: var(--color-error-100);
-                                border: 1px solid var(--color-error-400)">
-                        <p class="text-body-sm"
-                           style="color: var(--color-error-600)"
-                           x-text="imageEditError"></p>
-                    </div>
-                </div>
-                            {# Footer #}
-                <div class="px-6 py-3 flex gap-2 justify-between items-center"
-                     style="border-top: 1px solid var(--color-borders-dividers);
-                            background-color: var(--color-tables-cards)">
-                    {{ button(_("Delete image"), variant="danger", attrs='type="button" @click="deleteEditingImage()"', alpine_disabled="imageEditing || imageBeingDeletedId === editingImage.id") }}
-                    <div class="flex gap-2">
-                        {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="closeImageDetailsModalIfAllowed()"', alpine_disabled="imageEditing") }}
-                        {{ button(_("Save alt"), variant="primary", attrs='type="button" @click="submitImageEdit()"', alpine_disabled="!editingImageAlt.trim() || imageEditing") }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</template>
-            {# Document Upload Modal #}
-<template x-if="documentUploadModalOpen">
-    <div x-cloak>
-                    {# Backdrop overlay #}
-        <div class="fixed inset-0 z-40"
-             style="background-color: rgba(0, 0, 0, 0.5)"
-             @click="closeDocumentUploadModalIfAllowed()"
-             @keydown.escape.window="closeDocumentUploadModalIfAllowed()"></div>
-                    {# Modal panel #}
-        <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="document-upload-modal-title">
-            <div class="pointer-events-auto w-full max-w-lg mx-4 rounded-lg shadow-xl overflow-hidden"
-                 style="background-color: var(--color-tables-cards);
-                        border: 1px solid var(--color-borders-dividers)"
-                 @click.stop>
-                            {# Header #}
-                <div class="px-6 py-4 flex items-center justify-between"
-                     style="border-bottom: 1px solid var(--color-borders-dividers)">
-                    <h2 id="document-upload-modal-title"
-                        class="text-heading-lg"
-                        style="color: var(--color-headings)">{{ _("Upload document") }}</h2>
-                    <button type="button"
-                            @click="closeDocumentUploadModalIfAllowed()"
-                            :disabled="documentUploading"
-                            class="p-2 rounded-lg transition-colors hover:bg-gray-100 disabled:opacity-50"
-                            style="color: var(--color-secondary-text)"
-                            aria-label="{{ _('Close') }}">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="h-5 w-5"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                            {# Content #}
-                <div class="px-6 py-4">
-                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("PDF files only. Maximum file size: %(max)s MB per document.", max=max_pdf_upload_mb) }}
-                    </p>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="document-upload-file"
-                                   class="text-label-md block mb-1"
-                                   style="color: var(--color-headings)">{{ _("PDF file") }}</label>
-                            <input type="file"
-                                   id="document-upload-file"
-                                   x-ref="documentFileInput"
-                                   accept="application/pdf"
-                                   @change="onDocumentFileSelected($event)"
-                                   :disabled="documentUploading"
-                                   class="w-full px-3 py-2 rounded-md text-body-sm"
-                                   style="border: 1px solid var(--color-borders-dividers);
-                                          background: var(--color-page-background)" />
-                            <p x-show="documentFileName"
-                               x-cloak
-                               class="text-body-sm mt-1"
-                               style="color: var(--color-secondary-text)">
-                                <span x-text="documentFileName"></span>
-                            </p>
-                        </div>
-                        <div>
-                            <label for="document-upload-label"
-                                   class="text-label-md block mb-1"
-                                   style="color: var(--color-headings)">{{ _("Label") }}</label>
-                            <input type="text"
-                                   id="document-upload-label"
-                                   x-model="documentLabel"
-                                   :disabled="documentUploading"
-                                   class="w-full px-3 py-2 rounded-md text-body-sm"
-                                   style="border: 1px solid var(--color-borders-dividers);
-                                          background: var(--color-page-background)" />
-                            <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
-                                {{ _("Shown to registrants as the download link text and used as the file's display name in the asset list. Defaults to the file name.") }}
-                            </p>
-                        </div>
-                                    {# Inline error #}
-                        <div x-show="documentUploadError"
-                             x-cloak
-                             class="rounded-md p-3"
-                             style="background-color: var(--color-error-100);
-                                    border: 1px solid var(--color-error-400)">
-                            <p class="text-body-sm"
-                               style="color: var(--color-error-600)"
-                               x-text="documentUploadError"></p>
-                        </div>
-                    </div>
-                </div>
-                            {# Footer #}
-                <div class="px-6 py-3 flex gap-2 justify-end"
-                     style="border-top: 1px solid var(--color-borders-dividers);
-                            background-color: var(--color-tables-cards)">
-                    {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="closeDocumentUploadModalIfAllowed()"', alpine_disabled="documentUploading") }}
-                    {{ button(_("Upload"), variant="primary", attrs='type="button" @click="submitDocumentUpload()"', alpine_disabled="!documentFile || documentUploading") }}
-                </div>
-            </div>
-        </div>
-    </div>
-</template>
-            {# Document Details / Edit Label Modal #}
-<template x-if="documentDetailsModalOpen && editingDocument">
-    <div x-cloak>
-                    {# Backdrop overlay #}
-        <div class="fixed inset-0 z-40"
-             style="background-color: rgba(0, 0, 0, 0.5)"
-             @click="closeDocumentDetailsModalIfAllowed()"
-             @keydown.escape.window="closeDocumentDetailsModalIfAllowed()"></div>
-                    {# Modal panel #}
-        <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="document-details-modal-title">
-            <div class="pointer-events-auto w-full max-w-lg mx-4 rounded-lg shadow-xl overflow-hidden"
-                 style="background-color: var(--color-tables-cards);
-                        border: 1px solid var(--color-borders-dividers)"
-                 @click.stop>
-                            {# Header #}
-                <div class="px-6 py-4 flex items-center justify-between"
-                     style="border-bottom: 1px solid var(--color-borders-dividers)">
-                    <h2 id="document-details-modal-title"
-                        class="text-heading-lg"
-                        style="color: var(--color-headings)">{{ _("Document details") }}</h2>
-                    <button type="button"
-                            @click="closeDocumentDetailsModalIfAllowed()"
-                            :disabled="documentEditing"
-                            class="p-2 rounded-lg transition-colors hover:bg-gray-100 disabled:opacity-50"
-                            style="color: var(--color-secondary-text)"
-                            aria-label="{{ _('Close') }}">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="h-5 w-5"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                            {# Content #}
-                <div class="px-6 py-4">
-                                {# Compact metadata #}
-                    <div class="rounded-md p-3 mb-4 grid gap-y-1 gap-x-3 text-body-sm content-center"
-                         style="background-color: var(--color-subtle-background-panels);
-                                grid-template-columns: auto 1fr">
-                        <template x-if="editingDocument.original_filename">
-                            <span class="contents">
-                                <span class="text-label-lg whitespace-nowrap"
-                                      style="color: var(--color-headings)">{{ _("Original filename") }}</span>
-                                <span class="min-w-0 truncate text-code"
-                                      style="color: var(--color-body-text)"
-                                      :title="editingDocument.original_filename"
-                                      x-text="editingDocument.original_filename"></span>
-                            </span>
-                        </template>
-                        <span class="text-label-lg whitespace-nowrap"
-                              style="color: var(--color-headings)">{{ _("File size") }}</span>
-                        <span class="min-w-0"
-                              style="color: var(--color-body-text)"
-                              x-text="formatBytes(editingDocument.byte_size)"></span>
-                    </div>
-                                {# File name (read-only + copy) #}
-                    <div class="mb-3">
-                        <label for="document-details-filename"
-                               class="text-label-md block mb-1"
-                               style="color: var(--color-headings)">{{ _("File name") }}</label>
-                        <div class="flex gap-2">
-                            <input type="text"
-                                   id="document-details-filename"
-                                   readonly
-                                   :value="editingDocument.file_name"
-                                   @click="$event.target.select()"
-                                   class="flex-1 min-w-0 px-3 py-2 rounded-md text-code"
-                                   style="border: 1px solid var(--color-borders-dividers);
-                                          background: var(--color-page-background)" />
-                                        {# :data-copy-text is bound reactively so it tracks editingDocument.file_name #}
-                            <button type="button"
-                                    :data-copy-text="editingDocument.file_name"
-                                    data-copy-msg="{{ _('File name copied to clipboard') }}"
-                                    @click="copyToClipboard($el)"
-                                    class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
-                                    style="border: 1px solid var(--color-borders-dividers);
-                                           color: var(--color-secondary-text)"
-                                    aria-label="{{ _('Copy file name') }}">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-4 w-4"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor"
-                                     stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                                {# <a> snippet (read-only + copy) — hidden when there's no public URL yet #}
-                    <div class="mb-3" x-show="editingDocument.a_snippet">
-                        <label for="document-details-snippet"
-                               class="text-label-md block mb-1"
-                               style="color: var(--color-headings)">
-                            {{ _("Download link snippet") }}
-                        </label>
-                        <div class="flex gap-2">
-                            <input type="text"
-                                   id="document-details-snippet"
-                                   readonly
-                                   :value="editingDocument.a_snippet"
-                                   @click="$event.target.select()"
-                                   class="flex-1 min-w-0 px-3 py-2 rounded-md text-code"
-                                   style="border: 1px solid var(--color-borders-dividers);
-                                          background: var(--color-page-background)" />
-                            <button type="button"
-                                    @click="copyDocumentSnippet(editingDocument)"
-                                    class="p-2 rounded-md flex-shrink-0 transition-colors hover:bg-gray-100"
-                                    style="border: 1px solid var(--color-borders-dividers);
-                                           color: var(--color-secondary-text)"
-                                    aria-label="{{ _('Copy download link snippet') }}">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-4 w-4"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor"
-                                     stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="document-edit-label"
-                               class="text-label-md block mb-1"
-                               style="color: var(--color-headings)">
-                            {{ _("Label") }}
-                            <span aria-hidden="true" style="color: var(--color-error-600);">*</span>
-                        </label>
-                        <input type="text"
-                               id="document-edit-label"
-                               x-model="editingDocumentLabel"
-                               :disabled="documentEditing"
-                               required
-                               aria-required="true"
-                               class="w-full px-3 py-2 rounded-md text-body-sm"
-                               style="border: 1px solid var(--color-borders-dividers);
-                                      background: var(--color-page-background)" />
-                        <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
-                            {{ _("Shown to registrants as the download link text and used as the file's display name in the asset list.") }}
-                        </p>
-                    </div>
-                                {# Inline error #}
-                    <div x-show="documentEditError"
-                         x-cloak
-                         class="rounded-md p-3 mt-3"
-                         style="background-color: var(--color-error-100);
-                                border: 1px solid var(--color-error-400)">
-                        <p class="text-body-sm"
-                           style="color: var(--color-error-600)"
-                           x-text="documentEditError"></p>
-                    </div>
-                </div>
-                            {# Footer #}
-                <div class="px-6 py-3 flex gap-2 justify-between items-center"
-                     style="border-top: 1px solid var(--color-borders-dividers);
-                            background-color: var(--color-tables-cards)">
-                    {{ button(_("Delete document"), variant="danger", attrs='type="button" @click="deleteEditingDocument()"', alpine_disabled="documentEditing || documentBeingDeletedId === editingDocument.id") }}
-                    <div class="flex gap-2">
-                        {{ button(_("Cancel"), variant="secondary", attrs='type="button" @click="closeDocumentDetailsModalIfAllowed()"', alpine_disabled="documentEditing") }}
-                        {{ button(_("Save label"), variant="primary", attrs='type="button" @click="submitDocumentEdit()"', alpine_disabled="!editingDocumentLabel.trim() || documentEditing") }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</template>
-            {# Close-registration confirmation — closing is terminal (there is no reopen), so the
-           destructive action must be explicit. Same single-surface dialog style as the
-           discard confirmation: the safe action is the primary on the right and receives
-           initial focus; the destructive action is a plain red text button. Rendered only
-           where its opener exists (preview step of a published page). #}
-{% if active_section == "preview" and registration_status == "PUBLISHED" and registration_page %}
-    <template x-if="confirmCloseOpen">
-        <div x-cloak>
-                        {# Backdrop overlay #}
-            <div class="fixed inset-0 z-40"
-                 style="background-color: rgba(0, 0, 0, 0.5)"
-                 @click="cancelConfirmClose()"
-                 @keydown.escape.window="cancelConfirmClose()"></div>
-                        {# Modal panel #}
-            <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-                 role="dialog"
-                 aria-modal="true"
-                 aria-labelledby="close-registration-modal-title">
-                <div class="pointer-events-auto w-full max-w-md mx-4 rounded-lg shadow-xl overflow-hidden px-6 py-5"
-                     style="background-color: var(--color-tables-cards);
-                            border: 1px solid var(--color-borders-dividers)"
-                     @click.stop>
-                    <h2 id="close-registration-modal-title"
-                        class="text-heading-lg mb-2"
-                        style="color: var(--color-headings)">{{ _("Close registration?") }}</h2>
-                    <p class="text-body-md mb-5" style="color: var(--color-body-text);">
-                        {{ _("This permanently stops new registrations. Visitors who follow the form link will see the 'registration closed' page, and the form cannot be reopened.") }}
-                    </p>
-                    <div class="flex gap-2 justify-end items-center">
-                        <form method="post"
-                              action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id, url_slug=registration_page.url_slug) }}"
-                              x-data
-                              x-preserve-scroll-on-submit>
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                            <input type="hidden" name="action" value="close" />
-                            {{ button(_("Close registration"), type="submit", variant="danger") }}
-                        </form>
-                        {{ button(_("Keep it open"), variant="primary", attrs='type="button" x-ref="keepOpenBtn" @click="cancelConfirmClose()"') }}
-                    </div>
-                </div>
-            </div>
+        {# Two separate x-if'd textareas, not one x-text-bound textarea switched by
+           x-show: html-editor.js mounts a CodeMirror view over the textarea once,
+           reading its value at mount time only, so changing x-text on an
+           already-mounted textarea would not update the visible editor. x-if
+           destroys and recreates the element on toggle, so it remounts fresh.
+           Each textarea is wrapped in its own div: CodeMirror inserts its editor
+           DOM as a sibling of the textarea via plain insertBefore(), outside
+           Alpine's tracking, so without the wrapper x-if would remove only the
+           textarea it created and leave the CodeMirror instance orphaned. #}
+    <template x-if="skeletonView === 'plain'">
+        <div>
+            <textarea readonly
+                      data-code-editor
+                      aria-label="{{ _('Form skeleton preview') }}"
+                      x-text="skeletonHtmlPlain"
+                      class="w-full rounded-lg p-4"
+                      rows="18"
+                      style="font-family: var(--font-mono);
+                             font-size: 0.875rem;
+                             line-height: 1.5;
+                             background-color: var(--color-subtle-background-panels);
+                             border: 1px solid var(--color-borders-dividers);
+                             color: var(--color-body-text);
+                             resize: none"></textarea>
         </div>
     </template>
-{% endif %}
-            {# Discard-changes confirmation — opened by guardLeave() when the user cancels
-           edit mode with unsaved changes. Only edit mode can be dirty, so this is the
-           single home of the "was leaving intentional?" decision. #}
-<template x-if="leaveModalOpen">
-    <div x-cloak>
-                    {# Backdrop overlay #}
-        <div class="fixed inset-0 z-40"
-             style="background-color: rgba(0, 0, 0, 0.5)"
-             @click="closeLeaveModal()"
-             @keydown.escape.window="closeLeaveModal()"></div>
-                    {# Modal panel #}
-        <div class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-             role="dialog"
-             aria-modal="true"
-             aria-labelledby="leave-modal-title">
-                        {# Single-surface dialog (no header/footer dividers, per the Figma design):
-                           title, body, and actions share one padded panel. Keep editing is the
-                           primary (safe) action on the right and receives initial focus; Discard
-                           changes is a plain text button so the destructive path never looks like
-                           the default. #}
-            <div class="pointer-events-auto w-full max-w-md mx-4 rounded-lg shadow-xl overflow-hidden px-6 py-5"
-                 style="background-color: var(--color-tables-cards);
-                        border: 1px solid var(--color-borders-dividers)"
-                 @click.stop>
-                <h2 id="leave-modal-title"
-                    class="text-heading-lg mb-2"
-                    style="color: var(--color-headings)">{{ _("Discard changes?") }}</h2>
-                <p class="text-body-md mb-5" style="color: var(--color-body-text);">
-                    {{ _("You have unsaved changes. If you leave this page, your changes will be lost.") }}
-                </p>
-                <div class="flex gap-2 justify-end items-center">
-                    {{ button(_("Discard changes"), variant="tertiary", attrs='type="button" @click="discardAndLeave()"') }}
-                    {{ button(_("Keep editing") , variant="primary", attrs='type="button" x-ref="keepEditingBtn" @click="closeLeaveModal()"') }}
-                </div>
-            </div>
+    <template x-if="skeletonView === 'styled'">
+        <div>
+            <textarea readonly
+                      data-code-editor
+                      aria-label="{{ _('Form skeleton preview (GOV.UK styled)') }}"
+                      x-text="skeletonHtmlStyled"
+                      class="w-full rounded-lg p-4"
+                      rows="18"
+                      style="font-family: var(--font-mono);
+                             font-size: 0.875rem;
+                             line-height: 1.5;
+                             background-color: var(--color-subtle-background-panels);
+                             border: 1px solid var(--color-borders-dividers);
+                             color: var(--color-body-text);
+                             resize: none"></textarea>
         </div>
+    </template>
+</div>
+<div class="dialog-footer">
+    {{ button(_("Copy All"), variant="secondary", attrs='@click="copySkeletonToClipboard()"') }}
+</div>
+{% endcall %}
+{{ asset_upload_modal(id="image-upload-modal",
+title=_("Upload image"),
+open_expr="imageUploadModalOpen",
+close_expr="closeImageUploadModalIfAllowed()",
+busy_expr="imageUploading",
+hint=_("Supported formats: %(formats)s. Maximum file size: %(max)s MB per image. Files are downscaled and re-encoded to PNG on upload.", formats=allowed_image_formats|join(", "), max=max_image_upload_mb),
+file_id="image-upload-file",
+file_label=_("Image file"),
+file_ref="imageFileInput",
+file_accept="image/png,image/jpeg,image/webp",
+file_change="onImageFileSelected($event)",
+file_name_expr="imageFileName",
+text_id="image-upload-alt",
+text_label=_("Alt text"),
+text_model="imageAlt",
+text_hint=_("Describes the image for screen-reader users and is used as the file's display name in the asset list."),
+text_required=true,
+error_expr="imageUploadError",
+submit_click="submitImageUpload()",
+submit_disabled_expr="!imageFile || !imageAlt.trim() || imageUploading") }}
+{% call asset_details_modal(id="image-details-modal",
+title=_("Image details"),
+open_expr="imageDetailsModalOpen && editingImage",
+close_expr="closeImageDetailsModalIfAllowed()",
+busy_expr="imageEditing",
+entity="editingImage",
+filename_id="image-details-filename",
+snippet_id="image-details-snippet",
+snippet_label=_("Image snippet"),
+snippet_expr="editingImage.img_snippet",
+snippet_copy_click="copyImageSnippet(editingImage)",
+snippet_copy_label=_("Copy image snippet"),
+edit_id="image-edit-alt",
+edit_label=_("Alt text"),
+edit_model="editingImageAlt",
+edit_hint=_("Describes the image for screen-reader users and is used as the file's display name in the asset list."),
+error_expr="imageEditError",
+delete_label=_("Delete image"),
+delete_click="deleteEditingImage()",
+deleting_expr="imageBeingDeletedId === editingImage.id",
+save_label=_("Save alt"),
+save_click="submitImageEdit()",
+save_disabled_expr="!editingImageAlt.trim() || imageEditing") %}
+    {# Thumbnail + compact metadata #}
+<div class="rounded-md p-3 mb-4 flex gap-3"
+     style="background-color: var(--color-subtle-background-panels)">
+    <div class="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden flex items-center justify-center"
+         style="background-color: var(--color-page-background);
+                border: 1px solid var(--color-borders-dividers)">
+        <template x-if="editingImage.public_url">
+            <img :src="editingImage.public_url"
+                 :alt="editingImage.alt || ''"
+                 class="max-w-full max-h-full object-contain" />
+        </template>
+        <template x-if="!editingImage.public_url">
+            <span class="text-body-sm text-center px-1 leading-tight"
+                  style="color: var(--color-placeholder-text)">{{ _("No preview") }}</span>
+        </template>
     </div>
-</template>
-            {# Toast notification #}
-                {# role="status" (polite live region) so screen readers hear
-                   copy/upload/delete outcomes - same intent as floating_alerts'
-                   aria-live="polite". #}
+    <div class="flex-1 min-w-0 grid gap-y-1 gap-x-3 text-body-sm content-center"
+         style="grid-template-columns: auto 1fr">
+        {{ asset_original_filename_row("editingImage") }}
+        <span class="text-label-lg whitespace-nowrap"
+              style="color: var(--color-headings)">{{ _("Dimensions") }}</span>
+        <span class="min-w-0" style="color: var(--color-body-text);">
+            <span x-text="editingImage.width"></span>
+            ×
+            <span x-text="editingImage.height"></span>
+            {{ _("px") }}
+        </span>
+        {{ asset_file_size_row("editingImage") }}
+    </div>
+</div>
+{% endcall %}
+{{ asset_upload_modal(id="document-upload-modal",
+title=_("Upload document"),
+open_expr="documentUploadModalOpen",
+close_expr="closeDocumentUploadModalIfAllowed()",
+busy_expr="documentUploading",
+hint=_("PDF files only. Maximum file size: %(max)s MB per document.", max=max_pdf_upload_mb),
+file_id="document-upload-file",
+file_label=_("PDF file"),
+file_ref="documentFileInput",
+file_accept="application/pdf",
+file_change="onDocumentFileSelected($event)",
+file_name_expr="documentFileName",
+text_id="document-upload-label",
+text_label=_("Label"),
+text_model="documentLabel",
+text_hint=_("Shown to registrants as the download link text and used as the file's display name in the asset list. Defaults to the file name."),
+text_required=false,
+error_expr="documentUploadError",
+submit_click="submitDocumentUpload()",
+submit_disabled_expr="!documentFile || documentUploading") }}
+{% call asset_details_modal(id="document-details-modal",
+title=_("Document details"),
+open_expr="documentDetailsModalOpen && editingDocument",
+close_expr="closeDocumentDetailsModalIfAllowed()",
+busy_expr="documentEditing",
+entity="editingDocument",
+filename_id="document-details-filename",
+snippet_id="document-details-snippet",
+snippet_label=_("Download link snippet"),
+snippet_expr="editingDocument.a_snippet",
+snippet_copy_click="copyDocumentSnippet(editingDocument)",
+snippet_copy_label=_("Copy download link snippet"),
+edit_id="document-edit-label",
+edit_label=_("Label"),
+edit_model="editingDocumentLabel",
+edit_hint=_("Shown to registrants as the download link text and used as the file's display name in the asset list."),
+error_expr="documentEditError",
+delete_label=_("Delete document"),
+delete_click="deleteEditingDocument()",
+deleting_expr="documentBeingDeletedId === editingDocument.id",
+save_label=_("Save label"),
+save_click="submitDocumentEdit()",
+save_disabled_expr="!editingDocumentLabel.trim() || documentEditing") %}
+    {# Compact metadata #}
+<div class="rounded-md p-3 mb-4 grid gap-y-1 gap-x-3 text-body-sm content-center"
+     style="background-color: var(--color-subtle-background-panels);
+            grid-template-columns: auto 1fr">
+    {{ asset_original_filename_row("editingDocument") }}
+    {{ asset_file_size_row("editingDocument") }}
+</div>
+{% endcall %}
+{# Close-registration confirmation — closing is terminal (there is no reopen), so the
+   destructive action must be explicit. The safe action is the primary on the right and
+   receives initial focus; the destructive action is a plain red button. Rendered only
+   where its opener exists (preview step of a published page). #}
+{% if active_section == "preview" and registration_status == "PUBLISHED" and registration_page %}
+    {% call controlled_alert_dialog(id="close-registration-modal",
+    title=_("Close registration?"),
+    description=_("This permanently stops new registrations. Visitors who follow the form link will see the 'registration closed' page, and the form cannot be reopened."),
+    open_expr="confirmCloseOpen",
+    close_expr="cancelConfirmClose()") %}
+    <form method="post"
+          action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id, url_slug=registration_page.url_slug) }}"
+          x-data
+          x-preserve-scroll-on-submit>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="close" />
+        {{ button(_("Close registration"), type="submit", variant="danger") }}
+    </form>
+    {{ button(_("Keep it open"), variant="primary", attrs='type="button" x-ref="keepOpenBtn" @click="cancelConfirmClose()"') }}
+{% endcall %}
+{% endif %}
+{# Discard-changes confirmation — opened by guardLeave() when the user cancels
+   edit mode with unsaved changes. Only edit mode can be dirty, so this is the
+   single home of the "was leaving intentional?" decision. Keep editing is the
+   primary (safe) action on the right and receives initial focus; Discard
+   changes is a plain text button so the destructive path never looks like the
+   default. #}
+{% call controlled_alert_dialog(id="leave-modal",
+title=_("Discard changes?"),
+description=_("You have unsaved changes. If you leave this page, your changes will be lost."),
+open_expr="leaveModalOpen",
+close_expr="closeLeaveModal()") %}
+{{ button(_("Discard changes"), variant="tertiary", attrs='type="button" @click="discardAndLeave()"') }}
+{{ button(_("Keep editing"), variant="primary", attrs='type="button" x-ref="keepEditingBtn" @click="closeLeaveModal()"') }}
+{% endcall %}
+{# Toast notification. role="status" (polite live region) so screen readers hear
+   copy/upload/delete outcomes - same intent as floating_alerts' aria-live="polite". #}
 <div x-cloak
      x-show="toastVisible"
      role="status"

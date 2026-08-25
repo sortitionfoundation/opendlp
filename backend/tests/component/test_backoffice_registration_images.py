@@ -3,7 +3,6 @@
 
 import uuid
 from io import BytesIO
-from pathlib import Path
 
 import pytest
 from PIL import Image
@@ -219,29 +218,31 @@ class TestDeleteRoute:
 
 
 class TestImageDetailsModalTemplate:
-    """Structural assertions on the Image Details modal in registration/_modals.html.
+    """Structural assertions on the Image Details modal as the page serves it.
 
-    The modal HTML lives inline in the registration template, gated by
-    ``<template x-if="imageDetailsModalOpen && editingImage">`` so Alpine controls
-    visibility client-side. Rendering the page through the route requires a real
-    authenticated user (the base layout reads ``current_user.global_role`` in a
-    context processor), which is heavyweight for verifying static modal markup.
-
-    We instead scan the template file and confirm the enhanced modal carries the
-    expected structural markers — thumbnail binding, read-only inputs with copy
-    handlers, danger-styled Delete button, and the renamed "Save alt" button.
+    The modal is server-rendered inside ``<template x-if="imageDetailsModalOpen
+    && editingImage">``, so Alpine controls visibility client-side but the markup
+    is always in the response. The markup itself comes from the shared
+    asset_details_modal() macro, which images and documents both call — so these
+    assertions read the rendered page rather than the template source, which no
+    longer contains the image-specific ids and bindings as literals.
     """
 
     @pytest.fixture
-    def modal_block(self) -> str:
-        """Return only the Image Details modal subsection of the template."""
-        path = Path(__file__).resolve().parents[2] / "templates/backoffice/registration/_modals.html"
-        text = path.read_text(encoding="utf-8")
-        start_marker = "{# Image Details / Edit Alt Modal #}"
-        end_marker = "{# Toast notification #}"
+    def modal_block(self, logged_in_admin, registration_page, existing_assembly) -> str:
+        """Return only the Image Details modal subsection of the rendered page."""
+        url = (
+            f"/backoffice/assembly/{existing_assembly.id}/registration/{registration_page.url_slug}?section=form&edit=1"
+        )
+        response = logged_in_admin.get(url)
+        assert response.status_code == 200
+        text = response.get_data(as_text=True)
+        # && is entity-encoded in the attribute, as Jinja autoescaping renders it.
+        start_marker = '<template x-if="imageDetailsModalOpen &amp;&amp; editingImage">'
+        end_marker = '<template x-if="documentUploadModalOpen">'
         start = text.find(start_marker)
         end = text.find(end_marker, start)
-        assert start != -1 and end != -1, "Image Details modal section not found in template"
+        assert start != -1 and end != -1, "Image Details modal section not found in rendered page"
         return text[start:end]
 
     def test_thumbnail_binds_to_public_url_with_no_preview_fallback(self, modal_block):
@@ -279,13 +280,15 @@ class TestImageDetailsModalTemplate:
 
     def test_footer_has_delete_on_left_and_renamed_save_button(self, modal_block):
         # Danger-styled Delete handler exists and is wired through a non-confirming method
-        assert 'variant="danger"' in modal_block
+        assert "btn--danger" in modal_block
         assert "deleteEditingImage()" in modal_block
         assert "Delete image" in modal_block
+        # mr-auto pushes the destructive action away from the safe ones
+        assert "mr-auto" in modal_block
         # The primary save button is renamed to clarify what's persisted
         assert "Save alt" in modal_block
         # Old generic "Save" label is no longer the button text
-        assert 'button(_("Save"),' not in modal_block
+        assert "<span>Save</span>" not in modal_block
 
     # The handlers themselves used to be asserted here, by grepping the template for the
     # inline script's source. They now live in src/js/components/ and are covered by
