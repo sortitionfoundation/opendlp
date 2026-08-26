@@ -246,6 +246,22 @@ class TestTargetJoin:
         assert age["target_values"][0]["max_flex"] == -1
         assert spec["unmatched_target_categories"] == []
 
+    def test_target_values_are_attached_to_the_matching_field_case_insensitive(self):
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            _add_field(uow, assembly, "age_bracket")
+            _add_category(uow, assembly, "Age_Bracket", ["16-29", "30-44"])
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        age = _field_by_key(spec, "age_bracket")
+        assert [v["value"] for v in age["target_values"]] == ["16-29", "30-44"]
+        assert age["target_values"][0]["min"] == 1
+        assert age["target_values"][0]["max"] == 5
+        # -1 is the library's "unset" sentinel, so it calculates a safe default.
+        assert age["target_values"][0]["max_flex"] == -1
+        assert spec["unmatched_target_categories"] == []
+
     def test_a_field_with_no_category_has_null_target_values(self):
         with FakeUnitOfWork() as uow:
             user, assembly = _seed(uow)
@@ -273,6 +289,9 @@ class TestTargetJoin:
         The heuristics that bucket a new column into a group match target names
         loosely; sortition-algorithms does not. A loose match here would report a
         category as wired up when selection would fail to find its column.
+
+        (Although ``Age_Bracket`` and ``age_bracket`` do match - as sortition-algorithms does
+        case-insensitive matching of field names.)
         """
         with FakeUnitOfWork() as uow:
             user, assembly = _seed(uow)

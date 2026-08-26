@@ -94,7 +94,7 @@ def build_field_spec(
     # pairs the two by exact string match. So the join here is exact as well: a
     # category that only matched loosely would find no column at selection time
     # either, and reporting it as matched here would hide that.
-    categories_by_name = {category.name: category for category in categories}
+    categories_by_name = {category.name.lower(): category for category in categories}
     matched_names: set[str] = set()
 
     id_column = resolve_id_column_header(assembly)
@@ -102,7 +102,7 @@ def build_field_spec(
     field_payloads: list[dict[str, Any]] = []
     columns = [id_column]
     for field in fields:
-        category = categories_by_name.get(field.field_key)
+        category = categories_by_name.get(field.field_key.lower())
         if category is not None:
             matched_names.add(category.name)
         field_payloads.append(_field_payload(field, category))
