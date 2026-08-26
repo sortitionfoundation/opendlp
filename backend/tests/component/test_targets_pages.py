@@ -517,10 +517,15 @@ def _read_only_html(html_text):
 
 
 def _column_headings(html_text):
-    """The column headings of the first values table in `html_text`."""
+    """The column headings of the first values table in `html_text`.
+
+    A heading's hover note is written out for screen readers as well, so drop
+    that before reading the label off the cell.
+    """
     head = re.search(r"<thead>(.*?)</thead>", html_text, re.DOTALL).group(1)
     cells = re.findall(r"<th[^>]*>(.*?)</th>", head, re.DOTALL)
-    return [re.sub(r"<[^>]+>", "", cell).strip() for cell in cells]
+    cells = [re.sub(r'<span class="sr-only">.*?</span>', "", cell, flags=re.DOTALL) for cell in cells]
+    return [re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", cell)).strip() for cell in cells]
 
 
 def _edit_form_row_cells(html_text, value):
@@ -584,6 +589,25 @@ class TestRespondentCountColumns:
             "Actions",
         ]
         assert _edit_form_row_cells(edit_form, "Woman")[2] == "2"
+
+    def test_the_respondents_heading_says_who_is_counted(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Which respondents a column counts is not something a heading can say on its own."""
+        self._gender_targets(fake_store, admin_user, existing_assembly.id)
+        self._gender_respondents(fake_store, existing_assembly.id)
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        note = (
+            "Counts people in the pool, and those selected or confirmed. "
+            "Withdrawn people and test submissions are not counted."
+        )
+        for view in (_read_only_html(html_text), _edit_form_html(html_text)):
+            head = re.search(r"<thead>(.*?)</thead>", view, re.DOTALL).group(1)
+            heading = next(th for th in re.findall(r"<th[^>]*>(.*?)</th>", head, re.DOTALL) if "Respondents" in th)
+            assert f'title="{note}"' in heading, "the icon has no hover text"
+            assert f'<span class="sr-only">{note}</span>' in heading, "the note is there for a mouse only"
 
     def test_selected_respondents_get_their_own_column(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

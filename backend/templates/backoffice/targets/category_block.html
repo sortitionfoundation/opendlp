@@ -2,6 +2,8 @@
 ABOUTME: HTMX partial for a single target category block in the backoffice
 ABOUTME: Read-only view of one category - every change is made through "Edit targets"
 #}
+{% from "backoffice/components/info_icon.html" import info_icon %}
+
 {% macro provenance_icon(manual) %}
     {% if manual %}
         <span class="inline-flex shrink-0"
@@ -112,7 +114,8 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
             <colgroup>
                 <col />
                 <col style="width: 8rem;" />
-                {% if has_counts %}<col style="width: 8rem;" />{% endif %}
+                {# Wide enough for "Respondents" and the icon beside it on one line. #}
+                {% if has_counts %}<col style="width: 10rem;" />{% endif %}
                 {% if show_selected %}<col style="width: 8rem;" />{% endif %}
                 <col style="width: 8rem;" />
                 <col style="width: 8rem;" />
@@ -126,7 +129,12 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                         style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
                     {% if has_counts %}
                         <th class="py-3 px-4 text-right text-label-md"
-                            style="color: var(--color-headings)">{{ _("Respondents") }}</th>
+                            style="color: var(--color-headings)">
+                            <span class="inline-flex items-center justify-end gap-1">
+                                {{ _("Respondents") }}
+                                {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted.")) }}
+                            </span>
+                        </th>
                     {% endif %}
                     {% if show_selected %}
                         <th class="py-3 px-4 text-right text-label-md"

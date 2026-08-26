@@ -504,6 +504,34 @@ class TestIncludeDeletedFiltering:
         counts = respondent_backend.repo.get_attribute_value_counts(assembly.id, "gender")
         assert counts == {"Female": 1}
 
+    def test_get_attribute_value_counts_counts_the_pool_and_those_taken_from_it(
+        self, respondent_backend: ContractBackend
+    ):
+        """Pool, selected and confirmed are the assembly's respondents. The rest are not.
+
+        A withdrawn person has left the pool a target is measured against, and a
+        test submission was never in it.
+        """
+        assembly = respondent_backend.make_assembly()
+        for external_id, status in [
+            ("R-POOL", RespondentStatus.POOL),
+            ("R-SELECTED", RespondentStatus.SELECTED),
+            ("R-CONFIRMED", RespondentStatus.CONFIRMED),
+            ("R-WITHDRAWN", RespondentStatus.WITHDRAWN),
+            ("R-TEST", RespondentStatus.TEST_SUBMISSION),
+            ("R-DELETED", RespondentStatus.DELETED),
+        ]:
+            _make_respondent(
+                respondent_backend,
+                assembly.id,
+                external_id=external_id,
+                attributes={"gender": "Female"},
+                status=status,
+            )
+
+        counts = respondent_backend.repo.get_attribute_value_counts(assembly.id, "gender")
+        assert counts == {"Female": 3}
+
     def test_get_attribute_columns_skips_deleted_sample(self, respondent_backend: ContractBackend):
         assembly = respondent_backend.make_assembly()
         # Insert the DELETED respondent first so if the sample picks "first row"

@@ -30,6 +30,8 @@ from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import (
+    COUNTED_RESPONDENT_STATUSES,
+    SELECTED_RESPONDENT_STATUSES,
     AssemblyStatus,
     GlobalRole,
     RespondentAction,
@@ -1340,7 +1342,7 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
                     orm.respondents.c.attributes[attribute_name].isnot(None),
-                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
+                    orm.respondents.c.selection_status.in_(COUNTED_RESPONDENT_STATUSES),
                 )
             )
             .group_by(val_col)
@@ -1355,10 +1357,7 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 and_(
                     orm.respondents.c.assembly_id == assembly_id,
                     orm.respondents.c.attributes[attribute_name].isnot(None),
-                    orm.respondents.c.selection_status.in_([
-                        RespondentStatus.SELECTED.value,
-                        RespondentStatus.CONFIRMED.value,
-                    ]),
+                    orm.respondents.c.selection_status.in_(SELECTED_RESPONDENT_STATUSES),
                 )
             )
             .group_by(val_col)

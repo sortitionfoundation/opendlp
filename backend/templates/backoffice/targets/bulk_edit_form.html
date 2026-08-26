@@ -3,6 +3,7 @@ ABOUTME: One form covering every target category and value, for edit-all/save-al
 ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed by save_all_parser
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/input.html" import input %}
 
 {#
@@ -206,7 +207,12 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                             style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
                         {% if show_counts %}
                             <th class="py-3 px-4 text-right text-label-md"
-                                style="color: var(--color-headings)">{{ _("Respondents") }}</th>
+                                style="color: var(--color-headings)">
+                                <span class="inline-flex items-center justify-end gap-1">
+                                    {{ _("Respondents") }}
+                                    {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted.")) }}
+                                </span>
+                            </th>
                         {% endif %}
                         {% if show_selected %}
                             <th class="py-3 px-4 text-right text-label-md"

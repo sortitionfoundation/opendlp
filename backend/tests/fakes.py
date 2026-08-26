@@ -29,6 +29,8 @@ from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import (
+    COUNTED_RESPONDENT_STATUSES,
+    SELECTED_RESPONDENT_STATUSES,
     AssemblyStatus,
     GlobalRole,
     RespondentAction,
@@ -822,19 +824,20 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
         return []
 
     def get_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
-        counts: dict[str, int] = {}
-        for r in self._items:
-            if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.DELETED and r.attributes:
-                val = r.attributes.get(attribute_name)
-                if val is not None:
-                    counts[val] = counts.get(val, 0) + 1
-        return counts
+        return self._value_counts(assembly_id, attribute_name, COUNTED_RESPONDENT_STATUSES)
 
     def get_selected_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
-        selected_statuses = {RespondentStatus.SELECTED, RespondentStatus.CONFIRMED}
+        return self._value_counts(assembly_id, attribute_name, SELECTED_RESPONDENT_STATUSES)
+
+    def _value_counts(
+        self,
+        assembly_id: uuid.UUID,
+        attribute_name: str,
+        statuses: list[RespondentStatus],
+    ) -> dict[str, int]:
         counts: dict[str, int] = {}
         for r in self._items:
-            if r.assembly_id == assembly_id and r.selection_status in selected_statuses and r.attributes:
+            if r.assembly_id == assembly_id and r.selection_status in statuses and r.attributes:
                 val = r.attributes.get(attribute_name)
                 if val is not None:
                     counts[val] = counts.get(val, 0) + 1
