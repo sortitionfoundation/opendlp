@@ -1155,6 +1155,24 @@ those the other way round. Deleting "Gender" and adding a new "Gender" in one go
 is therefore refused — do it in two saves. `save_all` also gained a catch-all
 handler, because a whole page of edits should not be lost to a stack trace.
 
+**The row controls are icons**, following the Figma at node `4771-32435`:
+"Use percentage" is the undo circle, "Delete value" the bin. Both are icon-only
+buttons whose `aria_label` is the wording they replaced, so they still answer to
+`get_by_role("button", name="Delete value")` and a screen reader still hears the
+verb. Two things worth knowing:
+
+- **"Use percentage" is disabled, not hidden**, when there is nothing to re-link -
+  a value with no percentage, or one whose min and max are already calculated -
+  and again once re-linking has been asked for. A control that comes and goes is
+  harder to find than one plainly unavailable, and the row keeps its shape either
+  way. The bin keeps the pending-delete swap: it is replaced by "Undo" while the
+  row is struck through.
+- The `attrs` string is built with `{% set %}…{% endset %}`, **not** `~`
+  concatenation. Under autoescape `~` escapes the quotes, so `@click` arrives as
+  `@click=&#34;remove()&#34;` - which renders, looks right, and does nothing when
+  clicked. The component tests were perfectly happy; only the BDD suite noticed.
+  Hence `test_the_row_controls_carry_live_click_handlers`.
+
 **Layout:** "Save all" and "Cancel" sit at the top right of the form, with "Save
 all" primary and to the right; "Add value" sits inside the table between the last
 value and the totals row. "Edit targets" on the view page is the primary action.
