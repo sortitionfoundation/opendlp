@@ -1102,6 +1102,29 @@ job, and duplicating `min_max_for_percentage` in JavaScript would put the rule i
 two places. Live min/max preview is a possible follow-up, and would need that
 duplication weighed against it.
 
+**The respondent counts sit beside the percentage, in both views.**
+"Respondents" and "Selected" used to trail the read-only row after the notes.
+They now sit between "Population (%)" and "Min", which is where they are read: a
+percentage is judged against how many respondents actually hold that value, and
+min and max against both. The bulk form gained the same two columns in the same
+place, so a column means the same thing whichever view you are on. Three things
+follow:
+
+- A column appears only when there is something to count. "Respondents" needs
+  the category name to match a respondent data column; "Selected" needs some
+  respondents to have been selected. A category with neither shows neither
+  column, rather than a column of dashes.
+- **"Selected" means selected _or_ confirmed.** Confirmed is selected and then
+  confirmed, so both statuses count; `get_selected_attribute_value_counts`
+  filters on the pair.
+- In the bulk form the numbers are read-only and **as they were when the page
+  loaded**. They describe the respondent data, which the form never touches, so
+  renaming a value does not move its count, and a row whose value is blank - or
+  names something no respondent answered - shows a dash rather than a zero. A
+  zero would claim the value was asked about and nobody chose it. Making the
+  count follow what is typed would mean a live lookup for a number that is only
+  on the page for reference.
+
 **Adding a target is provisional too.** A text box and "Add target" at the foot
 of the form clone a blank category block under a `new-<n>` id — the same shape
 `new-<n>` value rows use — and `save_all_targets` creates a category for any edit
