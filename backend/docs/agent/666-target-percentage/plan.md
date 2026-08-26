@@ -1115,7 +1115,8 @@ follow:
   respondents to have been selected. A category with neither shows neither
   column, rather than a column of dashes.
 - **"Selected" means selected _or_ confirmed.** Confirmed is selected and then
-  confirmed, so both statuses count.
+  confirmed, so both statuses count. Its heading carries an info icon saying so,
+  for the same reason "Respondents" does: the word alone names one of the two.
 - **"Respondents" means the pool, plus whoever has been taken from it** - `POOL`,
   `SELECTED` and `CONFIRMED`. A withdrawn person has left the pool a target is
   measured against, a test submission was never in it, and a deleted one has had
@@ -1125,9 +1126,11 @@ follow:
   status added later has to be considered rather than quietly counted - which is
   what the previous "anything but `DELETED`" filter did. The heading carries an
   info icon saying so, because a column of numbers cannot: none of this is
-  guessable from the word "Respondents". The change reaches everything counting
-  values off respondent data, including the columns offered as new categories
-  and the values auto-added with them.
+  guessable from the word "Respondents". The icon itself is
+  `components/info_icon.html` - hover text and `sr-only` wording from one string,
+  because a glyph on its own says nothing to a screen reader. The change reaches
+  everything counting values off respondent data, including the columns offered
+  as new categories and the values auto-added with them.
 - In the bulk form the numbers are read-only and **as they were when the page
   loaded**. They describe the respondent data, which the form never touches, so
   renaming a value does not move its count, and a row whose value is blank - or
