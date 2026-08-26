@@ -590,22 +590,40 @@ class TestRespondentCountColumns:
         ]
         assert _edit_form_row_cells(edit_form, "Woman")[2] == "2"
 
-    def test_the_respondents_heading_says_who_is_counted(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    @pytest.mark.parametrize(
+        ("column", "note"),
+        [
+            (
+                "Respondents",
+                (
+                    "Counts people in the pool, and those selected or confirmed. "
+                    "Withdrawn people and test submissions are not counted."
+                ),
+            ),
+            (
+                "Selected",
+                "Counts people who have been selected, including those who have since confirmed their place.",
+            ),
+        ],
+    )
+    def test_each_count_heading_says_who_is_counted(
+        self, column, note, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """Which respondents a column counts is not something a heading can say on its own."""
+        """Which people a column counts is not something one word at the top of it can say."""
         self._gender_targets(fake_store, admin_user, existing_assembly.id)
         self._gender_respondents(fake_store, existing_assembly.id)
+        _add_respondents(
+            fake_store,
+            existing_assembly.id,
+            [("r4", {"Gender": "Woman"})],
+            status=RespondentStatus.CONFIRMED,
+        )
 
         html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
-        note = (
-            "Counts people in the pool, and those selected or confirmed. "
-            "Withdrawn people and test submissions are not counted."
-        )
         for view in (_read_only_html(html_text), _edit_form_html(html_text)):
             head = re.search(r"<thead>(.*?)</thead>", view, re.DOTALL).group(1)
-            heading = next(th for th in re.findall(r"<th[^>]*>(.*?)</th>", head, re.DOTALL) if "Respondents" in th)
+            heading = next(th for th in re.findall(r"<th[^>]*>(.*?)</th>", head, re.DOTALL) if column in th)
             assert f'title="{note}"' in heading, "the icon has no hover text"
             assert f'<span class="sr-only">{note}</span>' in heading, "the note is there for a mouse only"
 

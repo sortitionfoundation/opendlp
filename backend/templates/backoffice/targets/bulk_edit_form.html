@@ -216,7 +216,12 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                         {% endif %}
                         {% if show_selected %}
                             <th class="py-3 px-4 text-right text-label-md"
-                                style="color: var(--color-headings)">{{ _("Selected") }}</th>
+                                style="color: var(--color-headings)">
+                                <span class="inline-flex items-center justify-end gap-1">
+                                    {{ _("Selected") }}
+                                    {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place.")) }}
+                                </span>
+                            </th>
                         {% endif %}
                         <th class="py-3 px-4 text-left text-label-md"
                             style="color: var(--color-headings)">{{ _("Min") }}</th>
