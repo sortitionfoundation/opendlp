@@ -66,7 +66,7 @@ def logged_in_as_admin(page: Page, admin_user):
     page.fill('input[name="email"]', admin_user.email)
     page.fill('input[name="password"]', ADMIN_PASSWORD)
     page.click('button[type="submit"]')
-    page.wait_for_url(Urls.dashboard)
+    page.wait_for_url(Urls.any_dashboard)
 
 
 @given(parsers.parse('there is an assembly called "{title}" with a registration page'))
