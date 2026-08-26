@@ -439,7 +439,8 @@ class TestPercentageColumn:
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
         assert b"boosted by 2" in response.data
-        assert b"Use percentage" in response.data
+        relink = _edit_form_button(_edit_form_html(response.data.decode()), "Male", "Use percentage")
+        assert not _is_disabled(relink)
 
     def test_the_column_heading_reads_population(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         """The heading is escaped as `%%` for gettext, so check what actually reaches the page."""
@@ -450,14 +451,18 @@ class TestPercentageColumn:
         assert b"Population (%)" in response.data
         assert b"Population (%%)" not in response.data
 
-    def test_a_linked_value_is_not_offered_relinking(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_a_linked_value_is_offered_relinking_only_as_a_dead_control(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Greyed out, not gone: a control that vanishes is harder to find than one plainly unavailable."""
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
         with FakeUnitOfWork(store=fake_store) as uow:
             add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
 
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
-        assert b"Use percentage" not in response.data
+        relink = _edit_form_button(_edit_form_html(response.data.decode()), "Male", "Use percentage")
+        assert _is_disabled(relink)
 
 
 class TestCategorySourceAndComment:
@@ -526,6 +531,22 @@ def _column_headings(html_text):
     cells = re.findall(r"<th[^>]*>(.*?)</th>", head, re.DOTALL)
     cells = [re.sub(r'<span class="sr-only">.*?</span>', "", cell, flags=re.DOTALL) for cell in cells]
     return [re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", cell)).strip() for cell in cells]
+
+
+def _edit_form_button(html_text, value, label):
+    """The bulk edit form's button named `label`, on the row for `value`."""
+    actions = _edit_form_row_cells(html_text, value)[-1]
+    buttons = re.findall(r"<button\b.*?</button>", actions, re.DOTALL)
+    return next(b for b in buttons if f'aria-label="{label}"' in b)
+
+
+def _is_disabled(button_html):
+    """Whether a rendered button carries the `disabled` attribute.
+
+    Matched with the space in front of it: an enabled button can still carry
+    Alpine's `:disabled` binding, which is not the same claim.
+    """
+    return re.search(r"\sdisabled[\s>]", button_html) is not None
 
 
 def _edit_form_row_cells(html_text, value):
@@ -1035,6 +1056,20 @@ class TestBulkEditForm:
         assert b"Add value" in response.data
         assert b"Delete value" in response.data
         assert b"Delete target" in response.data
+
+    def test_the_row_controls_carry_live_click_handlers(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """An escaped @click looks fine on the page and does nothing when clicked."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 1, 2)
+
+        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+
+        actions = _edit_form_row_cells(_edit_form_html(response.data.decode()), "Male")[-1]
+        assert '@click="usePercentage()"' in actions
+        assert '@click="remove()"' in actions
+        assert "&#34;" not in actions, "an attribute was escaped on its way into the markup"
 
     def test_carries_a_totals_row_for_the_browser_to_fill_in(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
