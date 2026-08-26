@@ -5,7 +5,25 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input %}
 
-{% macro value_row(category_id, row_id, val=None, is_new=false, prefill="", errors={}) %}
+{#
+    A respondent or selected count, read-only, for one value row.
+
+    The numbers describe the respondent data, which this form never changes, so
+    they are what they were when the page loaded. A row whose value is blank -
+    or names something no respondent answered - has nothing to count.
+#}
+{% macro count_cell(counts, row_value) %}
+    {% set count = counts.get(row_value) if counts and row_value else none %}
+    <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
+        {% if count is not none %}
+            {{ count }}
+        {% else %}
+            <span style="color: var(--color-secondary-text);">&mdash;</span>
+        {% endif %}
+    </td>
+{% endmacro %}
+
+{% macro value_row(category_id, row_id, val=None, is_new=false, prefill="", errors={}, respondent_counts=None, selected_counts=None, show_counts=false, show_selected=false) %}
     {% set val_prefix = "cat[" ~ category_id ~ "][values][" ~ row_id ~ "]" %}
     {% set field_id = "bulk-" ~ category_id ~ "-" ~ row_id %}
     {% set can_relink = val and val.minmax_manual and val.percentage_target is not none %}
@@ -62,6 +80,8 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             classes="w-24",
             attrs='min="0" max="100" step="0.1" data-field="percentage"') }}
         </td>
+        {% if show_counts %}{{ count_cell(respondent_counts, val.value if val else prefill) }}{% endif %}
+        {% if show_selected %}{{ count_cell(selected_counts, val.value if val else prefill) }}{% endif %}
         <td class="py-3 px-4">
             {{ input(name=val_prefix ~ "[min]",
             id=field_id ~ "-min",
@@ -105,8 +125,13 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     </tr>
 {% endmacro %}
 
-{% macro category_block(cat_id, category=None, missing_values=None, errors={}) %}
+{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None) %}
     {% set cat_prefix = "cat[" ~ cat_id ~ "]" %}
+    {# Both count columns are only worth a column when there is something to
+       count, so a category with no matching respondent data shows neither. #}
+    {% set show_counts = respondent_counts is not none and respondent_counts %}
+    {% set show_selected = selected_counts is not none and selected_counts %}
+    {% set column_count = 6 + (1 if show_counts else 0) + (1 if show_selected else 0) %}
     {% set block_deleted = "true" if category and category.deleted else "false" %}
     {% set block_error = errors.get(cat_prefix, "") %}
     <div class="mb-8 rounded-lg overflow-hidden p-6"
@@ -179,6 +204,14 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                             style="color: var(--color-headings)">{{ _("Value") }}</th>
                         <th class="py-3 px-4 text-left text-label-md"
                             style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
+                        {% if show_counts %}
+                            <th class="py-3 px-4 text-right text-label-md"
+                                style="color: var(--color-headings)">{{ _("Respondents") }}</th>
+                        {% endif %}
+                        {% if show_selected %}
+                            <th class="py-3 px-4 text-right text-label-md"
+                                style="color: var(--color-headings)">{{ _("Selected") }}</th>
+                        {% endif %}
                         <th class="py-3 px-4 text-left text-label-md"
                             style="color: var(--color-headings)">{{ _("Min") }}</th>
                         <th class="py-3 px-4 text-left text-label-md"
@@ -191,17 +224,17 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 </thead>
                 <tbody x-ref="rows">
                     {% for val in (category.values if category else []) or [] %}
-                        {{ value_row(cat_id, val.value_id, val=val, errors=errors) }}
+                        {{ value_row(cat_id, val.value_id, val=val, errors=errors, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
                     {% endfor %}
                     {# Blank rows are cloned from here, so the markup has exactly
                        one definition. __ID__ becomes new-<n> on the way in. #}
                     <template x-ref="rowTemplate">
-                        {{ value_row(cat_id, "__ID__", is_new=true) }}
+                        {{ value_row(cat_id, "__ID__", is_new=true, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
                     </template>
                     {% if missing_values %}
                         <template x-ref="missingTemplate">
                             {% for mv in missing_values %}
-                                {{ value_row(cat_id, "__ID__", is_new=true, prefill=mv) }}
+                                {{ value_row(cat_id, "__ID__", is_new=true, prefill=mv, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
                             {% endfor %}
                         </template>
                     {% endif %}
@@ -209,7 +242,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 {# ── Add Value Row ─────────────────────────── #}
                 <tbody>
                     <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
-                        <td colspan="6" class="py-3">
+                        <td colspan="{{ column_count }}" class="py-3">
                             <div class="flex items-center gap-3">
                                 {{ button(_("Add value"), variant="secondary", attrs='@click="addValue()"') }}
                                 {% if missing_values %}
@@ -231,6 +264,14 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                         <td class="py-3 px-4 text-label-md font-bold targets-total"
                             :class="percentageTotalClass"
                             x-text="percentageTotal"></td>
+                        {% if show_counts %}
+                            <td class="py-3 px-4 text-right text-label-md font-bold"
+                                style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>
+                        {% endif %}
+                        {% if show_selected %}
+                            <td class="py-3 px-4 text-right text-label-md font-bold"
+                                style="color: var(--color-headings)">{{ selected_counts.values() | sum }}</td>
+                        {% endif %}
                         <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="minTotal"></td>
                         <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="maxTotal"></td>
                         <td class="py-3 px-4"></td>
@@ -258,6 +299,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     <div id="bulk-categories" x-ref="categories">
         {% for category in form_categories %}
             {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
+            {% set selected_counts = all_selected_counts.get(category.name) if has_selected is defined and has_selected and all_selected_counts is defined and all_selected_counts else None %}
             {% set target_value_names = (category.values or []) | map(attribute='value') | list %}
             {% set missing_values = [] %}
             {% if respondent_counts %}
@@ -267,7 +309,8 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     {% endif %}
                 {% endfor %}
             {% endif %}
-            {{ category_block(category.id, category=category, missing_values=missing_values, errors=errors) }}
+            {{ category_block(category.id, category=category, missing_values=missing_values, errors=errors,
+            respondent_counts=respondent_counts, selected_counts=selected_counts) }}
         {% endfor %}
     </div>
     {# ── Add Target ───────────────────────────────────── #}

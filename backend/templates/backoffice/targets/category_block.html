@@ -112,11 +112,11 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
             <colgroup>
                 <col />
                 <col style="width: 8rem;" />
+                {% if has_counts %}<col style="width: 8rem;" />{% endif %}
+                {% if show_selected %}<col style="width: 8rem;" />{% endif %}
                 <col style="width: 8rem;" />
                 <col style="width: 8rem;" />
                 <col />
-                {% if has_counts %}<col style="width: 8rem;" />{% endif %}
-                {% if show_selected %}<col style="width: 8rem;" />{% endif %}
             </colgroup>
             <thead>
                 <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
@@ -124,12 +124,6 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                         style="color: var(--color-headings)">{{ _("Value") }}</th>
                     <th class="py-3 px-4 text-right text-label-md"
                         style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
-                    <th class="py-3 px-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Min") }}</th>
-                    <th class="py-3 px-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Max") }}</th>
-                    <th class="py-3 px-4 text-left text-label-md"
-                        style="color: var(--color-headings)">{{ _("Notes") }}</th>
                     {% if has_counts %}
                         <th class="py-3 px-4 text-right text-label-md"
                             style="color: var(--color-headings)">{{ _("Respondents") }}</th>
@@ -138,6 +132,12 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                         <th class="py-3 px-4 text-right text-label-md"
                             style="color: var(--color-headings)">{{ _("Selected") }}</th>
                     {% endif %}
+                    <th class="py-3 px-4 text-left text-label-md"
+                        style="color: var(--color-headings)">{{ _("Min") }}</th>
+                    <th class="py-3 px-4 text-left text-label-md"
+                        style="color: var(--color-headings)">{{ _("Max") }}</th>
+                    <th class="py-3 px-4 text-left text-label-md"
+                        style="color: var(--color-headings)">{{ _("Notes") }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -151,14 +151,6 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                                 <span style="color: var(--color-secondary-text);">&mdash;</span>
                             {% endif %}
                         </td>
-                        {% set has_percentage = val.percentage_target is not none %}
-                        {{ minmax_cell(val.min, val.minmax_manual, has_percentage) }}
-                        {{ minmax_cell(val.max, val.minmax_manual, has_percentage) }}
-                        <td class="py-3 px-4 text-body-sm"
-                            style="color: var(--color-secondary-text);
-                                   overflow-wrap: anywhere">
-                            {% if val.comment %}{{ val.comment | linkify }}{% endif %}
-                        </td>
                         {% if has_counts %}
                             <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
                                 {{ respondent_counts.get(val.value, 0) }}
@@ -169,6 +161,14 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                                 {{ selected_counts.get(val.value, 0) }}
                             </td>
                         {% endif %}
+                        {% set has_percentage = val.percentage_target is not none %}
+                        {{ minmax_cell(val.min, val.minmax_manual, has_percentage) }}
+                        {{ minmax_cell(val.max, val.minmax_manual, has_percentage) }}
+                        <td class="py-3 px-4 text-body-sm"
+                            style="color: var(--color-secondary-text);
+                                   overflow-wrap: anywhere">
+                            {% if val.comment %}{{ val.comment | linkify }}{% endif %}
+                        </td>
                     </tr>
                         {# ── Value Annotations Row ── #}
                     {% if value_annotations is defined and value_annotations.get(val.value) %}
@@ -215,11 +215,6 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                             <span style="color: var(--color-secondary-text);">&mdash;</span>
                         {% endif %}
                     </td>
-                    <td class="py-3 px-4 text-left text-label-md font-bold"
-                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='min') }}</td>
-                    <td class="py-3 px-4 text-left text-label-md font-bold"
-                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='max') }}</td>
-                    <td class="py-3 px-4"></td>
                     {% if has_counts %}
                         <td class="py-3 px-4 text-right text-label-md font-bold"
                             style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>
@@ -228,6 +223,11 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                         <td class="py-3 px-4 text-right text-label-md font-bold"
                             style="color: var(--color-headings)">{{ selected_counts.values() | sum }}</td>
                     {% endif %}
+                    <td class="py-3 px-4 text-left text-label-md font-bold"
+                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='min') }}</td>
+                    <td class="py-3 px-4 text-left text-label-md font-bold"
+                        style="color: var(--color-headings)">{{ (category.values or []) | sum(attribute='max') }}</td>
+                    <td class="py-3 px-4"></td>
                 </tr>
             </tfoot>
         </table>

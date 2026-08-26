@@ -1054,6 +1054,7 @@ def _render_targets_edit_errors(
         target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
     attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
+    selected_counts = build_selected_counts(assembly_id, target_categories, attribute_columns)
     context = _get_assembly_context(assembly_id)
 
     flash(_("Your targets were not saved. Please correct the errors below."), "error")
@@ -1071,6 +1072,8 @@ def _render_targets_edit_errors(
         can_manage=_can_manage(assembly_id),
         respondent_attribute_columns=attribute_columns,
         all_respondent_counts=build_respondent_counts(assembly_id, target_categories, attribute_columns),
+        all_selected_counts=selected_counts,
+        has_selected=any(selected_counts.values()),
         **context,
     ), 200
 

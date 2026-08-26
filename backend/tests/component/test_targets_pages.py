@@ -11,7 +11,7 @@ from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import UserAssemblyRole
-from opendlp.domain.value_objects import AssemblyRole
+from opendlp.domain.value_objects import AssemblyRole, RespondentStatus
 from opendlp.service_layer.assembly_service import add_assembly_gsheet
 from opendlp.service_layer.target_service import (
     add_target_value,
@@ -40,11 +40,18 @@ def _targets_url(assembly_id, suffix=""):
     return f"{PREFIX}/{assembly_id}/targets{suffix}"
 
 
-def _add_respondents(fake_store, assembly_id, respondents_data):
+def _add_respondents(fake_store, assembly_id, respondents_data, status=RespondentStatus.POOL):
     """Seed respondents with the given attributes into the shared store."""
     with FakeUnitOfWork(store=fake_store) as uow:
         for ext_id, attributes in respondents_data:
-            uow.respondents.add(Respondent(assembly_id=assembly_id, external_id=ext_id, attributes=attributes))
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=assembly_id,
+                    external_id=ext_id,
+                    attributes=attributes,
+                    selection_status=status,
+                )
+            )
         uow.commit()
 
 
@@ -499,6 +506,142 @@ class TestValueNotesColumn:
         assert "boosted by 2" in cells[4]
 
 
+def _edit_form_html(html_text):
+    """The half of the targets page holding the bulk edit form."""
+    return html_text.split('id="target-categories"')[0]
+
+
+def _read_only_html(html_text):
+    """The half of the targets page holding the read-only category blocks."""
+    return html_text.split('id="target-categories"')[1]
+
+
+def _column_headings(html_text):
+    """The column headings of the first values table in `html_text`."""
+    head = re.search(r"<thead>(.*?)</thead>", html_text, re.DOTALL).group(1)
+    cells = re.findall(r"<th[^>]*>(.*?)</th>", head, re.DOTALL)
+    return [re.sub(r"<[^>]+>", "", cell).strip() for cell in cells]
+
+
+def _edit_form_row_cells(html_text, value):
+    """The cells of the bulk edit form row for `value`, in column order."""
+    rows = re.findall(r'<tr data-value-row="true".*?</tr>', html_text, re.DOTALL)
+    row = next(r for r in rows if re.search(rf'value="{re.escape(value)}"', r))
+    return [re.sub(r"\s+", " ", cell).strip() for cell in re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)]
+
+
+class TestRespondentCountColumns:
+    """How many respondents hold each value, next to the percentage it is judged against.
+
+    Both counts sit between "Population (%)" and "Min" - on the read-only page
+    and in the edit form alike, so a column means the same thing on either.
+    """
+
+    def _gender_targets(self, fake_store, admin_user, assembly_id):
+        _import_targets(
+            fake_store,
+            admin_user,
+            assembly_id,
+            "feature,value,min,max\nGender,Woman,3,7\nGender,Man,3,7\n",
+        )
+
+    def _gender_respondents(self, fake_store, assembly_id):
+        _add_respondents(
+            fake_store,
+            assembly_id,
+            [("r1", {"Gender": "Woman"}), ("r2", {"Gender": "Woman"}), ("r3", {"Gender": "Man"})],
+        )
+
+    def test_the_read_only_table_counts_respondents_before_min(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._gender_targets(fake_store, admin_user, existing_assembly.id)
+        self._gender_respondents(fake_store, existing_assembly.id)
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        read_only = _read_only_html(html_text)
+        assert _column_headings(read_only) == ["Value", "Population (%)", "Respondents", "Min", "Max", "Notes"]
+        cells = _read_only_row_cells(read_only, "Woman")
+        assert cells[2].strip() == "2"
+
+    def test_the_edit_form_counts_respondents_before_min(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._gender_targets(fake_store, admin_user, existing_assembly.id)
+        self._gender_respondents(fake_store, existing_assembly.id)
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        edit_form = _edit_form_html(html_text)
+        assert _column_headings(edit_form) == [
+            "Value",
+            "Population (%)",
+            "Respondents",
+            "Min",
+            "Max",
+            "Notes",
+            "Actions",
+        ]
+        assert _edit_form_row_cells(edit_form, "Woman")[2] == "2"
+
+    def test_selected_respondents_get_their_own_column(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A confirmed respondent has been selected too, so both statuses count."""
+        self._gender_targets(fake_store, admin_user, existing_assembly.id)
+        _add_respondents(
+            fake_store,
+            existing_assembly.id,
+            [("r1", {"Gender": "Woman"})],
+            status=RespondentStatus.SELECTED,
+        )
+        _add_respondents(
+            fake_store,
+            existing_assembly.id,
+            [("r2", {"Gender": "Woman"}), ("r3", {"Gender": "Man"})],
+            status=RespondentStatus.CONFIRMED,
+        )
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        expected = ["Value", "Population (%)", "Respondents", "Selected", "Min", "Max", "Notes"]
+        assert _column_headings(_read_only_html(html_text)) == expected
+        assert _column_headings(_edit_form_html(html_text)) == [*expected, "Actions"]
+        assert _read_only_row_cells(_read_only_html(html_text), "Woman")[3].strip() == "2"
+        assert _edit_form_row_cells(_edit_form_html(html_text), "Woman")[3] == "2"
+
+    def test_a_value_no_respondent_holds_is_counted_as_a_dash(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Zero would claim the value was asked about and nobody chose it."""
+        self._gender_targets(fake_store, admin_user, existing_assembly.id)
+        _add_respondents(fake_store, existing_assembly.id, [("r1", {"Gender": "Woman"})])
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        count_cell = _edit_form_row_cells(_edit_form_html(html_text), "Man")[2]
+        assert "&mdash;" in count_cell
+        assert "0" not in count_cell
+
+    def test_a_category_with_no_respondent_data_gets_no_count_columns(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._gender_targets(fake_store, admin_user, existing_assembly.id)
+
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert _column_headings(_read_only_html(html_text)) == ["Value", "Population (%)", "Min", "Max", "Notes"]
+        assert _column_headings(_edit_form_html(html_text)) == [
+            "Value",
+            "Population (%)",
+            "Min",
+            "Max",
+            "Notes",
+            "Actions",
+        ]
+
+
 class TestMinMaxProvenance:
     """Min and max say where they came from, in the cells themselves.
 
@@ -806,6 +949,33 @@ class TestSaveAllValidationErrors:
 
         row = _bulk_row_for(response.data.decode(), "Male")
         assert "Max must be at least the min" in row
+
+    def test_the_redisplayed_form_still_counts_the_respondents(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
+        value_id = cat.values[0].value_id
+        _add_respondents(
+            fake_store,
+            existing_assembly.id,
+            [("r1", {"Gender": "Male"})],
+            status=RespondentStatus.CONFIRMED,
+        )
+
+        response = self._post_min_above_max(logged_in_admin, existing_assembly.id, category.id, value_id)
+
+        edit_form = _edit_form_html(response.data.decode())
+        assert _column_headings(edit_form) == [
+            "Value",
+            "Population (%)",
+            "Respondents",
+            "Selected",
+            "Min",
+            "Max",
+            "Notes",
+            "Actions",
+        ]
 
     # "nothing was saved" is asserted in tests/e2e: FakeUnitOfWork snapshots the
     # repository lists, not the objects in them, so it cannot roll back a field
