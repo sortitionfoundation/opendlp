@@ -1107,7 +1107,7 @@ duplication weighed against it.
 They now sit between "Population (%)" and "Min", which is where they are read: a
 percentage is judged against how many respondents actually hold that value, and
 min and max against both. The bulk form gained the same two columns in the same
-place, so a column means the same thing whichever view you are on. Three things
+place, so a column means the same thing whichever view you are on. Four things
 follow:
 
 - A column appears only when there is something to count. "Respondents" needs
@@ -1115,8 +1115,19 @@ follow:
   respondents to have been selected. A category with neither shows neither
   column, rather than a column of dashes.
 - **"Selected" means selected _or_ confirmed.** Confirmed is selected and then
-  confirmed, so both statuses count; `get_selected_attribute_value_counts`
-  filters on the pair.
+  confirmed, so both statuses count.
+- **"Respondents" means the pool, plus whoever has been taken from it** - `POOL`,
+  `SELECTED` and `CONFIRMED`. A withdrawn person has left the pool a target is
+  measured against, a test submission was never in it, and a deleted one has had
+  its details blanked. Both counts name the statuses they *include*
+  (`COUNTED_RESPONDENT_STATUSES` and `SELECTED_RESPONDENT_STATUSES` in
+  `domain/value_objects.py`, shared by the SQL repository and the fake), so a
+  status added later has to be considered rather than quietly counted - which is
+  what the previous "anything but `DELETED`" filter did. The heading carries an
+  info icon saying so, because a column of numbers cannot: none of this is
+  guessable from the word "Respondents". The change reaches everything counting
+  values off respondent data, including the columns offered as new categories
+  and the values auto-added with them.
 - In the bulk form the numbers are read-only and **as they were when the page
   loaded**. They describe the respondent data, which the form never touches, so
   renaming a value does not move its count, and a row whose value is blank - or
