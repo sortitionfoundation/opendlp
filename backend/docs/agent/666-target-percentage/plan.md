@@ -1177,6 +1177,31 @@ verb. Two things worth knowing:
 all" primary and to the right; "Add value" sits inside the table between the last
 value and the totals row. "Edit targets" on the view page is the primary action.
 
+**The category header row follows the same Figma.** "Move up" and "Move down"
+are chevron icons - `aria_label` carrying the wording they replaced, so
+`get_by_role("button", name="Move down")` still finds them - and they sit with
+"Delete target" in an `ml-auto` group at the right edge of the row, clear of the
+name, source and comment fields. The controls that reshape the page are worth
+separating from the ones that fill it in. `moveUp` / `moveDown` do not grey out
+at the ends of the list: knowing a block is first or last means watching the
+DOM the buttons reorder, which the Figma implies but the component does not
+track. The category comment box is labelled "Comment" rather than "Notes"; the
+per-value column beside it is still headed "Notes", which is worth aligning.
+
+**The heading says the number to select, not how many categories there are.**
+`number_to_select` moved out of the page header and into the line under the
+`<h2>`, replacing "%(count)s categories defined." Every min and max on the page
+is a share of the seat count, and the categories are listed immediately below,
+so a tally of them says nothing the page does not already show. The empty state
+still says "No target categories defined yet", now alongside the seat count
+rather than instead of it. The legacy page keeps the tally: it is hidden and
+slated for deletion (D12).
+
+**The respondent and selected counts are left-aligned in the edit form.** They
+sit between boxed inputs whose text starts at the left edge, so a right-aligned
+number drifts away from everything the eye is running down. The read-only table
+keeps them right-aligned - there they are among numbers, not among fields.
+
 **Parser and service additions:** `save_all_parser` reads `[deleted]` and
 `[sort_order]` on a category and `[deleted]` and `[relink]` on a value; either id
 may be `new-<n>`; a deleted category carries no value edits, a deleted row needs
