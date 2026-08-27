@@ -178,7 +178,6 @@ class TestAdminUserEdit:
                 "first_name": "NewFirst",
                 "last_name": "NewLast",
                 "global_role": user.global_role.name,
-                "is_active": "y",
                 "csrf_token": get_csrf_token(client, f"/admin/users/{user.id}/edit"),
             },
             follow_redirects=False,
@@ -191,6 +190,36 @@ class TestAdminUserEdit:
         view_response = client.get(f"/admin/users/{user.id}")
         assert b"NewFirst" in view_response.data
         assert b"NewLast" in view_response.data
+
+
+class TestAdminDisableAccount:
+    """Disabling against the real database, including what it does to a live session."""
+
+    def test_disabling_ends_the_users_live_session(
+        self, app, client: FlaskClient, admin_user: User, test_users: list[User], postgres_session_factory
+    ):
+        """The session the user is already holding must stop working on the next request."""
+        victim = test_users[0]
+        victim_client = app.test_client()
+        with victim_client.session_transaction() as session:
+            session["_user_id"] = victim.get_id()
+            session["_fresh"] = True
+        assert victim_client.get("/dashboard").status_code == 200
+
+        login_as_admin(client, admin_user)
+        response = client.post(
+            f"/admin/users/{victim.id}/disable",
+            data={"csrf_token": get_csrf_token(client, f"/admin/users/{victim.id}")},
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        assert victim_client.get("/dashboard", follow_redirects=False).status_code == 302
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            stored = uow.users.get(victim.id)
+            assert stored.is_active is False
+            assert stored.has_usable_password() is False
+            assert stored.sessions_invalidated_at is not None
 
 
 @pytest.fixture

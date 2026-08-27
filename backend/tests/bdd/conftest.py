@@ -32,7 +32,17 @@ from tests.conftest import (
 )
 from tests.data import VALID_GSHEET_URL
 
-from .config import ADMIN_EMAIL, ADMIN_PASSWORD, BDD_PORT, NORMAL_EMAIL, NORMAL_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
+from .config import (
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    BDD_PORT,
+    DISPOSABLE_EMAIL,
+    DISPOSABLE_PASSWORD,
+    NORMAL_EMAIL,
+    NORMAL_PASSWORD,
+    PLAYWRIGHT_TIMEOUT,
+    Urls,
+)
 
 # Maximum age in hours before a reused server is considered stale
 _MAX_SERVER_AGE_HOURS = 24
@@ -340,6 +350,33 @@ def assembly_creator(test_database, admin_user):
             )
 
     return _create_assembly
+
+
+@pytest.fixture
+def disposable_user(test_database):
+    """A confirmed user that scenarios may lock out.
+
+    Separate from `normal_user`, which is session scoped and shared - disabling
+    that one would poison every scenario that runs afterwards. This one is
+    removed by `delete_all_except_standard_users` after each scenario.
+    """
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        create_user(
+            uow=uow,
+            email=DISPOSABLE_EMAIL,
+            password=DISPOSABLE_PASSWORD,
+            first_name="Dis",
+            last_name="Posable",
+            global_role=GlobalRole.USER,
+            accept_data_agreement=True,
+        )
+
+    with uow:
+        fetched_user = uow.users.get_by_email(DISPOSABLE_EMAIL)
+        fetched_user.confirm_email()
+        uow.commit()
+        return fetched_user.create_detached_copy()
 
 
 @pytest.fixture

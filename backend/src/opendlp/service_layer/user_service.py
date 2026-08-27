@@ -627,12 +627,15 @@ def disable_user(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uui
 
     _warn_about_outstanding_invites(uow, user)
 
+    # The field is "credentials_reset" rather than anything with "password" in
+    # the name: censor_pii redacts values under such a key, which would make
+    # this line say [REDACTED] instead of what happened.
     logger.warning(
         "user.disabled",
         user_id=str(user_id),
         admin_user_id=str(admin_user_id),
         sessions_invalidated=True,
-        password_scrambled=True,
+        credentials_reset=True,
         totp_cleared=totp_cleared,
     )
 

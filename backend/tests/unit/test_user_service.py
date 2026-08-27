@@ -1255,6 +1255,19 @@ class TestDisableUser:
         with pytest.raises(UserNotFoundError):
             user_service.disable_user(uow, uuid.uuid4(), admin_user.id)
 
+    def test_the_lockout_is_logged_for_a_sysadmin_to_find(self, uow, admin_user, target_user, caplog):
+        user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert "user.disabled" in caplog.text
+        assert str(target_user.id) in caplog.text
+        assert str(admin_user.id) in caplog.text
+        # censor_pii redacts any field whose name contains "password", so the
+        # field naming has to avoid it or the log says nothing useful
+        assert "credentials_reset" in caplog.text
+        assert "[REDACTED]" not in caplog.text
+        # Never the email address - see docs/personal-data.md
+        assert "target@example.com" not in caplog.text
+
     def test_usable_invites_the_user_created_are_logged(self, uow, admin_user, target_user, caplog):
         uow.user_invites.add(
             UserInvite(
