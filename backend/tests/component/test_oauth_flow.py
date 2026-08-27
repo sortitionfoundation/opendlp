@@ -88,7 +88,7 @@ def existing_dual_auth_user(fake_store: FakeStore) -> User:
 
 def _login(client: FlaskClient, user: User) -> None:
     with client.session_transaction() as session:
-        session["_user_id"] = str(user.id)
+        session["_user_id"] = user.get_id()
 
 
 class TestOAuthRegistrationForms:

@@ -203,7 +203,7 @@ class TestOAuthLogin:
         # Verify user is logged in
         with client.session_transaction() as session:
             assert "_user_id" in session
-            assert session["_user_id"] == str(existing_oauth_user.id)
+            assert session["_user_id"] == existing_oauth_user.get_id()
 
     def test_login_google_auto_links_to_existing_password_user(
         self, client: FlaskClient, postgres_session_factory, existing_password_user: User, mock_oauth_token
@@ -224,7 +224,7 @@ class TestOAuthLogin:
         # Verify user is logged in
         with client.session_transaction() as session:
             assert "_user_id" in session
-            assert session["_user_id"] == str(existing_password_user.id)
+            assert session["_user_id"] == existing_password_user.get_id()
 
         # Verify OAuth was linked to existing user
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
@@ -243,7 +243,7 @@ class TestOAuthAccountLinking:
         """Test successfully linking Google account to password-only user."""
         # Login as password user
         with client.session_transaction() as session:
-            session["_user_id"] = str(existing_password_user.id)
+            session["_user_id"] = existing_password_user.get_id()
 
         # Initiate OAuth linking
         with patch("opendlp.entrypoints.blueprints.profile.oauth.google") as mock_google:
@@ -282,7 +282,7 @@ class TestOAuthAccountLinking:
         """Test that linking fails if Google email doesn't match user email."""
         # Login as password user
         with client.session_transaction() as session:
-            session["_user_id"] = str(existing_password_user.id)
+            session["_user_id"] = existing_password_user.get_id()
             session["oauth_action"] = "link"
 
         # Use different email in OAuth response
@@ -443,7 +443,7 @@ class TestMicrosoftOAuthLogin:
         # Verify user is logged in
         with client.session_transaction() as session:
             assert "_user_id" in session
-            assert session["_user_id"] == str(existing_microsoft_oauth_user.id)
+            assert session["_user_id"] == existing_microsoft_oauth_user.get_id()
 
 
 class TestMicrosoftOAuthAccountLinking:
@@ -455,7 +455,7 @@ class TestMicrosoftOAuthAccountLinking:
         """Test linking Microsoft OAuth to existing password account."""
         # Login as password user
         with client.session_transaction() as session:
-            session["_user_id"] = str(existing_password_user.id)
+            session["_user_id"] = existing_password_user.get_id()
 
         # Update mock token to match user's email
         mock_microsoft_oauth_token["userinfo"]["email"] = existing_password_user.email
@@ -499,7 +499,7 @@ class TestOAuthProviderReplacement:
         """Test that linking Microsoft OAuth replaces existing Google OAuth."""
         # Login as Google OAuth user
         with client.session_transaction() as session:
-            session["_user_id"] = str(existing_google_oauth_user_for_replacement.id)
+            session["_user_id"] = existing_google_oauth_user_for_replacement.get_id()
 
         # Update mock token to match user's email
         mock_microsoft_oauth_token["userinfo"]["email"] = existing_google_oauth_user_for_replacement.email
