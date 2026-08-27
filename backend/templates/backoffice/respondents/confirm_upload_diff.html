@@ -22,10 +22,13 @@ ABOUTME: Lists added / absent columns and id-column changes; user confirms or ca
     {% if diff.id_column_changed %}
         <section class="mb-6">
             <strong class="govuk-tag govuk-tag--yellow">{{ _("ID column changed") }}</strong>
+            {# The <code> wrappers are built as block-set markup so the column names,
+               which come from the uploaded CSV, are still escaped. #}
+            {% set old_id_column %}<code>{{ diff.id_column_changed[0] }}</code>{% endset %}
+            {% set new_id_column %}<code>{{ diff.id_column_changed[1] }}</code>{% endset %}
             <p class="text-body-md mt-2">
                 {{ _("The ID column has changed from %(old)s to %(new)s.",
-                old="<code>" + diff.id_column_changed[0] + "</code>",
-                new="<code>" + diff.id_column_changed[1] + "</code>")|safe }}
+                old=old_id_column, new=new_id_column) }}
                 {{ _("Existing respondents will be replaced — make sure this is intentional.") }}
             </p>
         </section>

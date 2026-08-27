@@ -281,6 +281,46 @@ class TestUploadDiffConfirmation:
         assert any("person_ref, first_name, postcode" in m for m in messages)
         assert any("pre-filled from your last upload" in m for m in messages)
 
+    def _confirm_diff_page(self, client: FlaskClient, assembly_id: uuid.UUID) -> str:
+        response = client.get(f"/backoffice/assembly/{assembly_id}/data/upload-respondents/confirm-diff")
+        assert response.status_code == 200
+        return response.data.decode()
+
+    def test_id_column_change_renders_code_tags_as_markup(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The two column names are wrapped in <code>, not shown as escaped tags."""
+        _upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        response = _upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "person_ref,first_name\nP001,Bob\n",
+            id_column="person_ref",
+        )
+        assert "confirm-diff" in response.location
+
+        body = self._confirm_diff_page(logged_in_admin, existing_assembly.id)
+        assert "<code>external_id</code>" in body
+        assert "<code>person_ref</code>" in body
+        assert "&lt;code&gt;" not in body
+
+    def test_id_column_change_escapes_the_column_names(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The column names come from an uploaded file, so they stay escaped
+        even though the <code> wrappers around them are markup."""
+        _upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        _upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "<script>x</script>,first_name\nP001,Bob\n",
+            id_column="<script>x</script>",
+        )
+
+        body = self._confirm_diff_page(logged_in_admin, existing_assembly.id)
+        assert "<script>x</script>" not in body
+        assert "<code>&lt;script&gt;x&lt;/script&gt;</code>" in body
+
 
 class TestBackofficeViewRespondentsPage:
     """The respondents list page render variants."""
