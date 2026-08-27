@@ -2,8 +2,8 @@
 
 **Issue:** none yet — the question arose while reviewing `666-target-percentage`
 **Branch:** proposed `icons-consolidation`, **not** `666-target-percentage`
-**Status:** PLANNED — phase 1 is ready to implement; phase 2 is blocked on a design decision
-**Date:** 2026-08-27
+**Status:** ✅ PHASE 1 IMPLEMENTED on `666-target-percentage`; phase 2 is blocked on a design decision
+**Date:** 2026-08-27, phase 1 implemented 2026-08-27
 
 ## Scope of this document
 
@@ -61,8 +61,8 @@ designer, not an assumption for us to make.
 | Glyph                | Copies | Where                                                                                                          |
 | -------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
 | Copy-to-clipboard    | 3      | `components/url_display.html:26`, `_assets.html:21`, `registration/_step_email.html:173`                        |
-| Import arrow         | 3      | `admin/users.html:177`, `main/view_assembly_data.html:125`, `respondents/view_respondents.html:200`             |
-| Export arrow         | 3      | `admin/users.html:217`, `main/view_assembly_data.html:158`, `respondents/view_respondents.html:233`             |
+| ~~Import arrow~~     | 3      | **Not icons.** See the correction in §8 — these are GOV.UK pagination markup                                    |
+| ~~Export arrow~~     | 3      | **Not icons.** See the correction in §8                                                                        |
 | Spinner              | 2      | `components/modal.html:296`, `components/search_dropdown.html:96`                                              |
 | Google brand mark    | 4      | `auth/login.html:43`, `auth/register.html:24`, `auth/register_google.html:57`, `profile/view.html:105`         |
 | Microsoft brand mark | 4      | `auth/login.html:75`, `auth/register.html:56`, `auth/register_microsoft.html:57`, `profile/view.html:170`      |
@@ -112,7 +112,9 @@ which is example text, not markup.
 **Test for inclusion:** does the glyph name an action or a status? Then it is an
 icon.
 
-That leaves roughly **34 macros covering 54 call sites**.
+That leaves roughly **34 macros covering 54 call sites**. In the event: **32
+macros in `icons.html` and 2 in `brand_marks.html`, covering 54 call sites**,
+with 12 raw `<svg>` elements deliberately left in place (§8).
 
 ### D3 — Phase 1 keeps existing macro names wherever it can
 
@@ -131,8 +133,10 @@ Two collisions force a decision even so:
   interim: `icon_info_heroicons`, `icon_info_lucide`.
 
 **Rule:** where one concept has more than one glyph, suffix each with its family
-(`_lucide`, `_heroicons`, `_material`). Where a concept has exactly one glyph,
-keep its current name. Phase 2 drops every suffix. The suffixes are ugly on
+(`_lucide`, `_heroicons`, `_material`) — or, where the drawings come from the
+same family and differ only in the grid they are built on, with that grid size
+(`_20`, `_16`, `_12`). Where a concept has exactly one glyph, keep its current
+name. Phase 2 drops every suffix. The suffixes are ugly on
 purpose — they are a to-do list visible at every call site.
 
 ### D4 — Wrapper components stay put and import from `icons.html`
@@ -147,7 +151,7 @@ This is the point of phase 1. See §4.
 
 ---
 
-## 3. Phase 1 — the move
+## 3. Phase 1 — the move ✅ DONE
 
 No visual change. Every rendered page must be byte-identical apart from
 whitespace.
@@ -180,7 +184,7 @@ splitting the commit at the `backoffice/` boundary so the `auth/`, `admin/`,
 `main/` and `respondents/` templates land separately — they are outside the
 backoffice design system and are the ones most likely to want a second look.
 
-## 4. Phase 1 — the showcase page
+## 4. Phase 1 — the showcase page ✅ DONE
 
 `templates/backoffice/showcase/icons.html`, wired into the showcase index
 alongside the existing 28 component pages.
@@ -222,18 +226,25 @@ Blocked on the designer choosing a family. Once chosen:
 the set that looks deliberately chosen rather than reached for. But a headcount
 is a weak argument and loses to whatever the Figma design system specifies.
 
-## 6. Enforcement, once phase 2 lands
+## 6. Enforcement ✅ DONE EARLY
 
 A doc paragraph will not hold. There is exact precedent in
 `tests/unit/test_design_tokens.py`, which fails the build on a `var(--...)`
 that no token file defines.
 
-Add `tests/unit/test_icons.py`: a raw `<svg` in any template outside
-`components/icons.html`, `components/brand_marks.html` and a short explicit
-allowlist (the logo, the two illustrations) fails. The allowlist entries each
-carry a comment saying why.
+`tests/unit/test_icons.py` now does the same for icons: a raw `<svg` in any
+template outside `backoffice/components/icons.html`,
+`components/brand_marks.html` and a short explicit allowlist fails, and a
+stale allowlist entry fails too. Every allowlist entry carries its reason. It
+also asserts that every icon macro is `aria-hidden`.
 
-Then, and only then, the documentation:
+**This was planned for after phase 2 and landed in phase 1 instead**, because
+phase 1 already reached the clean state and there was no reason to leave it
+unguarded while the family question is open. `tests/component/`
+`test_backoffice_general.py` additionally asserts the showcase lists every
+macro in the set, which renders all 32 through a real route.
+
+Still to do, and still after phase 2 — the documentation:
 
 - a section in `docs/agent/frontend_design_system.md` — where icons live, the
   house family, the `icon_name(classes)` signature, `aria-hidden` on the glyph
@@ -247,12 +258,66 @@ Then, and only then, the documentation:
 2. **Is the small-viewBox divergence deliberate?** The stepper's 20-box tick and
    triangle and the checkbox's 12-box tick are drawn for their slots. Keep, or
    scale one glyph?
-3. **Does phase 1 cover `auth/`, `admin/`, `main/` and `respondents/`, or
-   backoffice only?** This plan assumes all of them for the *inventory* and the
-   showcase, with the non-backoffice templates in a separate commit so they can
-   be dropped cheaply.
-4. **Rename `icon_button` to `asset_icon_button`?** (D1)
+3. ~~**Does phase 1 cover `auth/`, `admin/`, `main/` and `respondents/`, or
+   backoffice only?**~~ Settled by §8: `admin/`, `main/` and `respondents/`
+   turned out to hold nothing but GOV.UK pagination markup, so phase 1 covers
+   the backoffice plus the `auth/` and `profile/` brand marks, which landed in
+   their own commit.
+4. **Rename `icon_button` to `asset_icon_button`?** (D1) Left alone in phase 1,
+   since it was an open question rather than a decision.
 5. **Should this doc live under `666-target-percentage/`?** It is filed there
    because that is where the question came up, but the work is unrelated to
    target percentages. It probably wants its own folder once it has an issue
    number.
+
+---
+
+## 8. What actually happened, and where it departed from the plan
+
+Phase 1 is on `666-target-percentage` in two commits: `fb3d0adf` (brand marks)
+and `cd6668c0` (the backoffice set, the showcase page and the tests).
+
+### 8.1 A correction to §1.2
+
+**The "import arrow" and "export arrow" rows were wrong.** Identified from path
+data alone, they looked like two icons copied three times each. They are in fact
+`govuk-pagination__icon--prev` and `--next`: GOV.UK Frontend's own pagination
+markup, hand-rolled in three templates. They are not ours to restyle, so they
+are excluded and allowlisted.
+
+That leaves a **separate finding, out of scope here**: `admin/users.html`,
+`main/view_assembly_data.html` and `respondents/view_respondents.html` each
+hand-roll a GOV.UK pagination block rather than using
+`backoffice/components/pagination.html`. Worth its own issue.
+
+### 8.2 Deviations
+
+| Deviation | Why |
+| --------- | ---- |
+| Enforcement test landed now, not after phase 2 (§6) | Phase 1 reached the clean state; leaving it unguarded for the length of a design decision invites regressions |
+| Suffix rule extended to grid sizes (D3) | The tick, warning and download duplicates differ by viewBox, not family, so `_20` / `_16` / `_12` says more than a family label would |
+| The showcase page uses no `gettext` | Every other `backoffice/showcase/*.html` template writes plain English. Consistency with the surrounding code beat the general i18n rule, and it keeps paragraphs about icon families — most of which phase 2 deletes — out of the translation catalogue |
+| "Light and dark backgrounds" became one inverted swatch | The backoffice has no dark theme at all. The swatch uses the `--color-neutral-800` primitive; there is no semantic dark-surface token and inventing one for a showcase page is not this branch's business |
+| `xmlns` added where a few inline SVGs lacked it | Inert for inline SVG in HTML, and it makes the file uniform |
+| `stroke-width` moved from `<svg>` to `<path>` on the warning glyph | It inherits, so the rendering is identical |
+| `icon_button` not renamed | It is open question 4, not a decision |
+
+### 8.3 A new finding
+
+**`icon_about` is drawn by nothing.** It came across with the rest of the
+account menu set from `_nav_icons.html` and has no call site anywhere. It is
+kept, flagged on the showcase page, and raised there as a question — deleting it
+is the team's call, not a refactor's.
+
+### 8.4 Verification
+
+`prek run --all-files`, `mypy`, `deptry`, the UnitOfWork checker and
+`uv lock --locked` all pass. `just test-js` (423), `just test-nobdd` (4570) and
+`just test-bdd-headless` (159 passed, 5 pre-existing skips) are green. The
+showcase Icons section and the OAuth sign-in page were checked visually in a
+real browser.
+
+Note for whoever picks up phase 2: `just check` could not run as written in this
+environment — `uv tool run prek` needs to write to a read-only tools directory.
+Running `prek run --all-files` plus the other four commands directly is
+equivalent.
