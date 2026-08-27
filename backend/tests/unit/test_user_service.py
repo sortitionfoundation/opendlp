@@ -7,11 +7,14 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.email_confirmation import EmailConfirmationToken
+from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer import user_service
 from opendlp.service_layer.exceptions import (
+    CannotDisableSelf,
     CannotRemoveLastAuthMethod,
     InsufficientPermissions,
     InvalidCredentials,
@@ -20,7 +23,7 @@ from opendlp.service_layer.exceptions import (
     UserAlreadyExists,
     UserNotFoundError,
 )
-from opendlp.service_layer.security import hash_password
+from opendlp.service_layer.security import hash_password, verify_password
 
 
 class TestCreateUser:
@@ -728,13 +731,11 @@ class TestUpdateUser:
             first_name="New",
             last_name="Name",
             global_role=GlobalRole.GLOBAL_ORGANISER,
-            is_active=False,
         )
 
         assert updated_user.first_name == "New"
         assert updated_user.last_name == "Name"
         assert updated_user.global_role == GlobalRole.GLOBAL_ORGANISER
-        assert updated_user.is_active is False
 
     def test_update_user_cannot_change_own_role(self, uow):
         """Test admin cannot change their own role."""
@@ -756,25 +757,31 @@ class TestUpdateUser:
                 global_role=GlobalRole.USER,
             )
 
-    def test_update_user_cannot_deactivate_self(self, uow):
-        """Test admin cannot deactivate their own account."""
+    def test_update_user_does_not_change_whether_the_account_is_active(self, uow):
+        """Enabling and disabling is disable_user/enable_user's job, not this one's."""
 
-        # Create admin user
         admin_user = User(
             email="admin@example.com",
             global_role=GlobalRole.ADMIN,
             password_hash="hash",  # pragma: allowlist secret
         )
+        target_user = User(
+            email="target@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+            is_active=False,
+        )
         uow.users.add(admin_user)
+        uow.users.add(target_user)
 
-        # Try to deactivate self
-        with pytest.raises(ValueError, match="Cannot deactivate your own account"):
-            user_service.update_user(
-                uow=uow,
-                user_id=admin_user.id,
-                admin_user_id=admin_user.id,
-                is_active=False,
-            )
+        updated_user = user_service.update_user(
+            uow=uow,
+            user_id=target_user.id,
+            admin_user_id=admin_user.id,
+            first_name="New",
+        )
+
+        assert updated_user.is_active is False
 
     def test_update_user_non_admin(self, uow):
         """Test that non-admin users cannot update users."""
@@ -1136,3 +1143,255 @@ class TestOAuthUserOperations:
 
         with pytest.raises(CannotRemoveLastAuthMethod):
             user_service.remove_oauth_auth(uow=uow, user_id=user.id)
+
+
+class TestDisableUser:
+    """Locking a user out has to take away every route back in at once."""
+
+    @pytest.fixture
+    def admin_user(self, uow):
+        admin = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin)
+        return admin
+
+    @pytest.fixture
+    def target_user(self, uow):
+        target = User(
+            email="target@example.com",
+            global_role=GlobalRole.USER,
+            password_hash=hash_password("OriginalPassw0rd!"),
+        )
+        uow.users.add(target)
+        return target
+
+    def test_disabling_clears_the_active_flag(self, uow, admin_user, target_user):
+        disabled = user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert disabled.is_active is False
+
+    def test_disabling_ends_every_existing_session(self, uow, admin_user, target_user):
+        old_session_id = target_user.get_id()
+
+        disabled = user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert disabled.sessions_invalidated_at is not None
+        assert disabled.get_id() != old_session_id
+
+    def test_disabling_makes_the_password_unusable(self, uow, admin_user, target_user):
+        disabled = user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert disabled.has_usable_password() is False
+        assert verify_password("OriginalPassw0rd!", disabled.password_hash) is False
+
+    def test_disabling_invalidates_outstanding_reset_and_confirmation_tokens(self, uow, admin_user, target_user):
+        reset_token = PasswordResetToken(user_id=target_user.id)
+        confirmation_token = EmailConfirmationToken(user_id=target_user.id)
+        uow.password_reset_tokens.add(reset_token)
+        uow.email_confirmation_tokens.add(confirmation_token)
+
+        user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert reset_token.is_valid() is False
+        assert confirmation_token.is_valid() is False
+
+    def test_disabling_clears_2fa(self, uow, admin_user, target_user):
+        target_user.enable_totp("encrypted-secret")
+
+        disabled = user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert disabled.totp_enabled is False
+        assert disabled.totp_secret_encrypted is None
+
+    def test_disabling_a_user_without_2fa_does_not_raise(self, uow, admin_user, target_user):
+        # admin_disable_2fa raises when there is nothing to disable, so disable_user guards it
+        disabled = user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert disabled.totp_enabled is False
+
+    def test_disabling_an_oauth_user_does_not_raise(self, uow, admin_user):
+        oauth_user = User(
+            email="oauth@example.com",
+            global_role=GlobalRole.USER,
+            oauth_provider="google",
+            oauth_id="google123",
+        )
+        uow.users.add(oauth_user)
+
+        disabled = user_service.disable_user(uow, oauth_user.id, admin_user.id)
+
+        assert disabled.is_active is False
+        assert disabled.oauth_provider == "google"
+
+    def test_an_admin_cannot_disable_themselves(self, uow, admin_user):
+        with pytest.raises(CannotDisableSelf):
+            user_service.disable_user(uow, admin_user.id, admin_user.id)
+
+        assert admin_user.is_active is True
+
+    def test_disabling_an_already_disabled_user_changes_nothing(self, uow, admin_user, target_user):
+        first = user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        second = user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert second.sessions_invalidated_at == first.sessions_invalidated_at
+        assert second.password_hash == first.password_hash
+
+    def test_a_non_admin_cannot_disable_anyone(self, uow, target_user):
+        regular_user = User(
+            email="regular@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(regular_user)
+
+        with pytest.raises(InsufficientPermissions):
+            user_service.disable_user(uow, target_user.id, regular_user.id)
+
+    def test_disabling_an_unknown_user_raises(self, uow, admin_user):
+        with pytest.raises(UserNotFoundError):
+            user_service.disable_user(uow, uuid.uuid4(), admin_user.id)
+
+    def test_usable_invites_the_user_created_are_logged(self, uow, admin_user, target_user, caplog):
+        uow.user_invites.add(
+            UserInvite(
+                code="STILLGOOD",
+                global_role=GlobalRole.USER,
+                created_by=target_user.id,
+                expires_at=datetime.now(UTC) + timedelta(hours=24),
+            )
+        )
+
+        user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert "user.disabled.outstanding_invites" in caplog.text
+        # The code is a credential and must never reach the logs
+        assert "STILLGOOD" not in caplog.text
+
+    def test_expired_invites_the_user_created_are_not_logged(self, uow, admin_user, target_user, caplog):
+        uow.user_invites.add(
+            UserInvite(
+                code="EXPIRED",
+                global_role=GlobalRole.USER,
+                created_by=target_user.id,
+                expires_at=datetime.now(UTC) - timedelta(hours=1),
+            )
+        )
+
+        user_service.disable_user(uow, target_user.id, admin_user.id)
+
+        assert "user.disabled.outstanding_invites" not in caplog.text
+
+
+class TestEnableUser:
+    """Re-enabling gets the user back in, but must not resurrect the old sessions."""
+
+    @pytest.fixture
+    def admin_user(self, uow):
+        admin = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin)
+        return admin
+
+    @pytest.fixture
+    def disabled_user(self, uow, admin_user):
+        target = User(
+            email="target@example.com",
+            global_role=GlobalRole.USER,
+            password_hash=hash_password("OriginalPassw0rd!"),
+        )
+        uow.users.add(target)
+        user_service.disable_user(uow, target.id, admin_user.id)
+        return target
+
+    def test_enabling_sets_the_active_flag(self, uow, admin_user, disabled_user):
+        enabled = user_service.enable_user(uow, disabled_user.id, admin_user.id)
+
+        assert enabled.is_active is True
+
+    def test_enabling_leaves_the_cancelled_sessions_cancelled(self, uow, admin_user, disabled_user):
+        session_id_while_disabled = disabled_user.get_id()
+
+        enabled = user_service.enable_user(uow, disabled_user.id, admin_user.id)
+
+        assert enabled.get_id() == session_id_while_disabled
+
+    def test_enabling_does_not_restore_the_password(self, uow, admin_user, disabled_user):
+        enabled = user_service.enable_user(uow, disabled_user.id, admin_user.id)
+
+        assert enabled.has_usable_password() is False
+
+    def test_enabling_an_active_user_changes_nothing(self, uow, admin_user, disabled_user):
+        user_service.enable_user(uow, disabled_user.id, admin_user.id)
+
+        enabled_again = user_service.enable_user(uow, disabled_user.id, admin_user.id)
+
+        assert enabled_again.is_active is True
+
+    def test_a_non_admin_cannot_enable_anyone(self, uow, disabled_user):
+        regular_user = User(
+            email="regular@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(regular_user)
+
+        with pytest.raises(InsufficientPermissions):
+            user_service.enable_user(uow, disabled_user.id, regular_user.id)
+
+    def test_enabling_an_unknown_user_raises(self, uow, admin_user):
+        with pytest.raises(UserNotFoundError):
+            user_service.enable_user(uow, uuid.uuid4(), admin_user.id)
+
+
+class TestTotpClearedByLockout:
+    """The re-enable email needs to know whether it should mention 2FA."""
+
+    @pytest.fixture
+    def admin_user(self, uow):
+        admin = User(
+            email="admin@example.com",
+            global_role=GlobalRole.ADMIN,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(admin)
+        return admin
+
+    def test_true_when_the_lockout_cleared_2fa(self, uow, admin_user):
+        target = User(
+            email="target@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        target.enable_totp("encrypted-secret")
+        uow.users.add(target)
+        user_service.disable_user(uow, target.id, admin_user.id)
+
+        assert user_service.totp_cleared_by_lockout(uow, target) is True
+
+    def test_false_when_the_user_never_had_2fa(self, uow, admin_user):
+        target = User(
+            email="target@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(target)
+        user_service.disable_user(uow, target.id, admin_user.id)
+
+        assert user_service.totp_cleared_by_lockout(uow, target) is False
+
+    def test_false_when_the_user_has_never_been_locked_out(self, uow):
+        target = User(
+            email="target@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(target)
+
+        assert user_service.totp_cleared_by_lockout(uow, target) is False

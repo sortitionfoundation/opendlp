@@ -6,6 +6,7 @@ import pytest
 from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
+    CannotDisableSelf,
     CannotRemoveLastAuthMethod,
     CuratedMessage,
     DocumentQuotaExceeded,
@@ -52,6 +53,7 @@ CURATED = [
     OAuthError(provider="google", reason="the token exchange was refused"),
     OAuthStateError(),
     CannotRemoveLastAuthMethod(),
+    CannotDisableSelf(),
 ]
 
 UNCURATED = [

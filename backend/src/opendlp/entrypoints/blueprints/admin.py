@@ -14,6 +14,7 @@ from opendlp.entrypoints.decorators import require_admin
 from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm
 from opendlp.service_layer import two_factor_service
 from opendlp.service_layer.exceptions import (
+    CannotDisableSelf,
     InsufficientPermissions,
     InviteNotFoundError,
     UserNotFoundError,
@@ -27,7 +28,16 @@ from opendlp.service_layer.invite_service import (
     revoke_invite,
 )
 from opendlp.service_layer.two_factor_service import TwoFactorSetupError
-from opendlp.service_layer.user_service import get_user_by_id, get_user_stats, list_users_paginated, update_user
+from opendlp.service_layer.user_service import (
+    disable_user,
+    enable_user,
+    get_user_by_id,
+    get_user_stats,
+    list_users_paginated,
+    send_account_reenabled_email,
+    totp_cleared_by_lockout,
+    update_user,
+)
 from opendlp.translations import gettext as _
 
 admin_bp = Blueprint("admin", __name__)
@@ -162,7 +172,6 @@ def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
                         first_name=form.first_name.data or "",
                         last_name=form.last_name.data or "",
                         global_role=global_role,
-                        is_active=form.is_active.data,
                     )
 
                 flash(
@@ -216,6 +225,100 @@ def edit_user(user_id: uuid.UUID) -> ResponseReturnValue:
         )
         flash(_("An error occurred while loading the edit page"), "error")
         return redirect(url_for("admin.list_users"))
+
+
+@admin_bp.route("/users/<uuid:user_id>/disable", methods=["POST"])
+@login_required
+@require_admin
+def disable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
+    """Lock a user out: end their sessions, make their password unusable, clear their 2FA."""
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            user = disable_user(uow, user_id, current_user.id)
+
+        flash(
+            _(
+                "Account disabled for '%(email)s'. All sessions have been ended and the password reset.",
+                email=user.email,
+            ),
+            "success",
+        )
+        return redirect(url_for("admin.view_user", user_id=user_id))
+
+    except CannotDisableSelf as e:
+        logger.warning("Admin attempted to disable own account", user_id=str(current_user.id), error=str(e))
+        flash(e.user_msg(), "error")
+        return redirect(url_for("admin.view_user", user_id=user_id))
+    except UserNotFoundError as e:
+        logger.warning(
+            "User not found for disable by admin",
+            user_id=str(user_id),
+            admin_user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("User not found"), "error")
+        return redirect(url_for("admin.list_users"))
+    except InsufficientPermissions as e:
+        logger.warning("Unauthorized account disable attempt", user_id=str(current_user.id), error=str(e))
+        flash(_("You don't have permission to perform this action"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        logger.error(
+            "Error disabling user account", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+        )
+        flash(_("An error occurred while disabling the account"), "error")
+        return redirect(url_for("admin.view_user", user_id=user_id))
+
+
+@admin_bp.route("/users/<uuid:user_id>/enable", methods=["POST"])
+@login_required
+@require_admin
+def enable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
+    """Let a disabled user back in, and email them a route to a new password."""
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            user = enable_user(uow, user_id, current_user.id)
+            totp_cleared = totp_cleared_by_lockout(uow, user)
+
+        flash(_("Account enabled for '%(email)s'", email=user.email), "success")
+
+        email_sent = send_account_reenabled_email(
+            email_adapter=get_email_adapter(),
+            template_renderer=get_template_renderer(current_app),
+            url_generator=get_url_generator(current_app),
+            user=user,
+            totp_cleared=totp_cleared,
+        )
+        if email_sent:
+            flash(_("An email has been sent telling them how to set a new password"), "success")
+        else:
+            flash(
+                _("The account is enabled, but we could not email the user. Please contact them directly."), "warning"
+            )
+
+        return redirect(url_for("admin.view_user", user_id=user_id))
+
+    except UserNotFoundError as e:
+        logger.warning(
+            "User not found for enable by admin",
+            user_id=str(user_id),
+            admin_user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("User not found"), "error")
+        return redirect(url_for("admin.list_users"))
+    except InsufficientPermissions as e:
+        logger.warning("Unauthorized account enable attempt", user_id=str(current_user.id), error=str(e))
+        flash(_("You don't have permission to perform this action"), "error")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        logger.error(
+            "Error enabling user account", user_id=str(user_id), admin_user_id=str(current_user.id), error=str(e)
+        )
+        flash(_("An error occurred while enabling the account"), "error")
+        return redirect(url_for("admin.view_user", user_id=user_id))
 
 
 @admin_bp.route("/users/<uuid:user_id>/2fa/disable", methods=["POST"])

@@ -129,6 +129,25 @@
                             <button type="submit" class="govuk-button govuk-button--warning">{{ _("Disable 2FA") }}</button>
                         </form>
                     {% endif %}
+                    {% if user.id != current_user.id %}
+                        {% if user.is_active %}
+                            <form method="POST"
+                                  action="{{ url_for('admin.disable_user_account', user_id=user.id) }}"
+                                  style="display: inline"
+                                  data-confirm="{{ _("Are you sure you want to disable this account? This ends every session they have signed in to, permanently removes their password, and switches off their two-factor authentication. They will have to set a new password when the account is enabled again.") }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit" class="govuk-button govuk-button--warning">{{ _("Disable Account") }}</button>
+                            </form>
+                        {% else %}
+                            <form method="POST"
+                                  action="{{ url_for('admin.enable_user_account', user_id=user.id) }}"
+                                  style="display: inline"
+                                  data-confirm="{{ _("Are you sure you want to enable this account? The user will be emailed a link to set a new password.") }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Enable Account") }}</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
                     <a href="{{ url_for('admin.list_users') }}"
                        class="govuk-button govuk-button--secondary">{{ _("Back to User List") }}</a>
                 </div>

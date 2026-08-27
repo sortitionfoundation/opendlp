@@ -10,6 +10,9 @@ from opendlp.service_layer import totp_service
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import lazy_gettext as _l
 
+# Audit log action recorded when an admin turns off a user's 2FA
+ADMIN_DISABLED_ACTION = "admin_disabled"
+
 
 class TwoFactorSetupError(Exception):
     """Raised when 2FA setup fails."""
@@ -266,7 +269,7 @@ def admin_disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id
     # Create audit log entry
     audit_log = TwoFactorAuditLog(
         user_id=user_id,
-        action="admin_disabled",
+        action=ADMIN_DISABLED_ACTION,
         performed_by=admin_user_id,
         metadata={"admin_email": admin_user.email},
     )

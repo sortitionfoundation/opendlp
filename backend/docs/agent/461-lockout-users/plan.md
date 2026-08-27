@@ -4,7 +4,7 @@
 **Branch:** `461-lockout-users`
 **Date:** 2026-08-27
 **Status:** All open questions answered by Chewie and folded in (§3, recorded in
-§6). Ready to implement; nothing built yet.
+§6). Implementation in progress — see the DONE markers in §4.
 
 ---
 
@@ -305,22 +305,22 @@ instead of a success message.
 
 ## 4. Work breakdown
 
-1. **Domain** — `sessions_invalidated_at` on `User` (constructor, attribute,
+1. **Domain** — DONE. `sessions_invalidated_at` on `User` (constructor, attribute,
    `create_detached_copy`); `invalidate_sessions()`, `set_unusable_password()`,
    `has_usable_password()`; `get_id()` returning `"<uuid>|<epoch>"`.
-2. **Persistence** — column in `orm.py`; `uv run alembic revision
+2. **Persistence** — DONE. column in `orm.py`; `uv run alembic revision
    --autogenerate -m "add sessions_invalidated_at to users"`. No new table, so
    `_delete_all_test_data()` is untouched.
-3. **Session kill** — `load_user` parses the composite id, rejects an epoch
+3. **Session kill** — DONE. `load_user` parses the composite id, rejects an epoch
    mismatch, a bare UUID, and an inactive user. `verify_password`
    short-circuits the unusable-password sentinel.
-4. **Service** — `disable_user` / `enable_user` per §3.3–3.4; strip `is_active`
+4. **Service** — DONE. `disable_user` / `enable_user` per §3.3–3.4; strip `is_active`
    from `update_user` and move the self-deactivation guard; token invalidation;
    2FA clearing; outstanding-invite warning; structlog events.
-5. **Email** — `send_account_reenabled_email` in `user_service.py`;
+5. **Email** — DONE. `send_account_reenabled_email` in `user_service.py`;
    `templates/emails/account_reenabled.{txt,html}` with the password/OAuth
    branch; `just translate-regen`.
-6. **Entrypoints** — new `disable`/`enable` admin routes; buttons on
+6. **Entrypoints** — DONE. new `disable`/`enable` admin routes; buttons on
    `user_view.html`; `is_active` out of `EditUserForm` and `user_edit.html`;
    CLI `deactivate` routed through the service; `login_user` return values
    checked (§3.7).

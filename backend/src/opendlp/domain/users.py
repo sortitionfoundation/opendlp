@@ -1,11 +1,21 @@
 """ABOUTME: User domain models for OpenDLP authentication and authorization
 ABOUTME: Contains User and UserAssemblyRole classes as plain Python objects"""
 
+import secrets
 import uuid
 from datetime import UTC, datetime
 
 from .validators import validate_email
 from .value_objects import AssemblyRole, GlobalRole
+
+# Prefix marking a password hash that no input can ever match. A user must
+# always have a password hash or OAuth credentials, so locking an account out
+# replaces the hash with an unusable one rather than removing it.
+UNUSABLE_PASSWORD_PREFIX = "!"  # noqa: S105 - a marker for hashes that cannot match, not a password
+
+# Separates the user id from the session epoch in the value flask-login stores
+# in the session cookie and the remember-me cookie.
+SESSION_ID_SEPARATOR = "|"
 
 
 class User:
@@ -28,6 +38,7 @@ class User:
         totp_enabled: bool = False,
         totp_enabled_at: datetime | None = None,
         email_confirmed_at: datetime | None = None,
+        sessions_invalidated_at: datetime | None = None,
     ):
         validate_email(email)
 
@@ -49,6 +60,7 @@ class User:
         self.totp_enabled = totp_enabled
         self.totp_enabled_at = totp_enabled_at
         self.email_confirmed_at = email_confirmed_at
+        self.sessions_invalidated_at = sessions_invalidated_at
         self.assembly_roles: list[UserAssemblyRole] = []
 
     # couple of things required for flask_login
@@ -61,7 +73,23 @@ class User:
         return False
 
     def get_id(self) -> str:
-        return str(self.id)
+        """Return the id flask-login stores in the session and remember-me cookie.
+
+        The session epoch is included so that invalidating sessions makes every
+        previously issued id stale - see `session_epoch` and `load_user`.
+        """
+        return f"{self.id}{SESSION_ID_SEPARATOR}{self.session_epoch}"
+
+    @property
+    def session_epoch(self) -> str:
+        """The marker distinguishing sessions issued before the last lockout from those after."""
+        if self.sessions_invalidated_at is None:
+            return ""
+        return self.sessions_invalidated_at.isoformat()
+
+    def invalidate_sessions(self) -> None:
+        """Make every session and remember-me cookie issued so far unusable."""
+        self.sessions_invalidated_at = datetime.now(UTC)
 
     @property
     def display_name(self) -> str:
@@ -117,6 +145,21 @@ class User:
 
         self.oauth_provider = None
         self.oauth_id = None
+
+    def set_unusable_password(self) -> None:
+        """Replace the password with a value that no input can ever match.
+
+        Used when locking an account out: the old password must not work again,
+        but the user still needs a password hash to satisfy the invariant that
+        every user has at least one authentication method.
+        """
+        self.password_hash = f"{UNUSABLE_PASSWORD_PREFIX}{secrets.token_urlsafe(32)}"
+
+    def has_usable_password(self) -> bool:
+        """Check whether the user has a password they could actually log in with."""
+        if not self.password_hash:
+            return False
+        return not self.password_hash.startswith(UNUSABLE_PASSWORD_PREFIX)
 
     def has_multiple_auth_methods(self) -> bool:
         """Check if user has more than one authentication method."""
@@ -185,9 +228,25 @@ class User:
             totp_enabled=self.totp_enabled,
             totp_enabled_at=self.totp_enabled_at,
             email_confirmed_at=self.email_confirmed_at,
+            sessions_invalidated_at=self.sessions_invalidated_at,
         )
         detached_user.assembly_roles = [r.create_detached_copy() for r in self.assembly_roles]
         return detached_user
+
+
+def split_session_id(session_id: str) -> tuple[uuid.UUID, str] | None:
+    """Split a value produced by `User.get_id()` into a user id and session epoch.
+
+    Returns None if the value is not in that form - including a bare user id,
+    which is what sessions issued before session epochs existed contain.
+    """
+    user_id_str, separator, epoch = session_id.partition(SESSION_ID_SEPARATOR)
+    if not separator:
+        return None
+    try:
+        return uuid.UUID(user_id_str), epoch
+    except ValueError:
+        return None
 
 
 class UserAssemblyRole:

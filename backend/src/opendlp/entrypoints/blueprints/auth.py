@@ -13,6 +13,7 @@ from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
+from opendlp.domain.users import User
 from opendlp.entrypoints.extensions import oauth
 from opendlp.entrypoints.forms import (
     LoginForm,
@@ -55,6 +56,20 @@ from opendlp.translations import gettext as _
 auth_bp = Blueprint("auth", __name__)
 
 logger = structlog.get_logger(__name__)
+
+
+def sign_in(user: User, remember: bool = False) -> bool:
+    """Sign a user in, saying so plainly when the account has been disabled.
+
+    flask-login refuses an inactive user and returns False. Without checking
+    that, a caller goes on to flash a success message and redirect to a page
+    that immediately bounces the user back to the login form.
+    """
+    if login_user(user, remember=remember):
+        return True
+
+    flash(_("This account has been disabled. Please contact an administrator."), "error")
+    return False
 
 
 def get_safe_next_page(next_page: str | None, default: str = "") -> str:
@@ -214,7 +229,8 @@ def _complete_2fa_login(uow: AbstractUnitOfWork, user_id: uuid.UUID, is_backup_c
 
     # Get fresh user object for login
     user = uow.users.get(user_id)
-    login_user(user, remember=remember_me)
+    if not user or not sign_in(user, remember=remember_me):
+        return redirect(url_for("auth.login"))
 
     # Show backup code warning if used
     if is_backup_code:
@@ -600,7 +616,8 @@ def google_callback() -> ResponseReturnValue:
         session.pop("oauth_accept_agreement", None)
 
         # Log user in
-        login_user(user)
+        if not sign_in(user):
+            return redirect(url_for("auth.login"))
 
         if created:
             flash(_("Account created successfully! Welcome to OpenDLP."), "success")
@@ -709,7 +726,8 @@ def microsoft_callback() -> ResponseReturnValue:
         session.pop("oauth_accept_agreement", None)
 
         # Log user in
-        login_user(user)
+        if not sign_in(user):
+            return redirect(url_for("auth.login"))
 
         if created:
             flash(_("Account created successfully! Welcome to OpenDLP."), "success")

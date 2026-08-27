@@ -1,7 +1,6 @@
 """ABOUTME: Flask extensions initialization and configuration
 ABOUTME: Sets up Flask-Login, Flask-Session, security headers, and database session management"""
 
-import uuid
 from wsgiref.headers import Headers
 
 from authlib.integrations.flask_client import OAuth
@@ -14,7 +13,7 @@ from whitenoise import WhiteNoise
 
 from opendlp import bootstrap
 from opendlp.config import FlaskBaseConfig
-from opendlp.domain.users import User
+from opendlp.domain.users import User, split_session_id
 from opendlp.translations import gettext
 
 # Initialize extensions
@@ -166,18 +165,23 @@ def _add_browser_region(base: str) -> str:
 
 
 @login_manager.user_loader
-def load_user(user_id: str) -> User | None:
-    """Load user from database for Flask-Login."""
+def load_user(session_id: str) -> User | None:
+    """Load user from database for Flask-Login.
 
-    try:
-        user_uuid = uuid.UUID(user_id)
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            db_user = uow.users.get(user_uuid)
-            if db_user:
-                user = db_user.create_detached_copy()
-                assert isinstance(user, User)
-                return user
-            return None
-    except (ValueError, TypeError):
+    The stored id carries the session epoch it was issued under, so a user whose
+    sessions have been invalidated - or who has been deactivated - loads as
+    nobody, which ends the session and any remember-me cookie along with it.
+    """
+    split = split_session_id(session_id)
+    if split is None:
         return None
+    user_uuid, epoch = split
+
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        db_user = uow.users.get(user_uuid)
+        if not db_user or not db_user.is_active or db_user.session_epoch != epoch:
+            return None
+        user = db_user.create_detached_copy()
+        assert isinstance(user, User)
+        return user

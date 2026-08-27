@@ -97,35 +97,15 @@
                             </div>
                         </fieldset>
                     </div>
-                    <div class="govuk-form-group {% if form.is_active.errors %}govuk-form-group--error{% endif %}">
-                        <fieldset class="govuk-fieldset">
-                            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                                <h1 class="govuk-fieldset__heading">{{ form.is_active.label.text }}</h1>
-                            </legend>
-                            {% if form.is_active.description %}<div class="govuk-hint">{{ form.is_active.description }}</div>{% endif %}
-                            {% if form.is_active.errors %}
-                                <p class="govuk-error-message">
-                                    <span class="govuk-visually-hidden">Error:</span>
-                                    {{ form.is_active.errors[0] }}
-                                </p>
-                            {% endif %}
-                            <div class="govuk-checkboxes" data-module="govuk-checkboxes">
-                                <div class="govuk-checkboxes__item">
-                                    {{ form.is_active(class="govuk-checkboxes__input") }}
-                                    <label class="govuk-label govuk-checkboxes__label"
-                                           for="{{ form.is_active.id }}">
-                                        {{ _("User account is active and can log in") }}
-                                    </label>
-                                </div>
-                            </div>
-                        </fieldset>
-                    </div>
+                    <p class="govuk-body">
+                        {{ _("Whether the account is active is changed from the <a class=\"govuk-link\" href=\"%(url) s\">user's page</a>, not here.", url=url_for('admin.view_user', user_id=user.id))|safe }}
+                    </p>
                     {% if user.id == current_user.id %}
                         <div class="govuk-warning-text">
                             <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
                             <strong class="govuk-warning-text__text">
                                 <span class="govuk-visually-hidden">{{ _("Warning") }}</span>
-                                {{ _("You are editing your own account. You cannot change your own role or deactivate your own account.") }}
+                                {{ _("You are editing your own account. You cannot change your own role or disable your own account.") }}
                             </strong>
                         </div>
                     {% endif %}

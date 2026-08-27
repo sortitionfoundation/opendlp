@@ -14,9 +14,11 @@ from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options
 
+from . import two_factor_service
 from .email_confirmation_service import create_confirmation_token
 from .exceptions import (
     AssemblyNotFoundError,
+    CannotDisableSelf,
     CannotRemoveLastAuthMethod,
     EmailNotConfirmed,
     InsufficientPermissions,
@@ -483,10 +485,12 @@ def update_user(
     first_name: str | None = None,
     last_name: str | None = None,
     global_role: GlobalRole | None = None,
-    is_active: bool | None = None,
 ) -> User:
     """
     Update user details (admin only).
+
+    Enabling and disabling an account is not done here - see `disable_user`
+    and `enable_user`, which carry the lockout side effects with them.
 
     Args:
         uow: Unit of Work for database operations
@@ -495,7 +499,6 @@ def update_user(
         first_name: New first name
         last_name: New last name
         global_role: New global role
-        is_active: New active status
 
     Returns:
         Updated User instance
@@ -523,10 +526,6 @@ def update_user(
     if user_id == admin_user_id and global_role is not None and global_role != user.global_role:
         raise ValueError("Cannot change your own admin role")
 
-    # Prevent admin from deactivating themselves
-    if user_id == admin_user_id and is_active is False:
-        raise ValueError("Cannot deactivate your own account")
-
     # Apply updates
     if first_name is not None:
         user.first_name = first_name
@@ -534,10 +533,224 @@ def update_user(
         user.last_name = last_name
     if global_role is not None:
         user.global_role = global_role
-    if is_active is not None:
-        user.is_active = is_active
 
     return user.create_detached_copy()
+
+
+def _get_admin_and_target(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> tuple[User, User]:
+    """Load the admin performing an account action and the user it applies to."""
+    admin_user = uow.users.get(admin_user_id)
+    if not admin_user:
+        raise UserNotFoundError(f"Admin user {admin_user_id} not found")
+
+    if not has_global_admin(admin_user):
+        raise InsufficientPermissions("Only admins can enable or disable users")
+
+    user = uow.users.get(user_id)
+    if not user:
+        raise UserNotFoundError(f"User {user_id} not found")
+
+    assert isinstance(admin_user, User)
+    assert isinstance(user, User)
+    return admin_user, user
+
+
+def _warn_about_outstanding_invites(uow: AbstractUnitOfWork, user: User) -> None:
+    """Log any usable invites the disabled user created, for a sysadmin to review.
+
+    Disabling an account does nothing to invites it has already handed out, so
+    someone with the account could still have a route back in through one. We
+    log the ids rather than the codes - a code is a credential.
+    """
+    outstanding = [invite for invite in uow.user_invites.get_invites_created_by(user.id) if invite.is_valid()]
+    if not outstanding:
+        return
+
+    logger.warning(
+        "user.disabled.outstanding_invites",
+        user_id=str(user.id),
+        invite_count=len(outstanding),
+        invite_ids=[str(invite.id) for invite in outstanding],
+    )
+
+
+def disable_user(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> User:
+    """
+    Lock a user out of the system (admin only).
+
+    Beyond clearing the active flag this ends every session the user has, makes
+    their password unusable, clears any 2FA enrolment and invalidates
+    outstanding password reset and email confirmation tokens - so an attacker
+    holding any of those loses them all at once. Re-enabling the account does
+    not undo any of it; the user has to set a new password.
+
+    No email is sent: if we suspect a compromise, whoever has the account may
+    also have the mailbox.
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user to disable
+        admin_user_id: ID of admin performing the action
+
+    Returns:
+        Updated User instance
+
+    Raises:
+        UserNotFoundError: If either user is not found
+        InsufficientPermissions: If requesting user is not admin
+        CannotDisableSelf: If the admin is disabling their own account
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _admin_user, user = _get_admin_and_target(uow, user_id, admin_user_id)
+
+    if user_id == admin_user_id:
+        raise CannotDisableSelf()
+
+    if not user.is_active:
+        logger.info("user.disabled.already_inactive", user_id=str(user_id), admin_user_id=str(admin_user_id))
+        return user.create_detached_copy()
+
+    user.is_active = False
+    user.invalidate_sessions()
+    user.set_unusable_password()
+
+    uow.password_reset_tokens.invalidate_user_tokens(user_id)
+    uow.email_confirmation_tokens.invalidate_user_tokens(user_id)
+
+    # A compromised account is exactly where the enrolled authenticator may be
+    # the attacker's, so it goes too. admin_disable_2fa raises rather than
+    # no-ops when there is nothing to disable, hence the guard.
+    totp_cleared = user.totp_enabled and not user.oauth_provider
+    if totp_cleared:
+        two_factor_service.admin_disable_2fa(uow, user_id, admin_user_id)
+
+    _warn_about_outstanding_invites(uow, user)
+
+    logger.warning(
+        "user.disabled",
+        user_id=str(user_id),
+        admin_user_id=str(admin_user_id),
+        sessions_invalidated=True,
+        password_scrambled=True,
+        totp_cleared=totp_cleared,
+    )
+
+    return user.create_detached_copy()
+
+
+def enable_user(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> User:
+    """
+    Let a previously disabled user back into the system (admin only).
+
+    Deliberately narrow: it clears the active flag and nothing else. In
+    particular the session epoch stays where `disable_user` left it, so the
+    sessions that were cancelled stay cancelled. The caller is expected to send
+    the user the account re-enabled email.
+
+    Args:
+        uow: Unit of Work for database operations
+        user_id: ID of user to enable
+        admin_user_id: ID of admin performing the action
+
+    Returns:
+        Updated User instance
+
+    Raises:
+        UserNotFoundError: If either user is not found
+        InsufficientPermissions: If requesting user is not admin
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _admin_user, user = _get_admin_and_target(uow, user_id, admin_user_id)
+
+    if user.is_active:
+        logger.info("user.enabled.already_active", user_id=str(user_id), admin_user_id=str(admin_user_id))
+        return user.create_detached_copy()
+
+    user.is_active = True
+
+    logger.warning("user.enabled", user_id=str(user_id), admin_user_id=str(admin_user_id))
+
+    return user.create_detached_copy()
+
+
+def totp_cleared_by_lockout(uow: AbstractUnitOfWork, user: User) -> bool:
+    """Check whether the user's 2FA was cleared by the lockout they are coming out of.
+
+    Used to tell a re-enabled user that they need to enrol again. The 2FA audit
+    log is the record of it, so ask that rather than storing the fact twice.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    if user.sessions_invalidated_at is None:
+        return False
+
+    return any(
+        log.action == two_factor_service.ADMIN_DISABLED_ACTION and log.timestamp >= user.sessions_invalidated_at
+        for log in uow.two_factor_audit_logs.get_logs_for_user(user.id, limit=10)
+    )
+
+
+def send_account_reenabled_email(
+    email_adapter: EmailAdapter,
+    template_renderer: TemplateRenderer,
+    url_generator: URLGenerator,
+    user: User,
+    totp_cleared: bool = False,
+) -> bool:
+    """
+    Tell a user their account has been re-enabled, and how to get back in.
+
+    Password users are sent to the forgot password page rather than a reset
+    link: their password was made unusable by the lockout, and a token minted
+    here would likely expire before they read the email.
+
+    Args:
+        email_adapter: Email adapter for sending emails
+        template_renderer: Template renderer for rendering email templates
+        url_generator: URL generator for creating the links
+        user: User whose account has been re-enabled
+        totp_cleared: Whether their 2FA was cleared by the lockout
+
+    Returns:
+        True if email sent successfully, False otherwise
+    """
+    if not user.email:
+        # An erased user has no address to write to - see docs/personal-data.md
+        logger.warning("user.reenabled_email_skipped_no_address", user_id=str(user.id))
+        return False
+
+    try:
+        context = {
+            "user_name": user.display_name if user.first_name or user.last_name else None,
+            "email_address": user.email,
+            "uses_oauth": not user.has_usable_password() and bool(user.oauth_provider),
+            "forgot_password_url": url_generator.generate_url("auth.forgot_password", _external=True),
+            "login_url": url_generator.generate_url("auth.login", _external=True),
+            "totp_cleared": totp_cleared,
+        }
+
+        text_body = template_renderer.render_template("emails/account_reenabled.txt", **context)
+        html_body = template_renderer.render_template("emails/account_reenabled.html", **context)
+
+        success = email_adapter.send_email(
+            to=[user.email],
+            subject="Your OpenDLP Account Has Been Re-enabled",
+            text_body=text_body,
+            html_body=html_body,
+        )
+
+        if success:
+            logger.info("user.reenabled_email_sent", user_id=str(user.id))
+        else:
+            logger.error("user.reenabled_email_failed", user_id=str(user.id))
+
+        return success
+
+    except Exception as e:
+        logger.error("user.reenabled_email_failed", user_id=str(user.id), error=str(e))
+        return False
 
 
 def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[str, int]:
