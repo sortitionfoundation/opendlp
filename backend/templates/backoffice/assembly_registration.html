@@ -3,6 +3,7 @@ ABOUTME: Backoffice registration form configuration page
 ABOUTME: Allows assembly managers to configure RSVP/registration forms with custom HTML
 #}
 {% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/icons.html" import icon_warning %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
@@ -38,15 +39,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
              style="background-color: var(--color-warning-100);
                     border: 1px solid var(--color-warning-400)">
             <div class="flex items-start gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     class="h-6 w-6 flex-shrink-0"
-                     style="color: var(--color-warning-600)"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor"
-                     stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+                {{ icon_warning(classes="h-6 w-6 flex-shrink-0", style="color: var(--color-warning-600)") }}
                 <div>
                     <h2 class="text-heading-md mb-2" style="color: var(--color-warning-600);">{{ _("Registration page not created") }}</h2>
                     <p class="text-body-md mb-4" style="color: var(--color-warning-600);">

@@ -4,6 +4,7 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/url_display.html" import compact_url_display %}
+{% from "backoffice/components/icons.html" import icon_more_vert %}
 {% macro registration_page_list(assembly, page_rows) %}
     <div>
         {# Header row: section title + create CTA, per the Figma list view. The CTA
@@ -137,9 +138,7 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                                                 x-bind:aria-expanded="open ? 'true' : 'false'"
                                                 aria-controls="page-actions-{{ loop.index }}-menu"
                                                 aria-label="{{ _('Actions for %(name)s', name=page.name) }}">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color: var(--color-secondary-text);">
-                                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                                            </svg>
+                                            {{ icon_more_vert(style="color: var(--color-secondary-text);") }}
                                         </button>
                                         <div x-show="open"
                                              x-cloak

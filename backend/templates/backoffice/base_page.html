@@ -6,7 +6,7 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
 {% from "backoffice/components/navigation.html" import navigation %}
 {% from "backoffice/components/floating_alerts.html" import floating_alerts %}
 {% from "backoffice/components/footer.html" import footer with context %}
-{% from "backoffice/components/_nav_icons.html" import icon_user, icon_switch, icon_data_agreement, icon_logout %}
+{% from "backoffice/components/icons.html" import icon_user, icon_switch, icon_data_agreement, icon_logout %}
 
 {% block body %}
     {# Avatar initials: first+last initial, falling back to the email's first letter.

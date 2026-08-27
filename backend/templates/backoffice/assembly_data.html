@@ -3,6 +3,7 @@ ABOUTME: Backoffice assembly data page
 ABOUTME: Displays data source selection and data management for assemblies
 #}
 {% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/icons.html" import icon_check %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, checkbox, radio_group, file_input, first_error as e %}
@@ -303,14 +304,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                     {# Show uploaded status #}
                     <div class="flex items-center gap-2 mb-4 p-3 rounded-lg"
                          style="background-color: var(--color-subtle-background-panels)">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="h-5 w-5"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor"
-                             style="color: var(--color-success-600)">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
+                        {{ icon_check(style="color: var(--color-success-600)") }}
                         <span class="text-body-sm" style="color: var(--color-body-text);">
                             {{ _("%(count)d categories uploaded", count=targets_count) }}
                         </span>
@@ -352,14 +346,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                     {# Show uploaded status #}
                     <div class="flex items-center gap-2 mb-4 p-3 rounded-lg"
                          style="background-color: var(--color-subtle-background-panels)">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="h-5 w-5"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor"
-                             style="color: var(--color-success-600)">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
+                        {{ icon_check(style="color: var(--color-success-600)") }}
                         <span class="text-body-sm" style="color: var(--color-body-text);">
                             {{ _("%(count)d respondents uploaded", count=respondents_count) }}
                         </span>
@@ -486,14 +473,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         {% if csv_config and csv_config.settings_confirmed %}
                             <div class="flex items-center gap-2 p-3 rounded-lg"
                                  style="background-color: var(--color-subtle-background-panels)">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-5 w-5"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor"
-                                     style="color: var(--color-success-600)">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
+                                {{ icon_check(style="color: var(--color-success-600)") }}
                                 <span class="text-body-sm" style="color: var(--color-body-text);">
                                     {{ _("Settings have been confirmed. You can run selection.") }}
                                 </span>

@@ -5,6 +5,7 @@
 {% from "backoffice/showcase/spacing.html" import spacing_section %}
 {% from "backoffice/showcase/responsive.html" import responsive_section %}
 {% from "backoffice/showcase/typography.html" import typography_section %}
+{% from "backoffice/showcase/icons.html" import icons_section %}
 {% from "backoffice/showcase/button_component.html" import button_section %}
 {% from "backoffice/showcase/split_button_component.html" import split_button_section %}
 {% from "backoffice/showcase/input_component.html" import input_section %}
@@ -75,6 +76,7 @@
                 <option value="foundations:spacing">Spacing Conventions</option>
                 <option value="foundations:responsive">Responsive Layout</option>
                 <option value="foundations:typography">Typography</option>
+                <option value="foundations:icons">Icons</option>
             </select>
 
             <select id="showcase-nav-jump-components"
@@ -118,6 +120,7 @@
             <div id="spacing" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ spacing_section() }}</div>
             <div id="responsive" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ responsive_section() }}</div>
             <div id="typography" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ typography_section() }}</div>
+            <div id="icons" data-tab="foundations" style="scroll-margin-top: 6rem;">{{ icons_section() }}</div>
         </div>
 
         {# Components tab content. Each section is wrapped in an anchor whose id

@@ -1,11 +1,13 @@
 # ABOUTME: Component tests for general backoffice routes over a FakeUnitOfWork
 # ABOUTME: Drives dashboard, showcase, assembly data page, and data-source locking against a seeded fake store, no PostgreSQL
 
+import re
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from flask.testing import FlaskClient
 
+from opendlp import config
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from tests.fakes import FakeStore, FakeUnitOfWork
@@ -72,6 +74,22 @@ class TestBackofficeShowcase:
         assert response.status_code == 200
         # Showcase demonstrates the design system components
         assert b"showcase" in response.data.lower() or b"component" in response.data.lower()
+
+    def test_showcase_renders_every_shared_icon(self, client: FlaskClient) -> None:
+        """The icons section draws each macro in the shared set, named so it can be found.
+
+        Somebody about to draw a fourth info circle should be able to see the
+        three that already exist, and read off what to type instead.
+        """
+        icons_file = config.get_templates_path() / "backoffice" / "components" / "icons.html"
+        names = re.findall(r"\{%\s*macro\s+(icon_[a-z0-9_]+)", icons_file.read_text())
+        assert names
+
+        response = client.get("/backoffice/showcase")
+        assert response.status_code == 200
+        body = response.data.decode()
+        missing = [name for name in names if name not in body]
+        assert not missing, f"showcase does not list these icons: {missing}"
 
     def test_search_demo_empty_query(self, client: FlaskClient) -> None:
         """Search demo returns empty for no query."""

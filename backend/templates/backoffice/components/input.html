@@ -22,6 +22,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {%- endmacro %}
 
 
+{% from "backoffice/components/icons.html" import icon_check_12 %}
 {% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true) %}
     {#
     Text input component using semantic design tokens.
@@ -319,9 +320,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
     {# Checkmark SVG icon (12x12) #}
     {% set checkmark_svg %}
-        <svg class="checkbox-checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        {{ icon_check_12() }}
     {% endset %}
 
     <div class="flex flex-col gap-1.5">

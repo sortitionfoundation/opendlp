@@ -3,39 +3,15 @@ ABOUTME: One form covering every target category and value, for edit-all/save-al
 ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed by save_all_parser
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_trash_material, icon_undo %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/input.html" import input %}
 
 {# ────────────────────────────────────────────────────────────────────────
-   ICONS — the row controls, from the Figma at node 4908:15647. Both are sized
-   and coloured by `.btn-icon svg`, so the paths carry `currentColor` and the
-   button variant decides what that is - grey when the control is disabled.
+   The row controls come from the Figma at node 4908:15647. They are sized and
+   coloured by `.btn-icon svg`, so they are drawn with no class of their own and
+   the button variant decides the colour - grey when the control is disabled.
 ──────────────────────────────────────────────────────────────────────── #}
-{% macro icon_undo() %}
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5.63605 18.364C7.2647 19.9927 9.5147 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02945 16.9706 3 12 3C7.94209 3 5.4824 5.7045 3 8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M3 4.5V8.5H7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-{% endmacro %}
-
-{% macro icon_chevron_down() %}
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="6 9 12 15 18 9"/>
-    </svg>
-{% endmacro %}
-
-{% macro icon_chevron_up() %}
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="6 15 12 9 18 15"/>
-    </svg>
-{% endmacro %}
-
-{% macro icon_bin() %}
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M15 4H20V6H19V19C19 19.55 18.8038 20.0204 18.4121 20.4121C18.0204 20.8038 17.55 21 17 21H7C6.45 21 5.97956 20.8038 5.58789 20.4121C5.19622 20.0204 5 19.55 5 19V6H4V4H9V3H15V4ZM7 19H17V6H7V19ZM11 8V17H9V8H11ZM15 8V17H13V8H15Z" fill="currentColor" stroke="currentColor"/>
-    </svg>
-{% endmacro %}
-
 {#
     A respondent or selected count, read-only, for one value row.
 
@@ -155,7 +131,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 attrs=relink_attrs) }}
                 <span x-show="!deleted">
                     {{ button(variant="icon",
-                    icon=icon_bin(),
+                    icon=icon_trash_material(),
                     aria_label=_("Delete value"),
                     attrs=delete_attrs) }}
                 </span>
@@ -242,11 +218,11 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                    it in. Down before up, as in the Figma at node 4771:32435. #}
                 <div class="ml-auto flex items-center gap-2">
                     {{ button(variant="icon",
-                    icon=icon_chevron_down(),
+                    icon=icon_chevron_down(stroke_width="1.5"),
                     aria_label=_("Move down"),
                     attrs=move_down_attrs) }}
                     {{ button(variant="icon",
-                    icon=icon_chevron_up(),
+                    icon=icon_chevron_up(stroke_width="1.5"),
                     aria_label=_("Move up"),
                     attrs=move_up_attrs) }}
                     {{ button(_("Delete target"), variant="danger", attrs='@click="markDeleted()"') }}

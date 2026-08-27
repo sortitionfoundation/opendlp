@@ -3,6 +3,7 @@ ABOUTME: Backoffice assembly selection page
 ABOUTME: Displays selection operations: initial selection, replacement, and tab management
 #}
 {% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/icons.html" import icon_download_16 %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/card.html" import card, card_body, card_footer %}
@@ -224,14 +225,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                                         {% endset %}
                                                         {{ button(variant="icon",
                                                         href=url_for('db_selection_backoffice.download_db_selected', assembly_id=assembly.id, run_id=run_record.task_id) ,
-                                                        icon='<svg width="16"
-                                                                   height="16"
-                                                                   viewBox="0 0 16 16"
-                                                                   fill="none"
-                                                                   stroke="currentColor"
-                                                                   stroke-width="1.5"
-                                                                   stroke-linecap="round"
-                                                                   stroke-linejoin="round"><path d="M8 2v8m0 0l-3-3m3 3l3-3" /><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" /></svg>',
+                                                        icon=icon_download_16(),
                                                         attrs=download_attrs
                                                         ) }}
                                                     {% endif %}

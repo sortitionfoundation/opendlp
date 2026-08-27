@@ -3,6 +3,7 @@ ABOUTME: Step 3 of the registration editor - form preview, sharing links and QR 
 ABOUTME: Included by assembly_registration.html when ?section=preview
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_download %}
 {% from "backoffice/components/url_display.html" import readonly_url_display %}
 <div id="reg-steps-panel-preview"
      role="tabpanel"
@@ -78,14 +79,7 @@ ABOUTME: Included by assembly_registration.html when ?section=preview
                                                   color: var(--color-button-secondary-text);
                                                   border: 1px solid var(--color-borders-dividers)"
                                            download>
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 class="h-5 w-5"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor"
-                                                 stroke-width="1.5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                            </svg>
+                                            {{ icon_download() }}
                                             {{ _("Download QR Code") }}
                                         </a>
                                         <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("PNG format, 400x400 pixels") }}</p>

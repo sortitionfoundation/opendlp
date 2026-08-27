@@ -4,6 +4,7 @@ ABOUTME: Reuses the .menu / .menu-item atoms and the Alpine open/close pattern
 #}
 {% from "backoffice/components/avatar.html" import avatar %}
 
+{% from "backoffice/components/icons.html" import icon_chevron_down %}
 {% macro account_menu(items=None, initials="", label="", id="account-menu") %}
     {#
     Account dropdown for the top navigation bar. The trigger is a user avatar plus
@@ -43,9 +44,7 @@ ABOUTME: Reuses the .menu / .menu-item atoms and the Alpine open/close pattern
                 aria-label="{{ label if label else _('Account menu') }}">
             {{ avatar(initials=initials) }}
             <span class="inline-flex items-center justify-center w-4 h-4 shrink-0" aria-hidden="true">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"/>
-                </svg>
+                {{ icon_chevron_down() }}
             </span>
         </button>
 
