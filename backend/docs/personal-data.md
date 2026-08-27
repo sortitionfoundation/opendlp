@@ -210,3 +210,4 @@ need a decision, not a commit.
 - [docs/translations.md](translations.md) — language detection and the session preference
 - [docs/agent/code_quality_rules.md](agent/code_quality_rules.md#logging-pii--secrets) — how to write a safe log call
 - [docs/configuration.md](configuration.md) — `SESSION_COOKIE_*`, `REMEMBER_COOKIE_*`, `HELP_SITE_COOKIES`
+- [docs/account-lockout.md](account-lockout.md) — what disabling a user account does to their sessions, password and 2FA

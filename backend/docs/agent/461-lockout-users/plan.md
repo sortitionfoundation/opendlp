@@ -3,8 +3,8 @@
 **Issue:** 461
 **Branch:** `461-lockout-users`
 **Date:** 2026-08-27
-**Status:** All open questions answered by Chewie and folded in (§3, recorded in
-§6). Implementation in progress — see the DONE markers in §4.
+**Status:** Implemented. All open questions answered by Chewie and folded in
+(§3, recorded in §6); every item in §4 is done.
 
 ---
 
@@ -339,7 +339,7 @@ instead of a success message.
    - e2e (`tests/e2e/test_admin_user_management.py`): admin disables a user,
      that user's live session dies on the next request;
    - BDD (`tests/bdd/test_admin_users.py`): the admin-facing story end to end.
-8. **Docs** — a short `docs/account-lockout.md` (linked from `CLAUDE.md`'s
+8. **Docs** — DONE. A short `docs/account-lockout.md` (linked from `CLAUDE.md`'s
    documentation list) on what disabling does, what it deliberately does not do
    (OAuth links, invites), and what an operator should check beyond it.
 
