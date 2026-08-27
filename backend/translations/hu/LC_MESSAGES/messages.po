@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-28 12:57+0100\n"
+"POT-Creation-Date: 2026-08-28 12:58+0100\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -635,7 +635,7 @@ msgstr "Új jelszó"
 #: src/opendlp/entrypoints/forms.py:568 src/opendlp/entrypoints/forms.py:653
 #: templates/backoffice/assembly_data.html:334
 #: templates/backoffice/assembly_data.html:386
-#: templates/backoffice/assembly_targets.html:207
+#: templates/backoffice/assembly_targets.html:205
 #: templates/backoffice/patterns/_file_upload.html:37
 msgid "CSV File"
 msgstr ""
@@ -653,7 +653,7 @@ msgid "Select a CSV file containing target categories"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:581 src/opendlp/entrypoints/forms.py:591
-#: templates/backoffice/targets/bulk_edit_form.html:209
+#: templates/backoffice/targets/bulk_edit_form.html:221
 #, fuzzy
 msgid "Category Name"
 msgstr "Kategóriákat tartalmazó lapful neve"
@@ -663,8 +663,7 @@ msgid "e.g. Gender, Age, Ethnicity"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:596 src/opendlp/entrypoints/forms.py:635
-#: templates/backoffice/targets/bulk_edit_form.html:222
-#: templates/backoffice/targets/bulk_edit_form.html:260
+#: templates/backoffice/targets/bulk_edit_form.html:285
 #: templates/backoffice/targets/category_block.html:153
 #, fuzzy
 msgid "Notes"
@@ -675,7 +674,7 @@ msgid "Optional - why these targets were chosen"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:602
-#: templates/backoffice/targets/bulk_edit_form.html:216
+#: templates/backoffice/targets/bulk_edit_form.html:228
 #: templates/respondents/view_respondents.html:167
 #, fuzzy
 msgid "Source"
@@ -686,7 +685,7 @@ msgid "Optional - a link to where the percentages came from"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:612
-#: templates/backoffice/targets/bulk_edit_form.html:234
+#: templates/backoffice/targets/bulk_edit_form.html:259
 #: templates/backoffice/targets/category_block.html:127
 #: templates/targets/components/category_block.html:69
 #: templates/targets/components/category_block.html:136
@@ -709,7 +708,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:625
 #: src/opendlp/service_layer/selection_report.py:231
-#: templates/backoffice/targets/bulk_edit_form.html:256
+#: templates/backoffice/targets/bulk_edit_form.html:281
 #: templates/backoffice/targets/category_block.html:149
 #: templates/targets/components/category_block.html:70
 #: templates/targets/components/category_block.html:147
@@ -719,7 +718,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:630
 #: src/opendlp/service_layer/selection_report.py:232
-#: templates/backoffice/targets/bulk_edit_form.html:258
+#: templates/backoffice/targets/bulk_edit_form.html:283
 #: templates/backoffice/targets/category_block.html:151
 #: templates/targets/components/category_block.html:71
 #: templates/targets/components/category_block.html:158
@@ -2455,7 +2454,7 @@ msgstr ""
 #: templates/backoffice/assembly_view_respondent.html:226
 #: templates/backoffice/components/table.html:206
 #: templates/backoffice/patterns/_file_upload.html:56
-#: templates/backoffice/targets/bulk_edit_form.html:250
+#: templates/backoffice/targets/bulk_edit_form.html:275
 #: templates/backoffice/targets/category_block.html:143
 #: templates/respondents/view_respondents.html:132
 #, fuzzy
@@ -3567,7 +3566,7 @@ msgstr "Hozzon létre fiókot"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_form.html:21
-#: templates/backoffice/assembly_targets.html:187 templates/base.html:127
+#: templates/backoffice/assembly_targets.html:185 templates/base.html:127
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -3691,7 +3690,7 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/backoffice/respondents/confirm_upload_diff.html:98
 #: templates/backoffice/respondents/export_modal.html:77
 #: templates/backoffice/showcase/modal_component.html:25
-#: templates/backoffice/targets/bulk_edit_form.html:336
+#: templates/backoffice/targets/bulk_edit_form.html:361
 #: templates/backoffice/targets/category_name_edit.html:23
 #: templates/db_selection/select.html:113
 #: templates/db_selection/settings.html:76
@@ -3937,7 +3936,7 @@ msgstr ""
 #: templates/backoffice/assembly_selection.html:363
 #: templates/backoffice/components/registration_page_list.html:36
 #: templates/backoffice/respondent_field_schema/view.html:138
-#: templates/backoffice/targets/bulk_edit_form.html:262
+#: templates/backoffice/targets/bulk_edit_form.html:287
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
 #: templates/targets/components/category_block.html:76
@@ -4043,8 +4042,8 @@ msgid "View details"
 msgstr "Meghívó kód"
 
 #: templates/admin/user_2fa_audit_log.html:82
-#: templates/backoffice/targets/bulk_edit_form.html:170
-#: templates/backoffice/targets/bulk_edit_form.html:172
+#: templates/backoffice/targets/bulk_edit_form.html:182
+#: templates/backoffice/targets/bulk_edit_form.html:184
 #: templates/main/view_assembly_data.html:105
 msgid "None"
 msgstr ""
@@ -4841,7 +4840,7 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:298
 #: templates/backoffice/assembly_targets.html:12
-#: templates/backoffice/assembly_targets.html:86
+#: templates/backoffice/assembly_targets.html:83
 #: templates/backoffice/components/assembly_tabs.html:48
 #: templates/backoffice/service_docs.html:35
 #: templates/main/view_assembly_base.html:36
@@ -5189,7 +5188,7 @@ msgstr ""
 #: templates/backoffice/components/assembly_tabs.html:61
 #: templates/backoffice/respondents/export_modal.html:65
 #: templates/backoffice/service_docs.html:34
-#: templates/backoffice/targets/bulk_edit_form.html:241
+#: templates/backoffice/targets/bulk_edit_form.html:266
 #: templates/backoffice/targets/category_block.html:134
 #: templates/db_selection/select.html:43
 #: templates/main/view_assembly_base.html:42
@@ -5218,8 +5217,8 @@ msgstr "Kezdeti/Teszt kiválasztás"
 
 #: templates/backoffice/assembly_respondents.html:58
 #: templates/backoffice/assembly_respondents.html:64
-#: templates/backoffice/assembly_targets.html:59
-#: templates/backoffice/assembly_targets.html:65
+#: templates/backoffice/assembly_targets.html:56
+#: templates/backoffice/assembly_targets.html:62
 #: templates/backoffice/respondent_field_schema/view.html:59
 #: templates/backoffice/respondent_field_schema/view.html:66
 #, fuzzy
@@ -5233,7 +5232,7 @@ msgid "Replacement Respondents Tab:"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
 #: templates/backoffice/assembly_respondents.html:70
-#: templates/backoffice/assembly_targets.html:71
+#: templates/backoffice/assembly_targets.html:68
 #: templates/backoffice/respondent_field_schema/view.html:71
 #, fuzzy
 msgid "View Data Configuration"
@@ -5457,6 +5456,7 @@ msgstr "Befejezve"
 #: templates/backoffice/assembly_selection.html:181
 #: templates/backoffice/assembly_selection.html:361
 #: templates/backoffice/assembly_view_respondent.html:241
+#: templates/backoffice/targets/bulk_edit_form.html:234
 #: templates/main/view_assembly_data.html:59
 msgid "Comment"
 msgstr ""
@@ -5546,95 +5546,89 @@ msgstr ""
 msgid "List Old Tabs"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:22
-#, fuzzy, python-format
-msgid "Number to select: %(number)s"
-msgstr "Kiválasztandó emberek száma"
-
-#: templates/backoffice/assembly_targets.html:50
+#: templates/backoffice/assembly_targets.html:47
 #, fuzzy
 msgid "Targets are configured in Google Sheets"
 msgstr "Adja meg a Google táblázat beállításait"
 
-#: templates/backoffice/assembly_targets.html:52
+#: templates/backoffice/assembly_targets.html:49
 msgid ""
 "Selection targets (demographic categories and quotas) are defined in your"
 " Google Spreadsheet."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:57
+#: templates/backoffice/assembly_targets.html:54
 #, fuzzy
 msgid "Initial Selection Categories Tab:"
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: templates/backoffice/assembly_targets.html:63
+#: templates/backoffice/assembly_targets.html:60
 #, fuzzy
 msgid "Replacement Categories Tab:"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: templates/backoffice/assembly_targets.html:89
-#: templates/targets/view_targets.html:6
-#, python-format
-msgid "%(count)s categories defined."
-msgstr ""
+#: templates/backoffice/assembly_targets.html:87
+#, fuzzy, python-format
+msgid "Number to select: %(number)s"
+msgstr "Kiválasztandó emberek száma"
 
-#: templates/backoffice/assembly_targets.html:93
+#: templates/backoffice/assembly_targets.html:91
 #: templates/targets/view_targets.html:8
 #, fuzzy
 msgid "No target categories defined yet."
 msgstr "Feladat állapota"
 
-#: templates/backoffice/assembly_targets.html:102
+#: templates/backoffice/assembly_targets.html:100
 #, fuzzy
 msgid "Edit targets"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_targets.html:112
+#: templates/backoffice/assembly_targets.html:110
 #, python-format
 msgid ""
 "All checks passed. Found %(num_features)s target categories and "
 "%(num_people)s eligible respondents. Targets are ready for selection."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:121
+#: templates/backoffice/assembly_targets.html:119
 #: templates/targets/view_targets.html:41
 #: templates/targets/view_targets.html:52
 #: templates/targets/view_targets.html:61
 msgid "Target check found problems"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:129
+#: templates/backoffice/assembly_targets.html:127
 msgid ""
 "Target check found problems. See details below next to the affected "
 "targets."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:170
+#: templates/backoffice/assembly_targets.html:168
 #: templates/targets/view_targets.html:198
 msgid "Import from CSV"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:174
+#: templates/backoffice/assembly_targets.html:172
 #: templates/targets/view_targets.html:202
 msgid "Upload a CSV file with columns either:"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:177
+#: templates/backoffice/assembly_targets.html:175
 #: templates/targets/view_targets.html:204
 msgid "category, name, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:178
+#: templates/backoffice/assembly_targets.html:176
 #: templates/targets/view_targets.html:206
 msgid "feature, value, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:181
+#: templates/backoffice/assembly_targets.html:179
 #: templates/targets/view_targets.html:213
 msgid "Uploading a CSV will replace all existing target categories."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:209
+#: templates/backoffice/assembly_targets.html:207
 #: templates/respondents/view_respondents.html:78
 #: templates/targets/view_targets.html:252
 msgid "Upload CSV"
@@ -8597,12 +8591,12 @@ msgid "On registration form for %(key)s"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/respondent_field_schema/view.html:213
-#: templates/backoffice/targets/bulk_edit_form.html:225
+#: templates/backoffice/targets/bulk_edit_form.html:250
 msgid "Move up"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/view.html:222
-#: templates/backoffice/targets/bulk_edit_form.html:226
+#: templates/backoffice/targets/bulk_edit_form.html:246
 msgid "Move down"
 msgstr ""
 
@@ -9701,7 +9695,7 @@ msgid "New category name"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
 #: templates/backoffice/targets/add_category_form.html:22
-#: templates/backoffice/targets/bulk_edit_form.html:361
+#: templates/backoffice/targets/bulk_edit_form.html:386
 #: templates/targets/components/add_category_form.html:19
 #, fuzzy
 msgid "e.g. Gender"
@@ -9713,104 +9707,112 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 msgid "Add category"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:82
+#: templates/backoffice/targets/bulk_edit_form.html:94
 msgid "Min and max were set by hand, not calculated from the percentage"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:83
+#: templates/backoffice/targets/bulk_edit_form.html:95
 msgid "Set by hand"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:89
+#: templates/backoffice/targets/bulk_edit_form.html:101
 msgid "Min and max will be recalculated when you save."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:127
+#: templates/backoffice/targets/bulk_edit_form.html:139
 msgid "Why min and max were set by hand"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:132
+#: templates/backoffice/targets/bulk_edit_form.html:144
 msgid "Recalculate min and max from the percentage"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:133
-#: templates/backoffice/targets/bulk_edit_form.html:147
+#: templates/backoffice/targets/bulk_edit_form.html:145
+#: templates/backoffice/targets/bulk_edit_form.html:159
 #, fuzzy
 msgid "Delete value"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/targets/bulk_edit_form.html:140
+#: templates/backoffice/targets/bulk_edit_form.html:152
 #, fuzzy
 msgid "Use percentage"
 msgstr "Elkezdve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:151
-#: templates/backoffice/targets/bulk_edit_form.html:197
+#: templates/backoffice/targets/bulk_edit_form.html:163
+#: templates/backoffice/targets/bulk_edit_form.html:209
 msgid "Undo"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:194
+#: templates/backoffice/targets/bulk_edit_form.html:206
 #, python-format
 msgid "\"%(name)s\" and all its values will be deleted when you save."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:227
+#: templates/backoffice/targets/bulk_edit_form.html:238
+msgid "Move this target down"
+msgstr ""
+
+#: templates/backoffice/targets/bulk_edit_form.html:239
+msgid "Move this target up"
+msgstr ""
+
+#: templates/backoffice/targets/bulk_edit_form.html:252
 #, fuzzy
 msgid "Delete target"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/targets/bulk_edit_form.html:236
+#: templates/backoffice/targets/bulk_edit_form.html:261
 #: templates/backoffice/targets/category_block.html:129
 #, fuzzy, python-format
 msgid "Population (%%)"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/targets/bulk_edit_form.html:242
+#: templates/backoffice/targets/bulk_edit_form.html:267
 #: templates/backoffice/targets/category_block.html:135
 msgid ""
 "Counts people in the pool, and those selected or confirmed. Withdrawn "
 "people and test submissions are not counted."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:251
+#: templates/backoffice/targets/bulk_edit_form.html:276
 #: templates/backoffice/targets/category_block.html:144
 msgid ""
 "Counts people who have been selected, including those who have since "
 "confirmed their place."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:287
+#: templates/backoffice/targets/bulk_edit_form.html:312
 #: templates/targets/components/category_block.html:247
 msgid "Add value"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:290
+#: templates/backoffice/targets/bulk_edit_form.html:315
 #, fuzzy
 msgid "Add values found in respondent data"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:293
+#: templates/backoffice/targets/bulk_edit_form.html:318
 #, python-format
 msgid "Not yet targeted: %(values)s"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:303
+#: templates/backoffice/targets/bulk_edit_form.html:328
 #: templates/backoffice/targets/category_block.html:222
 #: templates/targets/components/category_block.html:195
 msgid "Total"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:337
+#: templates/backoffice/targets/bulk_edit_form.html:362
 #, fuzzy
 msgid "Save all"
 msgstr "Elkezdve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:360
+#: templates/backoffice/targets/bulk_edit_form.html:385
 #, fuzzy
 msgid "New target name"
 msgstr "Vezetéknév"
 
-#: templates/backoffice/targets/bulk_edit_form.html:363
+#: templates/backoffice/targets/bulk_edit_form.html:388
 #, fuzzy
 msgid "Add target"
 msgstr "Kezdés dátuma"
@@ -11293,6 +11295,11 @@ msgstr ""
 #, fuzzy
 msgid "Target Categories"
 msgstr "Feladat állapota"
+
+#: templates/targets/view_targets.html:6
+#, python-format
+msgid "%(count)s categories defined."
+msgstr ""
 
 #: templates/targets/view_targets.html:18
 #, fuzzy

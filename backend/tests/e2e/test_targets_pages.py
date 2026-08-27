@@ -58,7 +58,7 @@ class TestViewTargetsPage:
         assert b"Gender" in response.data
         assert b"Male" in response.data
         assert b"Female" in response.data
-        assert b"1 categories defined" in response.data
+        assert b"Number to select:" in response.data
 
 
 class TestUploadTargetsCsv:

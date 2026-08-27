@@ -556,6 +556,27 @@ def _edit_form_row_cells(html_text, value):
     return [re.sub(r"\s+", " ", cell).strip() for cell in re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)]
 
 
+def _edit_form_category_header(html_text):
+    """The header row of the first category block in the bulk edit form.
+
+    Sliced rather than parsed: the row holds nested divs of its own, and
+    everything between it and the values table belongs to it.
+    """
+    edit_form = _edit_form_html(html_text)
+    start = edit_form.index('class="mb-4 flex flex-wrap items-end gap-3"')
+    return edit_form[start : edit_form.index("<table", start)]
+
+
+def _named_button(html_text, label):
+    """The button in `html_text` whose accessible name is `label`.
+
+    An icon button carries its name in aria-label; one with a visible label
+    carries it in the text.
+    """
+    buttons = re.findall(r"<button\b.*?</button>", html_text, re.DOTALL)
+    return next(b for b in buttons if f'aria-label="{label}"' in b or f">{label}<" in b)
+
+
 class TestRespondentCountColumns:
     """How many respondents hold each value, next to the percentage it is judged against.
 
@@ -610,6 +631,29 @@ class TestRespondentCountColumns:
             "Actions",
         ]
         assert _edit_form_row_cells(edit_form, "Woman")[2] == "2"
+
+    def test_the_edit_form_counts_read_from_the_left(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """They sit in a row of form fields, and every one of those starts at its left edge.
+
+        Right-aligned numbers read well in a table of numbers. This is not one:
+        the eye running down the row meets a boxed input either side of them.
+        """
+        self._gender_targets(fake_store, admin_user, existing_assembly.id)
+        _add_respondents(
+            fake_store,
+            existing_assembly.id,
+            [("r1", {"Gender": "Woman"})],
+            status=RespondentStatus.SELECTED,
+        )
+
+        edit_form = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        head = re.search(r"<thead>(.*?)</thead>", edit_form, re.DOTALL).group(1)
+        for column in ("Respondents", "Selected"):
+            heading = next(th for th in re.findall(r"<th[^>]*>.*?</th>", head, re.DOTALL) if column in th)
+            assert "text-left" in heading.split(">")[0], f"{column} is not left aligned"
+        row = re.findall(r'<tr data-value-row="true".*?</tr>', edit_form, re.DOTALL)[0]
+        assert all("text-left" in cell for cell in re.findall(r"<td[^>]*>", row)[2:4])
 
     @pytest.mark.parametrize(
         ("column", "note"),
@@ -863,12 +907,20 @@ class TestMoveCategoryPermissions:
 
 
 class TestViewIsReadOnly:
-    def test_the_page_shows_the_number_to_select(self, logged_in_admin, existing_assembly, fake_store):
+    def test_the_page_shows_the_number_to_select(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """Under the heading, where a tally of the categories used to be.
+
+        Every min and max on the page is a share of the seat count, and the
+        categories are listed right below - so one number is worth reading and
+        the other is worth counting for yourself.
+        """
         _set_number_to_select(fake_store, existing_assembly.id, 42)
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
 
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
         assert b"Number to select: 42" in response.data
+        assert b"categories defined" not in response.data
 
     def test_the_category_block_offers_no_way_to_change_anything(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1165,3 +1217,38 @@ class TestBulkEditForm:
 
         assert b"save-all-form" not in response.data
         assert b"Edit targets" not in response.data
+
+
+class TestCategoryOrderControls:
+    """Moving and deleting a target sit at the right edge of its header row.
+
+    They reshape the page rather than fill anything in, so they are kept clear
+    of the fields - and the two that only shuffle a block are icons, which is
+    all a repeated control needs to be.
+    """
+
+    def _header(self, logged_in_admin, assembly_id):
+        return _edit_form_category_header(logged_in_admin.get(_targets_url(assembly_id)).data.decode())
+
+    @pytest.mark.parametrize(("label", "handler"), [("Move down", "moveDown()"), ("Move up", "moveUp()")])
+    def test_moving_a_category_is_an_icon_button(
+        self, label, handler, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """An escaped @click looks fine on the page and does nothing when clicked."""
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        control = _named_button(self._header(logged_in_admin, existing_assembly.id), label)
+
+        assert "btn--icon" in control
+        assert "<svg" in control, "the control is still spelled out in words"
+        assert f'@click="{handler}"' in control
+
+    def test_the_controls_follow_the_fields(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        header = self._header(logged_in_admin, existing_assembly.id)
+
+        last_field = header.index(f"cat[{category.id}][comment]")
+        assert header.index("ml-auto") > last_field, "the controls are not pushed to the right edge"
+        for marker in ('aria-label="Move down"', 'aria-label="Move up"', "Delete target"):
+            assert header.index(marker) > last_field, marker

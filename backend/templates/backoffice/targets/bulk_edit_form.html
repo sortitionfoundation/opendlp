@@ -18,6 +18,18 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     </svg>
 {% endmacro %}
 
+{% macro icon_chevron_down() %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="6 9 12 15 18 9"/>
+    </svg>
+{% endmacro %}
+
+{% macro icon_chevron_up() %}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="6 15 12 9 18 15"/>
+    </svg>
+{% endmacro %}
+
 {% macro icon_bin() %}
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M15 4H20V6H19V19C19 19.55 18.8038 20.0204 18.4121 20.4121C18.0204 20.8038 17.55 21 17 21H7C6.45 21 5.97956 20.8038 5.58789 20.4121C5.19622 20.0204 5 19.55 5 19V6H4V4H9V3H15V4ZM7 19H17V6H7V19ZM11 8V17H9V8H11ZM15 8V17H13V8H15Z" fill="currentColor" stroke="currentColor"/>
@@ -33,7 +45,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 #}
 {% macro count_cell(counts, row_value) %}
     {% set count = counts.get(row_value) if counts and row_value else none %}
-    <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
+    <td class="py-3 px-4 text-left" style="color: var(--color-body-text)">
         {% if count is not none %}
             {{ count }}
         {% else %}
@@ -219,11 +231,24 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 {{ input(name=cat_prefix ~ "[comment]",
                 id="bulk-comment-" ~ cat_id|string,
                 error=errors.get(cat_prefix ~ "[comment]", ""),
-                label=_("Notes"),
+                label=_("Comment"),
                 value=category.comment if category else "") }}
-                <div class="flex items-center gap-2">
-                    {{ button(_("Move up"), variant="tertiary", attrs='@click="moveUp()"') }}
-                    {{ button(_("Move down"), variant="tertiary", attrs='@click="moveDown()"') }}
+                {# Blocks rather than concatenation: `~` under autoescape escapes
+                   the quotes, and an escaped @click is not a handler. #}
+                {% set move_down_attrs %}@click="moveDown()" title="{{ _("Move this target down") }}"{% endset %}
+                {% set move_up_attrs %}@click="moveUp()" title="{{ _("Move this target up") }}"{% endset %}
+                {# Pushed to the right edge, away from the fields, so the controls
+                   that reshape the page are not mixed in with the ones that fill
+                   it in. Down before up, as in the Figma at node 4771:32435. #}
+                <div class="ml-auto flex items-center gap-2">
+                    {{ button(variant="icon",
+                    icon=icon_chevron_down(),
+                    aria_label=_("Move down"),
+                    attrs=move_down_attrs) }}
+                    {{ button(variant="icon",
+                    icon=icon_chevron_up(),
+                    aria_label=_("Move up"),
+                    attrs=move_up_attrs) }}
                     {{ button(_("Delete target"), variant="danger", attrs='@click="markDeleted()"') }}
                 </div>
             </div>
@@ -235,18 +260,18 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                         <th class="py-3 px-4 text-left text-label-md"
                             style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
                         {% if show_counts %}
-                            <th class="py-3 px-4 text-right text-label-md"
+                            <th class="py-3 px-4 text-left text-label-md"
                                 style="color: var(--color-headings)">
-                                <span class="inline-flex items-center justify-end gap-1">
+                                <span class="inline-flex items-center gap-1">
                                     {{ _("Respondents") }}
                                     {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted.")) }}
                                 </span>
                             </th>
                         {% endif %}
                         {% if show_selected %}
-                            <th class="py-3 px-4 text-right text-label-md"
+                            <th class="py-3 px-4 text-left text-label-md"
                                 style="color: var(--color-headings)">
-                                <span class="inline-flex items-center justify-end gap-1">
+                                <span class="inline-flex items-center gap-1">
                                     {{ _("Selected") }}
                                     {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place.")) }}
                                 </span>
@@ -305,11 +330,11 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                             :class="percentageTotalClass"
                             x-text="percentageTotal"></td>
                         {% if show_counts %}
-                            <td class="py-3 px-4 text-right text-label-md font-bold"
+                            <td class="py-3 px-4 text-left text-label-md font-bold"
                                 style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>
                         {% endif %}
                         {% if show_selected %}
-                            <td class="py-3 px-4 text-right text-label-md font-bold"
+                            <td class="py-3 px-4 text-left text-label-md font-bold"
                                 style="color: var(--color-headings)">{{ selected_counts.values() | sum }}</td>
                         {% endif %}
                         <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="minTotal"></td>
