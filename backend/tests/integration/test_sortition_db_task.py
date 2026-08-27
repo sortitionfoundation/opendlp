@@ -11,6 +11,7 @@ from opendlp import config
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentStatus, SelectionRunStatus, SelectionTaskType
@@ -20,7 +21,7 @@ from opendlp.entrypoints.celery.tasks import (
     _internal_write_db_results,
     run_select_from_db,
 )
-from opendlp.service_layer.sortition import generate_selection_csvs
+from opendlp.service_layer.sortition import check_db_selection_data, generate_selection_csvs
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -312,6 +313,77 @@ class TestGenerateSelectionCsvs:
         # The row for the deleted respondent contains the placeholder marker
         deleted_row = next(line for line in selected_lines[1:] if line.split(",")[0] == victim_ext_id)
         assert "DATA DELETED" in deleted_row
+
+
+class TestStoredIdColumnIgnored:
+    """SelectionSettings.id_column may hold a Google Sheet column name.
+
+    It is shared between the gsheet and CSV data sources, a team default or a
+    removed gsheet config can leave a sheet column name behind, and the CSV
+    settings form has no field to correct it. The database data source keys
+    people by DB_ID_COLUMN whatever the uploaded CSV called its id column, so
+    nothing on this path may read the stored value.
+    """
+
+    def test_check_db_selection_data_succeeds(self, postgres_session_factory, assembly_with_data):
+        assembly_id = assembly_with_data
+
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            user = User(
+                email=f"id-col-{uuid.uuid4().hex[:6]}@example.com",
+                global_role=GlobalRole.ADMIN,
+                password_hash="hash",  # pragma: allowlist secret
+            )
+            uow.users.add(user)
+            assembly = uow.assemblies.get(assembly_id)
+            assembly.selection_settings = SelectionSettings(
+                assembly_id=assembly_id,
+                id_column="nationbuilder_id",
+                check_same_address=False,
+            )
+            uow.commit()
+            user_id = user.id
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            result = check_db_selection_data(uow=uow, user_id=user_id, assembly_id=assembly_id)
+
+        assert result.errors == []
+        assert result.success is True
+        assert result.num_people == 4
+
+    def test_generate_selection_csvs_ignores_recorded_id_column(
+        self, postgres_session_factory, assembly_with_data, test_settings
+    ):
+        """Records written before the id column was pinned still download."""
+        assembly_id = assembly_with_data
+        task_id = _make_run_record(assembly_id, postgres_session_factory)
+
+        with patch.object(run_select_from_db, "update_state"):
+            success, _selected_panels, _ = run_select_from_db(
+                task_id=task_id,
+                assembly_id=assembly_id,
+                number_people_wanted=2,
+                settings=test_settings,
+                test_selection=False,
+                session_factory=postgres_session_factory,
+            )
+        assert success is True
+
+        # Simulate a run recorded before the fix, when the stored gsheet column
+        # name was snapshotted into the record.
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            record.settings_used = {**record.settings_used, "id_column": "nationbuilder_id"}
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            selected_csv, remaining_csv = generate_selection_csvs(uow, assembly_id, task_id)
+
+        for content in (selected_csv, remaining_csv):
+            lines = [line for line in content.strip().split("\n") if line]
+            assert len(lines) == 3  # header + 2 people
+            assert "external_id" in lines[0]
+            assert "nationbuilder_id" not in lines[0]
 
 
 class TestRunSelectFromDb:

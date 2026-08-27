@@ -13,6 +13,13 @@ from sortition_algorithms.utils import RunReport
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
+# The header this adapter emits for the unique id of each person. Respondents in
+# the database are keyed by Respondent.external_id whatever the uploaded CSV
+# called its id column, so this is fixed. Anything building a
+# sortition_algorithms Settings for this adapter must use it as the id_column -
+# see SelectionSettings.to_settings(id_column=...).
+DB_ID_COLUMN = "external_id"
+
 
 class OpenDLPDataAdapter(AbstractDataSource):
     """Data adapter that reads from OpenDLP database via UnitOfWork."""
@@ -108,12 +115,12 @@ class OpenDLPDataAdapter(AbstractDataSource):
 
         # Build headers from first respondent's attributes + external_id
         first = respondents[0]
-        headers = ["external_id", *first.attributes.keys()]
+        headers = [DB_ID_COLUMN, *first.attributes.keys()]
 
         # Convert to CSV-like format
         rows = []
         for resp in respondents:
-            row = {"external_id": resp.external_id}
+            row = {DB_ID_COLUMN: resp.external_id}
             row.update({k: str(v) for k, v in resp.attributes.items()})
             rows.append(row)
 

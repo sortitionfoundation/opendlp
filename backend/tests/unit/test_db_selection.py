@@ -9,6 +9,7 @@ from flask import Flask
 from sortition_algorithms import RunReport
 from sortition_algorithms.errors import ParseTableErrorMsg, ParseTableMultiError, SortitionBaseError
 
+from opendlp.adapters.sortition_data_adapter import DB_ID_COLUMN
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.selection_settings import SelectionSettings
@@ -132,6 +133,36 @@ class TestCheckDbSelectionData:
         check_db_selection_data(uow=uow, user_id=admin_user.id, assembly_id=assembly.id)
 
         mock_select_data.load_people.assert_not_called()
+
+    @patch("opendlp.service_layer.sortition.OpenDLPDataAdapter")
+    @patch("opendlp.service_layer.sortition.adapters.SelectionData")
+    def test_ignores_stored_id_column(self, mock_selection_data_cls, mock_adapter_cls, uow):
+        """A leftover gsheet id_column must not reach the database data source.
+
+        SelectionSettings is shared between the gsheet and CSV data sources, so
+        id_column can hold a sheet column name (e.g. left behind by a removed
+        gsheet config, or a team default). The database adapter always emits
+        DB_ID_COLUMN, and there is no UI to correct the stored value, so
+        selection would be permanently broken if we passed it through.
+        """
+        _, admin_user, assembly = self._setup_uow(uow)
+        assembly.selection_settings.id_column = "nationbuilder_id"
+
+        mock_features = MagicMock()
+        mock_features.__len__ = MagicMock(return_value=3)
+        mock_people = MagicMock()
+        mock_people.count = 100
+
+        mock_select_data = MagicMock()
+        mock_select_data.load_features.return_value = (mock_features, RunReport())
+        mock_select_data.load_people.return_value = (mock_people, RunReport())
+        mock_selection_data_cls.return_value = mock_select_data
+
+        result = check_db_selection_data(uow=uow, user_id=admin_user.id, assembly_id=assembly.id)
+
+        assert result.success is True
+        settings_used = mock_select_data.load_people.call_args[0][0]
+        assert settings_used.id_column == DB_ID_COLUMN
 
     def test_assembly_not_found_raises(self, uow):
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")

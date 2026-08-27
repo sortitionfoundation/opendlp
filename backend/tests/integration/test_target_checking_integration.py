@@ -121,6 +121,43 @@ class TestCheckTargetsDetailedIntegration:
         assert "female" in result.annotations["gender"]
         assert any(ann.level == "error" and ann.field == "min" for ann in result.annotations["gender"]["female"])
 
+    def test_stored_gsheet_id_column_ignored(self, uow, admin_user, assembly_with_csv):
+        """A Google Sheet id_column left on the shared SelectionSettings must not
+        reach the database data source, which keys people by external_id."""
+        assembly_id = assembly_with_csv.id
+
+        with uow:
+            assembly = uow.assemblies.get(assembly_id)
+            assembly.selection_settings.id_column = "nationbuilder_id"
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=assembly_id,
+                    name="gender",
+                    values=[
+                        TargetValue(value="male", min=3, max=7),
+                        TargetValue(value="female", min=3, max=7),
+                    ],
+                )
+            )
+            for i in range(20):
+                uow.respondents.add(
+                    Respondent(
+                        assembly_id=assembly_id,
+                        external_id=f"p{i}",
+                        attributes={"gender": "male" if i % 2 == 0 else "female"},
+                        selection_status=RespondentStatus.POOL,
+                    )
+                )
+            uow.commit()
+
+        uow2 = SqlAlchemyUnitOfWork(uow.session_factory)
+        with uow2:
+            result = check_targets_detailed(uow2, admin_user.id, assembly_id)
+
+        assert result.global_errors == []
+        assert result.success is True
+        assert result.num_people == 20
+
     def test_no_respondents_gives_global_error(self, uow, admin_user, assembly_with_csv):
         assembly_id = assembly_with_csv.id
 

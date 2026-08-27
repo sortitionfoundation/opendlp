@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 from sortition_algorithms import GSheetDataSource, RunReport
 
+from opendlp.adapters.sortition_data_adapter import DB_ID_COLUMN
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.selection_settings import SelectionSettings
@@ -1202,6 +1203,38 @@ class TestStartDbSelectTask:
                 ],
             },
         ]
+
+    def test_start_db_select_task_ignores_stored_id_column(self, uow):
+        """A leftover gsheet id_column reaches neither the worker nor the record.
+
+        The database data source always keys people by DB_ID_COLUMN, and the
+        stored settings snapshot is what generate_selection_csvs replays later,
+        so both have to carry the adapter's column name.
+        """
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        assembly = Assembly(title="Test Assembly", number_to_select=2)
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+        assembly.selection_settings = SelectionSettings(
+            assembly_id=assembly.id,
+            id_column="nationbuilder_id",
+            check_same_address=False,
+        )
+        uow.assemblies.add(assembly)
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_celery:
+            mock_result = Mock()
+            mock_result.id = "celery-task-id"
+            mock_celery.return_value = mock_result
+
+            task_id = sortition.start_db_select_task(uow, admin_user.id, assembly.id)
+
+        assert mock_celery.call_args[1]["settings"].id_column == DB_ID_COLUMN
+
+        record = uow.selection_run_records.get_by_task_id(task_id)
+        assert record is not None
+        assert record.settings_used["id_column"] == DB_ID_COLUMN
 
     def test_start_db_select_task_assembly_not_found_raises(self, uow):
         """Test that AssemblyNotFoundError is raised for non-existent assembly."""

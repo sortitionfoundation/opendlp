@@ -82,6 +82,39 @@ class TestSelectionSettings:
         assert settings.columns_to_keep == []
         assert settings.selection_algorithm == "maximin"
 
+    def test_to_settings_id_column_override(self):
+        """An explicit id_column wins over the stored one.
+
+        The database adapter keys people by Respondent.external_id, so it passes
+        its own column name rather than the stored value, which describes a
+        Google Sheet column.
+        """
+        sel_settings = SelectionSettings(
+            assembly_id=uuid.uuid4(),
+            id_column="nationbuilder_id",
+            check_same_address=False,
+            columns_to_keep=["first_name"],
+        )
+
+        settings = sel_settings.to_settings(id_column="external_id")
+
+        assert settings.id_column == "external_id"
+        # The override touches nothing else
+        assert settings.columns_to_keep == ["first_name"]
+        assert settings.check_same_address is False
+        # ...and does not mutate the stored value
+        assert sel_settings.id_column == "nationbuilder_id"
+
+    def test_to_settings_empty_id_column_uses_stored_value(self):
+        """An empty override falls back to the stored id_column."""
+        sel_settings = SelectionSettings(
+            assembly_id=uuid.uuid4(),
+            id_column="nationbuilder_id",
+            check_same_address=False,
+        )
+
+        assert sel_settings.to_settings(id_column="").id_column == "nationbuilder_id"
+
     def test_create_detached_copy(self):
         """Test creating a detached copy of SelectionSettings"""
         assembly_id = uuid.uuid4()

@@ -83,9 +83,17 @@ class SelectionSettings:
     columns_to_keep: list[str] = field(default_factory=list)
     selection_algorithm: str = "maximin"
 
-    def to_settings(self) -> settings.Settings:
+    def to_settings(self, *, id_column: str = "") -> settings.Settings:
+        """Convert to the sortition_algorithms Settings.
+
+        ``id_column`` overrides the stored value, for data sources that fix the
+        name of their id column rather than letting the organiser choose it.
+        The database adapter is one: it keys people by Respondent.external_id,
+        so ``self.id_column`` - which describes a Google Sheet column - would
+        name a column that the feed does not have.
+        """
         return settings.Settings(
-            id_column=self.id_column,
+            id_column=id_column or self.id_column,
             columns_to_keep=self.columns_to_keep,
             check_same_address=self.check_same_address,
             check_same_address_columns=self.check_same_address_cols,

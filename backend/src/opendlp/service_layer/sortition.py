@@ -20,7 +20,7 @@ from sortition_algorithms.people import People
 from sqlalchemy.orm.attributes import flag_modified
 
 from opendlp import config
-from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
+from opendlp.adapters.sortition_data_adapter import DB_ID_COLUMN, OpenDLPDataAdapter
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import target_categories_to_snapshot
@@ -445,7 +445,7 @@ def check_db_selection_data(
     people_report_html = ""
 
     try:
-        settings_obj = sel_settings.to_settings()
+        settings_obj = sel_settings.to_settings(id_column=DB_ID_COLUMN)
     except SortitionBaseError as e:
         check_errors.append(translate_sortition_error(e))
         return CheckDataResult(
@@ -499,7 +499,7 @@ def start_db_select_task(
 
     sel_settings = _get_selection_settings(assembly)
     try:
-        settings_obj = sel_settings.to_settings()
+        settings_obj = sel_settings.to_settings(id_column=DB_ID_COLUMN)
     except SortitionBaseError as e:
         raise InvalidSelection(str(e)) from e
 
@@ -583,10 +583,12 @@ def generate_selection_csvs(
     selected_ext_ids = list(record.selected_ids[0])
     remaining_ext_ids = list(record.remaining_ids)
 
-    # Reconstruct settings from what was stored at selection time
+    # Reconstruct settings from what was stored at selection time. The id column
+    # is not taken from the record: this reads back through the database adapter,
+    # which always keys people by DB_ID_COLUMN.
     stored = record.settings_used
     settings_obj = sa_settings.Settings(
-        id_column=stored.get("id_column", "external_id"),
+        id_column=DB_ID_COLUMN,
         selection_algorithm=stored.get("selection_algorithm", "maximin"),
         check_same_address=stored.get("check_same_address", False),
         check_same_address_columns=stored.get("check_same_address_columns", []),

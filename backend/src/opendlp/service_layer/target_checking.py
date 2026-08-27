@@ -26,7 +26,7 @@ from sortition_algorithms.people import (
     check_people_per_feature_value,
 )
 
-from opendlp.adapters.sortition_data_adapter import OpenDLPDataAdapter
+from opendlp.adapters.sortition_data_adapter import DB_ID_COLUMN, OpenDLPDataAdapter
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
@@ -273,7 +273,7 @@ def check_targets_detailed(
     result = DetailedCheckResult(success=True, global_errors=[])
 
     try:
-        settings_obj = sel_settings.to_settings()
+        settings_obj = sel_settings.to_settings(id_column=DB_ID_COLUMN)
     except SortitionBaseError as e:
         result.success = False
         result.global_errors.append(str(e))
