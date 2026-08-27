@@ -21,3 +21,14 @@ Feature: Manage Users
     And the non-admin user is a manager for the assembly
     When the admin removes them from the assembly
     Then the non-admin user cannot see the assembly
+
+  Scenario: Lock a user out of a compromised account
+    Given there is a disposable user
+    When the admin disables their account
+    Then the disposable user cannot sign in
+
+  Scenario: Let a locked out user back in
+    Given there is a disposable user
+    And the admin has disabled their account
+    When the admin enables their account
+    Then the disposable user still cannot sign in with their old password

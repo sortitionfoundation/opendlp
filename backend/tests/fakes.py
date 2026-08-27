@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any
 
+from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, TabularData
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
@@ -1151,3 +1152,39 @@ class FakeGSheetExportTarget(AbstractGSheetExportTarget):
         if self._error is not None:
             raise self._error
         self.writes.append((title, table))
+
+
+class FakeEmailAdapter(EmailAdapter):
+    """In-memory email adapter that records what would have been sent.
+
+    Lets tests assert on the recipient, subject and body of a real rendered
+    email without an SMTP server or a console full of PII.
+    """
+
+    def __init__(self, succeed: bool = True) -> None:
+        self.sent: list[dict[str, Any]] = []
+        # When False, send_email records nothing and reports failure, so tests
+        # can drive the "we could not email them" path.
+        self.succeed = succeed
+
+    def send_email(
+        self,
+        to: list[str | tuple[str, str]],
+        subject: str,
+        text_body: str,
+        html_body: str | None = None,
+        from_email: str | tuple[str, str] | None = None,
+        reply_to: str | tuple[str, str] | None = None,
+    ) -> bool:
+        if not self.succeed:
+            return False
+
+        self.sent.append({
+            "to": to,
+            "subject": subject,
+            "text_body": text_body,
+            "html_body": html_body,
+            "from_email": from_email,
+            "reply_to": reply_to,
+        })
+        return True

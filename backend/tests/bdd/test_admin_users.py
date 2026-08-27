@@ -8,7 +8,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 
-from .config import Urls
+from .config import DISPOSABLE_PASSWORD, Urls
 
 # consider splitting up if these features grow many more tests
 scenarios("../../features/admin-users.feature")
@@ -94,3 +94,56 @@ def _(normal_logged_in_page: Page, assembly: Assembly):
     # and as we just switched users, we'll be back at the dashboard page
     normal_logged_in_page.goto(Urls.for_assembly("view_assembly", str(assembly.id)))
     expect(normal_logged_in_page.locator("main")).to_contain_text(assembly.title)
+
+
+def _disable_account(page: Page, user: User) -> None:
+    """Click through the confirmation on the admin's Disable Account button."""
+    page.goto(f"{Urls.admin_users}/{user.id}")
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.get_by_role("button", name="Disable Account").click()
+    expect(page.locator(".govuk-notification-banner").first).to_contain_text("Account disabled")
+
+
+def _sign_in_attempt(page: Page, email: str, password: str) -> None:
+    page.context.clear_cookies()
+    page.goto(Urls.login)
+    page.fill('input[name="email"]', email)
+    page.fill('input[name="password"]', password)
+    page.click('button[type="submit"]')
+
+
+@given("there is a disposable user")
+def _(disposable_user: User):
+    """there is a disposable user."""
+    assert disposable_user.is_active
+
+
+@when("the admin disables their account")
+@given("the admin has disabled their account")
+def _(admin_logged_in_page: Page, disposable_user: User):
+    """the admin disables their account."""
+    _disable_account(admin_logged_in_page, disposable_user)
+
+
+@then("the disposable user cannot sign in")
+def _(page: Page, disposable_user: User):
+    """the disposable user cannot sign in."""
+    _sign_in_attempt(page, disposable_user.email, DISPOSABLE_PASSWORD)
+    expect(page.locator(".govuk-error-summary")).to_contain_text("Invalid email or password")
+
+
+@when("the admin enables their account")
+def _(admin_logged_in_page: Page, disposable_user: User):
+    """the admin enables their account."""
+    admin_logged_in_page.goto(f"{Urls.admin_users}/{disposable_user.id}")
+    admin_logged_in_page.on("dialog", lambda dialog: dialog.accept())
+    admin_logged_in_page.get_by_role("button", name="Enable Account").click()
+    # Two banners: the account change and the email we sent about it
+    expect(admin_logged_in_page.locator(".govuk-notification-banner").first).to_contain_text("Account enabled")
+
+
+@then("the disposable user still cannot sign in with their old password")
+def _(page: Page, disposable_user: User):
+    """the disposable user still cannot sign in with their old password."""
+    _sign_in_attempt(page, disposable_user.email, DISPOSABLE_PASSWORD)
+    expect(page.locator(".govuk-error-summary")).to_contain_text("Invalid email or password")

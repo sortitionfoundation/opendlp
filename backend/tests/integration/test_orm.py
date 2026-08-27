@@ -64,6 +64,41 @@ class TestUserORM:
         assert isinstance(retrieved_user.created_at, datetime)
         assert retrieved_user.created_at.tzinfo is not None
 
+    def test_sessions_invalidated_at_round_trips(self, postgres_session: Session):
+        """The session epoch has to survive the database or the lockout is not durable."""
+        user = User(
+            email="locked-out@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed_password",  # pragma: allowlist secret
+        )
+        user.invalidate_sessions()
+        session_id = user.get_id()
+
+        postgres_session.add(user)
+        postgres_session.commit()
+        postgres_session.expunge_all()
+
+        retrieved_user = postgres_session.query(User).filter_by(email="locked-out@example.com").first()
+
+        assert retrieved_user.sessions_invalidated_at is not None
+        assert retrieved_user.sessions_invalidated_at.tzinfo is not None
+        assert retrieved_user.get_id() == session_id
+
+    def test_sessions_invalidated_at_defaults_to_null(self, postgres_session: Session):
+        user = User(
+            email="never-locked-out@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed_password",  # pragma: allowlist secret
+        )
+
+        postgres_session.add(user)
+        postgres_session.commit()
+        postgres_session.expunge_all()
+
+        retrieved_user = postgres_session.query(User).filter_by(email="never-locked-out@example.com").first()
+
+        assert retrieved_user.sessions_invalidated_at is None
+
     def test_user_oauth_fields(self, postgres_session: Session):
         """Test that OAuth fields are properly stored and retrieved."""
         user = User(

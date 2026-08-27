@@ -324,7 +324,7 @@ instead of a success message.
    `user_view.html`; `is_active` out of `EditUserForm` and `user_edit.html`;
    CLI `deactivate` routed through the service; `login_user` return values
    checked (§3.7).
-7. **Tests** —
+7. **Tests** — DONE.
    - unit: domain methods; `disable_user` / `enable_user` including the
      already-inactive and self-disable branches, the OAuth and no-2FA branches,
      and the invite warning; unusable password never verifies; epoch mismatch;
