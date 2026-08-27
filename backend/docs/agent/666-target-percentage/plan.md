@@ -1185,8 +1185,9 @@ name, source and comment fields. The controls that reshape the page are worth
 separating from the ones that fill it in. `moveUp` / `moveDown` do not grey out
 at the ends of the list: knowing a block is first or last means watching the
 DOM the buttons reorder, which the Figma implies but the component does not
-track. The category comment box is labelled "Comment" rather than "Notes"; the
-per-value column beside it is still headed "Notes", which is worth aligning.
+track. The category comment box is labelled "Comment", and so is the per-value
+column beside it: they hold the same kind of thing, and "Notes" for one of them
+was two words for one idea.
 
 **The heading says the number to select, not how many categories there are.**
 `number_to_select` moved out of the page header and into the line under the
