@@ -119,13 +119,11 @@ class TestRegistration:
 
 
 class TestLogin:
-    """Login failure branches and Flask-Login cookie behaviour."""
+    """Login failure branches and Flask-Login cookie behaviour.
 
-    @pytest.fixture(autouse=True)
-    def _no_redis_rate_limit(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Rate limiting is Redis-backed and stays in the e2e tier; no-op it here."""
-        monkeypatch.setattr("opendlp.entrypoints.blueprints.auth.check_login_rate_limit", lambda **kwargs: None)
-        monkeypatch.setattr("opendlp.entrypoints.blueprints.auth.record_failed_login", lambda **kwargs: None)
+    Rate limiting is Redis-backed and stays in the e2e tier; the component
+    conftest stubs its Redis for every test here.
+    """
 
     def test_login_invalid_credentials_fails(self, client: FlaskClient, regular_user: User) -> None:
         response = client.post(
