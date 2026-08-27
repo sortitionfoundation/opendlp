@@ -234,8 +234,13 @@
           "type": "string",
           "minLength": 1
         },
-        "description": {
-          "type": "string"
+        "comment": {
+          "type": "string",
+          "description": "The organiser's free-text note on why these targets were chosen. Empty when none was written."
+        },
+        "source_url": {
+          "type": "string",
+          "description": "Where the figures came from, e.g. a census table. Empty when none was given; when set it is a full http:// or https:// address."
         },
         "values": {
           "type": "array",
@@ -246,7 +251,8 @@
       },
       "required": [
         "name",
-        "description",
+        "comment",
+        "source_url",
         "values"
       ],
       "additionalProperties": false
@@ -282,10 +288,16 @@
             "null"
           ],
           "minimum": 0,
-          "maximum": 100
+          "maximum": 100,
+          "description": "The share of the committee this value is meant to take, as a percentage. Null when the quota was set as seat counts alone. A better steer for the distribution to generate than min/max, which are rounded to whole seats."
         },
-        "description": {
-          "type": "string"
+        "minmax_manual": {
+          "type": "boolean",
+          "description": "True when an organiser typed min/max by hand, breaking the link to percentage_target. While false, min/max are recalculated from the percentage whenever it or number_to_select changes."
+        },
+        "comment": {
+          "type": "string",
+          "description": "The organiser's free-text note on this value. Empty when none was written."
         }
       },
       "required": [
@@ -295,7 +307,8 @@
         "min_flex",
         "max_flex",
         "percentage_target",
-        "description"
+        "minmax_manual",
+        "comment"
       ],
       "additionalProperties": false
     }

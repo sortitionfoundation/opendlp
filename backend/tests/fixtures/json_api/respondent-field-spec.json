@@ -125,21 +125,23 @@
       "sort_order": 10,
       "target_values": [
         {
-          "description": "",
-          "max": 22,
+          "comment": "",
+          "max": 21,
           "max_flex": -1,
-          "min": 18,
+          "min": 20,
           "min_flex": 0,
-          "percentage_target": null,
+          "minmax_manual": false,
+          "percentage_target": 50.0,
           "value": "Male"
         },
         {
-          "description": "",
+          "comment": "Widened after the pilot",
           "max": 22,
           "max_flex": -1,
           "min": 18,
           "min_flex": 0,
-          "percentage_target": null,
+          "minmax_manual": true,
+          "percentage_target": 50.0,
           "value": "Female"
         }
       ]
@@ -175,18 +177,20 @@
       "target_values": null
     }
   ],
-  "spec_version": 1,
+  "spec_version": 2,
   "unmatched_target_categories": [
     {
-      "description": "No respondent column carries this yet",
+      "comment": "No respondent column carries this yet",
       "name": "education",
+      "source_url": "https://example.org/census/education",
       "values": [
         {
-          "description": "",
+          "comment": "",
           "max": 14,
           "max_flex": -1,
           "min": 10,
           "min_flex": 0,
+          "minmax_manual": false,
           "percentage_target": null,
           "value": "Degree"
         }

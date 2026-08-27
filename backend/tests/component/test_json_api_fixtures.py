@@ -206,14 +206,27 @@ class TestRespondentFieldSpecFixtures:
                 TargetCategory(
                     assembly_id=existing_assembly.id,
                     name="gender",
-                    values=[TargetValue(value="Male", min=18, max=22), TargetValue(value="Female", min=18, max=22)],
+                    values=[
+                        # One value still linked to its percentage, one widened by
+                        # hand, so the fixture carries both sides of minmax_manual.
+                        TargetValue(value="Male", min=20, max=21, percentage_target=50.0),
+                        TargetValue(
+                            value="Female",
+                            min=18,
+                            max=22,
+                            percentage_target=50.0,
+                            minmax_manual=True,
+                            comment="Widened after the pilot",
+                        ),
+                    ],
                 )
             )
             uow.target_categories.add(
                 TargetCategory(
                     assembly_id=existing_assembly.id,
                     name="education",
-                    description="No respondent column carries this yet",
+                    comment="No respondent column carries this yet",
+                    source_url="https://example.org/census/education",
                     values=[TargetValue(value="Degree", min=10, max=14)],
                 )
             )

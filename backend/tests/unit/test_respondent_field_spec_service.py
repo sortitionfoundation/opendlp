@@ -283,6 +283,86 @@ class TestTargetJoin:
         assert [c["name"] for c in spec["unmatched_target_categories"]] == ["education"]
         assert [v["value"] for v in spec["unmatched_target_categories"][0]["values"]] == ["School", "Degree"]
 
+    def test_a_target_value_carries_its_percentage_manual_flag_and_comment(self):
+        """The percentage is the honest steer; min/max are it rounded to whole seats.
+
+        ``minmax_manual`` is how a consumer tells a value whose seat counts still
+        track the percentage from one an organiser has pinned by hand.
+        """
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            _add_field(uow, assembly, "gender")
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=assembly.id,
+                    name="gender",
+                    values=[
+                        TargetValue(value="Male", min=20, max=21, percentage_target=50.0),
+                        TargetValue(
+                            value="Female",
+                            min=18,
+                            max=22,
+                            percentage_target=50.0,
+                            minmax_manual=True,
+                            comment="Widened after the pilot",
+                        ),
+                    ],
+                )
+            )
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        male, female = _field_by_key(spec, "gender")["target_values"]
+        assert male["percentage_target"] == 50.0
+        assert male["minmax_manual"] is False
+        assert male["comment"] == ""
+        assert female["minmax_manual"] is True
+        assert female["comment"] == "Widened after the pilot"
+
+    def test_a_target_value_with_no_percentage_reports_null(self):
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            _add_field(uow, assembly, "age_bracket")
+            _add_category(uow, assembly, "age_bracket", ["16-29"])
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        value = _field_by_key(spec, "age_bracket")["target_values"][0]
+        assert value["percentage_target"] is None
+        assert value["minmax_manual"] is False
+
+    def test_an_unmatched_category_carries_its_comment_and_source_url(self):
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            _add_field(uow, assembly, "gender")
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=assembly.id,
+                    name="education",
+                    values=[TargetValue(value="Degree", min=10, max=14)],
+                    comment="No respondent column carries this yet",
+                    source_url="https://example.org/census/education",
+                )
+            )
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        category = spec["unmatched_target_categories"][0]
+        assert category["comment"] == "No respondent column carries this yet"
+        assert category["source_url"] == "https://example.org/census/education"
+
+    def test_an_unmatched_category_with_no_notes_reports_empty_strings(self):
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            _add_field(uow, assembly, "gender")
+            _add_category(uow, assembly, "education", ["Degree"])
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        category = spec["unmatched_target_categories"][0]
+        assert category["comment"] == ""
+        assert category["source_url"] == ""
+
     def test_the_join_is_exact_because_selection_matches_exactly(self):
         """``Age Bracket`` and ``age_bracket`` normalise alike but select nothing.
 
