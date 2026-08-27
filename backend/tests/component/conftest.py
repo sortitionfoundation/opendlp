@@ -66,6 +66,23 @@ def _mock_registration_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None
     )
 
 
+@pytest.fixture(autouse=True)
+def _mock_login_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Prevent login rate limiting from connecting to Redis in component tests.
+
+    The same seam as the registration limiter, on the other Redis-backed rate
+    limit. Any component test that posts to /auth/login reaches it twice: once
+    checking the counters on the way in, and again recording the attempt on the
+    way out if the credentials were rejected.
+    """
+    mock_redis = MagicMock()
+    mock_redis.get.return_value = None  # no counter = not rate-limited
+    monkeypatch.setattr(
+        "opendlp.service_layer.login_rate_limit_service._get_redis",
+        lambda: mock_redis,
+    )
+
+
 class _InMemoryRedis:
     """The slice of the Redis API the CSV upload stash uses, backed by a dict.
 
