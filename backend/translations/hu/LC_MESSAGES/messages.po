@@ -663,8 +663,6 @@ msgid "e.g. Gender, Age, Ethnicity"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:596 src/opendlp/entrypoints/forms.py:635
-#: templates/backoffice/targets/bulk_edit_form.html:285
-#: templates/backoffice/targets/category_block.html:153
 #, fuzzy
 msgid "Notes"
 msgstr "Kezdés dátuma"
@@ -5457,6 +5455,8 @@ msgstr "Befejezve"
 #: templates/backoffice/assembly_selection.html:361
 #: templates/backoffice/assembly_view_respondent.html:241
 #: templates/backoffice/targets/bulk_edit_form.html:234
+#: templates/backoffice/targets/bulk_edit_form.html:285
+#: templates/backoffice/targets/category_block.html:153
 #: templates/main/view_assembly_data.html:59
 msgid "Comment"
 msgstr ""

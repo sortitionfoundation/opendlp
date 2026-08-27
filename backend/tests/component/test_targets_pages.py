@@ -490,7 +490,7 @@ def _read_only_row_cells(html_text, value):
     return re.findall(r"<td[^>]*>(.*?)</td>", row, re.DOTALL)
 
 
-class TestValueNotesColumn:
+class TestValueCommentColumn:
     def test_a_value_comment_renders_in_its_own_column(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
@@ -501,11 +501,11 @@ class TestValueNotesColumn:
             "feature,value,min,max,comment\nGender,Woman,3,7,boosted by 2\n",
         )
 
-        response = logged_in_admin.get(_targets_url(existing_assembly.id))
+        html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
-        assert b"Notes" in response.data
-        cells = _read_only_row_cells(response.data.decode(), "Woman")
-        # Value, Population (%), Min, Max, Notes
+        assert _column_headings(_read_only_html(html_text))[-1] == "Comment"
+        cells = _read_only_row_cells(html_text, "Woman")
+        # Value, Population (%), Min, Max, Comment
         assert len(cells) == 5
         assert "boosted by 2" not in cells[0]
         assert "boosted by 2" in cells[4]
@@ -608,7 +608,7 @@ class TestRespondentCountColumns:
         html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
         read_only = _read_only_html(html_text)
-        assert _column_headings(read_only) == ["Value", "Population (%)", "Respondents", "Min", "Max", "Notes"]
+        assert _column_headings(read_only) == ["Value", "Population (%)", "Respondents", "Min", "Max", "Comment"]
         cells = _read_only_row_cells(read_only, "Woman")
         assert cells[2].strip() == "2"
 
@@ -627,7 +627,7 @@ class TestRespondentCountColumns:
             "Respondents",
             "Min",
             "Max",
-            "Notes",
+            "Comment",
             "Actions",
         ]
         assert _edit_form_row_cells(edit_form, "Woman")[2] == "2"
@@ -712,7 +712,7 @@ class TestRespondentCountColumns:
 
         html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
-        expected = ["Value", "Population (%)", "Respondents", "Selected", "Min", "Max", "Notes"]
+        expected = ["Value", "Population (%)", "Respondents", "Selected", "Min", "Max", "Comment"]
         assert _column_headings(_read_only_html(html_text)) == expected
         assert _column_headings(_edit_form_html(html_text)) == [*expected, "Actions"]
         assert _read_only_row_cells(_read_only_html(html_text), "Woman")[3].strip() == "2"
@@ -738,13 +738,13 @@ class TestRespondentCountColumns:
 
         html_text = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
-        assert _column_headings(_read_only_html(html_text)) == ["Value", "Population (%)", "Min", "Max", "Notes"]
+        assert _column_headings(_read_only_html(html_text)) == ["Value", "Population (%)", "Min", "Max", "Comment"]
         assert _column_headings(_edit_form_html(html_text)) == [
             "Value",
             "Population (%)",
             "Min",
             "Max",
-            "Notes",
+            "Comment",
             "Actions",
         ]
 
@@ -1088,7 +1088,7 @@ class TestSaveAllValidationErrors:
             "Selected",
             "Min",
             "Max",
-            "Notes",
+            "Comment",
             "Actions",
         ]
 
