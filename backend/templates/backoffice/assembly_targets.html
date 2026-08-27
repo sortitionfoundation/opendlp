@@ -73,10 +73,21 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
     {% else %}
         {# CSV source, no source yet, or targets exist - show full editor #}
 
-        {# One component over the whole editor: which mode is on screen, and the
+        {# One component over the whole page: which mode is on screen, and the
            dialog that adds a target, are the same piece of state. The actions
-           beside the heading reveal and drive the form below. #}
-        <div x-data="targetsPage({ editingAll: {{ "true" if editing_all is defined and editing_all else "false" }} })">
+           beside the heading reveal and drive the form below.
+
+           It covers the respondent columns and the CSV import as well, so that
+           the sticky save bar - its last child - has the whole page as its
+           containing block and stays in view all the way down.
+
+           discardUrl is passed in rather than read from the address bar: a
+           rejected save re-renders this page at the save-all POST url, which
+           would 405 on the GET a reload makes. #}
+        <div x-data="targetsPage({
+                     editingAll: {{ "true" if editing_all is defined and editing_all else "false" }},
+                     discardUrl: '{{ url_for('targets.view_assembly_targets', assembly_id=assembly.id) }}'
+                     })">
             {# ── Targets Heading and Actions ──────────────── #}
             <section class="mb-6 flex items-start justify-between gap-4">
                 <div>
@@ -92,10 +103,13 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
                         </p>
                     {% endif %}
                 </div>
-                {# Every action for the page in one cluster, in both modes. No
-                   "check targets" button: saving runs the detailed check and
-                   lands back here with its annotations, so there is nothing left
-                   for a separate button to do. #}
+                {# The actions that get you into a mode, beside the heading. The
+                   two that get you out of editing - discard and save - sit in
+                   the sticky bar at the foot of the page instead, where they
+                   stay in reach however far down the form you are. No "check
+                   targets" button: saving runs the detailed check and lands
+                   back here with its annotations, so there is nothing left for
+                   a separate button to do. #}
                 {% if can_manage %}
                     <span class="flex items-center gap-2 shrink-0">
                         {{ button(_("Add target"),
@@ -107,11 +121,6 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
                                 {{ button(_("Edit targets"), variant="primary", attrs='@click="editingAll = true"') }}
                             </span>
                         {% endif %}
-                        {# Outside #save-all-form, so `form` is what submits it. #}
-                        <span x-show="editingAll" x-cloak class="flex items-center gap-2">
-                            {{ button(_("Cancel"), variant="tertiary", attrs='@click="editingAll = false"') }}
-                            {{ button(_("Save all"), variant="primary", type="submit", attrs='form="save-all-form"') }}
-                        </span>
                     </span>
                 {% endif %}
             </section>
@@ -166,63 +175,78 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
                 {% endfor %}
             </div>
 
-        </div>
+            {# ── Respondent Attribute Columns ─────────────────── #}
+            {% include "backoffice/targets/respondent_columns.html" %}
 
-        {# ── Respondent Attribute Columns ─────────────────── #}
-        {% include "backoffice/targets/respondent_columns.html" %}
+            {# ── CSV Import (collapsible) ─────────────────────── #}
+            <section class="mt-8 pt-8" style="border-top: 1px solid var(--color-borders-dividers);">
+                {% set csv_details_open = form.errors %}
+                <details x-data="{ open: {{ 'true' if csv_details_open else 'false' }} }"
+                         {% if csv_details_open %}open{% endif %}>
+                    <summary class="text-heading-md cursor-pointer underline mb-4"
+                             style="color: var(--color-links);"
+                             @click="open = !open">
+                        {{ _("Import from CSV") }}
+                    </summary>
+                    <div x-show="open" x-cloak class="mt-2">
+                        <p class="text-body-md mb-2" style="color: var(--color-body-text);">
+                            {{ _("Upload a CSV file with columns either:") }}
+                        </p>
+                        <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+                            {{ _("category, name, min, max.") }}<br />
+                            {{ _("feature, value, min, max.") }}
+                        </p>
+                        {% if target_categories %}
+                            {{ alert(_("Uploading a CSV will replace all existing target categories."), variant="warning") }}
+                        {% endif %}
 
-        {# ── CSV Import (collapsible) ─────────────────────── #}
-        <section class="mt-8 pt-8" style="border-top: 1px solid var(--color-borders-dividers);">
-            {% set csv_details_open = form.errors %}
-            <details x-data="{ open: {{ 'true' if csv_details_open else 'false' }} }"
-                     {% if csv_details_open %}open{% endif %}>
-                <summary class="text-heading-md cursor-pointer underline mb-4"
-                         style="color: var(--color-links);"
-                         @click="open = !open">
-                    {{ _("Import from CSV") }}
-                </summary>
-                <div x-show="open" x-cloak class="mt-2">
-                    <p class="text-body-md mb-2" style="color: var(--color-body-text);">
-                        {{ _("Upload a CSV file with columns either:") }}
-                    </p>
-                    <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("category, name, min, max.") }}<br />
-                        {{ _("feature, value, min, max.") }}
-                    </p>
-                    {% if target_categories %}
-                        {{ alert(_("Uploading a CSV will replace all existing target categories."), variant="warning") }}
-                    {% endif %}
-
-                    {% if form.errors %}
-                        <div class="mb-4 rounded-lg p-4"
-                             style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
-                            <h3 class="text-heading-md mb-2" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h3>
-                            <ul class="list-disc pl-5">
-                                {% for field_name, errors in form.errors.items() %}
-                                    {% for error in errors %}
+                        {% if form.errors %}
+                            <div class="mb-4 rounded-lg p-4"
+                                 style="background-color: var(--color-error-100); border: 1px solid var(--color-error-400);">
+                                <h3 class="text-heading-md mb-2" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h3>
+                                <ul class="list-disc pl-5">
+                                    {% for field_name, errors in form.errors.items() %}
+                                        {% for error in errors %}
                                         {# pre-line renders the newlines in multi-line errors (e.g. CSV parse failures) #}
-                                        <li class="text-body-md"
-                                            style="color: var(--color-error-600);
-                                                   white-space: pre-line">{{ error }}</li>
+                                            <li class="text-body-md"
+                                                style="color: var(--color-error-600);
+                                                       white-space: pre-line">{{ error }}</li>
+                                        {% endfor %}
                                     {% endfor %}
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
+                                </ul>
+                            </div>
+                        {% endif %}
 
-                    <form method="post"
-                          action="{{ url_for('targets.upload_targets_csv', assembly_id=assembly.id) }}"
-                          enctype="multipart/form-data"
-                          novalidate>
-                        {{ form.hidden_tag() }}
-                        <div class="mb-4">
-                            {{ file_input("csv_file", label=_("CSV File"), accept=".csv", error=first_error(form.csv_file.errors) if form.csv_file.errors else "") }}
-                        </div>
-                        {{ button(_("Upload CSV"), variant="secondary", type="submit") }}
-                    </form>
+                        <form method="post"
+                              action="{{ url_for('targets.upload_targets_csv', assembly_id=assembly.id) }}"
+                              enctype="multipart/form-data"
+                              novalidate>
+                            {{ form.hidden_tag() }}
+                            <div class="mb-4">
+                                {{ file_input("csv_file", label=_("CSV File"), accept=".csv", error=first_error(form.csv_file.errors) if form.csv_file.errors else "") }}
+                            </div>
+                            {{ button(_("Upload CSV"), variant="secondary", type="submit") }}
+                        </form>
+                    </div>
+                </details>
+            </section>
+
+            {# ── Save bar ─────────────────────────────────────── #}
+            {# The two ways out of edit mode, pinned to the foot of the
+               viewport. The form is long enough that a save button at the top
+               was out of sight for most of it; sticky, it is always one click
+               away. In flow it is an ordinary card - see .wizard-footer.
+
+               "Save" is outside #save-all-form, so `form` is what submits it. #}
+            {% if can_manage %}
+                <div class="wizard-footer" x-show="editingAll" x-cloak>
+                    <div class="wizard-footer-box">
+                        {{ button(_("Discard changes"), variant="tertiary", attrs='@click="discardEdits()"') }}
+                        {{ button(_("Save"), variant="primary", type="submit", attrs='form="save-all-form"') }}
+                    </div>
                 </div>
-            </details>
-        </section>
+            {% endif %}
+        </div>
 
     {% endif %}
 {% endblock %}

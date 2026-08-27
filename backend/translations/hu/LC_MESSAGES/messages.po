@@ -635,7 +635,7 @@ msgstr "Új jelszó"
 #: src/opendlp/entrypoints/forms.py:568 src/opendlp/entrypoints/forms.py:653
 #: templates/backoffice/assembly_data.html:328
 #: templates/backoffice/assembly_data.html:373
-#: templates/backoffice/assembly_targets.html:219
+#: templates/backoffice/assembly_targets.html:226
 #: templates/backoffice/patterns/_file_upload.html:37
 msgid "CSV File"
 msgstr ""
@@ -3561,7 +3561,7 @@ msgstr "Hozzon létre fiókot"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_form.html:21
-#: templates/backoffice/assembly_targets.html:199 templates/base.html:127
+#: templates/backoffice/assembly_targets.html:206 templates/base.html:127
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -3675,7 +3675,6 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/backoffice/assembly_data.html:495
 #: templates/backoffice/assembly_edit_respondent.html:134
 #: templates/backoffice/assembly_form.html:96
-#: templates/backoffice/assembly_targets.html:112
 #: templates/backoffice/assembly_view_respondent.html:302
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:87
@@ -4836,7 +4835,7 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:299
 #: templates/backoffice/assembly_targets.html:13
-#: templates/backoffice/assembly_targets.html:83
+#: templates/backoffice/assembly_targets.html:94
 #: templates/backoffice/components/assembly_tabs.html:48
 #: templates/backoffice/service_docs.html:35
 #: templates/main/view_assembly_base.html:36
@@ -5565,82 +5564,96 @@ msgstr "Kezdeti/Teszt kiválasztás"
 msgid "Replacement Categories Tab:"
 msgstr "Kategóriákat tartalmazó lapful neve"
 
-#: templates/backoffice/assembly_targets.html:87
+#: templates/backoffice/assembly_targets.html:98
 #, fuzzy, python-format
 msgid "Number to select: %(number)s"
 msgstr "Kiválasztandó emberek száma"
 
-#: templates/backoffice/assembly_targets.html:91
+#: templates/backoffice/assembly_targets.html:102
 #: templates/targets/view_targets.html:8
 #, fuzzy
 msgid "No target categories defined yet."
 msgstr "Feladat állapota"
 
-#: templates/backoffice/assembly_targets.html:101
+#: templates/backoffice/assembly_targets.html:115
 #: templates/backoffice/targets/add_target_modal.html:14
 #, fuzzy
 msgid "Add target"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_targets.html:107
+#: templates/backoffice/assembly_targets.html:121
 #, fuzzy
 msgid "Edit targets"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/assembly_targets.html:113
-#, fuzzy
-msgid "Save all"
-msgstr "Elkezdve"
-
-#: templates/backoffice/assembly_targets.html:124
+#: templates/backoffice/assembly_targets.html:133
 #, python-format
 msgid ""
 "All checks passed. Found %(num_features)s target categories and "
 "%(num_people)s eligible respondents. Targets are ready for selection."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:133
+#: templates/backoffice/assembly_targets.html:142
 #: templates/targets/view_targets.html:41
 #: templates/targets/view_targets.html:52
 #: templates/targets/view_targets.html:61
 msgid "Target check found problems"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:141
+#: templates/backoffice/assembly_targets.html:150
 msgid ""
 "Target check found problems. See details below next to the affected "
 "targets."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:182
+#: templates/backoffice/assembly_targets.html:189
 #: templates/targets/view_targets.html:198
 msgid "Import from CSV"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:186
+#: templates/backoffice/assembly_targets.html:193
 #: templates/targets/view_targets.html:202
 msgid "Upload a CSV file with columns either:"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:189
+#: templates/backoffice/assembly_targets.html:196
 #: templates/targets/view_targets.html:204
 msgid "category, name, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:190
+#: templates/backoffice/assembly_targets.html:197
 #: templates/targets/view_targets.html:206
 msgid "feature, value, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:193
+#: templates/backoffice/assembly_targets.html:200
 #: templates/targets/view_targets.html:213
 msgid "Uploading a CSV will replace all existing target categories."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:221
+#: templates/backoffice/assembly_targets.html:228
 #: templates/respondents/view_respondents.html:78
 #: templates/targets/view_targets.html:252
 msgid "Upload CSV"
+msgstr ""
+
+#: templates/backoffice/assembly_targets.html:244
+#: templates/backoffice/components/leave_guard_modal.html:17
+#, fuzzy
+msgid "Discard changes"
+msgstr "Módosítások mentése"
+
+#: templates/backoffice/assembly_targets.html:245
+#: templates/backoffice/components/edit_number_to_select_modal.html:41
+#: templates/backoffice/registration/_step_email.html:93
+#: templates/backoffice/registration/_step_form.html:23
+#: templates/backoffice/respondent_field_schema/view.html:220
+#: templates/backoffice/respondent_field_schema/view.html:261
+#: templates/backoffice/targets/category_name_edit.html:22
+#: templates/targets/components/category_block.html:42
+#: templates/targets/components/category_block.html:168
+#: templates/targets/components/category_name_edit.html:19
+msgid "Save"
 msgstr ""
 
 #: templates/backoffice/assembly_view_respondent.html:19
@@ -6210,18 +6223,6 @@ msgstr "Kiválasztandó emberek száma"
 msgid "Enter a positive number"
 msgstr ""
 
-#: templates/backoffice/components/edit_number_to_select_modal.html:41
-#: templates/backoffice/registration/_step_email.html:93
-#: templates/backoffice/registration/_step_form.html:23
-#: templates/backoffice/respondent_field_schema/view.html:220
-#: templates/backoffice/respondent_field_schema/view.html:261
-#: templates/backoffice/targets/category_name_edit.html:22
-#: templates/targets/components/category_block.html:42
-#: templates/targets/components/category_block.html:168
-#: templates/targets/components/category_name_edit.html:19
-msgid "Save"
-msgstr ""
-
 #: templates/backoffice/components/footer.html:20
 #, fuzzy
 msgid "Old Dashboard"
@@ -6249,11 +6250,6 @@ msgid ""
 "You have unsaved changes. If you leave this page, your changes will be "
 "lost."
 msgstr ""
-
-#: templates/backoffice/components/leave_guard_modal.html:17
-#, fuzzy
-msgid "Discard changes"
-msgstr "Módosítások mentése"
 
 #: templates/backoffice/components/leave_guard_modal.html:18
 #, fuzzy
@@ -14944,4 +14940,7 @@ msgstr ""
 
 #~ msgid "https://... where the percentages came from"
 #~ msgstr ""
+
+#~ msgid "Save all"
+#~ msgstr "Elkezdve"
 

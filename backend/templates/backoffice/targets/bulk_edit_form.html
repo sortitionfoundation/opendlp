@@ -336,8 +336,8 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
    database, so nothing typed into the form is lost while it is being fixed. #}
 {% set form_categories = pending_categories if pending_categories is defined and pending_categories else target_categories %}
 {% set errors = field_errors if field_errors is defined and field_errors else {} %}
-{# No buttons of its own: "Cancel" and "Save all" sit in the page's action
-   cluster beside the heading, and reach this form by its id.
+{# No buttons of its own: "Discard changes" and "Save" sit in the sticky bar at
+   the foot of the page, and reach this form by its id.
 
    Anything typed marks the page dirty, so the edit guard knows there is
    something to lose. Adding, deleting and reordering fire no input event, so

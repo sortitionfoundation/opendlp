@@ -13,7 +13,7 @@ var PERCENTAGE_TOLERANCE = 1.0;
 /**
  * Build the state for one category block of the bulk targets editor.
  *
- * Every action is client-side and provisional until "Save all" is submitted,
+ * Every action is client-side and provisional until the form is saved,
  * so a misplaced click costs nothing and no edit elsewhere on the page is lost.
  *
  * @param {Object} [options] - configuration

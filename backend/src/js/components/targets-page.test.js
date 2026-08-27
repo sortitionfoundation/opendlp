@@ -243,4 +243,36 @@ describe("targetsPage", () => {
       expect(pageState("", { editingAll: true }).editingAll).toBe(true);
     });
   });
+
+  describe("discarding the edits", () => {
+    const OPTIONS = { editingAll: true, discardUrl: "/targets" };
+
+    it("just closes the form when there is nothing to lose", () => {
+      const state = pageState("", OPTIONS);
+      state.discardEdits();
+
+      expect(state.editingAll).toBe(false);
+      expect(state.leaveModalOpen).toBe(false);
+    });
+
+    it("asks first when there are edits to lose", () => {
+      const state = pageState("", OPTIONS);
+      state.markEditDirty();
+      state.discardEdits();
+
+      expect(state.leaveModalOpen).toBe(true);
+      // Still editing: nothing is thrown away until the dialog is answered.
+      expect(state.editingAll).toBe(true);
+    });
+
+    it("fetches the page again rather than hiding the form", () => {
+      const state = pageState("", OPTIONS);
+      state.markEditDirty();
+      state.discardEdits();
+
+      // The url the template passed in, not the one in the address bar: a
+      // rejected save renders this page at the save-all POST url.
+      expect(state.leaveUrl).toBe("/targets");
+    });
+  });
 });

@@ -4,7 +4,7 @@
 /**
  * Build the state for one value row of the bulk targets editor.
  *
- * Nothing here touches the server. Deleting marks the row so that "Save all"
+ * Nothing here touches the server. Deleting marks the row so that saving
  * removes it, rather than firing its own request - a round trip would throw
  * away every other edit on the page. A row the user added and then deleted has
  * nothing to mark, so it simply leaves the DOM.

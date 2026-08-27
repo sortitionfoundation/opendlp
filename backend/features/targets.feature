@@ -133,7 +133,7 @@ Feature: Target percentages, notes and ordering
     When I open the targets page for "Add From View Demo"
     And I add a target called "Age"
     Then the "Age" category should be on screen with one blank value
-    And I should see the "Save all" button
+    And I should see the "Save" button
 
   Scenario: Leaving the page with unsaved target edits asks first
     Given there is an assembly with targets called "Leave Guard Demo"
@@ -156,6 +156,18 @@ Feature: Target percentages, notes and ordering
     And I try to leave for the assembly details
     And I choose to discard the changes
     Then I should be on the assembly details page
+
+  Scenario: Discarding from the save bar really throws the edits away
+    Given there is an assembly with targets called "Save Bar Discard Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Save Bar Discard Demo"
+    And I choose to edit all targets
+    And I set the "Male" percentage to "30"
+    And I discard the edits from the save bar
+    And I choose to discard the changes
+    Then I should still be on the targets page
+    When I choose to edit all targets
+    Then the "Male" edit row should show min "10" and max "11"
 
   Scenario: A page with no edits lets you leave without asking
     Given there is an assembly with targets called "No Guard Demo"

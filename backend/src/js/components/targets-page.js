@@ -19,7 +19,7 @@ var FIRST_ROW_ID = "new-0";
  * is one button with one handler wherever it is clicked from - it names the
  * target in a dialog, clones a blank block into the form, and switches to it.
  * Nothing is sent to the server, so no unsaved edit elsewhere on the page is
- * lost, and the target exists only once "Save all" goes through.
+ * lost, and the target exists only once the form is saved.
  *
  * That last part is what the edit guard is here for. The edits live only in
  * this page until it is saved, and every link on it - the assembly tabs, the
@@ -30,17 +30,39 @@ var FIRST_ROW_ID = "new-0";
  * @param {Object} [options] - configuration
  * @param {boolean} [options.editingAll=false] - whether the page opens in edit mode,
  *   as it does when a rejected save redisplays the form
+ * @param {string} [options.discardUrl=""] - where "Discard changes" reloads from
  * @returns {Object} Alpine component state
  */
 export function targetsPage(options) {
   return Object.assign({}, editGuard({ guardLinks: true }), {
     editingAll: Boolean(options && options.editingAll),
+    discardUrl: (options && options.discardUrl) || "",
     addTargetOpen: false,
     newCategoryName: "",
     newCategoryCount: 0,
 
     init: function () {
       this.initEditGuard();
+    },
+
+    /**
+     * Throw the unsaved edits away and go back to the read-only page.
+     *
+     * Discarding really discards: the edits live only in this page, so
+     * fetching it again is what removes them. Hiding the form would leave them
+     * in the DOM to reappear the next time edit mode was opened.
+     *
+     * A clean form has nothing to lose, so it just closes. A dirty one asks
+     * first, through the same dialog every other way off this page goes
+     * through - the button is on screen the whole time the form is open, which
+     * makes it easy to reach by accident as well as on purpose.
+     */
+    discardEdits: function () {
+      if (!this.editDirty) {
+        this.editingAll = false;
+        return;
+      }
+      this.openLeaveModal(this.discardUrl);
     },
 
     openAddTarget: function () {

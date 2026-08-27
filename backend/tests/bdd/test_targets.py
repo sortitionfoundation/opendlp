@@ -115,7 +115,7 @@ def choose_edit_all(admin_logged_in_page: Page) -> None:
 
 @when("I save all targets")
 def save_all(admin_logged_in_page: Page) -> None:
-    admin_logged_in_page.get_by_role("button", name="Save all").click()
+    admin_logged_in_page.get_by_role("button", name="Save", exact=True).click()
 
 
 @when(parsers.parse('I link the "{value}" target back to its percentage'))
@@ -138,9 +138,15 @@ def keep_editing(admin_logged_in_page: Page) -> None:
     admin_logged_in_page.get_by_role("button", name="Keep editing").click()
 
 
+@when("I discard the edits from the save bar")
+def discard_from_save_bar(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.locator(".wizard-footer").get_by_role("button", name="Discard changes").click()
+
+
 @when("I choose to discard the changes")
 def discard_changes(admin_logged_in_page: Page) -> None:
-    admin_logged_in_page.get_by_role("button", name="Discard changes").click()
+    """The one in the dialog - the save bar's button of the same name opens it."""
+    admin_logged_in_page.get_by_role("alertdialog").get_by_role("button", name="Discard changes").click()
 
 
 @then("I should still be on the targets page")

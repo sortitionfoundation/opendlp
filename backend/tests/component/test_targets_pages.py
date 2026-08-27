@@ -945,17 +945,21 @@ class TestViewIsReadOnly:
         # Saving is the one way out that keeps the edits.
         assert '@submit="allowLeave()"' in html
 
-    def test_save_all_is_reached_from_the_heading_cluster(
+    def test_save_and_discard_sit_in_the_sticky_bar_not_the_heading_cluster(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """It sits outside the form it submits, so it needs the form attribute."""
+        """The form is long, so the way out of it follows the viewport down the page."""
         _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
 
         html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
         heading_section = html[html.index("<h2") : html.index("</section>", html.index("<h2"))]
+        save_bar = html[html.index('class="wizard-footer"') :]
 
-        assert "Save all" in heading_section
-        assert 'form="save-all-form"' in heading_section
+        assert "Save" not in heading_section
+        assert "Discard changes" not in heading_section
+        assert "Discard changes" in save_bar
+        # Outside the form it submits, so it needs the form attribute.
+        assert 'form="save-all-form"' in save_bar
 
     def test_the_edit_targets_button_is_the_primary_action(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1171,18 +1175,20 @@ class TestBulkEditForm:
         assert b"Add values found in respondent data" in response.data
         assert b"Non-binary" in response.data
 
-    def test_save_and_cancel_come_before_the_categories(
+    def test_save_and_discard_come_after_everything_they_stick_over(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """At the top of the form, so a long page need not be scrolled to save."""
+        """Sticky, so its containing block has to cover the page it follows down."""
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
         with FakeUnitOfWork(store=fake_store) as uow:
             add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=100.0)
 
         html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+        save_bar = html.index('class="wizard-footer"')
 
-        assert html.index("Save all") < html.index('id="bulk-categories"')
-        assert html.index("Cancel") < html.index("Save all")
+        assert html.index('id="bulk-categories"') < save_bar
+        assert html.index("Import from CSV") < save_bar
+        assert html.index("Discard changes", save_bar) < html.index("Save", save_bar)
 
     def test_add_value_sits_between_the_last_value_and_the_total(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
