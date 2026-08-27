@@ -1,7 +1,7 @@
 // ABOUTME: Unit tests for the bulkTargetsCategory Alpine component
 // ABOUTME: Covers the live totals row, adding rows from a template, and reordering categories
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { bulkTargetsCategory } from "./bulk-targets-category.js";
 
@@ -270,5 +270,45 @@ describe("bulkTargetsCategory reordering", () => {
     const state = twoBlocks();
     state.moveDown();
     expect(order()).toEqual(["first", "second"]);
+  });
+});
+
+describe("announcing changes above the block", () => {
+  /**
+   * The page listens on the form for the same bubbling event the rows fire, so
+   * that adding, deleting and reordering - none of which fire an input event -
+   * still count as edits worth warning about.
+   */
+  function heard(action) {
+    const state = categoryState(valueRow({ percentage: "50" }));
+    const seen = vi.fn();
+    document
+      .getElementById("categories")
+      .addEventListener("targets-changed", seen);
+    action(state);
+    return seen;
+  }
+
+  it.each([
+    ["adding a value", (state) => state.addValue()],
+    ["deleting the target", (state) => state.markDeleted()],
+    ["taking the deletion back", (state) => state.undoDelete()],
+    ["moving the target", (state) => state.moveUp()],
+  ])("says so on %s", (_name, action) => {
+    expect(heard(action)).toHaveBeenCalled();
+  });
+
+  it("says so even when the block it was on has gone", () => {
+    const state = categoryState(valueRow({ percentage: "50" }));
+    state.isNew = true;
+    const seen = vi.fn();
+    document
+      .getElementById("categories")
+      .addEventListener("targets-changed", seen);
+
+    state.markDeleted();
+
+    expect(document.getElementById("block")).toBe(null);
+    expect(seen).toHaveBeenCalled();
   });
 });

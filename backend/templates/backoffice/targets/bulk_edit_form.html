@@ -337,10 +337,20 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 {% set form_categories = pending_categories if pending_categories is defined and pending_categories else target_categories %}
 {% set errors = field_errors if field_errors is defined and field_errors else {} %}
 {# No buttons of its own: "Cancel" and "Save all" sit in the page's action
-   cluster beside the heading, and reach this form by its id. #}
+   cluster beside the heading, and reach this form by its id.
+
+   Anything typed marks the page dirty, so the edit guard knows there is
+   something to lose. Adding, deleting and reordering fire no input event, so
+   they announce themselves with the "targets-changed" the rows already bubble.
+   Submitting stands the guard down: saving is the one way out that keeps the
+   edits. #}
 <form method="post"
       action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}"
-      id="save-all-form">
+      id="save-all-form"
+      @input="markEditDirty()"
+      @change="markEditDirty()"
+      @targets-changed="markEditDirty()"
+      @submit="allowLeave()">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <div id="bulk-categories" x-ref="categories">
         {% for category in form_categories %}

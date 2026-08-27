@@ -635,7 +635,7 @@ msgstr "Új jelszó"
 #: src/opendlp/entrypoints/forms.py:568 src/opendlp/entrypoints/forms.py:653
 #: templates/backoffice/assembly_data.html:328
 #: templates/backoffice/assembly_data.html:373
-#: templates/backoffice/assembly_targets.html:216
+#: templates/backoffice/assembly_targets.html:219
 #: templates/backoffice/patterns/_file_upload.html:37
 msgid "CSV File"
 msgstr ""
@@ -3561,7 +3561,7 @@ msgstr "Hozzon létre fiókot"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_form.html:21
-#: templates/backoffice/assembly_targets.html:196 templates/base.html:127
+#: templates/backoffice/assembly_targets.html:199 templates/base.html:127
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -5612,32 +5612,32 @@ msgid ""
 "targets."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:179
+#: templates/backoffice/assembly_targets.html:182
 #: templates/targets/view_targets.html:198
 msgid "Import from CSV"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:183
+#: templates/backoffice/assembly_targets.html:186
 #: templates/targets/view_targets.html:202
 msgid "Upload a CSV file with columns either:"
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:186
+#: templates/backoffice/assembly_targets.html:189
 #: templates/targets/view_targets.html:204
 msgid "category, name, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:187
+#: templates/backoffice/assembly_targets.html:190
 #: templates/targets/view_targets.html:206
 msgid "feature, value, min, max."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:190
+#: templates/backoffice/assembly_targets.html:193
 #: templates/targets/view_targets.html:213
 msgid "Uploading a CSV will replace all existing target categories."
 msgstr ""
 
-#: templates/backoffice/assembly_targets.html:218
+#: templates/backoffice/assembly_targets.html:221
 #: templates/respondents/view_respondents.html:78
 #: templates/targets/view_targets.html:252
 msgid "Upload CSV"
@@ -6238,6 +6238,27 @@ msgstr ""
 #: templates/backoffice/components/input.html:556
 msgid "Off"
 msgstr ""
+
+#: templates/backoffice/components/leave_guard_modal.html:13
+#, fuzzy
+msgid "Discard changes?"
+msgstr "Módosítások mentése"
+
+#: templates/backoffice/components/leave_guard_modal.html:14
+msgid ""
+"You have unsaved changes. If you leave this page, your changes will be "
+"lost."
+msgstr ""
+
+#: templates/backoffice/components/leave_guard_modal.html:17
+#, fuzzy
+msgid "Discard changes"
+msgstr "Módosítások mentése"
+
+#: templates/backoffice/components/leave_guard_modal.html:18
+#, fuzzy
+msgid "Keep editing"
+msgstr "Kieső emberek pótlása új kiválasztással"
 
 #: templates/backoffice/components/manage_tabs_progress_modal.html:10
 #, fuzzy
@@ -8146,27 +8167,6 @@ msgstr ""
 #: templates/backoffice/registration/_modals.html:233
 #, fuzzy
 msgid "Keep it open"
-msgstr "Kieső emberek pótlása új kiválasztással"
-
-#: templates/backoffice/registration/_modals.html:243
-#, fuzzy
-msgid "Discard changes?"
-msgstr "Módosítások mentése"
-
-#: templates/backoffice/registration/_modals.html:244
-msgid ""
-"You have unsaved changes. If you leave this page, your changes will be "
-"lost."
-msgstr ""
-
-#: templates/backoffice/registration/_modals.html:247
-#, fuzzy
-msgid "Discard changes"
-msgstr "Módosítások mentése"
-
-#: templates/backoffice/registration/_modals.html:248
-#, fuzzy
-msgid "Keep editing"
 msgstr "Kieső emberek pótlása új kiválasztással"
 
 #: templates/backoffice/registration/_page_data.html:23

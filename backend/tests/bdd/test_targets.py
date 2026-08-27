@@ -128,6 +128,31 @@ def move_category_down(admin_logged_in_page: Page, name: str) -> None:
     _edit_block_for(admin_logged_in_page, name).get_by_role("button", name="Move down").first.click()
 
 
+@when("I try to leave for the assembly details")
+def click_details_tab(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("tab", name="Details").click()
+
+
+@when("I choose to keep editing")
+def keep_editing(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Keep editing").click()
+
+
+@when("I choose to discard the changes")
+def discard_changes(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Discard changes").click()
+
+
+@then("I should still be on the targets page")
+def still_on_targets(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page).to_have_url(_targets_url(_current_assembly_id[-1]), timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("I should be on the assembly details page")
+def on_details_page(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page).not_to_have_url(_targets_url(_current_assembly_id[-1]), timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when(parsers.parse('I add a target called "{name}"'))
 def add_category_via_dialog(admin_logged_in_page: Page, name: str) -> None:
     """The one flow, from either view: name it in the dialog and it lands in the form."""

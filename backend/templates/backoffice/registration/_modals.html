@@ -235,18 +235,8 @@ save_disabled_expr="!editingDocumentLabel.trim() || documentEditing") %}
 {% endif %}
 {# Discard-changes confirmation — opened by guardLeave() when the user cancels
    edit mode with unsaved changes. Only edit mode can be dirty, so this is the
-   single home of the "was leaving intentional?" decision. Keep editing is the
-   primary (safe) action on the right and receives initial focus; Discard
-   changes is a plain text button so the destructive path never looks like the
-   default. #}
-{% call controlled_alert_dialog(id="leave-modal",
-title=_("Discard changes?"),
-description=_("You have unsaved changes. If you leave this page, your changes will be lost."),
-open_expr="leaveModalOpen",
-close_expr="closeLeaveModal()") %}
-{{ button(_("Discard changes"), variant="tertiary", attrs='type="button" @click="discardAndLeave()"') }}
-{{ button(_("Keep editing"), variant="primary", attrs='type="button" x-ref="keepEditingBtn" @click="closeLeaveModal()"') }}
-{% endcall %}
+   single home of the "was leaving intentional?" decision. #}
+{% include "backoffice/components/leave_guard_modal.html" %}
 {# Toast notification. role="status" (polite live region) so screen readers hear
    copy/upload/delete outcomes - same intent as floating_alerts' aria-live="polite". #}
 <div x-cloak

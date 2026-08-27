@@ -152,6 +152,9 @@ ABOUTME: Displays target categories, values, respondent data, CSV import, and va
                     {% include "backoffice/targets/bulk_edit_form.html" %}
                 </div>
                 {% include "backoffice/targets/add_target_modal.html" %}
+                {# Every edit on this page lives only in the page until it is
+                   saved, so leaving asks first. #}
+                {% include "backoffice/components/leave_guard_modal.html" %}
             {% endif %}
             <div id="target-categories" x-show="!editingAll">
                 {% for category in target_categories %}

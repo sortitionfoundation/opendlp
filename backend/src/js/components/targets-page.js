@@ -5,6 +5,7 @@ import {
   applyPlaceholder,
   renumberSortOrder,
 } from "../lib/bulk-targets-dom.js";
+import { editGuard } from "./edit-guard.js";
 
 // The blank row the template carries. addValue() issues new-1 onwards, so the
 // row that arrives with the block takes the one id it will never reach.
@@ -20,17 +21,27 @@ var FIRST_ROW_ID = "new-0";
  * Nothing is sent to the server, so no unsaved edit elsewhere on the page is
  * lost, and the target exists only once "Save all" goes through.
  *
+ * That last part is what the edit guard is here for. The edits live only in
+ * this page until it is saved, and every link on it - the assembly tabs, the
+ * way back to the dashboard, the header and the footer - would take them away
+ * without a word. So this page asks editGuard to intercept links, which a page
+ * that already funnels leaving through one control does not need to.
+ *
  * @param {Object} [options] - configuration
  * @param {boolean} [options.editingAll=false] - whether the page opens in edit mode,
  *   as it does when a rejected save redisplays the form
  * @returns {Object} Alpine component state
  */
 export function targetsPage(options) {
-  return {
+  return Object.assign({}, editGuard({ guardLinks: true }), {
     editingAll: Boolean(options && options.editingAll),
     addTargetOpen: false,
     newCategoryName: "",
     newCategoryCount: 0,
+
+    init: function () {
+      this.initEditGuard();
+    },
 
     openAddTarget: function () {
       this.newCategoryName = "";
@@ -57,8 +68,10 @@ export function targetsPage(options) {
       var block = this.addCategory(name);
       this.addTargetOpen = false;
       this.newCategoryName = "";
-      // The new target only exists in the edit form, so that is where we go.
+      // The new target only exists in the edit form, so that is where we go -
+      // and it exists only in the page, so leaving now would lose it.
       this.editingAll = true;
+      this.markEditDirty();
       this.revealCategory(block);
     },
 
@@ -109,5 +122,5 @@ export function targetsPage(options) {
         }
       });
     },
-  };
+  });
 }

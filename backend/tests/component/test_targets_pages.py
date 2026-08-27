@@ -929,6 +929,22 @@ class TestViewIsReadOnly:
         # Nothing to edit yet, so nothing offers to.
         assert "Edit targets" not in html
 
+    def test_the_page_guards_against_leaving_with_unsaved_edits(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert "leave-modal" in html
+        assert "Discard changes?" in html
+        # Typing, and the structural changes that fire no input event of their own.
+        assert 'x-data="targetsPage(' in html
+        assert '@input="markEditDirty()"' in html
+        assert '@targets-changed="markEditDirty()"' in html
+        # Saving is the one way out that keeps the edits.
+        assert '@submit="allowLeave()"' in html
+
     def test_save_all_is_reached_from_the_heading_cluster(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):

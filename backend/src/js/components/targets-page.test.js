@@ -200,6 +200,40 @@ describe("targetsPage", () => {
     });
   });
 
+  describe("the unsaved-changes guard", () => {
+    it("starts clean", () => {
+      expect(pageState().editDirty).toBe(false);
+    });
+
+    it("is wired up when the page starts, links and all", () => {
+      const listeners = vi.spyOn(document, "addEventListener");
+      const windowListeners = vi.spyOn(window, "addEventListener");
+      pageState().init();
+
+      expect(listeners.mock.calls.some((c) => c[0] === "click")).toBe(true);
+      expect(
+        windowListeners.mock.calls.some((c) => c[0] === "beforeunload"),
+      ).toBe(true);
+    });
+
+    it("counts a target added from the read-only view as an edit to lose", () => {
+      const state = pageState();
+      state.newCategoryName = "Age";
+      state.confirmAddTarget();
+
+      expect(state.editDirty).toBe(true);
+    });
+
+    it("is not tripped by opening and cancelling the dialog", () => {
+      const state = pageState();
+      state.openAddTarget();
+      state.newCategoryName = "Age";
+      state.cancelAddTarget();
+
+      expect(state.editDirty).toBe(false);
+    });
+  });
+
   describe("which mode the page opens in", () => {
     it("is the read-only view by default", () => {
       expect(pageState().editingAll).toBe(false);

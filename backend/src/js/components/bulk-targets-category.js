@@ -46,20 +46,23 @@ export function bulkTargetsCategory(options) {
     },
 
     markDeleted: function () {
+      var container = this.$root.parentElement;
       if (this.isNew) {
         // Never saved, so there is nothing to mark and nothing to undo.
-        var container = this.$root.parentElement;
         this.$root.remove();
         renumberSortOrder(container);
+        announceChange(container);
         return;
       }
       this.deleted = true;
       if (this.$refs.deletedField) this.$refs.deletedField.value = "true";
+      announceChange(container);
     },
 
     undoDelete: function () {
       this.deleted = false;
       if (this.$refs.deletedField) this.$refs.deletedField.value = "false";
+      announceChange(this.$root.parentElement);
     },
 
     moveUp: function () {
@@ -75,7 +78,9 @@ export function bulkTargetsCategory(options) {
     },
 
     renumber: function () {
-      renumberSortOrder(this.$root.parentElement);
+      var container = this.$root.parentElement;
+      renumberSortOrder(container);
+      announceChange(container);
     },
 
     addValue: function () {
@@ -85,12 +90,14 @@ export function bulkTargetsCategory(options) {
         if (first) first.focus();
       }
       this.recalculate();
+      announceChange(this.$root.parentElement);
     },
 
     addMissingValues: function () {
       this.appendFrom(this.$refs.missingTemplate);
       this.missingAdded = true;
       this.recalculate();
+      announceChange(this.$root.parentElement);
     },
 
     /**
@@ -149,6 +156,23 @@ export function bulkTargetsCategory(options) {
       this.maxTotal = String(max);
     },
   };
+}
+
+/**
+ * Tell the page something in the form changed, other than by typing.
+ *
+ * Fired on the container rather than on the block, because the block's own
+ * "targets-changed" handler redoes its totals - which the caller has already
+ * done directly. Above that it is what tells the edit guard the page is dirty:
+ * adding, deleting and reordering fire no input event of their own.
+ *
+ * @param {Element} container - the element holding the category blocks
+ */
+function announceChange(container) {
+  if (!container) return;
+  container.dispatchEvent(
+    new CustomEvent("targets-changed", { bubbles: true }),
+  );
 }
 
 /**
