@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from markupsafe import Markup
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from opendlp.domain.users import UNUSABLE_PASSWORD_PREFIX
 from opendlp.vendor import password_validation as pv
 
 
@@ -18,7 +19,13 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    """Verify a password against its hash."""
+    """Verify a password against its hash.
+
+    An unusable password hash never matches - we reject it here rather than
+    relying on how werkzeug handles a hash it cannot parse.
+    """
+    if not password_hash or password_hash.startswith(UNUSABLE_PASSWORD_PREFIX):
+        return False
     return check_password_hash(password_hash, password)
 
 

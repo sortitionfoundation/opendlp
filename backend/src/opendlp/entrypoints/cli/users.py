@@ -7,7 +7,7 @@ from opendlp import bootstrap
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.exceptions import PasswordTooWeak, UserAlreadyExists
 from opendlp.service_layer.security import hash_password
-from opendlp.service_layer.user_service import create_user
+from opendlp.service_layer.user_service import create_user, disable_user
 
 
 @click.group()
@@ -110,10 +110,11 @@ def list_users(ctx: click.Context, role: str | None, active: bool | None) -> Non
 
 @users.command("deactivate")
 @click.argument("email")
+@click.option("--admin-email", required=True, help="Email of the admin performing the deactivation")
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
-def deactivate_user(ctx: click.Context, email: str, confirm: bool) -> None:
-    """Deactivate a user account."""
+def deactivate_user(ctx: click.Context, email: str, admin_email: str, confirm: bool) -> None:
+    """Deactivate a user account, ending their sessions and resetting their password."""
     try:
         session_factory = ctx.obj.get("session_factory") if ctx.obj else None
         uow = bootstrap.bootstrap(session_factory=session_factory)
@@ -123,17 +124,24 @@ def deactivate_user(ctx: click.Context, email: str, confirm: bool) -> None:
                 click.echo(click.style(f"✗ User with email '{email}' not found.", "red"))
                 raise click.Abort()
 
+            admin_user = uow.users.get_by_email(admin_email)
+            if not admin_user:
+                click.echo(click.style(f"✗ Admin user with email '{admin_email}' not found.", "red"))
+                raise click.Abort()
+
             if not user.is_active:
                 click.echo(click.style(f"User '{email}' is already deactivated.", "yellow"))
                 return
 
             # Confirmation prompt
-            if not confirm and not click.confirm(f"Are you sure you want to deactivate user '{email}'?"):
+            if not confirm and not click.confirm(
+                f"Deactivate user '{email}'? This ends their sessions, removes their "
+                f"password and switches off their two-factor authentication."
+            ):
                 click.echo("Operation cancelled.")
                 return
 
-            user.is_active = False
-            uow.users.add(user)
+            disable_user(uow, user.id, admin_user.id)
             uow.commit()
 
             click.echo(click.style(f"✓ User '{email}' has been deactivated.", "green"))

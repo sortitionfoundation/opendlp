@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from opendlp.domain.users import User, UserAssemblyRole
+from opendlp.domain.users import User, UserAssemblyRole, split_session_id
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 
 
@@ -293,6 +293,81 @@ class TestUser:
             email="user@example.com", global_role=GlobalRole.USER, oauth_provider="google", oauth_id="google123"
         )
         assert user.has_multiple_auth_methods() is False
+
+
+class TestUnusablePassword:
+    """Locking an account out replaces the password rather than removing it."""
+
+    def test_a_fresh_password_user_has_a_usable_password(self):
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+
+        assert user.has_usable_password() is True
+
+    def test_an_oauth_only_user_has_no_usable_password(self):
+        user = User(
+            email="user@example.com", global_role=GlobalRole.USER, oauth_provider="google", oauth_id="google123"
+        )
+
+        assert user.has_usable_password() is False
+
+    def test_setting_an_unusable_password_leaves_the_user_valid(self):
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+
+        user.set_unusable_password()
+
+        assert user.has_usable_password() is False
+        # The invariant that a user has an auth method must survive, or every
+        # detached copy of this user would raise
+        assert user.password_hash
+        assert user.create_detached_copy().has_usable_password() is False
+
+    def test_each_unusable_password_differs(self):
+        first = User(email="a@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+        second = User(email="b@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+
+        first.set_unusable_password()
+        second.set_unusable_password()
+
+        assert first.password_hash != second.password_hash
+
+
+class TestSessionEpoch:
+    """The id flask-login stores carries the epoch, so old sessions can be spotted."""
+
+    def test_a_user_who_has_never_been_locked_out_has_an_empty_epoch(self):
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+
+        assert user.session_epoch == ""
+        assert user.get_id() == f"{user.id}|"
+
+    def test_invalidating_sessions_changes_the_id(self):
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+        before = user.get_id()
+
+        user.invalidate_sessions()
+
+        assert user.sessions_invalidated_at is not None
+        assert user.get_id() != before
+
+    def test_the_epoch_survives_a_detached_copy(self):
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+        user.invalidate_sessions()
+
+        assert user.create_detached_copy().get_id() == user.get_id()
+
+    def test_split_session_id_round_trips(self):
+        user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hashed")
+        user.invalidate_sessions()
+
+        assert split_session_id(user.get_id()) == (user.id, user.session_epoch)
+
+    def test_split_session_id_rejects_a_bare_user_id(self):
+        # What sessions issued before epochs existed contain - they must not load
+        assert split_session_id(str(uuid.uuid4())) is None
+
+    @pytest.mark.parametrize("value", ["", "|", "not-a-uuid|2026-01-01T00:00:00+00:00", "|epoch"])
+    def test_split_session_id_rejects_rubbish(self, value):
+        assert split_session_id(value) is None
 
 
 class TestUserAssemblyRole:

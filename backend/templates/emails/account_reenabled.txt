@@ -1,0 +1,22 @@
+{% if user_name %}{{ _("Hi %(name)s,", name=user_name) }}{% else %}{{ _("Hi,") }}{% endif %}
+
+{{ _("Email address:") }} {{ email_address }}
+
+{{ _("Your OpenDLP account has been re-enabled by an administrator, and you can use it again.") }}
+
+{% if uses_oauth %}{{ _("Sign in the way you did before, using the button for your email provider on the sign in page:") }}
+
+{{ login_url }}
+{% else %}{{ _("Your password was removed while the account was disabled, so you will need to set a new one before you can sign in. Go to the page below and enter your email address, and we will send you a link to set a new password:") }}
+
+{{ forgot_password_url }}
+{% endif %}
+{% if totp_cleared %}
+{{ _("Two-factor authentication was also switched off for your account. You can set it up again from your profile once you have signed in.") }}
+{% endif %}
+{{ _("If you were not expecting this, please contact us before signing in.") }}
+
+---
+{{ _("OpenDLP Team") }}
+
+{{ _("Need help? Contact us at") }} {{ support_email_address }}

@@ -403,12 +403,6 @@ class EditUserForm(FlaskForm):  # type: ignore[no-any-unimported]
         description=_l("User's global role determines their permissions across the system"),
     )
 
-    is_active = BooleanField(
-        _l("Active Account"),
-        description=_l("Inactive users cannot log in to the system"),
-        default=True,
-    )
-
 
 class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for creating user invites (admin only)."""

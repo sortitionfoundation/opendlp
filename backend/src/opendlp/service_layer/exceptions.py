@@ -312,3 +312,10 @@ class CannotRemoveLastAuthMethod(CuratedMessage, ServiceLayerError):
 
     def __init__(self) -> None:
         super().__init__(_("Cannot remove last authentication method. Add another method first."))
+
+
+class CannotDisableSelf(CuratedMessage, ServiceLayerError):
+    """Raised when an admin attempts to disable their own account."""
+
+    def __init__(self) -> None:
+        super().__init__(_("You cannot disable your own account"))
