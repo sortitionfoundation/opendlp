@@ -537,8 +537,8 @@ def update_user(
     return user.create_detached_copy()
 
 
-def _get_admin_and_target(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> tuple[User, User]:
-    """Load the admin performing an account action and the user it applies to."""
+def _target_of_admin_account_action(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> User:
+    """Check the admin may enable and disable accounts, and return the one they are acting on."""
     admin_user = uow.users.get(admin_user_id)
     if not admin_user:
         raise UserNotFoundError(f"Admin user {admin_user_id} not found")
@@ -550,9 +550,8 @@ def _get_admin_and_target(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_use
     if not user:
         raise UserNotFoundError(f"User {user_id} not found")
 
-    assert isinstance(admin_user, User)
     assert isinstance(user, User)
-    return admin_user, user
+    return user
 
 
 def _warn_about_outstanding_invites(uow: AbstractUnitOfWork, user: User) -> None:
@@ -602,7 +601,7 @@ def disable_user(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uui
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    _admin_user, user = _get_admin_and_target(uow, user_id, admin_user_id)
+    user = _target_of_admin_account_action(uow, user_id, admin_user_id)
 
     if user_id == admin_user_id:
         raise CannotDisableSelf()
@@ -646,7 +645,7 @@ def enable_user(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid
     """
     Let a previously disabled user back into the system (admin only).
 
-    Deliberately narrow: it clears the active flag and nothing else. In
+    Deliberately narrow: it sets the active flag and nothing else. In
     particular the session epoch stays where `disable_user` left it, so the
     sessions that were cancelled stay cancelled. The caller is expected to send
     the user the account re-enabled email.
@@ -665,7 +664,7 @@ def enable_user(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    _admin_user, user = _get_admin_and_target(uow, user_id, admin_user_id)
+    user = _target_of_admin_account_action(uow, user_id, admin_user_id)
 
     if user.is_active:
         logger.info("user.enabled.already_active", user_id=str(user_id), admin_user_id=str(admin_user_id))
