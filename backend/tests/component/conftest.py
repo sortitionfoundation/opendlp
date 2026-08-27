@@ -66,6 +66,41 @@ def _mock_registration_rate_limit_redis(monkeypatch: pytest.MonkeyPatch) -> None
     )
 
 
+class _InMemoryRedis:
+    """The slice of the Redis API the CSV upload stash uses, backed by a dict.
+
+    A MagicMock won't do here: the diff-confirmation flow stashes an upload on
+    one request and reads it back on the next, so the stub has to remember what
+    it was given. The TTL is ignored - nothing expires within a test.
+    """
+
+    def __init__(self) -> None:
+        self._values: dict[str, bytes] = {}
+
+    def set(self, key: str, value: str | bytes, ex: int | None = None) -> None:
+        self._values[key] = value.encode("utf-8") if isinstance(value, str) else value
+
+    def get(self, key: str) -> bytes | None:
+        return self._values.get(key)
+
+    def delete(self, key: str) -> None:
+        self._values.pop(key, None)
+
+
+@pytest.fixture(autouse=True)
+def _in_memory_csv_upload_stash(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Back the pending-CSV stash with a dict for every component test.
+
+    Component tests have no Redis, but the upload-then-confirm-diff flow needs
+    the stash to hold the CSV across two requests. Each test gets its own store.
+    """
+    fake_redis = _InMemoryRedis()
+    monkeypatch.setattr(
+        "opendlp.service_layer.csv_upload_stash._get_redis",
+        lambda: fake_redis,
+    )
+
+
 @pytest.fixture
 def fake_store():
     """A single in-memory store shared by every UnitOfWork in a test."""
