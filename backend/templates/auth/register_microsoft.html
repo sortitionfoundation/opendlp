@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/brand_marks.html" import brand_microsoft %}
 {% block title %}{{ _("Create an Account with Microsoft") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-grid-row">
@@ -54,14 +55,7 @@
                     <div class="gsi-material-button-state"></div>
                     <div class="gsi-material-button-content-wrapper">
                         <div class="gsi-material-button-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 viewBox="0 0 23 23"
-                                 style="display: block">
-                                <path fill="#f35325" d="M0 0h11v11H0z" />
-                                <path fill="#81bc06" d="M12 0h11v11H12z" />
-                                <path fill="#05a6f0" d="M0 12h11v11H0z" />
-                                <path fill="#ffba08" d="M12 12h11v11H12z" />
-                            </svg>
+                            {{ brand_microsoft() }}
                         </div>
                         <span class="gsi-material-button-contents">{{ _("Create an Account with Microsoft") }}</span>
                         <span style="display: none;">{{ _("Create an Account with Microsoft") }}</span>
