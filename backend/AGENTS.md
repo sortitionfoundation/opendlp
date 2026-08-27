@@ -294,6 +294,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 ### General Documentation
 
 - [Personal Data](docs/personal-data.md) - Cookies, PII logging, and the right to erasure
+- [Account Lockout](docs/account-lockout.md) - What disabling a user account does, and what it does not
 - [Analytics](docs/analytics.md) - Why we have none, and the constraints if you add some
 - [Testing Strategy](docs/testing.md) - Unit, contract, integration, e2e, and BDD testing
 - [Configuration Guide](docs/configuration.md) - Detailed environment variables and config classes

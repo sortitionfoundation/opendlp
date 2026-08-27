@@ -37,8 +37,8 @@ opendlp users add --email user@example.com --password securepass123
 # List all users
 opendlp users list
 
-# Deactivate a user
-opendlp users deactivate user@example.com --confirm
+# Deactivate a user (locks them out - see docs/account-lockout.md)
+opendlp users deactivate user@example.com --admin-email admin@example.com --confirm
 
 # Reset a user's password
 opendlp users reset-password user@example.com --password newpass456
@@ -47,7 +47,9 @@ opendlp users reset-password user@example.com --password newpass456
 **Available commands:**
 - `add` - Create a new user with email and password
 - `list` - Display all users with their roles and status
-- `deactivate` - Disable a user account (requires confirmation)
+- `deactivate` - Lock a user out: ends their sessions, makes their password
+  unusable and clears their 2FA. Takes `--admin-email` to record who did it.
+  See [Account Lockout](account-lockout.md).
 - `reset-password` - Change a user's password
 
 Use `opendlp users [COMMAND] --help` for detailed options.
@@ -177,7 +179,7 @@ opendlp users add --email admin@company.com --password temp123 --role admin
 opendlp users reset-password user@company.com
 
 # Deactivate compromised account
-opendlp users deactivate spam@badactor.com --confirm
+opendlp users deactivate spam@badactor.com --admin-email admin@example.com --confirm
 ```
 
 ### Deployment Checks
