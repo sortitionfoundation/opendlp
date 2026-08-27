@@ -1173,9 +1173,10 @@ verb. Two things worth knowing:
   clicked. The component tests were perfectly happy; only the BDD suite noticed.
   Hence `test_the_row_controls_carry_live_click_handlers`.
 
-**Layout:** "Save all" and "Cancel" sit at the top right of the form, with "Save
-all" primary and to the right; "Add value" sits inside the table between the last
-value and the totals row. "Edit targets" on the view page is the primary action.
+**Layout:** "Save" and "Discard changes" sit in a sticky bar at the foot of the
+page, with "Save" primary and to the right (see §7.4); "Add value" sits inside
+the table between the last value and the totals row. "Edit targets" on the view
+page is the primary action.
 
 **The category header row follows the same Figma.** "Move up" and "Move down"
 are chevron icons - `aria_label` carrying the wording they replaced, so
@@ -1245,10 +1246,9 @@ switches to the edit form, appends the block, and scrolls it into view.
   persisted at all — `TargetValue` needs a value string — so this row can only
   ever exist client-side, which on its own rules out any server-side "create
   the target now" flow.
-- **Every page action is in one cluster beside the `<h2>`**: "Add target"
-  always, "Edit targets" in the read-only view, "Cancel" and "Save all" while
-  editing. "Save all" sits outside the form it submits and reaches it with
-  `form="save-all-form"`.
+- **The actions that get you into a mode sit beside the `<h2>`**: "Add target"
+  always, "Edit targets" in the read-only view. The two that get you out of
+  editing moved to the sticky save bar - see §7.4.
 - **The bulk form renders even when there is nothing to edit yet**, because
   "Add target" clones into it. It used to be gated on there being a category.
 - **`targets.add_category` is deleted**, along with
@@ -1306,12 +1306,37 @@ container rather than the block, since the block's own handler would redo
 totals the caller has already redone. `@submit="allowLeave()"` stands the guard
 down, because saving is the one way out that keeps the edits.
 
-**Two things the guard does not cover.** The CSV import and "Add selected
+**One thing the guard does not cover.** The CSV import and "Add selected
 categories" forms sit below the editor and navigate on submit; `beforeunload`
-catches those with the browser's own wording rather than our dialog. And
-"Cancel" only hides the form — the edits stay in the DOM and reappear on
-re-entry — so the page is still, honestly, dirty afterwards. Making Cancel
-discard for real is a separate decision about what that button means.
+catches those with the browser's own wording rather than our dialog.
+
+### 7.4 Follow-up — the save bar follows the page down
+
+The form is as long as the assembly has targets, and every way out of it was
+pinned to the top of the page: to save, you scrolled back up. So the two
+controls that end an editing session moved to a bar at the foot of the page
+that sticks to the bottom of the viewport (Figma node 4920:6619, which also
+gave them their names — "Discard changes" and "Save").
+
+- **It reuses `.wizard-footer`**, the registration wizard's sticky footer: an
+  ordinary card in flow, stretched to the full viewport width by a
+  `scroll-state(stuck: bottom)` container query once it pins. Nothing new to
+  maintain, and the two pages stay recognisably the same product.
+- **The page component now wraps the respondent columns and the CSV import as
+  well.** `position: sticky` only pins within its own parent's box, so the bar
+  has to be the last child of something that covers everything it follows down.
+- **"Cancel" became "Discard changes", and now really discards.** It used to
+  hide the form and leave the edits in the DOM to reappear on re-entry; it now
+  fetches the page again, which is the only thing that actually removes edits
+  that live only in the page. A clean form has nothing to lose, so it just
+  closes.
+- **A dirty form asks first**, through the same `leave_guard_modal` every other
+  way off the page goes through. The button is on screen the whole time the
+  form is open — the point of the change — which makes it that much easier to
+  hit by accident.
+- **The url it reloads is passed in as `discardUrl`, not read from the address
+  bar.** A rejected save re-renders this page at the `save-all` POST url, and
+  the GET a reload makes would 405 there.
 
 ---
 
