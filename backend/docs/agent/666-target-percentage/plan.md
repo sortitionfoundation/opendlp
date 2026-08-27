@@ -1212,11 +1212,57 @@ where an existing category could be renamed to the empty string.
 
 **New JS:** `bulk-targets-category.js` (live totals, add rows from a `<template>`,
 reorder, mark deleted), `bulk-targets-value-row.js` (one row's pending-delete and
-re-link flags) and `bulk-targets-form.js` (add a category), over shared helpers in
-`lib/bulk-targets-dom.js`. Placeholder substitution has to descend into nested
-`<template>` elements — a cloned category carries the template its own rows come
-from — and to rewrite `for` alongside `name` and `id`, or a cloned block's labels
-point at an id that never existed.
+re-link flags) and `targets-page.js` (which mode the page is in, and adding a
+target), over shared helpers in `lib/bulk-targets-dom.js`. Placeholder
+substitution has to descend into nested `<template>` elements — a cloned category
+carries the template its own rows come from — and to rewrite `for` alongside
+`name` and `id`, or a cloned block's labels point at an id that never existed.
+
+### 7.2 Follow-up — one "Add target", in one action cluster
+
+There were two ways to add a target and they behaved differently: an inline
+"Add category" box on the read-only page that posted to `targets.add_category`
+and saved immediately, and an inline "Add target" box at the foot of the bulk
+form that cloned a block client-side. Both are gone. In their place is a single
+**"Add target"** button beside the heading, which opens a dialog for the name.
+
+The duplication was easier to remove than it looked, because **the read-only
+view and the edit form are the same page**: `editingAll` decides which is on
+screen and the bulk form is already rendered, hidden, on every page load. So
+there is nothing to navigate between, no URL parameter to carry an intent
+across a reload, and one handler serves both. Adding from the read-only view
+switches to the edit form, appends the block, and scrolls it into view.
+
+- **The dialog is the only way in, from either view.** `Cancel` closes it and
+  changes nothing; `Add` is disabled until the name box has something in it.
+- **Nothing is saved until "Save all"**, matching every other change in this
+  form. A target added and then thought better of costs a `Delete target`
+  rather than a round trip, and no unsaved edit elsewhere is lost — which the
+  old read-only "Add category" could not have offered, because it posted.
+- **The new block arrives with one blank value row.** Its id is `new-0`, the
+  one id `addValue()` will never issue, so the row it carries and the rows
+  added afterwards cannot submit under the same name. A blank value cannot be
+  persisted at all — `TargetValue` needs a value string — so this row can only
+  ever exist client-side, which on its own rules out any server-side "create
+  the target now" flow.
+- **Every page action is in one cluster beside the `<h2>`**: "Add target"
+  always, "Edit targets" in the read-only view, "Cancel" and "Save all" while
+  editing. "Save all" sits outside the form it submits and reaches it with
+  `form="save-all-form"`.
+- **The bulk form renders even when there is nothing to edit yet**, because
+  "Add target" clones into it. It used to be gated on there being a category.
+- **`targets.add_category` is deleted**, along with
+  `backoffice/targets/add_category_form.html` and `add_category_response.html`.
+  Its one extra trick — auto-filling values from a respondent column of the same
+  name — is the "Respondent data columns" panel's job, and that panel does it
+  better, with checkboxes and a distinct-value count.
+- **Scrolling is `scrollIntoView`, not the `?scroll=` machinery.** That
+  machinery restores a pixel offset across a page reload; here nothing reloads
+  and the element being scrolled to did not exist a moment ago. The value box
+  is focused with `preventScroll`, so the smooth scroll is what the eye follows
+  rather than the jump focus would otherwise cause.
+- `bulkTargetsForm` became **`targetsPage`**, holding `editingAll` too: the
+  button lives outside the `<form>`, and Alpine scope only flows downwards.
 
 ---
 
