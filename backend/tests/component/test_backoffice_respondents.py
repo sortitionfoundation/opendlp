@@ -71,6 +71,23 @@ class TestBackofficeUploadRespondents:
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondents.count_by_assembly_id(existing_assembly.id) == 0
 
+    def test_upload_with_invalid_id_column_lists_the_csv_columns(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The flash names the columns the file has, so the fix needs no guesswork."""
+        _upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "name,email,age\nAlice,alice@example.com,30",
+            id_column="nonexistent_column",
+        )
+
+        with logged_in_admin.session_transaction() as session:
+            messages = [msg[1] for msg in session.get("_flashes", [])]
+        assert any('no column called "nonexistent_column"' in m for m in messages)
+        assert any("name, email, age" in m for m in messages)
+        assert any('clear it to use the first column ("name")' in m for m in messages)
+
     def test_upload_shows_success_message(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """A successful upload flashes a success message."""
         _upload(logged_in_admin, existing_assembly.id, "id,name\n1,Test User")
@@ -163,6 +180,59 @@ class TestBackofficeDeleteRespondents:
             assert uow.respondents.count_by_assembly_id(existing_assembly.id) == 0
 
 
+class TestUploadFormIdColumnHint:
+    """The ID Column field is prefilled from the last upload, so the hint has to
+    say where the value came from - otherwise a leftover reads as something the
+    organiser typed."""
+
+    def _data_page(self, client, assembly_id):
+        response = client.get(f"/backoffice/assembly/{assembly_id}/data?source=csv")
+        assert response.status_code == 200
+        return response.data.decode()
+
+    def test_generic_hint_before_any_upload(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        body = self._data_page(logged_in_admin, existing_assembly.id)
+        assert "If blank, the first column in the CSV will be used." in body
+        assert "from your last upload" not in body
+
+    def test_field_is_blank_before_any_upload(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        """AssemblyCSV.csv_id_column defaults to "external_id" as soon as a config
+        row exists. Prefilling that would fail a first upload of any file without
+        a column of that name, on a value the organiser never chose."""
+        body = self._data_page(logged_in_admin, existing_assembly.id)
+        assert 'value="external_id"' not in body
+
+    def test_hint_names_the_previous_id_column(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        """Upload then delete: the form comes back with the remembered column."""
+        _upload(logged_in_admin, existing_assembly.id, "nationbuilder_id,first_name\nR001,Alice\n")
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/data/delete-respondents",
+            follow_redirects=False,
+        )
+
+        body = self._data_page(logged_in_admin, existing_assembly.id)
+        assert 'Using "nationbuilder_id" from your last upload.' in body
+        assert 'value="nationbuilder_id"' in body
+
+    def test_hint_escapes_the_remembered_column_name(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The column name comes from an uploaded file, so it is untrusted.
+
+        Jinja's i18n extension escapes the interpolated parameter while leaving
+        the message's own punctuation alone - assert the parameter specifically.
+        """
+        _upload(logged_in_admin, existing_assembly.id, "<script>x</script>,first_name\nR001,Alice\n")
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/data/delete-respondents",
+            follow_redirects=False,
+        )
+
+        body = self._data_page(logged_in_admin, existing_assembly.id)
+        assert "<script>x</script>" not in body
+        assert "&lt;script&gt;x&lt;/script&gt;" in body
+
+
 class TestUploadDiffConfirmation:
     """Schema-diff confirmation flow on CSV re-upload."""
 
@@ -183,6 +253,33 @@ class TestUploadDiffConfirmation:
         response = _upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR002,Bob\n")
         assert response.status_code == 302
         assert "confirm-diff" not in response.location
+
+    def test_re_upload_with_stale_id_column_errors_before_the_diff_page(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """The stale-prefill case: the ID Column field still holds last upload's
+        value but the new file doesn't have that column.
+
+        This used to reach the confirmation page and only fail on apply, where
+        nothing caught it - a 500, with the stashed upload already discarded.
+        """
+        _upload(logged_in_admin, existing_assembly.id, "nationbuilder_id,first_name\nR001,Alice\n")
+
+        response = _upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "person_ref,first_name,postcode\nP001,Bob,SW1\n",
+            id_column="nationbuilder_id",
+        )
+
+        assert response.status_code == 302
+        assert "confirm-diff" not in response.location
+
+        with logged_in_admin.session_transaction() as session:
+            messages = [msg[1] for msg in session.get("_flashes", [])]
+        assert any('no column called "nationbuilder_id"' in m for m in messages)
+        assert any("person_ref, first_name, postcode" in m for m in messages)
+        assert any("pre-filled from your last upload" in m for m in messages)
 
 
 class TestBackofficeViewRespondentsPage:

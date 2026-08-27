@@ -863,6 +863,56 @@ class TestReconciliation:
         )
         assert diff is None
 
+    def test_compute_diff_for_pending_csv_rejects_unknown_id_column(self, uow, admin_user, test_assembly):
+        """Catch a bad id column here, not after the organiser applies the diff.
+
+        The apply step clears the stashed upload, so a raise there costs them the
+        file as well as the confirmation.
+        """
+        respondent_service.import_respondents_from_csv(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            "nationbuilder_id,first_name\nR001,Alice\n",
+            replace_existing=True,
+        )
+        update_csv_config(
+            uow,
+            user_id=admin_user.id,
+            assembly_id=test_assembly.id,
+            csv_id_column="nationbuilder_id",
+        )
+
+        with pytest.raises(InvalidSelection) as exc_info:
+            respondent_field_schema_service.compute_diff_for_pending_csv(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                "person_ref,first_name\nP001,Alice\n",
+                explicit_id_column="nationbuilder_id",
+            )
+
+        message = str(exc_info.value)
+        assert 'no column called "nationbuilder_id"' in message
+        assert "person_ref, first_name" in message
+        assert "pre-filled from your last upload" in message
+
+    def test_compute_diff_for_pending_csv_rejects_unknown_id_column_without_schema(
+        self, uow, admin_user, test_assembly
+    ):
+        """The check runs before the no-schema early return, so a first upload
+        with a mistyped id column is rejected too."""
+        with pytest.raises(InvalidSelection) as exc_info:
+            respondent_field_schema_service.compute_diff_for_pending_csv(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                "person_ref,first_name\nP001,Alice\n",
+                explicit_id_column="typo_id",
+            )
+
+        assert 'no column called "typo_id"' in str(exc_info.value)
+
     def test_compute_diff_for_pending_csv_rejects_empty_csv(self, uow, admin_user, test_assembly):
         with pytest.raises(InvalidSelection):
             respondent_field_schema_service.compute_diff_for_pending_csv(

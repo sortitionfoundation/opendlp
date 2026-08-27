@@ -146,7 +146,10 @@ EXT001,Alice Smith,alice@example.com"""
                 id_column="participant_id",
             )
 
-        assert "CSV must have 'participant_id' column" in str(exc_info.value)
+        message = str(exc_info.value)
+        assert 'no column called "participant_id"' in message
+        # The columns the file does have, so the organiser can fix it without opening it
+        assert "external_id, name, email" in message
 
     def test_import_with_no_id_column_uses_first_csv_column(self, postgres_session_factory, admin_user, test_assembly):
         """Test CSV import uses the first column as id_column when none is specified"""

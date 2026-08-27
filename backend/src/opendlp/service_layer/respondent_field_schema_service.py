@@ -43,6 +43,11 @@ if TYPE_CHECKING:
 
 _MAX_RADIO_OPTIONS = 6
 
+# How many of the CSV's own column names to list when the chosen id column is
+# not among them. Enough to recognise the file by, few enough to stay readable
+# in a flash message - respondent exports can run to dozens of columns.
+MAX_LISTED_HEADERS = 10
+
 
 class FieldDefinitionNotFoundError(Exception):
     """Raised when a RespondentFieldDefinition cannot be found."""
@@ -717,6 +722,47 @@ def _auto_detect_id_column(headers: list[str], explicit_id_column: str | None) -
     return headers[0] if headers else ""
 
 
+def check_id_column_in_headers(
+    id_column: str,
+    headers: list[str],
+    previous_id_column: str | None = None,
+) -> None:
+    """Raise ``InvalidSelection`` if ``id_column`` is not one of ``headers``.
+
+    The message names the columns the CSV does have, so the organiser can
+    correct the ID Column field without opening the file to look. Pass
+    ``previous_id_column`` - the id column of the last upload - to explain the
+    likeliest cause: when it matches, the value came from the form's prefill
+    rather than from something they typed this time.
+    """
+    if id_column in headers:
+        return
+
+    if len(headers) > MAX_LISTED_HEADERS:
+        columns = str(
+            _l(
+                "%(columns)s and %(count)d more",
+                columns=", ".join(headers[:MAX_LISTED_HEADERS]),
+                count=len(headers) - MAX_LISTED_HEADERS,
+            )
+        )
+    else:
+        columns = ", ".join(headers)
+
+    message = str(
+        _l(
+            'This CSV has no column called "%(id_column)s". Its columns are: %(columns)s. '
+            'Set the ID Column field to one of these, or clear it to use the first column ("%(first)s").',
+            id_column=id_column,
+            columns=columns,
+            first=headers[0],
+        )
+    )
+    if previous_id_column and previous_id_column == id_column:
+        message += " " + str(_l("The ID Column field was pre-filled from your last upload."))
+    raise InvalidSelection(message)
+
+
 def compute_diff_for_pending_csv(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -731,7 +777,10 @@ def compute_diff_for_pending_csv(
     categories, and compares. Returns ``None`` when the assembly has no schema
     yet — the caller interprets that as "skip the confirmation page entirely".
 
-    Raises ``InvalidSelection`` if the CSV has no header row.
+    Raises ``InvalidSelection`` if the CSV has no header row, or if the id
+    column is not one of its columns. Validating here rather than leaving it to
+    the import means the organiser is told before the confirmation page instead
+    of after they apply it, when the stashed upload has already been cleared.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -739,10 +788,6 @@ def compute_diff_for_pending_csv(
     id_column = _auto_detect_id_column(headers, explicit_id_column)
 
     _ensure_view_permission(uow, user_id, assembly_id)
-    if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
-        return None
-
-    target_category_names = [c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)]
 
     # Pull the previous id column from the assembly's CSV config so we can
     # flag column renames. ``assembly.csv`` is the ORM relationship, so we
@@ -753,6 +798,13 @@ def compute_diff_for_pending_csv(
     previous_id_column: str | None = None
     if assembly.csv is not None:
         previous_id_column = assembly.csv.csv_id_column
+
+    check_id_column_in_headers(id_column, headers, previous_id_column=previous_id_column)
+
+    if uow.respondent_field_definitions.count_by_assembly_id(assembly_id) == 0:
+        return None
+
+    target_category_names = [c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)]
 
     return compute_reconciliation_diff(
         uow,

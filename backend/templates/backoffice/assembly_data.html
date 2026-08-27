@@ -388,11 +388,23 @@ ABOUTME: Displays data source selection and data management for assemblies
                         required=true,
                         hint=_("Select a CSV file with respondent data.")
                         ) }}
+                        {# Prefilled from the last upload so a file whose id column isn't the
+                        first one works without retyping, and the hint says where the value
+                        came from so a leftover doesn't read as something they typed.
+                        Gated on last_import_timestamp, not on csv_id_column: that defaults to
+                        "external_id" the moment a config row exists, and prefilling it before
+                        any upload fails files that have no column of that name. #}
+                        {% set has_previous_upload = csv_config and csv_config.last_import_timestamp and csv_config.csv_id_column %}
+                        {% if has_previous_upload %}
+                            {% set id_column_hint = _('Using "%(id_column)s" from your last upload. Change it if this file uses a different column, or clear it to use the first column.', id_column=csv_config.csv_id_column) %}
+                        {% else %}
+                            {% set id_column_hint = _("Name of column containing unique identifiers. If blank, the first column in the CSV will be used.") %}
+                        {% endif %}
                         {{ input(name="id_column",
                         label=_("ID Column") ,
-                        value=csv_config.csv_id_column if csv_config and csv_config.csv_id_column else "",
+                        value=csv_config.csv_id_column if has_previous_upload else "",
                         placeholder=_("e.g., ID"),
-                        hint=_("Name of column containing unique identifiers. If blank, the first column in the CSV will be used.")
+                        hint=id_column_hint
                         ) }}
                         <div>{{ button(_("Upload") , type="submit", variant="primary") }}</div>
                     </form>

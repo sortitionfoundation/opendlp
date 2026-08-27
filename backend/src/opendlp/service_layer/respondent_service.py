@@ -28,7 +28,10 @@ from opendlp.service_layer.permissions import (
     can_manage_assembly,
     can_view_assembly,
 )
-from opendlp.service_layer.respondent_field_schema_service import update_schema_from_headers
+from opendlp.service_layer.respondent_field_schema_service import (
+    check_id_column_in_headers,
+    update_schema_from_headers,
+)
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 # Internal, export-only columns recognised and skipped on import. They mirror
@@ -160,8 +163,8 @@ def import_respondents_from_rows(  # noqa: C901
     if id_column is None:
         id_column = headers[0]
 
-    if id_column not in headers:
-        raise InvalidSelection(f"CSV must have '{id_column}' column")
+    previous_id_column = assembly.csv.csv_id_column if assembly.csv is not None else None
+    check_id_column_in_headers(id_column, headers, previous_id_column=previous_id_column)
 
     errors: list[str] = []
 

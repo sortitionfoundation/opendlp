@@ -336,6 +336,14 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
             id_column=pending.id_column,
             replace_existing=pending.replace_existing,
         )
+    except InvalidSelection as e:
+        # compute_diff_for_pending_csv validates the same things before we get
+        # here, so this is a backstop rather than the expected route. Without it
+        # the raise escapes to the 500 page, and the finally below has already
+        # discarded the upload the organiser would need to retry.
+        logger.warning("Invalid CSV format applying upload diff", assembly_id=str(assembly_id), error=str(e))
+        flash(_("Invalid CSV format: %(error)s", error=str(e)), "error")
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
     finally:
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
     return response
