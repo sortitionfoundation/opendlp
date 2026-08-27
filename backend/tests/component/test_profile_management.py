@@ -30,7 +30,7 @@ def oauth_user(fake_store: FakeStore) -> User:
 
 def _login_session(client: FlaskClient, user: User) -> None:
     with client.session_transaction() as session:
-        session["_user_id"] = str(user.id)
+        session["_user_id"] = user.get_id()
 
 
 class TestProfileViewing:

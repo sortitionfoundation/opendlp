@@ -97,7 +97,7 @@ def test_change_password_success(client: FlaskClient, regular_user: User) -> Non
 def test_oauth_user_can_set_password(client: FlaskClient, oauth_user: User) -> None:
     """OAuth user can set a password and end up with both auth methods active."""
     with client.session_transaction() as session:
-        session["_user_id"] = str(oauth_user.id)
+        session["_user_id"] = oauth_user.get_id()
 
     response = client.get("/profile/set-password")
     assert response.status_code == 200

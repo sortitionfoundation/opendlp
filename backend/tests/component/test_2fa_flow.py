@@ -51,7 +51,7 @@ def user_with_2fa(fake_store: FakeStore) -> dict:
 
 def _login_session(client: FlaskClient, user: User) -> None:
     with client.session_transaction() as session:
-        session["_user_id"] = str(user.id)
+        session["_user_id"] = user.get_id()
         session["_fresh"] = True
 
 
