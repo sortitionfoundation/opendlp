@@ -56,7 +56,8 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             id=field_id ~ "-value",
             value=val.value if val else prefill,
             error=errors.get(val_prefix ~ "[value]", ""),
-            required=true) }}
+            required=true,
+            attrs='data-field="value"') }}
             {% if row_error %}
                 <p class="text-body-sm mt-1"
                    style="color: var(--color-primary-action);
@@ -143,7 +144,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
     </tr>
 {% endmacro %}
 
-{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None) %}
+{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None, first_row_id="") %}
     {% set cat_prefix = "cat[" ~ cat_id ~ "]" %}
     {# Both count columns are only worth a column when there is something to
        count, so a category with no matching respondent data shows neither. #}
@@ -267,6 +268,13 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     {% for val in (category.values if category else []) or [] %}
                         {{ value_row(cat_id, val.value_id, val=val, errors=errors, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
                     {% endfor %}
+                    {# A target with no values is not worth saving, so a block
+                       cloned for a new one arrives with the row its author is
+                       about to fill in - rather than an empty table and a
+                       button to press first. #}
+                    {% if first_row_id %}
+                        {{ value_row(cat_id, first_row_id, is_new=true, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
+                    {% endif %}
                     {# Blank rows are cloned from here, so the markup has exactly
                        one definition. __ID__ becomes new-<n> on the way in. #}
                     <template x-ref="rowTemplate">
@@ -328,15 +336,12 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
    database, so nothing typed into the form is lost while it is being fixed. #}
 {% set form_categories = pending_categories if pending_categories is defined and pending_categories else target_categories %}
 {% set errors = field_errors if field_errors is defined and field_errors else {} %}
+{# No buttons of its own: "Cancel" and "Save all" sit in the page's action
+   cluster beside the heading, and reach this form by its id. #}
 <form method="post"
       action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}"
-      id="save-all-form"
-      x-data="bulkTargetsForm()">
+      id="save-all-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <div class="mb-6 flex items-center justify-end gap-3">
-        {{ button(_("Cancel"), variant="tertiary", attrs='@click="editingAll = false"') }}
-        {{ button(_("Save all"), variant="primary", type="submit") }}
-    </div>
     <div id="bulk-categories" x-ref="categories">
         {% for category in form_categories %}
             {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
@@ -354,15 +359,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
             respondent_counts=respondent_counts, selected_counts=selected_counts) }}
         {% endfor %}
     </div>
-    {# ── Add Target ───────────────────────────────────── #}
-    <div class="flex items-end gap-3">
-        {{ input(name="new-category-name",
-        id="bulk-new-category-name",
-        label=_("New target name"),
-        placeholder=_("e.g. Gender"),
-        attrs='x-model="newCategoryName" @keydown.enter.prevent="addCategory()"') }}
-        {{ button(_("Add target"), variant="secondary", attrs='@click="addCategory()"') }}
-    </div>
-    {# Blank category blocks are cloned from here; __CAT__ becomes new-<n>. #}
-    <template x-ref="categoryTemplate">{{ category_block("__CAT__") }}</template>
+    {# Blank category blocks are cloned from here by the "Add target" dialog;
+       __CAT__ becomes new-<n>, and the one row it carries __ROW__ becomes new-0. #}
+    <template x-ref="categoryTemplate">{{ category_block("__CAT__", first_row_id="__ROW__") }}</template>
 </form>

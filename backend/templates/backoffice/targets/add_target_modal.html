@@ -1,0 +1,32 @@
+{#
+ABOUTME: Dialog that names a new target, from either the read-only view or the edit form
+ABOUTME: Adding clones a blank block into the bulk form; nothing is saved until "Save all"
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input %}
+{% from "backoffice/components/modal.html" import controlled_modal %}
+
+{# Driven by the page's own targetsPage component rather than modal(), because
+   "Add" has to reach the form the page holds. Deliberately outside
+   #save-all-form: the name is read by Alpine, and has no business being
+   submitted with the targets. #}
+{% call controlled_modal(id="add-target-modal",
+title=_("Add target"),
+open_expr="addTargetOpen",
+close_expr="cancelAddTarget()",
+panel_classes="dialog-panel--default") %}
+<div class="dialog-body">
+    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+        {{ _("The target is added to the bottom of the edit form, ready for its values. It is saved when you save the rest of the page.") }}
+    </p>
+    {{ input(name="new-target-name",
+    id="add-target-name",
+    label=_("Target name"),
+    placeholder=_("e.g. Gender"),
+    attrs='x-model="newCategoryName" x-ref="newTargetName" @keydown.enter.prevent="confirmAddTarget()"') }}
+</div>
+<div class="dialog-footer">
+    {{ button(_("Cancel"), variant="secondary", attrs='@click="cancelAddTarget()"') }}
+    {{ button(_("Add"), variant="primary", alpine_disabled="!newCategoryName", attrs='@click="confirmAddTarget()"') }}
+</div>
+{% endcall %}

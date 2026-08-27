@@ -146,40 +146,6 @@ class TestUploadTargetsCsv:
         assert b"Only CSV files are allowed" in response.data
 
 
-class TestAddCategory:
-    def test_add_category_htmx_returns_fragment(self, logged_in_admin, existing_assembly):
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, "/categories"),
-            data={"name": "Age"},
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        assert b"Age" in response.data
-        assert b"<!DOCTYPE" not in response.data
-
-    def test_add_category_htmx_auto_populates_values_from_respondent_column(
-        self, logged_in_admin, existing_assembly, fake_store
-    ):
-        """Adding a category whose name matches a respondent column auto-adds its values."""
-        _add_respondents(
-            fake_store,
-            existing_assembly.id,
-            [("1", {"Gender": "Male"}), ("2", {"Gender": "Female"}), ("3", {"Gender": "Non-binary"})],
-        )
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, "/categories"),
-            data={"name": "Gender"},
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        assert b"Gender" in response.data
-        assert b"Male" in response.data
-        assert b"Female" in response.data
-        assert b"Non-binary" in response.data
-        assert b"<!DOCTYPE" not in response.data
-
-
 class TestDeleteCategory:
     def test_delete_category_htmx_returns_empty(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
@@ -399,7 +365,7 @@ class TestViewerPermissions:
         assert response.status_code == 200
         assert b"Gender" in response.data
         assert b"Male" in response.data
-        assert b"Add category" not in response.data
+        assert b"Add target" not in response.data
         assert b"Add value" not in response.data
 
 
@@ -943,7 +909,7 @@ class TestViewIsReadOnly:
         for control in (b"Add value", b"Delete", b"Move up", b"Move down", b"Rename", b"Use percentage"):
             assert control not in response.data, control
 
-    def test_the_page_offers_editing_and_adding_a_category(
+    def test_the_page_offers_editing_and_adding_a_target(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
         _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
@@ -951,7 +917,29 @@ class TestViewIsReadOnly:
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
         assert b"Edit targets" in response.data
-        assert b"Add category" in response.data
+        assert b"Add target" in response.data
+
+    def test_an_assembly_with_no_targets_can_still_add_one(self, logged_in_admin, existing_assembly):
+        """ "Add target" clones into the bulk form, so the form has to be there first."""
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert "Add target" in html
+        assert 'id="save-all-form"' in html
+        assert 'x-ref="categoryTemplate"' in html
+        # Nothing to edit yet, so nothing offers to.
+        assert "Edit targets" not in html
+
+    def test_save_all_is_reached_from_the_heading_cluster(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """It sits outside the form it submits, so it needs the form attribute."""
+        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+        heading_section = html[html.index("<h2") : html.index("</section>", html.index("<h2"))]
+
+        assert "Save all" in heading_section
+        assert 'form="save-all-form"' in heading_section
 
     def test_the_edit_targets_button_is_the_primary_action(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1192,13 +1180,14 @@ class TestBulkEditForm:
         assert html.index("Add value") < html.index("<tfoot>")
         assert html.index("</tbody>") < html.index("Add value")
 
-    def test_offers_a_box_for_adding_a_target(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_offers_a_dialog_for_adding_a_target(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
 
         html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
 
+        assert "add-target-modal" in html
         assert 'x-model="newCategoryName"' in html
-        assert "Add target" in html
+        assert 'x-show="editingAll"' in html
 
     def test_carries_a_blank_category_template(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         """Cloned client-side; __CAT__ becomes new-<n> on the way in."""
@@ -1208,6 +1197,8 @@ class TestBulkEditForm:
 
         assert 'x-ref="categoryTemplate"' in html
         assert "cat[__CAT__][name]" in html
+        # It arrives with the one blank row the person adding it is about to fill in.
+        assert "cat[__CAT__][values][__ROW__][value]" in html
         assert "cat[__CAT__][values][__ID__][value]" in html
 
     def test_a_viewer_is_not_given_the_form_at_all(self, logged_in_user, existing_assembly, admin_user, fake_store):

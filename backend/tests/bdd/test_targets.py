@@ -129,19 +129,33 @@ def move_category_down(admin_logged_in_page: Page, name: str) -> None:
 
 
 @when(parsers.parse('I add a target called "{name}"'))
-def add_category_in_bulk_form(admin_logged_in_page: Page, name: str) -> None:
-    admin_logged_in_page.locator("#bulk-new-category-name").fill(name)
+def add_category_via_dialog(admin_logged_in_page: Page, name: str) -> None:
+    """The one flow, from either view: name it in the dialog and it lands in the form."""
     admin_logged_in_page.get_by_role("button", name="Add target").click()
+    admin_logged_in_page.locator("#add-target-name").fill(name)
+    admin_logged_in_page.get_by_role("button", name="Add", exact=True).click()
 
 
 @when(parsers.parse('I add a target value called "{value}" with percentage "{percentage}"'))
 def add_target_value_in_bulk_form(admin_logged_in_page: Page, value: str, percentage: str) -> None:
     """Into the last category block, which is the one most recently added."""
     block = admin_logged_in_page.locator("#bulk-categories > div").last
-    block.get_by_role("button", name="Add value", exact=True).click()
-    row = block.locator("tr[data-value-row]").last
-    row.locator('input[name$="[value]"]').fill(value)
+    row = _blank_or_new_row(block)
+    row.locator('[data-field="value"]').fill(value)
     row.locator('[data-field="percentage"]').fill(percentage)
+
+
+def _blank_or_new_row(block):
+    """The block's last row if it is still blank, otherwise one added for the purpose.
+
+    A target added through the dialog arrives with one empty row, so the first
+    value goes into that rather than leaving it behind to fail validation.
+    """
+    last = block.locator("tr[data-value-row]").last
+    if last.count() and last.locator('[data-field="value"]').input_value() == "":
+        return last
+    block.get_by_role("button", name="Add value", exact=True).click()
+    return block.locator("tr[data-value-row]").last
 
 
 @when(parsers.parse('I delete the "{value}" target value'))
@@ -169,6 +183,15 @@ def set_min_max_in_bulk_form(admin_logged_in_page: Page, value: str, minimum: st
     row = _edit_row_for(admin_logged_in_page, value)
     row.locator('[data-field="min"]').fill(minimum)
     row.locator('[data-field="max"]').fill(maximum)
+
+
+@then(parsers.parse('the "{name}" category should be on screen with one blank value'))
+def new_category_ready_to_fill_in(admin_logged_in_page: Page, name: str) -> None:
+    block = _edit_block_for(admin_logged_in_page, name)
+    expect(block).to_be_in_viewport(timeout=PLAYWRIGHT_TIMEOUT)
+    rows = block.locator("tr[data-value-row]")
+    expect(rows).to_have_count(1, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(rows.locator('[data-field="value"]')).to_have_value("", timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the "{value}" edit row should show min "{minimum}" and max "{maximum}"'))

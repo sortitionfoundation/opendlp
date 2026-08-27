@@ -80,20 +80,6 @@ class TestUploadTargetsCsv:
             assert any("Successfully imported" in msg for msg in flash_messages)
 
 
-class TestAddCategory:
-    def test_add_category_creates_and_redirects(self, logged_in_admin, existing_assembly):
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, "/categories"),
-            data={
-                "name": "Gender",
-                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
-            },
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"Gender" in response.data
-
-
 class TestDeleteCategory:
     def test_delete_category_redirects(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)

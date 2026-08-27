@@ -59,7 +59,6 @@ from opendlp.service_layer.target_service import (
 from opendlp.translations import gettext as _
 
 from ..forms import (
-    AddTargetCategoryForm,
     EditTargetCategoryForm,
     SaveAllTargetsForm,
     TargetValueForm,
@@ -144,7 +143,6 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
         upload_form = UploadTargetsCsvForm()
-        add_category_form = AddTargetCategoryForm()
         value_form = TargetValueForm()
         can_manage = _can_manage(assembly_id)
 
@@ -168,7 +166,6 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly_id=assembly_id,
             target_categories=target_categories,
             form=upload_form,
-            add_category_form=add_category_form,
             value_form=value_form,
             can_manage=can_manage,
             respondent_attribute_columns=attribute_columns,
@@ -216,7 +213,6 @@ def _render_targets_upload_page(assembly_id: uuid.UUID, form: UploadTargetsCsvFo
         assembly_id=assembly_id,
         target_categories=target_categories,
         form=form,
-        add_category_form=AddTargetCategoryForm(),
         value_form=TargetValueForm(),
         can_manage=_can_manage(assembly_id),
         **context,
@@ -323,73 +319,6 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )
-
-
-@targets_bp.route("/assembly/<uuid:assembly_id>/targets/categories", methods=["POST"])
-@login_required
-def add_category(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Add a target category to an assembly."""
-    form = AddTargetCategoryForm()
-    try:
-        if not form.validate_on_submit():
-            if _is_htmx():
-                return render_template(
-                    "backoffice/targets/add_category_form.html",
-                    assembly_id=assembly_id,
-                    add_category_form=form,
-                ), 422
-            flash(_("Please correct the errors below"), "error")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            assert form.name.data is not None  # this is basically a type hint
-
-            category = create_target_category(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                name=form.name.data,
-            )
-
-        if _is_htmx():
-            value_form = TargetValueForm()
-            add_category_form = AddTargetCategoryForm()
-            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-            response = make_response(
-                render_template(
-                    "backoffice/targets/add_category_response.html",
-                    assembly_id=assembly_id,
-                    category=category,
-                    value_form=value_form,
-                    add_category_form=add_category_form,
-                    can_manage=True,
-                    respondent_counts=counts,
-                    selected_counts=sel_counts,
-                    has_selected=bool(sel_counts),
-                )
-            )
-            response.headers["HX-Trigger"] = "categoriesChanged"
-            return response
-
-        flash(_("Category '%(name)s' added", name=category.name), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except ValueError as e:
-        if _is_htmx():
-            form.name.errors.append(str(e))  # type: ignore[attr-defined]
-            return render_template(
-                "backoffice/targets/add_category_form.html",
-                assembly_id=assembly_id,
-                add_category_form=form,
-            ), 422
-        flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-    except (NotFoundError, InsufficientPermissions) as e:
-        flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
 
 @targets_bp.route(
@@ -917,7 +846,6 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
         upload_form = UploadTargetsCsvForm()
-        add_category_form = AddTargetCategoryForm()
         value_form = TargetValueForm()
         can_manage = _can_manage(assembly_id)
 
@@ -940,7 +868,6 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly_id=assembly_id,
             target_categories=target_categories,
             form=upload_form,
-            add_category_form=add_category_form,
             value_form=value_form,
             can_manage=can_manage,
             respondent_attribute_columns=attribute_columns,
@@ -1067,7 +994,6 @@ def _render_targets_edit_errors(
         field_errors=errors_by_field(errors),
         editing_all=True,
         form=UploadTargetsCsvForm(),
-        add_category_form=AddTargetCategoryForm(),
         value_form=TargetValueForm(),
         can_manage=_can_manage(assembly_id),
         respondent_attribute_columns=attribute_columns,

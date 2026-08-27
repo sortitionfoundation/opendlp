@@ -4,7 +4,6 @@
 import { autocomplete } from "../components/autocomplete.js";
 import { autoDismissAlert } from "../components/auto-dismiss-alert.js";
 import { bulkTargetsCategory } from "../components/bulk-targets-category.js";
-import { bulkTargetsForm } from "../components/bulk-targets-form.js";
 import { bulkTargetsValueRow } from "../components/bulk-targets-value-row.js";
 import { modal } from "../components/modal.js";
 import { registrationPageRow } from "../components/registration-page-row.js";
@@ -14,6 +13,7 @@ import {
 } from "../components/showcase-demos.js";
 import { showcaseNav } from "../components/showcase-nav.js";
 import { tabsKeyboard } from "../components/tabs-keyboard.js";
+import { targetsPage } from "../components/targets-page.js";
 import { urlSelect } from "../components/url-select.js";
 import { registerFocusMagic } from "../init/focus-magic.js";
 import { initFocusRestore } from "../init/focus-restore.js";
@@ -28,7 +28,6 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("autocomplete", autocomplete);
   Alpine.data("autoDismissAlert", autoDismissAlert);
   Alpine.data("bulkTargetsCategory", bulkTargetsCategory);
-  Alpine.data("bulkTargetsForm", bulkTargetsForm);
   Alpine.data("bulkTargetsValueRow", bulkTargetsValueRow);
   Alpine.data("buttonLoadingDemo", buttonLoadingDemo);
   Alpine.data("modal", modal);
@@ -36,5 +35,6 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("registrationPageRow", registrationPageRow);
   Alpine.data("showcaseNav", showcaseNav);
   Alpine.data("tabsKeyboard", tabsKeyboard);
+  Alpine.data("targetsPage", targetsPage);
   Alpine.data("urlSelect", urlSelect);
 });

@@ -61,7 +61,7 @@ Feature: Target percentages, notes and ordering
     And I am signed in as an admin user
     When I open the targets page for "Read Only Demo"
     Then I should see the "Edit targets" button
-    And I should see the "Add category" button
+    And I should see the "Add target" button
     And I should not see the "Delete value" button
     And I should not see the "Add value" button
 
@@ -126,6 +126,14 @@ Feature: Target percentages, notes and ordering
     Then I should see "Targets saved"
     And the "Age" category should appear after the "Gender" category
     And the "16-29" target should show min "20" and max "20"
+
+  Scenario: Adding a target from the read-only page
+    Given there is an assembly with targets called "Add From View Demo"
+    And I am signed in as an admin user
+    When I open the targets page for "Add From View Demo"
+    And I add a target called "Age"
+    Then the "Age" category should be on screen with one blank value
+    And I should see the "Save all" button
 
   Scenario: A target added by mistake can be taken straight back out
     Given there is an assembly with targets called "Undo Add Target Demo"
