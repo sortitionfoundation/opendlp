@@ -1264,6 +1264,55 @@ switches to the edit form, appends the block, and scrolls it into view.
 - `bulkTargetsForm` became **`targetsPage`**, holding `editingAll` too: the
   button lives outside the `<form>`, and Alpine scope only flows downwards.
 
+### 7.3 Follow-up — leaving the page asks about unsaved edits
+
+Everything on this page is provisional until "Save all", which is what makes
+the form safe to work in — and what made leaving it so expensive. Clicking an
+assembly tab, the way back to the dashboard, or anything in the header threw
+the lot away without a word.
+
+The registration editor already had this problem solved, so the answer was to
+take its guard apart rather than write a second one. `components/edit-guard.js`
+now holds the generic half — `editDirty`, the discard dialog, `beforeunload`,
+`guardLeave` — and both pages merge it as a flat slice.
+`registration-edit-guard.js` keeps only what is its own: the `editMode` gate,
+the takeover modal's `closePageGuarded`, and the close-registration
+confirmation. The dialog moved to `components/leave_guard_modal.html`, which
+both pages include.
+
+Two differences between the pages shaped the shared piece:
+
+- **Registration funnels leaving through one control**; the targets page does
+  not. Its stepper and footer navigation are disabled while editing, so
+  annotating the one Cancel link with `guardLeave` covers it. The targets page
+  leaves every link live, and annotating them all — in the header, the tab bar,
+  the footer, `page_header` — would be both tedious and quietly incomplete the
+  next time one is added. So `editGuard` gained an opt-in **`guardLinks`**: one
+  capture-phase click listener on the document that finds the link a click
+  would navigate by and diverts it to the dialog. It steps aside for the clicks
+  that do not replace the page — modifier and non-primary clicks, `target`,
+  `download`, in-page `#` jumps, and anything carrying `data-no-leave-guard`.
+- **`init()` cannot live in the slice.** The slices are merged with
+  `Object.assign`, so a slice that claimed `init` would take it from every page
+  composing it. The guard exposes `initEditGuard()`, and each page's own
+  `init()` decides when to call it — which is also where registration's
+  "read-only pages are never dirty" early return belongs.
+
+**What marks the page dirty.** `@input` and `@change` on the bulk form cover
+typing. Adding a value, deleting one, deleting a target and reordering fire no
+input event, so `bulkTargetsCategory` announces them with the same bubbling
+`targets-changed` the rows already used for the totals row — dispatched on the
+container rather than the block, since the block's own handler would redo
+totals the caller has already redone. `@submit="allowLeave()"` stands the guard
+down, because saving is the one way out that keeps the edits.
+
+**Two things the guard does not cover.** The CSV import and "Add selected
+categories" forms sit below the editor and navigate on submit; `beforeunload`
+catches those with the browser's own wording rather than our dialog. And
+"Cancel" only hides the form — the edits stay in the DOM and reappear on
+re-entry — so the page is still, honestly, dirty afterwards. Making Cancel
+discard for real is a separate decision about what that button means.
+
 ---
 
 ## 8. Phase 5 — Tests ✅ DONE
