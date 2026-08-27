@@ -125,17 +125,34 @@ class TestBackofficeDeleteRespondents:
 class TestUploadDiffConfirmation:
     """The schema-diff confirmation flow on CSV re-upload (Redis-stashed pending upload)."""
 
-    def _upload(self, client, assembly_id, csv_text, filename="respondents.csv"):
+    def _upload(self, client, assembly_id, csv_text, filename="respondents.csv", id_column=""):
         return client.post(
             f"/backoffice/assembly/{assembly_id}/data/upload-respondents",
             data={
                 "file": (BytesIO(csv_text.encode()), filename),
-                "id_column": "",
+                "id_column": id_column,
                 "csrf_token": get_csrf_token(client, f"/backoffice/assembly/{assembly_id}/data?source=csv"),
             },
             content_type="multipart/form-data",
             follow_redirects=False,
         )
+
+    def _confirm(self, client, assembly_id, action="confirm"):
+        return client.post(
+            f"/backoffice/assembly/{assembly_id}/data/upload-respondents/confirm-diff",
+            data={
+                "csrf_token": get_csrf_token(
+                    client,
+                    f"/backoffice/assembly/{assembly_id}/data/upload-respondents/confirm-diff",
+                ),
+                "action": action,
+            },
+            follow_redirects=False,
+        )
+
+    def _stash_keys(self, redis_client, assembly_id):
+        """The pending-upload keys Redis holds for this assembly, if any."""
+        return redis_client.keys(f"csv_import_pending:*:{assembly_id}")
 
     def test_re_upload_with_added_column_redirects_to_diff_page(
         self, logged_in_admin, existing_assembly, postgres_session_factory
@@ -245,6 +262,97 @@ class TestUploadDiffConfirmation:
         )
         assert response.status_code == 302
         assert "source=csv" in response.location
+
+    def test_stash_expires_and_confirm_then_imports_nothing(
+        self, logged_in_admin, existing_assembly, postgres_session_factory, test_redis_client
+    ):
+        """The stashed CSV holds personal data, so it must not outlive the flow.
+
+        Assert the key carries a TTL, then delete it — which is what Redis
+        leaves behind once that TTL elapses — and confirm the apply step tells
+        the organiser to upload again rather than 500ing or importing a blank.
+        """
+        self._upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "external_id,first_name,postcode\nR002,Bob,SW1\n",
+        )
+
+        keys = self._stash_keys(test_redis_client, existing_assembly.id)
+        assert len(keys) == 1
+        ttl = test_redis_client.ttl(keys[0])
+        assert 0 < ttl <= 30 * 60
+        test_redis_client.delete(keys[0])
+
+        response = self._confirm(logged_in_admin, existing_assembly.id)
+        assert response.status_code == 302
+        assert "source=csv" in response.location
+        with logged_in_admin.session_transaction() as session:
+            messages = [msg[1] for msg in session.get("_flashes", [])]
+        assert any("expired" in m.lower() for m in messages)
+
+        # The first upload's respondent is untouched — no import, no wipe.
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = uow.respondents.get_by_assembly_id(existing_assembly.id)
+            assert {r.external_id for r in respondents} == {"R001"}
+
+    def test_confirm_clears_the_stash_so_a_repeat_post_cannot_reimport(
+        self, logged_in_admin, existing_assembly, postgres_session_factory, test_redis_client
+    ):
+        """A double submit or a back-button re-POST must not import twice.
+
+        The import replaces every existing respondent, so a second apply of a
+        stale stash would be destructive. Confirming discards the stash.
+        """
+        self._upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "external_id,first_name,postcode\nR002,Bob,SW1\n",
+        )
+        assert self._confirm(logged_in_admin, existing_assembly.id).status_code == 302
+
+        assert self._stash_keys(test_redis_client, existing_assembly.id) == []
+
+        repeat = self._confirm(logged_in_admin, existing_assembly.id)
+        assert repeat.status_code == 302
+        with logged_in_admin.session_transaction() as session:
+            messages = [msg[1] for msg in session.get("_flashes", [])]
+        assert any("expired" in m.lower() for m in messages)
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = uow.respondents.get_by_assembly_id(existing_assembly.id)
+            assert {r.external_id for r in respondents} == {"R002"}
+
+    def test_stashed_id_column_survives_the_round_trip_through_redis(
+        self, logged_in_admin, existing_assembly, postgres_session_factory
+    ):
+        """The chosen ID column is stashed alongside the CSV and must come back.
+
+        It is not the first column here, so losing it in the round trip would
+        fall back to first_name and give the wrong external_ids.
+        """
+        self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "first_name,person_ref\nAlice,P001\n",
+            id_column="person_ref",
+        )
+        response = self._upload(
+            logged_in_admin,
+            existing_assembly.id,
+            "first_name,person_ref,postcode\nBob,P002,SW1\n",
+            id_column="person_ref",
+        )
+        assert response.status_code == 303
+
+        assert self._confirm(logged_in_admin, existing_assembly.id).status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondents = uow.respondents.get_by_assembly_id(existing_assembly.id)
+            assert {r.external_id for r in respondents} == {"P002"}
+            assert "person_ref" not in respondents[0].attributes
 
     def test_oversized_upload_is_rejected_with_friendly_error(self, logged_in_admin, existing_assembly, monkeypatch):
         # Force the limit to 1 byte so a tiny CSV trips it.
