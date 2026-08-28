@@ -109,6 +109,10 @@ check:
   @uv run deptry src
   @echo "🚀 Checking the UnitOfWork convention"
   @uv run python scripts/check_uow_convention.py
+  @echo "🚀 Checking the if any db migrations need to be created"
+  @uv run alembic check 2>&1 | grep -v '^INFO'
+  @echo "🚀 Checking there is only one db migration head"
+  @if [ $(uv run alembic heads | wc -l) != 1 ]; then echo 'More than one alembic head'; uv run alembic heads; fi
 
 # Run code quality tools - CI edition
 # Identical to `check` except that detect-secrets is skipped: it gives false
