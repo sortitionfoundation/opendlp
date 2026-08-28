@@ -24,6 +24,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.security import hash_password, verify_password
+from tests.fakes import FakeEmailAdapter, FakeTemplateRenderer, FakeURLGenerator
 
 
 class TestCreateUser:
@@ -1144,6 +1145,21 @@ class TestOAuthUserOperations:
         with pytest.raises(CannotRemoveLastAuthMethod):
             user_service.remove_oauth_auth(uow=uow, user_id=user.id)
 
+    def test_remove_oauth_auth_fails_with_only_a_password_the_lockout_destroyed(self, uow):
+        """A hash they cannot sign in with is not the auth method that survives unlinking."""
+        user = User(
+            email="user@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hashed",  # pragma: allowlist secret
+            oauth_provider="google",
+            oauth_id="google123",
+        )
+        user.set_unusable_password()
+        uow.users.add(user)
+
+        with pytest.raises(CannotRemoveLastAuthMethod):
+            user_service.remove_oauth_auth(uow=uow, user_id=user.id)
+
 
 class TestDisableUser:
     """Locking a user out has to take away every route back in at once."""
@@ -1207,7 +1223,7 @@ class TestDisableUser:
         assert disabled.totp_secret_encrypted is None
 
     def test_disabling_a_user_without_2fa_does_not_raise(self, uow, admin_user, target_user):
-        # admin_disable_2fa raises when there is nothing to disable, so disable_user guards it
+        # clear_2fa_for_lockout is a no-op when there is no enrolment to clear
         disabled = user_service.disable_user(uow, target_user.id, admin_user.id)
 
         assert disabled.totp_enabled is False
@@ -1225,6 +1241,25 @@ class TestDisableUser:
 
         assert disabled.is_active is False
         assert disabled.oauth_provider == "google"
+
+    def test_disabling_clears_2fa_for_an_oauth_user_too(self, uow, admin_user):
+        """requires_2fa ignores TOTP once OAuth is linked, so the secret would sit there
+        dormant until someone unlinked OAuth and woke the attacker's authenticator up."""
+        # Only reachable in this order: enable_totp refuses an account that already
+        # has OAuth, but linking OAuth to a 2FA account is not guarded.
+        user = User(
+            email="both@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        user.enable_totp("encrypted-secret")
+        user.add_oauth_credentials("google", "google123")
+        uow.users.add(user)
+
+        disabled = user_service.disable_user(uow, user.id, admin_user.id)
+
+        assert disabled.totp_enabled is False
+        assert disabled.totp_secret_encrypted is None
 
     def test_an_admin_cannot_disable_themselves(self, uow, admin_user):
         with pytest.raises(CannotDisableSelf):
@@ -1408,3 +1443,52 @@ class TestTotpClearedByLockout:
         uow.users.add(target)
 
         assert user_service.totp_cleared_by_lockout(uow, target) is False
+
+
+class TestSendAccountReenabledEmail:
+    """Telling the user their account is back, and how they get in."""
+
+    @pytest.fixture
+    def email_adapter(self):
+        return FakeEmailAdapter()
+
+    def _send(self, email_adapter, user, totp_cleared=False):
+        return user_service.send_account_reenabled_email(
+            email_adapter=email_adapter,
+            template_renderer=FakeTemplateRenderer(),
+            url_generator=FakeURLGenerator(),
+            user=user,
+            totp_cleared=totp_cleared,
+        )
+
+    def test_a_user_with_an_address_is_emailed(self, email_adapter):
+        user = User(
+            email="back@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+
+        assert self._send(email_adapter, user) is True
+        assert email_adapter.sent[0]["to"] == ["back@example.com"]
+
+    def test_an_erased_user_has_no_address_to_write_to(self, email_adapter, caplog):
+        """A GDPR erasure blanks the email but keeps the row - see docs/personal-data.md."""
+        user = User(
+            email="erased@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        user.email = ""
+
+        assert self._send(email_adapter, user) is False
+        assert email_adapter.sent == []
+        assert "user.reenabled_email_skipped_no_address" in caplog.text
+
+    def test_a_failing_adapter_is_reported_not_raised(self):
+        user = User(
+            email="back@example.com",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+
+        assert self._send(FakeEmailAdapter(succeed=False), user) is False

@@ -169,15 +169,18 @@ def temp_env_vars():
 def cli_with_session_factory(postgres_session_factory):
     """Fixture that provides a Click runner with test session factory in context."""
 
-    def _invoke_cli_with_context(cli_command, args):
-        """Helper to invoke CLI commands with test session factory in context."""
+    def _invoke_cli_with_context(cli_command, args, input=None):  # noqa: A002 - matches CliRunner.invoke
+        """Helper to invoke CLI commands with test session factory in context.
+
+        `input` is what the operator types at any prompt, e.g. "y\\n".
+        """
         runner = CliRunner()
 
         # Create context object with our test session factory
         ctx_obj = {"session_factory": postgres_session_factory}
 
         # Invoke with the context object
-        return runner.invoke(cli_command, args, obj=ctx_obj)
+        return runner.invoke(cli_command, args, obj=ctx_obj, input=input)
 
     return _invoke_cli_with_context
 

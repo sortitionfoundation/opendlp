@@ -2,6 +2,7 @@
 # ABOUTME: Drives the real Flask routes + services against a seeded fake store, no provider call, no PostgreSQL
 
 import uuid
+from unittest.mock import patch
 
 import pytest
 from flask.testing import FlaskClient
@@ -86,9 +87,47 @@ def existing_dual_auth_user(fake_store: FakeStore) -> User:
         return user.create_detached_copy()
 
 
+@pytest.fixture
+def google_token() -> dict:
+    """The token shape authlib hands back from the Google callback."""
+    return {
+        "access_token": "mock_access_token",  # pragma: allowlist secret
+        "token_type": "Bearer",
+        "userinfo": {
+            "sub": "google-123",
+            "email": "someone@example.com",
+            "given_name": "OAuth",
+            "family_name": "User",
+            "email_verified": True,
+        },
+    }
+
+
 def _login(client: FlaskClient, user: User) -> None:
     with client.session_transaction() as session:
         session["_user_id"] = user.get_id()
+
+
+class TestOAuthLoginForDisabledAccounts:
+    """A disabled account must not be signed in by its OAuth provider either."""
+
+    def test_the_google_callback_refuses_a_disabled_user(
+        self, client: FlaskClient, fake_store: FakeStore, existing_oauth_user: User, google_token: dict
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.users.get(existing_oauth_user.id).is_active = False
+            uow.commit()
+
+        google_token["userinfo"]["sub"] = existing_oauth_user.oauth_id
+        google_token["userinfo"]["email"] = existing_oauth_user.email
+
+        with patch("opendlp.entrypoints.blueprints.auth.oauth.google") as mock_google:
+            mock_google.authorize_access_token.return_value = google_token
+            response = client.get("/auth/login/google/callback", follow_redirects=True)
+
+        assert b"This account has been disabled" in response.data
+        with client.session_transaction() as session:
+            assert "_user_id" not in session
 
 
 class TestOAuthRegistrationForms:

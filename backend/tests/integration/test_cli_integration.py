@@ -135,6 +135,92 @@ class TestCliUsersIntegration:
         with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
             assert uow.users.get_by_email(user_email).is_active is True
 
+    def test_deactivate_user_prompts_and_proceeds_on_yes(self, postgres_session_factory, cli_with_session_factory):
+        """The prompt runs between two `with uow:` blocks - the second must still work after it."""
+        user_email = "deactivate-prompted@example.com"
+        admin_email = "deactivate-prompt-admin@example.com"
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            create_user(
+                uow=uow,
+                email=user_email,
+                password="pass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.USER,
+            )
+            create_user(
+                uow=uow,
+                email=admin_email,
+                password="adminpass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.ADMIN,
+            )
+
+        result = cli_with_session_factory(
+            cli, ["users", "deactivate", user_email, "--admin-email", admin_email], input="y\n"
+        )
+
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
+        assert f"✓ User '{user_email}' has been deactivated." in result.output
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            user = uow.users.get_by_email(user_email)
+            assert user.is_active is False
+            assert user.sessions_invalidated_at is not None
+            assert user.has_usable_password() is False
+
+    def test_deactivate_user_leaves_the_account_alone_on_no(self, postgres_session_factory, cli_with_session_factory):
+        """Answering no must not have started any work in the first block either."""
+        user_email = "deactivate-declined@example.com"
+        admin_email = "deactivate-decline-admin@example.com"
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            create_user(
+                uow=uow,
+                email=user_email,
+                password="pass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.USER,
+            )
+            create_user(
+                uow=uow,
+                email=admin_email,
+                password="adminpass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.ADMIN,
+            )
+
+        result = cli_with_session_factory(
+            cli, ["users", "deactivate", user_email, "--admin-email", admin_email], input="n\n"
+        )
+
+        assert result.exit_code == 0
+        assert "Operation cancelled." in result.output
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            user = uow.users.get_by_email(user_email)
+            assert user.is_active is True
+            assert user.sessions_invalidated_at is None
+
+    def test_deactivate_user_requires_an_admin_role(self, postgres_session_factory, cli_with_session_factory):
+        """--admin-email is the permission check, so an ordinary account must be refused by name."""
+        user_email = "deactivate-byuser@example.com"
+        non_admin_email = "not-an-admin@example.com"
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            create_user(
+                uow=uow,
+                email=user_email,
+                password="pass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.USER,
+            )
+            create_user(
+                uow=uow,
+                email=non_admin_email,
+                password="pass123oiua",  # pragma: allowlist secret
+                global_role=GlobalRole.GLOBAL_ORGANISER,
+            )
+
+        result = cli_with_session_factory(
+            cli, ["users", "deactivate", user_email, "--admin-email", non_admin_email, "--confirm"]
+        )
+
+        assert result.exit_code != 0
+        assert f"✗ User '{non_admin_email}' must have ADMIN role to deactivate users." in result.output
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            assert uow.users.get_by_email(user_email).is_active is True
+
     def test_reset_password_flow(self, postgres_session_factory, cli_with_session_factory, monkeypatch):
         """Test user password reset flow."""
         user_email = "reset-password-test@example.com"
