@@ -1306,9 +1306,9 @@ container rather than the block, since the block's own handler would redo
 totals the caller has already redone. `@submit="allowLeave()"` stands the guard
 down, because saving is the one way out that keeps the edits.
 
-**One thing the guard does not cover.** The CSV import and "Add selected
-categories" forms sit below the editor and navigate on submit; `beforeunload`
-catches those with the browser's own wording rather than our dialog.
+The two forms that used to sit below the editor and navigate on submit — the
+CSV import and "Add selected categories" — have since moved to the data page
+(§7.5), so the guard now covers everything the page can do.
 
 ### 7.4 Follow-up — the save bar follows the page down
 
@@ -1322,9 +1322,9 @@ gave them their names — "Discard changes" and "Save").
   ordinary card in flow, stretched to the full viewport width by a
   `scroll-state(stuck: bottom)` container query once it pins. Nothing new to
   maintain, and the two pages stay recognisably the same product.
-- **The page component now wraps the respondent columns and the CSV import as
-  well.** `position: sticky` only pins within its own parent's box, so the bar
-  has to be the last child of something that covers everything it follows down.
+- **The page component wraps everything above the bar.** `position: sticky`
+  only pins within its own parent's box, so the bar has to be the last child of
+  something that covers everything it follows down.
 - **"Cancel" became "Discard changes", and now really discards.** It used to
   hide the form and leave the edits in the DOM to reappear on re-entry; it now
   fetches the page again, which is the only thing that actually removes edits
@@ -1337,6 +1337,39 @@ gave them their names — "Discard changes" and "Save").
 - **The url it reloads is passed in as `discardUrl`, not read from the address
   bar.** A rejected save re-renders this page at the `save-all` POST url, and
   the GET a reload makes would 405 there.
+
+---
+
+### 7.5 Follow-up — getting the targets in belongs to the data page
+
+Two things on the targets page were not about tuning targets at all: importing
+a CSV of them, and building categories from the columns of the respondent data.
+Both are how an assembly gets its targets in the first place, and both now live
+on the data page beside the uploads they belong with. The targets page is left
+doing one job — setting percentages, minimums and maximums.
+
+- **The CSV import section is gone rather than moved.** The data page already
+  had a targets upload form in its "Targets" card; the targets page had a
+  second, collapsed one posting to the same route. Only the error display was
+  worth keeping, so the card gained an error summary and a field-level error,
+  and `_render_targets_upload_page` now re-renders the *data* page. That is why
+  `backoffice.render_assembly_data_page` exists: the targets blueprint owns the
+  upload route but not the page the form is on. It takes `preferred_source`
+  because a POST carries no `?source=` to read the source from.
+- **"Respondent data columns" became a dialog on the targets card**, opened by
+  "Create from respondent data" and offered whether or not targets already
+  exist — a column missed the first time round can be added later, and the
+  dialog shows the ones already covered as ticked and disabled. Its checkboxes
+  gained distinct ids; as one flat `name="columns"` list they had all shared
+  one, so every label pointed at the first box.
+- **The HTMX partial route went with it.** `targets.respondent_columns` existed
+  only to re-render that section when a category was added or deleted on the
+  same page, and nothing on the data page changes categories in place. The
+  `HX-Trigger: categoriesChanged` it listened for went too.
+- **Creating from columns still lands on the targets page**, because the new
+  categories carry no numbers yet and setting them is the next thing to do.
+  When nothing is created — no columns ticked, or every one already defined —
+  it stays on the data page instead.
 
 ---
 
