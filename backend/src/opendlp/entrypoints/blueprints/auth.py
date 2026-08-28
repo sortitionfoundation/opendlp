@@ -414,8 +414,9 @@ def confirm_email(token: str) -> ResponseReturnValue:
         # POST: actually confirm the email
         try:
             user = confirm_email_with_token(uow, token)
+            if not sign_in(user):
+                return redirect(url_for("auth.login"))
             flash(_("Email confirmed successfully! You can now log in."), "success")
-            login_user(user)
             return redirect(url_for(default_dashboard_endpoint()))
         except InvalidConfirmationToken as e:
             flash(str(e), "error")

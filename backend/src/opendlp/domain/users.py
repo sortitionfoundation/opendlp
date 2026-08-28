@@ -163,7 +163,7 @@ class User:
 
     def has_multiple_auth_methods(self) -> bool:
         """Check if user has more than one authentication method."""
-        return bool(self.password_hash and self.oauth_provider)
+        return bool(self.has_usable_password() and self.oauth_provider)
 
     def get_assembly_role(self, assembly_id: uuid.UUID) -> AssemblyRole | None:
         """Get user's role for a specific assembly."""

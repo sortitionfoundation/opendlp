@@ -133,18 +133,26 @@
                         {% if user.is_active %}
                             <form method="POST"
                                   action="{{ url_for('admin.disable_user_account', user_id=user.id) }}"
-                                  style="display: inline"
-                                  data-confirm="{{ _("Are you sure you want to disable this account? This ends every session they have signed in to, permanently removes their password, and switches off their two-factor authentication. They will have to set a new password when the account is enabled again.") }}">
+                                  style="display: inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <button type="submit" class="govuk-button govuk-button--warning">{{ _("Disable Account") }}</button>
+                                <button type="submit"
+                                        class="govuk-button govuk-button--warning"
+                                        data-module="govuk-button"
+                                        data-confirm="{% if user.oauth_provider %}{{ _("Are you sure you want to disable this account? This ends every session they have signed in to and switches off their two-factor authentication. They will still sign in with %(provider)s when the account is enabled again.", provider=user.oauth_provider|capitalize) }}{% else %}{{ _("Are you sure you want to disable this account? This ends every session they have signed in to, permanently removes their password, and switches off their two-factor authentication. They will have to set a new password when the account is enabled again.") }}{% endif %}">
+                                    {{ _("Disable Account") }}
+                                </button>
                             </form>
                         {% else %}
                             <form method="POST"
                                   action="{{ url_for('admin.enable_user_account', user_id=user.id) }}"
-                                  style="display: inline"
-                                  data-confirm="{{ _("Are you sure you want to enable this account? The user will be emailed a link to set a new password.") }}">
+                                  style="display: inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <button type="submit" class="govuk-button govuk-button--secondary">{{ _("Enable Account") }}</button>
+                                <button type="submit"
+                                        class="govuk-button govuk-button--secondary"
+                                        data-module="govuk-button"
+                                        data-confirm="{% if user.oauth_provider %}{{ _("Are you sure you want to enable this account? The user will be emailed to say so, and signs in with %(provider)s as before.", provider=user.oauth_provider|capitalize) }}{% else %}{{ _("Are you sure you want to enable this account? The user will be emailed telling them to request a password reset - their old password no longer works.") }}{% endif %}">
+                                    {{ _("Enable Account") }}
+                                </button>
                             </form>
                         {% endif %}
                     {% endif %}

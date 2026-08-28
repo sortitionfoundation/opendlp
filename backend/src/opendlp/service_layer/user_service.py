@@ -618,11 +618,9 @@ def disable_user(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uui
     uow.email_confirmation_tokens.invalidate_user_tokens(user_id)
 
     # A compromised account is exactly where the enrolled authenticator may be
-    # the attacker's, so it goes too. admin_disable_2fa raises rather than
-    # no-ops when there is nothing to disable, hence the guard.
-    totp_cleared = user.totp_enabled and not user.oauth_provider
-    if totp_cleared:
-        two_factor_service.admin_disable_2fa(uow, user_id, admin_user_id)
+    # the attacker's, so it goes too - for OAuth users as well, whose dormant
+    # TOTP secret would otherwise wake up if the OAuth link were removed later.
+    totp_cleared = two_factor_service.clear_2fa_for_lockout(uow, user_id, admin_user_id)
 
     _warn_about_outstanding_invites(uow, user)
 
@@ -1208,7 +1206,9 @@ def remove_oauth_auth(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> User:
         raise UserNotFoundError(f"User {user_id} not found")
     assert isinstance(user, User)
 
-    if not user.password_hash:
+    # A password made unusable by a lockout is not something they can sign in
+    # with, so it does not count as the auth method that survives this.
+    if not user.has_usable_password():
         raise CannotRemoveLastAuthMethod()
 
     user.remove_oauth()

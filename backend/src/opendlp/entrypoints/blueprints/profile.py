@@ -71,8 +71,9 @@ def edit() -> ResponseReturnValue:
 @login_required
 def change_password() -> ResponseReturnValue:
     """Change own password."""
-    # OAuth users without password should use set-password instead
-    if current_user.oauth_provider and not current_user.password_hash:
+    # OAuth users without a usable password should use set-password instead -
+    # there is no current password for them to type into this form.
+    if current_user.oauth_provider and not current_user.has_usable_password():
         flash(_("You need to set a password first"), "info")
         return redirect(url_for("profile.set_password"))
 
@@ -278,8 +279,9 @@ def remove_oauth() -> ResponseReturnValue:
 @login_required
 def set_password() -> ResponseReturnValue:
     """Set password for OAuth users who don't have one."""
-    # Redirect if user already has password
-    if current_user.password_hash:
+    # Redirect if user already has a password they can sign in with. One made
+    # unusable by a lockout does not count - setting a new one is the point.
+    if current_user.has_usable_password():
         flash(_("You already have a password. Use 'Change password' instead."), "info")
         return redirect(url_for("profile.view"))
 

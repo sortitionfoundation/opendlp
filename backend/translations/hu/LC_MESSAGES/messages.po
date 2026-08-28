@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-27 14:01+0000\n"
+"POT-Creation-Date: 2026-08-28 10:43+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -750,9 +750,9 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/admin.py:112
 #: src/opendlp/entrypoints/blueprints/admin.py:140
 #: src/opendlp/entrypoints/blueprints/admin.py:220
-#: src/opendlp/entrypoints/blueprints/admin.py:402
-#: src/opendlp/entrypoints/blueprints/admin.py:433
-#: src/opendlp/entrypoints/blueprints/admin.py:538
+#: src/opendlp/entrypoints/blueprints/admin.py:428
+#: src/opendlp/entrypoints/blueprints/admin.py:459
+#: src/opendlp/entrypoints/blueprints/admin.py:564
 #, fuzzy
 msgid "You don't have permission to view this page"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
@@ -765,17 +765,18 @@ msgstr "Hiba történt a gyűlés frissítése közben"
 #: src/opendlp/entrypoints/blueprints/admin.py:136
 #: src/opendlp/entrypoints/blueprints/admin.py:190
 #: src/opendlp/entrypoints/blueprints/admin.py:216
-#: src/opendlp/entrypoints/blueprints/admin.py:260
-#: src/opendlp/entrypoints/blueprints/admin.py:310
-#: src/opendlp/entrypoints/blueprints/admin.py:350
-#: src/opendlp/entrypoints/blueprints/admin.py:398
+#: src/opendlp/entrypoints/blueprints/admin.py:272
+#: src/opendlp/entrypoints/blueprints/admin.py:336
+#: src/opendlp/entrypoints/blueprints/admin.py:376
+#: src/opendlp/entrypoints/blueprints/admin.py:424
 #: src/opendlp/service_layer/two_factor_service.py:48
 #: src/opendlp/service_layer/two_factor_service.py:95
 #: src/opendlp/service_layer/two_factor_service.py:153
 #: src/opendlp/service_layer/two_factor_service.py:204
 #: src/opendlp/service_layer/two_factor_service.py:251
-#: src/opendlp/service_layer/two_factor_service.py:296
-#: src/opendlp/service_layer/two_factor_service.py:323
+#: src/opendlp/service_layer/two_factor_service.py:286
+#: src/opendlp/service_layer/two_factor_service.py:328
+#: src/opendlp/service_layer/two_factor_service.py:355
 #, fuzzy
 msgid "User not found"
 msgstr "Az oldal nem elérhető"
@@ -791,11 +792,11 @@ msgid "User '%(email)s' updated successfully"
 msgstr "A '%(email)s' gyűlés sikeresen frissült"
 
 #: src/opendlp/entrypoints/blueprints/admin.py:194
-#: src/opendlp/entrypoints/blueprints/admin.py:264
-#: src/opendlp/entrypoints/blueprints/admin.py:314
-#: src/opendlp/entrypoints/blueprints/admin.py:354
-#: src/opendlp/entrypoints/blueprints/admin.py:504
-#: src/opendlp/entrypoints/blueprints/admin.py:572
+#: src/opendlp/entrypoints/blueprints/admin.py:276
+#: src/opendlp/entrypoints/blueprints/admin.py:340
+#: src/opendlp/entrypoints/blueprints/admin.py:380
+#: src/opendlp/entrypoints/blueprints/admin.py:530
+#: src/opendlp/entrypoints/blueprints/admin.py:598
 #, fuzzy
 msgid "You don't have permission to perform this action"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
@@ -810,123 +811,144 @@ msgstr "Hiba történt a gyűlés frissítése közben"
 msgid "An error occurred while loading the edit page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:242
+#: src/opendlp/entrypoints/blueprints/admin.py:243
 #, python-format
 msgid ""
-"Account disabled for '%(email)s'. All sessions have been ended and the "
-"password reset."
+"Account disabled for '%(email)s'. Every session has been ended. Their "
+"%(provider)s account still exists - if that is how they were compromised,"
+" it needs attention too."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:270
+#: src/opendlp/entrypoints/blueprints/admin.py:253
+#, python-format
+msgid ""
+"Account disabled for '%(email)s'. Every session has been ended and their "
+"password permanently removed."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/admin.py:282
 #, fuzzy
 msgid "An error occurred while disabling the account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:285
+#: src/opendlp/entrypoints/blueprints/admin.py:297
 #, python-format
 msgid "Account enabled for '%(email)s'"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:295
-msgid "An email has been sent telling them how to set a new password"
+#: src/opendlp/entrypoints/blueprints/admin.py:307
+msgid "An email has been sent telling them their account is back"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:298
+#: src/opendlp/entrypoints/blueprints/admin.py:311
+#, python-format
+msgid ""
+"An email has been sent telling them their account is back, and that they "
+"sign in with %(provider)s as before."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/admin.py:319
+msgid ""
+"An email has been sent telling them to request a password reset - their "
+"old password is gone"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/admin.py:324
 msgid ""
 "The account is enabled, but we could not email the user. Please contact "
 "them directly."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:320
+#: src/opendlp/entrypoints/blueprints/admin.py:346
 #, fuzzy
 msgid "An error occurred while enabling the account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:334
+#: src/opendlp/entrypoints/blueprints/admin.py:360
 msgid "Two-factor authentication has been disabled for this user"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:360
+#: src/opendlp/entrypoints/blueprints/admin.py:386
 #, fuzzy
 msgid "An error occurred while disabling two-factor authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:411
+#: src/opendlp/entrypoints/blueprints/admin.py:437
 #, fuzzy
 msgid "An error occurred while loading the audit log"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:437
+#: src/opendlp/entrypoints/blueprints/admin.py:463
 #, fuzzy
 msgid "An error occurred while loading the invite list"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:468
+#: src/opendlp/entrypoints/blueprints/admin.py:494
 #, python-format
 msgid "Invite created successfully. Code: %(code)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:482
+#: src/opendlp/entrypoints/blueprints/admin.py:508
 #, python-format
 msgid "Invitation email sent to %(email)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:487
+#: src/opendlp/entrypoints/blueprints/admin.py:513
 msgid "Failed to send invitation email. Please share the invite code manually."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:493
+#: src/opendlp/entrypoints/blueprints/admin.py:519
 msgid "Error sending invitation email. Please share the invite code manually."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:501
-#: src/opendlp/entrypoints/blueprints/admin.py:508
+#: src/opendlp/entrypoints/blueprints/admin.py:527
+#: src/opendlp/entrypoints/blueprints/admin.py:534
 #, fuzzy
 msgid "An error occurred while creating the invite"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:514
+#: src/opendlp/entrypoints/blueprints/admin.py:540
 #, fuzzy
 msgid "An error occurred while loading the page"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:534
-#: src/opendlp/entrypoints/blueprints/admin.py:568
+#: src/opendlp/entrypoints/blueprints/admin.py:560
+#: src/opendlp/entrypoints/blueprints/admin.py:594
 #, fuzzy
 msgid "Invite not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:544
+#: src/opendlp/entrypoints/blueprints/admin.py:570
 #, fuzzy
 msgid "An error occurred while loading the invite details"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:558
+#: src/opendlp/entrypoints/blueprints/admin.py:584
 #, python-format
 msgid "Invite '%(code)s' has been revoked"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:576
+#: src/opendlp/entrypoints/blueprints/admin.py:602
 #, fuzzy
 msgid "An error occurred while revoking the invite"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:591
+#: src/opendlp/entrypoints/blueprints/admin.py:617
 #, fuzzy
 msgid "No expired invites to clean up"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:593
+#: src/opendlp/entrypoints/blueprints/admin.py:619
 #, fuzzy
 msgid "Cleaned up 1 expired invite"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:595
+#: src/opendlp/entrypoints/blueprints/admin.py:621
 #, python-format
 msgid "Cleaned up %(count)s expired invites"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/admin.py:601
+#: src/opendlp/entrypoints/blueprints/admin.py:627
 #, fuzzy
 msgid "An error occurred while cleaning up invites"
 msgstr "Hiba történt a gyűlés létrehozásakor"
@@ -940,8 +962,8 @@ msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/auth.py:128
 #: src/opendlp/entrypoints/blueprints/auth.py:246
-#: src/opendlp/entrypoints/blueprints/auth.py:625
-#: src/opendlp/entrypoints/blueprints/auth.py:735
+#: src/opendlp/entrypoints/blueprints/auth.py:626
+#: src/opendlp/entrypoints/blueprints/auth.py:736
 #, fuzzy
 msgid "Signed in successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
@@ -1018,8 +1040,8 @@ msgid "Registration successful! Please check your email to confirm your account.
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/auth.py:388
-#: src/opendlp/entrypoints/blueprints/auth.py:550
-#: src/opendlp/entrypoints/blueprints/profile.py:319
+#: src/opendlp/entrypoints/blueprints/auth.py:551
+#: src/opendlp/entrypoints/blueprints/profile.py:321
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
@@ -1029,54 +1051,54 @@ msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:411
-#: src/opendlp/entrypoints/blueprints/auth.py:425
-#: src/opendlp/entrypoints/blueprints/auth.py:457
-#: src/opendlp/entrypoints/blueprints/auth.py:511
-#: src/opendlp/entrypoints/blueprints/auth.py:553
+#: src/opendlp/entrypoints/blueprints/auth.py:426
+#: src/opendlp/entrypoints/blueprints/auth.py:458
+#: src/opendlp/entrypoints/blueprints/auth.py:512
+#: src/opendlp/entrypoints/blueprints/auth.py:554
 #, fuzzy
 msgid "An error occurred. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:417
+#: src/opendlp/entrypoints/blueprints/auth.py:419
 msgid "Email confirmed successfully! You can now log in."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:448
+#: src/opendlp/entrypoints/blueprints/auth.py:449
 msgid ""
 "If that email is registered and unconfirmed, a confirmation link has been"
 " sent."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:502
+#: src/opendlp/entrypoints/blueprints/auth.py:503
 msgid "If an account exists with this email, a password reset link has been sent."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:543
+#: src/opendlp/entrypoints/blueprints/auth.py:544
 msgid "Your password has been reset successfully. You can now log in."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:596
-#: src/opendlp/entrypoints/blueprints/profile.py:152
+#: src/opendlp/entrypoints/blueprints/auth.py:597
+#: src/opendlp/entrypoints/blueprints/profile.py:153
 msgid "Failed to get user information from Google"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:623
-#: src/opendlp/entrypoints/blueprints/auth.py:733
+#: src/opendlp/entrypoints/blueprints/auth.py:624
+#: src/opendlp/entrypoints/blueprints/auth.py:734
 #, fuzzy
 msgid "Account created successfully! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:637
+#: src/opendlp/entrypoints/blueprints/auth.py:638
 #, fuzzy
 msgid "An error occurred during Google sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:706
-#: src/opendlp/entrypoints/blueprints/profile.py:216
+#: src/opendlp/entrypoints/blueprints/auth.py:707
+#: src/opendlp/entrypoints/blueprints/profile.py:217
 msgid "Failed to get user information from Microsoft"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:747
+#: src/opendlp/entrypoints/blueprints/auth.py:748
 #, fuzzy
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
@@ -2000,140 +2022,140 @@ msgstr "A '%(title)s' gyűlés sikeresen frissült"
 msgid "An error occurred while updating your profile"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:76
+#: src/opendlp/entrypoints/blueprints/profile.py:77
 msgid "You need to set a password first"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:96
+#: src/opendlp/entrypoints/blueprints/profile.py:97
 #, fuzzy
 msgid "Password changed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:100
+#: src/opendlp/entrypoints/blueprints/profile.py:101
 msgid "Current password is incorrect"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:102
+#: src/opendlp/entrypoints/blueprints/profile.py:103
 #, fuzzy, python-format
 msgid "New password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:105
+#: src/opendlp/entrypoints/blueprints/profile.py:106
 #, fuzzy
 msgid "An error occurred while changing your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:137
-#: src/opendlp/entrypoints/blueprints/profile.py:200
+#: src/opendlp/entrypoints/blueprints/profile.py:138
+#: src/opendlp/entrypoints/blueprints/profile.py:201
 msgid "Invalid OAuth linking request"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:163
+#: src/opendlp/entrypoints/blueprints/profile.py:164
 #, fuzzy
 msgid "Google account linked successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:171
+#: src/opendlp/entrypoints/blueprints/profile.py:172
 #, fuzzy
 msgid "An error occurred while linking your Google account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:227
+#: src/opendlp/entrypoints/blueprints/profile.py:228
 #, fuzzy
 msgid "Microsoft account linked successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:235
+#: src/opendlp/entrypoints/blueprints/profile.py:236
 #, fuzzy
 msgid "An error occurred while linking your Microsoft account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:248
+#: src/opendlp/entrypoints/blueprints/profile.py:249
 #, fuzzy
 msgid "Password authentication removed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:253
+#: src/opendlp/entrypoints/blueprints/profile.py:254
 #, fuzzy
 msgid "An error occurred while removing password authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:267
+#: src/opendlp/entrypoints/blueprints/profile.py:268
 #, fuzzy
 msgid "OAuth authentication removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:272
+#: src/opendlp/entrypoints/blueprints/profile.py:273
 #, fuzzy
 msgid "An error occurred while removing OAuth authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:283
+#: src/opendlp/entrypoints/blueprints/profile.py:285
 msgid "You already have a password. Use 'Change password' instead."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:288
+#: src/opendlp/entrypoints/blueprints/profile.py:290
 msgid "Cannot set password without another authentication method"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:315
+#: src/opendlp/entrypoints/blueprints/profile.py:317
 #, fuzzy
 msgid "Password set successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:322
+#: src/opendlp/entrypoints/blueprints/profile.py:324
 #, fuzzy
 msgid "An error occurred while setting your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:342
+#: src/opendlp/entrypoints/blueprints/profile.py:344
 #, fuzzy
 msgid "An error occurred while loading 2FA settings"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:371
+#: src/opendlp/entrypoints/blueprints/profile.py:373
 #, fuzzy
 msgid "An error occurred while setting up 2FA"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:382
+#: src/opendlp/entrypoints/blueprints/profile.py:384
 msgid "Please enter the verification code from your authenticator app"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:390
+#: src/opendlp/entrypoints/blueprints/profile.py:392
 msgid "Setup session expired. Please start over."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:402
+#: src/opendlp/entrypoints/blueprints/profile.py:404
 #, fuzzy
 msgid "Two-factor authentication has been enabled successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:410
+#: src/opendlp/entrypoints/blueprints/profile.py:412
 #, fuzzy
 msgid "An error occurred while enabling 2FA"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:421
+#: src/opendlp/entrypoints/blueprints/profile.py:423
 #, fuzzy
 msgid "Please enter your verification code to disable 2FA"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:429
+#: src/opendlp/entrypoints/blueprints/profile.py:431
 msgid "Two-factor authentication has been disabled"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:437
+#: src/opendlp/entrypoints/blueprints/profile.py:439
 #, fuzzy
 msgid "An error occurred while disabling 2FA"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:448
+#: src/opendlp/entrypoints/blueprints/profile.py:450
 #, fuzzy
 msgid "Please enter your verification code to regenerate backup codes"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:463
+#: src/opendlp/entrypoints/blueprints/profile.py:465
 #, fuzzy
 msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a gyűlés létrehozásakor"
@@ -3343,6 +3365,7 @@ msgid "2FA is not enabled for this user"
 msgstr ""
 
 #: src/opendlp/service_layer/two_factor_service.py:255
+#: src/opendlp/service_layer/two_factor_service.py:290
 #, fuzzy
 msgid "Admin user not found"
 msgstr "Az oldal nem elérhető"
@@ -4046,7 +4069,16 @@ msgstr ""
 msgid "Disable 2FA"
 msgstr ""
 
-#: templates/admin/user_view.html:137
+#: templates/admin/user_view.html:141
+#, python-format
+msgid ""
+"Are you sure you want to disable this account? This ends every session "
+"they have signed in to and switches off their two-factor authentication. "
+"They will still sign in with %(provider)s when the account is enabled "
+"again."
+msgstr ""
+
+#: templates/admin/user_view.html:141
 msgid ""
 "Are you sure you want to disable this account? This ends every session "
 "they have signed in to, permanently removes their password, and switches "
@@ -4054,23 +4086,31 @@ msgid ""
 " when the account is enabled again."
 msgstr ""
 
-#: templates/admin/user_view.html:139
+#: templates/admin/user_view.html:142
 #, fuzzy
 msgid "Disable Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/admin/user_view.html:145
+#: templates/admin/user_view.html:153
+#, python-format
 msgid ""
-"Are you sure you want to enable this account? The user will be emailed a "
-"link to set a new password."
+"Are you sure you want to enable this account? The user will be emailed to"
+" say so, and signs in with %(provider)s as before."
 msgstr ""
 
-#: templates/admin/user_view.html:147
+#: templates/admin/user_view.html:153
+msgid ""
+"Are you sure you want to enable this account? The user will be emailed "
+"telling them to request a password reset - their old password no longer "
+"works."
+msgstr ""
+
+#: templates/admin/user_view.html:154
 #, fuzzy
 msgid "Enable Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/admin/user_view.html:152
+#: templates/admin/user_view.html:160
 #, fuzzy
 msgid "Back to User List"
 msgstr "Vissza a közösségi gyűléshez"
@@ -14643,4 +14683,20 @@ msgstr ""
 #~ "You are editing your own account. "
 #~ "You cannot change your own role or"
 #~ " deactivate your own account."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Account disabled for '%(email)s'. All "
+#~ "sessions have been ended and the "
+#~ "password reset."
+#~ msgstr ""
+
+#~ msgid "An email has been sent telling them how to set a new password"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Are you sure you want to enable"
+#~ " this account? The user will be "
+#~ "emailed a link to set a new "
+#~ "password."
 #~ msgstr ""
