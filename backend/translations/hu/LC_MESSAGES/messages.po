@@ -14943,4 +14943,3 @@ msgstr ""
 
 #~ msgid "Save all"
 #~ msgstr "Elkezdve"
-
