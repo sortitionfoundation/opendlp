@@ -397,7 +397,17 @@ flowchart LR
 
 ## Developer Tools (/backoffice/dev/)
 
-Dev tooling lives in a dedicated `blueprints/dev.py`, registered under `/backoffice` only when `config.is_production()` is false. All routes additionally check `has_global_admin()`; non-admins get a 404.
+Dev tooling lives in a dedicated `blueprints/dev.py`, registered under `/backoffice` only when `config.dev_tools_enabled()` is true — that is, outside production. All routes additionally check `has_global_admin()`; non-admins get a 404.
+
+**Linking to a dev route from a page production serves.** `url_for()` on an endpoint that is not registered raises, so an unguarded link is a 500 that only appears on a production install. `config.dev_tools_enabled()` is the single answer to "is the dev blueprint here", asked both by the blueprint registration and — as the Jinja global `dev_tools_enabled`, set in `create_app()` — by templates:
+
+```jinja
+{% if dev_tools_enabled %}
+    <a href="{{ url_for('dev.patterns') }}">…</a>
+{% endif %}
+```
+
+It is a Jinja global rather than a context processor because macros imported with `{% from %}` render without the template context, and the showcase — the one page production serves that is written with the dev tools in mind — is built out of exactly those. `TestShowcaseOnAProductionInstall` in `tests/component/test_backoffice_general.py` renders the showcase against a production blueprint set to catch a link added without the guard.
 
 Current routes:
 
