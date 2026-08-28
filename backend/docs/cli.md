@@ -48,7 +48,10 @@ opendlp users reset-password user@example.com --password newpass456
 - `add` - Create a new user with email and password
 - `list` - Display all users with their roles and status
 - `deactivate` - Lock a user out: ends their sessions, makes their password
-  unusable and clears their 2FA. Takes `--admin-email` to record who did it.
+  unusable and clears their 2FA. `--admin-email` is required and must be the
+  address of an existing admin - it is the permission check as well as the
+  record of who did it. There is no `activate` counterpart; re-enabling an
+  account is done from Site Admin → Users, because it also emails the user.
   See [Account Lockout](account-lockout.md).
 - `reset-password` - Change a user's password
 

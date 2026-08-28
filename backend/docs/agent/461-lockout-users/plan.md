@@ -184,14 +184,16 @@ use.
 4. `user.set_unusable_password()` (§3.2).
 5. `password_reset_tokens.invalidate_user_tokens(user_id)` and the same for
    `email_confirmation_tokens` — so no outstanding link survives the lockout.
-6. **Clear 2FA** (Q1): if `user.totp_enabled and not user.oauth_provider`, call
-   `two_factor_service.admin_disable_2fa(uow, user_id, admin_user_id)`, which
-   drops the TOTP secret, deletes the backup codes and writes the audit row.
-   The guard matters — `admin_disable_2fa` raises `TwoFactorSetupError` when 2FA
-   is off or the user is OAuth-based (`two_factor_service.py:254-258`), so it
-   cannot be called unconditionally. `user_service` importing `two_factor_service`
-   introduces no cycle (that module imports only `totp_service`, domain and
-   `unit_of_work`).
+6. **Clear 2FA** (Q1): call
+   `two_factor_service.clear_2fa_for_lockout(uow, user_id, admin_user_id)`, which
+   drops the TOTP secret, deletes the backup codes and writes the audit row, and
+   reports whether there was an enrolment to clear. It exists alongside
+   `admin_disable_2fa` because that one raises `TwoFactorSetupError` when 2FA is
+   off or the user is OAuth-based (`two_factor_service.py:257-261`), and a
+   lockout wants neither guard: an OAuth account's TOTP secret is dormant rather
+   than absent, and would wake up if the OAuth link were later removed.
+   `user_service` importing `two_factor_service` introduces no cycle (that module
+   imports only `totp_service`, domain and `unit_of_work`).
    The reasoning: a compromised account is exactly the case where the enrolled
    authenticator may be the *attacker's*, and leaving it in place would both
    preserve their second factor and lock the real user out after their password
@@ -286,7 +288,7 @@ strings, and **no email addresses or invite codes** (`docs/personal-data.md`):
 
 | Event | Level | Fields |
 |---|---|---|
-| `user.disabled` | `warning` | `sessions_invalidated`, `password_scrambled`, `totp_cleared` |
+| `user.disabled` | `warning` | `sessions_invalidated`, `credentials_reset`, `totp_cleared` |
 | `user.disabled.outstanding_invites` | `warning` | `invite_count`, `invite_ids` |
 | `user.enabled` | `warning` | |
 | `user.reenabled_email_sent` / `...email_failed` | `info` / `error` | |
@@ -363,7 +365,7 @@ instead of a success message.
 
 | # | Question | Decision |
 |---|---|---|
-| Q1 | Clear 2FA on disable? | **Yes, clear it.** A compromised account is exactly where the enrolled authenticator may be the attacker's. Via `admin_disable_2fa`, guarded (§3.3 step 6). |
+| Q1 | Clear 2FA on disable? | **Yes, clear it** — for every account with an enrolment, OAuth-linked or not. A compromised account is exactly where the enrolled authenticator may be the attacker's. Via `clear_2fa_for_lockout` (§3.3 step 6). |
 | Q2 | OAuth-only users — unlink on disable? | **No (option a).** Being locked out of OpenDLP is enough; once the account is known clean they carry on with the same Google/Microsoft login. |
 | Q3 | Revoke unused invites the disabled user created? | **No — log a warning only.** Invites may be going away, so do the minimal thing: a `warning` log with invite ids and count, never the codes. |
 | Q4 | Email the user on disable too? | **No.** The attacker may still control the mailbox. |
