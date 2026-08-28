@@ -242,6 +242,25 @@ class TestAdminDisableAccount:
 
         assert b"Invalid email or password" in response.data
 
+    def test_the_old_password_still_fails_once_the_account_is_enabled_again(
+        self, logged_in_admin: FlaskClient, app: Flask, fake_store: FakeStore, fake_email: FakeEmailAdapter
+    ) -> None:
+        """With the account active again, only the destroyed password stands between them."""
+        victim = _seed_user(fake_store, "victim@example.com", GlobalRole.USER)
+        logged_in_admin.post(f"/admin/users/{victim.id}/disable")
+        logged_in_admin.post(f"/admin/users/{victim.id}/enable")
+
+        client = _second_client(app)
+        response = client.post(
+            "/auth/login",
+            data={"email": "victim@example.com", "password": "SecurePass123!"},  # pragma: allowlist secret
+            follow_redirects=True,
+        )
+
+        assert b"Invalid email or password" in response.data
+        with client.session_transaction() as session:
+            assert "_user_id" not in session
+
     def test_an_admin_cannot_disable_their_own_account(
         self, logged_in_admin: FlaskClient, admin_user: User, fake_store: FakeStore
     ) -> None:
@@ -285,6 +304,21 @@ class TestAdminDisableAccount:
         assert f"/admin/users/{user.id}/enable".encode() in response.data
         assert f"/admin/users/{user.id}/disable".encode() not in response.data
 
+    def test_the_confirmation_sits_on_the_button_where_the_handler_reads_it(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore
+    ) -> None:
+        """document-actions.js reads e.target.dataset.confirm, and e.target is the button.
+
+        On the <form> the attribute is silently ignored and the destructive POST
+        goes through unconfirmed.
+        """
+        user = _seed_user(fake_store, "active@example.com", GlobalRole.USER)
+
+        response = logged_in_admin.get(f"/admin/users/{user.id}")
+
+        button_tags = re.findall(r"<button[^>]*>", response.data.decode())
+        assert any("Are you sure you want to disable this account" in tag for tag in button_tags)
+
     def test_an_admin_is_not_offered_a_button_on_their_own_page(
         self, logged_in_admin: FlaskClient, admin_user: User
     ) -> None:
@@ -319,6 +353,31 @@ class TestAdminEnableAccount:
         # No token in the email - it points at the page that mints one
         assert "/auth/forgot-password" in sent["text_body"]
         assert "/auth/forgot-password" in sent["html_body"]
+
+    def test_a_user_whose_2fa_was_cleared_is_told_to_set_it_up_again(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, fake_email: FakeEmailAdapter
+    ) -> None:
+        user = _seed_user(fake_store, "twofactor@example.com", GlobalRole.USER)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.users.get(user.id).enable_totp("encrypted-secret")
+            uow.commit()
+        logged_in_admin.post(f"/admin/users/{user.id}/disable")
+
+        logged_in_admin.post(f"/admin/users/{user.id}/enable")
+
+        sent = fake_email.sent[0]
+        assert "Two-factor authentication was also switched off" in sent["text_body"]
+        assert "Two-factor authentication was also switched off" in sent["html_body"]
+
+    def test_a_user_who_never_had_2fa_is_not_told_about_it(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, fake_email: FakeEmailAdapter
+    ) -> None:
+        user = _seed_user(fake_store, "back@example.com", GlobalRole.USER)
+        logged_in_admin.post(f"/admin/users/{user.id}/disable")
+
+        logged_in_admin.post(f"/admin/users/{user.id}/enable")
+
+        assert "Two-factor authentication" not in fake_email.sent[0]["text_body"]
 
     def test_an_oauth_user_is_not_told_to_reset_a_password(
         self, logged_in_admin: FlaskClient, fake_store: FakeStore, fake_email: FakeEmailAdapter

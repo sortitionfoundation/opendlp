@@ -108,6 +108,27 @@ class Test2FALoginFlow:
         with client.session_transaction() as session:
             assert "_user_id" not in session
 
+    def test_a_disabled_user_is_not_signed_in_by_a_correct_backup_code(
+        self, client: FlaskClient, fake_store: FakeStore, user_with_2fa: dict
+    ) -> None:
+        """The 2FA step is reached before the account check, so it has to refuse here too."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.users.get(user_with_2fa["id"]).is_active = False
+            uow.commit()
+
+        with client.session_transaction() as session:
+            session["pending_2fa_user_id"] = str(user_with_2fa["id"])
+
+        response = client.post(
+            "/auth/login/verify-2fa",
+            data={"verification_code": user_with_2fa["backup_codes"][0]},
+            follow_redirects=True,
+        )
+
+        assert b"This account has been disabled" in response.data
+        with client.session_transaction() as session:
+            assert "_user_id" not in session
+
 
 class Test2FAManagement:
     def test_regenerate_backup_codes(self, client: FlaskClient, fake_store: FakeStore, user_with_2fa: dict) -> None:
