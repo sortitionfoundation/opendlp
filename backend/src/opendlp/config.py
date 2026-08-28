@@ -42,6 +42,17 @@ def is_development() -> bool:
     return flask_env == "development"
 
 
+def dev_tools_enabled() -> bool:
+    """Whether the dev blueprint - /backoffice/dev/* - is part of this app.
+
+    The one place that decides. Templates get it as a global of the same name,
+    so a page that is served in production but links to a dev route can ask
+    rather than guess: url_for() on an unregistered endpoint is a 500, and the
+    two answers drifting apart is what causes it.
+    """
+    return not is_production()
+
+
 def get_log_level() -> int:
     log_level_str = os.environ.get("LOG_LEVEL", "INFO")
     return logging.getLevelNamesMapping().get(log_level_str, logging.INFO)

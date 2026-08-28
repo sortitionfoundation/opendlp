@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from opendlp.feature_flags import has_feature, reload_flags
+from opendlp.feature_flags import has_feature, reload_flags, showcase_enabled
 
 
 @pytest.fixture(autouse=True)
@@ -80,3 +80,38 @@ class TestHasFeature:
         monkeypatch.setenv("FF_LATE_ADD", "yes")
         reload_flags()
         assert has_feature("late_add") is True
+
+
+class TestShowcaseEnabled:
+    """Where the component showcase at /backoffice/showcase is served.
+
+    The only flag whose default depends on the environment: always on where
+    people are building the thing, opt-in on an install that faces the world.
+    """
+
+    def test_on_in_development_without_any_flag(self, monkeypatch):
+        monkeypatch.setenv("FLASK_ENV", "development")
+        assert showcase_enabled() is True
+
+    def test_on_in_testing_without_any_flag(self, monkeypatch):
+        """Every existing showcase test relies on this."""
+        monkeypatch.setenv("FLASK_ENV", "testing")
+        assert showcase_enabled() is True
+
+    def test_off_in_production_by_default(self, monkeypatch):
+        monkeypatch.setenv("FLASK_ENV", "production")
+        assert showcase_enabled() is False
+
+    def test_on_in_production_when_the_install_asks_for_it(self, monkeypatch):
+        """What a staging server sets."""
+        monkeypatch.setenv("FLASK_ENV", "production")
+        monkeypatch.setenv("FF_SHOWCASE", "true")
+        reload_flags()
+        assert showcase_enabled() is True
+
+    def test_the_flag_alone_does_not_turn_it_off_elsewhere(self, monkeypatch):
+        """FF_SHOWCASE=false is about production; development keeps it."""
+        monkeypatch.setenv("FLASK_ENV", "development")
+        monkeypatch.setenv("FF_SHOWCASE", "false")
+        reload_flags()
+        assert showcase_enabled() is True

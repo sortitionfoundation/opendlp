@@ -9,8 +9,57 @@ from flask.testing import FlaskClient
 
 from opendlp import config
 from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.entrypoints import context_processors
+from opendlp.entrypoints.flask_app import create_app
+from opendlp.feature_flags import reload_flags
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from tests.fakes import FakeStore, FakeUnitOfWork
+
+
+def _clear_cached_config_readers() -> None:
+    """Drop the cached answers of the context processors' config readers.
+
+    These read whichever config FLASK_ENV names, and cache it for the life of
+    the process, so a test that changes FLASK_ENV has to clear them on the way
+    in and on the way out - otherwise it either reads the previous test's
+    config or leaves its own for the next one.
+    """
+    context_processors.get_site_banner_config.cache_clear()
+    context_processors.get_support_email.cache_clear()
+    context_processors.get_help_site_urls.cache_clear()
+
+
+@pytest.fixture
+def production_client(fake_store: FakeStore, monkeypatch: pytest.MonkeyPatch):
+    """A client for an app carrying the blueprints a production install has.
+
+    register_blueprints() asks config.dev_tools_enabled(), which reads FLASK_ENV
+    rather than the loaded config, so setting the variable here drops the dev
+    blueprint while the app keeps the component config - in-memory sessions, a
+    fake store, no PostgreSQL and no Redis. Building the whole production config
+    would want a Redis session backend, which is not what these tests are about.
+
+    It does have to be a production environment that *validates*, though: the
+    cached readers above call get_config() with no name, so with FLASK_ENV set
+    they build FlaskProductionConfig, which refuses a console email adapter and
+    the development secret key.
+    """
+    monkeypatch.setenv("FLASK_ENV", "production")
+    monkeypatch.setenv("EMAIL_ADAPTER", "smtp")
+    monkeypatch.setenv("SECRET_KEY", "component-test-key-not-the-dev-default")  # pragma: allowlist secret
+    _clear_cached_config_readers()
+    reload_flags()
+    app = create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+    yield app.test_client()
+    _clear_cached_config_readers()
+
+
+@pytest.fixture
+def showcase_production_client(production_client: FlaskClient, monkeypatch: pytest.MonkeyPatch) -> FlaskClient:
+    """The same install, having opted in to the showcase the way staging does."""
+    monkeypatch.setenv("FF_SHOWCASE", "true")
+    reload_flags()
+    return production_client
 
 
 @pytest.fixture
@@ -106,6 +155,58 @@ class TestBackofficeShowcase:
         # Should match mock user with "alice"
         assert len(data) >= 1
         assert any("alice" in item["label"].lower() or "alice" in item["sublabel"].lower() for item in data)
+
+    def test_the_dev_patterns_link_is_offered_where_dev_tools_are_loaded(self, client: FlaskClient) -> None:
+        """Outside production the alert section points at the live patterns page."""
+        response = client.get("/backoffice/showcase")
+        assert response.status_code == 200
+        # The href, not the path: other sections name /backoffice/dev/patterns
+        # as plain text, which is fine wherever it is served.
+        assert 'href="/backoffice/dev/patterns?tab=floating-alerts"' in response.data.decode()
+
+
+class TestShowcaseOnAProductionInstall:
+    """The showcase as a production install serves it - no dev blueprint.
+
+    A production install registers a smaller set of blueprints, and the
+    showcase is one of the few pages it serves that is written with the dev
+    tools in mind. url_for() on an endpoint that is not registered raises, so
+    a link added here without a guard is a 500 that only production sees.
+    """
+
+    def test_the_dev_blueprint_is_absent(self, production_client: FlaskClient) -> None:
+        """The premise of every other test here, so it is worth stating.
+
+        Without this, a fixture that quietly stopped being production-shaped
+        would leave the tests below passing while guarding nothing.
+        """
+        assert production_client.get("/backoffice/dev").status_code == 404
+
+    def test_the_showcase_is_not_published_unless_asked_for(self, production_client: FlaskClient) -> None:
+        """Off by default: the live install does not publish it at all."""
+        assert production_client.get("/backoffice/showcase").status_code == 404
+        assert production_client.get("/backoffice/showcase/search-demo").status_code == 404
+
+    def test_the_showcase_renders_where_the_install_opts_in(self, showcase_production_client: FlaskClient) -> None:
+        """A staging server sets FF_SHOWCASE, and every section has to render.
+
+        This is the whole point of the class: rendering is what catches a
+        reference to a route that production does not have.
+        """
+        response = showcase_production_client.get("/backoffice/showcase")
+        assert response.status_code == 200
+        assert b"Alert Component" in response.data
+
+    def test_the_search_demo_comes_with_it(self, showcase_production_client: FlaskClient) -> None:
+        """The showcase's own endpoint, so it is reachable wherever the page is."""
+        response = showcase_production_client.get("/backoffice/showcase/search-demo?q=alice")
+        assert response.status_code == 200
+        assert response.get_json()
+
+    def test_it_does_not_offer_a_link_to_the_dev_tools(self, showcase_production_client: FlaskClient) -> None:
+        """No dead invitation to a route this install does not have."""
+        body = showcase_production_client.get("/backoffice/showcase").data.decode()
+        assert 'href="/backoffice/dev/patterns' not in body
 
 
 class TestBackofficeAssemblyDataPage:

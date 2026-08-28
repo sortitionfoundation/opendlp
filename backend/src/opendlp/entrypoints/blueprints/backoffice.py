@@ -4,7 +4,7 @@ ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source
 import uuid
 
 import structlog
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -23,6 +23,7 @@ from opendlp.entrypoints.forms import (
     EditAssemblyForm,
     EditAssemblyGSheetForm,
 )
+from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_nav_context,
@@ -56,7 +57,13 @@ logger = structlog.get_logger(__name__)
 
 @backoffice_bp.route("/showcase")
 def showcase() -> ResponseReturnValue:
-    """Component showcase page demonstrating the backoffice design system."""
+    """Component showcase page demonstrating the backoffice design system.
+
+    Takes no login, so that a designer or a reviewer can be sent a link. That is
+    also why a production install has to opt in - see showcase_enabled().
+    """
+    if not showcase_enabled():
+        abort(404)
     return render_template("backoffice/showcase.html"), 200
 
 
@@ -609,8 +616,11 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def search_demo() -> ResponseReturnValue:
     """Demo search endpoint for showcase page.
 
-    Returns mock data for demonstrating the search_dropdown component.
+    Returns mock data for demonstrating the search_dropdown component. Goes
+    wherever the showcase goes - it is the page's own endpoint.
     """
+    if not showcase_enabled():
+        abort(404)
     search_term = request.args.get("q", "").strip().lower()
 
     # Mock data for demonstration

@@ -17,11 +17,17 @@ ABOUTME: Displays alert variants and floating alerts documentation
                 In the backoffice, flash messages now appear as <strong>floating alerts</strong> at the bottom-right of the viewport.
                 This ensures users see feedback without scrolling to the top of the page.
             </p>
-            <p class="text-body-sm" style="color: var(--color-body-text);">
-                <strong>Test it:</strong> Visit
-                <a href="{{ url_for('dev.patterns', tab='floating-alerts') }}" class="underline" style="color: var(--color-link-text);">/backoffice/dev/patterns?tab=floating-alerts</a>
-                to trigger test alerts interactively.
-            </p>
+            {# Only where the dev blueprint is loaded. This page is served in
+               production, where url_for on a dev endpoint is a 500 - and an
+               invitation to visit a route that is not there would be no use
+               anyway. #}
+            {% if dev_tools_enabled %}
+                <p class="text-body-sm" style="color: var(--color-body-text);">
+                    <strong>Test it:</strong> Visit
+                    <a href="{{ url_for('dev.patterns', tab='floating-alerts') }}" class="underline" style="color: var(--color-link-text);">/backoffice/dev/patterns?tab=floating-alerts</a>
+                    to trigger test alerts interactively.
+                </p>
+            {% endif %}
         </div>
 
         {% call showcase_example('{% from "backoffice/components/alert.html" import alert %}
