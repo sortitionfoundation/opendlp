@@ -21,7 +21,7 @@ Both go through `user_service.disable_user`, so they do the same thing:
 | Clears the active flag | Blocks every new sign in, password or OAuth |
 | Ends **every** session, including remember-me cookies | The attacker's browser stops working on its next request |
 | Replaces the password with an unusable one | The password they have is gone for good, even after the account is re-enabled |
-| Clears 2FA - TOTP secret and backup codes | The enrolled authenticator may be the attacker's; leaving it would preserve their second factor and lock the real user out after their password reset |
+| Clears 2FA - TOTP secret and backup codes | The enrolled authenticator may be the attacker's; leaving it would preserve their second factor and lock the real user out after their password reset. This happens even for an account with OAuth linked, where `requires_2fa()` ignores TOTP: the secret is dormant there, not gone, and unlinking OAuth later would wake it up |
 | Invalidates outstanding password reset and email confirmation tokens | A link already in an inbox is another way back in |
 | Logs `user.disabled` at warning, with the user id and the admin's id | The record of who did it, for a sysadmin reading the logs |
 
@@ -36,7 +36,11 @@ An admin cannot disable their own account.
 ## Re-enabling an account
 
 From the same page: **Enable Account**. This sets the active flag and emails the
-user, and that is all. In particular:
+user, and that is all. There is deliberately no CLI counterpart - the email is
+part of re-enabling, and the web route is the only place that sends it. An
+account disabled from a shell is brought back from the browser.
+
+In particular:
 
 - **The cancelled sessions stay cancelled.** Re-enabling must not bring the
   attacker's browser back to life, so the session epoch is left where the
@@ -62,9 +66,9 @@ Worth an operator's attention, because none of it is automatic:
   admin account can mint an invite code and register a second account, which
   survives the lockout completely. Disabling logs a
   `user.disabled.outstanding_invites` warning with the invite **ids** (never the
-  codes, which are credentials) so a sysadmin can revoke them from
-  Site Admin → Invites. Deciding which to revoke is a judgement call, so it is
-  not automatic.
+  codes, which are credentials). The invites list is keyed by code rather than
+  id, so go to `/admin/invites/<id>` directly and revoke from there. Deciding
+  which to revoke is a judgement call, so it is not automatic.
 - **Assembly roles are untouched.** They come back with the account, which is
   usually what you want.
 
@@ -76,6 +80,12 @@ session and the remember-me cookie and hands it back to the `user_loader`, which
 rejects anything whose epoch no longer matches. So moving the timestamp
 invalidates both at once, with no session store to sweep and nothing that a
 surviving cookie can do about it.
+
+The same `user_loader` also returns nobody for an account whose active flag is
+clear, whatever its epoch says. That is what makes a disabled user *anonymous*
+rather than merely blocked: context processors, locale selection and every
+template see `current_user.is_authenticated` as false, so it holds on pages that
+have no `@login_required` on them at all.
 
 Two consequences worth knowing:
 
