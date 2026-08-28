@@ -96,6 +96,17 @@ class TestViewTargetsPage:
         response = logged_in_admin.get(_targets_url("00000000-0000-0000-0000-000000000099"))
         assert response.status_code == 302
 
+    def test_getting_data_in_belongs_to_the_data_page(self, logged_in_admin, existing_assembly, fake_store):
+        """Importing a CSV and building categories from respondent columns both
+        set an assembly up rather than tune it, so both live on the data page."""
+        _add_respondents(fake_store, existing_assembly.id, [("1", {"Gender": "Male"})])
+
+        html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
+
+        assert "Import from CSV" not in html
+        assert "Respondent data columns" not in html
+        assert "add-from-columns" not in html
+
 
 class TestUploadTargetsCsv:
     def test_upload_always_replaces_existing(self, logged_in_admin, existing_assembly, admin_user, fake_store):
@@ -1187,7 +1198,7 @@ class TestBulkEditForm:
         save_bar = html.index('class="wizard-footer"')
 
         assert html.index('id="bulk-categories"') < save_bar
-        assert html.index("Import from CSV") < save_bar
+        assert html.index('id="target-categories"') < save_bar
         assert html.index("Discard changes", save_bar) < html.index("Save", save_bar)
 
     def test_add_value_sits_between_the_last_value_and_the_total(

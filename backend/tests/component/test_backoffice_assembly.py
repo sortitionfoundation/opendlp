@@ -2,6 +2,7 @@
 # ABOUTME: Drives the real backoffice Flask routes + services against a seeded fake store, no PostgreSQL
 
 import re
+import uuid
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
 
@@ -9,6 +10,8 @@ import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
@@ -504,11 +507,10 @@ class TestBackofficeCsvUpload:
     def test_targets_csv_upload_error_keeps_form_visible(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        """When CSV upload validation fails, the <details> wrapping the form must be open.
+        """A rejected upload re-renders the data page with the form and the reason.
 
-        The CSV import form lives in a <details> block that defaults to closed.
-        On validation failure the page re-renders inline with errors, but if
-        <details> stays closed those errors are hidden — confusing the user.
+        Redirecting instead would leave the reason in a flash message at the
+        top of the page, away from the field it is about.
         """
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/targets/upload",
@@ -522,18 +524,8 @@ class TestBackofficeCsvUpload:
         assert b"Please select a CSV file" in response.data, (
             "Expected the FileRequired error message in the response body"
         )
-
-        details_tags = re.findall(r"<details\b[^>]*>", html)
-
-        def has_open_attribute(tag: str) -> bool:
-            # Strip quoted attribute values so we don't match 'open' inside
-            # things like x-data="{ open: false }".
-            stripped = re.sub(r'"[^"]*"|\'[^\']*\'', '""', tag)
-            return re.search(r"\bopen\b", stripped) is not None
-
-        assert any(has_open_attribute(tag) for tag in details_tags), (
-            "Expected the CSV import <details> to be open after a validation "
-            "error so the user can see it. Found: " + repr(details_tags)
+        assert f'action="/backoffice/assembly/{existing_assembly.id}/targets/upload"' in html, (
+            "Expected the upload form to still be on the page so the user can retry"
         )
 
     def test_targets_csv_upload_invalid_format_keeps_form_visible(
@@ -542,8 +534,8 @@ class TestBackofficeCsvUpload:
         """When the CSV passes WTForms validation but the import service rejects it.
 
         The page must re-render inline (not redirect to a fresh page) so the
-        <details> stays open with the error visible alongside the form, rather
-        than just flashing a message at the top of an empty page.
+        error is visible alongside the form, rather than just flashing a
+        message at the top of an empty page.
         """
         # Headers that don't match feature/value/min/max → InvalidSelection
         # at read_in_features() inside import_targets_from_csv.
@@ -564,16 +556,8 @@ class TestBackofficeCsvUpload:
         assert b"CSV import failed" in response.data or b"Failed to parse CSV" in response.data, (
             "Expected the import error message in the response body"
         )
-
-        details_tags = re.findall(r"<details\b[^>]*>", html)
-
-        def has_open_attribute(tag: str) -> bool:
-            stripped = re.sub(r'"[^"]*"|\'[^\']*\'', '""', tag)
-            return re.search(r"\bopen\b", stripped) is not None
-
-        assert any(has_open_attribute(tag) for tag in details_tags), (
-            "Expected the CSV import <details> to be open after an import "
-            "error so the user can see it. Found: " + repr(details_tags)
+        assert f'action="/backoffice/assembly/{existing_assembly.id}/targets/upload"' in html, (
+            "Expected the upload form to still be on the page so the user can retry"
         )
 
     def test_targets_csv_multiline_error_renders_line_breaks(
@@ -636,3 +620,100 @@ class TestBackofficeCsvViewPages:
         response = client.get(f"/backoffice/assembly/{assembly_with_targets.id}/targets")
         assert response.status_code == 302
         assert "login" in response.location
+
+
+def _seed_respondents(fake_store: FakeStore, assembly_id: uuid.UUID, respondents_data: list) -> None:
+    """Seed respondents with the given attributes into the shared store."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        for ext_id, attributes in respondents_data:
+            uow.respondents.add(Respondent(assembly_id=assembly_id, external_id=ext_id, attributes=attributes))
+        uow.commit()
+
+
+def _data_url(assembly_id: uuid.UUID) -> str:
+    return f"/backoffice/assembly/{assembly_id}/data?source=csv"
+
+
+class TestDataTabCreateTargetsFromRespondents:
+    """The dialog on the targets card that builds categories from respondent columns."""
+
+    def test_offers_the_respondent_columns_when_there_is_data(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _seed_respondents(
+            fake_store,
+            existing_assembly.id,
+            [("1", {"Gender": "Male", "Age": "18-25"}), ("2", {"Gender": "Female", "Age": "26-35"})],
+        )
+
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+
+        assert "Create from respondent data" in html
+        assert 'value="Gender"' in html
+        assert 'value="Age"' in html
+        assert f'action="/backoffice/assembly/{existing_assembly.id}/targets/categories/add-from-columns"' in html
+
+    def test_no_offer_without_respondent_data(
+        self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly
+    ) -> None:
+        """Nothing to build the categories from, so the button stays away."""
+        html = logged_in_admin.get(_data_url(assembly_with_targets.id)).data.decode()
+
+        assert "Create from respondent data" not in html
+
+    def test_offered_alongside_existing_targets(
+        self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly, fake_store: FakeStore
+    ) -> None:
+        """A column missed the first time round can still be added later."""
+        _seed_respondents(fake_store, assembly_with_targets.id, [("1", {"Region": "North"})])
+
+        html = logged_in_admin.get(_data_url(assembly_with_targets.id)).data.decode()
+
+        assert "Delete Targets" in html
+        assert "Create from respondent data" in html
+
+    def test_a_column_already_used_as_a_target_is_shown_as_such(
+        self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly, fake_store: FakeStore
+    ) -> None:
+        """assembly_with_targets has a "Gender" category already."""
+        _seed_respondents(fake_store, assembly_with_targets.id, [("1", {"Gender": "Male"})])
+
+        html = logged_in_admin.get(_data_url(assembly_with_targets.id)).data.decode()
+
+        checkbox = next(
+            tag for tag in re.findall(r"<input\b[^>]*>", html) if 'value="Gender"' in tag and 'name="columns"' in tag
+        )
+        assert "already defined" in html
+        assert "disabled" in checkbox
+        assert "checked" in checkbox
+
+    def test_the_id_column_is_not_offered(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        """It identifies a respondent rather than describing them."""
+        _seed_respondents(fake_store, existing_assembly.id, [("1", {"Reference": "1", "Gender": "Male"})])
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assembly = uow.assemblies.get(existing_assembly.id)
+            assembly.csv = AssemblyCSV(assembly_id=existing_assembly.id, csv_id_column="Reference")
+            uow.commit()
+
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+
+        assert 'value="Gender"' in html
+        assert 'value="Reference"' not in html
+
+    def test_high_cardinality_columns_sit_behind_a_disclosure(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        """Twenty-odd distinct values makes for a poor target category."""
+        _seed_respondents(
+            fake_store,
+            existing_assembly.id,
+            [(str(i), {"Gender": "Male", "Postcode": f"PC{i}"}) for i in range(25)],
+        )
+
+        html = logged_in_admin.get(_data_url(existing_assembly.id)).data.decode()
+        disclosure = html.index("Other columns")
+
+        assert html.index('value="Gender"') < disclosure
+        assert disclosure < html.index('value="Postcode"')

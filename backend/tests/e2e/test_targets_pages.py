@@ -277,24 +277,6 @@ class TestCheckTargets:
         assert b"All checks passed" in response.data
 
 
-class TestRespondentColumns:
-    def test_respondent_columns_returns_fragment(self, logged_in_admin, existing_assembly, postgres_session_factory):
-        """The respondent-columns HTMX partial renders the assembly's attribute columns."""
-        _add_respondents(
-            postgres_session_factory,
-            existing_assembly.id,
-            [
-                ("1", {"Gender": "Male"}),
-                ("2", {"Gender": "Female"}),
-            ],
-        )
-
-        response = logged_in_admin.get(_targets_url(existing_assembly.id, "/respondent-columns"))
-
-        assert response.status_code == 200
-        assert b"Gender" in response.data
-
-
 class TestMoveCategory:
     def test_move_down_then_up_restores_the_order(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory

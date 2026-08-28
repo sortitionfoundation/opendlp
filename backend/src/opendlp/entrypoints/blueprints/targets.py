@@ -12,6 +12,7 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.domain.targets import TargetCategory
+from opendlp.entrypoints.blueprints.backoffice import render_assembly_data_page
 from opendlp.entrypoints.save_all_parser import errors_by_field, parse_save_all_targets, pending_categories
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
@@ -142,7 +143,6 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
             target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
-        upload_form = UploadTargetsCsvForm()
         value_form = TargetValueForm()
         can_manage = _can_manage(assembly_id)
 
@@ -151,13 +151,6 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         selected_counts = build_selected_counts(assembly_id, target_categories, attribute_columns)
         has_selected = any(selected_counts.values())
 
-        # Get the id_column to exclude from the respondent columns list
-        id_column = ""
-        if assembly.csv is not None:
-            id_column = assembly.csv.csv_id_column
-
-        column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
-
         context = _get_assembly_context(assembly_id)
 
         return render_template(
@@ -165,15 +158,11 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly=assembly,
             assembly_id=assembly_id,
             target_categories=target_categories,
-            form=upload_form,
             value_form=value_form,
             can_manage=can_manage,
-            respondent_attribute_columns=attribute_columns,
             all_respondent_counts=respondent_counts,
             all_selected_counts=selected_counts,
             has_selected=has_selected,
-            id_column=id_column,
-            column_distinct_counts=column_distinct_counts,
             **context,
         ), 200
     except NotFoundError as e:
@@ -198,25 +187,13 @@ def view_assembly_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 def _render_targets_upload_page(assembly_id: uuid.UUID, form: UploadTargetsCsvForm) -> ResponseReturnValue:
-    """Re-render the targets page so the user sees their upload error inline."""
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+    """Re-render the data page so the user sees their upload error beside the form.
 
-        target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-
-    context = _get_assembly_context(assembly_id)
-
-    return render_template(
-        "backoffice/assembly_targets.html",
-        assembly=assembly,
-        assembly_id=assembly_id,
-        target_categories=target_categories,
-        form=form,
-        value_form=TargetValueForm(),
-        can_manage=_can_manage(assembly_id),
-        **context,
-    ), 200
+    The form lives on the data page rather than this blueprint's own, so this
+    borrows that page's renderer. Redirecting instead would leave the reason in
+    a flash message at the top of the page, away from the field it is about.
+    """
+    return render_assembly_data_page(assembly_id, targets_upload_form=form, preferred_source="csv"), 200
 
 
 @targets_bp.route("/assembly/<uuid:assembly_id>/targets/upload", methods=["POST"])
@@ -406,9 +383,8 @@ def remove_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseR
             )
 
         if _is_htmx():
-            response = make_response("")
-            response.headers["HX-Trigger"] = "categoriesChanged"
-            return response
+            # An empty body, so the swap removes the block that was deleted.
+            return make_response("")
 
         flash(_("Category deleted"), "success")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
@@ -725,39 +701,6 @@ def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> Respon
 
 
 @targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/respondent-columns",
-)
-@login_required
-def respondent_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Render the respondent data columns section (HTMX partial)."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-            target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-
-        attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-        column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
-
-        id_column = ""
-        if assembly.csv is not None:
-            id_column = assembly.csv.csv_id_column
-
-        return render_template(
-            "backoffice/targets/respondent_columns.html",
-            assembly_id=assembly_id,
-            target_categories=target_categories,
-            can_manage=_can_manage(assembly_id),
-            respondent_attribute_columns=attribute_columns,
-            column_distinct_counts=column_distinct_counts,
-            id_column=id_column,
-        )
-
-    except (NotFoundError, InsufficientPermissions):
-        return ""
-
-
-@targets_bp.route(
     "/assembly/<uuid:assembly_id>/targets/categories/add-from-columns",
     methods=["POST"],
 )
@@ -768,7 +711,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
         selected_columns = request.form.getlist("columns")
         if not selected_columns:
             flash(_("No columns selected"), "warning")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
         attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
         column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
@@ -808,30 +751,33 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     # Category with this name may already exist; skip it
                     continue
 
-        if created:
-            if values_added_count > 0:
-                flash(
-                    _(
-                        "Created %(count)s categories with %(values)s values: %(names)s",
-                        count=len(created),
-                        values=values_added_count,
-                        names=", ".join(created),
-                    ),
-                    "success",
-                )
-            else:
-                flash(
-                    _("Created %(count)s categories: %(names)s", count=len(created), names=", ".join(created)),
-                    "success",
-                )
-        else:
+        if not created:
             flash(_("No new categories were created"), "warning")
+            return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
+        if values_added_count > 0:
+            flash(
+                _(
+                    "Created %(count)s categories with %(values)s values: %(names)s",
+                    count=len(created),
+                    values=values_added_count,
+                    names=", ".join(created),
+                ),
+                "success",
+            )
+        else:
+            flash(
+                _("Created %(count)s categories: %(names)s", count=len(created), names=", ".join(created)),
+                "success",
+            )
+
+        # The new categories carry no percentages, minimums or maximums yet, so
+        # the targets page is where the organiser needs to be next.
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
     except (NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
+        return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
 
 @targets_bp.route("/assembly/<uuid:assembly_id>/targets/check", methods=["GET"])
@@ -845,7 +791,6 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             check_result = check_targets_detailed(uow, current_user.id, assembly_id)
             target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
 
-        upload_form = UploadTargetsCsvForm()
         value_form = TargetValueForm()
         can_manage = _can_manage(assembly_id)
 
@@ -854,12 +799,6 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
         selected_counts = build_selected_counts(assembly_id, target_categories, attribute_columns)
         has_selected = any(selected_counts.values())
 
-        id_column = ""
-        if assembly.csv is not None:
-            id_column = assembly.csv.csv_id_column
-
-        column_distinct_counts = get_column_distinct_counts(assembly_id, attribute_columns)
-
         context = _get_assembly_context(assembly_id)
 
         return render_template(
@@ -867,15 +806,11 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly=assembly,
             assembly_id=assembly_id,
             target_categories=target_categories,
-            form=upload_form,
             value_form=value_form,
             can_manage=can_manage,
-            respondent_attribute_columns=attribute_columns,
             all_respondent_counts=respondent_counts,
             all_selected_counts=selected_counts,
             has_selected=has_selected,
-            id_column=id_column,
-            column_distinct_counts=column_distinct_counts,
             check_result=check_result,
             **context,
         ), 200
@@ -993,10 +928,8 @@ def _render_targets_edit_errors(
         pending_categories=pending_categories(form_data),
         field_errors=errors_by_field(errors),
         editing_all=True,
-        form=UploadTargetsCsvForm(),
         value_form=TargetValueForm(),
         can_manage=_can_manage(assembly_id),
-        respondent_attribute_columns=attribute_columns,
         all_respondent_counts=build_respondent_counts(assembly_id, target_categories, attribute_columns),
         all_selected_counts=selected_counts,
         has_selected=any(selected_counts.values()),

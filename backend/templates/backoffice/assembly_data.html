@@ -293,13 +293,39 @@ ABOUTME: Displays data source selection and data management for assemblies
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {# Target Upload Card #}
+            {# The respondent columns are only worth offering once there is
+               respondent data to read them from. x-data is on the card because
+               the button that opens the dialog lives in it. #}
+            {% set can_create_from_respondents = has_respondents and respondent_attribute_columns %}
             <div class="rounded-lg p-6"
                  style="background-color: var(--color-tables-cards);
-                        border: 1px solid var(--color-borders-dividers)">
+                        border: 1px solid var(--color-borders-dividers)"
+                 {% if can_create_from_respondents %}x-data="modal({ initialOpen: false })"{% endif %}>
                 <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h3>
                 <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
                     {{ _("Upload target categories for selection criteria.") }}
                 </p>
+                {# A rejected upload re-renders this page with the form that
+                   rejected it, so the reason sits beside the file field rather
+                   than in a flash message at the top of the page. #}
+                {% set targets_upload_errors = targets_upload_form.errors if targets_upload_form else {} %}
+                {% if targets_upload_errors %}
+                    <div class="mb-4 rounded-lg p-4"
+                         style="background-color: var(--color-error-100);
+                                border: 1px solid var(--color-error-400)">
+                        <h4 class="text-heading-sm mb-2" style="color: var(--color-error-600);">{{ _("There is a problem") }}</h4>
+                        <ul class="list-disc pl-5">
+                            {% for field_errors in targets_upload_errors.values() %}
+                                {% for error in field_errors %}
+                                    {# pre-line renders the newlines in multi-line errors (e.g. CSV parse failures) #}
+                                    <li class="text-body-sm"
+                                        style="color: var(--color-error-600);
+                                               white-space: pre-line">{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
                 {% if has_targets %}
                     {# Show uploaded status #}
                     <div class="flex items-center gap-2 mb-4 p-3 rounded-lg"
@@ -328,10 +354,27 @@ ABOUTME: Displays data source selection and data management for assemblies
                         label=_("CSV File") ,
                         accept=".csv",
                         required=true,
-                        hint=_("Select a CSV file with target categories.")
+                        hint=_("Select a CSV file with target categories."),
+                        error=e(targets_upload_errors.get("csv_file", []))
                         ) }}
                         <div class="mt-4">{{ button(_("Upload") , type="submit", variant="primary") }}</div>
                     </form>
+                {% endif %}
+                {# Offered alongside the CSV whether or not targets exist: a column
+                   missed the first time round can be added later, and the dialog
+                   shows the ones already covered as such. #}
+                {% if can_create_from_respondents %}
+                    <div class="mt-4 pt-4"
+                         style="border-top: 1px solid var(--color-borders-dividers)">
+                        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                            {{ _("Or build the categories from the columns in your respondent data.") }}
+                        </p>
+                        {{ button(_("Create from respondent data"),
+                        variant="secondary",
+                        attrs='@click="open()"',
+                        aria_haspopup="dialog") }}
+                    </div>
+                    {% include "backoffice/targets/create_from_columns_modal.html" %}
                 {% endif %}
             </div>
             {# People Upload Card #}

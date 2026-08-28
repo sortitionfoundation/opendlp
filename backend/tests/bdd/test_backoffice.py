@@ -1716,3 +1716,23 @@ def people_upload_button_enabled(page: Page):
     people_section = page.locator("text=People").locator("..").locator("..")
     upload_button = people_section.locator("button[type='submit'], input[type='submit']").first
     expect(upload_button).to_be_enabled()
+
+
+@when("I open the dialog to create targets from respondent data")
+def open_create_targets_from_columns_dialog(page: Page):
+    page.get_by_role("button", name="Create from respondent data").click()
+    expect(page.get_by_role("dialog")).to_be_visible()
+
+
+@when(parsers.parse('I choose the respondent column "{column}"'))
+def choose_respondent_column(page: Page, column: str):
+    """Clicked by its label, the way the styled checkbox is reached on screen."""
+    box = page.locator(f'input[name="columns"][value="{column}"]')
+    page.locator("label.checkbox-container").filter(has=box).click()
+    expect(box).to_be_checked()
+
+
+@when("I add the selected categories")
+def add_selected_categories(page: Page):
+    page.get_by_role("button", name="Add selected categories").click()
+    page.wait_for_load_state("networkidle")

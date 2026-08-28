@@ -95,3 +95,22 @@ Feature: Backoffice CSV Upload
     Then the "Targets" tab should be enabled
     And the "Respondents" tab should be enabled
     And the data source selector should be disabled
+
+  # Building the targets from the respondent data
+
+  Scenario: The respondent columns are only offered once there is data to read
+    Given I am logged in as an admin user
+    And there is an assembly called "No Respondents Yet"
+    When I visit the assembly data page for "No Respondents Yet" with source "csv"
+    Then I should not see "Create from respondent data"
+
+  Scenario: Building the target categories from the respondent data columns
+    Given I am logged in as an admin user
+    And there is an assembly called "Targets From Respondents"
+    And the assembly "Targets From Respondents" has respondents uploaded
+    When I visit the assembly data page for "Targets From Respondents"
+    And I open the dialog to create targets from respondent data
+    And I choose the respondent column "Gender"
+    And I add the selected categories
+    Then I should see "Created 1 categories"
+    And I should see "Gender"
