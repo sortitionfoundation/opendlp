@@ -1,7 +1,7 @@
 """add comment and source_url to target categories, drop description
 
 Revision ID: bb9ef5dce9be
-Revises: 4b420dba5d65
+Revises: 1ce9bb5eb31f
 Create Date: 2026-08-24 13:43:38.054493
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "bb9ef5dce9be"
-down_revision: str | Sequence[str] | None = "4b420dba5d65"
+down_revision: str | Sequence[str] | None = "1ce9bb5eb31f"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
