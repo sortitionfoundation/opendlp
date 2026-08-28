@@ -36,14 +36,14 @@
                 <div class="govuk-summary-list__row">
                     <dt class="govuk-summary-list__key">{{ _("Password") }}</dt>
                     <dd class="govuk-summary-list__value">
-                        {% if current_user.password_hash %}
+                        {% if current_user.has_usable_password() %}
                             <strong class="govuk-tag govuk-tag--green">{{ _("Active") }}</strong>
                         {% else %}
                             <strong class="govuk-tag govuk-tag--grey">{{ _("Not set") }}</strong>
                         {% endif %}
                     </dd>
                     <dd class="govuk-summary-list__actions">
-                        {% if current_user.password_hash and current_user.oauth_provider %}
+                        {% if current_user.has_usable_password() and current_user.oauth_provider %}
                             <form method="POST"
                                   action="{{ url_for('profile.remove_password') }}"
                                   style="display: inline"
@@ -56,7 +56,7 @@
                                                cursor: pointer;
                                                text-decoration: underline">{{ _("Remove") }}</button>
                             </form>
-                        {% elif not current_user.password_hash %}
+                        {% elif not current_user.has_usable_password() %}
                             {% if current_user.oauth_provider %}
                                 <a href="{{ url_for('profile.set_password') }}" class="govuk-link">{{ _("Set password") }}</a>
                             {% else %}
@@ -77,7 +77,7 @@
                         </dd>
                         <dd class="govuk-summary-list__actions">
                             {% if current_user.oauth_provider == 'google' %}
-                                {% if current_user.password_hash %}
+                                {% if current_user.has_usable_password() %}
                                     <form method="POST"
                                           action="{{ url_for('profile.remove_oauth') }}"
                                           style="display: inline"
@@ -142,7 +142,7 @@
                         </dd>
                         <dd class="govuk-summary-list__actions">
                             {% if current_user.oauth_provider == 'microsoft' %}
-                                {% if current_user.password_hash %}
+                                {% if current_user.has_usable_password() %}
                                     <form method="POST"
                                           action="{{ url_for('profile.remove_oauth') }}"
                                           style="display: inline"
@@ -213,7 +213,7 @@
                 <a href="{{ url_for('profile.edit') }}"
                    class="govuk-button govuk-button--secondary"
                    data-module="govuk-button">{{ _("Edit profile") }}</a>
-                {% if current_user.password_hash %}
+                {% if current_user.has_usable_password() %}
                     <a href="{{ url_for('profile.change_password') }}"
                        class="govuk-button govuk-button--secondary"
                        data-module="govuk-button">{{ _("Change password") }}</a>

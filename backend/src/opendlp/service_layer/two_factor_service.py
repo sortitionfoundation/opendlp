@@ -260,23 +260,58 @@ def admin_disable_2fa(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id
     if user.oauth_provider:
         raise TwoFactorSetupError(_l("Cannot disable 2FA for OAuth users (they don't use 2FA)"))
 
+    _clear_2fa(uow, user, admin_user)
+
+    detached_user: User = user.create_detached_copy()
+    return detached_user
+
+
+def clear_2fa_for_lockout(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id: uuid.UUID) -> bool:
+    """Remove a user's 2FA enrolment as part of locking their account out.
+
+    Unlike `admin_disable_2fa` this applies to OAuth users too. `requires_2fa()`
+    ignores TOTP once an account has an OAuth provider, so a secret left behind
+    there is dormant rather than harmless: unlinking OAuth later would bring it
+    back, and on a compromised account the enrolled authenticator may be the
+    attacker's. It is also a no-op rather than an error when there is nothing
+    enrolled, because the caller is disabling an account, not managing 2FA.
+
+    Returns:
+        True if there was an enrolment to clear.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    user = uow.users.get(user_id)
+    if user is None:
+        raise TwoFactorSetupError(_l("User not found"))
+
+    admin_user = uow.users.get(admin_user_id)
+    if admin_user is None:
+        raise TwoFactorSetupError(_l("Admin user not found"))
+
+    if not user.totp_enabled:
+        return False
+
+    _clear_2fa(uow, user, admin_user)
+    return True
+
+
+def _clear_2fa(uow: AbstractUnitOfWork, user: User, admin_user: User) -> None:
+    """Remove the TOTP secret and backup codes, and record who did it."""
     # Disable 2FA
     user.disable_totp()
 
     # Delete all backup codes
-    uow.user_backup_codes.delete_codes_for_user(user_id)
+    uow.user_backup_codes.delete_codes_for_user(user.id)
 
     # Create audit log entry
     audit_log = TwoFactorAuditLog(
-        user_id=user_id,
+        user_id=user.id,
         action=ADMIN_DISABLED_ACTION,
-        performed_by=admin_user_id,
+        performed_by=admin_user.id,
         metadata={"admin_email": admin_user.email},
     )
     uow.two_factor_audit_logs.add(audit_log)
-
-    detached_user: User = user.create_detached_copy()
-    return detached_user
 
 
 def get_2fa_status(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict:

@@ -237,13 +237,25 @@ def disable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             user = disable_user(uow, user_id, current_user.id)
 
-        flash(
-            _(
-                "Account disabled for '%(email)s'. All sessions have been ended and the password reset.",
-                email=user.email,
-            ),
-            "success",
-        )
+        if user.oauth_provider:
+            flash(
+                _(
+                    "Account disabled for '%(email)s'. Every session has been ended. Their %(provider)s "
+                    "account still exists - if that is how they were compromised, it needs attention too.",
+                    email=user.email,
+                    provider=user.oauth_provider.capitalize(),
+                ),
+                "success",
+            )
+        else:
+            flash(
+                _(
+                    "Account disabled for '%(email)s'. Every session has been ended and their password "
+                    "permanently removed.",
+                    email=user.email,
+                ),
+                "success",
+            )
         return redirect(url_for("admin.view_user", user_id=user_id))
 
     except CannotDisableSelf as e:
@@ -275,7 +287,7 @@ def disable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
 @login_required
 @require_admin
 def enable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
-    """Let a disabled user back in, and email them a route to a new password."""
+    """Let a disabled user back in, and email them to say how they get back to signing in."""
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -291,8 +303,22 @@ def enable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
             user=user,
             totp_cleared=totp_cleared,
         )
-        if email_sent:
-            flash(_("An email has been sent telling them how to set a new password"), "success")
+        if email_sent and user.has_usable_password():
+            flash(_("An email has been sent telling them their account is back"), "success")
+        elif email_sent and user.oauth_provider:
+            flash(
+                _(
+                    "An email has been sent telling them their account is back, and that they sign in "
+                    "with %(provider)s as before.",
+                    provider=user.oauth_provider.capitalize(),
+                ),
+                "success",
+            )
+        elif email_sent:
+            flash(
+                _("An email has been sent telling them to request a password reset - their old password is gone"),
+                "success",
+            )
         else:
             flash(
                 _("The account is enabled, but we could not email the user. Please contact them directly."), "warning"

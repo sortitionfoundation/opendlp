@@ -114,10 +114,14 @@ def list_users(ctx: click.Context, role: str | None, active: bool | None) -> Non
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 def deactivate_user(ctx: click.Context, email: str, admin_email: str, confirm: bool) -> None:
-    """Deactivate a user account, ending their sessions and resetting their password."""
+    """Lock a user out: end their sessions, remove their password, clear their 2FA."""
     try:
         session_factory = ctx.obj.get("session_factory") if ctx.obj else None
         uow = bootstrap.bootstrap(session_factory=session_factory)
+
+        # Look up both users and check the admin's role first, so the operator
+        # is not prompted before we know the command can succeed - and so no
+        # transaction is held open while we wait for them to answer.
         with uow:
             user = uow.users.get_by_email(email)
             if not user:
@@ -129,22 +133,31 @@ def deactivate_user(ctx: click.Context, email: str, admin_email: str, confirm: b
                 click.echo(click.style(f"✗ Admin user with email '{admin_email}' not found.", "red"))
                 raise click.Abort()
 
+            if admin_user.global_role != GlobalRole.ADMIN:
+                click.echo(click.style(f"✗ User '{admin_email}' must have ADMIN role to deactivate users.", "red"))
+                raise click.Abort()
+
             if not user.is_active:
                 click.echo(click.style(f"User '{email}' is already deactivated.", "yellow"))
                 return
 
-            # Confirmation prompt
-            if not confirm and not click.confirm(
-                f"Deactivate user '{email}'? This ends their sessions, removes their "
-                f"password and switches off their two-factor authentication."
-            ):
-                click.echo("Operation cancelled.")
-                return
+            user_id = user.id
+            admin_user_id = admin_user.id
+            uses_oauth = bool(user.oauth_provider)
 
-            disable_user(uow, user.id, admin_user.id)
+        credentials = "" if uses_oauth else "removes their password and "
+        if not confirm and not click.confirm(
+            f"Deactivate user '{email}'? This ends their sessions, {credentials}"
+            f"switches off their two-factor authentication."
+        ):
+            click.echo("Operation cancelled.")
+            return
+
+        with uow:
+            disable_user(uow, user_id, admin_user_id)
             uow.commit()
 
-            click.echo(click.style(f"✓ User '{email}' has been deactivated.", "green"))
+        click.echo(click.style(f"✓ User '{email}' has been deactivated.", "green"))
 
     except Exception as e:
         click.echo(click.style(f"✗ Error deactivating user: {e}", "red"))
