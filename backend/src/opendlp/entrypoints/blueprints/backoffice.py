@@ -172,6 +172,59 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard")
+@login_required
+def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Backoffice assembly results dashboard (ticket 886).
+
+    Placeholder for now: renders the assembly nav with the Dashboard tab active
+    and an empty body. The real page — stats, pie charts, results table, export —
+    will be built here from the Figma design against the services in
+    service_layer/dashboard_stats.py.
+    """
+    try:
+        nav_uow = bootstrap.get_flask_uow()
+        with nav_uow:
+            nav = get_assembly_nav_context(
+                nav_uow,
+                current_user.id,
+                assembly_id,
+                request.args.get("source", ""),
+            )
+
+        return render_template(
+            "backoffice/assembly_dashboard.html",
+            assembly=nav.assembly,
+            current_tab="dashboard",
+            data_source=nav.data_source,
+            gsheet=nav.gsheet,
+            targets_enabled=nav.targets_enabled,
+            respondents_enabled=nav.respondents_enabled,
+            selection_enabled=nav.selection_enabled,
+        ), 200
+    except NotFoundError as e:
+        logger.warning(
+            "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions for assembly",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to view this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        logger.exception(
+            "View assembly dashboard error", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
+        )
+        flash(_("An error occurred while loading the dashboard"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:

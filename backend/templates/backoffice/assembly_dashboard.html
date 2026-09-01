@@ -1,0 +1,42 @@
+{#
+ABOUTME: Backoffice assembly results dashboard page (ticket 886)
+ABOUTME: Placeholder — nav + empty body; real stats/charts/table/export built here from Figma next
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/page_header.html" import page_header %}
+{% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+
+{% block title %}{{ _("Dashboard") }} - {{ assembly.title }}{% endblock %}
+
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
+        {{ page_header(
+        title=assembly.title,
+        back_href=url_for('backoffice.dashboard'),
+        back_label=_("Back to dashboard")
+        ) }}
+        <div class="mt-4">
+            {{ assembly_tabs(
+            assembly=assembly,
+            active_tab="dashboard",
+            data_source=data_source|default(""),
+            gsheet=gsheet|default(none),
+            targets_enabled=targets_enabled|default(false),
+            respondents_enabled=respondents_enabled|default(false),
+            selection_enabled=selection_enabled|default(false)
+            ) }}
+        </div>
+    </div>
+{% endblock %}
+
+{% block page_content %}
+    <section class="mb-8">
+        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Dashboard") }}</h2>
+        {# Placeholder. The results dashboard (stats, pie charts, results table, export)
+           will be built here from the Figma design, backed by the services in
+           service_layer/dashboard_stats.py (ticket 886). #}
+        <p class="text-body-lg" style="color: var(--color-secondary-text);">
+            {{ _("This page is coming soon.") }}
+        </p>
+    </section>
+{% endblock %}
