@@ -201,7 +201,8 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 
 | Module                       | Purpose                                                                                            | Key dependencies                                                            |
 | ---------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `assembly_service`           | Assembly CRUD, GSheet config, target categories/values, CSV config, selection settings             | SQLAlchemy, `sortition-algorithms`                                          |
+| `assembly_service`           | Assembly CRUD, GSheet config, CSV config, selection settings                                       | SQLAlchemy, `sortition-algorithms`                                          |
+| `target_service`             | Target categories and values: CRUD, CSV import, derived percentages, the bulk save                 | SQLAlchemy, `sortition-algorithms`                                          |
 | `respondent_service`         | Respondent CRUD, CSV/row import, attribute analysis                                                | CSV parsing, permissions                                                    |
 | `respondent_export_service`  | Build tabular respondent data and export it to CSV or Google Sheets, with status filtering         | `tabular_export`, `gsheet_export`, permissions                              |
 | `sortition`                  | Celery task dispatch for GSheet + DB selection workflows; run status/cancellation/health           | `celery`, `sortition-algorithms`, `error_translation`, `report_translation` |
@@ -230,10 +231,23 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 
 - **Assembly CRUD & permissions** — `create_assembly`, `update_assembly`, `get_assembly_with_permissions`, …
 - **Google Sheets config** — `add_assembly_gsheet`, `update_assembly_gsheet`, `remove_assembly_gsheet`, `get_assembly_gsheet`
-- **Target management** — `get_targets_for_assembly`, `import_targets_from_csv`, `create_target_category`, `update_target_category`, `delete_target_category`, `add_target_value`, `update_target_value`, `delete_target_value`
 - **CSV config** — `get_or_create_csv_config`, `update_csv_config`, `get_csv_upload_status`
 - **Selection settings** — `get_or_create_selection_settings`, …
-- **Deletion** — `delete_targets_for_assembly`, `delete_respondents_for_assembly`
+- **Deletion** — `delete_respondents_for_assembly`
+
+Target management used to live here too. It now has its own module.
+
+### target_service
+
+`target_service.py` owns everything about target categories and values:
+
+- **CRUD** — `get_targets_for_assembly`, `create_target_category`, `update_target_category`,
+  `delete_target_category`, `add_target_value`, `update_target_value`, `delete_target_value`,
+  `delete_targets_for_assembly`
+- **CSV import** — `import_targets_from_csv`, and the percentage derivation that fills in
+  values the spreadsheet did not carry
+- **The bulk save** — `save_all_targets`, which is what the targets page posts to: one
+  form, one transaction, every error on the page reported in a single pass
 
 ### sortition
 
@@ -353,6 +367,7 @@ flowchart LR
         reg_bot_svc[registration_bot_protection_service]
         permissions_svc[permissions]
         target_check_svc[target_checking]
+        target_svc[target_service]
         report_xl[report_translation]
     end
 
@@ -361,37 +376,37 @@ flowchart LR
     registration_bp --> reg_bot_svc
     main_bp --> assembly_svc & user_svc & permissions_svc
     profile_bp --> user_svc & two_factor_svc
-    backoffice_bp --> assembly_svc & user_svc & respondent_svc & permissions_svc
+    backoffice_bp --> assembly_svc & target_svc & user_svc & respondent_svc & permissions_svc
     dev_bp --> assembly_svc & respondent_svc & permissions_svc
 
     gsheets_bp --> assembly_svc & sortition_svc & respondent_svc & report_xl
     db_sel_bo --> assembly_svc & respondent_svc & sortition_svc & report_xl
-    targets_bp --> assembly_svc & target_check_svc
+    targets_bp --> assembly_svc & target_svc & target_check_svc
 
     gsheets_legacy_bp --> assembly_svc & sortition_svc & report_xl
     db_sel_legacy --> assembly_svc & respondent_svc & sortition_svc
-    targets_legacy_bp --> assembly_svc & target_check_svc
+    targets_legacy_bp --> assembly_svc & target_svc & target_check_svc
     respondents_legacy_bp --> assembly_svc & respondent_svc
 ```
 
 ### Dependency matrix
 
-|                    | assembly | user | respondent | sortition | invite | 2fa | email_conf | pw_reset | totp | rate_lim | bot_prot | perms | target_check |
-| ------------------ | :------: | :--: | :--------: | :-------: | :----: | :-: | :--------: | :------: | :--: | :------: | :------: | :---: | :----------: |
-| **admin**          |          |  ✓   |            |           |   ✓    |  ✓  |            |          |      |          |          |       |              |
-| **auth**           |          |  ✓   |            |           |        |     |     ✓      |    ✓     |  ✓   |    ✓     |          |       |              |
-| **registration**   |          |      |            |           |        |     |            |          |      |          |    ✓     |       |              |
-| **main**           |    ✓     |  ✓   |            |           |        |     |            |          |      |          |          |   ✓   |              |
-| **profile**        |          |  ✓   |            |           |        |  ✓  |            |          |      |          |          |       |              |
-| **backoffice**     |    ✓     |  ✓   |     ✓      |           |        |     |            |          |      |          |          |   ✓   |              |
-| **dev**            |    ✓     |      |     ✓      |           |        |     |            |          |      |          |          |   ✓   |              |
-| **gsheets**        |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
-| **db_sel_bo**      |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
-| **targets**        |    ✓     |      |            |           |        |     |            |          |      |          |          |       |      ✓       |
-| **gsheets_legacy** |    ✓     |      |            |     ✓     |        |     |            |          |      |          |          |       |              |
-| **db_sel_legacy**  |    ✓     |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
-| **targets_legacy** |    ✓     |      |            |           |        |     |            |          |      |          |          |       |      ✓       |
-| **respondents_lg** |    ✓     |      |     ✓      |           |        |     |            |          |      |          |          |       |              |
+|                    | assembly | target | user | respondent | sortition | invite | 2fa | email_conf | pw_reset | totp | rate_lim | bot_prot | perms | target_check |
+| ------------------ | :------: | :----: | :--: | :--------: | :-------: | :----: | :-: | :--------: | :------: | :--: | :------: | :------: | :---: | :----------: |
+| **admin**          |          |        |  ✓   |            |           |   ✓    |  ✓  |            |          |      |          |          |       |              |
+| **auth**           |          |        |  ✓   |            |           |        |     |     ✓      |    ✓     |  ✓   |    ✓     |          |       |              |
+| **registration**   |          |        |      |            |           |        |     |            |          |      |          |    ✓     |       |              |
+| **main**           |    ✓     |        |  ✓   |            |           |        |     |            |          |      |          |          |   ✓   |              |
+| **profile**        |          |        |  ✓   |            |           |        |  ✓  |            |          |      |          |          |       |              |
+| **backoffice**     |    ✓     |   ✓    |  ✓   |     ✓      |           |        |     |            |          |      |          |          |   ✓   |              |
+| **dev**            |    ✓     |        |      |     ✓      |           |        |     |            |          |      |          |          |   ✓   |              |
+| **gsheets**        |    ✓     |        |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
+| **db_sel_bo**      |    ✓     |        |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
+| **targets**        |    ✓     |   ✓    |      |            |           |        |     |            |          |      |          |          |       |      ✓       |
+| **gsheets_legacy** |    ✓     |        |      |            |     ✓     |        |     |            |          |      |          |          |       |              |
+| **db_sel_legacy**  |    ✓     |        |      |     ✓      |     ✓     |        |     |            |          |      |          |          |       |              |
+| **targets_legacy** |    ✓     |   ✓    |      |            |           |        |     |            |          |      |          |          |       |      ✓       |
+| **respondents_lg** |    ✓     |        |      |     ✓      |           |        |     |            |          |      |          |          |       |              |
 
 ---
 
@@ -449,7 +464,7 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 
 | Service                               | Approx. functions | Notes                                                                                       |
 | ------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------- |
-| `assembly_service`                    | 28                | **Could be split** — assembly CRUD, targets, gsheet config, CSV config, selection settings. |
+| `assembly_service`                    | 18                | Assembly CRUD, gsheet config, CSV config, selection settings. Targets now live in `target_service`. |
 | `user_service`                        | 18+               | Large but well grouped by responsibility.                                                   |
 | `sortition`                           | 12+               | **Could split GSheet vs DB workflows.** Now also shares progress/status helpers with both.  |
 | `respondent_service`                  | 4                 | Focused.                                                                                    |
@@ -460,7 +475,7 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 
 1. **Retire legacy blueprints:** remove from main nav, then delete `*_legacy.py` once the Tailwind backoffice equivalents are trusted in production.
 2. **Split out respondents backoffice blueprint** from `backoffice.py`.
-3. **Consider splitting `assembly_service`** — target management and CSV config are distinct concerns.
+3. **Consider splitting `assembly_service` further** — target management has been split out into `target_service`; CSV config is still a distinct concern sitting alongside assembly CRUD.
 4. **Consider splitting `sortition`** — GSheet and DB selection workflows share only status helpers.
 5. **Standardise URL patterns:** legacy uses `/assemblies/<id>/…`, backoffice uses `/backoffice/assembly/<id>/…`. Legacy retirement will remove this inconsistency.
 
