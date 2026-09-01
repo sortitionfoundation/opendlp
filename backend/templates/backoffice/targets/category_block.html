@@ -59,7 +59,11 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
             {% if category.source_url %}
                 <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
                     {{ _("Source:") }}
-                    <a href="{{ category.source_url }}" target="_blank" rel="noopener noreferrer">{{ category.source_url }}</a>
+                    <a href="{{ category.source_url }}"
+                       class="underline"
+                       style="color: var(--color-links)"
+                       target="_blank"
+                       rel="noopener noreferrer">{{ category.source_url }}</a>
                 </p>
             {% endif %}
             {% if category.comment %}

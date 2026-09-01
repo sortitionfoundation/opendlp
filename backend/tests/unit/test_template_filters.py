@@ -14,6 +14,17 @@ class TestLinkify:
         assert 'rel="noopener noreferrer"' in result
         assert 'target="_blank"' in result
 
+    def test_the_link_is_visibly_a_link(self):
+        """The Tailwind preflight sets `a { color: inherit; text-decoration: inherit }`.
+
+        Without an explicit colour and underline the link renders as plain text,
+        which defeats the point of linkifying it at all.
+        """
+        result = str(linkify("see https://www.ons.gov.uk/data"))
+
+        assert 'class="underline"' in result
+        assert "var(--color-links)" in result
+
     def test_escapes_markup_in_the_surrounding_text(self):
         """Escaped output, not raw input marked safe - the other way lets a comment inject markup."""
         result = str(linkify("<script>alert(1)</script> and https://ok.com"))

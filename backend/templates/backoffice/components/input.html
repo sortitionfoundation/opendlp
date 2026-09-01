@@ -23,7 +23,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
 
 {% from "backoffice/components/icons.html" import icon_check_12 %}
-{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true) %}
+{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="") %}
     {#
     Text input component using semantic design tokens.
 
@@ -100,6 +100,9 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 {# The error is next to the input on screen; these are what say so
                    to anything that is not looking at the screen. #}
                 {% if has_error %}aria-invalid="true" aria-describedby="{{ input_id }}-error"{% endif %}
+                {# For inputs whose only visible label is a column heading, which
+                   does not name a form control to a screen reader. #}
+                {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
                 {% if attrs %}{{ attrs | safe }}{% endif %}
                 class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 {{ classes }}"
                 style="

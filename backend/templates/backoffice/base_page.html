@@ -17,9 +17,7 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
     {% if not account_initials %}{% set account_initials = current_user.email[0] | upper %}{% endif %}
     {% set _is_site_admin = current_user.global_role.value in ['admin', 'global-organiser'] %}
 
-    {# page_alpine: an x-data for pages whose header and content share Alpine state.
-       The header and main are siblings, so a scope on either cannot reach the other. #}
-    <div class="min-h-screen flex flex-col" {% block page_alpine %}{% endblock %}>
+    <div class="min-h-screen flex flex-col">
         {# Sticky chrome: the top bar and (where present) the page header + tabs
            stay pinned while page content scrolls beneath them. The header uses the
            page background so the sticky page-header slot is opaque. #}

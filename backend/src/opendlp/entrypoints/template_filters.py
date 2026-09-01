@@ -27,7 +27,13 @@ class _NewTabUrlizer(Urlizer):  # type: ignore[no-any-unimported]
 
     # Comments are read alongside the targets they explain, so a source opens
     # beside the page rather than replacing it.
-    url_template = '<a href="{href}" target="_blank" rel="noopener noreferrer"{attrs}>{url}</a>'
+    # Styled explicitly: the Tailwind preflight sets `a { color: inherit;
+    # text-decoration: inherit }`, so an unstyled link is indistinguishable from
+    # the sentence around it.
+    url_template = (
+        '<a href="{href}" class="underline" style="color: var(--color-links)"'
+        ' target="_blank" rel="noopener noreferrer"{attrs}>{url}</a>'
+    )
 
 
 _urlize = _NewTabUrlizer()

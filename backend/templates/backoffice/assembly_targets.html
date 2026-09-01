@@ -164,6 +164,9 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                    saved, so leaving asks first. #}
                 {% include "backoffice/components/leave_guard_modal.html" %}
             {% endif %}
+            {# No x-cloak, unlike its x-show="editingAll" siblings: this is the
+               default view, so cloaking it would blank the page until Alpine
+               boots rather than prevent a flash. #}
             <div id="target-categories" x-show="!editingAll">
                 {% for category in target_categories %}
                     {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}

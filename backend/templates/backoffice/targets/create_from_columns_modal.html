@@ -46,7 +46,7 @@ close_expr="close()") %}
                     {% set already_defined = col | lower in existing_category_names_lower %}
                     {{ checkbox(name="columns",
                     id="create-target-column-" ~ loop.index,
-                    label=col ~ " (" ~ counts.get(col, 0) | string ~ " " ~ _("values") ~ ")" ~ (" - " ~ _("already defined") if already_defined else ""),
+                    label=_("%(column)s (%(count)s values)", column=col, count=counts.get(col, 0)) ~ (" - " ~ _("already defined") if already_defined else ""),
                     value=col,
                     checked=already_defined,
                     disabled=already_defined
@@ -56,13 +56,15 @@ close_expr="close()") %}
         {% endif %}
         {# ── High cardinality columns (>= 20 distinct values) ── #}
         {% if high_cardinality_columns %}
-            <details class="mb-4" x-data="{ open: false }">
+            {# No Alpine flag: <details> already shows and hides its own content, and
+               a second source of truth goes out of step the moment anything opens it
+               without clicking the summary - find-in-page, or setting `open`. #}
+            <details class="mb-4">
                 <summary class="text-body-md cursor-pointer underline mb-2"
-                         style="color: var(--color-links)"
-                         @click="open = !open">
+                         style="color: var(--color-links)">
                     {{ _("Other columns (%(count)s)", count=high_cardinality_columns|length) }}
                 </summary>
-                <div x-show="open" x-cloak class="mt-2">
+                <div class="mt-2">
                     <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
                         {{ _("These columns have many different values and probably aren't useful as target categories. Only the category will be created; values will not be added automatically.") }}
                     </p>
@@ -71,7 +73,7 @@ close_expr="close()") %}
                             {% set already_defined = col | lower in existing_category_names_lower %}
                             {{ checkbox(name="columns",
                             id="create-target-other-column-" ~ loop.index,
-                            label=col ~ " (" ~ counts.get(col, 0) | string ~ " " ~ _("values") ~ ")" ~ (" - " ~ _("already defined") if already_defined else ""),
+                            label=_("%(column)s (%(count)s values)", column=col, count=counts.get(col, 0)) ~ (" - " ~ _("already defined") if already_defined else ""),
                             value=col,
                             disabled=already_defined
                             ) }}
