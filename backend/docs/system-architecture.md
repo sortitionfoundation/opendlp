@@ -121,10 +121,10 @@ Not all of these are required. A deployment that does not use Google Sheets, one
 ## Networking
 
 - All application containers share the `opendlp_prod_net` bridge network and reach each other by service name (`postgres`, `redis`, `postfix`).
-- Only the `app` container publishes a port to the host (`8080:8080`). Everything else is cluster-internal.
+- Only the `app` container publishes a port to the host, bound to localhost only (`127.0.0.1:8080:8080`) because docker-published ports bypass ufw. Everything else is cluster-internal.
 - The reverse proxy terminates HTTPS and forwards to `localhost:8080`, sending `X-Forwarded-Host`, `X-Forwarded-Proto`, and `X-Forwarded-For`. `ProxyFix` in the Flask app trusts these for URL generation. See [deploy.md](deploy.md#reverse-proxy-configuration).
 - Outbound connections to OAuth providers, Google Sheets, and the upstream SMTP relay follow the host's egress rules.
-- The app container has a readiness healthcheck (`curl --fail http://localhost:8080`); the Celery worker uses `celery inspect ping`; postgres uses `pg_isready`; redis uses `redis-cli ping`. Compose `depends_on: condition: service_healthy` chains ensure the app only starts once the data stores and relay are ready.
+- The app container has a readiness healthcheck (`curl --fail --max-time 4 http://localhost:8080`); the Celery worker uses `celery inspect ping`; postgres uses `pg_isready`; redis uses `redis-cli ping`. Compose `depends_on: condition: service_healthy` chains ensure the app only starts once the data stores and relay are ready.
 
 ---
 

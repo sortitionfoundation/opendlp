@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from opendlp.adapters.email import ConsoleEmailAdapter, EmailAdapter, SMTPEmailAdapter
+from opendlp.adapters.email import SMTP_TIMEOUT_SECONDS, ConsoleEmailAdapter, EmailAdapter, SMTPEmailAdapter
 from opendlp.log_redaction import EMAIL_PLACEHOLDER
 
 
@@ -181,7 +181,7 @@ class TestSMTPEmailAdapter:
             )
 
             assert result is True
-            mock_smtp.assert_called_once_with("smtp.example.com", 587)
+            mock_smtp.assert_called_once_with("smtp.example.com", 587, timeout=SMTP_TIMEOUT_SECONDS)
             mock_server.starttls.assert_called_once()
             mock_server.login.assert_called_once_with("user@example.com", "password")
             mock_server.sendmail.assert_called_once()

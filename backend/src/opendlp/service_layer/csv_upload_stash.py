@@ -7,12 +7,12 @@ import json
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING
 
-from redis import Redis
-
 from opendlp.config import RedisCfg
 
 if TYPE_CHECKING:
     import uuid
+
+    from redis import Redis
 
 _KEY_PREFIX = "csv_import_pending:"
 # TTL for a stashed upload — generous enough that an organiser can read the
@@ -32,9 +32,8 @@ class StashedUpload:
 
 
 def _get_redis() -> Redis:
-    cfg = RedisCfg.from_env()
     # decode_responses=False because csv_content is opaque text we round-trip via JSON.
-    return Redis(host=cfg.host, port=cfg.port, db=cfg.db)
+    return RedisCfg.from_env().create_client()
 
 
 def _key(user_id: uuid.UUID, assembly_id: uuid.UUID) -> str:

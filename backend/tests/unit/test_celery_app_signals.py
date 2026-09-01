@@ -34,3 +34,19 @@ class TestResetDbConnectionsAfterFork:
         worker_process_init.send(sender=None)
 
         assert called, "worker_process_init signal did not invoke the connected handler"
+
+
+class TestRedisTransportTimeouts:
+    """Broker and result-backend socket operations must be bounded.
+
+    Celery's defaults (120s socket_timeout, unbounded connect) can hold a
+    gunicorn worker far past its own timeout when Redis stalls.
+    """
+
+    def test_broker_and_backend_transport_options_bound_socket_operations(self) -> None:
+        for options in (
+            celery_app_module.app.conf.broker_transport_options,
+            celery_app_module.app.conf.result_backend_transport_options,
+        ):
+            assert options["socket_timeout"] <= 10
+            assert options["socket_connect_timeout"] <= 5

@@ -105,6 +105,13 @@ def get_google_auth_json_path() -> Path:
     return Path(os.environ.get("GOOGLE_AUTH_JSON_PATH", "/no-such-file"))
 
 
+# Redis is consulted from inside web requests (sessions, rate limiting, CSV
+# stash), so socket operations must fail well before the gunicorn worker
+# timeout rather than inherit whatever default the installed redis-py has.
+REDIS_SOCKET_TIMEOUT_SECONDS = 5
+REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS = 5
+
+
 @dataclass(slots=True, kw_only=True)
 class RedisCfg:
     host: str
@@ -113,6 +120,17 @@ class RedisCfg:
 
     def to_url(self) -> str:
         return f"redis://{self.host}:{self.port}/{self.db}"
+
+    def create_client(self, decode_responses: bool = False) -> Redis:
+        """Build a redis-py client with bounded socket operations."""
+        return Redis(
+            host=self.host,
+            port=self.port,
+            db=self.db,
+            decode_responses=decode_responses,
+            socket_timeout=REDIS_SOCKET_TIMEOUT_SECONDS,
+            socket_connect_timeout=REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS,
+        )
 
     @classmethod
     def from_env(cls) -> "RedisCfg":
@@ -565,7 +583,7 @@ class FlaskConfig(FlaskBaseConfig):
         # Session configuration
         redis_cfg = RedisCfg.from_env()
         self.SESSION_TYPE = "redis"
-        self.SESSION_REDIS = Redis(host=redis_cfg.host, port=redis_cfg.port)
+        self.SESSION_REDIS = redis_cfg.create_client()
 
 
 class FlaskTestConfig(FlaskBaseConfig):

@@ -16,6 +16,11 @@ from opendlp.config import FlaskBaseConfig
 from opendlp.domain.users import User, split_session_id
 from opendlp.translations import gettext
 
+# OAuth providers are contacted from inside web requests (token exchange,
+# OIDC discovery, userinfo), so a stalled provider must fail well before the
+# gunicorn worker timeout. Applied per request via authlib's default_timeout.
+OAUTH_HTTP_TIMEOUT_SECONDS = 10
+
 # Initialize extensions
 login_manager = LoginManager()
 session_store = Session()
@@ -94,7 +99,7 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
             client_id=app.config["OAUTH_GOOGLE_CLIENT_ID"],
             client_secret=app.config["OAUTH_GOOGLE_CLIENT_SECRET"],
             server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-            client_kwargs={"scope": "openid email profile"},
+            client_kwargs={"scope": "openid email profile", "default_timeout": OAUTH_HTTP_TIMEOUT_SECONDS},
         )
 
     # Register Microsoft OAuth provider (only if client ID is configured)
@@ -104,7 +109,7 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
             client_id=app.config["OAUTH_MICROSOFT_CLIENT_ID"],
             client_secret=app.config["OAUTH_MICROSOFT_CLIENT_SECRET"],
             server_metadata_url="https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration",
-            client_kwargs={"scope": "openid email profile"},
+            client_kwargs={"scope": "openid email profile", "default_timeout": OAUTH_HTTP_TIMEOUT_SECONDS},
         )
 
 

@@ -21,8 +21,7 @@ DEFAULT_EMAIL_WINDOW_MINUTES = 1440
 
 
 def _get_redis() -> Redis:
-    cfg = RedisCfg.from_env()
-    return Redis(host=cfg.host, port=cfg.port, db=cfg.db, decode_responses=True)
+    return RedisCfg.from_env().create_client(decode_responses=True)
 
 
 def _ip_key(ip_address: str) -> str:

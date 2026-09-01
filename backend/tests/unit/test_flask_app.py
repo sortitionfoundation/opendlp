@@ -39,6 +39,26 @@ class TestRequestContextLogging:
             assert "email" not in ctx
         structlog.contextvars.clear_contextvars()
 
+    def test_request_start_and_finish_are_logged_with_duration(self) -> None:
+        """Every request logs request_started and request_finished.
+
+        A hung request leaves an unmatched request_started line, which is how
+        we identify what a killed gunicorn worker was serving.
+        """
+        app = create_app("testing")
+        client = app.test_client()
+        with structlog.testing.capture_logs() as logs:
+            response = client.get("/health")
+
+        events = [log["event"] for log in logs]
+        assert "request_started" in events
+        assert "request_finished" in events
+        started = next(log for log in logs if log["event"] == "request_started")
+        finished = next(log for log in logs if log["event"] == "request_finished")
+        assert started["method"] == "GET"
+        assert finished["status"] == response.status_code
+        assert finished["duration_ms"] >= 0
+
 
 class TestFlaskApp:
     """Test Flask application factory and basic functionality."""

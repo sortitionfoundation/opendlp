@@ -7,10 +7,13 @@ from typing import ClassVar
 import pytest
 
 from opendlp.config import (
+    REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS,
+    REDIS_SOCKET_TIMEOUT_SECONDS,
     FlaskConfig,
     FlaskProductionConfig,
     FlaskTestConfig,
     InvalidConfig,
+    RedisCfg,
     dev_tools_enabled,
     get_config,
     get_max_content_length,
@@ -602,3 +605,19 @@ class TestDevToolsEnabled:
         temp_env_vars(FLASK_ENV="production")
 
         assert dev_tools_enabled() is False
+
+
+class TestRedisCfgCreateClient:
+    """Redis clients must carry socket timeouts so a stalled Redis cannot hang a worker."""
+
+    def test_client_has_bounded_socket_operations(self):
+        cfg = RedisCfg(host="example.com", port=6379, db=2)
+        client = cfg.create_client(decode_responses=True)
+
+        kwargs = client.connection_pool.connection_kwargs
+        assert kwargs["host"] == "example.com"
+        assert kwargs["port"] == 6379
+        assert kwargs["db"] == 2
+        assert kwargs["decode_responses"] is True
+        assert kwargs["socket_timeout"] == REDIS_SOCKET_TIMEOUT_SECONDS
+        assert kwargs["socket_connect_timeout"] == REDIS_SOCKET_CONNECT_TIMEOUT_SECONDS

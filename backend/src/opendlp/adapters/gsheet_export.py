@@ -16,10 +16,16 @@ __all__ = ["GSheetExportTarget", "WorksheetNotFound"]
 _DEFAULT_ROWS = 1000
 _DEFAULT_COLS = 26
 
+# Exports run inside web requests, so a stalled Google API must fail before
+# the gunicorn worker timeout. gspread's default is no timeout at all.
+GSPREAD_TIMEOUT_SECONDS = 20
+
 
 def _default_client_factory() -> Any:
     """Build a gspread client from the shared service-account credentials."""
-    return gspread.service_account(filename=str(config.get_google_auth_json_path()))
+    client = gspread.service_account(filename=str(config.get_google_auth_json_path()))
+    client.set_timeout(GSPREAD_TIMEOUT_SECONDS)
+    return client
 
 
 class GSheetExportTarget(AbstractGSheetExportTarget):

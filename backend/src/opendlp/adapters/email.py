@@ -13,6 +13,10 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
+# Sends run inside web requests (registration auto-reply, password reset, ...),
+# so a stalled SMTP server must fail well before the gunicorn worker timeout.
+SMTP_TIMEOUT_SECONDS = 10
+
 
 class EmailAdapter(ABC):
     """Abstract base class for email sending adapters."""
@@ -217,7 +221,7 @@ class SMTPEmailAdapter(EmailAdapter):
             to_addresses = [self._parse_address(addr)[1] for addr in to]
 
             # Send email
-            with smtplib.SMTP(self.host, self.port) as server:
+            with smtplib.SMTP(self.host, self.port, timeout=SMTP_TIMEOUT_SECONDS) as server:
                 if self.use_tls:
                     server.starttls()
                 if self.username and self.password:
