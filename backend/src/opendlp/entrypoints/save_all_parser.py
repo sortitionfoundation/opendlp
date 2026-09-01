@@ -16,7 +16,7 @@ ID = r"[0-9a-fA-F-]{36}|new-\d+"
 CATEGORY_FIELD = re.compile(rf"^cat\[({ID})\]\[(name|comment|source_url|deleted|sort_order)\]$")
 VALUE_FIELD = re.compile(rf"^cat\[({ID})\]\[values\]\[({ID})\]\[(\w+)\]$")
 
-VALUE_FIELDS = ("value", "percentage", "min", "max", "comment", "deleted", "relink")
+VALUE_FIELDS = ("value", "percentage", "min", "max", "comment", "deleted", "relink", "minmax_manual")
 
 TRUTHY = frozenset({"true", "1", "on", "yes"})
 
@@ -94,12 +94,17 @@ def _value_edit(
     if not name and not deleted:
         errors.append(TargetEditError(_("Every target value needs a name"), category_id, value_id, "value"))
 
+    # A row on its way out is not worth complaining about: `_value_problem`
+    # skips deleted rows too, and without this a stale number in a row the user
+    # has already removed would block the whole save.
+    number_errors = [] if deleted else errors
+
     return TargetValueEdit(
         value=name,
         value_id=_submitted_id(value_id),
-        percentage=_parse_number(cells.get("percentage", ""), "percentage", errors, category_id, value_id),
-        min=_parse_number(cells.get("min", ""), "min", errors, category_id, value_id),
-        max=_parse_number(cells.get("max", ""), "max", errors, category_id, value_id),
+        percentage=_parse_number(cells.get("percentage", ""), "percentage", number_errors, category_id, value_id),
+        min=_parse_number(cells.get("min", ""), "min", number_errors, category_id, value_id),
+        max=_parse_number(cells.get("max", ""), "max", number_errors, category_id, value_id),
         comment=cells.get("comment", "").strip(),
         deleted=deleted,
         relink=_is_true(cells.get("relink", "")),
@@ -141,7 +146,7 @@ def parse_save_all_targets(form_data: Any) -> tuple[list[TargetCategoryEdit], li
                 source_url=fields.get("source_url", "").strip(),
                 values=value_edits,
                 deleted=deleted,
-                sort_order=_parse_number(fields.get("sort_order", ""), "sort order", errors, category_id),
+                sort_order=_parse_number(fields.get("sort_order", ""), "sort_order", errors, category_id),
                 form_id=category_id,
             )
         )
@@ -166,6 +171,9 @@ class PendingValue:
     comment: str = ""
     deleted: bool = False
     relink: bool = False
+    # Carried through the form only so a redisplayed row still offers the re-link
+    # button. `save_all_targets` works this out from the stored value and the
+    # submitted numbers, and never reads it from here.
     minmax_manual: bool = False
 
 
@@ -198,6 +206,7 @@ def pending_categories(form_data: Any) -> list[PendingCategory]:
                 comment=cells.get("comment", ""),
                 deleted=_is_true(cells.get("deleted", "")),
                 relink=_is_true(cells.get("relink", "")),
+                minmax_manual=_is_true(cells.get("minmax_manual", "")),
             )
             for (owner, value_id), cells in values.items()
             if owner == category_id

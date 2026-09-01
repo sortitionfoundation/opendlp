@@ -3,7 +3,12 @@ ABOUTME: Covers field-name parsing, numeric cells, new values and malformed inpu
 
 import uuid
 
-from opendlp.entrypoints.save_all_parser import parse_save_all_targets
+from opendlp.entrypoints.save_all_parser import (
+    errors_by_field,
+    parse_save_all_targets,
+    pending_categories,
+)
+from opendlp.service_layer.target_service import TargetEditError
 
 CATEGORY_ID = uuid.uuid4()
 _NAME_REQUIRED = "Every target needs a name"
@@ -229,3 +234,163 @@ class TestNewCategories:
 
         assert errors == []
         assert edits[0].deleted is True
+
+
+class TestDeletedRowsAreNotNumberChecked:
+    def test_a_bad_number_on_a_deleted_row_does_not_block_the_save(self):
+        """`_value_problem` already skips deleted rows; the parser has to agree."""
+        edits, errors = parse_save_all_targets(
+            _form(**{
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][min]": "not a number",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][deleted]": "true",
+            })
+        )
+
+        assert errors == []
+        assert edits[0].values[0].deleted is True
+
+    def test_a_bad_number_on_a_live_row_still_blocks_the_save(self):
+        _edits, errors = parse_save_all_targets(
+            _form(**{
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][min]": "not a number",
+            })
+        )
+
+        assert errors
+
+
+class TestPendingCategories:
+    """What a rejected save puts back on the page.
+
+    The parser's other half: `parse_save_all_targets` is what the service acts
+    on, `pending_categories` is what the template redisplays, and only the
+    second one keeps the user's typing when the save is refused.
+    """
+
+    def test_rebuilds_a_category_with_its_values(self):
+        pending = pending_categories(
+            _form(**{
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][min]": " 3 ",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][max]": " 7 ",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][percentage]": " 50 ",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][comment]": "counted by hand",
+            })
+        )
+
+        assert len(pending) == 1
+        category = pending[0]
+        assert category.id == str(CATEGORY_ID)
+        assert category.name == "Gender"
+        assert category.comment == "from the census"
+        assert category.source_url == "https://www.ons.gov.uk/dataset"
+
+        assert len(category.values) == 1
+        row = category.values[0]
+        assert row.value_id == str(VALUE_ID)
+        assert row.value == "Male"
+        # Stripped, because they go straight back into `value` attributes.
+        assert (row.min, row.max, row.percentage_target) == ("3", "7", "50")
+        assert row.comment == "counted by hand"
+
+    def test_keeps_a_value_that_would_not_parse_as_a_number(self):
+        """The whole point: the user gets their typing back, mistake and all."""
+        pending = pending_categories(
+            _form(**{
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][min]": "not a number",
+            })
+        )
+
+        assert pending[0].values[0].min == "not a number"
+
+    def test_carries_the_pending_deletions_through(self):
+        """A row marked deleted must come back deleted, or saving again undoes it."""
+        pending = pending_categories(
+            _form(**{
+                f"cat[{CATEGORY_ID}][deleted]": "true",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][deleted]": "true",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][relink]": "true",
+            })
+        )
+
+        assert pending[0].deleted is True
+        assert pending[0].values[0].deleted is True
+        assert pending[0].values[0].relink is True
+
+    def test_carries_the_set_by_hand_flag_through(self):
+        """Without it the re-link button vanishes from every row after a rejected save."""
+        pending = pending_categories(
+            _form(**{
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male",
+                f"cat[{CATEGORY_ID}][values][{VALUE_ID}][minmax_manual]": "true",
+            })
+        )
+
+        assert pending[0].values[0].minmax_manual is True
+
+    def test_the_set_by_hand_flag_defaults_to_false(self):
+        pending = pending_categories(_form(**{f"cat[{CATEGORY_ID}][values][{VALUE_ID}][value]": "Male"}))
+
+        assert pending[0].values[0].minmax_manual is False
+
+    def test_keeps_a_client_side_new_id_verbatim(self):
+        """The page reissues ids from these, so they have to come back unchanged."""
+        pending = pending_categories({
+            "cat[new-1][name]": "Age",
+            "cat[new-1][values][new-2][value]": "18-30",
+        })
+
+        assert pending[0].id == "new-1"
+        assert pending[0].values[0].value_id == "new-2"
+
+    def test_ignores_fields_that_are_not_part_of_the_form(self):
+        pending = pending_categories({"csrf_token": "irrelevant"})
+
+        assert pending == []
+
+
+class TestErrorsByField:
+    def test_keys_a_category_error_by_its_field(self):
+        grouped = errors_by_field([TargetEditError("Needs a name", "cat-1", field="name")])
+
+        assert grouped == {"cat[cat-1][name]": "Needs a name"}
+
+    def test_keys_a_value_error_by_category_and_row(self):
+        grouped = errors_by_field([TargetEditError("Too big", "cat-1", "val-1", "max")])
+
+        assert grouped == {"cat[cat-1][values][val-1][max]": "Too big"}
+
+    def test_a_row_error_with_no_field_goes_against_the_row(self):
+        grouped = errors_by_field([TargetEditError("Check this row", "cat-1", "val-1")])
+
+        assert grouped == {"cat[cat-1][values][val-1]": "Check this row"}
+
+    def test_several_messages_on_one_field_stack(self):
+        """The input component renders its error with `white-space: pre-line`."""
+        grouped = errors_by_field([
+            TargetEditError("First problem", "cat-1", field="name"),
+            TargetEditError("Second problem", "cat-1", field="name"),
+        ])
+
+        assert grouped == {"cat[cat-1][name]": "First problem\nSecond problem"}
+
+    def test_errors_on_different_fields_stay_apart(self):
+        grouped = errors_by_field([
+            TargetEditError("Bad name", "cat-1", field="name"),
+            TargetEditError("Bad url", "cat-1", field="source_url"),
+        ])
+
+        assert grouped == {
+            "cat[cat-1][name]": "Bad name",
+            "cat[cat-1][source_url]": "Bad url",
+        }
+
+    def test_a_sort_order_error_lands_on_the_field_that_exists(self):
+        """The key has to match the input's name, or the message is rendered nowhere."""
+        grouped = errors_by_field([TargetEditError("Not a number", "cat-1", field="sort_order")])
+
+        assert grouped == {"cat[cat-1][sort_order]": "Not a number"}

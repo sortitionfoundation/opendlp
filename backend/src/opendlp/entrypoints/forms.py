@@ -116,7 +116,9 @@ class SourceUrlValidator:
         try:
             validate_source_url(field.data)
         except ValueError as e:
-            raise ValidationError(str(e)) from e
+            # A literal rather than str(e): the domain's message is written for a
+            # developer and never passes through gettext.
+            raise ValidationError(_l("Enter a full http:// or https:// address")) from e
 
 
 class LoginForm(FlaskForm):  # type: ignore[no-any-unimported]
