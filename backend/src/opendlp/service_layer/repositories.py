@@ -530,6 +530,15 @@ class RespondentRepository(AbstractRepository):
         """Get counts of each distinct value for a given attribute across selected/confirmed respondents."""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def get_attribute_distinct_counts(self, assembly_id: uuid.UUID, attribute_names: list[str]) -> dict[str, int]:
+        """How many distinct values each of the given attributes has, in one pass.
+
+        The per-attribute call answers the same question one column at a time,
+        which is a table scan per column on a page that asks about all of them.
+        """
+        raise NotImplementedError
+
 
 class RespondentFieldDefinitionRepository(AbstractRepository):
     """Repository interface for RespondentFieldDefinition domain objects."""

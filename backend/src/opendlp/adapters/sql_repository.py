@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import and_, delete, func, or_, select, update
+from sqlalchemy import and_, delete, distinct, func, or_, select, update
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
@@ -1348,6 +1348,30 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             .group_by(val_col)
         ).all()
         return {row.val: row.cnt for row in rows if row.val is not None}
+
+    def get_attribute_distinct_counts(self, assembly_id: uuid.UUID, attribute_names: list[str]) -> dict[str, int]:
+        """One COUNT(DISTINCT ...) per column, all in a single scan of the table.
+
+        The data page asks this about every respondent column at once, so doing
+        it a column at a time is a GROUP BY per column - and only the size of
+        each result was ever used, never the values.
+        """
+        if not attribute_names:
+            return {}
+        # Positional labels: an attribute name is user data and not a safe identifier.
+        columns = [
+            func.count(distinct(orm.respondents.c.attributes[name].as_string())).label(f"c{index}")
+            for index, name in enumerate(attribute_names)
+        ]
+        row = self.session.execute(
+            select(*columns).where(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.selection_status.in_(COUNTED_RESPONDENT_STATUSES),
+                )
+            )
+        ).one()
+        return {name: getattr(row, f"c{index}") for index, name in enumerate(attribute_names)}
 
     def get_selected_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
         val_col = orm.respondents.c.attributes[attribute_name].as_string().label("val")

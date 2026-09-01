@@ -532,6 +532,46 @@ class TestIncludeDeletedFiltering:
         counts = respondent_backend.repo.get_attribute_value_counts(assembly.id, "gender")
         assert counts == {"Female": 3}
 
+    def test_get_attribute_distinct_counts_agrees_with_counting_each_column(self, respondent_backend: ContractBackend):
+        """The one-query version must answer exactly what the per-column one did.
+
+        It replaced a loop of GROUP BY queries whose results were only ever
+        measured with len(), so the two have to stay in step.
+        """
+        assembly = respondent_backend.make_assembly()
+        for external_id, attributes in [
+            ("R-1", {"gender": "Female", "age": "30-40"}),
+            ("R-2", {"gender": "Male", "age": "30-40"}),
+            ("R-3", {"gender": "Female", "age": "50-60"}),
+        ]:
+            _make_respondent(respondent_backend, assembly.id, external_id=external_id, attributes=attributes)
+
+        distinct_counts = respondent_backend.repo.get_attribute_distinct_counts(assembly.id, ["gender", "age"])
+
+        assert distinct_counts == {"gender": 2, "age": 2}
+        for column, count in distinct_counts.items():
+            assert count == len(respondent_backend.repo.get_attribute_value_counts(assembly.id, column))
+
+    def test_get_attribute_distinct_counts_excludes_respondents_outside_the_pool(
+        self, respondent_backend: ContractBackend
+    ):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R-POOL", attributes={"gender": "Female"})
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R-DEAD",
+            attributes={"gender": "Male"},
+            status=RespondentStatus.DELETED,
+        )
+
+        assert respondent_backend.repo.get_attribute_distinct_counts(assembly.id, ["gender"]) == {"gender": 1}
+
+    def test_get_attribute_distinct_counts_with_no_columns_asks_nothing(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+
+        assert respondent_backend.repo.get_attribute_distinct_counts(assembly.id, []) == {}
+
     def test_get_attribute_columns_skips_deleted_sample(self, respondent_backend: ContractBackend):
         assembly = respondent_backend.make_assembly()
         # Insert the DELETED respondent first so if the sample picks "first row"

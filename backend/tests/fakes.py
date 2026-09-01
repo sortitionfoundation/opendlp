@@ -829,6 +829,11 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
     def get_selected_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
         return self._value_counts(assembly_id, attribute_name, SELECTED_RESPONDENT_STATUSES)
 
+    def get_attribute_distinct_counts(self, assembly_id: uuid.UUID, attribute_names: list[str]) -> dict[str, int]:
+        return {
+            name: len(self._value_counts(assembly_id, name, COUNTED_RESPONDENT_STATUSES)) for name in attribute_names
+        }
+
     def _value_counts(
         self,
         assembly_id: uuid.UUID,
