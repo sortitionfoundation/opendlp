@@ -1,6 +1,7 @@
 """ABOUTME: BDD tests for target percentages, hand-set notes, bulk edit and reordering
 ABOUTME: Exercises the full UI stack via Playwright for the paths covered by unit + e2e tests"""
 
+import re
 import uuid
 
 from playwright.sync_api import Page, expect
@@ -30,8 +31,9 @@ def _targets_url(assembly_id: str) -> str:
     return f"{Urls.base}/backoffice/assembly/{assembly_id}/targets"
 
 
-def _details_url(assembly_id: str) -> str:
-    return f"{Urls.base}/backoffice/assembly/{assembly_id}"
+def _details_url_pattern(assembly_id: str) -> re.Pattern[str]:
+    """The details tab, with or without the ?source= the tabs carry."""
+    return re.compile(re.escape(f"{Urls.base}/backoffice/assembly/{assembly_id}") + r"(\?.*)?$")
 
 
 def _row_for(page: Page, value: str):
@@ -163,7 +165,7 @@ def still_on_targets(admin_logged_in_page: Page) -> None:
 @then("I should be on the assembly details page")
 def on_details_page(admin_logged_in_page: Page) -> None:
     """Named positively: "not the targets page" also passes on an error page."""
-    expect(admin_logged_in_page).to_have_url(_details_url(_current_assembly_id[-1]), timeout=PLAYWRIGHT_TIMEOUT)
+    expect(admin_logged_in_page).to_have_url(_details_url_pattern(_current_assembly_id[-1]), timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when(parsers.parse('I add a target called "{name}"'))
