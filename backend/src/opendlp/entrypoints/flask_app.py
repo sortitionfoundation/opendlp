@@ -2,6 +2,7 @@
 ABOUTME: Creates and configures Flask app instance with all necessary extensions and routes"""
 
 import secrets
+import time
 import uuid
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,8 @@ from opendlp.entrypoints.extensions import init_extensions
 
 if TYPE_CHECKING:
     from opendlp.adapters.tabular_export import AbstractGSheetExportTarget
+
+logger = structlog.get_logger(__name__)
 
 
 def generate_csp_nonce() -> str:
@@ -204,6 +207,18 @@ def register_before_request_handlers(app: Flask) -> None:
             peer=request.access_route[0],
         )
 
+    @app.before_request
+    def log_request_started() -> None:
+        """Log the start of every request.
+
+        A request that hangs (and gets its worker killed) leaves this line
+        with no matching request_finished, identifying the stuck URL - the
+        gunicorn timeout messages themselves carry stale context from the
+        previous request on that worker, so they cannot be trusted for this.
+        """
+        g.request_started_at = time.monotonic()
+        logger.info("request_started", method=request.method)
+
 
 def get_secure_headers(config: Config) -> Secure:
     secure_headers = Secure(
@@ -255,6 +270,17 @@ def register_after_request_handlers(app: Flask) -> None:
     """Register after request handlers."""
 
     secure_headers = get_secure_headers(app.config)
+
+    # after_request handlers run in reverse registration order, so registering
+    # this first means it runs last, timing as much of the request as possible.
+    @app.after_request
+    def log_request_finished(response: Response) -> Response:
+        """Log completion and duration of every request (pairs with request_started)."""
+        started_at = g.pop("request_started_at", None)
+        if started_at is not None:
+            duration_ms = round((time.monotonic() - started_at) * 1000, 1)
+            logger.info("request_finished", status=response.status_code, duration_ms=duration_ms)
+        return response
 
     @app.after_request
     def add_cache_headers_for_authenticated_users(response: Response) -> Response:
