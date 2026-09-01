@@ -18,9 +18,9 @@ from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import TargetCategory, TargetValue
-from opendlp.domain.users import User
-from opendlp.domain.value_objects import GlobalRole, RespondentStatus
-from opendlp.service_layer.exceptions import AssemblyNotFoundError
+from opendlp.domain.users import User, UserAssemblyRole
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole, RespondentStatus
+from opendlp.service_layer.exceptions import AssemblyNotFoundError, InsufficientPermissions
 from opendlp.service_layer.target_checking import (
     TargetAnnotation,
     _annotations_from_cross_feature_issues,
@@ -436,6 +436,44 @@ class TestCheckTargetsDetailed:
 
         with pytest.raises(AssemblyNotFoundError):
             check_targets_detailed(uow, admin.id, uuid.uuid4())
+
+    def test_a_confirmation_caller_cannot_run_the_check(self, uow):
+        """The detailed check loads the pool and runs a feasibility solve, so it needs manage rights.
+
+        A view-level role is not enough: the routes only pre-check view permission,
+        so this decorator is the only thing standing between a caller and the solve.
+        """
+        _uow, _admin_id, assembly_id = _make_uow_with_targets_and_respondents(uow)
+
+        caller = User(email="caller@test.com", global_role=GlobalRole.USER, password_hash="hash")
+        caller.assembly_roles.append(
+            UserAssemblyRole(
+                user_id=caller.id,
+                assembly_id=assembly_id,
+                role=AssemblyRole.CONFIRMATION_CALLER,
+            )
+        )
+        uow.users.add(caller)
+
+        with pytest.raises(InsufficientPermissions):
+            check_targets_detailed(uow, caller.id, assembly_id)
+
+    def test_an_assembly_manager_can_run_the_check(self, uow):
+        _uow, _admin_id, assembly_id = _make_uow_with_targets_and_respondents(uow)
+
+        manager = User(email="manager@test.com", global_role=GlobalRole.USER, password_hash="hash")
+        manager.assembly_roles.append(
+            UserAssemblyRole(
+                user_id=manager.id,
+                assembly_id=assembly_id,
+                role=AssemblyRole.ASSEMBLY_MANAGER,
+            )
+        )
+        uow.users.add(manager)
+
+        result = check_targets_detailed(uow, manager.id, assembly_id)
+
+        assert result is not None
 
 
 def _category_with_percentages(name: str, percentages: list[float]) -> TargetCategory:

@@ -255,7 +255,6 @@ def _run_feasibility_check(
         result.global_errors.append(str(e))
 
 
-@require_assembly_permission(can_manage_assembly)
 def _annotations_from_percentage_totals(
     categories: "list[TargetCategory]",
     category_annotations: CategoryAnnotationsDict,
@@ -280,6 +279,7 @@ def _annotations_from_percentage_totals(
         )
 
 
+@require_assembly_permission(can_manage_assembly)
 def check_targets_detailed(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
