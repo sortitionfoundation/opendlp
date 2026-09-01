@@ -1,5 +1,5 @@
-"""ABOUTME: Guards against templates referencing undefined CSS design tokens
-ABOUTME: Every var(--...) in templates must be defined in the backoffice token files (see issue #797)"""
+"""ABOUTME: Guards against templates and CSS source referencing undefined CSS design tokens
+ABOUTME: Every var(--...) must be defined in the backoffice token files (see issue #797)"""
 
 import re
 from pathlib import Path
@@ -22,15 +22,15 @@ def _defined_tokens() -> set[str]:
     return defined
 
 
-def _find_undefined_refs(templates_path: Path, defined: set[str]) -> dict[str, set[str]]:
+def _find_undefined_refs(root: Path, defined: set[str], pattern: str = "*.html") -> dict[str, set[str]]:
     undefined_refs: dict[str, set[str]] = {}
-    for template in sorted(templates_path.rglob("*.html")):
+    for template in sorted(root.rglob(pattern)):
         text = template.read_text()
         # Tokens a template defines inline (e.g. in a <style> block) are fine to reference.
         local = set(DEFINITION_RE.findall(text))
         for token in REFERENCE_RE.findall(text):
             if token not in defined and token not in local:
-                undefined_refs.setdefault(token, set()).add(str(template.relative_to(templates_path)))
+                undefined_refs.setdefault(token, set()).add(str(template.relative_to(root)))
     return undefined_refs
 
 
@@ -58,4 +58,19 @@ def test_templates_only_reference_defined_tokens() -> None:
         "Templates reference CSS custom properties that are not defined in "
         "static/backoffice/tokens/{primitive,semantic}.css - define the token (or an alias) "
         f"there, or repoint the template at an existing token: {undefined_refs}"
+    )
+
+
+def test_backoffice_css_source_only_references_defined_tokens() -> None:
+    """The same trap as the templates, in the file the templates are styled from.
+
+    Scanned as well as `templates/`: main.css is hand-written source (Tailwind
+    compiles it into `dist/`), so an undefined token here fails just as silently.
+    """
+    css_source = config.get_static_path() / "backoffice" / "src"
+    undefined_refs = _find_undefined_refs(css_source, _defined_tokens(), pattern="*.css")
+    assert not undefined_refs, (
+        "static/backoffice/src CSS references custom properties that are not defined in "
+        "static/backoffice/tokens/{primitive,semantic}.css - define the token (or an alias) "
+        f"there, or repoint the rule at an existing token: {undefined_refs}"
     )
