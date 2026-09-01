@@ -28,6 +28,7 @@ import base64
 import binascii
 import uuid
 from collections.abc import Callable
+from dataclasses import asdict
 from typing import TYPE_CHECKING, Any, cast
 
 import structlog
@@ -55,6 +56,12 @@ from opendlp.service_layer.assembly_service import (
     update_assembly,
     update_csv_config,
     update_selection_settings,
+)
+from opendlp.service_layer.dashboard_stats import (
+    DashboardStatsError,
+    export_assembly_dashboard,
+    get_assembly_dashboard_report,
+    get_assembly_dashboard_summary,
 )
 from opendlp.service_layer.email_template_service import (
     assign_auto_reply_template,
@@ -210,6 +217,7 @@ def service_docs() -> ResponseReturnValue:
         "images",
         "documents",
         "emails",
+        "dashboard",
     ]
     if active_tab not in valid_tabs:
         active_tab = "respondents"
@@ -1473,6 +1481,40 @@ def _handle_auto_reply_readiness_problems(uow: Any, params: dict[str, Any]) -> d
     }
 
 
+# --- Dashboard (ticket 886) — MOCK services. See service_layer/dashboard_stats.py. ---
+
+
+def _handle_get_assembly_dashboard_summary(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle get_assembly_dashboard_summary service call (MOCK)."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    try:
+        summary = get_assembly_dashboard_summary(uow=uow, assembly_id=assembly_id)
+    except DashboardStatsError as e:
+        return {"status": "error", "error": str(e), "error_type": "DashboardStatsError"}
+    return {"status": "success", **asdict(summary)}
+
+
+def _handle_get_assembly_dashboard_report(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle get_assembly_dashboard_report service call (MOCK)."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    try:
+        report = get_assembly_dashboard_report(uow=uow, assembly_id=assembly_id)
+    except DashboardStatsError as e:
+        return {"status": "error", "error": str(e), "error_type": "DashboardStatsError"}
+    return {"status": "success", **asdict(report)}
+
+
+def _handle_export_assembly_dashboard(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle export_assembly_dashboard service call (MOCK)."""
+    assembly_id = uuid.UUID(params["assembly_id"])
+    export_format = params.get("export_format", "csv")
+    try:
+        export = export_assembly_dashboard(uow=uow, assembly_id=assembly_id, export_format=export_format)
+    except DashboardStatsError as e:
+        return {"status": "error", "error": str(e), "error_type": "DashboardStatsError"}
+    return {"status": "success", **asdict(export)}
+
+
 # Mapping of service names to their handler functions
 _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = {
     "import_respondents_from_csv": _handle_import_respondents,
@@ -1517,6 +1559,9 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "delete_email_template": _handle_delete_email_template,
     "assign_auto_reply_template": _handle_assign_auto_reply_template,
     "auto_reply_readiness_problems": _handle_auto_reply_readiness_problems,
+    "get_assembly_dashboard_summary": _handle_get_assembly_dashboard_summary,
+    "get_assembly_dashboard_report": _handle_get_assembly_dashboard_report,
+    "export_assembly_dashboard": _handle_export_assembly_dashboard,
 }
 
 
@@ -1567,6 +1612,9 @@ SERVICE_RESPONSE_KEYS: dict[str, str] = {
     "delete_email_template": "delete_email_template",
     "assign_auto_reply_template": "assign_auto_reply_template",
     "auto_reply_readiness_problems": "auto_reply_readiness",
+    "get_assembly_dashboard_summary": "dashboard_summary",
+    "get_assembly_dashboard_report": "dashboard_report",
+    "export_assembly_dashboard": "dashboard_export",
 }
 
 

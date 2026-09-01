@@ -22,6 +22,7 @@ TABS = [
     "images",
     "documents",
     "emails",
+    "dashboard",
 ]
 
 # Where the extracted component lives. Read directly rather than through the built

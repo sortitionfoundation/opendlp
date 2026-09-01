@@ -4,6 +4,7 @@
 import { serviceDocsAssembly } from "./assembly.js";
 import { serviceDocsCore } from "./core.js";
 import { serviceDocsCsvConfig } from "./csv-config.js";
+import { serviceDocsDashboard } from "./dashboard.js";
 import { serviceDocsDocuments } from "./documents.js";
 import { serviceDocsEmails } from "./emails.js";
 import { serviceDocsFields } from "./fields.js";
@@ -49,5 +50,6 @@ export function serviceDocsController(config) {
     serviceDocsImages(),
     serviceDocsDocuments(),
     serviceDocsEmails(),
+    serviceDocsDashboard(),
   );
 }

@@ -37,7 +37,8 @@ ABOUTME: Provides testing console with code references, sample data, and executi
         {"key": "selection", "label": _("Selection"), "href": url_for('dev.service_docs', tab='selection'), "active": active_tab == 'selection'},
         {"key": "images", "label": _("Images"), "href": url_for('dev.service_docs', tab='images'), "active": active_tab == 'images'},
         {"key": "documents", "label": _("Documents"), "href": url_for('dev.service_docs', tab='documents'), "active": active_tab == 'documents'},
-        {"key": "emails", "label": _("Emails"), "href": url_for('dev.service_docs', tab='emails'), "active": active_tab == 'emails'}
+        {"key": "emails", "label": _("Emails"), "href": url_for('dev.service_docs', tab='emails'), "active": active_tab == 'emails'},
+        {"key": "dashboard", "label": _("Dashboard (886)"), "href": url_for('dev.service_docs', tab='dashboard'), "active": active_tab == 'dashboard'}
         ],
         aria_label=_("Service categories"),
         preserve_scroll=true
@@ -82,6 +83,10 @@ ABOUTME: Provides testing console with code references, sample data, and executi
 
         {% if active_tab == 'emails' %}
             {% include "backoffice/service_docs/_emails.html" %}
+        {% endif %}
+
+        {% if active_tab == 'dashboard' %}
+            {% include "backoffice/service_docs/_dashboard.html" %}
         {% endif %}
 
         {# Toast Notification #}

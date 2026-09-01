@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-28 10:43+0000\n"
+"POT-Creation-Date: 2026-09-02 09:26+0200\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -775,8 +775,8 @@ msgstr "Hiba történt a gyűlés frissítése közben"
 #: src/opendlp/service_layer/two_factor_service.py:204
 #: src/opendlp/service_layer/two_factor_service.py:251
 #: src/opendlp/service_layer/two_factor_service.py:286
-#: src/opendlp/service_layer/two_factor_service.py:328
-#: src/opendlp/service_layer/two_factor_service.py:355
+#: src/opendlp/service_layer/two_factor_service.py:331
+#: src/opendlp/service_layer/two_factor_service.py:358
 #, fuzzy
 msgid "User not found"
 msgstr "Az oldal nem elérhető"
@@ -1668,7 +1668,7 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:552
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:975
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1325
-#: src/opendlp/service_layer/sortition.py:756
+#: src/opendlp/service_layer/sortition.py:759
 #, fuzzy
 msgid "Task not found"
 msgstr "Az oldal nem elérhető"
@@ -1774,38 +1774,38 @@ msgstr "További beállítások"
 msgid "An unexpected error occurred"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:159
+#: src/opendlp/entrypoints/blueprints/dev.py:166
 #: src/opendlp/service_layer/exceptions.py:84
 #, fuzzy
 msgid "Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/dev.py:160
+#: src/opendlp/entrypoints/blueprints/dev.py:167
 msgid "(check the Flask console log for full error details)"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:177
-#: src/opendlp/entrypoints/blueprints/dev.py:197
-#: src/opendlp/entrypoints/blueprints/dev.py:1599
-#: src/opendlp/entrypoints/blueprints/dev.py:1635
+#: src/opendlp/entrypoints/blueprints/dev.py:184
+#: src/opendlp/entrypoints/blueprints/dev.py:204
+#: src/opendlp/entrypoints/blueprints/dev.py:1647
+#: src/opendlp/entrypoints/blueprints/dev.py:1683
 #, fuzzy
 msgid "You don't have permission to access developer tools"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1643
+#: src/opendlp/entrypoints/blueprints/dev.py:1691
 msgid "Success! Your changes have been saved."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1644
+#: src/opendlp/entrypoints/blueprints/dev.py:1692
 msgid "Warning: Please review the data before continuing."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1645
+#: src/opendlp/entrypoints/blueprints/dev.py:1693
 #, fuzzy
 msgid "Error: Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1646
+#: src/opendlp/entrypoints/blueprints/dev.py:1694
 msgid "Info: A new feature is available."
 msgstr ""
 
@@ -2694,7 +2694,7 @@ msgid "An unexpected error occurred while checking targets"
 msgstr "Hiba történt a betöltés indítása közben"
 
 #: src/opendlp/entrypoints/celery/tasks.py:115
-#: src/opendlp/service_layer/sortition.py:894
+#: src/opendlp/service_layer/sortition.py:897
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 
@@ -3088,14 +3088,14 @@ msgstr ""
 msgid "The image could not be read"
 msgstr ""
 
-#: src/opendlp/service_layer/login_rate_limit_service.py:74
-#: src/opendlp/service_layer/login_rate_limit_service.py:83
+#: src/opendlp/service_layer/login_rate_limit_service.py:73
+#: src/opendlp/service_layer/login_rate_limit_service.py:82
 #, fuzzy
 msgid "login"
 msgstr "Bejelentkezés"
 
-#: src/opendlp/service_layer/registration_bot_protection_service.py:71
-#: src/opendlp/service_layer/registration_bot_protection_service.py:82
+#: src/opendlp/service_layer/registration_bot_protection_service.py:70
+#: src/opendlp/service_layer/registration_bot_protection_service.py:81
 #, fuzzy
 msgid "registration"
 msgstr "Vissza a regisztrációhoz"
@@ -3213,6 +3213,9 @@ msgstr ""
 #: templates/backoffice/service_docs.html:31
 #: templates/backoffice/service_docs/_config.html:64
 #: templates/backoffice/service_docs/_config.html:245
+#: templates/backoffice/service_docs/_dashboard.html:75
+#: templates/backoffice/service_docs/_dashboard.html:166
+#: templates/backoffice/service_docs/_dashboard.html:264
 #: templates/backoffice/service_docs/_emails.html:62
 #: templates/backoffice/service_docs/_emails.html:156
 #: templates/backoffice/service_docs/_emails.html:419
@@ -3281,25 +3284,25 @@ msgstr ""
 msgid "Selection has not completed — no results to download"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:760
+#: src/opendlp/service_layer/sortition.py:763
 msgid "Cannot cancel task - it has already finished"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:777
+#: src/opendlp/service_layer/sortition.py:780
 #, python-format
 msgid "Task cancelled by %(user_name)s"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:965
+#: src/opendlp/service_layer/sortition.py:968
 msgid "Task exceeded timeout"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:992
+#: src/opendlp/service_layer/sortition.py:995
 msgid "Task failed to start"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:1004
-#: src/opendlp/service_layer/sortition.py:1015
+#: src/opendlp/service_layer/sortition.py:1007
+#: src/opendlp/service_layer/sortition.py:1018
 msgid "Task stopped unexpectedly"
 msgstr ""
 
@@ -5923,7 +5926,12 @@ msgstr "Kieső emberek pótlása új kiválasztással"
 msgid "Emails"
 msgstr "Hiba részletei"
 
-#: templates/backoffice/service_docs.html:42
+#: templates/backoffice/service_docs.html:41
+#, fuzzy
+msgid "Dashboard (886)"
+msgstr "Irányító pult"
+
+#: templates/backoffice/service_docs.html:43
 #, fuzzy
 msgid "Service categories"
 msgstr "Feladat állapota"
@@ -6489,6 +6497,9 @@ msgstr ""
 #: templates/backoffice/service_docs/_assembly.html:294
 #: templates/backoffice/service_docs/_config.html:25
 #: templates/backoffice/service_docs/_config.html:128
+#: templates/backoffice/service_docs/_dashboard.html:39
+#: templates/backoffice/service_docs/_dashboard.html:132
+#: templates/backoffice/service_docs/_dashboard.html:223
 #: templates/backoffice/service_docs/_documents.html:35
 #: templates/backoffice/service_docs/_emails.html:41
 #: templates/backoffice/service_docs/_emails.html:142
@@ -6712,6 +6723,9 @@ msgstr ""
 
 #: templates/backoffice/patterns/_dropdown.html:152
 #: templates/backoffice/service_docs/_config.html:70
+#: templates/backoffice/service_docs/_dashboard.html:81
+#: templates/backoffice/service_docs/_dashboard.html:172
+#: templates/backoffice/service_docs/_dashboard.html:270
 #: templates/backoffice/service_docs/_emails.html:65
 #: templates/backoffice/service_docs/_emails.html:159
 #: templates/backoffice/service_docs/_emails.html:422
@@ -8690,6 +8704,9 @@ msgstr ""
 #: templates/backoffice/service_docs/_assembly.html:225
 #: templates/backoffice/service_docs/_assembly.html:333
 #: templates/backoffice/service_docs/_config.html:50
+#: templates/backoffice/service_docs/_dashboard.html:63
+#: templates/backoffice/service_docs/_dashboard.html:155
+#: templates/backoffice/service_docs/_dashboard.html:252
 #: templates/backoffice/service_docs/_documents.html:75
 #: templates/backoffice/service_docs/_documents.html:176
 #: templates/backoffice/service_docs/_emails.html:50
@@ -8786,6 +8803,9 @@ msgstr ""
 
 #: templates/backoffice/service_docs/_config.html:60
 #: templates/backoffice/service_docs/_config.html:240
+#: templates/backoffice/service_docs/_dashboard.html:72
+#: templates/backoffice/service_docs/_dashboard.html:163
+#: templates/backoffice/service_docs/_dashboard.html:260
 #: templates/backoffice/service_docs/_emails.html:59
 #: templates/backoffice/service_docs/_emails.html:153
 #: templates/backoffice/service_docs/_emails.html:216
@@ -8803,6 +8823,9 @@ msgstr ""
 
 #: templates/backoffice/service_docs/_config.html:80
 #: templates/backoffice/service_docs/_config.html:303
+#: templates/backoffice/service_docs/_dashboard.html:90
+#: templates/backoffice/service_docs/_dashboard.html:181
+#: templates/backoffice/service_docs/_dashboard.html:292
 #: templates/backoffice/service_docs/_emails.html:101
 #: templates/backoffice/service_docs/_emails.html:167
 #: templates/backoffice/service_docs/_emails.html:228
@@ -8820,6 +8843,9 @@ msgstr "Kiválasztás"
 
 #: templates/backoffice/service_docs/_config.html:81
 #: templates/backoffice/service_docs/_config.html:304
+#: templates/backoffice/service_docs/_dashboard.html:91
+#: templates/backoffice/service_docs/_dashboard.html:182
+#: templates/backoffice/service_docs/_dashboard.html:293
 #: templates/backoffice/service_docs/_emails.html:102
 #: templates/backoffice/service_docs/_emails.html:168
 #: templates/backoffice/service_docs/_emails.html:229
@@ -8838,6 +8864,9 @@ msgstr "Folyamatban"
 
 #: templates/backoffice/service_docs/_config.html:95
 #: templates/backoffice/service_docs/_config.html:325
+#: templates/backoffice/service_docs/_dashboard.html:104
+#: templates/backoffice/service_docs/_dashboard.html:195
+#: templates/backoffice/service_docs/_dashboard.html:306
 #: templates/backoffice/service_docs/_respondents.html:226
 #: templates/backoffice/service_docs/_respondents.html:380
 #: templates/backoffice/service_docs/_respondents.html:531
@@ -8876,6 +8905,53 @@ msgstr "Új jelszó"
 #, fuzzy
 msgid "Reset"
 msgstr "Válaszadókat tartalmazó lapful neve"
+
+#: templates/backoffice/service_docs/_dashboard.html:11
+msgid "Mock services — ticket 886 (results dashboard)"
+msgstr ""
+
+#: templates/backoffice/service_docs/_dashboard.html:14
+msgid ""
+"These services return fixture data so the dashboard front-end can be "
+"built now. The real queries are Hamish's to implement — see"
+msgstr ""
+
+#: templates/backoffice/service_docs/_dashboard.html:16
+msgid "and"
+msgstr ""
+
+#: templates/backoffice/service_docs/_dashboard.html:35
+msgid ""
+"Headline stats for the dashboard's stat-tile row: respondents in each "
+"state, number to select, number of target categories, and the pool total."
+msgstr ""
+
+#: templates/backoffice/service_docs/_dashboard.html:55
+#: templates/backoffice/service_docs/_dashboard.html:148
+#: templates/backoffice/service_docs/_dashboard.html:239
+#, fuzzy
+msgid "Target assembly ID"
+msgstr "Hozzon létre közösségi gyűlést"
+
+#: templates/backoffice/service_docs/_dashboard.html:129
+msgid ""
+"The full per-category results table: for each target category, each "
+"value's target band and pool count. The rows double as the pie-chart "
+"series. Also returns the derived list of targets that cannot yet be met "
+"(pool_count < target_min)."
+msgstr ""
+
+#: templates/backoffice/service_docs/_dashboard.html:220
+msgid ""
+"Export the results table. csv and gsheet reuse existing tabular_export.py"
+" targets; xlsx has NO backend yet (returns download_ready=false) — a new "
+"xlsx target is needed behind AbstractTabularExportTarget."
+msgstr ""
+
+#: templates/backoffice/service_docs/_dashboard.html:275
+#, fuzzy
+msgid "Format"
+msgstr "Keresztnév"
 
 #: templates/backoffice/service_docs/_documents.html:6
 msgid ""
@@ -14700,3 +14776,4 @@ msgstr ""
 #~ "emailed a link to set a new "
 #~ "password."
 #~ msgstr ""
+
