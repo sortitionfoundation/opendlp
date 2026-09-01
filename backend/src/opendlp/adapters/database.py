@@ -38,7 +38,7 @@ def create_session_factory(database_url: str = "", echo: bool = False) -> sessio
     """Create a SQLAlchemy session factory with proper configuration."""
     database_url = database_url or get_db_uri()
     echo = bool_environ_get("DB_ECHO") or echo
-    extra_args: dict[str, int | bool] = {}
+    extra_args: dict[str, object] = {}
     if database_url.startswith("postgresql://"):
         # Sized for 8 connection-opening processes (5 celery workers + beat +
         # 2 gunicorn workers) against postgres max_connections=100. Worst-case
@@ -48,6 +48,33 @@ def create_session_factory(database_url: str = "", echo: bool = False) -> sessio
             "pool_recycle": 3600,  # Recycle connections after 1 hour
             "pool_size": 3,
             "max_overflow": 7,
+            # Fail fast when the pool is exhausted instead of the default 30s
+            # wait, which matches the gunicorn worker timeout exactly and so
+            # turns pool starvation into an unexplained worker kill.
+            "pool_timeout": 10,
+            "connect_args": {
+                "connect_timeout": 10,
+                # TCP keepalives turn a silently dropped connection (e.g. a
+                # dead peer behind the docker bridge) into a prompt error;
+                # without them, libpq blocks in C code until the kernel gives
+                # up (~15 min), where even gunicorn's SIGABRT can't run
+                # Python-level handlers - the worker dies to SIGKILL with no
+                # traceback. Dead peer detected after 30 + 3*10 seconds.
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 3,
+                # Per-statement and lock-wait ceilings, converting a stuck
+                # query or lock contention into a logged error naming the
+                # statement. Statements are short everywhere (long work like
+                # the solver runs between transactions, not inside one), but
+                # some web paths legitimately hold an open transaction across
+                # an external call, hence the generous idle bound. Alembic
+                # builds its own engine, so migrations are unaffected.
+                "options": (
+                    "-c statement_timeout=30000 -c lock_timeout=10000 -c idle_in_transaction_session_timeout=300000"
+                ),
+            },
         }
     engine = create_engine(database_url, echo=echo, **extra_args)
 
