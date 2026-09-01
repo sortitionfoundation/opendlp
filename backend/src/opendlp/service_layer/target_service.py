@@ -831,7 +831,7 @@ def _duplicate_value_errors(category_edit: TargetCategoryEdit) -> list[TargetEdi
             continue
         seen.setdefault(value_edit.value.strip(), []).append(value_edit)
 
-    errors = []
+    errors: list[TargetEditError] = []
     for name, group in seen.items():
         if not name or len(group) < 2:
             continue
