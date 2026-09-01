@@ -3,6 +3,7 @@
 
 import {
   applyPlaceholder,
+  highestNewIndex,
   renumberSortOrder,
 } from "../lib/bulk-targets-dom.js";
 import { editGuard } from "./edit-guard.js";
@@ -10,6 +11,9 @@ import { editGuard } from "./edit-guard.js";
 // The blank row the template carries. addValue() issues new-1 onwards, so the
 // row that arrives with the block takes the one id it will never reach.
 var FIRST_ROW_ID = "new-0";
+
+// Category ids, as save_all_parser names them.
+var NEW_CATEGORY_ID = /^cat\[new-(\d+)\]/;
 
 /**
  * Build the state for the targets page.
@@ -42,6 +46,12 @@ export function targetsPage(options) {
     newCategoryCount: 0,
 
     init: function () {
+      // Start above whatever the server rendered, so a redisplayed form after a
+      // rejected save cannot have two blocks sharing one id.
+      this.newCategoryCount = highestNewIndex(
+        this.$refs.categories,
+        NEW_CATEGORY_ID,
+      );
       this.initEditGuard();
     },
 

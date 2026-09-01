@@ -64,3 +64,27 @@ export function renumberSortOrder(container) {
     if (field) field.value = String((i + 1) * SORT_ORDER_STEP);
   }
 }
+
+/**
+ * The highest "new-<n>" index already present in a container's field names.
+ *
+ * A rejected save redisplays the form with the ids it was submitted with, so a
+ * counter that started again at 0 would reissue an id already on the page. Two
+ * fields of the same name means the browser sends both and the parser keeps
+ * only the first, silently dropping whatever was typed into the second.
+ *
+ * @param {Element|null} container - the element whose fields to scan
+ * @param {RegExp} pattern - matches a field name, capturing the index
+ * @returns {number} the highest index found, or 0 if there is none
+ */
+export function highestNewIndex(container, pattern) {
+  if (!container) return 0;
+  var highest = 0;
+  container.querySelectorAll("[name]").forEach(function (el) {
+    var match = pattern.exec(el.name);
+    if (!match) return;
+    var index = parseInt(match[1], 10);
+    if (index > highest) highest = index;
+  });
+  return highest;
+}

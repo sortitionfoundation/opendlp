@@ -31,13 +31,13 @@ const BLANK_TEMPLATE = `
 function categoryState(rows, { missing = "" } = {}) {
   document.body.innerHTML = `
     <div id="categories">
-      <div id="block">
+      <div id="block" data-empty-label="None">
         <input type="hidden" id="deleted" value="false" />
         <input type="hidden" data-sort-order="true" value="10" />
         <table><tbody id="rows">${rows}${BLANK_TEMPLATE}${missing}</tbody></table>
       </div>
     </div>`;
-  const state = bulkTargetsCategory({ emptyLabel: "None" });
+  const state = bulkTargetsCategory({});
   state.$root = document.getElementById("block");
   state.$refs = {
     rows: document.getElementById("rows"),
@@ -117,6 +117,27 @@ describe("bulkTargetsCategory totals", () => {
   });
 });
 
+describe("bulkTargetsCategory empty label", () => {
+  it("reads the label from the block rather than the x-data expression", () => {
+    // Passed as an attribute so a translation containing an apostrophe cannot
+    // break the expression Alpine parses.
+    const state = categoryState("");
+    expect(state.percentageTotal).toBe("None");
+  });
+
+  it("falls back to a dash when the attribute is missing", () => {
+    document.body.innerHTML = `
+      <div id="categories"><div id="block">
+        <table><tbody id="rows"></tbody></table>
+      </div></div>`;
+    const state = bulkTargetsCategory({});
+    state.$root = document.getElementById("block");
+    state.$refs = { rows: document.getElementById("rows") };
+    state.init();
+    expect(state.percentageTotal).toBe("\u2014");
+  });
+});
+
 describe("bulkTargetsCategory adding rows", () => {
   it("appends a blank row named for a new value", () => {
     const state = categoryState(valueRow({ percentage: "100" }));
@@ -139,6 +160,23 @@ describe("bulkTargetsCategory adding rows", () => {
       "cat[c][values][new-1][value]",
       "cat[c][values][new-2][value]",
     ]);
+  });
+
+  it("does not reuse an id the redisplayed form already carries", () => {
+    // A rejected save re-renders the rows with the ids they were submitted
+    // with, so a counter that restarts at 0 reissues "new-1" and the two
+    // fields collide - the browser sends both and the parser keeps the first.
+    const submitted = `
+      <tr data-value-row="true" data-deleted="false">
+        <td><input name="cat[c][values][new-1][value]" value="" /></td>
+      </tr>`;
+    const state = categoryState(submitted);
+    state.addValue();
+    const names = Array.from(
+      state.$refs.rows.querySelectorAll("[name$='[value]']"),
+    ).map((el) => el.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(names).toContain("cat[c][values][new-2][value]");
   });
 
   it("leaves the totals alone when the added row is blank", () => {

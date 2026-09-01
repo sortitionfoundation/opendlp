@@ -47,7 +47,9 @@ function pageState(existing = "", options = {}) {
 }
 
 function existingBlock(id, sortOrder) {
-  return `<div id="bulk-category-${id}"><input type="hidden" data-sort-order="true" value="${sortOrder}" /></div>`;
+  // The name matters: it is how the page works out which "new-<n>" ids the
+  // server has already rendered, so it has to match the real template.
+  return `<div id="bulk-category-${id}"><input type="hidden" data-sort-order="true" name="cat[${id}][sort_order]" value="${sortOrder}" /></div>`;
 }
 
 beforeEach(() => {
@@ -125,6 +127,19 @@ describe("targetsPage", () => {
   });
 
   describe("cloning a category block", () => {
+    it("does not reuse a category id the redisplayed form already carries", () => {
+      // Same trap as the value rows: after a rejected save the form comes back
+      // holding "new-1", and a counter starting at 0 names the next block the
+      // same thing.
+      const state = pageState(existingBlock("new-1", 10));
+      state.init();
+      const added = state.addCategory("Age");
+      expect(added.id).not.toBe("bulk-category-new-1");
+      expect(added.querySelector("[data-category-name]").name).toBe(
+        "cat[new-2][name]",
+      );
+    });
+
     it("appends a block named for the new category", () => {
       const state = pageState();
       const added = state.addCategory("Age");

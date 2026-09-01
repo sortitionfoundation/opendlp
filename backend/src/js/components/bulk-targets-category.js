@@ -3,8 +3,12 @@
 
 import {
   applyPlaceholder,
+  highestNewIndex,
   renumberSortOrder,
 } from "../lib/bulk-targets-dom.js";
+
+// Value ids within a category, as save_all_parser names them.
+var NEW_VALUE_ID = /\[values\]\[new-(\d+)\]/;
 
 // Matches PERCENTAGE_TOLERANCE in domain/targets.py: the totals row flags the
 // same near-100 window the server treats as plausible.
@@ -16,15 +20,17 @@ var PERCENTAGE_TOLERANCE = 1.0;
  * Every action is client-side and provisional until the form is saved,
  * so a misplaced click costs nothing and no edit elsewhere on the page is lost.
  *
+ * The label for an empty total is read from the block's `data-empty-label`
+ * attribute rather than passed in, so a translation containing an apostrophe
+ * cannot break the x-data expression it would otherwise sit inside.
+ *
  * @param {Object} [options] - configuration
- * @param {string} [options.emptyLabel="—"] - shown when no value has a percentage
  * @param {boolean} [options.isNew=false] - whether the user added this block client-side
  * @param {boolean} [options.deleted=false] - whether the block is already marked
  *   for deletion, as it is when a rejected save redisplays the form
  * @returns {Object} Alpine component state
  */
 export function bulkTargetsCategory(options) {
-  var emptyLabel = (options && options.emptyLabel) || "—";
   var isNew = Boolean(options && options.isNew);
 
   return {
@@ -32,12 +38,17 @@ export function bulkTargetsCategory(options) {
     isNew: isNew,
     missingAdded: false,
     newRowCount: 0,
-    percentageTotal: emptyLabel,
+    emptyLabel: "—",
+    percentageTotal: "—",
     minTotal: "0",
     maxTotal: "0",
     percentagesPlausible: true,
 
     init: function () {
+      this.emptyLabel = this.$root.dataset.emptyLabel || "—";
+      // Start above whatever the server rendered, so a redisplayed form after a
+      // rejected save cannot have two rows sharing one id.
+      this.newRowCount = highestNewIndex(this.$refs.rows, NEW_VALUE_ID);
       this.recalculate();
     },
 
@@ -149,7 +160,7 @@ export function bulkTargetsCategory(options) {
 
       this.percentageTotal = anyPercentage
         ? String(round2(percentage)) + "%"
-        : emptyLabel;
+        : this.emptyLabel;
       this.percentagesPlausible =
         !anyPercentage || Math.abs(percentage - 100) <= PERCENTAGE_TOLERANCE;
       this.minTotal = String(min);
