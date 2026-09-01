@@ -331,6 +331,8 @@ Parlament = "Parlament"
 algorithme = "algorithme"
 # HashiCorp is leading to errors about Hashi -> Hash
 Hashi = "Hashi"
+# a mermaid node id in the targets explainer - CAlculated Fields, not a calf
+CAF = "CAF"
 # British English additions, for now at least
 superceded = "superceded"
 supercedes = "supercedes"
