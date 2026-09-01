@@ -1,5 +1,5 @@
-"""ABOUTME: Integration tests for assembly service target category functions
-ABOUTME: Tests target category creation, import, and retrieval service functions"""
+"""ABOUTME: Integration tests for target_service against a real database
+ABOUTME: Target category creation, CSV import, percentages, reordering and the bulk save"""
 
 import uuid
 
@@ -9,7 +9,7 @@ from sortition_algorithms.features import MAX_FLEX_UNSET
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
-from opendlp.service_layer import assembly_service, respondent_service, target_service
+from opendlp.service_layer import assembly_service, respondent_service, target_csv_import, target_service
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,
@@ -183,7 +183,7 @@ Gender,Female,12,17,9,19
 Age,16-29,17,22,14,25
 Age,30-44,5,9,4,10"""
 
-        categories = target_service.import_targets_from_csv(
+        categories = target_csv_import.import_targets_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         ).categories
 
@@ -205,7 +205,7 @@ Age,30-44,5,9,4,10"""
 Gender,Male,10,15
 Gender,Female,10,15"""
 
-        categories = target_service.import_targets_from_csv(
+        categories = target_csv_import.import_targets_from_csv(
             uow, admin_user.id, test_assembly.id, csv_content
         ).categories
 
@@ -225,7 +225,7 @@ Gender,Female,10,15"""
 Gender,Male,20,10"""  # Invalid: min > max
 
         with pytest.raises(InvalidSelection):
-            target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+            target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
     def test_import_with_replace_existing(self, uow, admin_user: User, test_assembly: Assembly):
         """Test replacing existing targets with new import."""
@@ -234,7 +234,7 @@ Gender,Male,20,10"""  # Invalid: min > max
 Gender,Male,10,15
 Gender,Female,10,15"""
 
-        target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv1)
+        target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv1)
 
         # Verify first import
         categories = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
@@ -246,7 +246,7 @@ Gender,Female,10,15"""
 Age,16-29,17,22
 Age,30-44,5,9"""
 
-        categories = target_service.import_targets_from_csv(
+        categories = target_csv_import.import_targets_from_csv(
             uow, admin_user.id, test_assembly.id, csv2, replace_existing=True
         ).categories
 
@@ -270,7 +270,7 @@ Age,30-44,5,9"""
 Gender,Male,10,15"""
 
         with pytest.raises(InsufficientPermissions):
-            target_service.import_targets_from_csv(uow, user_id, test_assembly.id, csv_content)
+            target_csv_import.import_targets_from_csv(uow, user_id, test_assembly.id, csv_content)
 
 
 class TestGetFeatureCollectionForAssembly:
@@ -280,7 +280,7 @@ class TestGetFeatureCollectionForAssembly:
 Gender,Male,10,15
 Gender,Female,10,15"""
 
-        target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         fc, report = target_service.get_feature_collection_for_assembly(uow, admin_user.id, test_assembly.id)
 
@@ -438,7 +438,7 @@ class TestUpdateTargetValue:
         csv_content = "feature,value,min,max\nGender,Male,3,7\nGender,Female,3,7\n"
         uow = SqlAlchemyUnitOfWork(postgres_session_factory)
         with uow:
-            target_service.import_targets_from_csv(
+            target_csv_import.import_targets_from_csv(
                 uow=uow,
                 user_id=admin_user.id,
                 assembly_id=test_assembly.id,
@@ -572,129 +572,12 @@ class TestDeleteTargetsForAssembly:
         assert other_cats[0].name == "Age"
 
 
-class TestDeleteRespondentsForAssembly:
-    def test_delete_all_respondents(self, admin_user: User, test_assembly: Assembly, postgres_session_factory):
-        """Test deleting all respondents for an assembly."""
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            respondent_service.create_respondent(
-                uow, admin_user.id, test_assembly.id, external_id="NB001", attributes={"Gender": "Male"}
-            )
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2:
-            respondent_service.create_respondent(
-                uow2, admin_user.id, test_assembly.id, external_id="NB002", attributes={"Gender": "Female"}
-            )
-
-        uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow3:
-            count = assembly_service.delete_respondents_for_assembly(uow3, admin_user.id, test_assembly.id)
-        assert count == 2
-
-        # Verify they're gone
-        uow4 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow4:
-            respondents = uow4.respondents.get_by_assembly_id(test_assembly.id)
-            assert len(respondents) == 0
-
-    def test_delete_respondents_returns_zero_when_none_exist(
-        self, admin_user: User, test_assembly: Assembly, postgres_session_factory
-    ):
-        """Test that deleting respondents when none exist returns 0."""
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            count = assembly_service.delete_respondents_for_assembly(uow, admin_user.id, test_assembly.id)
-        assert count == 0
-
-    def test_delete_respondents_insufficient_permissions(
-        self, regular_user: User, test_assembly: Assembly, postgres_session_factory
-    ):
-        """Test that a regular user cannot delete respondents."""
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow, pytest.raises(InsufficientPermissions):
-            assembly_service.delete_respondents_for_assembly(uow, regular_user.id, test_assembly.id)
-
-    def test_delete_respondents_nonexistent_assembly(self, admin_user: User, postgres_session_factory):
-        """Test that deleting respondents for a nonexistent assembly raises error."""
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow, pytest.raises(AssemblyNotFoundError):
-            assembly_service.delete_respondents_for_assembly(uow, admin_user.id, uuid.uuid4())
-
-    def test_delete_respondents_nonexistent_user(self, test_assembly: Assembly, postgres_session_factory):
-        """Test that deleting respondents with a nonexistent user raises error."""
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow, pytest.raises(UserNotFoundError):
-            assembly_service.delete_respondents_for_assembly(uow, uuid.uuid4(), test_assembly.id)
-
-    def test_delete_respondents_does_not_affect_other_assembly(
-        self, admin_user: User, test_assembly: Assembly, other_assembly: Assembly, postgres_session_factory
-    ):
-        """Test that deleting respondents for one assembly doesn't affect another."""
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            respondent_service.create_respondent(
-                uow, admin_user.id, test_assembly.id, external_id="NB001", attributes={"Gender": "Male"}
-            )
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2:
-            respondent_service.create_respondent(
-                uow2, admin_user.id, other_assembly.id, external_id="NB002", attributes={"Gender": "Female"}
-            )
-
-        # Delete only from test_assembly
-        uow3 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow3:
-            assembly_service.delete_respondents_for_assembly(uow3, admin_user.id, test_assembly.id)
-
-        # other_assembly respondents should still exist
-        uow4 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow4:
-            other_resps = uow4.respondents.get_by_assembly_id(other_assembly.id)
-            assert len(other_resps) == 1
-            assert other_resps[0].external_id == "NB002"
-
-
 def _category_with_percentages(uow, admin_user, assembly, percentages):
     """A category whose values all carry a percentage and an intact link."""
     category = target_service.create_target_category(uow, admin_user.id, assembly.id, name="Gender")
     for name, percentage in percentages.items():
         target_service.add_target_value(uow, admin_user.id, assembly.id, category.id, value=name, percentage=percentage)
     return target_service.get_targets_for_assembly(uow, admin_user.id, assembly.id)[0]
-
-
-class TestReorderTargetCategories:
-    def test_reissues_sort_order_in_tens(self, uow, admin_user: User, test_assembly: Assembly):
-        names = ["Gender", "Age", "Region"]
-        created = [target_service.create_target_category(uow, admin_user.id, test_assembly.id, name=n) for n in names]
-
-        target_service.reorder_target_categories(
-            uow, admin_user.id, test_assembly.id, [created[2].id, created[0].id, created[1].id]
-        )
-
-        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)
-        assert [c.name for c in after] == ["Region", "Gender", "Age"]
-        assert [c.sort_order for c in after] == [10, 20, 30]
-
-    def test_partial_id_set_is_rejected(self, uow, admin_user: User, test_assembly: Assembly):
-        """A stale page must not be able to silently drop a category."""
-        first = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
-        target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Age")
-
-        with pytest.raises(ValueError, match="complete set"):
-            target_service.reorder_target_categories(uow, admin_user.id, test_assembly.id, [first.id])
-
-    def test_id_from_another_assembly_is_rejected(
-        self, uow, admin_user: User, test_assembly: Assembly, other_assembly: Assembly
-    ):
-        mine = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
-        theirs = target_service.create_target_category(uow, admin_user.id, other_assembly.id, name="Gender")
-
-        with pytest.raises(ValueError, match="complete set"):
-            target_service.reorder_target_categories(uow, admin_user.id, test_assembly.id, [mine.id, theirs.id])
-
-    def test_requires_manage_permission(self, uow, regular_user: User, test_assembly: Assembly):
-        with pytest.raises(InsufficientPermissions):
-            target_service.reorder_target_categories(uow, regular_user.id, test_assembly.id, [])
 
 
 class TestCreateCategorySortOrder:
@@ -923,30 +806,51 @@ class TestRelinkTargetValue:
             )
 
 
-class TestSetTargetValuePercentage:
-    def test_sets_and_recalculates(self, uow, admin_user: User, test_assembly: Assembly):
-        category = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Gender")
-        target_service.add_target_value(uow, admin_user.id, test_assembly.id, category.id, value="Man")
-        reloaded = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
+class TestSaveAllTargets:
+    def test_renaming_two_values_the_same_is_refused(
+        self, postgres_session_factory, admin_user: User, test_assembly: Assembly
+    ):
+        """Duplicates do not fail loudly downstream - they drop a target from the run.
 
-        target_service.set_target_value_percentage(
-            uow, admin_user.id, test_assembly.id, category.id, reloaded.values[0].value_id, 50.0
-        )
+        `to_feature_dict` keys on the value name, so the second of two identical
+        names silently replaces the first.
+        """
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as setup:
+            gender = _category_with_percentages(setup, admin_user, test_assembly, {"Man": 50.0, "Woman": 50.0})
+            setup.commit()
 
-        after = target_service.get_targets_for_assembly(uow, admin_user.id, test_assembly.id)[0]
-        assert after.values[0].percentage_target == 50.0
-        assert (after.values[0].min, after.values[0].max) == (15, 16)
-
-    def test_requires_manage_permission(self, uow, regular_user: User, admin_user: User, test_assembly: Assembly):
-        category = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0})
-
-        with pytest.raises(InsufficientPermissions):
-            target_service.set_target_value_percentage(
-                uow, regular_user.id, test_assembly.id, category.id, category.values[0].value_id, 25.0
+        with (
+            pytest.raises(target_service.TargetsNotSaved) as caught,
+            SqlAlchemyUnitOfWork(postgres_session_factory) as uow,
+        ):
+            target_service.save_all_targets(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                [
+                    target_service.TargetCategoryEdit(
+                        category_id=gender.id,
+                        name="Gender",
+                        values=[
+                            target_service.TargetValueEdit(
+                                value_id=gender.values[0].value_id, value="Man", percentage=50.0
+                            ),
+                            target_service.TargetValueEdit(
+                                value_id=gender.values[1].value_id, value="Man", percentage=50.0
+                            ),
+                        ],
+                    )
+                ],
             )
 
+        assert any("both called" in error.message for error in caught.value.errors)
+        # Both rows are flagged: the form cannot know which one they meant to keep.
+        assert len([e for e in caught.value.errors if "both called" in e.message]) == 2
 
-class TestSaveAllTargets:
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as check:
+            after = target_service.get_targets_for_assembly(check, admin_user.id, test_assembly.id)[0]
+        assert sorted(v.value for v in after.values) == ["Man", "Woman"]
+
     def test_saves_across_two_categories(self, uow, admin_user: User, test_assembly: Assembly):
         gender = _category_with_percentages(uow, admin_user, test_assembly, {"Man": 50.0, "Woman": 50.0})
         age = target_service.create_target_category(uow, admin_user.id, test_assembly.id, name="Age")
@@ -1371,7 +1275,7 @@ class TestImportTargetsNewColumns:
 Gender,Male,10,15,48.5,boosted by 2,from the census,https://www.ons.gov.uk/dataset
 Gender,Female,10,15,51.5,,from the census,https://www.ons.gov.uk/dataset"""
 
-        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        result = target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         category = result.categories[0]
         assert category.comment == "from the census"
@@ -1386,7 +1290,7 @@ Gender,Female,10,15,51.5,,from the census,https://www.ons.gov.uk/dataset"""
 Gender,Male,10,15,48.5
 Gender,Female,10,15,51.5"""
 
-        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        result = target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         assert result.categories[0].get_value("Male").percentage_target == 48.5
 
@@ -1400,7 +1304,7 @@ Gender,Female,10,15,51.5"""
         csv_content = """feature,value,min,max
 Gender,Male,10,15
 Gender,Female,10,15"""
-        target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         assembly_service.update_assembly(uow, test_assembly.id, admin_user.id, number_to_select=100)
 
@@ -1415,10 +1319,34 @@ Gender,Female,10,15"""
 Gender,Male,10,15
 Gender,Female,10,15"""
 
-        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        result = target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         # test_assembly selects 30, so a midpoint of 12.5 is 41.7%.
         assert result.categories[0].get_value("Male").percentage_target == 41.7
+
+    def test_a_midpoint_above_the_seat_count_is_clamped_and_still_loads(
+        self, admin_user: User, test_assembly: Assembly, postgres_session_factory
+    ):
+        """A derived percentage must stay inside the range TargetValue accepts.
+
+        TargetValue validates on load as well as on construction, so an unclamped
+        derivation writes a row once and then raises on every read of it after
+        that, with no way back through the UI. test_assembly selects 30, so a
+        midpoint of 55 derives 183%.
+        """
+        csv_content = """feature,value,min,max
+Gender,Male,50,60
+Gender,Female,50,60"""
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            result = target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+            assert result.categories[0].get_value("Male").percentage_target == 100.0
+
+        # The read back matters more than the write: this is the step that raised.
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow2:
+            reloaded = target_service.get_targets_for_assembly(uow2, admin_user.id, test_assembly.id)
+
+        assert reloaded[0].get_value("Male").percentage_target == 100.0
 
     def test_derives_percentage_by_ratio_when_seats_are_unknown(self, uow, admin_user: User, postgres_session_factory):
         assembly = _seed(
@@ -1430,7 +1358,7 @@ Gender,Female,10,15"""
 Gender,Male,10,20
 Gender,Female,30,40"""
 
-        result = target_service.import_targets_from_csv(uow, admin_user.id, assembly.id, csv_content)
+        result = target_csv_import.import_targets_from_csv(uow, admin_user.id, assembly.id, csv_content)
 
         category = result.categories[0]
         assert category.get_value("Male").percentage_target == 30.0
@@ -1449,7 +1377,7 @@ Gender,Female,30,40"""
 Gender,Male,0,0
 Gender,Female,0,0"""
 
-        result = target_service.import_targets_from_csv(uow, admin_user.id, assembly.id, csv_content)
+        result = target_csv_import.import_targets_from_csv(uow, admin_user.id, assembly.id, csv_content)
 
         assert all(v.percentage_target is None for v in result.categories[0].values)
 
@@ -1458,7 +1386,7 @@ Gender,Female,0,0"""
 Gender,Male,10,15,48.5
 Gender,Female,10,15,"""
 
-        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        result = target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         category = result.categories[0]
         assert category.get_value("Male").percentage_target == 48.5
@@ -1469,7 +1397,7 @@ Gender,Female,10,15,"""
 Gender,Male,10,15,https://www.ons.gov.uk/one
 Gender,Female,10,15,https://www.ons.gov.uk/two"""
 
-        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        result = target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         assert result.categories[0].source_url == "https://www.ons.gov.uk/one"
         assert len(result.warnings) == 1
@@ -1481,7 +1409,7 @@ Gender,Female,10,15,https://www.ons.gov.uk/two"""
 Gender,Male,10,15,census 2021
 Gender,Female,10,15,census 2011"""
 
-        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        result = target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         assert result.categories[0].comment == "census 2021"
         assert len(result.warnings) == 1
@@ -1492,20 +1420,43 @@ Gender,Female,10,15,census 2011"""
 Gender,Male,10,15,https://www.ons.gov.uk/one
 Gender,Female,10,15,https://www.ons.gov.uk/one"""
 
-        result = target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        result = target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
         assert result.warnings == []
 
     def test_an_invalid_source_url_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
+        """InvalidSelection rather than a bare ValueError, so the upload route can show it."""
         csv_content = """feature,value,min,max,source_url
 Gender,Male,10,15,javascript:alert(1)"""
 
-        with pytest.raises(ValueError, match="http"):
-            target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+        with pytest.raises(InvalidSelection, match="http"):
+            target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+    def test_a_source_url_with_no_scheme_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
+        """Bad data in the spreadsheet is the user's mistake, not an internal error.
+
+        InvalidSelection reaches the upload route's own handler, which puts the
+        message on the file field. A bare ValueError would fall through to
+        `except Exception` - "an unexpected error occurred", plus a stack trace.
+        """
+        csv_content = """feature,value,min,max,source_url
+Gender,Male,3,7,www.ons.gov.uk/dataset
+Gender,Female,3,7,www.ons.gov.uk/dataset"""
+
+        with pytest.raises(InvalidSelection):
+            target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+    def test_an_over_long_comment_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
+        csv_content = (
+            f"feature,value,min,max,category_comment\nGender,Male,3,7,{'x' * 2001}\nGender,Female,3,7,{'x' * 2001}"
+        )
+
+        with pytest.raises(InvalidSelection):
+            target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
 
     def test_an_invalid_percentage_fails_the_import(self, uow, admin_user: User, test_assembly: Assembly):
         csv_content = """feature,value,min,max,percentage
 Gender,Male,10,15,not a number"""
 
         with pytest.raises(InvalidSelection, match="percentage"):
-            target_service.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+            target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)

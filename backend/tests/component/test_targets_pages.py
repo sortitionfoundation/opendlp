@@ -13,11 +13,11 @@ from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, RespondentStatus
 from opendlp.service_layer.assembly_service import add_assembly_gsheet
+from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_service import (
     add_target_value,
     create_target_category,
     get_targets_for_assembly,
-    import_targets_from_csv,
     update_target_value,
 )
 from tests.fakes import FakeUnitOfWork
@@ -155,123 +155,6 @@ class TestUploadTargetsCsv:
         )
         assert response.status_code == 200
         assert b"Only CSV files are allowed" in response.data
-
-
-class TestDeleteCategory:
-    def test_delete_category_htmx_returns_empty(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/delete"),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        assert response.data == b""
-
-
-class TestAddValue:
-    def test_add_value_htmx_returns_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values"),
-            data={"value": "Male", "min_count": "5", "max_count": "10"},
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        assert b"Male" in response.data
-        assert b"<!DOCTYPE" not in response.data
-
-    def test_add_value_invalid_min_max(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values"),
-            data={"value": "Male", "min_count": "10", "max_count": "5"},
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-
-
-class TestEditValue:
-    def test_edit_value_htmx_returns_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 5, 10)
-        value_id = cat.values[0].value_id
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}"),
-            data={"value": "Female", "min_count": "6", "max_count": "12"},
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        assert b"Female" in response.data
-        assert b"<!DOCTYPE" not in response.data
-
-
-class TestDeleteValue:
-    def test_delete_value_htmx_returns_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-        _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 5, 10)
-        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Female", 3, 7)
-        male_value_id = cat.values[0].value_id
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{male_value_id}/delete"),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        assert b"Gender" in response.data
-        assert b"Female" in response.data
-        assert b"<!DOCTYPE" not in response.data
-
-
-class TestEditCategory:
-    def test_rename_category_htmx_returns_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}"),
-            data={"name": "Sex"},
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        assert b"Sex" in response.data
-        assert b"<!DOCTYPE" not in response.data
-
-
-class TestAddMissingValues:
-    def test_add_missing_values_htmx_returns_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        """HTMX request returns a category block fragment instead of redirecting."""
-        _add_respondents(
-            fake_store,
-            existing_assembly.id,
-            [("1", {"Gender": "Male"}), ("2", {"Gender": "Female"})],
-        )
-
-        # Use a name that doesn't match a respondent column to avoid auto-populate
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Sex")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/add-missing"),
-            data={"missing_values": ["Male", "Female"]},
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        assert b"Male" in response.data
-        assert b"Female" in response.data
-        assert b"<!DOCTYPE" not in response.data
-
-    def test_add_missing_values_no_values_redirects(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        """Posting with no missing values shows a warning and redirects."""
-        _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{existing_assembly.id}/values/add-missing"),
-            data={},
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
 
 
 class TestAddCategoriesFromColumns:
@@ -416,7 +299,9 @@ class TestPercentageColumn:
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
         assert b"boosted by 2" in response.data
-        relink = _edit_form_button(_edit_form_html(response.data.decode()), "Male", "Use percentage")
+        relink = _edit_form_button(
+            _edit_form_html(response.data.decode()), "Male", "Recalculate min and max from the percentage"
+        )
         assert not _is_disabled(relink)
 
     def test_the_column_heading_reads_population(self, logged_in_admin, existing_assembly, admin_user, fake_store):
@@ -438,7 +323,9 @@ class TestPercentageColumn:
 
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
 
-        relink = _edit_form_button(_edit_form_html(response.data.decode()), "Male", "Use percentage")
+        relink = _edit_form_button(
+            _edit_form_html(response.data.decode()), "Male", "Recalculate min and max from the percentage"
+        )
         assert _is_disabled(relink)
 
 
@@ -801,88 +688,6 @@ class TestMinMaxProvenance:
             assert "Manually modified" not in cell
 
 
-class TestEditValueWithPercentage:
-    def test_editing_the_percentage_recalculates_min_and_max(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        _set_number_to_select(fake_store, existing_assembly.id, 10)
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 0, 0)
-        value_id = cat.values[0].value_id
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}"),
-            data={"value": "Male", "percentage": "50", "min_count": "0", "max_count": "0"},
-            headers={"HX-Request": "true"},
-        )
-
-        assert response.status_code == 200
-        with FakeUnitOfWork(store=fake_store) as uow:
-            value = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0]
-        assert value.percentage_target == 50.0
-        assert (value.min, value.max) == (5, 6)
-
-    def test_a_percentage_with_no_seat_count_leaves_min_and_max_at_zero(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """Zero is the honest answer while number_to_select is unknown."""
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 0, 0)
-        value_id = cat.values[0].value_id
-
-        logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}"),
-            data={"value": "Male", "percentage": "50", "min_count": "0", "max_count": "0"},
-            headers={"HX-Request": "true"},
-        )
-
-        with FakeUnitOfWork(store=fake_store) as uow:
-            value = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0]
-        assert value.percentage_target == 50.0
-        assert (value.min, value.max) == (0, 0)
-
-    def test_an_invalid_percentage_is_a_422_not_a_500(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 0, 0)
-        value_id = cat.values[0].value_id
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}"),
-            data={"value": "Male", "percentage": "150"},
-            headers={"HX-Request": "true"},
-        )
-
-        assert response.status_code == 422
-
-
-class TestEditCategorySourceUrl:
-    def test_an_invalid_source_url_is_a_422_not_a_500(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}"),
-            data={"name": "Gender", "source_url": "javascript:alert(1)"},
-            headers={"HX-Request": "true"},
-        )
-
-        assert response.status_code == 422
-
-
-class TestMoveCategoryPermissions:
-    def test_a_viewer_cannot_reorder(self, logged_in_user, existing_assembly, admin_user, fake_store):
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-
-        response = logged_in_user.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/move"),
-            data={"direction": "down"},
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        with FakeUnitOfWork(store=fake_store) as uow:
-            assert get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].name == "Gender"
-
-
 class TestViewIsReadOnly:
     def test_the_page_shows_the_number_to_select(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         """Under the heading, where a tally of the categories used to be.
@@ -898,27 +703,6 @@ class TestViewIsReadOnly:
 
         assert b"Number to select: 42" in response.data
         assert b"categories defined" not in response.data
-
-    def test_the_category_block_offers_no_way_to_change_anything(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """Every change goes through "Edit targets", so the read-only block has no controls.
-
-        Asserted against the HTMX partial rather than the whole page, because the
-        page also carries the bulk edit form, where all of these do belong.
-        """
-        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values"),
-            data={"value": "Male", "min_count": 1, "max_count": 2},
-            headers={"HX-Request": "true"},
-        )
-
-        assert response.status_code == 200
-        assert b"Male" in response.data
-        for control in (b"Add value", b"Delete", b"Move up", b"Move down", b"Rename", b"Use percentage"):
-            assert control not in response.data, control
 
     def test_the_page_offers_editing_and_adding_a_target(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -943,6 +727,12 @@ class TestViewIsReadOnly:
     def test_the_page_guards_against_leaving_with_unsaved_edits(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
+        """A wiring check, not a behaviour one: it proves the template attaches the guard.
+
+        That the guard then behaves is covered by `edit-guard.test.js` and the
+        "Leaving the page with unsaved target edits asks first" BDD scenario. This
+        is the cheap check that the two are actually connected on the page.
+        """
         _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
 
         html = logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode()
@@ -1047,6 +837,30 @@ class TestSaveAllValidationErrors:
                 f"{prefix}[values][{value_id}][max]": "2",
             },
         )
+
+    def test_an_invalid_source_url_comes_back_as_the_form(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A scheme the domain refuses must reach the user as a field error, not a 500."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
+        prefix = f"cat[{category.id}]"
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                f"{prefix}[name]": "Gender",
+                f"{prefix}[source_url]": "javascript:alert(1)",
+                f"{prefix}[values][{cat.values[0].value_id}][value]": "Male",
+                f"{prefix}[values][{cat.values[0].value_id}][min]": "3",
+                f"{prefix}[values][{cat.values[0].value_id}][max]": "7",
+            },
+        )
+
+        assert response.status_code == 200, "a rejected save should re-render, not redirect"
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
+        assert stored.source_url == "", "the refused URL must not have been saved"
 
     def test_a_min_above_max_comes_back_as_the_form(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
@@ -1233,6 +1047,35 @@ class TestBulkEditForm:
         # It arrives with the one blank row the person adding it is about to fill in.
         assert "cat[__CAT__][values][__ROW__][value]" in html
         assert "cat[__CAT__][values][__ID__][value]" in html
+
+    def test_save_all_requires_login(self, client, existing_assembly):
+        response = client.post(_targets_url(existing_assembly.id, "/save-all"), data={})
+        assert response.status_code == 302
+        assert "login" in response.location
+
+    def test_a_viewer_posting_save_all_directly_changes_nothing(
+        self, logged_in_user, existing_assembly, admin_user, fake_store
+    ):
+        """Not being shown the form is not the same as not being able to post to it."""
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        cat = _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 3, 7)
+        prefix = f"cat[{category.id}]"
+
+        response = logged_in_user.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data={
+                f"{prefix}[name]": "Renamed by a viewer",
+                f"{prefix}[values][{cat.values[0].value_id}][value]": "Male",
+                f"{prefix}[values][{cat.values[0].value_id}][min]": "3",
+                f"{prefix}[values][{cat.values[0].value_id}][max]": "7",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        with FakeUnitOfWork(store=fake_store) as uow:
+            after = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
+        assert after.name == "Gender"
 
     def test_a_viewer_is_not_given_the_form_at_all(self, logged_in_user, existing_assembly, admin_user, fake_store):
         _create_category(fake_store, admin_user, existing_assembly.id, "Gender")

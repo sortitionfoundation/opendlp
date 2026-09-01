@@ -36,6 +36,12 @@ class TestTargetsRoutes:
         response = client.get("/assemblies/not-a-uuid/targets")
         assert response.status_code == 404
 
+    def test_add_category_requires_login(self, client: FlaskClient) -> None:
+        assembly_id = uuid.uuid4()
+        response = client.post(f"/assemblies/{assembly_id}/targets/categories")
+        assert response.status_code == 302
+        assert "/auth/login" in response.location
+
     def test_edit_category_requires_login(self, client: FlaskClient) -> None:
         assembly_id = uuid.uuid4()
         category_id = uuid.uuid4()

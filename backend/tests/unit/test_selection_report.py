@@ -260,7 +260,7 @@ class TestDeletedRespondents:
 
 
 class TestZeroPool:
-    def test_empty_pool_returns_zeroed_pcts(self, uow):
+    def test_empty_pool_zeroes_the_counts_but_keeps_the_target(self, uow):
         assembly = _make_assembly(uow, number_to_select=0)
         record = _make_run_record(
             uow,
@@ -283,6 +283,73 @@ class TestZeroPool:
             # An empty pool says nothing about the target the run was configured
             # with, which is still the recorded 50%.
             assert row.target_pct == pytest.approx(50.0)
+
+
+class TestLegacyRunsWithoutPercentages:
+    """Runs recorded before percentages existed fall back to the min/max midpoint.
+
+    This is the one branch only production data reaches: every snapshot written
+    from now on carries `percentage_target`, so nothing else exercises it.
+    """
+
+    def _snapshot_without_percentages(self) -> list[dict[str, Any]]:
+        snapshot = _gender_snapshot()
+        for value in snapshot[0]["values"]:
+            del value["percentage_target"]
+        return snapshot
+
+    def test_a_missing_percentage_falls_back_to_the_midpoint(self, uow):
+        assembly = _make_assembly(uow, number_to_select=4)
+        _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
+        _make_respondent(uow, assembly.id, "p2", {"Gender": "Woman"})
+        record = _make_run_record(
+            uow,
+            assembly.id,
+            selected=["p1"],
+            remaining=["p2"],
+            targets_used=self._snapshot_without_percentages(),
+        )
+
+        report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
+
+        # min and max are both 1, so the midpoint is 1 of 4 seats.
+        for row in report.categories[0].rows:
+            assert row.target_pct == pytest.approx(25.0)
+
+    def test_an_explicit_none_percentage_falls_back_too(self, uow):
+        assembly = _make_assembly(uow, number_to_select=4)
+        _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
+        _make_respondent(uow, assembly.id, "p2", {"Gender": "Woman"})
+        snapshot = _gender_snapshot()
+        for value in snapshot[0]["values"]:
+            value["percentage_target"] = None
+        record = _make_run_record(
+            uow,
+            assembly.id,
+            selected=["p1"],
+            remaining=["p2"],
+            targets_used=snapshot,
+        )
+
+        report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
+
+        for row in report.categories[0].rows:
+            assert row.target_pct == pytest.approx(25.0)
+
+    def test_no_seats_and_no_percentage_is_zero_rather_than_a_divide_by_zero(self, uow):
+        assembly = _make_assembly(uow, number_to_select=0)
+        record = _make_run_record(
+            uow,
+            assembly.id,
+            selected=[],
+            remaining=[],
+            targets_used=self._snapshot_without_percentages(),
+        )
+
+        report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
+
+        for row in report.categories[0].rows:
+            assert row.target_pct == 0.0
 
 
 class TestUnknownAttributeRaises:

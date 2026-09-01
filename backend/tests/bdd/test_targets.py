@@ -30,6 +30,10 @@ def _targets_url(assembly_id: str) -> str:
     return f"{Urls.base}/backoffice/assembly/{assembly_id}/targets"
 
 
+def _details_url(assembly_id: str) -> str:
+    return f"{Urls.base}/backoffice/assembly/{assembly_id}"
+
+
 def _row_for(page: Page, value: str):
     """The read-only table row whose first cell is this target value."""
     return page.locator("#target-categories tr").filter(has=page.get_by_role("cell", name=value, exact=False)).first
@@ -120,7 +124,9 @@ def save_all(admin_logged_in_page: Page) -> None:
 
 @when(parsers.parse('I link the "{value}" target back to its percentage'))
 def relink_target(admin_logged_in_page: Page, value: str) -> None:
-    _edit_row_for(admin_logged_in_page, value).get_by_role("button", name="Use percentage").click()
+    _edit_row_for(admin_logged_in_page, value).get_by_role(
+        "button", name="Recalculate min and max from the percentage"
+    ).click()
 
 
 @when(parsers.parse('I move the "{name}" category down'))
@@ -156,7 +162,8 @@ def still_on_targets(admin_logged_in_page: Page) -> None:
 
 @then("I should be on the assembly details page")
 def on_details_page(admin_logged_in_page: Page) -> None:
-    expect(admin_logged_in_page).not_to_have_url(_targets_url(_current_assembly_id[-1]), timeout=PLAYWRIGHT_TIMEOUT)
+    """Named positively: "not the targets page" also passes on an error page."""
+    expect(admin_logged_in_page).to_have_url(_details_url(_current_assembly_id[-1]), timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when(parsers.parse('I add a target called "{name}"'))
