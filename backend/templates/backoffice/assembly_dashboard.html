@@ -1,10 +1,11 @@
 {#
 ABOUTME: Backoffice assembly results dashboard page (ticket 886)
-ABOUTME: Placeholder — nav + empty body; real stats/charts/table/export built here from Figma next
+ABOUTME: Iteration 1 — number-to-select / registrations indicators + per-category pie charts (mock services)
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/components/pie_chart_card.html" import pie_chart_card %}
 
 {% block title %}{{ _("Dashboard") }} - {{ assembly.title }}{% endblock %}
 
@@ -30,13 +31,33 @@ ABOUTME: Placeholder — nav + empty body; real stats/charts/table/export built 
 {% endblock %}
 
 {% block page_content %}
-    <section class="mb-8">
-        <h2 class="text-heading-lg mb-4" style="color: var(--color-headings);">{{ _("Dashboard") }}</h2>
-        {# Placeholder. The results dashboard (stats, pie charts, results table, export)
-           will be built here from the Figma design, backed by the services in
-           service_layer/dashboard_stats.py (ticket 886). #}
-        <p class="text-body-lg" style="color: var(--color-secondary-text);">
-            {{ _("This page is coming soon.") }}
-        </p>
-    </section>
+    {# Content header: title + the two headline indicators #}
+    <div class="mb-8">
+        <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Dashboard") }}</h2>
+        <div class="mt-2 flex flex-wrap items-center gap-y-1 text-body-lg">
+            <span style="color: var(--color-neutral-600);">
+                {{ _("Number to select:") }}
+                <span style="color: var(--color-neutral-800); font-weight: 700;">{{ number_to_select }}</span>
+            </span>
+            <span aria-hidden="true"
+                  style="display: inline-block; width: 1px; height: 16px; margin: 0 16px; background-color: var(--color-neutral-300);"></span>
+            <span style="color: var(--color-neutral-600);">
+                {{ _("Number of registrations:") }}
+                <span style="color: var(--color-neutral-800); font-weight: 700;">{{ number_of_registrations }}</span>
+            </span>
+        </div>
+    </div>
+
+    {# One section per target category, each a titled row of pie cards #}
+    {% for section in dashboard_sections %}
+        <section class="mb-10">
+            <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ section.name }}</h3>
+            <div class="grid gap-4"
+                 style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+                {% for card in section.cards %}
+                    {{ pie_chart_card(card.title, segments=card.segments, message=card.message) }}
+                {% endfor %}
+            </div>
+        </section>
+    {% endfor %}
 {% endblock %}

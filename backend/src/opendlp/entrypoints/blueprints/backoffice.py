@@ -31,6 +31,11 @@ from opendlp.service_layer.assembly_service import (
     get_or_create_selection_settings,
     update_assembly,
 )
+from opendlp.service_layer.dashboard_stats import (
+    DashboardReport,
+    get_assembly_dashboard_report,
+    get_assembly_dashboard_summary,
+)
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     NotFoundError,
@@ -172,25 +177,72 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]]:
+    """Turn the (mock) dashboard report into per-category sections of pie cards.
+
+    Each category shows four dataset cards, matching the Figma layout:
+      - Target: the target distribution (band midpoints), always populated;
+      - Respondents / Selected / Confirmed: populated once the service exposes
+        those distributions. The mock report carries only the pool ("Respondents")
+        counts, so Selected and Confirmed render their skeleton state with a message.
+
+    Each card is a dict {title, segments, message}; a falsy ``segments`` triggers
+    the pie card's skeleton state, and ``message`` is the text shown in it.
+    """
+    sections: list[dict[str, object]] = []
+    for category in report.categories:
+        target_segments = [
+            {"label": row.value, "count": round((row.target_min + row.target_max) / 2)} for row in category.rows
+        ]
+        pool_total = sum(row.pool_count for row in category.rows)
+        respondent_segments = (
+            [{"label": row.value, "count": row.pool_count} for row in category.rows] if pool_total else None
+        )
+        cards = [
+            {"title": _("Target"), "segments": target_segments, "message": ""},
+            {
+                "title": _("Respondents"),
+                "segments": respondent_segments,
+                "message": _("Shows respondent data once registration starts."),
+            },
+            {
+                "title": _("Selected"),
+                "segments": None,
+                "message": _("Shows selected data once the selection process starts."),
+            },
+            {
+                "title": _("Confirmed"),
+                "segments": None,
+                "message": _("Shows confirmed data once registration closes."),
+            },
+        ]
+        sections.append({"name": category.name, "cards": cards})
+    return sections
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard")
 @login_required
 def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly results dashboard (ticket 886).
 
-    Placeholder for now: renders the assembly nav with the Dashboard tab active
-    and an empty body. The real page — stats, pie charts, results table, export —
-    will be built here from the Figma design against the services in
-    service_layer/dashboard_stats.py.
+    First iteration: the header indicators (number to select / registrations) and
+    the per-category pie charts, driven by the MOCK services in
+    service_layer/dashboard_stats.py. The chart/table toggle, the export button and
+    the findings banner are not wired yet.
     """
     try:
-        nav_uow = bootstrap.get_flask_uow()
-        with nav_uow:
+        uow = bootstrap.get_flask_uow()
+        with uow:
             nav = get_assembly_nav_context(
-                nav_uow,
+                uow,
                 current_user.id,
                 assembly_id,
                 request.args.get("source", ""),
             )
+            summary = get_assembly_dashboard_summary(uow, assembly_id)
+            report = get_assembly_dashboard_report(uow, assembly_id)
+
+        dashboard_sections = _build_dashboard_sections(report)
 
         return render_template(
             "backoffice/assembly_dashboard.html",
@@ -201,6 +253,9 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
+            number_to_select=summary.number_to_select,
+            number_of_registrations=summary.total_respondents,
+            dashboard_sections=dashboard_sections,
         ), 200
     except NotFoundError as e:
         logger.warning(
