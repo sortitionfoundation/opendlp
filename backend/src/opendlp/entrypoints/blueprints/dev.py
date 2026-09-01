@@ -121,9 +121,7 @@ from opendlp.service_layer.respondent_service import (
     import_respondents_from_csv,
     reset_selection_status,
 )
-from opendlp.service_layer.target_service import (
-    import_targets_from_csv,
-)
+from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 

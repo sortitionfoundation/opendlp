@@ -17,6 +17,7 @@ from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSel
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
 from opendlp.service_layer.target_checking import check_targets_detailed
+from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_respondent_helpers import (
     build_respondent_counts,
     get_assembly_respondent_attribute_columns,
@@ -29,7 +30,6 @@ from opendlp.service_layer.target_service import (
     delete_target_category,
     delete_target_value,
     get_targets_for_assembly,
-    import_targets_from_csv,
     update_target_category,
     update_target_value,
 )
