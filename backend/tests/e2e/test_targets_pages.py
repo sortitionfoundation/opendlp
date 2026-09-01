@@ -8,12 +8,11 @@ import pytest
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
+from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_service import (
     add_target_value,
     create_target_category,
     get_targets_for_assembly,
-    import_targets_from_csv,
-    update_target_value,
 )
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
@@ -80,137 +79,6 @@ class TestUploadTargetsCsv:
             assert any("Successfully imported" in msg for msg in flash_messages)
 
 
-class TestDeleteCategory:
-    def test_delete_category_redirects(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/delete"),
-            data={"csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-
-
-class TestAddValue:
-    def test_add_value_to_category(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values"),
-            data={
-                "value": "Male",
-                "min_count": "5",
-                "max_count": "10",
-                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
-            },
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"Male" in response.data
-
-
-class TestEditValue:
-    def test_edit_value(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2:
-            cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
-        value_id = cat.values[0].value_id
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}"),
-            data={
-                "value": "Female",
-                "min_count": "6",
-                "max_count": "12",
-                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
-            },
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"Female" in response.data
-
-
-class TestDeleteValue:
-    def test_delete_value(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2:
-            cat = add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 5, 10)
-        value_id = cat.values[0].value_id
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}/delete"),
-            data={"csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-
-
-class TestEditCategory:
-    def test_rename_category(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}"),
-            data={
-                "name": "Sex",
-                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
-            },
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"Sex" in response.data
-
-
-class TestAddMissingValues:
-    def test_add_missing_values_creates_values(
-        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
-    ):
-        """Adding missing respondent values bulk-creates them with min=0, max=0."""
-        _add_respondents(
-            postgres_session_factory,
-            existing_assembly.id,
-            [
-                ("1", {"Gender": "Male"}),
-                ("2", {"Gender": "Female"}),
-                ("3", {"Gender": "Non-binary"}),
-            ],
-        )
-
-        # Use a name that doesn't match a respondent column to avoid auto-populate
-        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow:
-            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Sex")
-        # Add one value so the others are "missing"
-        uow2 = SqlAlchemyUnitOfWork(postgres_session_factory)
-        with uow2:
-            add_target_value(uow2, admin_user.id, existing_assembly.id, category.id, "Male", 3, 7)
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/add-missing"),
-            data={
-                "missing_values": ["Female", "Non-binary"],
-                "csrf_token": _csrf(logged_in_admin, existing_assembly.id),
-            },
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"Female" in response.data
-        assert b"Non-binary" in response.data
-
-
 class TestAddCategoriesFromColumns:
     @pytest.mark.db_semantics
     def test_creates_categories_from_selected_columns(
@@ -275,101 +143,6 @@ class TestCheckTargets:
         )
         assert response.status_code == 200
         assert b"All checks passed" in response.data
-
-
-class TestMoveCategory:
-    def test_move_down_then_up_restores_the_order(
-        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
-    ):
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            first = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
-            second = create_target_category(uow, admin_user.id, existing_assembly.id, "Age")
-
-        def order():
-            with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-                return [c.name for c in get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)]
-
-        assert order() == ["Gender", "Age"]
-
-        logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{first.id}/move"),
-            data={"direction": "down", "csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
-            follow_redirects=True,
-        )
-        assert order() == ["Age", "Gender"]
-
-        logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{first.id}/move"),
-            data={"direction": "up", "csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
-            follow_redirects=True,
-        )
-        assert order() == ["Gender", "Age"]
-        assert second.id is not None
-
-    def test_moving_the_first_category_up_is_a_no_op(
-        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
-    ):
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            first = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
-            create_target_category(uow, admin_user.id, existing_assembly.id, "Age")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{first.id}/move"),
-            data={"direction": "up", "csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            names = [c.name for c in get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)]
-        assert names == ["Gender", "Age"]
-
-    def test_an_unknown_direction_is_rejected(
-        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
-    ):
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/move"),
-            data={"direction": "sideways", "csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
-        )
-
-        assert response.status_code == 400
-
-
-class TestRelinkValue:
-    def test_relink_restores_percentage_driven_minmax(
-        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
-    ):
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            category = create_target_category(uow, admin_user.id, existing_assembly.id, "Gender")
-            add_target_value(uow, admin_user.id, existing_assembly.id, category.id, "Male", percentage=50.0)
-
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            reloaded = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0]
-            value_id = reloaded.values[0].value_id
-            update_target_value(
-                uow,
-                admin_user.id,
-                existing_assembly.id,
-                category.id,
-                value_id,
-                value="Male",
-                min_count=1,
-                max_count=2,
-            )
-
-        response = logged_in_admin.post(
-            _targets_url(existing_assembly.id, f"/categories/{category.id}/values/{value_id}/relink"),
-            data={"csrf_token": _csrf(logged_in_admin, existing_assembly.id)},
-            follow_redirects=True,
-        )
-
-        assert response.status_code == 200
-        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            value = get_targets_for_assembly(uow, admin_user.id, existing_assembly.id)[0].values[0]
-        assert value.minmax_manual is False
 
 
 class TestSaveAll:

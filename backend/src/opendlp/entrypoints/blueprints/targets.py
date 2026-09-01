@@ -6,12 +6,11 @@ import uuid
 from typing import Any
 
 import structlog
-from flask import Blueprint, flash, make_response, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.domain.targets import TargetCategory
 from opendlp.entrypoints.blueprints.backoffice import render_assembly_data_page
 from opendlp.entrypoints.save_all_parser import errors_by_field, parse_save_all_targets, pending_categories
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
@@ -33,34 +32,25 @@ from opendlp.service_layer.exceptions import (
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
 from opendlp.service_layer.target_checking import check_targets_detailed
+from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_respondent_helpers import (
     build_respondent_counts,
     build_selected_counts,
     get_assembly_respondent_attribute_columns,
     get_column_distinct_counts,
-    get_respondent_counts_for_category,
-    get_selected_counts_for_category,
 )
 from opendlp.service_layer.target_service import (
     TargetEditError,
     TargetsNotSaved,
     add_target_value,
     create_target_category,
-    delete_target_category,
-    delete_target_value,
     delete_targets_for_assembly,
     get_targets_for_assembly,
-    import_targets_from_csv,
-    relink_target_value_to_percentage,
-    reorder_target_categories,
     save_all_targets,
-    update_target_category,
-    update_target_value,
 )
 from opendlp.translations import gettext as _
 
 from ..forms import (
-    EditTargetCategoryForm,
     SaveAllTargetsForm,
     TargetValueForm,
     UploadTargetsCsvForm,
@@ -69,23 +59,6 @@ from ..forms import (
 targets_bp = Blueprint("targets", __name__)
 
 logger = structlog.get_logger(__name__)
-
-
-def _render_category_block(assembly_id: uuid.UUID, category: TargetCategory) -> str:
-    """Render one category block, the partial the HTMX routes swap in."""
-    attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-    counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-    sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-    return render_template(
-        "backoffice/targets/category_block.html",
-        assembly_id=assembly_id,
-        category=category,
-        value_form=TargetValueForm(),
-        can_manage=True,
-        respondent_counts=counts,
-        selected_counts=sel_counts,
-        has_selected=bool(sel_counts),
-    )
 
 
 def _percentage_from(form: TargetValueForm) -> float | None:
@@ -299,408 +272,6 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 @targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>",
-    methods=["POST"],
-)
-@login_required
-def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Rename a target category."""
-    form = EditTargetCategoryForm()
-    try:
-        if not form.validate_on_submit():
-            if _is_htmx():
-                return render_template(
-                    "backoffice/targets/category_name_edit.html",
-                    assembly_id=assembly_id,
-                    category_id=category_id,
-                    edit_category_form=form,
-                    editing=True,
-                ), 422
-            flash(_("Please correct the errors below"), "error")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            assert form.name.data is not None
-            category = update_target_category(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                category_id=category_id,
-                name=form.name.data,
-                comment=form.comment.data or "",
-                source_url=form.source_url.data or "",
-            )
-
-        if _is_htmx():
-            value_form = TargetValueForm()
-            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-            return render_template(
-                "backoffice/targets/category_block.html",
-                assembly_id=assembly_id,
-                category=category,
-                value_form=value_form,
-                can_manage=True,
-                respondent_counts=counts,
-                selected_counts=sel_counts,
-                has_selected=bool(sel_counts),
-            )
-
-        flash(_("Category renamed to '%(name)s'", name=category.name), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except (ValueError, NotFoundError, InsufficientPermissions) as e:
-        if _is_htmx():
-            form.name.errors.append(str(e))  # type: ignore[attr-defined]
-            return render_template(
-                "backoffice/targets/category_name_edit.html",
-                assembly_id=assembly_id,
-                category_id=category_id,
-                edit_category_form=form,
-                editing=True,
-            ), 422
-        flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-
-@targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>/delete",
-    methods=["POST"],
-)
-@login_required
-def remove_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Delete a target category and all its values."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            delete_target_category(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                category_id=category_id,
-            )
-
-        if _is_htmx():
-            # An empty body, so the swap removes the block that was deleted.
-            return make_response("")
-
-        flash(_("Category deleted"), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except (NotFoundError, InsufficientPermissions) as e:
-        flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-
-@targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values",
-    methods=["POST"],
-)
-@login_required
-def add_value(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Add a value to a target category."""
-    form = TargetValueForm()
-    try:
-        if not form.validate_on_submit():
-            if _is_htmx():
-                uow = bootstrap.get_flask_uow()
-                with uow:
-                    categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-                category = next((c for c in categories if c.id == category_id), None)
-                if not category:
-                    return "", 404
-                attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-                counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-                sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-                return render_template(
-                    "backoffice/targets/category_block.html",
-                    assembly_id=assembly_id,
-                    category=category,
-                    value_form=form,
-                    show_add_value=True,
-                    can_manage=True,
-                    respondent_counts=counts,
-                    selected_counts=sel_counts,
-                    has_selected=bool(sel_counts),
-                ), 422
-            flash(_("Please correct the errors below"), "error")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            assert form.value.data is not None
-            assert form.min_count.data is not None
-            assert form.max_count.data is not None
-            category = add_target_value(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                category_id=category_id,
-                value=form.value.data,
-                min_count=form.min_count.data or 0,
-                max_count=form.max_count.data or 0,
-                percentage=_percentage_from(form),
-                comment=form.comment.data or "",
-            )
-
-        if _is_htmx():
-            value_form = TargetValueForm()
-            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-            return render_template(
-                "backoffice/targets/category_block.html",
-                assembly_id=assembly_id,
-                category=category,
-                value_form=value_form,
-                can_manage=True,
-                respondent_counts=counts,
-                selected_counts=sel_counts,
-                has_selected=bool(sel_counts),
-            )
-
-        flash(_("Value '%(value)s' added", value=form.value.data), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except ValueError as e:
-        if _is_htmx():
-            form.value.errors.append(str(e))  # type: ignore[attr-defined]
-            uow = bootstrap.get_flask_uow()
-            with uow:
-                categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-            category = next((c for c in categories if c.id == category_id), None)
-            if not category:
-                return "", 404
-            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-            return render_template(
-                "backoffice/targets/category_block.html",
-                assembly_id=assembly_id,
-                category=category,
-                value_form=form,
-                show_add_value=True,
-                can_manage=True,
-                respondent_counts=counts,
-                selected_counts=sel_counts,
-                has_selected=bool(sel_counts),
-            ), 422
-        flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-    except (NotFoundError, InsufficientPermissions) as e:
-        flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-
-@targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values/<uuid:value_id>",
-    methods=["POST"],
-)
-@login_required
-def edit_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UUID) -> ResponseReturnValue:
-    """Edit an existing target value."""
-    form = TargetValueForm()
-    try:
-        if not form.validate_on_submit():
-            if _is_htmx():
-                uow = bootstrap.get_flask_uow()
-                with uow:
-                    categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-                category = next((c for c in categories if c.id == category_id), None)
-                if not category:
-                    return "", 404
-                attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-                counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-                sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-                return render_template(
-                    "backoffice/targets/category_block.html",
-                    assembly_id=assembly_id,
-                    category=category,
-                    value_form=form,
-                    editing_value_id=value_id,
-                    can_manage=True,
-                    respondent_counts=counts,
-                    selected_counts=sel_counts,
-                    has_selected=bool(sel_counts),
-                ), 422
-            flash(_("Please correct the errors below"), "error")
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            assert form.value.data is not None
-            category = update_target_value(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                category_id=category_id,
-                value_id=value_id,
-                value=form.value.data,
-                min_count=form.min_count.data,
-                max_count=form.max_count.data,
-                percentage=_percentage_from(form),
-                comment=form.comment.data or "",
-            )
-
-        if _is_htmx():
-            value_form = TargetValueForm()
-            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-            return render_template(
-                "backoffice/targets/category_block.html",
-                assembly_id=assembly_id,
-                category=category,
-                value_form=value_form,
-                can_manage=True,
-                respondent_counts=counts,
-                selected_counts=sel_counts,
-                has_selected=bool(sel_counts),
-            )
-
-        flash(_("Value updated"), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except (ValueError, NotFoundError, InsufficientPermissions) as e:
-        if _is_htmx():
-            form.value.errors.append(str(e))  # type: ignore[attr-defined]
-            uow = bootstrap.get_flask_uow()
-            with uow:
-                categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-            category = next((c for c in categories if c.id == category_id), None)
-            if not category:
-                return "", 404
-            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-            return render_template(
-                "backoffice/targets/category_block.html",
-                assembly_id=assembly_id,
-                category=category,
-                value_form=form,
-                editing_value_id=value_id,
-                can_manage=True,
-                respondent_counts=counts,
-                selected_counts=sel_counts,
-                has_selected=bool(sel_counts),
-            ), 422
-        flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-
-@targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values/<uuid:value_id>/delete",
-    methods=["POST"],
-)
-@login_required
-def remove_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UUID) -> ResponseReturnValue:
-    """Delete a target value from a category."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            category = delete_target_value(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                category_id=category_id,
-                value_id=value_id,
-            )
-
-        if _is_htmx():
-            value_form = TargetValueForm()
-            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-            return render_template(
-                "backoffice/targets/category_block.html",
-                assembly_id=assembly_id,
-                category=category,
-                value_form=value_form,
-                can_manage=True,
-                respondent_counts=counts,
-                selected_counts=sel_counts,
-                has_selected=bool(sel_counts),
-            )
-
-        flash(_("Value deleted"), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except (NotFoundError, InsufficientPermissions) as e:
-        flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-
-@targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values/add-missing",
-    methods=["POST"],
-)
-@login_required
-def add_missing_values(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Bulk-add missing respondent values to a target category with min=0, max=0."""
-    try:
-        missing_values = request.form.getlist("missing_values")
-        if not missing_values:
-            flash(_("No values to add"), "warning")
-            if _is_htmx():
-                uow = bootstrap.get_flask_uow()
-                with uow:
-                    categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-                category = next((c for c in categories if c.id == category_id), None)
-                if not category:
-                    return "", 404
-                return render_template(
-                    "backoffice/targets/category_block.html",
-                    assembly_id=assembly_id,
-                    category=category,
-                    value_form=TargetValueForm(),
-                    can_manage=True,
-                )
-            return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-        category = None
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            for value_name in missing_values:
-                category = add_target_value(
-                    uow=uow,
-                    user_id=current_user.id,
-                    assembly_id=assembly_id,
-                    category_id=category_id,
-                    value=value_name,
-                    min_count=0,
-                    max_count=0,
-                )
-
-        if _is_htmx() and category is not None:
-            value_form = TargetValueForm()
-            attribute_columns = get_assembly_respondent_attribute_columns(assembly_id)
-            counts = get_respondent_counts_for_category(assembly_id, category.name, attribute_columns)
-            sel_counts = get_selected_counts_for_category(assembly_id, category.name, attribute_columns)
-            return render_template(
-                "backoffice/targets/category_block.html",
-                assembly_id=assembly_id,
-                category=category,
-                value_form=value_form,
-                can_manage=True,
-                respondent_counts=counts,
-                selected_counts=sel_counts,
-                has_selected=bool(sel_counts),
-            )
-
-        flash(
-            _("Added %(count)s values", count=len(missing_values)),
-            "success",
-        )
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except (ValueError, NotFoundError, InsufficientPermissions) as e:
-        flash(str(e), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-
-@targets_bp.route(
     "/assembly/<uuid:assembly_id>/targets/categories/add-from-columns",
     methods=["POST"],
 )
@@ -824,78 +395,6 @@ def check_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Error checking targets", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while checking targets"), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-
-@targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>/move",
-    methods=["POST"],
-)
-@login_required
-def move_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Move a target category one place up or down.
-
-    Up/down buttons rather than drag-and-drop: they are keyboard-accessible for
-    free. The service takes a full ordering either way, so drag-and-drop can be
-    added later without a service change.
-    """
-    direction = request.form.get("direction", "")
-    if direction not in ("up", "down"):
-        return "", 400
-
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
-            order = [c.id for c in categories]
-            if category_id not in order:
-                raise NotFoundError(f"Target category {category_id} not found")
-
-            index = order.index(category_id)
-            swap_with = index - 1 if direction == "up" else index + 1
-            if 0 <= swap_with < len(order):
-                order[index], order[swap_with] = order[swap_with], order[index]
-                reorder_target_categories(uow, current_user.id, assembly_id, order)
-
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except (ValueError, NotFoundError) as e:
-        flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-    except InsufficientPermissions:
-        flash(_("You don't have permission to reorder these targets"), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-
-@targets_bp.route(
-    "/assembly/<uuid:assembly_id>/targets/categories/<uuid:category_id>/values/<uuid:value_id>/relink",
-    methods=["POST"],
-)
-@login_required
-def relink_value(assembly_id: uuid.UUID, category_id: uuid.UUID, value_id: uuid.UUID) -> ResponseReturnValue:
-    """Restore percentage-driven min/max for one value."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            category = relink_target_value_to_percentage(
-                uow=uow,
-                user_id=current_user.id,
-                assembly_id=assembly_id,
-                category_id=category_id,
-                value_id=value_id,
-            )
-
-        if _is_htmx():
-            return _render_category_block(assembly_id, category)
-
-        flash(_("Min and max are calculated from the percentage again"), "success")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-
-    except (ValueError, NotFoundError) as e:
-        flash(_("Error: %(error)s", error=str(e)), "error")
-        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
-    except InsufficientPermissions:
-        flash(_("You don't have permission to edit these targets"), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
 
 
