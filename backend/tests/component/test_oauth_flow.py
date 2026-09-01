@@ -10,6 +10,7 @@ from flask.testing import FlaskClient
 from opendlp.adapters import database
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.entrypoints.extensions import OAUTH_HTTP_TIMEOUT_SECONDS, oauth
 from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer.user_service import create_user
 from tests.fakes import FakeStore, FakeUnitOfWork
@@ -106,6 +107,16 @@ def google_token() -> dict:
 def _login(client: FlaskClient, user: User) -> None:
     with client.session_transaction() as session:
         session["_user_id"] = user.get_id()
+
+
+class TestOAuthHTTPTimeout:
+    """Provider HTTP calls must time out rather than hang a gunicorn worker."""
+
+    def test_registered_providers_set_default_timeout_on_their_session(self, app) -> None:
+        with app.app_context():
+            for provider in ("google", "microsoft"):
+                session = oauth.create_client(provider)._get_oauth_client()
+                assert session.default_timeout == OAUTH_HTTP_TIMEOUT_SECONDS
 
 
 class TestOAuthLoginForDisabledAccounts:
