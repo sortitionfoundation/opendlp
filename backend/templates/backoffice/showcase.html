@@ -5,6 +5,7 @@
 {% from "backoffice/showcase/spacing.html" import spacing_section %}
 {% from "backoffice/showcase/responsive.html" import responsive_section %}
 {% from "backoffice/showcase/typography.html" import typography_section %}
+{% from "backoffice/showcase/pie_chart_card_component.html" import pie_chart_card_section %}
 {% from "backoffice/showcase/button_component.html" import button_section %}
 {% from "backoffice/showcase/split_button_component.html" import split_button_section %}
 {% from "backoffice/showcase/input_component.html" import input_section %}
@@ -85,6 +86,7 @@
                     class="text-body-md rounded-md px-3 py-2 min-w-64"
                     style="background-color: var(--color-page-background); color: var(--color-headings); border: 1px solid var(--color-borders-dividers);">
                 <option value="">Choose…</option>
+                <option value="components:pie-chart-card">Pie Chart Card</option>
                 <option value="components:button">Button</option>
                 <option value="components:split-button">Split Button</option>
                 <option value="components:input">Input</option>
@@ -125,6 +127,7 @@
            mirroring the Foundations tab, so hash links and the dropdown scroll
            to a real target. #}
         <div x-show="tab === 'components'" x-cloak>
+            <div id="pie-chart-card" data-tab="components" style="scroll-margin-top: 6rem;">{{ pie_chart_card_section() }}</div>
             <div id="button" data-tab="components" style="scroll-margin-top: 6rem;">{{ button_section() }}</div>
             <div id="split-button" data-tab="components" style="scroll-margin-top: 6rem;">{{ split_button_section() }}</div>
             <div id="input" data-tab="components" style="scroll-margin-top: 6rem;">{{ input_section() }}</div>
