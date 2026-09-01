@@ -22,7 +22,19 @@ def get_celery_app(redis_host: str = "", redis_port: int = 0, old_app: Celery | 
         broker=redis_cfg.to_url(),
         backend=redis_cfg.to_url(),
     )
+    # The web process talks to Redis through these transports on every task
+    # dispatch and status poll. Celery's defaults (120s socket_timeout,
+    # unbounded connect) can hold a gunicorn worker well past its timeout,
+    # so bound every socket operation instead.
+    redis_transport_options = {
+        "socket_timeout": 10,
+        "socket_connect_timeout": 5,
+        "retry_on_timeout": True,
+        "health_check_interval": 25,
+    }
     app.conf.update(
+        broker_transport_options=redis_transport_options,
+        result_backend_transport_options=redis_transport_options,
         timezone="UTC",
         # use pickle across the board, so we can use rich objects, not just JSON
         event_serializer="pickle",

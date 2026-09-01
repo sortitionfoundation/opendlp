@@ -644,7 +644,10 @@ def _process_celery_final_result(celery_result: AsyncResult, run_record: Selecti
     # raises RuntimeError('Never call result.get() within a task!'). Callers
     # invoked from a Celery worker must read state from SelectionRunRecord
     # instead of going through get_selection_run_status.
-    final_result = celery_result.get()
+    # Callers only reach this once successful() is True, so the value is
+    # already in the result backend; the timeout guards against a stalled
+    # Redis holding the request open, not against a still-running task.
+    final_result = celery_result.get(timeout=10)
     assert final_result
     if run_record.task_type in (
         SelectionTaskType.LOAD_GSHEET,
