@@ -1,6 +1,9 @@
 """ABOUTME: Unit tests for the gspread-backed GSheetExportTarget
 ABOUTME: Uses a fake gspread client so no real Google Sheets access is needed"""
 
+from unittest.mock import MagicMock
+
+from opendlp.adapters import gsheet_export
 from opendlp.adapters.gsheet_export import GSheetExportTarget, WorksheetNotFound
 from opendlp.adapters.tabular_export import TabularData
 
@@ -78,3 +81,15 @@ class TestGSheetExportTarget:
         assert existing.cleared is True
         assert existing.updated == [["id"], ["R1"]]
         assert spreadsheet.added == []
+
+
+class TestDefaultClientFactory:
+    def test_sets_timeout_on_gspread_client(self, monkeypatch) -> None:
+        """The real client must carry a timeout so an export cannot hang a worker."""
+        fake_client = MagicMock()
+        monkeypatch.setattr(gsheet_export.gspread, "service_account", lambda filename: fake_client)
+
+        client = gsheet_export._default_client_factory()
+
+        assert client is fake_client
+        fake_client.set_timeout.assert_called_once_with(gsheet_export.GSPREAD_TIMEOUT_SECONDS)
