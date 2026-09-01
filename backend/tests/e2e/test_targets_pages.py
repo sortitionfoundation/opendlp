@@ -428,7 +428,9 @@ class TestSaveAll:
 
         html = response.data.decode()
         assert html.count("Max must be at least the min") == 2
-        assert "source URL must be a full http:// or https:// address" in html
+        # The message the form shows, not the domain's own - that one is written
+        # for a developer and never passes through gettext.
+        assert "Enter a full http:// or https:// address" in html
 
     def test_saving_runs_the_detailed_check(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
