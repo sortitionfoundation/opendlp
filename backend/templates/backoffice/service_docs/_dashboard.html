@@ -1,0 +1,316 @@
+{#
+ABOUTME: Dashboard tab of the service docs console - MOCK results-dashboard services (ticket 886)
+ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/report and export_assembly_dashboard
+#}
+<div class="space-y-6">
+    {# MOCK banner #}
+    <div class="rounded-lg p-4"
+         style="background-color: var(--color-warning-100);
+                border: 1px solid var(--color-warning-400)">
+        <h3 class="text-heading-sm mb-1" style="color: var(--color-warning-600);">
+            🧪 {{ _("Mock services — ticket 886 (results dashboard)") }}
+        </h3>
+        <p class="text-body-sm" style="color: var(--color-body-text);">
+            {{ _("These services return fixture data so the dashboard front-end can be built now. The real queries are Hamish's to implement — see") }}
+            <code>service_layer/dashboard_stats.py</code>
+            {{ _("and") }}
+            <code>docs/agent/886-dashboard/service_layer_spec.md</code>.
+        </p>
+    </div>
+
+    {# get_assembly_dashboard_summary #}
+    {% call card(title="get_assembly_dashboard_summary()  ·  MOCK", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    dashboard_stats.py:get_assembly_dashboard_summary
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-success-100);
+                             color: var(--color-success-600)">👁️ can_view_assembly() (planned)</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Headline stats for the dashboard's stat-tile row: respondents in each state, number to select, number of target categories, and the pool total.") }}
+            </p>
+            {# Parameters #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Name</th>
+                                <th class="px-3 py-2 text-left">Type</th>
+                                <th class="px-3 py-2 text-left">Required</th>
+                                <th class="px-3 py-2 text-left">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 text-code">assembly_id</td>
+                                <td class="px-3 py-2">UUID</td>
+                                <td class="px-3 py-2">✅</td>
+                                <td class="px-3 py-2">{{ _("Target assembly ID") }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {# Returns #}
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    DashboardSummary  →  {assembly_id, assembly_title, number_to_select, target_category_count, total_respondents, status_counts[], mock}
+                </code>
+            </div>
+            {# Try It #}
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="dashboardSummaryAssemblyId"
+                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background);
+                                   border: 1px solid var(--color-borders-dividers);
+                                   color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeGetDashboardSummary()"
+                            :disabled="loading.dashboard_summary"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.dashboard_summary">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.dashboard_summary">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.dashboard_summary">
+                    <div class="rounded-lg p-4"
+                         :style="responses.dashboard_summary.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.dashboard_summary.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.dashboard_summary.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                            <button @click="copyDashboardSummaryResponse()"
+                                    class="text-body-sm px-2 py-1 rounded"
+                                    style="background-color: var(--color-page-background)">📋 {{ _("Copy JSON") }}</button>
+                        </div>
+                        <pre class="text-code overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('dashboard_summary')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# get_assembly_dashboard_report #}
+    {% call card(title="get_assembly_dashboard_report()  ·  MOCK", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    dashboard_stats.py:get_assembly_dashboard_report
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-success-100);
+                             color: var(--color-success-600)">👁️ can_view_assembly() (planned)</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("The full per-category results table: for each target category, each value's target band and pool count. The rows double as the pie-chart series. Also returns the derived list of targets that cannot yet be met (pool_count < target_min).") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Name</th>
+                                <th class="px-3 py-2 text-left">Type</th>
+                                <th class="px-3 py-2 text-left">Required</th>
+                                <th class="px-3 py-2 text-left">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 text-code">assembly_id</td>
+                                <td class="px-3 py-2">UUID</td>
+                                <td class="px-3 py-2">✅</td>
+                                <td class="px-3 py-2">{{ _("Target assembly ID") }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    DashboardReport  →  {assembly_id, assembly_title, number_to_select, pool_size, categories[{name, rows[{value, target_min, target_max, pool_count, shortfall, meetable}]}], unmet_targets[], mock}
+                </code>
+            </div>
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="dashboardReportAssemblyId"
+                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background);
+                                   border: 1px solid var(--color-borders-dividers);
+                                   color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeGetDashboardReport()"
+                            :disabled="loading.dashboard_report"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.dashboard_report">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.dashboard_report">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.dashboard_report">
+                    <div class="rounded-lg p-4"
+                         :style="responses.dashboard_report.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.dashboard_report.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.dashboard_report.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                            <button @click="copyDashboardReportResponse()"
+                                    class="text-body-sm px-2 py-1 rounded"
+                                    style="background-color: var(--color-page-background)">📋 {{ _("Copy JSON") }}</button>
+                        </div>
+                        <pre class="text-code overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('dashboard_report')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+
+    {# export_assembly_dashboard #}
+    {% call card(title="export_assembly_dashboard()  ·  MOCK", composed=true) %}
+        {% call card_body() %}
+            <div class="flex items-center justify-between mb-4">
+                <code class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-subtle-background-panels);
+                             color: var(--color-info-600)">
+                    dashboard_stats.py:export_assembly_dashboard
+                </code>
+                <span class="text-body-sm px-2 py-1 rounded"
+                      style="background-color: var(--color-success-100);
+                             color: var(--color-success-600)">👁️ can_view_assembly() (planned)</span>
+            </div>
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Export the results table. csv and gsheet reuse existing tabular_export.py targets; xlsx has NO backend yet (returns download_ready=false) — a new xlsx target is needed behind AbstractTabularExportTarget.") }}
+            </p>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-body-sm" style="border: 1px solid var(--color-borders-dividers)">
+                        <thead style="background-color: var(--color-subtle-background-panels);">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Name</th>
+                                <th class="px-3 py-2 text-left">Type</th>
+                                <th class="px-3 py-2 text-left">Required</th>
+                                <th class="px-3 py-2 text-left">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-2 text-code">assembly_id</td>
+                                <td class="px-3 py-2">UUID</td>
+                                <td class="px-3 py-2">✅</td>
+                                <td class="px-3 py-2">{{ _("Target assembly ID") }}</td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 text-code">export_format</td>
+                                <td class="px-3 py-2">str</td>
+                                <td class="px-3 py-2">✅</td>
+                                <td class="px-3 py-2">csv | xlsx | gsheet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
+                <code class="text-body-sm px-2 py-1 rounded block"
+                      style="background-color: var(--color-subtle-background-panels)">
+                    DashboardExport  →  {assembly_id, export_format, filename, note, download_ready, mock}
+                </code>
+            </div>
+            <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
+                <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
+                    <span class="mr-2">🧪</span>{{ _("Try It") }}
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                        <select x-model="dashboardExportAssemblyId"
+                                class="w-full px-3 py-2 rounded-lg text-body-md"
+                                style="background-color: var(--color-page-background);
+                                       border: 1px solid var(--color-borders-dividers);
+                                       color: var(--color-body-text)">
+                            <option value="">{{ _("Select an assembly...") }}</option>
+                            {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Format") }}</label>
+                        <select x-model="dashboardExportFormat"
+                                class="w-full px-3 py-2 rounded-lg text-body-md"
+                                style="background-color: var(--color-page-background);
+                                       border: 1px solid var(--color-borders-dividers);
+                                       color: var(--color-body-text)">
+                            <option value="csv">csv</option>
+                            <option value="xlsx">xlsx</option>
+                            <option value="gsheet">gsheet</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-2 mb-4">
+                    <button @click="executeExportDashboard()"
+                            :disabled="loading.dashboard_export"
+                            class="px-4 py-2 rounded-lg text-button-lg transition-all"
+                            style="background-color: var(--color-primary-action); color: var(--color-page-background)">
+                        <span x-show="!loading.dashboard_export">▶️ {{ _("Execute") }}</span>
+                        <span x-cloak x-show="loading.dashboard_export">⏳ {{ _("Running...") }}</span>
+                    </button>
+                </div>
+                <template x-if="responses.dashboard_export">
+                    <div class="rounded-lg p-4"
+                         :style="responses.dashboard_export.status === 'success' ? 'background-color: var(--color-success-100); border: 1px solid var(--color-success-400);' : 'background-color: var(--color-error-100); border: 1px solid var(--color-error-400);'">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-heading-sm"
+                                  :style="responses.dashboard_export.status === 'success' ? 'color: var(--color-success-600);' : 'color: var(--color-error-600);'">
+                                <span x-text="responses.dashboard_export.status === 'success' ? '✅ Success' : '❌ Error'"></span>
+                            </span>
+                            <button @click="copyDashboardExportResponse()"
+                                    class="text-body-sm px-2 py-1 rounded"
+                                    style="background-color: var(--color-page-background)">📋 {{ _("Copy JSON") }}</button>
+                        </div>
+                        <pre class="text-code overflow-x-auto whitespace-pre-wrap"
+                             style="color: var(--color-body-text)"
+                             x-text="formatResponse('dashboard_export')"></pre>
+                    </div>
+                </template>
+            </div>
+        {% endcall %}
+    {% endcall %}
+</div>
