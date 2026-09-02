@@ -10,26 +10,28 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.service_layer.assembly_service import (
-    add_target_value,
-    create_target_category,
-    delete_target_category,
-    delete_target_value,
     get_assembly_with_permissions,
-    get_targets_for_assembly,
-    import_targets_from_csv,
-    update_target_category,
-    update_target_value,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
 from opendlp.service_layer.target_checking import check_targets_detailed
+from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_respondent_helpers import (
     build_respondent_counts,
     get_assembly_respondent_attribute_columns,
     get_column_distinct_counts,
     get_respondent_counts_for_category,
+)
+from opendlp.service_layer.target_service import (
+    add_target_value,
+    create_target_category,
+    delete_target_category,
+    delete_target_value,
+    get_targets_for_assembly,
+    update_target_category,
+    update_target_value,
 )
 from opendlp.translations import gettext as _
 
@@ -151,7 +153,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id=assembly_id,
                 csv_content=csv_content,
                 replace_existing=True,
-            )
+            ).categories
 
         total_values = sum(len(c.values) for c in categories)
         flash(

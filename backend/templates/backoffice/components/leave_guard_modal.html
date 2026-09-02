@@ -1,0 +1,19 @@
+{#
+ABOUTME: The "you have unsaved changes" confirmation, for any page composing the editGuard slice
+ABOUTME: Bound to the names that slice exposes - leaveModalOpen, closeLeaveModal(), discardAndLeave()
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/modal.html" import controlled_alert_dialog %}
+
+{# Opened by guardLeave(), or by the click the guard caught on its way to
+   another page. Keep editing is the primary (safe) action on the right and
+   receives initial focus; Discard changes is a plain text button so the
+   destructive path never looks like the default. #}
+{% call controlled_alert_dialog(id="leave-modal",
+title=_("Discard changes?"),
+description=_("You have unsaved changes. If you leave this page, your changes will be lost."),
+open_expr="leaveModalOpen",
+close_expr="closeLeaveModal()") %}
+{{ button(_("Discard changes"), variant="tertiary", attrs='type="button" @click="discardAndLeave()"') }}
+{{ button(_("Keep editing"), variant="primary", attrs='type="button" x-ref="keepEditingBtn" @click="closeLeaveModal()"') }}
+{% endcall %}

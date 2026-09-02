@@ -277,11 +277,20 @@ just test-bdd
 
 # Run BDD tests headless (for CI)
 just test-bdd-headless
-CI=true uv run pytest test/bdd/test_file_i_want.py
+
+# Run one BDD file. NOTE: this skips the asset build - see the warning below.
+CI=true uv run pytest tests/bdd/test_file_i_want.py
 
 # Install development dependencies (including Playwright browsers)
 just install-dev
 ```
+
+> **Running pytest directly skips the asset build.** The `just test-bdd*` targets
+> depend on `build-all`, which recompiles the JavaScript bundles from `src/js/`
+> into `static/`. Calling `pytest tests/bdd/...` yourself runs against whatever
+> bundle happens to be on disk, so a change you just made to `src/js/` is not
+> under test and a stale bundle looks exactly like a regression. Run
+> `just build-all` first, or use the `just` target.
 
 ### BDD Test Infrastructure
 

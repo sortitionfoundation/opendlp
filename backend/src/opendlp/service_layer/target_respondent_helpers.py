@@ -51,14 +51,14 @@ def get_column_distinct_counts(
     assembly_id: uuid.UUID,
     attribute_columns: list[str],
 ) -> dict[str, int]:
-    """Get the number of distinct values for each respondent attribute column."""
-    counts: dict[str, int] = {}
+    """Get the number of distinct values for each respondent attribute column.
+
+    One query for every column rather than one per column: this runs on every
+    load of the data page, where a wide CSV import means dozens of columns.
+    """
     uow = bootstrap.get_flask_uow()
     with uow:
-        for col in attribute_columns:
-            value_counts = get_respondent_attribute_value_counts(uow, assembly_id, col)
-            counts[col] = len(value_counts)
-    return counts
+        return uow.respondents.get_attribute_distinct_counts(assembly_id, attribute_columns)
 
 
 def build_respondent_counts(

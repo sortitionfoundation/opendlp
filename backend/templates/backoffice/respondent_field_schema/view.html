@@ -3,6 +3,7 @@ ABOUTME: Backoffice page for viewing and editing the respondent field schema
 ABOUTME: Grouped field list with per-field label edit, move up/down, and delete actions
 #}
 {% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/icons.html" import icon_info_heroicons %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
@@ -35,16 +36,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                         border: 1px solid var(--color-borders-dividers);">
                 <div class="flex items-start gap-4">
                     <div class="flex-shrink-0">
-                        <svg class="w-6 h-6"
-                             style="color: var(--color-primary-action);"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        {{ icon_info_heroicons(classes="w-6 h-6", style="color: var(--color-primary-action);") }}
                     </div>
                     <div>
                         <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Fields are defined by your Google Spreadsheet") }}</h2>

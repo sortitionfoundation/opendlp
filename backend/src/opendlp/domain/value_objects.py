@@ -129,6 +129,25 @@ class RespondentStatus(Enum):
             return None
 
 
+# The statuses that make someone one of the assembly's respondents: in the pool,
+# picked from it, or picked and confirmed. A withdrawn person is no longer part
+# of the pool a target is measured against, a test submission was never in it,
+# and a deleted one has had its details blanked. Written as the statuses that do
+# count rather than the ones that do not, so a status added later has to be
+# considered rather than quietly counted.
+COUNTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
+    RespondentStatus.POOL,
+    RespondentStatus.SELECTED,
+    RespondentStatus.CONFIRMED,
+]
+
+# Confirmed is selected and then confirmed, so both count as selected.
+SELECTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
+    RespondentStatus.SELECTED,
+    RespondentStatus.CONFIRMED,
+]
+
+
 # Manual transitions allowed from the backoffice view-respondent page.
 # Any move between the four active statuses is permitted; moves to or from
 # DELETED are excluded (DELETED is reached only via the GDPR delete form).

@@ -1,0 +1,91 @@
+{#
+ABOUTME: Dialog on the data page that creates target categories from the respondent data columns
+ABOUTME: Each chosen column becomes a category; a low-cardinality one also gets a value per answer
+
+Driven by the modal() Alpine component on the Targets card that holds the
+button opening it, so isOpen/close() are in scope here.
+
+The columns are split by how many distinct answers they hold: the ones worth
+having as a target are offered up front, the rest behind a disclosure. A
+column already used by a target is shown ticked and disabled rather than
+hidden, so it reads as accounted for rather than missing.
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import checkbox %}
+{% from "backoffice/components/modal.html" import controlled_modal %}
+{% set existing_category_names_lower = target_categories | map(attribute='name') | map('lower') | list %}
+{% set recommended_columns = [] %}
+{% set high_cardinality_columns = [] %}
+{% set counts = column_distinct_counts if column_distinct_counts is defined and column_distinct_counts else {} %}
+{% for col in respondent_attribute_columns %}
+    {% set n = counts.get(col, 0) %}
+    {% if n > 0 and n < 20 %}
+        {% if recommended_columns.append(col) %}{% endif %}
+    {% else %}
+        {% if high_cardinality_columns.append(col) %}{% endif %}
+    {% endif %}
+{% endfor %}
+{% call controlled_modal(id="create-targets-from-data",
+title=_("Create targets from respondent data"),
+open_expr="isOpen",
+close_expr="close()") %}
+<form method="post"
+      action="{{ url_for('targets.add_categories_from_columns', assembly_id=assembly.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <div class="dialog-body">
+        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+            {{ _("Each column you choose becomes a target category. Set its percentages, minimums and maximums on the Targets tab afterwards.") }}
+        </p>
+        {# ── Recommended columns (< 20 distinct values) ── #}
+        {% if recommended_columns %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("These columns have few distinct values and are likely useful as target categories. Select the categories you want to use as targets.") }}
+            </p>
+            <div class="flex flex-col gap-2 mb-4">
+                {% for col in recommended_columns %}
+                    {% set already_defined = col | lower in existing_category_names_lower %}
+                    {{ checkbox(name="columns",
+                    id="create-target-column-" ~ loop.index,
+                    label=_("%(column)s (%(count)s values)", column=col, count=counts.get(col, 0)) ~ (" - " ~ _("already defined") if already_defined else ""),
+                    value=col,
+                    checked=already_defined,
+                    disabled=already_defined
+                    ) }}
+                {% endfor %}
+            </div>
+        {% endif %}
+        {# ── High cardinality columns (>= 20 distinct values) ── #}
+        {% if high_cardinality_columns %}
+            {# No Alpine flag: <details> already shows and hides its own content, and
+               a second source of truth goes out of step the moment anything opens it
+               without clicking the summary - find-in-page, or setting `open`. #}
+            <details class="mb-4">
+                <summary class="text-body-md cursor-pointer underline mb-2"
+                         style="color: var(--color-links)">
+                    {{ _("Other columns (%(count)s)", count=high_cardinality_columns|length) }}
+                </summary>
+                <div class="mt-2">
+                    <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
+                        {{ _("These columns have many different values and probably aren't useful as target categories. Only the category will be created; values will not be added automatically.") }}
+                    </p>
+                    <div class="flex flex-col gap-2">
+                        {% for col in high_cardinality_columns %}
+                            {% set already_defined = col | lower in existing_category_names_lower %}
+                            {{ checkbox(name="columns",
+                            id="create-target-other-column-" ~ loop.index,
+                            label=_("%(column)s (%(count)s values)", column=col, count=counts.get(col, 0)) ~ (" - " ~ _("already defined") if already_defined else ""),
+                            value=col,
+                            disabled=already_defined
+                            ) }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </details>
+        {% endif %}
+    </div>
+    <div class="dialog-footer">
+        {{ button(_("Cancel"), variant="secondary", attrs='@click="close()"') }}
+        {{ button(_("Add selected categories"), variant="primary", type="submit") }}
+    </div>
+</form>
+{% endcall %}

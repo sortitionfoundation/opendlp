@@ -3,6 +3,7 @@ ABOUTME: Dropdown button component - single trigger that opens a menu of actions
 ABOUTME: Composes .btn / .btn--{variant} + .menu / .menu-item atoms
 #}
 
+{% from "backoffice/components/icons.html" import icon_chevron_down %}
 {% macro dropdown_button(label="", items=None, variant="secondary", id="", aria_label="", disabled=false) %}
     {#
     Dropdown button: a single button that opens a menu of related actions. Unlike
@@ -55,9 +56,7 @@ ABOUTME: Composes .btn / .btn--{variant} + .menu / .menu-item atoms
                 aria-label="{{ aria_label if aria_label else label }}">
             <span>{{ label }}</span>
             <span class="btn-icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"/>
-                </svg>
+                {{ icon_chevron_down(classes="") }}
             </span>
         </button>
 

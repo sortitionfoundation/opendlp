@@ -126,7 +126,7 @@ def _(page: Page, test_database: sessionmaker):
             uow.commit()
 
     # If user was redirected to login (password registration), log them in
-    if page.url != Urls.dashboard:
+    if not Urls.any_dashboard.match(page.url):
         page.goto(Urls.login)
         page.fill('input[name="email"]', NEWUSER_EMAIL)
         page.fill('input[name="password"]', FRESH_PASSWORD)
@@ -139,7 +139,7 @@ def _(page: Page, test_database: sessionmaker):
 @then("the user should see the default view for an authorised user")
 def _(page: Page):
     """the user should see the default view for an authorised user."""
-    expect(page).to_have_url(Urls.dashboard)
+    expect(page).to_have_url(Urls.any_dashboard)
 
 
 @then("the user should see the default view for an anonymous user")

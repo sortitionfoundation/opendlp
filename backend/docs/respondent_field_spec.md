@@ -42,7 +42,7 @@ an unmatched one, all in one response.
 
 ```jsonc
 {
-  "spec_version": 1,
+  "spec_version": 2,
   "assembly": {
     "id": "...", "title": "Existing Assembly", "number_to_select": 40
   },
@@ -61,6 +61,9 @@ an unmatched one, all in one response.
 Bumped when the shape changes in a way a consumer has to notice. Consumers live
 outside this repo and cannot be updated in the same commit, which is the whole
 reason it is there.
+
+Version 2 renamed `description` to `comment` on both a target value and a target
+category, and added `minmax_manual` to a value and `source_url` to a category.
 
 ### `csv`
 
@@ -136,11 +139,26 @@ cannot help before there are respondents to guess from — so on a fresh assembl
 the target values are the only source of valid values there is.
 
 Each entry carries `value`, `min`, `max`, `min_flex`, `max_flex`,
-`percentage_target` and `description`. `min`/`max` are the quota for the
-*selected* committee, not for the pool, but they are a reasonable steer for the
-distribution to generate. `max_flex` of `-1` means unset, and
+`percentage_target`, `minmax_manual` and `comment`. `min`/`max` are the quota for
+the *selected* committee, not for the pool, but they are a reasonable steer for
+the distribution to generate. `max_flex` of `-1` means unset, and
 sortition-algorithms calculates a safe default; `min_flex`/`max_flex` are
 selection tolerances and constrain nothing about generated data.
+
+`percentage_target` is the share of the committee the value is meant to take, or
+`null` where the quota was set as seat counts alone. It is the better steer of
+the two for a distribution to generate, because `min`/`max` are that share
+rounded out to whole seats. `minmax_manual` says which way the two are wired: it
+is `false` while `min`/`max` are recalculated from the percentage whenever it or
+`number_to_select` changes, and `true` once an organiser has typed seat counts by
+hand and broken that link — so a `minmax_manual` entry is the one place the two
+can disagree deliberately.
+
+`comment` is the organiser's free-text note on the value, empty when none was
+written. On a category, `comment` plays the same role and `source_url` records
+where the figures came from — a census table, say. Both are notes for people, not
+data to generate from. `source_url` is empty or a full `http://`/`https://`
+address; nothing else is stored.
 
 **The join is exact.** A category is attached to the field whose `field_key`
 equals its `name` character for character. This mirrors selection: the data

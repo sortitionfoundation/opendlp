@@ -8,6 +8,7 @@ import pytest
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
@@ -516,3 +517,72 @@ class TestBackofficeCsvDelete:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             categories = uow.target_categories.get_by_assembly_id(assembly_with_targets.id)
             assert len(categories) == 0
+
+
+class TestDataTabCreateTargetsFromRespondents:
+    """The data page dialog that builds target categories from respondent columns."""
+
+    def _add_respondents(self, postgres_session_factory, assembly_id, respondents_data):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            for ext_id, attributes in respondents_data:
+                uow.respondents.add(Respondent(assembly_id=assembly_id, external_id=ext_id, attributes=attributes))
+            uow.commit()
+
+    @pytest.mark.db_semantics
+    def test_data_page_offers_the_respondent_columns(
+        self, logged_in_admin, existing_assembly: Assembly, postgres_session_factory
+    ):
+        self._add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [("1", {"Gender": "Male", "Region": "North"}), ("2", {"Gender": "Female", "Region": "South"})],
+        )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Create from respondent data" in html
+        assert 'value="Gender"' in html
+        assert 'value="Region"' in html
+
+    @pytest.mark.db_semantics
+    def test_creating_from_columns_lands_on_the_targets_page(
+        self, logged_in_admin, existing_assembly: Assembly, postgres_session_factory
+    ):
+        """The new categories carry no numbers yet, so the targets page is next."""
+        self._add_respondents(
+            postgres_session_factory,
+            existing_assembly.id,
+            [("1", {"Gender": "Male"}), ("2", {"Gender": "Female"})],
+        )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/targets/categories/add-from-columns",
+            data={"columns": ["Gender"]},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/assembly/{existing_assembly.id}/targets")
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            categories = uow.target_categories.get_by_assembly_id(existing_assembly.id)
+            assert [c.name for c in categories] == ["Gender"]
+            assert sorted(v.value for v in categories[0].values) == ["Female", "Male"]
+
+    @pytest.mark.db_semantics
+    def test_selecting_nothing_returns_to_the_data_page(
+        self, logged_in_admin, existing_assembly: Assembly, postgres_session_factory
+    ):
+        """Nothing was created, so there is nothing to go and set numbers for."""
+        self._add_respondents(postgres_session_factory, existing_assembly.id, [("1", {"Gender": "Male"})])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/targets/categories/add-from-columns",
+            data={},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert f"/backoffice/assembly/{existing_assembly.id}/data" in response.location

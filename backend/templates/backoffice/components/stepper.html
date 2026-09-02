@@ -2,6 +2,7 @@
 ABOUTME: Stepper component macro — numbered step navigation with tabs or wizard semantics
 ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="step"
 #}
+{% from "backoffice/components/icons.html" import icon_check_20, icon_warning_20 %}
 {% macro stepper(items=[], aria_label="", id="", mode="tabs", preserve_scroll=false, disabled=false) %}
     {#
     Numbered step navigation with two semantic modes.
@@ -92,9 +93,9 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
                               {{ extra_attrs | join(" ") | safe }}>
                             <span class="stepper-number" aria-hidden="true">
                                 {% if state == "done" %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 10 8 14 16 6"></polyline></svg>
+                                    {{ icon_check_20() }}
                                 {% elif state == "error" %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L18 17 L2 17 Z"></path><line x1="10" y1="9" x2="10" y2="12"></line><line x1="10" y1="15" x2="10.01" y2="15"></line></svg>
+                                    {{ icon_warning_20() }}
                                 {% else %}
                                     {{ loop.index }}
                                 {% endif %}
@@ -121,9 +122,9 @@ ABOUTME: mode="tabs" uses tablist ARIA; mode="wizard" uses list + aria-current="
                            {{ extra_attrs | join(" ") | safe }}>
                             <span class="stepper-number" aria-hidden="true">
                                 {% if state == "done" %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 10 8 14 16 6"></polyline></svg>
+                                    {{ icon_check_20() }}
                                 {% elif state == "error" %}
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L18 17 L2 17 Z"></path><line x1="10" y1="9" x2="10" y2="12"></line><line x1="10" y1="15" x2="10.01" y2="15"></line></svg>
+                                    {{ icon_warning_20() }}
                                 {% else %}
                                     {{ loop.index }}
                                 {% endif %}

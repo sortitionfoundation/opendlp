@@ -3,6 +3,7 @@ ABOUTME: Step 1 of the registration editor - the form HTML editor and assets pan
 ABOUTME: Included by assembly_registration.html when ?section=form
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_code %}
 {% from "backoffice/components/input.html" import textarea %}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/prefixed_url_input.html" import prefixed_url_input %}
@@ -57,14 +58,7 @@ ABOUTME: Included by assembly_registration.html when ?section=form
                         the href in capture phase, so the Cancel dirty-guard picks up the amended URL). #}
                         <div class="flex items-center gap-2" x-scroll-preserve-links>
                             {% set code_icon %}
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-4 w-4"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor"
-                                     stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                                </svg>
+                                {{ icon_code() }}
                             {% endset %}
                             {{ button(_("Show Form Skeleton"),
                             variant="tertiary",

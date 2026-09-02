@@ -1,15 +1,20 @@
-// ABOUTME: Unsaved-changes guard and close-registration confirmation for the registration page
+// ABOUTME: The registration page's share of the unsaved-changes guard, plus its close confirmation
 // ABOUTME: One of the slices composed into registrationPageController
+
+import { editGuard } from "./edit-guard.js";
 
 /**
  * Build the edit-guard slice of the registration page controller.
+ *
+ * The generic half - the dirty flag, the discard dialog, beforeunload - is
+ * `editGuard`. What is left here is what only this page has.
  *
  * Only edit mode can be dirty: markEditDirty() is wired to the editor forms'
  * input/change events, which also catch CodeMirror edits because .cm-content is
  * a contenteditable inside the form and its input events bubble. The stepper and
  * footer navigation are disabled while editing, so in-app leave paths funnel
- * through the Cancel button's guardLeave() and its discard modal; beforeunload
- * is the backstop for browser-level navigation - close tab, reload, back button.
+ * through the Cancel button's guardLeave() and its discard modal - which is why
+ * this page does not ask editGuard to intercept links for it.
  *
  * The editor renders as a takeover modal over the pages list, so this slice also
  * owns closing that modal: the close X is a guarded link, and Esc goes through
@@ -21,33 +26,15 @@
  * @returns {Object} a flat slice of Alpine component state
  */
 export function registrationEditGuard(options) {
-  return {
+  return Object.assign({}, editGuard(), {
     editMode: Boolean(options.editMode),
     listUrl: options.listUrl || "",
-    editDirty: false,
-    leaveModalOpen: false,
-    leaveUrl: "",
-    leaveGuardSuppressed: false,
     // Closing a registration is terminal - there is no reopen.
     confirmCloseOpen: false,
 
     init: function () {
-      var self = this;
-      if (!self.editMode) return;
-      window.addEventListener("beforeunload", function (event) {
-        if (!self.editDirty || self.leaveGuardSuppressed) return;
-        event.preventDefault();
-        event.returnValue = "";
-      });
-    },
-
-    markEditDirty: function () {
-      this.editDirty = true;
-    },
-
-    // Called on the editor form's submit so Save never trips the beforeunload guard.
-    allowLeave: function () {
-      this.leaveGuardSuppressed = true;
+      if (!this.editMode) return;
+      this.initEditGuard();
     },
 
     // Wired to Esc on the page root: closes the editor modal back to the pages
@@ -75,34 +62,6 @@ export function registrationEditGuard(options) {
       window.location.assign(this.listUrl);
     },
 
-    // Attached to leave-links (Cancel, and the editor modal's close X). Clean
-    // state falls through to normal navigation.
-    guardLeave: function (event) {
-      if (!this.editDirty) return;
-      event.preventDefault();
-      this.openLeaveModal(event.currentTarget.href);
-    },
-
-    openLeaveModal: function (url) {
-      var self = this;
-      self.leaveUrl = url;
-      self.leaveModalOpen = true;
-      self.$nextTick(function () {
-        if (self.$refs.keepEditingBtn) self.$refs.keepEditingBtn.focus();
-      });
-    },
-
-    closeLeaveModal: function () {
-      this.leaveModalOpen = false;
-      this.leaveUrl = "";
-    },
-
-    discardAndLeave: function () {
-      if (!this.leaveUrl) return;
-      this.leaveGuardSuppressed = true;
-      window.location.assign(this.leaveUrl);
-    },
-
     openConfirmClose: function () {
       var self = this;
       self.confirmCloseOpen = true;
@@ -114,5 +73,5 @@ export function registrationEditGuard(options) {
     cancelConfirmClose: function () {
       this.confirmCloseOpen = false;
     },
-  };
+  });
 }

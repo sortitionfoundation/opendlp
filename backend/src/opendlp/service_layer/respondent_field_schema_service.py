@@ -16,7 +16,6 @@ from opendlp.domain.respondent_field_schema import (
     FIXED_FIELD_TYPES,
     GROUP_DISPLAY_ORDER,
     IN_SCHEMA_FIXED_FIELDS,
-    SORT_ORDER_STEP,
     ChoiceOption,
     FieldOnRegistrationPage,
     FieldType,
@@ -25,7 +24,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
     humanise_field_key,
 )
-from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
+from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD, SORT_ORDER_STEP
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     InsufficientPermissions,

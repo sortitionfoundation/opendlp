@@ -3,6 +3,7 @@ ABOUTME: Split button component - primary action + dropdown menu of related acti
 ABOUTME: Composes .btn / .btn--{variant} / .btn--joined-* atoms; menu uses .menu / .menu-item
 #}
 
+{% from "backoffice/components/icons.html" import icon_chevron_down %}
 {% macro split_button(primary_text="", items=None, variant="primary", primary_type="submit", primary_attrs="", id="", aria_label_menu="") %}
     {#
     Split button: a primary action on the left and a chevron dropdown on the right
@@ -60,9 +61,7 @@ ABOUTME: Composes .btn / .btn--{variant} / .btn--joined-* atoms; menu uses .menu
                 aria-controls="{{ menu_id }}"
                 aria-label="{{ aria_label_menu if aria_label_menu else _('More actions') }}">
             <span class="btn-icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"/>
-                </svg>
+                {{ icon_chevron_down(classes="") }}
             </span>
         </button>
 

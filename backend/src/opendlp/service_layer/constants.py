@@ -7,3 +7,7 @@ ABOUTME: Neutral home for values used by multiple service modules."""
 # min and max. It is rare for the number of values for a single target category
 # to be over 20, so we use this as a rule of thumb for columns we suggest.
 MAX_DISTINCT_VALUES_FOR_AUTO_ADD = 20
+
+# Default sort_order gap — rows are seeded at multiples of this so drag-and-drop
+# reorder can slot a field between two existing ones before re-issuing.
+SORT_ORDER_STEP = 10

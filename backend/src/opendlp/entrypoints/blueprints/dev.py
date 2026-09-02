@@ -52,7 +52,6 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_or_create_csv_config,
     get_or_create_selection_settings,
-    import_targets_from_csv,
     update_assembly,
     update_csv_config,
     update_selection_settings,
@@ -128,6 +127,7 @@ from opendlp.service_layer.respondent_service import (
     import_respondents_from_csv,
     reset_selection_status,
 )
+from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.user_service import get_user_assemblies
 from opendlp.translations import gettext as _
 
@@ -371,15 +371,17 @@ def _handle_import_targets(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     replace_existing = params.get("replace_existing", True)
 
     try:
-        categories = import_targets_from_csv(
+        import_result = import_targets_from_csv(
             uow=uow,
             user_id=current_user.id,
             assembly_id=assembly_id,
             csv_content=csv_content,
             replace_existing=replace_existing,
         )
+        categories = import_result.categories
         return {
             "status": "success",
+            "warnings": import_result.warnings,
             "categories_count": len(categories),
             "total_values_count": sum(len(c.values) for c in categories),
             "categories": [

@@ -3,7 +3,7 @@ ABOUTME: Provides has_feature() to check if a feature is enabled at runtime."""
 
 import os
 
-from opendlp.config import to_bool
+from opendlp.config import is_production, to_bool
 
 # Scan environment at import time: collect all FF_* vars, strip prefix, normalise to lowercase
 _flags: dict[str, bool] = {}
@@ -55,3 +55,20 @@ def old_dashboard_route_enabled() -> bool:
     the route is fully disabled.
     """
     return has_feature("old_default_dashboard") or has_feature("dashboard_switch_links")
+
+
+def showcase_enabled() -> bool:
+    """Whether the component showcase at /backoffice/showcase is reachable.
+
+    The showcase is a design-system reference, not a feature of the product,
+    and it takes no login. Outside production it is always there - developers
+    and the tests rely on it. On a production install it is opt-in with
+    FF_SHOWCASE, so a staging server can offer it to designers and reviewers
+    while the live install does not publish it at all.
+
+    The default therefore depends on the environment, which no other flag does.
+    That is deliberate: the alternative is FF_SHOWCASE=true in every developer's
+    .env and in the test environment, which is a trip hazard for a page that
+    nothing in production links to.
+    """
+    return not is_production() or has_feature("showcase")

@@ -18,6 +18,7 @@ import opendlp.logging
 from opendlp import bootstrap, config
 from opendlp.entrypoints.context_processors import inject_feature_flags, inject_template_globals
 from opendlp.entrypoints.extensions import init_extensions
+from opendlp.entrypoints.template_filters import register_template_filters
 from opendlp.feature_flags import has_feature
 
 if TYPE_CHECKING:
@@ -82,6 +83,16 @@ def create_app(config_name: str = "", uow_factory: bootstrap.UowFactory | None =
     # Register context processors
     register_context_processors(app)
 
+    # Register template filters
+    register_template_filters(app)
+
+    # A Jinja global rather than a context processor, so that it is available
+    # wherever url_for is - macros imported with {% from %} are rendered
+    # without the template context, and the pages that need to ask this are
+    # built out of exactly those. Settled here, alongside the blueprint set it
+    # describes, so the two cannot disagree.
+    app.jinja_env.globals["dev_tools_enabled"] = config.dev_tools_enabled()
+
     # Register blueprints
     register_blueprints(app)
 
@@ -141,7 +152,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(health_bp)
     app.register_blueprint(backoffice_bp, url_prefix="/backoffice")
     app.register_blueprint(backoffice_registration_bp, url_prefix="/backoffice")
-    if not config.is_production():
+    if config.dev_tools_enabled():
         from .blueprints.dev import dev_bp  # noqa: PLC0415
 
         app.register_blueprint(dev_bp, url_prefix="/backoffice")

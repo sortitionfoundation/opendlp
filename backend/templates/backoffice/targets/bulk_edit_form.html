@@ -1,0 +1,398 @@
+{#
+ABOUTME: One form covering every target category and value, for edit-all/save-all
+ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed by save_all_parser
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_trash_material, icon_undo %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
+{% from "backoffice/components/input.html" import input %}
+
+{# ────────────────────────────────────────────────────────────────────────
+   The row controls come from the Figma at node 4908:15647. They are sized and
+   coloured by `.btn-icon svg`, so they are drawn with no class of their own and
+   the button variant decides the colour - grey when the control is disabled.
+──────────────────────────────────────────────────────────────────────── #}
+{#
+    A respondent or selected count, read-only, for one value row.
+
+    The numbers describe the respondent data, which this form never changes, so
+    they are what they were when the page loaded. A row whose value is blank -
+    or names something no respondent answered - has nothing to count.
+#}
+{% macro count_cell(counts, row_value) %}
+    {% set count = counts.get(row_value) if counts and row_value else none %}
+    <td class="py-3 px-4 text-left" style="color: var(--color-body-text)">
+        {% if count is not none %}
+            {{ count }}
+        {% else %}
+            <span style="color: var(--color-secondary-text);">&mdash;</span>
+        {% endif %}
+    </td>
+{% endmacro %}
+
+{% macro value_row(category_id, row_id, val=None, is_new=false, prefill="", errors={}, respondent_counts=None, selected_counts=None, show_counts=false, show_selected=false) %}
+    {% set val_prefix = "cat[" ~ category_id ~ "][values][" ~ row_id ~ "]" %}
+    {% set field_id = "bulk-" ~ category_id ~ "-" ~ row_id %}
+    {% set can_relink = val and val.minmax_manual and val.percentage_target is not none %}
+    {# A row redisplayed after a rejected save carries the pending deletion it
+       was submitted with, or saving again would quietly undo it. #}
+    {% set row_deleted = "true" if val and val.deleted else "false" %}
+    {% set row_error = errors.get(val_prefix, "") %}
+    {# Every input in the row is labelled by a column heading, which does not name
+       a form control to a screen reader. Naming the row too is what tells them
+       which value they are editing when there are a dozen rows on the page. #}
+    {% set row_name = (val.value if val else prefill) or _("the new value") %}
+    <tr data-value-row="true"
+        data-deleted="{{ row_deleted }}"
+        x-data="bulkTargetsValueRow({ isNew: {{ 'true' if is_new else 'false' }}, deleted: {{ row_deleted }} })"
+        :class="rowClass"
+        style="border-bottom: 1px solid var(--color-borders-dividers)">
+        <td class="py-3 pr-4">
+            <input type="hidden"
+                   name="{{ val_prefix }}[deleted]"
+                   value="{{ row_deleted }}"
+                   x-ref="deletedField" />
+            <input type="hidden"
+                   name="{{ val_prefix }}[relink]"
+                   value="{{ "true" if val and val.relink else "false" }}"
+                   x-ref="relinkField" />
+            {# Carried so a rejected save redisplays the "Set by hand" badge and the
+               re-link button. The save works the flag out for itself; this only
+               decides what the form shows. #}
+            <input type="hidden"
+                   name="{{ val_prefix }}[minmax_manual]"
+                   value="{{ "true" if val and val.minmax_manual else "false" }}" />
+            {{ input(name=val_prefix ~ "[value]",
+            id=field_id ~ "-value",
+            value=val.value if val else prefill,
+            error=errors.get(val_prefix ~ "[value]", ""),
+            required=true,
+            aria_label=_("Name of %(row)s", row=row_name),
+            attrs='data-field="value"') }}
+            {% if row_error %}
+                <p class="text-body-sm mt-1"
+                   style="color: var(--color-primary-action);
+                          white-space: pre-line">{{ row_error }}</p>
+            {% endif %}
+            {% if can_relink %}
+                <span class="text-label-md px-1.5 py-0.5 rounded inline-block mt-1"
+                      x-show="!relink"
+                      style="background-color: var(--color-warning-400);
+                             color: white"
+                      title="{{ _('Min and max were set by hand, not calculated from the percentage') }}">
+                    {{ _("Set by hand") }}
+                </span>
+                <span class="text-body-sm inline-block mt-1"
+                      x-show="relink"
+                      x-cloak
+                      style="color: var(--color-secondary-text);">
+                    {{ _("Min and max will be recalculated when you save.") }}
+                </span>
+            {% endif %}
+        </td>
+        <td class="py-3 px-4">
+            {{ input(name=val_prefix ~ "[percentage]",
+            id=field_id ~ "-pct",
+            error=errors.get(val_prefix ~ "[percentage]", ""),
+            type="number",
+            value=val.percentage_target if val and val.percentage_target is not none else "",
+            classes="w-24",
+            aria_label=_("Population share for %(row)s, in percent", row=row_name),
+            attrs='min="0" max="100" step="0.1" data-field="percentage"') }}
+        </td>
+        {% if show_counts %}{{ count_cell(respondent_counts, val.value if val else prefill) }}{% endif %}
+        {% if show_selected %}{{ count_cell(selected_counts, val.value if val else prefill) }}{% endif %}
+        <td class="py-3 px-4">
+            {{ input(name=val_prefix ~ "[min]",
+            id=field_id ~ "-min",
+            error=errors.get(val_prefix ~ "[min]", ""),
+            type="number",
+            value=val.min if val else "",
+            classes="w-20",
+            aria_label=_("Minimum for %(row)s", row=row_name),
+            attrs='min="0" data-field="min" :disabled="relink"') }}
+        </td>
+        <td class="py-3 px-4">
+            {{ input(name=val_prefix ~ "[max]",
+            id=field_id ~ "-max",
+            error=errors.get(val_prefix ~ "[max]", ""),
+            type="number",
+            value=val.max if val else "",
+            classes="w-20",
+            aria_label=_("Maximum for %(row)s", row=row_name),
+            attrs='min="0" data-field="max" :disabled="relink"') }}
+        </td>
+        <td class="py-3 px-4">
+            {{ input(name=val_prefix ~ "[comment]",
+            id=field_id ~ "-comment",
+            error=errors.get(val_prefix ~ "[comment]", ""),
+            value=val.comment if val else "",
+            placeholder=_("Why min and max were set by hand"),
+            aria_label=_("Comment on %(row)s", row=row_name)) }}
+        </td>
+        <td class="py-3 pl-4 text-right">
+            {# Built as blocks rather than by concatenation: `~` under autoescape
+               escapes the quotes, and an escaped @click is not a handler. #}
+            {% set relink_attrs %}@click="usePercentage()" title="{{ _("Recalculate min and max from the percentage") }}"{% endset %}
+            {# The tooltip and the accessible name say the same thing, so a screen
+               reader user and a mouse user are told the button does the same job. #}
+            {% set delete_attrs %}@click="remove()" title="{{ _("Delete value") }}"{% endset %}
+            <div class="flex items-center justify-end gap-2">
+                {# On every row, greyed out where there is nothing to re-link. A
+                   control that comes and goes is harder to find than one that is
+                   plainly unavailable, and the row keeps its shape either way. #}
+                {{ button(variant="icon",
+                icon=icon_undo(),
+                aria_label=_("Recalculate min and max from the percentage"),
+                disabled=not can_relink,
+                alpine_disabled="relink" if can_relink else "",
+                attrs=relink_attrs) }}
+                <span x-show="!deleted">
+                    {{ button(variant="icon",
+                    icon=icon_trash_material(),
+                    aria_label=_("Delete value"),
+                    attrs=delete_attrs) }}
+                </span>
+                <span x-show="deleted" x-cloak>
+                    {{ button(_("Undo"), variant="tertiary", attrs='@click="undoRemove()"') }}
+                </span>
+            </div>
+        </td>
+    </tr>
+{% endmacro %}
+
+{% macro category_block(cat_id, category=None, missing_values=None, errors={}, respondent_counts=None, selected_counts=None, first_row_id="") %}
+    {% set cat_prefix = "cat[" ~ cat_id ~ "]" %}
+    {# Both count columns are only worth a column when there is something to
+       count, so a category with no matching respondent data shows neither. #}
+    {% set show_counts = respondent_counts is not none and respondent_counts %}
+    {% set show_selected = selected_counts is not none and selected_counts %}
+    {% set column_count = 6 + (1 if show_counts else 0) + (1 if show_selected else 0) %}
+    {% set block_deleted = "true" if category and category.deleted else "false" %}
+    {% set block_error = errors.get(cat_prefix, "") %}
+    {# The label is a data attribute rather than part of the x-data expression:
+       Jinja escapes an apostrophe to &#39;, the parser turns it back into one
+       before Alpine reads the attribute, and a translation like "L'aucun" would
+       then break the whole expression - taking the totals, delete and reorder
+       with it. #}
+    <div class="mb-8 rounded-lg overflow-hidden p-6"
+         id="bulk-category-{{ cat_id }}"
+         data-empty-label="{{ _('None') }}"
+         {% if category %}
+             x-data="bulkTargetsCategory({ deleted: {{ block_deleted }} })"
+         {% else %}
+             x-data="bulkTargetsCategory({ isNew: true })"
+         {% endif %}
+         @input="recalculate()"
+         @targets-changed="recalculate()"
+         style="background-color: var(--color-tables-cards);
+                border: 1px solid var(--color-borders-dividers)">
+        <input type="hidden"
+               name="{{ cat_prefix }}[deleted]"
+               value="{{ block_deleted }}"
+               x-ref="deletedField" />
+        <input type="hidden"
+               name="{{ cat_prefix }}[sort_order]"
+               value="{{ category.sort_order if category else '' }}"
+               data-sort-order="true" />
+        {# ── Pending Deletion Banner ──────────────── #}
+        <div x-show="deleted"
+             x-cloak
+             class="rounded-lg p-3 flex items-center gap-3"
+             style="background-color: var(--color-warning-100);
+                    border: 1px solid var(--color-warning-400)">
+            <span style="color: var(--color-warning-600);">
+                {% if category %}
+                    {{ _('"%(name)s" and all its values will be deleted when you save.', name=category.name) }}
+                {% endif %}
+            </span>
+            {{ button(_("Undo"), variant="tertiary", attrs='@click="undoDelete()"') }}
+        </div>
+        <div x-show="!deleted">
+            {% if block_error %}
+                <p class="text-body-sm mb-2"
+                   style="color: var(--color-primary-action);
+                          white-space: pre-line">{{ block_error }}</p>
+            {% endif %}
+            <div class="mb-4 flex flex-wrap items-end gap-3">
+                {{ input(name=cat_prefix ~ "[name]",
+                id="bulk-name-" ~ cat_id|string,
+                error=errors.get(cat_prefix ~ "[name]", ""),
+                label=_("Category Name"),
+                value=category.name if category else "",
+                required=true,
+                attrs='data-category-name="true"') }}
+                {{ input(name=cat_prefix ~ "[source_url]",
+                id="bulk-source-" ~ cat_id|string,
+                error=errors.get(cat_prefix ~ "[source_url]", ""),
+                label=_("Source"),
+                value=category.source_url if category else "",
+                placeholder="https://") }}
+                {{ input(name=cat_prefix ~ "[comment]",
+                id="bulk-comment-" ~ cat_id|string,
+                error=errors.get(cat_prefix ~ "[comment]", ""),
+                label=_("Comment"),
+                value=category.comment if category else "") }}
+                {# Blocks rather than concatenation: `~` under autoescape escapes
+                   the quotes, and an escaped @click is not a handler. #}
+                {% set move_down_attrs %}@click="moveDown()" title="{{ _("Move this target down") }}"{% endset %}
+                {% set move_up_attrs %}@click="moveUp()" title="{{ _("Move this target up") }}"{% endset %}
+                {# Pushed to the right edge, away from the fields, so the controls
+                   that reshape the page are not mixed in with the ones that fill
+                   it in. Down before up, as in the Figma at node 4771:32435. #}
+                <div class="ml-auto flex items-center gap-2">
+                    {{ button(variant="icon",
+                    icon=icon_chevron_down(stroke_width="1.5"),
+                    aria_label=_("Move down"),
+                    attrs=move_down_attrs) }}
+                    {{ button(variant="icon",
+                    icon=icon_chevron_up(stroke_width="1.5"),
+                    aria_label=_("Move up"),
+                    attrs=move_up_attrs) }}
+                    {{ button(_("Delete target"), variant="danger", attrs='@click="markDeleted()"') }}
+                </div>
+            </div>
+            <table class="w-full text-body-md" style="border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
+                        <th class="py-3 pr-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Value") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Population (%%)") }}</th>
+                        {% if show_counts %}
+                            <th class="py-3 px-4 text-left text-label-md"
+                                style="color: var(--color-headings)">
+                                <span class="inline-flex items-center gap-1">
+                                    {{ _("Respondents") }}
+                                    {{ info_icon(_("Counts people in the pool, and those selected or confirmed. Withdrawn people and test submissions are not counted.")) }}
+                                </span>
+                            </th>
+                        {% endif %}
+                        {% if show_selected %}
+                            <th class="py-3 px-4 text-left text-label-md"
+                                style="color: var(--color-headings)">
+                                <span class="inline-flex items-center gap-1">
+                                    {{ _("Selected") }}
+                                    {{ info_icon(_("Counts people who have been selected, including those who have since confirmed their place.")) }}
+                                </span>
+                            </th>
+                        {% endif %}
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Min") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Max") }}</th>
+                        <th class="py-3 px-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Comment") }}</th>
+                        <th class="py-3 pl-4 text-right text-label-md"
+                            style="color: var(--color-headings)">{{ _("Actions") }}</th>
+                    </tr>
+                </thead>
+                <tbody x-ref="rows">
+                    {% for val in (category.values if category else []) or [] %}
+                        {{ value_row(cat_id, val.value_id, val=val, errors=errors, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
+                    {% endfor %}
+                    {# A target with no values is not worth saving, so a block
+                       cloned for a new one arrives with the row its author is
+                       about to fill in - rather than an empty table and a
+                       button to press first. #}
+                    {% if first_row_id %}
+                        {{ value_row(cat_id, first_row_id, is_new=true, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
+                    {% endif %}
+                    {# Blank rows are cloned from here, so the markup has exactly
+                       one definition. __ID__ becomes new-<n> on the way in. #}
+                    <template x-ref="rowTemplate">
+                        {{ value_row(cat_id, "__ID__", is_new=true, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
+                    </template>
+                    {% if missing_values %}
+                        <template x-ref="missingTemplate">
+                            {% for mv in missing_values %}
+                                {{ value_row(cat_id, "__ID__", is_new=true, prefill=mv, respondent_counts=respondent_counts, selected_counts=selected_counts, show_counts=show_counts, show_selected=show_selected) }}
+                            {% endfor %}
+                        </template>
+                    {% endif %}
+                </tbody>
+                {# ── Add Value Row ─────────────────────────── #}
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
+                        <td colspan="{{ column_count }}" class="py-3">
+                            <div class="flex items-center gap-3">
+                                {{ button(_("Add value"), variant="secondary", attrs='@click="addValue()"') }}
+                                {% if missing_values %}
+                                    <span x-show="!missingAdded">
+                                        {{ button(_("Add values found in respondent data"), variant="secondary", attrs='@click="addMissingValues()"') }}
+                                    </span>
+                                    <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                                        {{ _("Not yet targeted: %(values)s", values=missing_values | join(", ")) }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr style="border-top: 2px solid var(--color-borders-dividers);">
+                        <th class="py-3 pr-4 text-left text-label-md"
+                            style="color: var(--color-headings)">{{ _("Total") }}</th>
+                        <td class="py-3 px-4 text-label-md font-bold targets-total"
+                            :class="percentageTotalClass"
+                            x-text="percentageTotal"></td>
+                        {% if show_counts %}
+                            <td class="py-3 px-4 text-left text-label-md font-bold"
+                                style="color: var(--color-headings)">{{ respondent_counts.values() | sum }}</td>
+                        {% endif %}
+                        {% if show_selected %}
+                            <td class="py-3 px-4 text-left text-label-md font-bold"
+                                style="color: var(--color-headings)">{{ selected_counts.values() | sum }}</td>
+                        {% endif %}
+                        <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="minTotal"></td>
+                        <td class="py-3 px-4 text-label-md font-bold targets-total" x-text="maxTotal"></td>
+                        <td class="py-3 px-4"></td>
+                        <td class="py-3 pl-4"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+{% endmacro %}
+
+{# A rejected save re-renders from what was submitted rather than from the
+   database, so nothing typed into the form is lost while it is being fixed. #}
+{% set form_categories = pending_categories if pending_categories is defined and pending_categories else target_categories %}
+{% set errors = field_errors if field_errors is defined and field_errors else {} %}
+{# No buttons of its own: "Discard changes" and "Save" sit in the sticky bar at
+   the foot of the page, and reach this form by its id.
+
+   Anything typed marks the page dirty, so the edit guard knows there is
+   something to lose. Adding, deleting and reordering fire no input event, so
+   they announce themselves with the "targets-changed" the rows already bubble.
+   Submitting stands the guard down: saving is the one way out that keeps the
+   edits. #}
+<form method="post"
+      action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}"
+      id="save-all-form"
+      @input="markEditDirty()"
+      @change="markEditDirty()"
+      @targets-changed="markEditDirty()"
+      @submit="allowLeave()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <div id="bulk-categories" x-ref="categories">
+        {% for category in form_categories %}
+            {% set respondent_counts = all_respondent_counts.get(category.name) if all_respondent_counts is defined and all_respondent_counts else None %}
+            {% set selected_counts = all_selected_counts.get(category.name) if has_selected is defined and has_selected and all_selected_counts is defined and all_selected_counts else None %}
+            {% set target_value_names = (category.values or []) | map(attribute='value') | list %}
+            {% set missing_values = [] %}
+            {% if respondent_counts %}
+                {% for rv in respondent_counts.keys() %}
+                    {% if rv not in target_value_names %}
+                        {% if missing_values.append(rv) %}{% endif %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            {{ category_block(category.id, category=category, missing_values=missing_values, errors=errors,
+            respondent_counts=respondent_counts, selected_counts=selected_counts) }}
+        {% endfor %}
+    </div>
+    {# Blank category blocks are cloned from here by the "Add target" dialog;
+       __CAT__ becomes new-<n>, and the one row it carries __ROW__ becomes new-0. #}
+    <template x-ref="categoryTemplate">{{ category_block("__CAT__", first_row_id="__ROW__") }}</template>
+</form>

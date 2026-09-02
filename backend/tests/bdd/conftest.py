@@ -469,7 +469,7 @@ def _login(page: Page, email: str, password: str) -> None:
     page.fill('input[name="email"]', email)
     page.fill('input[name="password"]', password)
     page.click('button[type="submit"]')
-    page.wait_for_url(Urls.dashboard)
+    page.wait_for_url(Urls.any_dashboard)
 
 
 def _is_admin_signed_in(page: Page) -> bool:

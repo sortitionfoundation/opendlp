@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 # Bumped when the shape changes in a way a consumer has to notice. Consumers are
 # outside this repo, so they cannot be updated in the same commit as the change.
-SPEC_VERSION = 1
+SPEC_VERSION = 2
 
 
 def _target_value_payload(value: TargetValue) -> dict[str, Any]:
@@ -34,14 +34,16 @@ def _target_value_payload(value: TargetValue) -> dict[str, Any]:
         "min_flex": value.min_flex,
         "max_flex": value.max_flex,
         "percentage_target": value.percentage_target,
-        "description": value.description,
+        "minmax_manual": value.minmax_manual,
+        "comment": value.comment,
     }
 
 
 def _target_category_payload(category: TargetCategory) -> dict[str, Any]:
     return {
         "name": category.name,
-        "description": category.description,
+        "comment": category.comment,
+        "source_url": category.source_url,
         "values": [_target_value_payload(v) for v in category.values],
     }
 

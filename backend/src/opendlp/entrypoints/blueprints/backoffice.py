@@ -4,7 +4,7 @@ ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source
 import uuid
 
 import structlog
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -22,7 +22,9 @@ from opendlp.entrypoints.forms import (
     DbSelectionSettingsForm,
     EditAssemblyForm,
     EditAssemblyGSheetForm,
+    UploadTargetsCsvForm,
 )
+from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_nav_context,
@@ -45,6 +47,8 @@ from opendlp.service_layer.registration_page_service import (
     list_registration_pages,
 )
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
+from opendlp.service_layer.target_respondent_helpers import get_column_distinct_counts
+from opendlp.service_layer.target_service import get_targets_for_assembly
 from opendlp.service_layer.user_service import (
     get_assembly_members,
     get_user_assemblies,
@@ -61,7 +65,13 @@ logger = structlog.get_logger(__name__)
 
 @backoffice_bp.route("/showcase")
 def showcase() -> ResponseReturnValue:
-    """Component showcase page demonstrating the backoffice design system."""
+    """Component showcase page demonstrating the backoffice design system.
+
+    Takes no login, so that a designer or a reviewer can be sent a link. That is
+    also why a production install has to opt in - see showcase_enabled().
+    """
+    if not showcase_enabled():
+        abort(404)
     return render_template("backoffice/showcase.html"), 200
 
 
@@ -393,97 +403,134 @@ def update_number_to_select(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+def render_assembly_data_page(
+    assembly_id: uuid.UUID,
+    targets_upload_form: UploadTargetsCsvForm | None = None,
+    preferred_source: str = "",
+) -> str:
+    """Render the assembly data page.
+
+    Shared with the targets blueprint, which owns the targets CSV upload route
+    but not the page the form is on: a rejected upload re-renders this page with
+    `targets_upload_form` carrying the errors, rather than redirecting and
+    leaving the reason in a flash message away from the field. That caller also
+    names the source, because a POST carries no `?source=` to read it from.
+
+    Raises the same exceptions as the service functions it calls.
+    """
+    google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
+
+    nav_uow = bootstrap.get_flask_uow()
+    with nav_uow:
+        nav = get_assembly_nav_context(
+            nav_uow,
+            current_user.id,
+            assembly_id,
+            preferred_source or request.args.get("source", ""),
+        )
+
+    # Get selection settings for gsheet display and form population.
+    # A single UnitOfWork is reused for the sequential reads below.
+    uow = bootstrap.get_flask_uow()
+    sel_settings = None
+    with uow:
+        try:
+            sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
+        except Exception as sel_error:
+            logger.exception("Error loading selection settings", error=str(sel_error))
+
+    # Set up gsheet form if gsheet source is selected
+    gsheet_mode = "new"
+    gsheet_form = None
+    if nav.data_source == "gsheet":
+        mode_param = request.args.get("mode", "")
+        gsheet_mode = ("edit" if mode_param == "edit" else "view") if nav.gsheet else "new"
+        if nav.gsheet:
+            gsheet_form = EditAssemblyGSheetForm(
+                obj=nav.gsheet,
+                id_column=sel_settings.id_column if sel_settings else "",
+                check_same_address=sel_settings.check_same_address if sel_settings else True,
+                check_same_address_cols_string=sel_settings.check_same_address_cols_string if sel_settings else "",
+                columns_to_keep_string=sel_settings.columns_to_keep_string if sel_settings else "",
+            )
+        else:
+            gsheet_form = CreateAssemblyGSheetForm()
+
+    # Set up CSV settings form if CSV source is selected
+    csv_settings_form = None
+    csv_available_columns: list[str] = []
+    csv_mode = "view"  # Default to view mode
+    csv_config = None
+    # What the "Create from respondent data" dialog on the targets card needs:
+    # the columns it can offer, how many distinct answers each holds, and the
+    # categories that already cover one.
+    target_categories: list = []
+    respondent_attribute_columns: list[str] = []
+    column_distinct_counts: dict[str, int] = {}
+    if nav.data_source == "csv":
+        # Determine mode (view or edit)
+        mode_param = request.args.get("mode", "")
+        csv_mode = "edit" if mode_param == "edit" else "view"
+
+        # Get or create CSV config (reusing the UnitOfWork from above)
+        with uow:
+            csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+
+            # Get available columns from respondents for validation hints
+            csv_available_columns = get_respondent_attribute_columns(uow, assembly_id)
+
+            target_categories = get_targets_for_assembly(uow, current_user.id, assembly_id)
+
+        # The id column identifies a respondent rather than describing them,
+        # so it is never a target category.
+        respondent_attribute_columns = [
+            column for column in csv_available_columns if column != csv_config.csv_id_column
+        ]
+        if respondent_attribute_columns:
+            # Opens its own UnitOfWork, so it stays outside the block above.
+            column_distinct_counts = get_column_distinct_counts(assembly_id, respondent_attribute_columns)
+
+        # Create form with current values from SelectionSettings
+        csv_settings_form = DbSelectionSettingsForm(
+            data={
+                "check_same_address": sel_settings.check_same_address if sel_settings else True,
+                "check_same_address_cols_string": sel_settings.check_same_address_cols_string if sel_settings else "",
+                "columns_to_keep_string": sel_settings.columns_to_keep_string if sel_settings else "",
+            },
+            available_columns=csv_available_columns,
+        )
+
+    return render_template(
+        "backoffice/assembly_data.html",
+        assembly=nav.assembly,
+        data_source=nav.data_source,
+        data_source_locked=nav.data_source_locked,
+        gsheet=nav.gsheet,
+        selection_settings=sel_settings,
+        gsheet_mode=gsheet_mode,
+        gsheet_form=gsheet_form,
+        google_service_account_email=google_service_account_email,
+        targets_enabled=nav.targets_enabled,
+        respondents_enabled=nav.respondents_enabled,
+        selection_enabled=nav.selection_enabled,
+        csv_status=nav.csv_status,
+        csv_settings_form=csv_settings_form,
+        csv_available_columns=csv_available_columns,
+        csv_mode=csv_mode,
+        csv_config=csv_config,
+        target_categories=target_categories,
+        respondent_attribute_columns=respondent_attribute_columns,
+        column_distinct_counts=column_distinct_counts,
+        targets_upload_form=targets_upload_form,
+    )
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/data")
 @login_required
 def view_assembly_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly data page."""
     try:
-        google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
-
-        nav_uow = bootstrap.get_flask_uow()
-        with nav_uow:
-            nav = get_assembly_nav_context(
-                nav_uow,
-                current_user.id,
-                assembly_id,
-                request.args.get("source", ""),
-            )
-
-        # Get selection settings for gsheet display and form population.
-        # A single UnitOfWork is reused for the sequential reads below.
-        uow = bootstrap.get_flask_uow()
-        sel_settings = None
-        with uow:
-            try:
-                sel_settings = get_or_create_selection_settings(uow, current_user.id, assembly_id)
-            except Exception as sel_error:
-                logger.exception("Error loading selection settings", error=str(sel_error))
-
-        # Set up gsheet form if gsheet source is selected
-        gsheet_mode = "new"
-        gsheet_form = None
-        if nav.data_source == "gsheet":
-            mode_param = request.args.get("mode", "")
-            gsheet_mode = ("edit" if mode_param == "edit" else "view") if nav.gsheet else "new"
-            if nav.gsheet:
-                gsheet_form = EditAssemblyGSheetForm(
-                    obj=nav.gsheet,
-                    id_column=sel_settings.id_column if sel_settings else "",
-                    check_same_address=sel_settings.check_same_address if sel_settings else True,
-                    check_same_address_cols_string=sel_settings.check_same_address_cols_string if sel_settings else "",
-                    columns_to_keep_string=sel_settings.columns_to_keep_string if sel_settings else "",
-                )
-            else:
-                gsheet_form = CreateAssemblyGSheetForm()
-
-        # Set up CSV settings form if CSV source is selected
-        csv_settings_form = None
-        csv_available_columns: list[str] = []
-        csv_mode = "view"  # Default to view mode
-        csv_config = None
-        if nav.data_source == "csv":
-            # Determine mode (view or edit)
-            mode_param = request.args.get("mode", "")
-            csv_mode = "edit" if mode_param == "edit" else "view"
-
-            # Get or create CSV config (reusing the UnitOfWork from above)
-            with uow:
-                csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
-
-                # Get available columns from respondents for validation hints
-                csv_available_columns = get_respondent_attribute_columns(uow, assembly_id)
-
-            # Create form with current values from SelectionSettings
-            csv_settings_form = DbSelectionSettingsForm(
-                data={
-                    "check_same_address": sel_settings.check_same_address if sel_settings else True,
-                    "check_same_address_cols_string": sel_settings.check_same_address_cols_string
-                    if sel_settings
-                    else "",
-                    "columns_to_keep_string": sel_settings.columns_to_keep_string if sel_settings else "",
-                },
-                available_columns=csv_available_columns,
-            )
-
-        return render_template(
-            "backoffice/assembly_data.html",
-            assembly=nav.assembly,
-            data_source=nav.data_source,
-            data_source_locked=nav.data_source_locked,
-            gsheet=nav.gsheet,
-            selection_settings=sel_settings,
-            gsheet_mode=gsheet_mode,
-            gsheet_form=gsheet_form,
-            google_service_account_email=google_service_account_email,
-            targets_enabled=nav.targets_enabled,
-            respondents_enabled=nav.respondents_enabled,
-            selection_enabled=nav.selection_enabled,
-            csv_status=nav.csv_status,
-            csv_settings_form=csv_settings_form,
-            csv_available_columns=csv_available_columns,
-            csv_mode=csv_mode,
-            csv_config=csv_config,
-        ), 200
+        return render_assembly_data_page(assembly_id), 200
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
@@ -717,8 +764,11 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def search_demo() -> ResponseReturnValue:
     """Demo search endpoint for showcase page.
 
-    Returns mock data for demonstrating the search_dropdown component.
+    Returns mock data for demonstrating the search_dropdown component. Goes
+    wherever the showcase goes - it is the page's own endpoint.
     """
+    if not showcase_enabled():
+        abort(404)
     search_term = request.args.get("q", "").strip().lower()
 
     # Mock data for demonstration

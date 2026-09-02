@@ -164,11 +164,6 @@ class ChoiceOption:
         return cls(value=data["value"], help_text=data.get("help_text", ""))
 
 
-# Default sort_order gap — rows are seeded at multiples of this so drag-and-drop
-# reorder can slot a field between two existing ones before re-issuing.
-SORT_ORDER_STEP = 10
-
-
 class RespondentFieldDefinition:
     """One field in the per-assembly respondent schema.
 

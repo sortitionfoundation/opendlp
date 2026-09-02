@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<!--
+ABOUTME: Explainer with embedded mermaid flow charts for the two set-up flows an organiser follows.
+ABOUTME: Box 1 is setting up and managing selection targets; box 2 is setting up the registration fields that feed them.
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Workflow: setting up targets, then registration fields</title>
+        <style>
+            :root {
+                --link: #1d70b8;
+                --ink: #0b0c0c;
+                --muted: #505a5f;
+                --paper: #ffffff;
+                --panel: #f3f2f1;
+                --highlight: #fff7d6;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                max-width: 1100px;
+                margin: 2rem auto;
+                padding: 0 1.25rem 4rem;
+                color: var(--ink);
+                line-height: 1.5;
+                background: var(--paper);
+            }
+            h1, h2, h3 { color: var(--ink); line-height: 1.2; }
+            h1 { border-bottom: 3px solid var(--link); padding-bottom: .5rem; margin-top: 0; }
+            h2 { margin-top: 2.5rem; border-bottom: 1px solid #b1b4b6; padding-bottom: .25rem; }
+            h3 { margin-top: 1.75rem; }
+            a { color: var(--link); }
+            p.lede { font-size: 1.1rem; color: var(--muted); }
+
+            .legend {
+                display: flex;
+                gap: .5rem;
+                flex-wrap: wrap;
+                font-size: .85rem;
+                margin: 1rem 0 .5rem;
+            }
+            .legend span {
+                padding: .2rem .55rem;
+                border-radius: 3px;
+                border: 1px solid rgba(0,0,0,.15);
+            }
+            .leg-pre    { background: #d7ccc8; }
+            .leg-hub    { background: #cce2f7; }
+            .leg-target { background: #fad7a8; }
+            .leg-field  { background: #c8e6c9; }
+            .leg-decide { background: #f8bbd0; }
+            .leg-form   { background: #f3f2f1; }
+            .leg-check  { background: #fff7d6; }
+            .leg-done   { background: #e1bee7; }
+
+            .flowchart {
+                background: var(--panel);
+                padding: 1rem;
+                border-radius: 4px;
+                overflow-x: auto;
+                margin: 1rem 0 .5rem;
+            }
+            .hint {
+                font-size: .9rem;
+                color: var(--muted);
+                margin: 0 0 2rem;
+            }
+
+            details {
+                background: #f8f8f8;
+                border-left: 4px solid var(--link);
+                padding: .75rem 1rem;
+                margin: .5rem 0;
+                border-radius: 2px;
+            }
+            details summary {
+                cursor: pointer;
+                font-weight: 600;
+            }
+            details[open] summary { margin-bottom: .5rem; }
+
+            .callout {
+                background: var(--highlight);
+                border-left: 4px solid #b58840;
+                padding: .75rem 1rem;
+                margin: 1rem 0;
+                border-radius: 2px;
+            }
+            .callout p:last-child { margin-bottom: 0; }
+
+            .glossary dt {
+                font-weight: 700;
+                margin-top: 1.25rem;
+                color: var(--link);
+            }
+            .glossary dd {
+                margin-left: 1.25rem;
+                margin-top: .25rem;
+            }
+            code {
+                background: #eef;
+                padding: 1px 5px;
+                border-radius: 2px;
+                font-size: .9em;
+                word-break: break-all;
+            }
+            ul, ol { padding-left: 1.4rem; }
+            li { margin: .15rem 0; }
+
+            table {
+                border-collapse: collapse;
+                margin: .5rem 0;
+                font-size: .95rem;
+            }
+            th, td {
+                border: 1px solid #b1b4b6;
+                padding: .35rem .6rem;
+                text-align: left;
+            }
+            th { background: var(--panel); }
+
+  /* Highlight a section briefly when jumped to via fragment link */
+            :target {
+                animation: flash 1.5s ease-out;
+            }
+            @keyframes flash {
+                0%   { background: var(--highlight); }
+                100% { background: transparent; }
+            }
+
+            .mermaid .node rect, .mermaid .node polygon { cursor: pointer; }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    </head>
+    <body>
+        <h1>Workflow: setting up targets, then registration fields</h1>
+        <p class="lede">
+            Two set-up jobs, done in order. First you build the <strong>selection targets</strong> — the demographic categories and how many of each you want — without thinking about the registration form at all. Then you build the <strong>registration fields</strong>, and make sure that between them they can supply the data every target needs.
+        </p>
+
+        <div class="callout">
+            <p>
+                <strong>Targets and registration fields are independent structures.</strong> A target does not name a field, and a field does not name a target. They meet in one place only: the check that asks &ldquo;can every target get its value from the data this form collects?&rdquo; — either from a field whose name and options match the target, or from a <a href="#derived-detail">derived field</a> that computes it.
+            </p>
+            <p>
+                That is why targets come first. You agree the categories with the client in target-shaped language, and only afterwards work out what to ask people on the form.
+            </p>
+        </div>
+
+        <div class="legend" aria-label="Diagram legend">
+            <span class="leg-pre">Precondition</span>
+            <span class="leg-hub">Hub / list you return to</span>
+            <span class="leg-target">Target action</span>
+            <span class="leg-field">Field action</span>
+            <span class="leg-decide">Choice</span>
+            <span class="leg-form">Form contents</span>
+            <span class="leg-check">Check / warning</span>
+            <span class="leg-done">Outcome</span>
+        </div>
+
+        <h2 id="overview">The two boxes</h2>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef pre    fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef field  fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef done   fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+
+    P(["Number-to-select&lt;br/&gt;already agreed"]):::pre
+
+    subgraph BOX1["Box 1 - set up and manage targets"]
+        direction TB
+        T1["Add a target&lt;br/&gt;e.g. Gender"]:::target
+        T2["Add its target values&lt;br/&gt;Male, Female, Non-binary"]:::target
+        T3["Now or later: percentages,&lt;br/&gt;min and max, source URL,&lt;br/&gt;comments"]:::target
+        T1 --> T2 --> T3
+    end
+
+    subgraph BOX2["Box 2 - set up registration fields"]
+        direction TB
+        F1["Add sections"]:::field
+        F2["Add fields to the sections"]:::field
+        F3["Confirm every target can get&lt;br/&gt;its data - directly, or from&lt;br/&gt;a derived field"]:::field
+        F1 --> F2 --> F3
+    end
+
+    G["Generate the&lt;br/&gt;registration form"]:::done
+
+    P --> BOX1 --> BOX2 --> G
+
+    click T1 "#flow-targets" "Flow 1 - targets"
+    click T2 "#flow-targets" "Flow 1 - targets"
+    click T3 "#flow-targets" "Flow 1 - targets"
+    click F1 "#flow-fields" "Flow 2 - registration fields"
+    click F2 "#flow-fields" "Flow 2 - registration fields"
+    click F3 "#coverage-detail" "The coverage check"
+            </pre>
+        </div>
+        <p class="hint">
+            Click a box to jump to the flow that expands it. Box 2 branches a long way, so it is broken into four further flow charts below.
+        </p>
+
+        <h2 id="flow-targets">Flow 1 &mdash; Set up and manage targets</h2>
+        <p>
+            The core of this is two steps: add a target, add its values. Everything else is optional and can happen at set-up time or months later as ordinary management, so it is drawn as a fan-out from the targets list you keep coming back to.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef pre    fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+    classDef hub    fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef target fill:#fad7a8,stroke:#b58840,color:#0b0c0c
+    classDef decide fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef form   fill:#f3f2f1,stroke:#505a5f,color:#0b0c0c
+    classDef check  fill:#fff7d6,stroke:#b58840,color:#0b0c0c
+
+    S(["Number-to-select is set"]):::pre
+    A["Add a target&lt;br/&gt;e.g. Gender"]:::target
+    V["Add target values&lt;br/&gt;e.g. Male, Female, Non-binary"]:::target
+    HUB(["Targets list"]):::hub
+
+    S --> A --> V --> HUB
+    HUB -->|"another target"| A
+    HUB -->|"another value"| V
+
+    P["Set or edit the percentage&lt;br/&gt;for each target value"]:::target
+    CALC["Auto-calculates min and max:&lt;br/&gt;min = floor(percentage × number-to-select)&lt;br/&gt;max = ceil(percentage × number-to-select)"]:::form
+    SUM{"Do the percentages for&lt;br/&gt;this target add up to&lt;br/&gt;close to 100.0?"}:::decide
+    WARN["Show a warning&lt;br/&gt;(does not block you)"]:::check
+
+    HUB --> P --> CALC --> SUM
+    SUM -->|"no"| WARN --> HUB
+    SUM -->|"yes"| HUB
+
+    MM["Directly set min and max&lt;br/&gt;on a target value"]:::target
+    BREAK["Breaks the auto-calculate link&lt;br/&gt;for that value: later changes to the&lt;br/&gt;percentage or to number-to-select&lt;br/&gt;no longer move its min and max"]:::form
+    VC["Add or edit a comment on the&lt;br/&gt;target value - usually why the&lt;br/&gt;min and max were set by hand"]:::target
+
+    HUB --> MM --> BREAK --> VC --> HUB
+
+    URL["Add a source URL to the target&lt;br/&gt;where the percentages came from"]:::target
+    TC["Add or edit a comment on the target&lt;br/&gt;usually about the source"]:::target
+    HUB --> URL --> HUB
+    HUB --> TC --> HUB
+
+    DV["Delete a target value"]:::target
+    DT["Delete a target&lt;br/&gt;and all of its values, comments and URL"]:::target
+    HUB --> DV --> HUB
+    HUB --> DT --> HUB
+
+    CHK["Check the targets"]:::check
+    C1["against number-to-select"]:::form
+    C2["against the registration fields&lt;br/&gt;if any exist yet"]:::form
+    C3["against the pool of respondents&lt;br/&gt;if any exist yet"]:::form
+    HUB --> CHK
+    CHK --> C1
+    CHK --> C2
+    CHK --> C3
+
+    click A "#add-target-detail" "Adding a target"
+    click V "#add-target-detail" "Adding target values"
+    click P "#percent-detail" "Percentages and the auto-calculate link"
+    click CALC "#percent-detail" "Percentages and the auto-calculate link"
+    click SUM "#percent-detail" "Percentages and the auto-calculate link"
+    click WARN "#percent-detail" "Percentages and the auto-calculate link"
+    click MM "#minmax-detail" "Setting min and max by hand"
+    click BREAK "#minmax-detail" "Setting min and max by hand"
+    click VC "#minmax-detail" "Setting min and max by hand"
+    click URL "#provenance-detail" "Recording where the numbers came from"
+    click TC "#provenance-detail" "Recording where the numbers came from"
+    click DV "#delete-detail" "Deleting targets and values"
+    click DT "#delete-detail" "Deleting targets and values"
+    click CHK "#check-targets-detail" "The check targets button"
+    click C1 "#check-targets-detail" "The check targets button"
+    click C2 "#check-targets-detail" "The check targets button"
+    click C3 "#check-targets-detail" "The check targets button"
+            </pre>
+        </div>
+        <p class="hint">Click any box to jump to its details.</p>
+
+        <details id="add-target-detail">
+            <summary>Add a target, then its values</summary>
+            <p>
+                A <strong>target</strong> is a category you want to stratify on: <code>gender</code>, <code>age_bracket</code>, <code>region</code>. A <strong>target value</strong> is one of the buckets inside it: <code>Male</code>, <code>Female</code>, <code>Non-binary</code>.
+            </p>
+            <p>
+                This is the whole minimum. A target with values, and nothing else filled in, is a valid target — the percentages, min/max, URL and comments can all wait.
+            </p>
+        </details>
+
+        <details id="percent-detail">
+            <summary>Percentages, and how min and max are calculated from them</summary>
+            <p>
+                For each target value you enter the percentage of the assembly that should fall in that bucket. From the percentage and the already-agreed number-to-select, the min and max are calculated automatically:
+            </p>
+            <ul>
+                <li><code>min = floor(percentage × number-to-select)</code></li>
+                <li><code>max = ceil(percentage × number-to-select)</code></li>
+            </ul>
+            <p>
+                Because both are derived, changing the percentage <em>or</em> changing the number-to-select will move the min and max for every value that still has its auto-calculate link intact.
+            </p>
+            <p>
+                The percentages for a single target should add up to about 100.0. If they don't, a warning is shown — but it is only a warning. Rounding in published statistics means the total is often 99.9 or 100.1, and there are legitimate reasons for a bigger gap, so this never blocks you.
+            </p>
+        </details>
+
+        <details id="minmax-detail">
+            <summary>Setting min and max by hand &mdash; and breaking the link</summary>
+            <p>
+                You can type a min and max directly onto a target value instead of letting them be calculated. Doing so <strong>permanently breaks the auto-calculate link for that value</strong>: from then on, editing the percentage or the number-to-select will not touch its min and max.
+            </p>
+            <p>
+                The link is per target value, not per target — one hand-set value in a target does not detach the others.
+            </p>
+            <p>
+                This is exactly why target values carry their own comment field. A hand-set min/max is a decision someone made for a reason, and six weeks later nobody remembers the reason. Write it down next to the number.
+            </p>
+        </details>
+
+        <details id="provenance-detail">
+            <summary>Source URL and comments on the target</summary>
+            <p>
+                The target itself carries two pieces of provenance:
+            </p>
+            <ul>
+                <li><strong>Source URL</strong> — where the percentages came from, typically a census table or an ONS page.</li>
+                <li><strong>Comment</strong> — free text, generally about the source: which year, which geography, what was adjusted and why.</li>
+            </ul>
+        </details>
+
+        <details id="delete-detail">
+            <summary>Deleting a target or a target value</summary>
+            <ul>
+                <li><strong>Delete a target value</strong> — removes that one bucket, its percentage, min/max and comment.</li>
+                <li><strong>Delete a target</strong> — removes the whole category: every value under it, plus the target's comment and source URL.</li>
+            </ul>
+        </details>
+
+        <details id="check-targets-detail">
+            <summary>The &ldquo;check the targets&rdquo; button</summary>
+            <p>
+                A single button that runs the sanity checks that are possible <em>at that moment</em>. Which ones can run depends on what else exists yet:
+            </p>
+            <ul>
+                <li><strong>Against number-to-select</strong> — always possible. Do the minimums sum to more than the number of seats? Do the maximums sum to fewer? Either makes the selection impossible before it starts.</li>
+                <li><strong>Against the registration fields</strong> — only once fields exist. This is the same coverage check described in <a href="#coverage-detail">flow 2</a>, run from the targets side.</li>
+                <li><strong>Against the pool of respondents</strong> — only once people have registered. Are there actually enough people in each bucket to hit the minimum?</li>
+            </ul>
+            <p>
+                Because targets are set up before either fields or respondents exist, the first run of this button will usually only be able to do the first check. That's expected — it is a button you come back to.
+            </p>
+        </details>
+
+        <h2 id="flow-fields">Flow 2 &mdash; Set up registration fields</h2>
+        <p>
+            Fields live in named sections, and sections are what the respondent sees as headed groups on the form. Most of this flow is ordinary list management; the three big entry points — add a field, add common fields, create fields from a target — each get their own chart below.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef pre    fill:#d7ccc8,stroke:#5d4037,color:#0b0c0c
+    classDef hub    fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef field  fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef decide fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef check  fill:#fff7d6,stroke:#b58840,color:#0b0c0c
+    classDef done   fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+
+    S(["Targets exist"]):::pre
+    SEC["Add a section&lt;br/&gt;just give it a name"]:::field
+    HUB(["Sections and their fields"]):::hub
+
+    S --> SEC --> HUB
+    HUB -->|"another section"| SEC
+
+    RS["Reorder sections"]:::field
+    DS["Delete a section"]:::field
+    HUB --> RS --> HUB
+    HUB --> DS --> HUB
+
+    NF["Add a new field&lt;br/&gt;button sits inside each section,&lt;br/&gt;so the section is already known"]:::field
+    CF["Add common fields"]:::field
+    TF["Create field(s) from target(s)"]:::field
+    CP["Copy fields from another assembly"]:::field
+
+    HUB --> NF -.->|"flow 3"| HUB
+    HUB --> CF -.->|"flow 5"| HUB
+    HUB --> TF -.->|"flow 6"| HUB
+    HUB --> CP --> HUB
+
+    MV["Move a field to another section"]:::field
+    RF["Reorder fields within a section"]:::field
+    HUB --> MV --> HUB
+    HUB --> RF --> HUB
+
+    CHK{"Can every target get its&lt;br/&gt;data from these fields?"}:::check
+    MISS["Warning: target X has no source -&lt;br/&gt;no matching field and no derived field"]:::check
+    GEN["Generate the registration form&lt;br/&gt;it becomes the live web page"]:::done
+
+    HUB --> CHK
+    CHK -->|"no"| MISS --> HUB
+    CHK -->|"yes"| GEN
+
+    click SEC "#sections-detail" "Sections"
+    click RS "#sections-detail" "Sections"
+    click DS "#sections-detail" "Sections"
+    click NF "#flow-addfield" "Flow 3 - add a new field"
+    click CF "#flow-common" "Flow 5 - add common fields"
+    click TF "#flow-fromtarget" "Flow 6 - create fields from a target"
+    click CP "#copy-detail" "Copying fields from another assembly"
+    click MV "#arrange-detail" "Moving and reordering fields"
+    click RF "#arrange-detail" "Moving and reordering fields"
+    click CHK "#coverage-detail" "The coverage check"
+    click MISS "#coverage-detail" "The coverage check"
+    click GEN "#generate-detail" "Generating the form"
+            </pre>
+        </div>
+        <p class="hint">Dotted arrows lead to a flow chart of their own, further down the page.</p>
+
+        <details id="sections-detail">
+            <summary>Sections</summary>
+            <p>
+                A section has a name and nothing else. It groups fields on the registration page and gives the respondent a heading — <em>Eligibility</em>, <em>Contact details</em>, <em>About you</em>, <em>Consent</em> are the usual four.
+            </p>
+            <p>
+                Sections can be reordered and deleted. There is an unresolved question about what deleting a section does to the fields inside it — see <a href="#open-questions">open questions</a>.
+            </p>
+        </details>
+
+        <details id="arrange-detail">
+            <summary>Moving and reordering fields</summary>
+            <p>
+                Two separate operations: reordering fields <em>within</em> a section, and moving a field <em>between</em> sections. Neither changes the field itself — this is purely about how the form reads to the person filling it in.
+            </p>
+        </details>
+
+        <details id="copy-detail">
+            <summary>Copying fields from another assembly</summary>
+            <p>
+                Assemblies repeat. Rather than rebuild a near-identical set of sections and fields, copy them from an assembly you have already run and edit the differences.
+            </p>
+            <p>
+                Note that a copied <a href="#derived-detail">derived field</a> carries assumptions with it: an age-brackets field brings its boundaries, a postcode mapping brings its uploaded CSV. Those may not match this assembly's targets, so the coverage check matters more after a copy, not less.
+            </p>
+        </details>
+
+        <details id="coverage-detail">
+            <summary>The coverage check &mdash; does every target have data?</summary>
+            <p>
+                This is the single point where the two independent structures are compared. For each target, it asks whether the registration fields can produce a value for it. There are exactly two ways they can:
+            </p>
+            <ol>
+                <li>
+                    <strong>Directly</strong> — there is a field whose name matches the target's name and whose options match the target's values. A <code>gender</code> field offering <em>Male / Female / Non-binary</em> satisfies a <code>gender</code> target with those three values.
+                </li>
+                <li>
+                    <strong>Via a derived field</strong> — a <a href="#derived-detail">calculated field</a> named after the target computes the value from one or more real form fields. Date of birth becomes <code>age_bracket</code>; postcode becomes <code>region</code>.
+                </li>
+            </ol>
+            <p>
+                If neither exists for some target, the check reports it. Whether this is a button you press or something that runs automatically on every save is <a href="#open-questions">still open</a> — the diagram draws it as a gate, which is true either way.
+            </p>
+        </details>
+
+        <details id="generate-detail">
+            <summary>Generating the registration form</summary>
+            <p>
+                Once the fields are set, the registration form can be generated and served as the public web page. Derived fields never appear on it — they are computed after submission, from the fields that do.
+            </p>
+        </details>
+
+        <h2 id="flow-addfield">Flow 3 &mdash; Add a new field</h2>
+        <p>
+            The button lives inside a section, so which section you are adding to is never asked. Everything after that hangs off the field type: pick the type, and you get that type's form.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart LR
+    classDef hub    fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef field  fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef decide fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef form   fill:#f3f2f1,stroke:#505a5f,color:#0b0c0c
+    classDef done   fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+
+    B(["Add field, inside a section"]):::hub
+    T{"Choose the field type"}:::decide
+    B --> T
+
+    CB["Checkbox"]:::field
+    CH["Choice of options"]:::field
+    TX["Text"]:::field
+    NU["Text (numeric)"]:::field
+    DA["Date"]:::field
+    CA["Calculated from another field"]:::field
+
+    T --> CB
+    T --> CH
+    T --> TX
+    T --> NU
+    T --> DA
+    T --> CA
+
+    CBF["Name&lt;br/&gt;Question text&lt;br/&gt;Help text (optional)&lt;br/&gt;Must the respondent tick it?"]:::form
+    CHF["Name&lt;br/&gt;Question text&lt;br/&gt;Help text (optional)&lt;br/&gt;Text for each option&lt;br/&gt;Help text per option (optional)&lt;br/&gt;Form type: auto / radio buttons / dropdown"]:::form
+    TXF["Name&lt;br/&gt;Question text&lt;br/&gt;Help text (optional)"]:::form
+    NUF["Name&lt;br/&gt;Question text&lt;br/&gt;Help text (optional)&lt;br/&gt;Minimum (optional)&lt;br/&gt;Maximum (optional)"]:::form
+    DAF["Name&lt;br/&gt;Question text&lt;br/&gt;Help text (optional)&lt;br/&gt;Full date or year only&lt;br/&gt;Minimum (default 1900-01-01)&lt;br/&gt;Maximum (default start of this year)"]:::form
+    CAF["Its own multi-step form&lt;br/&gt;see flow 4"]:::form
+
+    CB --> CBF
+    CH --> CHF
+    TX --> TXF
+    NU --> NUF
+    DA --> DAF
+    CA --> CAF
+
+    SAVE["Save - the field appears&lt;br/&gt;in that section"]:::done
+    CBF --> SAVE
+    CHF --> SAVE
+    TXF --> SAVE
+    NUF --> SAVE
+    DAF --> SAVE
+    CAF -.->|"flow 4"| SAVE
+
+    click CB "#checkbox-detail" "Checkbox fields"
+    click CBF "#checkbox-detail" "Checkbox fields"
+    click CH "#choice-detail" "Choice of options"
+    click CHF "#choice-detail" "Choice of options"
+    click NU "#numeric-detail" "Numeric text"
+    click NUF "#numeric-detail" "Numeric text"
+    click DA "#date-detail" "Date fields"
+    click DAF "#date-detail" "Date fields"
+    click CA "#flow-calc" "Flow 4 - calculated fields"
+    click CAF "#flow-calc" "Flow 4 - calculated fields"
+            </pre>
+        </div>
+
+        <details id="checkbox-detail">
+            <summary>Checkbox &mdash; the only field that can be optional</summary>
+            <p>
+                Every other field type is required on the registration form. A checkbox is the one type where you choose: <em>must</em> the respondent tick it to submit, or is ticking it genuinely their choice?
+            </p>
+            <ul>
+                <li><strong>Must tick</strong> — <code>can_attend</code>, <code>eligible</code>, <code>consent</code>. These gate submission.</li>
+                <li><strong>Real choice</strong> — <code>stay_on_db</code>. Ticked or not, the form submits.</li>
+            </ul>
+        </details>
+
+        <details id="choice-detail">
+            <summary>Choice of options &mdash; and the &ldquo;auto&rdquo; form type</summary>
+            <p>
+                Each option has its own text and, optionally, its own help text. The <strong>form type</strong> controls how it renders:
+            </p>
+            <ul>
+                <li><strong>Auto</strong> (the default) — radio buttons, unless there are more than 10 options, in which case a dropdown.</li>
+                <li><strong>Radio buttons</strong> — forced, however many options there are.</li>
+                <li><strong>Select dropdown</strong> — forced, however few.</li>
+            </ul>
+            <p>
+                This is also the type that a <a href="#mapfewer-detail">map-more-to-fewer</a> derived field reads from, and the type an <a href="#exactcopy-detail">exact copy from a target</a> produces.
+            </p>
+        </details>
+
+        <details id="numeric-detail">
+            <summary>Text (numeric)</summary>
+            <p>
+                A text field constrained to numbers, with an optional minimum and maximum. Both are optional — leave them blank for an unbounded number.
+            </p>
+        </details>
+
+        <details id="date-detail">
+            <summary>Date &mdash; full date or year only</summary>
+            <p>
+                Used mainly for date of birth. You choose whether to ask for a full date or just a year, which matters: year-only is less intrusive to ask for, but gives an age that can be a year out.
+            </p>
+            <p>
+                The minimum defaults to <code>1900-01-01</code> and the maximum to the start of the current year, which between them reject the obvious typos.
+            </p>
+            <p>
+                A date field is the usual input for an <a href="#agerange-detail">age-ranges</a> derived field.
+            </p>
+        </details>
+
+        <h2 id="flow-calc">Flow 4 &mdash; Calculated (derived) fields</h2>
+        <p>
+            A calculated field never appears on the registration page. It exists to turn what you <em>did</em> ask into what the target <em>needs</em>, and it is computed when someone registers.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart TD
+    classDef hub    fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef field  fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef decide fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef form   fill:#f3f2f1,stroke:#505a5f,color:#0b0c0c
+    classDef done   fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+
+    S(["Field type: calculated from another field&lt;br/&gt;never shown on the registration page"]):::hub
+    N["Name - pick from the list of target names.&lt;br/&gt;Normally it should match a target name."]:::form
+    T{"Which calculation?"}:::decide
+    S --> N --> T
+
+    AG["Age ranges"]:::field
+    MP["Map more options to fewer"]:::field
+    PC["Map postcode to value"]:::field
+    T --> AG
+    T --> MP
+    T --> PC
+
+    AGF["Minimum age (default 16)&lt;br/&gt;Age boundaries, comma separated (default 30,45,60)&lt;br/&gt;Maximum age (default 100)&lt;br/&gt;Date to calculate age on (default today)"]:::form
+    AGB["Button: work out the minimum age and the&lt;br/&gt;boundaries from the target with the matching name"]:::form
+    AG --> AGF
+    AGB -.->|"fills in"| AGF
+
+    MPO["Text for each option&lt;br/&gt;button: copy the options from the matching target"]:::form
+    MPI["Field to map from - choose one of the&lt;br/&gt;fields of type 'choice of options'"]:::form
+    MPM["One dropdown per registration option;&lt;br/&gt;its choices are the target values.&lt;br/&gt;Every one has to be filled in."]:::form
+    MP --> MPO --> MPI --> MPM
+
+    PCO["Text for each option&lt;br/&gt;button: copy the options from the matching target"]:::form
+    PCI["Field to use as input&lt;br/&gt;default: postcode"]:::form
+    PCU["Upload a CSV mapping file:&lt;br/&gt;column 1 is the postcode, column 2 is the value.&lt;br/&gt;Can be thousands of rows."]:::form
+    PC --> PCO --> PCI --> PCU
+
+    SAVE["Save"]:::done
+    AGF --> SAVE
+    MPM --> SAVE
+    PCU --> SAVE
+
+    click AG "#agerange-detail" "Age ranges"
+    click AGF "#agerange-detail" "Age ranges"
+    click AGB "#agerange-detail" "Age ranges"
+    click MP "#mapfewer-detail" "Map more options to fewer"
+    click MPO "#mapfewer-detail" "Map more options to fewer"
+    click MPI "#mapfewer-detail" "Map more options to fewer"
+    click MPM "#mapfewer-detail" "Map more options to fewer"
+    click PC "#postcode-detail" "Map postcode to value"
+    click PCO "#postcode-detail" "Map postcode to value"
+    click PCI "#postcode-detail" "Map postcode to value"
+    click PCU "#postcode-detail" "Map postcode to value"
+    click N "#derived-detail" "Why derived fields exist"
+            </pre>
+        </div>
+
+        <details id="derived-detail">
+            <summary>Why derived fields exist at all</summary>
+            <p>
+                Because the best question to ask a respondent is often not the shape you want to stratify on. Three recurring cases:
+            </p>
+            <ul>
+                <li>
+                    <strong>The target is coarser than the honest question.</strong> The target is <code>age_bracket</code> (16&ndash;29, 30&ndash;44, &hellip;) but asking someone to self-select a bracket invites error; asking for date of birth does not.
+                </li>
+                <li>
+                    <strong>The target is coarser than a respectful question.</strong> Political party targets might be <em>Conservative, Labour, LibDem, Reform, Other</em>, while the form lists every party, with the smaller ones mapping to <em>Other</em>. The same argument applies to ethnicity: people should be able to see themselves in the list even when the target buckets are broad.
+                </li>
+                <li>
+                    <strong>The target isn't something a person knows about themselves.</strong> A <code>region</code> target with values <em>North / South / East / West / Central London</em> means nothing to most respondents. They know their address. You know which postcodes fall in which region.
+                </li>
+            </ul>
+            <p>
+                In all three cases you set up the target first, in target language, and only later work out which real question can feed it.
+            </p>
+        </details>
+
+        <details id="agerange-detail">
+            <summary>Age ranges</summary>
+            <p>
+                Date-of-birth fields go on the registration form. When someone registers, the system calculates their age and drops them into a bucket.
+            </p>
+            <p>The bucket boundaries come from four numbers:</p>
+            <table>
+                <thead>
+                    <tr><th>Input</th><th>Default</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Minimum age</td><td>16</td></tr>
+                    <tr><td>Age boundaries (comma separated)</td><td>30,45,60</td></tr>
+                    <tr><td>Maximum age</td><td>100</td></tr>
+                    <tr><td>Date to calculate age on</td><td>today</td></tr>
+                </tbody>
+            </table>
+            <p>
+                Worked example: minimum 16, maximum 100, boundaries <code>22,30,55</code> gives four brackets:
+            </p>
+            <ul>
+                <li>16&ndash;21</li>
+                <li>22&ndash;29</li>
+                <li>30&ndash;54</li>
+                <li>55&ndash;99</li>
+            </ul>
+            <p>
+                There is a button to work out the minimum age and the boundaries from the target with the matching name, so you don't retype what you already entered on the targets side.
+            </p>
+            <p>
+                <strong>Date to calculate age on</strong> defaults to today, but for an assembly you usually want the age people will be at the event, not at registration — so this is often set to the first assembly date.
+            </p>
+        </details>
+
+        <details id="mapfewer-detail">
+            <summary>Map more options to fewer</summary>
+            <p>
+                For when the form offers plenty of options and the target has few. Ethnicity is the standard case: 10 options on the form, 4 target buckets.
+            </p>
+            <ol>
+                <li>Early on, you created the target with its 4 values.</li>
+                <li>Now you create the field that will be on the form — a <em>choice of options</em> field with 10 options.</li>
+                <li>Then you create this derived field: pick the target it feeds, and pick the registration field it maps from.</li>
+                <li>You get one dropdown per registration option; each dropdown lists the target values. Every option must be assigned.</li>
+            </ol>
+            <p>
+                When someone registers, the system looks their answer up in that saved table and sets the target value accordingly.
+            </p>
+            <p>
+                Note the ordering constraint: the field you map <em>from</em> has to exist before you can build the mapping, because you pick it from a list of existing &ldquo;choice of options&rdquo; fields.
+            </p>
+        </details>
+
+        <details id="postcode-detail">
+            <summary>Map postcode to value (large mappings)</summary>
+            <p>
+                For when the form has a free-text box and the target has a small set of values, with a big lookup table in between. Postcode to region is the standard case.
+            </p>
+            <ol>
+                <li>Enter the target values (or copy them from the matching target).</li>
+                <li>Name the registration field this is based on — defaults to <code>postcode</code>.</li>
+                <li>Upload a CSV with two columns. Each row is one postcode and the value it maps to. There can be thousands of rows.</li>
+            </ol>
+            <p>
+                The column titles should match the field name and the target name — <code>postcode</code> and <code>region</code> in this example.
+            </p>
+            <p>
+                When someone registers, the system looks their postcode up in the saved table and sets the target value.
+            </p>
+            <div class="callout">
+                <p>
+                    <strong>Worth checking against the data-retention rules.</strong> The project's GDPR position is that no long-term copies of uploaded files are kept. A postcode-to-region CSV is reference data rather than personal data, so it is probably fine to store — but it arrives through a file upload, which is exactly the path that rule is about. Worth a decision rather than an assumption.
+                </p>
+            </div>
+        </details>
+
+        <h2 id="flow-common">Flow 5 &mdash; Add common fields</h2>
+        <p>
+            A shortcut past the blank page. Almost every assembly needs the same eligibility, contact, and consent fields, so they are offered as a checklist rather than built one at a time.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart TD
+    classDef hub    fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef field  fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef form   fill:#f3f2f1,stroke:#505a5f,color:#0b0c0c
+    classDef done   fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+
+    B(["Add common fields"]):::hub
+    M["Pop-up: the common fields, grouped into&lt;br/&gt;standard sections. Each has a description&lt;br/&gt;and a checkbox."]:::form
+    B --> M
+
+    E["Eligibility&lt;br/&gt;can_attend - I can attend all dates&lt;br/&gt;eligible - I am eligible to attend"]:::form
+    C["Contact details&lt;br/&gt;first_name, last_name, email, phone,&lt;br/&gt;address_line_1, address_line_2, city, postcode"]:::form
+    A["About you&lt;br/&gt;gender, date_of_birth, year_of_birth"]:::form
+    K["Consent&lt;br/&gt;consent - store my data per the linked policy&lt;br/&gt;stay_on_db (optional) - contact me about future events"]:::form
+
+    M --> E
+    M --> C
+    M --> A
+    M --> K
+
+    ACC["Tick the ones you want, click Accept"]:::field
+    E --> ACC
+    C --> ACC
+    A --> ACC
+    K --> ACC
+
+    RES["The chosen fields appear&lt;br/&gt;in your list of fields"]:::done
+    ED["Edit any of them afterwards&lt;br/&gt;like any other field"]:::field
+    ACC --> RES --> ED
+
+    click M "#common-detail" "The common fields list"
+    click E "#common-detail" "The common fields list"
+    click C "#common-detail" "The common fields list"
+    click A "#common-detail" "The common fields list"
+    click K "#common-detail" "The common fields list"
+            </pre>
+        </div>
+
+        <details id="common-detail">
+            <summary>The starter list</summary>
+            <table>
+                <thead>
+                    <tr><th>Section</th><th>Field</th><th>Note</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td rowspan="2">Eligibility</td><td><code>can_attend</code></td><td>&ldquo;I can attend all dates&rdquo;</td></tr>
+                    <tr><td><code>eligible</code></td><td>&ldquo;I am eligible to attend&rdquo;</td></tr>
+                    <tr><td rowspan="8">Contact details</td><td><code>first_name</code></td><td></td></tr>
+                    <tr><td><code>last_name</code></td><td></td></tr>
+                    <tr><td><code>email</code></td><td></td></tr>
+                    <tr><td><code>phone</code></td><td></td></tr>
+                    <tr><td><code>address_line_1</code></td><td></td></tr>
+                    <tr><td><code>address_line_2</code></td><td></td></tr>
+                    <tr><td><code>city</code></td><td></td></tr>
+                    <tr><td><code>postcode</code></td><td>Often also the input to a derived region field</td></tr>
+                    <tr><td rowspan="3">About you</td><td><code>gender</code></td><td></td></tr>
+                    <tr><td><code>date_of_birth</code></td><td></td></tr>
+                    <tr><td><code>year_of_birth</code></td><td>Alternative to <code>date_of_birth</code>, not an addition to it</td></tr>
+                    <tr><td rowspan="2">Consent</td><td><code>consent</code></td><td>&ldquo;I consent to you storing my data in accordance with a linked policy&rdquo;</td></tr>
+                    <tr><td><code>stay_on_db</code></td><td>Optional checkbox — &ldquo;Keep my details and contact me about similar events in the future&rdquo;</td></tr>
+                </tbody>
+            </table>
+            <p>
+                These are a starting point, not a fixed set. Once added they are ordinary fields: rename them, move them between sections, change the question text.
+            </p>
+        </details>
+
+        <h2 id="flow-fromtarget">Flow 6 &mdash; Create field(s) from a target</h2>
+        <p>
+            The other way round from flow 3: instead of building a field and hoping it lines up with a target, start from the target and let it fill in what it can. This is the fastest route to a form that passes the coverage check.
+        </p>
+        <div class="flowchart">
+            <pre class="mermaid">
+flowchart TD
+    classDef hub    fill:#cce2f7,stroke:#1d70b8,color:#0b0c0c
+    classDef field  fill:#c8e6c9,stroke:#2e7d32,color:#0b0c0c
+    classDef decide fill:#f8bbd0,stroke:#ad1457,color:#0b0c0c
+    classDef form   fill:#f3f2f1,stroke:#505a5f,color:#0b0c0c
+    classDef done   fill:#e1bee7,stroke:#6a1b9a,color:#0b0c0c
+
+    B(["Create field(s) from target(s)"]):::hub
+    L["One button per target.&lt;br/&gt;Greyed out if a matching field already exists."]:::form
+    H{"How should the field be created?"}:::decide
+    B --> L --> H
+
+    EX["Exact copy"]:::field
+    AG["Age ranges"]:::field
+    MP["Map from more options"]:::field
+    PC["Map postcode to value"]:::field
+    H --> EX
+    H --> AG
+    H --> MP
+    H --> PC
+
+    EXF["The 'choice of options' form, with the name and&lt;br/&gt;options pre-filled from the target.&lt;br/&gt;You still fill in question text, help text and form type."]:::form
+    EX --> EXF
+
+    AGD["Choose the date field to use as input:&lt;br/&gt;an existing date field, or create one now"]:::form
+    AGA["Minimum age and age boundaries are auto-filled&lt;br/&gt;from the target - error if they cannot be worked out"]:::form
+    AGO["You fill in the rest,&lt;br/&gt;e.g. the date to calculate age on"]:::form
+    AG --> AGD --> AGA --> AGO
+
+    MPT["The target is already known"]:::form
+    MPF["Choose the field to map from"]:::form
+    MPM["Set up the mapping: one dropdown per&lt;br/&gt;registration option, choices are the target values"]:::form
+    MP --> MPT --> MPF --> MPM
+
+    PCO["Options copied from the target"]:::form
+    PCI["Field to use as input&lt;br/&gt;default: postcode"]:::form
+    PCU["Upload the CSV mapping file"]:::form
+    PC --> PCO --> PCI --> PCU
+
+    SAVE["Save - the field(s) appear&lt;br/&gt;and the target is now covered"]:::done
+    EXF --> SAVE
+    AGO --> SAVE
+    MPM --> SAVE
+    PCU --> SAVE
+
+    click EX "#exactcopy-detail" "Exact copy"
+    click EXF "#exactcopy-detail" "Exact copy"
+    click AG "#agerange-detail" "Age ranges"
+    click AGD "#agerange-detail" "Age ranges"
+    click AGA "#agerange-detail" "Age ranges"
+    click AGO "#agerange-detail" "Age ranges"
+    click MP "#mapfewer-detail" "Map more options to fewer"
+    click MPT "#mapfewer-detail" "Map more options to fewer"
+    click MPF "#mapfewer-detail" "Map more options to fewer"
+    click MPM "#mapfewer-detail" "Map more options to fewer"
+    click PC "#postcode-detail" "Map postcode to value"
+    click PCO "#postcode-detail" "Map postcode to value"
+    click PCI "#postcode-detail" "Map postcode to value"
+    click PCU "#postcode-detail" "Map postcode to value"
+            </pre>
+        </div>
+
+        <details id="exactcopy-detail">
+            <summary>Exact copy</summary>
+            <p>
+                The simplest route: the target's name and values become a <em>choice of options</em> field's name and options. Gender in, gender out.
+            </p>
+            <p>
+                What it cannot fill in is the human half — the question text the respondent reads, the help text, and whether it renders as radios or a dropdown. Those are still yours to write.
+            </p>
+        </details>
+
+        <h2 id="open-questions">Open questions</h2>
+        <p>
+            Things the description above doesn't settle, drawn out here rather than quietly decided in a diagram.
+        </p>
+        <ol>
+            <li>
+                <strong>Maximum age.</strong> The age-range form is described in two places with two different lists — one has minimum age, boundaries and calculation date; the other adds a maximum age defaulting to 100. The diagrams show maximum age, because the worked example (<code>16, 100, boundaries 22,30,55</code>) needs it to produce a top bracket of 55&ndash;99. Confirm it belongs on the form.
+            </li>
+            <li>
+                <strong>Coverage check: button or automatic?</strong> Drawn as a gate, which is true whether it's a button or runs on every save. A button is honest about cost and lets you work in a broken state; automatic means nobody forgets. The likely answer is both — run automatically and show a persistent warning banner, with a button for the fuller cross-check against respondents.
+            </li>
+            <li>
+                <strong>Deleting a section that has fields in it.</strong> Does it delete the fields, refuse until the section is empty, or move them somewhere? Refusing is the safest and least surprising, but it makes tidying up tedious.
+            </li>
+            <li>
+                <strong>Deleting a target that a derived field feeds.</strong> A derived field is named after a target and may have copied that target's options. Deleting the target leaves the field orphaned. Warn, block, or allow and let the coverage check complain?
+            </li>
+            <li>
+                <strong>Ordering constraint on &ldquo;map more to fewer&rdquo;.</strong> You pick the field to map from out of a list of existing &ldquo;choice of options&rdquo; fields, so that field must be created first. Flow 6 partly solves this for age ranges by letting you create the date field inline; the same escape hatch may be worth having here.
+            </li>
+            <li>
+                <strong>CSV validation on the postcode mapping.</strong> The column titles &ldquo;should match&rdquo; the field and target names. Is that enforced, or advisory? And what happens at registration when a postcode isn't in the table at all — reject the submission, or record an unmapped value?
+            </li>
+            <li>
+                <strong>Percentage tolerance.</strong> &ldquo;Close to 100.0&rdquo; needs a number. Published statistics routinely total 99.9 or 100.1 through rounding, so the threshold has to allow that without waving through a genuine mistake.
+            </li>
+        </ol>
+
+        <h2 id="glossary">Glossary</h2>
+        <dl class="glossary">
+            <dt id="g-target">Target</dt>
+            <dd>
+                A category the selection stratifies on — <code>gender</code>, <code>age_bracket</code>, <code>region</code>. Holds target values, an optional source URL and an optional comment.
+            </dd>
+            <dt id="g-target-value">Target value</dt>
+            <dd>
+                One bucket within a target — <code>Male</code>, <code>16-29</code>, <code>North London</code>. Holds a percentage, a min and a max, and an optional comment.
+            </dd>
+            <dt id="g-nts">Number-to-select</dt>
+            <dd>
+                How many people the assembly needs. Agreed before any of this, and the multiplier that turns percentages into a min and max.
+            </dd>
+            <dt id="g-autolink">Auto-calculate link</dt>
+            <dd>
+                The live connection from a target value's percentage to its min and max. Intact by default; <a href="#minmax-detail">broken permanently</a> for that value the moment you type a min or max by hand.
+            </dd>
+            <dt id="g-section">Section</dt>
+            <dd>
+                A named group of fields. Becomes a heading on the registration page.
+            </dd>
+            <dt id="g-field">Field</dt>
+            <dd>
+                One question on the registration form — or, for a calculated field, one value computed from the answers rather than asked for.
+            </dd>
+            <dt id="g-derived">Derived (calculated) field</dt>
+            <dd>
+                A field that never appears on the form. It takes one or more real fields and produces the value a target needs: date of birth to <code>age_bracket</code>, ten ethnicity options to four, postcode to region. See <a href="#flow-calc">flow 4</a>.
+            </dd>
+        </dl>
+
+        <script>
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'default',
+                securityLevel: 'loose',
+                flowchart: { curve: 'basis', useMaxWidth: true }
+            });
+
+  // When a diagram click jumps to a <details>, open it so the content is visible.
+            window.addEventListener('hashchange', () => {
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+  // Also handle the case where the page loads with a hash already set.
+            window.addEventListener('load', () => {
+                if (!window.location.hash) return;
+                const el = document.querySelector(window.location.hash);
+                if (el && el.tagName === 'DETAILS') el.open = true;
+            });
+        </script>
+    </body>
+</html>

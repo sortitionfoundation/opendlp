@@ -14,6 +14,7 @@ from opendlp.config import (
     FlaskTestConfig,
     InvalidConfig,
     RedisCfg,
+    dev_tools_enabled,
     get_config,
     get_max_content_length,
     get_max_csv_upload_bytes,
@@ -584,6 +585,26 @@ class TestGetSecretKey:
     def test_get_secret_key_default(self, clear_env_vars):
         clear_env_vars("SECRET_KEY")
         assert get_secret_key() == "dev-secret-key-change-in-production"  # pragma: allowlist secret
+
+
+class TestDevToolsEnabled:
+    """Whether the dev blueprint - /backoffice/dev/* - is part of the app.
+
+    One answer, asked by both the blueprint registration and the templates: a
+    page that is served in production but links to a dev route needs to know,
+    because url_for on an unregistered endpoint is a 500.
+    """
+
+    @pytest.mark.parametrize("env", ["development", "testing", "testing_component"])
+    def test_loaded_outside_production(self, env, temp_env_vars):
+        temp_env_vars(FLASK_ENV=env)
+
+        assert dev_tools_enabled() is True
+
+    def test_not_loaded_in_production(self, temp_env_vars):
+        temp_env_vars(FLASK_ENV="production")
+
+        assert dev_tools_enabled() is False
 
 
 class TestRedisCfgCreateClient:

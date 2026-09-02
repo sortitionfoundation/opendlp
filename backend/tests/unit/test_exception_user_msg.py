@@ -37,6 +37,7 @@ from opendlp.service_layer.exceptions import (
     UserAlreadyExists,
     UserNotFoundError,
 )
+from opendlp.service_layer.target_service import TargetsNotSaved
 
 CURATED = [
     UserAlreadyExists("someone@example.org"),
@@ -71,6 +72,9 @@ UNCURATED = [
     EmailTemplateNotFoundError("Template 0f8f-... not found in table email_templates"),
     SelectionRunRecordNotFoundError("Selection run 0f8f-... not found"),
     RespondentNotFoundError("no row for respondent_id=0f8f-... in table respondents"),
+    # Its own message is a marker, not a sentence. What the user reads is the
+    # per-field messages on `.errors`, which the bulk edit form renders itself.
+    TargetsNotSaved([]),
 ]
 
 

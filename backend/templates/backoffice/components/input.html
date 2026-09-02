@@ -22,7 +22,8 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {%- endmacro %}
 
 
-{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true) %}
+{% from "backoffice/components/icons.html" import icon_check_12 %}
+{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="") %}
     {#
     Text input component using semantic design tokens.
 
@@ -96,6 +97,12 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 {% if placeholder %}placeholder="{{ placeholder }}"{%endif %}
                 {% if required %}required{% endif %}
                 {% if disabled %}disabled{% endif %}
+                {# The error is next to the input on screen; these are what say so
+                   to anything that is not looking at the screen. #}
+                {% if has_error %}aria-invalid="true" aria-describedby="{{ input_id }}-error"{% endif %}
+                {# For inputs whose only visible label is a column heading, which
+                   does not name a form control to a screen reader. #}
+                {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
                 {% if attrs %}{{ attrs | safe }}{% endif %}
                 class="text-body-md px-4 py-2.5 rounded-lg w-full transition-all duration-150 {{ classes }}"
                 style="
@@ -127,7 +134,10 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
         {# Error message #}
         {% if has_error %}
-            <p class="text-body-sm" style="color: var(--color-primary-action); white-space: pre-line;">{{ error }}</p>
+            <p id="{{ input_id }}-error"
+               class="text-body-sm"
+               style="color: var(--color-primary-action);
+                      white-space: pre-line">{{ error }}</p>
         {% endif %}
     </div>
 {% endmacro %}
@@ -313,9 +323,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
     {# Checkmark SVG icon (12x12) #}
     {% set checkmark_svg %}
-        <svg class="checkbox-checkmark" width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        {{ icon_check_12() }}
     {% endset %}
 
     <div class="flex flex-col gap-1.5">
