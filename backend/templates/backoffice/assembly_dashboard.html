@@ -35,15 +35,15 @@ ABOUTME: Iteration 1 — number-to-select / registrations indicators + per-categ
     <div class="mb-8">
         <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Dashboard") }}</h2>
         <div class="mt-2 flex flex-wrap items-center gap-y-1 text-body-lg">
-            <span style="color: var(--color-neutral-600);">
+            <span style="color: var(--color-body-text);">
                 {{ _("Number to select:") }}
-                <span style="color: var(--color-neutral-800); font-weight: 700;">{{ number_to_select }}</span>
+                <span style="color: var(--color-headings); font-weight: 700;">{{ number_to_select }}</span>
             </span>
             <span aria-hidden="true"
-                  style="display: inline-block; width: 1px; height: 16px; margin: 0 16px; background-color: var(--color-neutral-300);"></span>
-            <span style="color: var(--color-neutral-600);">
+                  style="display: inline-block; width: 1px; height: 16px; margin: 0 16px; background-color: var(--color-borders-dividers);"></span>
+            <span style="color: var(--color-body-text);">
                 {{ _("Number of registrations:") }}
-                <span style="color: var(--color-neutral-800); font-weight: 700;">{{ number_of_registrations }}</span>
+                <span style="color: var(--color-headings); font-weight: 700;">{{ number_of_registrations }}</span>
             </span>
         </div>
     </div>
@@ -55,7 +55,7 @@ ABOUTME: Iteration 1 — number-to-select / registrations indicators + per-categ
             <div class="grid gap-4"
                  style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
                 {% for card in section.cards %}
-                    {{ pie_chart_card(card.title, segments=card.segments, message=card.message) }}
+                    {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4") }}
                 {% endfor %}
             </div>
         </section>

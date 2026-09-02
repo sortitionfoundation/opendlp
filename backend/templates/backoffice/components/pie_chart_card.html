@@ -14,7 +14,7 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
 "var(--color-success-400)",
 "var(--color-warning-400)"
 ] %}
-{% macro pie_chart_card(title, segments=none, message="", size=180) %}
+{% macro pie_chart_card(title, segments=none, message="", size=180, title_tag="p") %}
     {#
     Pie chart card (stateless).
 
@@ -27,6 +27,8 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
                incoming parameter so the surrounding context decides what to say
                (e.g. "Shows respondent data once registration starts.").
       size: pie diameter in px (default 180, matching the Figma atom).
+      title_tag: "p" (default) or "h4" — pass "h4" when the card sits under section
+                 headings so the document outline stays clean.
 
     Data present:
       {{ pie_chart_card("Gender", segments=[
@@ -41,9 +43,13 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
     {% set total = (segments | map(attribute="count") | sum) if segments else 0 %}
     <div class="rounded-3xl p-6 flex flex-col gap-6 w-full h-full"
          style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-        {# Header #}
+        {# Header. Static tags (not <{{ title_tag }}>) so the template indenter can parse them. #}
         <div class="w-full">
-            <p class="text-display-sm" style="color: var(--color-headings); word-break: break-word;">{{ title }}</p>
+            {% if title_tag == "h4" %}
+                <h4 class="text-display-sm" style="color: var(--color-headings); word-break: break-word;">{{ title }}</h4>
+            {% else %}
+                <p class="text-display-sm" style="color: var(--color-headings); word-break: break-word;">{{ title }}</p>
+            {% endif %}
         </div>
         {% if segments and total > 0 %}
             {# ---- Data present: pie + legends ---- #}
@@ -92,9 +98,9 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
                     {% for seg in segments %}
                         {% set color = seg.get("color") or _pie_palette[loop.index0 % (_pie_palette | length)] %}
                         <div class="flex gap-1.5 items-center rounded"
-                             style="background-color: var(--color-neutral-100); padding: 4px 8px;">
+                             style="background-color: var(--color-subtle-background-panels); padding: 4px 8px;">
                             <span style="width: 8px; height: 8px; border-radius: 2px; background-color: {{ color }};"></span>
-                            <span class="text-caption whitespace-nowrap" style="color: var(--color-neutral-800);">{{ seg.label }} {{ (seg.count / total * 100) | round | int }}% ({{ seg.count }})</span>
+                            <span class="text-caption whitespace-nowrap" style="color: var(--color-headings);">{{ seg.label }} {{ (seg.count / total * 100) | round | int }}% ({{ seg.count }})</span>
                         </div>
                     {% endfor %}
                 </div>
@@ -105,7 +111,8 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
                 <div class="flex items-center justify-center w-full" style="height: {{ size }}px;">
                     {# Two grey halves split by a vertical divider. Feathered at the 50%
                        (bottom) and 0/100 (top, on the seam) boundaries, same as the data
-                       pie, so the straight edges are anti-aliased rather than jagged. #}
+                       pie, so the straight edges are anti-aliased rather than jagged.
+                       neutral-200/300 are used directly: there is no semantic skeleton token. #}
                     <div aria-hidden="true"
                          style="width: {{ size }}px; height: {{ size }}px; border-radius: 9999px;
                                 background: conic-gradient(
@@ -122,7 +129,7 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
                 </div>
             </div>
             {% if message %}
-                <p class="text-body-sm w-full" style="color: var(--color-neutral-800); word-break: break-word;">{{ message }}</p>
+                <p class="text-body-sm w-full" style="color: var(--color-headings); word-break: break-word;">{{ message }}</p>
             {% endif %}
         {% endif %}
     </div>

@@ -58,7 +58,6 @@ from opendlp.service_layer.assembly_service import (
     update_selection_settings,
 )
 from opendlp.service_layer.dashboard_stats import (
-    DashboardStatsError,
     export_assembly_dashboard,
     get_assembly_dashboard_report,
     get_assembly_dashboard_summary,
@@ -1485,33 +1484,29 @@ def _handle_auto_reply_readiness_problems(uow: Any, params: dict[str, Any]) -> d
 
 
 def _handle_get_assembly_dashboard_summary(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
-    """Handle get_assembly_dashboard_summary service call (MOCK)."""
-    assembly_id = uuid.UUID(params["assembly_id"])
-    try:
-        summary = get_assembly_dashboard_summary(uow=uow, assembly_id=assembly_id)
-    except DashboardStatsError as e:
-        return {"status": "error", "error": str(e), "error_type": "DashboardStatsError"}
+    """Handle get_assembly_dashboard_summary service call (MOCK).
+
+    DashboardStatsError is left to reach service_docs_execute's outer handler,
+    which logs the real error and returns a generic message - so no str(e)
+    reaches the response body.
+    """
+    summary = get_assembly_dashboard_summary(uow=uow, assembly_id=uuid.UUID(params["assembly_id"]))
     return {"status": "success", **asdict(summary)}
 
 
 def _handle_get_assembly_dashboard_report(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
-    """Handle get_assembly_dashboard_report service call (MOCK)."""
-    assembly_id = uuid.UUID(params["assembly_id"])
-    try:
-        report = get_assembly_dashboard_report(uow=uow, assembly_id=assembly_id)
-    except DashboardStatsError as e:
-        return {"status": "error", "error": str(e), "error_type": "DashboardStatsError"}
+    """Handle get_assembly_dashboard_report service call (MOCK). See summary handler for error handling."""
+    report = get_assembly_dashboard_report(uow=uow, assembly_id=uuid.UUID(params["assembly_id"]))
     return {"status": "success", **asdict(report)}
 
 
 def _handle_export_assembly_dashboard(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
-    """Handle export_assembly_dashboard service call (MOCK)."""
-    assembly_id = uuid.UUID(params["assembly_id"])
-    export_format = params.get("export_format", "csv")
-    try:
-        export = export_assembly_dashboard(uow=uow, assembly_id=assembly_id, export_format=export_format)
-    except DashboardStatsError as e:
-        return {"status": "error", "error": str(e), "error_type": "DashboardStatsError"}
+    """Handle export_assembly_dashboard service call (MOCK). See summary handler for error handling."""
+    export = export_assembly_dashboard(
+        uow=uow,
+        assembly_id=uuid.UUID(params["assembly_id"]),
+        export_format=params.get("export_format", "csv"),
+    )
     return {"status": "success", **asdict(export)}
 
 

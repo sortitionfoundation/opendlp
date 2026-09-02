@@ -11,6 +11,7 @@ import {
 } from "./samples.js";
 import { serviceDocsAssembly } from "./assembly.js";
 import { serviceDocsCsvConfig } from "./csv-config.js";
+import { serviceDocsDashboard } from "./dashboard.js";
 import { serviceDocsDocuments } from "./documents.js";
 import { serviceDocsEmails } from "./emails.js";
 import { serviceDocsFields } from "./fields.js";
@@ -418,6 +419,27 @@ const EXECUTE_CALLS = [
     props: { autoReplyReadinessAssemblyId: "a-1" },
     service: "auto_reply_readiness_problems",
     params: { assembly_id: "a-1" },
+  },
+  {
+    factory: serviceDocsDashboard,
+    method: "executeGetDashboardSummary",
+    props: { dashboardSummaryAssemblyId: "a-1" },
+    service: "get_assembly_dashboard_summary",
+    params: { assembly_id: "a-1" },
+  },
+  {
+    factory: serviceDocsDashboard,
+    method: "executeGetDashboardReport",
+    props: { dashboardReportAssemblyId: "a-1" },
+    service: "get_assembly_dashboard_report",
+    params: { assembly_id: "a-1" },
+  },
+  {
+    factory: serviceDocsDashboard,
+    method: "executeExportDashboard",
+    props: { dashboardExportAssemblyId: "a-1", dashboardExportFormat: "xlsx" },
+    service: "export_assembly_dashboard",
+    params: { assembly_id: "a-1", export_format: "xlsx" },
   },
 ];
 
