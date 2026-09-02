@@ -23,8 +23,10 @@ ABOUTME: Ensures consistent tab display across all assembly pages
         assembly_tabs(assembly, "targets", data_source="gsheet", gsheet=gsheet, targets_enabled=true, selection_enabled=true)
     #}
     {% set source_param = "?source=" ~ data_source if data_source else "" %}
-    {{ tabs(id="assembly-tabs",
-    items=[
+    {# Build the item list so the Dashboard tab (results dashboard, ticket 886) can be
+       gated behind the FF_RESULTS_DASHBOARD feature flag. When the flag is off or
+       absent the tab is simply hidden — the route itself is left reachable by URL. #}
+    {% set tab_items = [
     {
     "key": "details",
     "label": _("Details") ,
@@ -69,20 +71,24 @@ ABOUTME: Ensures consistent tab display across all assembly pages
     "href": url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "selection",
     "disabled": not selection_enabled
-    },
-    {
-    "key": "dashboard",
-    "label": _("Dashboard"),
-    "href": url_for('backoffice.view_assembly_dashboard', assembly_id=assembly.id) ~ source_param,
-    "active": active_tab == "dashboard"
-    },
-    {
+    }
+    ] %}
+    {% if feature('results_dashboard') %}
+        {% set _ignored = tab_items.append({
+        "key": "dashboard",
+        "label": _("Dashboard"),
+        "href": url_for('backoffice.view_assembly_dashboard', assembly_id=assembly.id) ~ source_param,
+        "active": active_tab == "dashboard"
+        }) %}
+    {% endif %}
+    {% set _ignored = tab_items.append({
     "key": "members",
     "label": _("Team Members"),
     "href": url_for('backoffice.view_assembly_members', assembly_id=assembly.id) ~ source_param,
     "active": active_tab == "members"
-    }
-    ],
+    }) %}
+    {{ tabs(id="assembly-tabs",
+    items=tab_items,
     aria_label=_("Assembly sections"),
     preserve_scroll=preserve_scroll
     ) }}
