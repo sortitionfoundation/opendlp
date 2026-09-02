@@ -6,6 +6,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
 {% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_trash_material, icon_undo %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/input.html" import input %}
+{% from "backoffice/targets/missing_values.html" import missing_values_summary %}
 
 {# ────────────────────────────────────────────────────────────────────────
    The row controls come from the Figma at node 4908:15647. They are sized and
@@ -316,13 +317,17 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     <tr style="border-bottom: 1px solid var(--color-borders-dividers)">
                         <td colspan="{{ column_count }}" class="py-3">
                             <div class="flex items-center gap-3">
-                                {{ button(_("Add value"), variant="secondary", attrs='@click="addValue()"') }}
+                                {{ button(_("Add value"), variant="tertiary", attrs='@click="addValue()"') }}
+                                {# Once every missing value is a row in the table there is
+                                   nothing left to add, and nothing left to name. #}
                                 {% if missing_values %}
                                     <span x-show="!missingAdded">
                                         {{ button(_("Add values found in respondent data"), variant="secondary", attrs='@click="addMissingValues()"') }}
                                     </span>
-                                    <span class="text-body-sm" style="color: var(--color-secondary-text);">
-                                        {{ _("Not yet targeted: %(values)s", values=missing_values | join(", ")) }}
+                                    <span class="text-body-sm"
+                                          x-show="!missingAdded"
+                                          style="color: var(--color-secondary-text);">
+                                        {{ _("Not yet targeted: %(values)s", values=missing_values_summary(missing_values)) }}
                                     </span>
                                 {% endif %}
                             </div>

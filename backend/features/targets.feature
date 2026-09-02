@@ -188,6 +188,17 @@ Feature: Target percentages, notes and ordering
     Then I should see "Targets saved"
     And there should be no "Age" category
 
+  Scenario: The respondent values with no target are summarised, and go once added
+    Given there is an assembly with targets called "Missing Values Demo"
+    And the respondent data holds nine ages, one of them targeted
+    And I am signed in as an admin user
+    When I open the targets page for "Missing Values Demo"
+    Then I should see "and 3 others"
+    When I choose to edit all targets
+    Then I should see "and 3 others"
+    When I add the values found in the respondent data
+    Then I should not see "and 3 others"
+
   Scenario: Reordering the target categories
     Given there is an assembly with two target categories called "Reorder Demo"
     And I am signed in as an admin user

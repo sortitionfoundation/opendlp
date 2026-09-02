@@ -1,5 +1,5 @@
 """ABOUTME: Jinja filters for rendering user-supplied text safely.
-ABOUTME: Currently just linkify, which turns URLs in free text into links."""
+ABOUTME: linkify turns URLs in free text into links; trim_url shortens link text."""
 
 import re
 
@@ -58,6 +58,18 @@ def linkify(text: str) -> Markup:
     return Markup(_urlize(text, trim_url_limit=MAX_URL_TEXT_LENGTH, autoescape=True))  # noqa: S704
 
 
+def trim_url(url: str) -> str:
+    """Shorten a URL to the length linkify uses for link text, ending in an ellipsis.
+
+    For a URL that is already a link in the markup, so only the text a reader
+    sees is cut - the href it points at is untouched.
+    """
+    if len(url) <= MAX_URL_TEXT_LENGTH:
+        return url
+    return url[: MAX_URL_TEXT_LENGTH - 1] + "\u2026"
+
+
 def register_template_filters(app: Flask) -> None:
     """Register the filters with a Flask app."""
     app.jinja_env.filters["linkify"] = linkify
+    app.jinja_env.filters["trim_url"] = trim_url

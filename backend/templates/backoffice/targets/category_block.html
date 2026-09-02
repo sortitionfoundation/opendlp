@@ -4,6 +4,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
 #}
 {% from "backoffice/components/icons.html" import icon_hand, icon_sparkles %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
+{% from "backoffice/targets/missing_values.html" import missing_values_summary %}
 
 {% macro provenance_icon(manual) %}
     {% if manual %}
@@ -63,7 +64,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                        class="underline"
                        style="color: var(--color-links)"
                        target="_blank"
-                       rel="noopener noreferrer">{{ category.source_url }}</a>
+                       rel="noopener noreferrer">{{ category.source_url | trim_url }}</a>
                 </p>
             {% endif %}
             {% if category.comment %}
@@ -253,7 +254,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                             border: 1px solid var(--color-info-400)">
                     <p class="text-body-md" style="color: var(--color-info-600);">
                         {{ _("Values in respondent data not yet targeted:") }}
-                        <strong>{{ missing_values | join(", ") }}</strong>
+                        <strong>{{ missing_values_summary(missing_values) }}</strong>
                         {{ _("Add them under \"Edit targets\".") }}
                     </p>
                 </div>
