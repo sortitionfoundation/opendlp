@@ -1,0 +1,98 @@
+"""ABOUTME: Component tests for the assembly results dashboard page and pie chart atom (ticket 886).
+ABOUTME: Covers the page render, the FF_RESULTS_DASHBOARD tab gating, and the atom's two states."""
+
+import os
+
+import pytest
+from flask import render_template_string
+
+from opendlp.feature_flags import reload_flags
+
+
+def _dashboard_url(assembly) -> str:
+    return f"/backoffice/assembly/{assembly.id}/dashboard"
+
+
+def _members_url(assembly) -> str:
+    return f"/backoffice/assembly/{assembly.id}/members"
+
+
+@pytest.fixture
+def results_dashboard_on():
+    """Turn FF_RESULTS_DASHBOARD on for the duration of a test, then restore."""
+    os.environ["FF_RESULTS_DASHBOARD"] = "true"
+    reload_flags()
+    yield
+    os.environ.pop("FF_RESULTS_DASHBOARD", None)
+    reload_flags()
+
+
+class TestTheDashboardPage:
+    def test_renders_indicators_and_sections(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+
+        assert "Number to select:" in html
+        assert "Number of registrations:" in html
+        # total_respondents from the mock summary (POOL 42 + WITHDRAWN 2)
+        assert "44" in html
+        # one section per mock category
+        assert ">Gender<" in html
+        assert ">Age<" in html
+
+    def test_target_pie_is_populated_and_later_datasets_are_skeletons(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+
+        # Target renders a real pie
+        assert "conic-gradient(" in html
+        # Selected / Confirmed render their skeleton messages
+        assert "Shows selected data once the selection process starts." in html
+        assert "Shows confirmed data once registration closes." in html
+
+    def test_route_is_reachable_even_when_the_flag_is_off(self, logged_in_admin, existing_assembly):
+        # The flag only hides the tab; the route stays reachable by URL.
+        assert logged_in_admin.get(_dashboard_url(existing_assembly)).status_code == 200
+
+
+class TestTheTabGating:
+    def test_tab_is_hidden_by_default(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(_members_url(existing_assembly)).get_data(as_text=True)
+        assert _dashboard_url(existing_assembly) not in html
+
+    def test_tab_is_shown_when_the_flag_is_on(self, logged_in_admin, existing_assembly, results_dashboard_on):
+        html = logged_in_admin.get(_members_url(existing_assembly)).get_data(as_text=True)
+        assert _dashboard_url(existing_assembly) in html
+
+
+class TestThePieChartAtom:
+    _IMPORT = '{% from "backoffice/components/pie_chart_card.html" import pie_chart_card %}'
+
+    def _render(self, app, body: str, **ctx: object) -> str:
+        with app.test_request_context():
+            return render_template_string(self._IMPORT + body, **ctx)
+
+    def test_populated_state_draws_a_pie_with_legends(self, app):
+        html = self._render(
+            app,
+            "{{ pie_chart_card('Gender', segments=segments, title_tag='h4') }}",
+            segments=[
+                {"label": "Male", "count": 10},
+                {"label": "Female", "count": 9},
+                {"label": "Non-binary", "count": 1},
+            ],
+        )
+        assert 'role="img"' in html
+        assert "conic-gradient(" in html
+        # percentages are computed from the counts (10/20 = 50%)
+        assert "Male 50% (10)" in html
+        # title_tag is honoured
+        assert "<h4" in html
+
+    def test_skeleton_state_shows_the_message_and_no_chart_role(self, app):
+        html = self._render(
+            app,
+            "{{ pie_chart_card('Respondents', message=message) }}",
+            message="Shows respondent data once registration starts.",
+        )
+        assert "Shows respondent data once registration starts." in html
+        assert 'aria-hidden="true"' in html
+        assert 'role="img"' not in html

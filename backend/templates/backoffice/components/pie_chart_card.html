@@ -1,0 +1,136 @@
+{#
+ABOUTME: Pie chart card atom for the assembly results dashboard (ticket 886)
+ABOUTME: Stateless — renders a categorical pie + legends from segment counts, or a skeleton + message when data is absent
+#}
+{# Default categorical palette, cycled when a segment gives no explicit colour.
+   Semantic tokens, so slices stay on-brand and theme-aware. A caller can override
+   per segment via a "color" key. #}
+{% set _pie_palette = [
+"var(--color-info-600)",
+"var(--color-brand-400)",
+"var(--color-success-600)",
+"var(--color-warning-600)",
+"var(--color-info-400)",
+"var(--color-success-400)",
+"var(--color-warning-400)"
+] %}
+{% macro pie_chart_card(title, segments=none, message="", size=180, title_tag="p") %}
+    {#
+    Pie chart card (stateless).
+
+    Args:
+      title: card heading — the target category name, e.g. "Gender".
+      segments: list of dicts, each {"label": str, "count": int, "color": <optional css colour>}.
+                When missing/empty or the counts sum to zero, the card renders its
+                skeleton state instead of a chart.
+      message: text shown beneath the skeleton chart when there is no data. It is an
+               incoming parameter so the surrounding context decides what to say
+               (e.g. "Shows respondent data once registration starts.").
+      size: pie diameter in px (default 180, matching the Figma atom).
+      title_tag: "p" (default) or "h4" — pass "h4" when the card sits under section
+                 headings so the document outline stays clean.
+
+    Data present:
+      {{ pie_chart_card("Gender", segments=[
+         {"label": "Male", "count": 10},
+         {"label": "Female", "count": 9},
+         {"label": "Non-binary", "count": 1},
+      ]) }}
+
+    No data (skeleton + message):
+      {{ pie_chart_card("Respondents", message="Shows respondent data once registration starts.") }}
+    #}
+    {% set total = (segments | map(attribute="count") | sum) if segments else 0 %}
+    <div class="rounded-3xl p-6 flex flex-col gap-6 w-full h-full"
+         style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
+        {# Header. Static tags (not <{{ title_tag }}>) so the template indenter can parse them. #}
+        <div class="w-full">
+            {% if title_tag == "h4" %}
+                <h4 class="text-display-sm" style="color: var(--color-headings); word-break: break-word;">{{ title }}</h4>
+            {% else %}
+                <p class="text-display-sm" style="color: var(--color-headings); word-break: break-word;">{{ title }}</p>
+            {% endif %}
+        </div>
+        {% if segments and total > 0 %}
+            {# ---- Data present: pie + legends ---- #}
+            {# Build the conic-gradient control points with a running cursor. Each slice
+               boundary carries a thin card-coloured divider (the white gaps in the design),
+               and every transition is FEATHERED by `f` on each side rather than a hard stop.
+               A hard conic stop renders an aliased (jagged) radial edge — the browser only
+               anti-aliases the outer circle — so the feather is what smooths the straight
+               edges. `hw` is the divider half-width; `f` is the feather half-width.
+               The 0deg/360deg seam is kept card-coloured on both sides so its unavoidable
+               discontinuity is invisible (a divider sits on the seam, matching the design). #}
+            {% set gap = 0.9 %}
+            {% set f = 0.4 %}
+            {% set hw = gap / 2 %}
+            {% set ns = namespace(cursor=0.0, stops=[]) %}
+            {# seam divider, right half #}
+            {% set _ = ns.stops.append("var(--color-tables-cards) 0.0000%") %}
+            {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format([hw - f, 0.0] | max)) %}
+            {% for seg in segments %}
+                {% set pct = seg.count / total * 100 %}
+                {% set color = seg.get("color") or _pie_palette[loop.index0 % (_pie_palette | length)] %}
+                {% set start = ns.cursor %}
+                {% set end = ns.cursor + pct %}
+                {# blend into the slice colour, then its solid core #}
+                {% set _ = ns.stops.append("%s %.4f%%" | format(color, start + hw + f)) %}
+                {% set _ = ns.stops.append("%s %.4f%%" | format(color, end - hw - f)) %}
+                {% if not loop.last %}
+                    {# card-coloured divider centred on the interior boundary at `end` #}
+                    {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format(end - hw + f)) %}
+                    {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format(end + hw - f)) %}
+                {% endif %}
+                {% set ns.cursor = end %}
+            {% endfor %}
+            {# seam divider, left half #}
+            {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format([100.0 - hw + f, 100.0] | min)) %}
+            {% set _ = ns.stops.append("var(--color-tables-cards) 100.0000%") %}
+            <div class="flex flex-col gap-2 w-full">
+                <div class="flex items-center justify-center w-full" style="height: {{ size }}px;">
+                    <div role="img"
+                         aria-label="{{ title }}: {% for seg in segments %}{{ seg.label }} {{ (seg.count / total * 100) | round | int }}% ({{ seg.count }}){% if not loop.last %}, {% endif %}{% endfor %}"
+                         style="width: {{ size }}px; height: {{ size }}px; border-radius: 9999px;
+                                background: conic-gradient({{ ns.stops | join(', ') }});"></div>
+                </div>
+                {# Legends #}
+                <div class="flex flex-wrap gap-3 items-start justify-center w-full">
+                    {% for seg in segments %}
+                        {% set color = seg.get("color") or _pie_palette[loop.index0 % (_pie_palette | length)] %}
+                        <div class="flex gap-1.5 items-center rounded"
+                             style="background-color: var(--color-subtle-background-panels); padding: 4px 8px;">
+                            <span style="width: 8px; height: 8px; border-radius: 2px; background-color: {{ color }};"></span>
+                            <span class="text-caption whitespace-nowrap" style="color: var(--color-headings);">{{ seg.label }} {{ (seg.count / total * 100) | round | int }}% ({{ seg.count }})</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            {# ---- No data: skeleton circle + message ---- #}
+            <div class="w-full">
+                <div class="flex items-center justify-center w-full" style="height: {{ size }}px;">
+                    {# Two grey halves split by a vertical divider. Feathered at the 50%
+                       (bottom) and 0/100 (top, on the seam) boundaries, same as the data
+                       pie, so the straight edges are anti-aliased rather than jagged.
+                       neutral-200/300 are used directly: there is no semantic skeleton token. #}
+                    <div aria-hidden="true"
+                         style="width: {{ size }}px; height: {{ size }}px; border-radius: 9999px;
+                                background: conic-gradient(
+                                var(--color-tables-cards) 0.0000%,
+                                var(--color-tables-cards) 0.0500%,
+                                var(--color-neutral-300) 0.8500%,
+                                var(--color-neutral-300) 49.1500%,
+                                var(--color-tables-cards) 49.9500%,
+                                var(--color-tables-cards) 50.0500%,
+                                var(--color-neutral-200) 50.8500%,
+                                var(--color-neutral-200) 99.1500%,
+                                var(--color-tables-cards) 99.9500%,
+                                var(--color-tables-cards) 100.0000%);"></div>
+                </div>
+            </div>
+            {% if message %}
+                <p class="text-body-sm w-full" style="color: var(--color-headings); word-break: break-word;">{{ message }}</p>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endmacro %}

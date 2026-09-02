@@ -1,0 +1,67 @@
+{#
+ABOUTME: Showcase section for the pie chart card atom (ticket 886 dashboard)
+ABOUTME: Demonstrates the data-present state (pie + legends) and the no-data skeleton with an incoming message
+#}
+{% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_example, showcase_tokens %}
+{% from "backoffice/components/pie_chart_card.html" import pie_chart_card %}
+
+{% macro pie_chart_card_section() %}
+    {% call showcase_section() %}
+        {{ showcase_title("Pie Chart Card") }}
+        {{ showcase_description("Stateless card for the results dashboard. Given segment counts it draws a categorical pie (CSS conic-gradient, no JS) with legend chips. With no data it renders a skeleton circle and a caller-supplied message.") }}
+
+        {% call showcase_example('{% from "backoffice/components/pie_chart_card.html" import pie_chart_card %}
+
+{# Data present — counts drive the slices, percentages and legends #}
+            {{ pie_chart_card("Gender", segments=[
+            {"label": "Male", "count": 10},
+            {"label": "Female", "count": 9},
+            {"label": "Non-binary", "count": 1},
+            ]) }}
+
+{# More categories — the default palette cycles #}
+            {{ pie_chart_card("Age", segments=[
+            {"label": "0-15", "count": 45},
+            {"label": "16-29", "count": 85},
+            {"label": "30-44", "count": 36},
+            {"label": "45-59", "count": 5},
+            {"label": "60+", "count": 9},
+            ]) }}
+
+{# No data — skeleton + an incoming message set by the context #}
+            {{ pie_chart_card("Respondents",
+            message="Shows respondent data once registration starts.") }}') %}
+            <div class="flex flex-wrap gap-4 items-stretch">
+                <div style="width: 306px;">
+                    {{ pie_chart_card("Gender", segments=[
+                    {"label": "Male", "count": 10},
+                    {"label": "Female", "count": 9},
+                    {"label": "Non-binary", "count": 1}
+                    ]) }}
+                </div>
+                <div style="width: 306px;">
+                    {{ pie_chart_card("Age", segments=[
+                    {"label": "0-15", "count": 45},
+                    {"label": "16-29", "count": 85},
+                    {"label": "30-44", "count": 36},
+                    {"label": "45-59", "count": 5},
+                    {"label": "60+", "count": 9}
+                    ]) }}
+                </div>
+                <div style="width: 306px;">
+                    {{ pie_chart_card("Respondents",
+                    message="Shows respondent data once registration starts.") }}
+                </div>
+            </div>
+        {% endcall %}
+
+        {{ showcase_tokens([
+        "--color-tables-cards (card + slice dividers)",
+        "--color-headings (title)",
+        "--color-info-600 / --color-brand-400 / --color-success-600 (default slice palette)",
+        "--color-neutral-100 (legend chip background)",
+        "--color-neutral-200 / --color-neutral-300 (skeleton circle)",
+        "--color-neutral-800 (legend + message text)"
+        ]) }}
+    {% endcall %}
+{% endmacro %}

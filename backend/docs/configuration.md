@@ -367,6 +367,7 @@ if has_feature("my_feature"):
 | Flag                   | Default | Purpose                                                                                                                                                                                    |
 | ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `FF_REGISTRATION_PAGE` | `false` | Enables the public registration page routes (`/register/<slug>`, `/register/<slug>/thank-you`, `/r/<short_slug>`, `/registration-closed`). When unset or `false`, those routes return 404. |
+| `FF_RESULTS_DASHBOARD` | `false` | Shows the assembly results **Dashboard** tab (ticket 886). The dashboard currently renders mock data, so it stays hidden in production until the flag is set. Only the tab is gated — the route itself remains reachable by URL. |
 
 ## Environment Files
 

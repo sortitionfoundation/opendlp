@@ -29,6 +29,7 @@ const ONE_PER_SLICE = [
   "executeAddRegistrationImage",
   "executeAddRegistrationDocument",
   "executeCreateEmailTemplate",
+  "executeGetDashboardSummary",
 ];
 
 describe("the composed controller", () => {
