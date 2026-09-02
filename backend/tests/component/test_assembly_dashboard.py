@@ -114,8 +114,8 @@ class TestTheDashboardPage:
         # Target renders a real pie
         assert "conic-gradient(" in html
         # Selected / Confirmed render their skeleton messages
-        assert "Shows selected data once the selection process starts." in html
-        assert "Shows confirmed data once registration closes." in html
+        assert "Shows selected data once selection has happened." in html
+        assert "Shows confirmed data once at least one selected respondent is confirmed." in html
 
     def test_route_is_reachable_even_when_the_flag_is_off(self, logged_in_admin, existing_assembly):
         # The flag only hides the tab; the route stays reachable by URL.

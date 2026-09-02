@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-03 12:24+0100\n"
+"POT-Creation-Date: 2026-09-03 14:21+0200\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -1344,8 +1344,9 @@ msgid "Selected"
 msgstr "Kiválasztás"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:221
-msgid "Shows selected data once the selection process starts."
-msgstr ""
+#, fuzzy
+msgid "Shows selected data once selection has happened."
+msgstr "Vissza a regisztrációhoz"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:224
 #: src/opendlp/entrypoints/blueprints/respondents.py:460
@@ -1358,9 +1359,8 @@ msgid "Confirmed"
 msgstr "Új jelszó"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:226
-#, fuzzy
-msgid "Shows confirmed data once registration closes."
-msgstr "Vissza a regisztrációhoz"
+msgid "Shows confirmed data once at least one selected respondent is confirmed."
+msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:289
 #, fuzzy
@@ -15174,3 +15174,7 @@ msgstr ""
 
 #~ msgid "Format"
 #~ msgstr "Keresztnév"
+
+#~ msgid "Shows selected data once the selection process starts."
+#~ msgstr ""
+

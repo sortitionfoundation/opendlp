@@ -218,12 +218,12 @@ def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]
             {
                 "title": _("Selected"),
                 "segments": None,
-                "message": _("Shows selected data once the selection process starts."),
+                "message": _("Shows selected data once selection has happened."),
             },
             {
                 "title": _("Confirmed"),
                 "segments": None,
-                "message": _("Shows confirmed data once registration closes."),
+                "message": _("Shows confirmed data once at least one selected respondent is confirmed."),
             },
         ]
         sections.append({"name": category.name, "cards": cards})
