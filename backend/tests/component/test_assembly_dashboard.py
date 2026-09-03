@@ -2,11 +2,15 @@
 ABOUTME: Covers the page render, the FF_RESULTS_DASHBOARD tab gating, and the atom's two states."""
 
 import os
+import re
 
 import pytest
 from flask import render_template_string
 
+from opendlp.domain.respondents import Respondent
+from opendlp.domain.value_objects import RespondentStatus
 from opendlp.feature_flags import reload_flags
+from tests.fakes import FakeUnitOfWork
 
 
 def _dashboard_url(assembly) -> str:
@@ -15,6 +19,35 @@ def _dashboard_url(assembly) -> str:
 
 def _members_url(assembly) -> str:
     return f"/backoffice/assembly/{assembly.id}/members"
+
+
+def _indicator_values(html: str) -> list[str]:
+    """The bold numbers in the "Number to select / Number of registrations" row."""
+    return re.findall(r'font-weight: 700;">(\d+)</span>', html)
+
+
+@pytest.fixture
+def assembly_with_respondents(fake_store, existing_assembly):
+    """25 registrations, plus a test submission and a deletion that do not count."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        statuses = (
+            [RespondentStatus.POOL] * 20
+            + [RespondentStatus.SELECTED] * 3
+            + [RespondentStatus.CONFIRMED] * 1
+            + [RespondentStatus.WITHDRAWN] * 1
+            + [RespondentStatus.TEST_SUBMISSION] * 4
+            + [RespondentStatus.DELETED] * 2
+        )
+        for index, status in enumerate(statuses):
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=existing_assembly.id,
+                    external_id=f"R{index:03d}",
+                    selection_status=status,
+                )
+            )
+        uow.commit()
+    return existing_assembly
 
 
 @pytest.fixture
@@ -33,11 +66,23 @@ class TestTheDashboardPage:
 
         assert "Number to select:" in html
         assert "Number of registrations:" in html
-        # total_respondents from the mock summary (POOL 42 + WITHDRAWN 2)
-        assert "44" in html
         # one section per mock category
         assert ">Gender<" in html
         assert ">Age<" in html
+
+    def test_the_registration_count_excludes_test_and_deleted_respondents(
+        self,
+        logged_in_admin,
+        assembly_with_respondents,
+    ):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_respondents)).get_data(as_text=True)
+
+        assert _indicator_values(html) == ["0", "25"]
+
+    def test_an_assembly_with_no_respondents_shows_no_registrations(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+
+        assert _indicator_values(html) == ["0", "0"]
 
     def test_target_pie_is_populated_and_later_datasets_are_skeletons(self, logged_in_admin, existing_assembly):
         html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)

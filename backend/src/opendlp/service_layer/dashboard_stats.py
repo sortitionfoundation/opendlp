@@ -1,31 +1,12 @@
-"""ABOUTME: MOCK service layer for the assembly results dashboard (ticket 886).
-ABOUTME: Returns representative fixture data so the front-end can be built before Hamish writes the real queries."""
+"""ABOUTME: Service layer for the assembly results dashboard (ticket 886).
+ABOUTME: Headline respondent counts, the per-category results table, and its export."""
 
 # =============================================================================
-# ⚠️  MOCK / STUB MODULE — ticket 886 (results dashboard)
+# ⚠️  PARTIALLY MOCKED MODULE — ticket 886 (results dashboard)
 # =============================================================================
-# Every function here returns DETERMINISTIC FIXTURE DATA. None of it queries the
-# respondent pool or computes real target feasibility — that business logic is
-# Hamish's to implement when he is back. The value of this module is the *shape*
-# it pins down: the dataclasses below are the contract the dashboard front-end
-# binds to, so the two halves can be built in parallel and reconciled later.
-#
-# What is real vs. mocked:
-#   * assembly title + number_to_select are read from the existing repository
-#     (no new logic — these fields already exist on the Assembly aggregate);
-#   * per-status respondent counts, per-category pool breakdowns, unmet targets
-#     and the export payload are ALL fabricated fixtures.
-#
-# Decisions that still need Hamish / a human (documented in
-# docs/agent/886-dashboard/service_layer_spec.md — kept as CONFIRM notes):
-#   1. Pool-vs-run scope: is the dashboard a live view of the current pool, or a
-#      post-selection report? The mock assumes LIVE POOL (matches "only 8 have
-#      signed up so far"), with selected counts omitted until a run exists.
-#   2. Which RespondentStatus values count toward the headline pool total.
-#   3. Feasibility semantics: simple per-value shortfall (mocked here) vs. the
-#      joint-quota InfeasibleQuotasError machinery in target_checking.py.
-#   4. xlsx export is a genuine gap — tabular_export.py has CSV + GSheet targets
-#      but no xlsx one. export_assembly_dashboard() documents this.
+# get_assembly_dashboard_summary is real. get_assembly_dashboard_report and
+# export_assembly_dashboard still return fixture data; see
+# docs/agent/886-dashboard/service_layer_plan.md for the phases that replace them.
 # =============================================================================
 
 from __future__ import annotations
@@ -33,12 +14,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import HEADLINE_RESPONDENT_STATUSES, RespondentStatus
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InvalidSelection
+from opendlp.service_layer.permissions import can_view_assembly, require_assembly_permission
 
 if TYPE_CHECKING:
     import uuid
 
+    from opendlp.domain.assembly import Assembly
+    from opendlp.domain.targets import TargetCategory
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
@@ -139,17 +123,22 @@ class DashboardExport:
 # -----------------------------------------------------------------------------
 
 
-def _assembly_facts(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> tuple[str, int]:
-    """Read the two real, already-persisted fields the dashboard needs.
+@dataclass
+class _DashboardContext:
+    """The assembly and its targets, which every dashboard service starts from."""
 
-    This is the only part of the mock that touches the database, and it adds no
-    new business logic — ``title`` and ``number_to_select`` are plain columns on
-    the Assembly aggregate.
-    """
+    assembly: Assembly
+    categories: list[TargetCategory]
+
+
+def _load_dashboard_context(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> _DashboardContext:
     assembly = uow.assemblies.get(assembly_id)
     if assembly is None:
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
-    return assembly.title, assembly.number_to_select
+    return _DashboardContext(
+        assembly=assembly,
+        categories=list(uow.target_categories.get_by_assembly_id(assembly_id)),
+    )
 
 
 def _mock_categories() -> list[DashboardCategory]:
@@ -175,36 +164,31 @@ def _mock_categories() -> list[DashboardCategory]:
     ]
 
 
-def get_assembly_dashboard_summary(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> DashboardSummary:
-    """MOCK: headline stats for the dashboard's stat-tile row.
+@require_assembly_permission(can_view_assembly)
+def get_assembly_dashboard_summary(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> DashboardSummary:
+    """Headline stats for the dashboard's stat-tile row.
 
-    REAL implementation (Hamish): count respondents per RespondentStatus for the
-    assembly and total the live-pool statuses. Assumes the caller has already
-    checked can_view_assembly()/permissions in the entrypoint.
+    ``status_counts`` carries every RespondentStatus, zeros included, so the
+    front-end never has to invent the list. ``total_respondents`` counts the
+    headline statuses only, which is wider than the pool the per-category counts
+    in the report are measured over — see HEADLINE_RESPONDENT_STATUSES.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    title, number_to_select = _assembly_facts(uow, assembly_id)
-
-    # Fixture per-status counts — one entry per status so the shape is complete.
-    mock_counts = {
-        RespondentStatus.TEST_SUBMISSION: 3,
-        RespondentStatus.POOL: 42,
-        RespondentStatus.SELECTED: 0,
-        RespondentStatus.CONFIRMED: 0,
-        RespondentStatus.WITHDRAWN: 2,
-        RespondentStatus.DELETED: 1,
-    }
-    status_counts = [StatusCount(status=status.value, count=count) for status, count in mock_counts.items()]
-
-    categories = _mock_categories()
+    context = _load_dashboard_context(uow, assembly_id)
+    counts = uow.respondents.count_by_status(assembly_id)
 
     return DashboardSummary(
         assembly_id=str(assembly_id),
-        assembly_title=title,
-        number_to_select=number_to_select,
-        target_category_count=len(categories),
-        # CONFIRM (decision 2): which statuses count. Mock counts the live pool.
-        total_respondents=mock_counts[RespondentStatus.POOL] + mock_counts[RespondentStatus.WITHDRAWN],
-        status_counts=status_counts,
+        assembly_title=context.assembly.title,
+        number_to_select=context.assembly.number_to_select,
+        target_category_count=len(context.categories),
+        total_respondents=sum(counts.get(status, 0) for status in HEADLINE_RESPONDENT_STATUSES),
+        status_counts=[StatusCount(status=status.value, count=counts.get(status, 0)) for status in RespondentStatus],
     )
 
 
@@ -215,7 +199,8 @@ def get_assembly_dashboard_report(uow: AbstractUnitOfWork, assembly_id: uuid.UUI
     pool respondents holding each value and derive the shortfall. The rows are
     also what the front-end draws the pie charts from.
     """
-    title, number_to_select = _assembly_facts(uow, assembly_id)
+    context = _load_dashboard_context(uow, assembly_id)
+    title, number_to_select = context.assembly.title, context.assembly.number_to_select
     categories = _mock_categories()
 
     # Unmet targets are a pure projection of the rows: anything with a shortfall.
@@ -261,8 +246,8 @@ def export_assembly_dashboard(
     if export_format not in EXPORT_FORMATS:
         raise InvalidSelection(f"Unknown export format '{export_format}'. Expected one of {EXPORT_FORMATS}.")
 
-    title, _number_to_select = _assembly_facts(uow, assembly_id)
-    slug = title.lower().replace(" ", "-") or "assembly"
+    context = _load_dashboard_context(uow, assembly_id)
+    slug = context.assembly.title.lower().replace(" ", "-") or "assembly"
 
     notes = {
         "csv": "Real service returns CSV bytes via CsvExportTarget.",
