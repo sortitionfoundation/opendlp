@@ -1488,7 +1488,7 @@ def _handle_auto_reply_readiness_problems(uow: Any, params: dict[str, Any]) -> d
 def _handle_get_assembly_dashboard_summary(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
     """Handle get_assembly_dashboard_summary service call (MOCK).
 
-    DashboardStatsError is left to reach service_docs_execute's outer handler,
+    AssemblyNotFoundError is left to reach service_docs_execute's outer handler,
     which logs the real error and returns a generic message - so no str(e)
     reaches the response body.
     """

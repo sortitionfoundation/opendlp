@@ -1,7 +1,8 @@
 # Ticket 886 — Results dashboard: service-layer implementation plan
 
-Status: **plan reviewed once, all questions answered. Nothing implemented.**
-Revision 3 — folds in Doctor Chewie's COMMENT lines from revisions 1 and 2.
+Status: **in progress.** Phase 0 done; Phases 1-5 outstanding. Phase 6 is a
+separate ticket. Revision 3 of the plan folds in Doctor Chewie's COMMENT lines
+from revisions 1 and 2.
 
 Companion to [service_layer_spec.md](service_layer_spec.md), which described the mock
 stage and carries the answers to the mock's own open questions. This document says
@@ -388,7 +389,7 @@ format dropdown reduced to csv/gsheet and the Returns prose updated.
 Each phase is independently committable and leaves the suite green. Docs and code
 commit separately.
 
-**Phase 0 — tidy the contract.** Drop `mock` from the three dataclasses; replace
+**Phase 0 — tidy the contract. ✅ Done.** Drop `mock` from the three dataclasses; replace
 `DashboardStatsError` with the standard exceptions; update the three prose lines in
 `_dashboard.html`. No behaviour change; the mock data stays. _Tests:_ existing ones
 stay green.

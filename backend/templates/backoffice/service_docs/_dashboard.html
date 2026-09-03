@@ -63,7 +63,7 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                 <code class="text-body-sm px-2 py-1 rounded block"
                       style="background-color: var(--color-subtle-background-panels)">
-                    DashboardSummary  →  {assembly_id, assembly_title, number_to_select, target_category_count, total_respondents, status_counts[], mock}
+                    DashboardSummary  →  {assembly_id, assembly_title, number_to_select, target_category_count, total_respondents, status_counts[]}
                 </code>
             </div>
             {# Try It #}
@@ -155,7 +155,7 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                 <code class="text-body-sm px-2 py-1 rounded block"
                       style="background-color: var(--color-subtle-background-panels)">
-                    DashboardReport  →  {assembly_id, assembly_title, number_to_select, pool_size, categories[{name, rows[{value, target_min, target_max, pool_count, shortfall, meetable}]}], unmet_targets[], mock}
+                    DashboardReport  →  {assembly_id, assembly_title, number_to_select, pool_size, categories[{name, rows[{value, target_min, target_max, pool_count, shortfall, meetable}]}], unmet_targets[]}
                 </code>
             </div>
             <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
@@ -252,7 +252,7 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                 <code class="text-body-sm px-2 py-1 rounded block"
                       style="background-color: var(--color-subtle-background-panels)">
-                    DashboardExport  →  {assembly_id, export_format, filename, note, download_ready, mock}
+                    DashboardExport  →  {assembly_id, export_format, filename, note, download_ready}
                 </code>
             </div>
             <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">

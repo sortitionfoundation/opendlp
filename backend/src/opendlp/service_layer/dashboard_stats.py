@@ -14,7 +14,7 @@ ABOUTME: Returns representative fixture data so the front-end can be built befor
 #   * assembly title + number_to_select are read from the existing repository
 #     (no new logic — these fields already exist on the Assembly aggregate);
 #   * per-status respondent counts, per-category pool breakdowns, unmet targets
-#     and the export payload are ALL fabricated fixtures (marked `mock=True`).
+#     and the export payload are ALL fabricated fixtures.
 #
 # Decisions that still need Hamish / a human (documented in
 # docs/agent/886-dashboard/service_layer_spec.md — kept as CONFIRM notes):
@@ -34,15 +34,12 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from opendlp.domain.value_objects import RespondentStatus
+from opendlp.service_layer.exceptions import AssemblyNotFoundError, InvalidSelection
 
 if TYPE_CHECKING:
     import uuid
 
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
-
-
-class DashboardStatsError(Exception):
-    """Raised when the dashboard stats cannot be built (e.g. assembly not found)."""
 
 
 # The formats the export control offers. gsheet writes to Google Sheets; csv and
@@ -75,7 +72,6 @@ class DashboardSummary:
     # Every RespondentStatus, in a stable order, so the front-end can render a
     # "number in each state" breakdown without inventing the list itself.
     status_counts: list[StatusCount] = field(default_factory=list)
-    mock: bool = True
 
 
 @dataclass
@@ -123,7 +119,6 @@ class DashboardReport:
     pool_size: int
     categories: list[DashboardCategory] = field(default_factory=list)
     unmet_targets: list[UnmetTarget] = field(default_factory=list)
-    mock: bool = True
 
 
 @dataclass
@@ -137,7 +132,6 @@ class DashboardExport:
     # this format (a file blob, a GSheet URL, ...). Mock returns no real bytes.
     note: str
     download_ready: bool
-    mock: bool = True
 
 
 # -----------------------------------------------------------------------------
@@ -154,7 +148,7 @@ def _assembly_facts(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> tuple[st
     """
     assembly = uow.assemblies.get(assembly_id)
     if assembly is None:
-        raise DashboardStatsError(f"Assembly {assembly_id} not found")
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
     return assembly.title, assembly.number_to_select
 
 
@@ -265,7 +259,7 @@ def export_assembly_dashboard(
         returns download_ready=False for xlsx to surface that gap in the UI.
     """
     if export_format not in EXPORT_FORMATS:
-        raise DashboardStatsError(f"Unknown export format '{export_format}'. Expected one of {EXPORT_FORMATS}.")
+        raise InvalidSelection(f"Unknown export format '{export_format}'. Expected one of {EXPORT_FORMATS}.")
 
     title, _number_to_select = _assembly_facts(uow, assembly_id)
     slug = title.lower().replace(" ", "-") or "assembly"
