@@ -3,8 +3,10 @@
 **Issue:** 913
 **Branch:** `913-user-create-project`
 **Date:** 2026-09-01, decisions recorded 2026-09-02
-**Status:** Decided. Nothing implemented yet. §7 records the decisions; §9 lists the
-few consequences those decisions created, with the call I've made on each.
+**Status:** Implemented. All nine phases of §4 are done and marked DONE, each as
+its own commit with `just check` clean and the suite green. §7 records the
+decisions; §9 lists the consequences those decisions created, and what was
+finally done about each.
 
 ## 0. Terminology
 
@@ -389,9 +391,10 @@ likely, but worth looking rather than assuming.
 Otherwise the sequence is the standard one from `docs/deploy.md:274-279` — backup,
 stop the app, `alembic upgrade head`, start.
 
-## 6. Test plan
+## 6. Test plan — DONE
 
-Following `docs/testing.md`; nothing here is "not applicable".
+Following `docs/testing.md`; nothing here is "not applicable". Everything below
+was written, except as noted under "one gap, knowingly left".
 
 **Unit** (`tests/unit/test_permissions.py`, `tests/unit/domain/test_users.py`)
 — the full matrix: {admin, organiser, user} × {no role, assembly-manager,
@@ -431,8 +434,19 @@ returns `[]` + 403 for a non-member and a single exact match for a manager.
 assembly, sees it on their dashboard, is listed as its assembly manager, adds a
 colleague by exact email; a second organiser cannot reach it by URL.
 
-**Existing tests that will need updating** (all currently assert the blanket
-access we are removing): `tests/unit/test_permissions.py` (17 refs),
+**One gap, knowingly left.** "The `created_by_user_id` migration up and down" is
+not driven through alembic in a test. The test database is built from
+`orm.metadata.create_all`, not from migrations, so an alembic-driven test would
+need a bespoke second database and would be the only such harness in the repo.
+Instead: `alembic check` (in `just check`) pins that the migration and the ORM
+agree; `TestCreatedByColumnShape` reads the nullability and the `SET NULL` rule
+back out of `information_schema`, because autogenerate does *not* compare
+`ondelete`; and `test_deleting_the_creator_leaves_the_assembly` proves the rule
+behaviourally. Up and down were run by hand against a real database before the
+migration was committed.
+
+**Existing tests that needed updating** (all asserted the blanket access we
+removed): `tests/unit/test_permissions.py` (17 refs),
 `tests/unit/test_user_service.py` (10), `tests/unit/test_invite_service.py` (6),
 `tests/component/test_admin_user_management.py`,
 `tests/component/test_admin_invite_management.py`,
@@ -475,27 +489,42 @@ Recorded from Chewie's comments, 2026-09-02.
 | Seeds & docs | `service_layer/db_utils.py`, `AGENTS.md`, `docs/personal-data.md`, new `docs/roles-and-permissions.md` |
 | Tests | see §6 |
 
-## 9. Consequences of the decisions, and the calls I've made
+## 9. Consequences of the decisions, and what was done
 
-Things that only became questions once the decisions above were taken. Say if
-any of these is wrong; otherwise I'll implement them as written.
+Things that only became questions once the decisions above were taken, and how
+each was settled.
 
 1. **The role migration's downgrade is a no-op** (§4.3). Converting
    `global-organiser` → `user` destroys the information needed to reverse it.
-   The alternative — hardcode the affected user id in the migration — is
-   reasonable for one row, and I'd take it if you paste me the id from the
-   `SELECT` in §5.
-2. **Unredeemed `global-organiser` invites are downgraded too**, silently.
-   Probably zero rows; §5 checks before assuming.
-3. **`created_by_user_id` is NULL for every existing assembly.** No backfill —
-   inferring the creator from the earliest assembly-manager row would be
-   plausible-looking and wrong often enough to be worse than an honest NULL.
+   Shipped as an empty `downgrade()` with a docstring saying why, and
+   `TestDowngradeIsANoOp` asserts it so nobody "fixes" it later. **Still open:**
+   the alternative — hardcode the affected user id — remains reasonable for one
+   row, and is a one-line change if you paste the id from the `SELECT` in §5
+   before deploy day.
+2. **Unredeemed `global-organiser` invites are downgraded too**, silently. The
+   migration updates `user_invites` as well as `users`. **Still open:** run the
+   §5 queries before deploying rather than assuming it is zero rows.
+3. **`created_by_user_id` is NULL for every existing assembly.** No backfill, as
+   planned — inferring the creator from the earliest assembly-manager row would
+   be plausible-looking and wrong often enough to be worse than an honest NULL.
 4. **The member-search endpoint still confirms account existence** for any
-   assembly manager, by design (§4.7). It is the least a member-adding UI can
-   leak; recorded in `docs/personal-data.md` rather than left implicit.
-5. **The seeded local-dev organiser needs a seeded assembly** (§4.9), otherwise
-   `just` dev with that account shows an empty dashboard and looks broken.
+   assembly manager, by design (§4.7). Recorded in `docs/personal-data.md` under
+   "Who can look up a user account", together with what would change the answer.
+5. **The seeded local-dev organiser owns the seeded assembly** (§4.9), with the
+   assembly-manager role on it, so that account no longer shows an empty
+   dashboard. `test_seeded_organiser_owns_the_sample_assembly` pins it.
 6. **Open signup (D3) will make `can_create_assembly` a public-facing
-   boundary.** Nothing to do now beyond having it be one named function — worth
-   flagging in `docs/roles-and-permissions.md` so whoever builds open signup
+   boundary.** Nothing to do now beyond having it be one named function; flagged
+   at the end of `docs/roles-and-permissions.md` so whoever builds open signup
    sees it.
+
+Two further consequences appeared during implementation:
+
+7. **The legacy HTMX member-search route bypassed the service**, checking
+   `has_global_admin` itself and calling the repository directly. It now goes
+   through `search_assembly_candidate_users`, so the exact-email rule cannot be
+   sidestepped by whichever UI a deployment happens to have enabled.
+8. **The fake `AssemblyRepository` stopped matching the real one.**
+   `get_assemblies_for_user` returned every active assembly regardless of the
+   user — harmless while everyone senior saw everything, and a hole in every
+   component test the moment access narrowed. It now mirrors the SQL query.

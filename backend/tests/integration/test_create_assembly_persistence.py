@@ -2,6 +2,7 @@
 ABOUTME: The new assembly row and the creator's role row are inserted in one commit, FK ordering and all."""
 
 import pytest
+from sqlalchemy import text
 
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
@@ -68,3 +69,39 @@ class TestCreateAssemblyPersistence:
             survivor = fresh.assemblies.get(assembly.id)
             assert survivor is not None
             assert survivor.created_by_user_id is None
+
+
+class TestCreatedByColumnShape:
+    """The column's shape is load-bearing, and autogenerate does not compare ON DELETE rules.
+
+    `alembic check` confirms the migration and the ORM agree on the column
+    existing; it does not confirm the delete rule, so read it back explicitly.
+    """
+
+    def test_the_foreign_key_is_set_null(self, postgres_session):
+        rule = postgres_session.execute(
+            text(
+                """
+                SELECT rc.delete_rule
+                FROM information_schema.referential_constraints rc
+                JOIN information_schema.key_column_usage kcu
+                  ON kcu.constraint_name = rc.constraint_name
+                WHERE kcu.table_name = 'assemblies' AND kcu.column_name = 'created_by_user_id'
+                """
+            )
+        ).scalar_one()
+
+        assert rule == "SET NULL"
+
+    def test_the_column_is_nullable(self, postgres_session):
+        """Assemblies created before the column existed have no creator to record."""
+        nullable = postgres_session.execute(
+            text(
+                """
+                SELECT is_nullable FROM information_schema.columns
+                WHERE table_name = 'assemblies' AND column_name = 'created_by_user_id'
+                """
+            )
+        ).scalar_one()
+
+        assert nullable == "YES"

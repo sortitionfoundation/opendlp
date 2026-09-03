@@ -98,6 +98,11 @@ class TestOrganiserCannotReachSomeoneElsesAssembly:
 class TestDashboardGating:
     """The create button and the Site Admin link follow capabilities, not roles."""
 
+    def test_backoffice_dashboard_offers_create_to_an_admin(self, logged_in_admin: FlaskClient) -> None:
+        response = logged_in_admin.get("/backoffice/dashboard")
+        assert response.status_code == 200
+        assert b"Create New Assembly" in response.data
+
     def test_backoffice_dashboard_offers_create_to_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
         response = logged_in_organiser.get("/backoffice/dashboard")
         assert response.status_code == 200

@@ -866,3 +866,49 @@ class TestCreateTargetCategoryAutoPopulate:
         category = target_service.create_target_category(uow, admin.id, assembly.id, name="PostCode")
 
         assert category.values == []
+
+
+class TestOrganiserIsConfinedToTheirOwnAssemblies:
+    """An organiser holds nothing over an assembly they were not added to.
+
+    Creating assemblies and reading everyone else's are different capabilities;
+    before issue 913 the one role granted both.
+    """
+
+    def _setup(self, uow):
+        organiser = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser)
+        assembly = Assembly(title="Someone else's", question="?")
+        uow.assemblies.add(assembly)
+        return organiser, assembly
+
+    def test_cannot_view(self, uow):
+        organiser, assembly = self._setup(uow)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.get_assembly_with_permissions(uow, assembly.id, organiser.id)
+
+    def test_cannot_update(self, uow):
+        organiser, assembly = self._setup(uow)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.update_assembly(uow=uow, assembly_id=assembly.id, user_id=organiser.id, title="Mine now")
+
+    def test_cannot_archive(self, uow):
+        organiser, assembly = self._setup(uow)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=organiser.id)
+
+    def test_can_do_all_three_on_an_assembly_they_created(self, uow):
+        """The mirror: creating it grants the assembly-manager role that permits all this."""
+        organiser, _ = self._setup(uow)
+        mine = assembly_service.create_assembly(uow=uow, title="Mine", created_by_user_id=organiser.id)
+
+        assert assembly_service.get_assembly_with_permissions(uow, mine.id, organiser.id).title == "Mine"
+        assembly_service.update_assembly(uow=uow, assembly_id=mine.id, user_id=organiser.id, title="Mine, renamed")
+        assembly_service.archive_assembly(uow=uow, assembly_id=mine.id, user_id=organiser.id)

@@ -452,6 +452,38 @@ class TestGetUserAssemblies:
         assert assembly1 in assemblies
         assert assembly2 in assemblies
 
+    def test_get_user_assemblies_organiser_sees_only_their_own(self, uow):
+        """An organiser's dashboard lists what they hold a role on, not every assembly."""
+        organiser = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser)
+
+        theirs = Assembly(title="Theirs", question="?")
+        someone_elses = Assembly(title="Someone else's", question="?")
+        uow.assemblies.add(theirs)
+        uow.assemblies.add(someone_elses)
+        organiser.assembly_roles.append(
+            UserAssemblyRole(user_id=organiser.id, assembly_id=theirs.id, role=AssemblyRole.ASSEMBLY_MANAGER)
+        )
+
+        assemblies = user_service.get_user_assemblies(uow=uow, user_id=organiser.id)
+
+        assert [a.title for a in assemblies] == ["Theirs"]
+
+    def test_get_user_assemblies_organiser_with_no_roles_sees_nothing(self, uow):
+        organiser = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser)
+        uow.assemblies.add(Assembly(title="Someone else's", question="?"))
+
+        assert user_service.get_user_assemblies(uow=uow, user_id=organiser.id) == []
+
     def test_get_user_assemblies_user_not_found(self, uow):
         """Test error when user not found."""
 

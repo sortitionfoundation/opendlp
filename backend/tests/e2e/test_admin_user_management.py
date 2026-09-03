@@ -49,14 +49,14 @@ def test_users(postgres_session_factory, admin_user):
         uow.commit()
         users.append(inactive_user)
 
-    # Create a global organiser
+    # Create an organiser
     with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
         organiser, _ = create_user(
             uow,
             email="organiser@example.com",
             global_role=GlobalRole.ORGANISER,
             password="SecurePass123!",  # pragma: allowlist secret
-            first_name="Global",
+            first_name="Sample",
             last_name="Organiser",
         )
         uow.commit()
@@ -119,7 +119,7 @@ class TestAdminUserList:
         assert b"user0@example.com" in response.data
 
         # Should not show organiser
-        assert b"organiser@example.com" not in response.data or b"Global Organiser" not in response.data
+        assert b"organiser@example.com" not in response.data
 
     @pytest.mark.db_semantics
     def test_list_users_filter_by_active_status(self, client: FlaskClient, admin_user: User, test_users: list[User]):
