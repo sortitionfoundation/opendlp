@@ -131,7 +131,7 @@ def can_manage_assembly_members(user, assembly) -> bool  # admin, or manages thi
 
 Each phase is a commit that leaves the suite green.
 
-### 4.1 Capability functions, no behaviour change
+### 4.1 Capability functions, no behaviour change — DONE
 
 Add the four functions above, defined to return exactly what the current code
 returns. Migrate every caller of `has_global_organiser` to the right one:

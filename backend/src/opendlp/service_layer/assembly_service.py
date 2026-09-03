@@ -26,7 +26,7 @@ from .exceptions import (
     InsufficientPermissions,
     UserNotFoundError,
 )
-from .permissions import can_manage_assembly, can_view_assembly, has_global_organiser
+from .permissions import can_create_assembly, can_manage_assembly, can_view_assembly
 from .unit_of_work import AbstractUnitOfWork
 from .user_service import get_user_assemblies
 
@@ -63,9 +63,8 @@ def create_assembly(
     if not user:
         raise UserNotFoundError(f"User {created_by_user_id} not found")
 
-    # Check permissions - only global organisers and admins can create assemblies
-    if not has_global_organiser(user):
-        raise InsufficientPermissions(action="create assembly", required_role="global-organiser or admin")
+    if not can_create_assembly(user):
+        raise InsufficientPermissions(action="create assembly", required_role="organiser or admin")
 
     # Create the assembly
     assembly = Assembly(

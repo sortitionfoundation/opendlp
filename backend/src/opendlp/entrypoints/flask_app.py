@@ -16,7 +16,11 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 import opendlp.logging
 from opendlp import bootstrap, config
-from opendlp.entrypoints.context_processors import inject_feature_flags, inject_template_globals
+from opendlp.entrypoints.context_processors import (
+    inject_capabilities,
+    inject_feature_flags,
+    inject_template_globals,
+)
 from opendlp.entrypoints.extensions import init_extensions
 from opendlp.entrypoints.template_filters import register_template_filters
 from opendlp.feature_flags import has_feature
@@ -112,6 +116,7 @@ def register_context_processors(app: Flask) -> None:
     """Register template context processors."""
     app.context_processor(inject_template_globals)
     app.context_processor(inject_feature_flags)
+    app.context_processor(inject_capabilities)
     # Also expose feature() as a Jinja global so it works inside imported macros
     # (which do not receive the render context), e.g. the shared assembly tabs.
     app.jinja_env.globals["feature"] = has_feature

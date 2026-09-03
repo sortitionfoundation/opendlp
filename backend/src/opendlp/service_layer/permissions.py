@@ -2,6 +2,7 @@
 ABOUTME: Provides functions and decorators for role-based access control throughout the system"""
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import wraps
 from typing import Any
 
@@ -102,9 +103,55 @@ def has_global_admin(user: User) -> bool:
     return user.global_role == GlobalRole.ADMIN
 
 
-def has_global_organiser(user: User) -> bool:
-    """Check if user has global organiser privileges."""
+# Capability functions. Ask one of these rather than comparing global roles, so
+# a future permissions refactor has one file to replace. Every capability has
+# one of two shapes: (user) -> bool, or (user, assembly) -> bool.
+
+
+def can_create_assembly(user: User) -> bool:
+    """Whether the user may create a new assembly."""
     return user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER)
+
+
+def can_see_all_assemblies(user: User) -> bool:
+    """Whether the user sees every assembly, rather than only those they hold a role on."""
+    return user.global_role == GlobalRole.ADMIN
+
+
+def can_administer_site(user: User) -> bool:
+    """Whether the user may manage users, invites and the site admin UI."""
+    return has_global_admin(user)
+
+
+def can_manage_assembly_members(user: User, assembly: Assembly) -> bool:
+    """Whether the user may add and remove members of this assembly."""
+    return can_manage_assembly(user, assembly)
+
+
+@dataclass(frozen=True)
+class UserCapabilities:
+    """The global capabilities of one user, in the form templates ask for them.
+
+    Injected into every template context as `perms`, including for anonymous
+    visitors, so a template never has to check `current_user.is_authenticated`
+    before asking what is permitted.
+    """
+
+    create_assembly: bool = False
+    see_all_assemblies: bool = False
+    administer_site: bool = False
+
+
+NO_CAPABILITIES = UserCapabilities()
+
+
+def capabilities_for(user: User) -> UserCapabilities:
+    """Gather one user's global capabilities for template use."""
+    return UserCapabilities(
+        create_assembly=can_create_assembly(user),
+        see_all_assemblies=can_see_all_assemblies(user),
+        administer_site=can_administer_site(user),
+    )
 
 
 def require_global_role(required_role: GlobalRole) -> Callable[[Callable[..., Any]], Callable[..., Any]]:

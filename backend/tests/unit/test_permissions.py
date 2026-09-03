@@ -11,15 +11,29 @@ from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InsufficientPermissions, UserNotFoundError
 from opendlp.service_layer.permissions import (
+    NO_CAPABILITIES,
+    UserCapabilities,
+    can_administer_site,
     can_call_confirmations,
+    can_create_assembly,
     can_edit_respondent,
     can_manage_assembly,
+    can_see_all_assemblies,
     can_view_assembly,
+    capabilities_for,
     has_global_admin,
-    has_global_organiser,
     require_assembly_permission,
     require_global_role,
 )
+
+
+def _user(global_role: GlobalRole) -> User:
+    """Build a user with the given global role and no assembly roles."""
+    return User(
+        email=f"{global_role.name.lower()}@example.com",
+        global_role=global_role,
+        password_hash="hash",  # pragma: allowlist secret
+    )
 
 
 class TestCanManageAssembly:
@@ -356,19 +370,47 @@ class TestGlobalRoleChecks:
         assert has_global_admin(organiser_user) is False
         assert has_global_admin(regular_user) is False
 
-    def test_has_global_organiser(self):
-        """Test global organiser detection."""
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        organiser_user = User(
-            email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",  # pragma: allowlist secret
-        )
-        regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+    def test_can_create_assembly(self):
+        """Admins and organisers can create assemblies; plain users cannot."""
+        assert can_create_assembly(_user(GlobalRole.ADMIN)) is True
+        assert can_create_assembly(_user(GlobalRole.GLOBAL_ORGANISER)) is True
+        assert can_create_assembly(_user(GlobalRole.USER)) is False
 
-        assert has_global_organiser(admin_user) is True  # Admin includes organiser privileges
-        assert has_global_organiser(organiser_user) is True
-        assert has_global_organiser(regular_user) is False
+    def test_can_see_all_assemblies(self):
+        """Only admins see every assembly."""
+        assert can_see_all_assemblies(_user(GlobalRole.ADMIN)) is True
+        assert can_see_all_assemblies(_user(GlobalRole.GLOBAL_ORGANISER)) is False
+        assert can_see_all_assemblies(_user(GlobalRole.USER)) is False
+
+    def test_can_administer_site(self):
+        """Only admins manage users, invites and the admin UI."""
+        assert can_administer_site(_user(GlobalRole.ADMIN)) is True
+        assert can_administer_site(_user(GlobalRole.GLOBAL_ORGANISER)) is False
+        assert can_administer_site(_user(GlobalRole.USER)) is False
+
+
+class TestUserCapabilities:
+    """Test the capability bundle handed to templates."""
+
+    def test_capabilities_for_admin(self):
+        """An admin may do everything the bundle covers."""
+        perms = capabilities_for(_user(GlobalRole.ADMIN))
+        assert perms == UserCapabilities(create_assembly=True, see_all_assemblies=True, administer_site=True)
+
+    def test_capabilities_for_organiser(self):
+        """An organiser may create assemblies and nothing else global."""
+        perms = capabilities_for(_user(GlobalRole.GLOBAL_ORGANISER))
+        assert perms == UserCapabilities(create_assembly=True, see_all_assemblies=False, administer_site=False)
+
+    def test_capabilities_for_user(self):
+        """A plain user has no global capabilities."""
+        assert capabilities_for(_user(GlobalRole.USER)) == NO_CAPABILITIES
+
+    def test_no_capabilities_permits_nothing(self):
+        """The anonymous bundle permits nothing, so templates can ask it safely."""
+        assert NO_CAPABILITIES.create_assembly is False
+        assert NO_CAPABILITIES.see_all_assemblies is False
+        assert NO_CAPABILITIES.administer_site is False
 
 
 class TestRequireGlobalRoleDecorator:

@@ -18,7 +18,6 @@ from opendlp.service_layer.permissions import (
     can_manage_assembly,
     can_view_assembly,
     has_global_admin,
-    has_global_organiser,
 )
 from opendlp.translations import _
 
@@ -189,8 +188,8 @@ def require_assembly_role(required_role: AssemblyRole) -> Callable[[F], F]:
             try:
                 assembly_uuid = uuid.UUID(str(assembly_id))
 
-                # Check if user has global admin/organiser privileges (bypass assembly role)
-                if has_global_admin(current_user) or has_global_organiser(current_user):
+                # Global admins bypass the assembly role check
+                if has_global_admin(current_user):
                     return f(*args, **kwargs)
 
                 # Check specific assembly role

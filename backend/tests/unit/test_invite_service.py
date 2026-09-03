@@ -32,8 +32,8 @@ class TestGenerateInvite:
         assert invite.expires_at > datetime.now(UTC)
         assert len(uow.user_invites.all()) == 1
 
-    def test_generate_invite_success_global_organiser(self, uow):
-        """Test successful invite generation by global organiser."""
+    def test_generate_invite_refused_for_organiser(self, uow):
+        """Invites are administered by admins only, so an organiser is refused."""
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
@@ -41,12 +41,8 @@ class TestGenerateInvite:
         )
         uow.users.add(organiser_user)
 
-        invite = invite_service.generate_invite(
-            uow=uow, created_by_user_id=organiser_user.id, global_role=GlobalRole.GLOBAL_ORGANISER
-        )
-
-        assert invite.global_role == GlobalRole.GLOBAL_ORGANISER
-        assert invite.created_by == organiser_user.id
+        with pytest.raises(InsufficientPermissions):
+            invite_service.generate_invite(uow=uow, created_by_user_id=organiser_user.id, global_role=GlobalRole.USER)
 
     def test_generate_invite_insufficient_permissions(self, uow):
         """Test invite generation fails for regular user."""
@@ -327,8 +323,8 @@ class TestGetInviteDetails:
         assert retrieved_invite.code == "DETAILS1"
         assert retrieved_invite.global_role == GlobalRole.USER
 
-    def test_get_invite_details_by_global_organiser(self, uow):
-        """Test invite details retrieval by global organiser."""
+    def test_get_invite_details_refused_for_organiser(self, uow):
+        """An organiser cannot read invite details - invites are admin-only."""
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.GLOBAL_ORGANISER,
@@ -344,9 +340,8 @@ class TestGetInviteDetails:
         )
         uow.user_invites.add(invite)
 
-        retrieved_invite = invite_service.get_invite_details(uow=uow, invite_id=invite.id, user_id=organiser_user.id)
-
-        assert retrieved_invite.code == "DETAILS2"
+        with pytest.raises(InsufficientPermissions):
+            invite_service.get_invite_details(uow=uow, invite_id=invite.id, user_id=organiser_user.id)
 
     def test_get_invite_details_insufficient_permissions(self, uow):
         """Test invite details retrieval fails for regular user."""
