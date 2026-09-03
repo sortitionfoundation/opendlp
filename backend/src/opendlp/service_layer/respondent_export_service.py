@@ -20,7 +20,6 @@ from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
 EXPORT_KIND = GSheetExportKind.RESPONDENTS
-DEFAULT_SHEET_TITLE = default_worksheet_name(EXPORT_KIND)
 
 # UI filter tokens accepted by resolve_status_filter alongside plain status names.
 STATUS_FILTER_ALL = "all"
@@ -173,7 +172,7 @@ def export_respondents(
     *,
     status_filter: list[RespondentStatus] | None,
     target: AbstractTabularExportTarget,
-    sheet_title: str = DEFAULT_SHEET_TITLE,
+    sheet_title: str = "",
 ) -> None:
     """Export an assembly's respondents to the given target.
 
@@ -182,8 +181,10 @@ def export_respondents(
     permission on the assembly. The caller is expected to manage the ``uow``
     context (``with uow: ...``).
 
-    The caller is expected to manage the `uow` context (`with uow: ...`).
+    An empty ``sheet_title`` means the default for this export kind, resolved
+    here rather than as a default argument so it lands in the caller's language.
     """
+    sheet_title = sheet_title or default_worksheet_name(EXPORT_KIND)
     assembly = _load_assembly(uow, assembly_id)
     _write_export(uow, assembly_id, assembly, status_filter, target, sheet_title)
 
@@ -224,7 +225,7 @@ def export_respondents_to_gsheet(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    worksheet_name = worksheet_name.strip() or DEFAULT_SHEET_TITLE
+    worksheet_name = worksheet_name.strip() or default_worksheet_name(EXPORT_KIND)
     assembly = _load_assembly(uow, assembly_id)
 
     # Write first so the target's result_title/result_url are populated; only
