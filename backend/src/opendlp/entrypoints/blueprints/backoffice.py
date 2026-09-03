@@ -188,13 +188,15 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]]:
-    """Turn the (mock) dashboard report into per-category sections of pie cards.
+    """Turn the dashboard report into per-category sections of pie cards.
 
     Each category shows four dataset cards, matching the Figma layout:
       - Target: the target distribution (band midpoints), always populated;
-      - Respondents / Selected / Confirmed: populated once the service exposes
-        those distributions. The mock report carries only the pool ("Respondents")
-        counts, so Selected and Confirmed render their skeleton state with a message.
+      - Respondents: the pool counts;
+      - Selected / Confirmed: still rendered as their skeleton state with a
+        message. The report does carry ``selected_count`` and ``confirmed_count``
+        per row - wiring those two cards up is a follow-up front-end ticket, so
+        the data arrives here ahead of anything drawing it.
 
     Each card is a dict {title, segments, message}; a falsy ``segments`` triggers
     the pie card's skeleton state, and ``message`` is the text shown in it.
@@ -236,7 +238,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly results dashboard (ticket 886).
 
     First iteration: the header indicators (number to select / registrations) and
-    the per-category pie charts, driven by the MOCK services in
+    the per-category pie charts, driven by the services in
     service_layer/dashboard_stats.py. The chart/table toggle, the export button and
     the findings banner are not wired yet.
     """
