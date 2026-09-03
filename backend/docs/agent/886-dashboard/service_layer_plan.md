@@ -1,6 +1,6 @@
 # Ticket 886 — Results dashboard: service-layer implementation plan
 
-Status: **in progress.** Phases 0-3 done; Phases 4-5 outstanding. Phase 6 is a
+Status: **in progress.** Phases 0-4 done; Phase 5 outstanding. Phase 6 is a
 separate ticket. Revision 3 of the plan folds in Doctor Chewie's COMMENT lines
 from revisions 1 and 2.
 
@@ -422,7 +422,7 @@ three `tests/unit/test_selection_report.py` cases listed in §3 re-pointed at th
 numbers; `tests/unit/test_dashboard_sections.py` updated only where the new required
 row fields break its constructor calls.
 
-**Phase 4 — generalise the GSheet export table.** Pure refactor, no new behaviour:
+**Phase 4 — generalise the GSheet export table. ✅ Done.** Pure refactor, no new behaviour:
 the rename, the `export_kind` column, the hand-written migration, and all 139
 references. The respondent export must behave identically before and after — its
 existing component, unit, contract and e2e tests are the proof, and should need no

@@ -10,7 +10,7 @@ from opendlp.config import bool_environ_get, get_db_uri
 from opendlp.domain import (
     assembly,
     assembly_csv,
-    assembly_respondent_gsheet,
+    assembly_export_gsheet,
     email_confirmation,
     email_send_record,
     email_template,
@@ -240,11 +240,9 @@ def start_mappers() -> None:
         # Map RegistrationPage and RegistrationPageHtml domain objects. These are
         # mapped independently - the service layer resolves page <-> source via
         # source_type rather than an ORM relationship.
-        # Map AssemblyRespondentGSheet independently - accessed via its
+        # Map AssemblyExportGSheet independently - accessed via its
         # repository rather than an Assembly ORM relationship.
-        orm.mapper_registry.map_imperatively(
-            assembly_respondent_gsheet.AssemblyRespondentGSheet, orm.assembly_respondent_gsheets
-        )
+        orm.mapper_registry.map_imperatively(assembly_export_gsheet.AssemblyExportGSheet, orm.assembly_export_gsheets)
 
         orm.mapper_registry.map_imperatively(registration_page.RegistrationPage, orm.registration_pages)
         orm.mapper_registry.map_imperatively(registration_page.RegistrationPageHtml, orm.registration_page_html_sources)

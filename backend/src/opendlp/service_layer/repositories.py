@@ -6,7 +6,7 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Any
 
-from opendlp.domain.value_objects import AssemblyStatus, RespondentStatus, SelectionTaskType
+from opendlp.domain.value_objects import AssemblyStatus, GSheetExportKind, RespondentStatus, SelectionTaskType
 
 if TYPE_CHECKING:
     import uuid
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
-    from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
+    from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
     from opendlp.domain.email_confirmation import EmailConfirmationToken
     from opendlp.domain.email_send_record import RespondentEmailSendRecord
     from opendlp.domain.email_template import EmailTemplate
@@ -221,17 +221,21 @@ class AssemblyGSheetRepository(AbstractRepository):
         raise NotImplementedError
 
 
-class AssemblyRespondentGSheetRepository(AbstractRepository):
-    """Repository interface for AssemblyRespondentGSheet domain objects."""
+class AssemblyExportGSheetRepository(AbstractRepository):
+    """Repository interface for AssemblyExportGSheet domain objects."""
 
     @abc.abstractmethod
-    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
-        """Get an AssemblyRespondentGSheet by its assembly ID."""
+    def get_by_assembly_and_kind(
+        self,
+        assembly_id: uuid.UUID,
+        export_kind: GSheetExportKind,
+    ) -> AssemblyExportGSheet | None:
+        """Get the saved export sheet for one assembly and export kind."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def delete(self, item: AssemblyRespondentGSheet) -> None:
-        """Delete an AssemblyRespondentGSheet from the repository."""
+    def delete(self, item: AssemblyExportGSheet) -> None:
+        """Delete an AssemblyExportGSheet from the repository."""
         raise NotImplementedError
 
 

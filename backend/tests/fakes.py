@@ -9,7 +9,7 @@ from typing import Any
 from opendlp.adapters.email import EmailAdapter
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, TabularData
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
-from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
+from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
@@ -33,15 +33,16 @@ from opendlp.domain.value_objects import (
     SELECTED_RESPONDENT_STATUSES,
     AssemblyStatus,
     GlobalRole,
+    GSheetExportKind,
     RespondentAction,
     RespondentStatus,
     SelectionTaskType,
 )
 from opendlp.service_layer.repositories import (
     AbstractRepository,
+    AssemblyExportGSheetRepository,
     AssemblyGSheetRepository,
     AssemblyRepository,
-    AssemblyRespondentGSheetRepository,
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
@@ -331,25 +332,29 @@ class FakeAssemblyGSheetRepository(FakeRepository, AssemblyGSheetRepository):
             self._items.remove(item)
 
 
-class FakeAssemblyRespondentGSheetRepository(FakeRepository, AssemblyRespondentGSheetRepository):
-    """Fake implementation of AssemblyRespondentGSheetRepository."""
+class FakeAssemblyExportGSheetRepository(FakeRepository, AssemblyExportGSheetRepository):
+    """Fake implementation of AssemblyExportGSheetRepository."""
 
-    def get(self, item_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
-        """Get an AssemblyRespondentGSheet by its ID."""
+    def get(self, item_id: uuid.UUID) -> AssemblyExportGSheet | None:
+        """Get an AssemblyExportGSheet by its ID."""
         for item in self._items:
-            if item.assembly_respondent_gsheet_id == item_id:
+            if item.assembly_export_gsheet_id == item_id:
                 return item
         return None
 
-    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
-        """Get an AssemblyRespondentGSheet by its assembly ID."""
+    def get_by_assembly_and_kind(
+        self,
+        assembly_id: uuid.UUID,
+        export_kind: GSheetExportKind,
+    ) -> AssemblyExportGSheet | None:
+        """Get the saved export sheet for one assembly and export kind."""
         for item in self._items:
-            if item.assembly_id == assembly_id:
+            if item.assembly_id == assembly_id and item.export_kind == export_kind:
                 return item
         return None
 
-    def delete(self, item: AssemblyRespondentGSheet) -> None:
-        """Delete an AssemblyRespondentGSheet from the repository."""
+    def delete(self, item: AssemblyExportGSheet) -> None:
+        """Delete an AssemblyExportGSheet from the repository."""
         if item in self._items:
             self._items.remove(item)
 
@@ -941,7 +946,7 @@ _REPO_NAMES = (
     "users",
     "assemblies",
     "assembly_gsheets",
-    "assembly_respondent_gsheets",
+    "assembly_export_gsheets",
     "user_invites",
     "user_assembly_roles",
     "selection_run_records",
@@ -975,7 +980,7 @@ class FakeStore:
         self.users = FakeUserRepository()
         self.assemblies = FakeAssemblyRepository()
         self.assembly_gsheets = FakeAssemblyGSheetRepository()
-        self.assembly_respondent_gsheets = FakeAssemblyRespondentGSheetRepository()
+        self.assembly_export_gsheets = FakeAssemblyExportGSheetRepository()
         self.user_invites = FakeUserInviteRepository()
         self.user_assembly_roles = FakeUserAssemblyRoleRepository()
         self.selection_run_records = FakeSelectionRunRecordRepository()

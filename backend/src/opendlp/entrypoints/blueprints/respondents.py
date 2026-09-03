@@ -49,6 +49,9 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.permissions import can_edit_respondent, can_manage_assembly
 from opendlp.service_layer.respondent_export_service import (
+    EXPORT_KIND as RESPONDENT_EXPORT_KIND,
+)
+from opendlp.service_layer.respondent_export_service import (
     export_respondents,
     export_respondents_to_gsheet,
     get_respondent_gsheet_config,
@@ -639,7 +642,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # No export config is expected until the first Google Sheets export, which
             # the repository reports as None rather than as an error.
             respondent_gsheet = None
-            saved = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
+            saved = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, RESPONDENT_EXPORT_KIND)
         if saved is not None:
             respondent_gsheet = saved.create_detached_copy()
 
