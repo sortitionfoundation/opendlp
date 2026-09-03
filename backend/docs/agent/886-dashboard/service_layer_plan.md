@@ -1,6 +1,6 @@
 # Ticket 886 — Results dashboard: service-layer implementation plan
 
-Status: **in progress.** Phases 0-1 done; Phases 2-5 outstanding. Phase 6 is a
+Status: **in progress.** Phases 0-2 done; Phases 3-5 outstanding. Phase 6 is a
 separate ticket. Revision 3 of the plan folds in Doctor Chewie's COMMENT lines
 from revisions 1 and 2.
 
@@ -400,7 +400,7 @@ empty assembly, DELETED excluded, an absent attribute, and the three-way
 `eligible` / `can_attend` states (`True` / `False` / `None`, where only explicit
 `False` excludes).
 
-**Phase 2 — real `get_assembly_dashboard_summary`.** Add `user_id`, decorate with
+**Phase 2 — real `get_assembly_dashboard_summary`. ✅ Done.** Add `user_id`, decorate with
 `can_view_assembly`, add `_load_dashboard_context`, count for real. Update both
 call sites to pass positionally. _Tests:_ integration over a seeded assembly
 (counts per status, zeros present for absent statuses, the

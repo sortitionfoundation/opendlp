@@ -141,6 +141,18 @@ COUNTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
     RespondentStatus.CONFIRMED,
 ]
 
+# Everyone who ever became one of the assembly's respondents, withdrawals
+# included. Wider than COUNTED_RESPONDENT_STATUSES on purpose: a withdrawal is no
+# longer part of the pool a target is measured against, but it is still a
+# registration that happened, so a headline "how many people registered" figure
+# has to count it. Test submissions were never real and deleted details are gone.
+HEADLINE_RESPONDENT_STATUSES: list["RespondentStatus"] = [
+    RespondentStatus.POOL,
+    RespondentStatus.SELECTED,
+    RespondentStatus.CONFIRMED,
+    RespondentStatus.WITHDRAWN,
+]
+
 # Confirmed is selected and then confirmed, so both count as selected.
 SELECTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
     RespondentStatus.SELECTED,

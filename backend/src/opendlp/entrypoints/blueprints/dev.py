@@ -1492,7 +1492,9 @@ def _handle_get_assembly_dashboard_summary(uow: Any, params: dict[str, Any]) -> 
     which logs the real error and returns a generic message - so no str(e)
     reaches the response body.
     """
-    summary = get_assembly_dashboard_summary(uow=uow, assembly_id=uuid.UUID(params["assembly_id"]))
+    # Positional: require_assembly_permission only reads args[0:3], so a keyword
+    # call would skip the permission check entirely.
+    summary = get_assembly_dashboard_summary(uow, current_user.id, uuid.UUID(params["assembly_id"]))
     return {"status": "success", **asdict(summary)}
 
 
