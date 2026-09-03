@@ -1,26 +1,33 @@
 """ABOUTME: Service layer for the assembly results dashboard (ticket 886).
 ABOUTME: Headline respondent counts, the per-category results table, and its export."""
 
-# =============================================================================
-# ⚠️  export_assembly_dashboard is still a MOCK — ticket 886, phase 5.
-# The summary and report services below are real. See
-# docs/agent/886-dashboard/service_layer_plan.md.
-# =============================================================================
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from opendlp.adapters.tabular_export import (
+    AbstractGSheetExportTarget,
+    AbstractTabularExportTarget,
+    TabularData,
+)
+from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet, default_worksheet_name
 from opendlp.domain.respondents import normalise_field_name
+from opendlp.domain.targets import percentage_of
 from opendlp.domain.value_objects import (
     COUNTED_RESPONDENT_STATUSES,
     HEADLINE_RESPONDENT_STATUSES,
     SELECTED_RESPONDENT_STATUSES,
+    GSheetExportKind,
     RespondentStatus,
 )
-from opendlp.service_layer.exceptions import AssemblyNotFoundError, InvalidSelection
-from opendlp.service_layer.permissions import can_view_assembly, require_assembly_permission
+from opendlp.service_layer.exceptions import AssemblyNotFoundError
+from opendlp.service_layer.permissions import (
+    can_manage_assembly,
+    can_view_assembly,
+    require_assembly_permission,
+)
+from opendlp.translations import gettext as _
 
 if TYPE_CHECKING:
     import uuid
@@ -30,9 +37,8 @@ if TYPE_CHECKING:
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
-# The formats the export control offers. gsheet writes to Google Sheets; csv and
-# xlsx are file downloads. xlsx has no backend yet — see export_assembly_dashboard.
-EXPORT_FORMATS = ("csv", "xlsx", "gsheet")
+EXPORT_KIND = GSheetExportKind.DASHBOARD
+DEFAULT_SHEET_TITLE = default_worksheet_name(EXPORT_KIND)
 
 
 # -----------------------------------------------------------------------------
@@ -128,19 +134,6 @@ class DashboardReport:
     pool_size: int
     categories: list[DashboardCategory] = field(default_factory=list)
     unmet_targets: list[UnmetTarget] = field(default_factory=list)
-
-
-@dataclass
-class DashboardExport:
-    """The result of asking for the results table in a downloadable form."""
-
-    assembly_id: str
-    export_format: str
-    filename: str
-    # A short human-readable note about what the real service will return for
-    # this format (a file blob, a GSheet URL, ...). Mock returns no real bytes.
-    note: str
-    download_ready: bool
 
 
 @dataclass
@@ -308,38 +301,154 @@ def get_assembly_dashboard_report(
     )
 
 
-def export_assembly_dashboard(
-    uow: AbstractUnitOfWork,
-    assembly_id: uuid.UUID,
-    export_format: str,
-) -> DashboardExport:
-    """MOCK: turn the results table into a downloadable/exported form.
+def _format_pct(value: float) -> str:
+    return f"{value:.1f}"
 
-    REAL implementation (Hamish): reuse the tabular_export.py targets.
-      * ``csv``    -> CsvExportTarget (exists).
-      * ``gsheet`` -> the GSheet export target (exists).
-      * ``xlsx``   -> NO BACKEND YET. tabular_export.py has no xlsx target; one
-        needs adding behind AbstractTabularExportTarget.write_sheet(). This mock
-        returns download_ready=False for xlsx to surface that gap in the UI.
+
+def _export_row(category_name: str, row: CategoryValueRow, totals: tuple[int, int, int]) -> list[str]:
+    pool_total, selected_total, confirmed_total = totals
+    return [
+        category_name,
+        row.value,
+        _format_pct(row.target_pct),
+        str(row.target_min),
+        str(row.target_max),
+        str(row.pool_count),
+        _format_pct(percentage_of(row.pool_count, pool_total)),
+        str(row.available_count),
+        str(row.selected_count),
+        _format_pct(percentage_of(row.selected_count, selected_total)),
+        str(row.confirmed_count),
+        _format_pct(percentage_of(row.confirmed_count, confirmed_total)),
+        str(row.shortfall),
+    ]
+
+
+def _unmatched_row(category: DashboardCategory) -> list[str]:
+    """Respondents whose value the category does not declare.
+
+    Carried into the export rather than dropped, so the sheet does not quietly
+    understate how many respondents the category covers. No target band applies.
     """
-    if export_format not in EXPORT_FORMATS:
-        raise InvalidSelection(f"Unknown export format '{export_format}'. Expected one of {EXPORT_FORMATS}.")
+    blanks = [""] * 7
+    return [category.name, _("Not in targets"), "", "", "", str(category.unmatched_count), *blanks]
 
-    context = _load_dashboard_context(uow, assembly_id)
-    slug = context.assembly.title.lower().replace(" ", "-") or "assembly"
 
-    notes = {
-        "csv": "Real service returns CSV bytes via CsvExportTarget.",
-        "gsheet": "Real service writes a worksheet and returns its URL.",
-        "xlsx": "NOT IMPLEMENTED: no xlsx export target exists in tabular_export.py yet.",
-    }
-    # gsheet has no downloadable file; csv/xlsx name a file with the matching suffix.
-    extensions = {"csv": "csv", "xlsx": "xlsx", "gsheet": "gsheet-link"}
+def build_dashboard_table(report: DashboardReport) -> TabularData:
+    """Flatten a report into one row per target value, ready for any export target.
 
-    return DashboardExport(
-        assembly_id=str(assembly_id),
-        export_format=export_format,
-        filename=f"{slug}-results.{extensions[export_format]}",
-        note=notes[export_format],
-        download_ready=export_format != "xlsx",
-    )
+    Flat rather than a block per category: ``write_sheet`` takes a single table of
+    uniform width, and preamble rows above the header would break sorting and
+    filtering in the Google Sheet this shares its export path with.
+
+    Percentages are computed here rather than stored on the row, over the
+    category's declared values - the same denominator the pie charts use.
+    """
+    headers = [
+        _("Category"),
+        _("Value"),
+        _("Target %"),
+        _("Target min"),
+        _("Target max"),
+        _("Respondents"),
+        _("Respondents %"),
+        _("Available to select"),
+        _("Selected"),
+        _("Selected %"),
+        _("Confirmed"),
+        _("Confirmed %"),
+        _("Shortfall"),
+    ]
+
+    rows: list[list[str]] = []
+    for category in report.categories:
+        totals = (
+            sum(row.pool_count for row in category.rows),
+            sum(row.selected_count for row in category.rows),
+            sum(row.confirmed_count for row in category.rows),
+        )
+        rows.extend(_export_row(category.name, row, totals) for row in category.rows)
+        if category.unmatched_count:
+            rows.append(_unmatched_row(category))
+
+    return TabularData(headers=headers, rows=rows)
+
+
+@require_assembly_permission(can_manage_assembly)
+def export_dashboard_report(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    *,
+    target: AbstractTabularExportTarget,
+    sheet_title: str = DEFAULT_SHEET_TITLE,
+) -> None:
+    """Write the results table to the given target.
+
+    The format is the target: a CsvExportTarget yields CSV, a Google Sheets one
+    writes a worksheet. Requires manage permission, matching the respondent
+    export.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    report = get_assembly_dashboard_report(uow, user_id, assembly_id)
+    target.write_sheet(sheet_title, build_dashboard_table(report))
+
+
+@require_assembly_permission(can_manage_assembly)
+def export_dashboard_report_to_gsheet(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    *,
+    spreadsheet_url: str,
+    worksheet_name: str,
+    target: AbstractGSheetExportTarget,
+) -> None:
+    """Write the results table to a Google Sheet and save the sheet config.
+
+    The config is saved under its own export kind, so it never shares a
+    spreadsheet with the respondent export - this table is aggregate counts and
+    may be published, that one is personal data and must not be.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    worksheet_name = worksheet_name.strip() or DEFAULT_SHEET_TITLE
+
+    # Write first so the target's result_title/result_url are populated; only
+    # then persist the config, so a failed write saves nothing.
+    export_dashboard_report(uow, user_id, assembly_id, target=target, sheet_title=worksheet_name)
+
+    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
+    if config is None:
+        config = AssemblyExportGSheet(
+            assembly_id=assembly_id,
+            export_kind=EXPORT_KIND,
+            url=spreadsheet_url,
+            worksheet_name=worksheet_name,
+            spreadsheet_title=target.result_title,
+            worksheet_url=target.result_url,
+        )
+        uow.assembly_export_gsheets.add(config)
+    else:
+        config.update_values(
+            url=spreadsheet_url,
+            worksheet_name=worksheet_name,
+            spreadsheet_title=target.result_title,
+            worksheet_url=target.result_url,
+        )
+    uow.commit()
+
+
+@require_assembly_permission(can_view_assembly)
+def get_dashboard_gsheet_config(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> AssemblyExportGSheet | None:
+    """The saved dashboard-export sheet config, or None before the first export.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
+    return config.create_detached_copy() if config else None

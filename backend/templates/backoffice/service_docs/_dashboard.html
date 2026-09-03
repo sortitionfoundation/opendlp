@@ -1,23 +1,8 @@
 {#
 ABOUTME: Dashboard tab of the service docs console - results-dashboard services (ticket 886)
-ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/report and export_assembly_dashboard
+ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/report and export_dashboard_report
 #}
 <div class="space-y-6">
-    {# Banner for the one service still returning fixture data #}
-    <div class="rounded-lg p-4"
-         style="background-color: var(--color-warning-100);
-                border: 1px solid var(--color-warning-400)">
-        <h3 class="text-heading-sm mb-1" style="color: var(--color-warning-600);">
-            🧪 {{ _("export_assembly_dashboard is still a mock — ticket 886") }}
-        </h3>
-        <p class="text-body-sm" style="color: var(--color-body-text);">
-            {{ _("The summary and report services below are real. The export still returns fixture data — see") }}
-            <code>service_layer/dashboard_stats.py</code>
-            {{ _("and") }}
-            <code>docs/agent/886-dashboard/service_layer_plan.md</code>.
-        </p>
-    </div>
-
     {# get_assembly_dashboard_summary #}
     {% call card(title="get_assembly_dashboard_summary()", composed=true) %}
         {% call card_body() %}
@@ -203,21 +188,21 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
         {% endcall %}
     {% endcall %}
 
-    {# export_assembly_dashboard #}
-    {% call card(title="export_assembly_dashboard()  ·  MOCK", composed=true) %}
+    {# export_dashboard_report #}
+    {% call card(title="export_dashboard_report()", composed=true) %}
         {% call card_body() %}
             <div class="flex items-center justify-between mb-4">
                 <code class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-subtle-background-panels);
                              color: var(--color-info-600)">
-                    dashboard_stats.py:export_assembly_dashboard
+                    dashboard_stats.py:export_dashboard_report
                 </code>
                 <span class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-success-100);
-                             color: var(--color-success-600)">👁️ can_view_assembly()</span>
+                             color: var(--color-success-600)">✏️ can_manage_assembly()</span>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("Export the results table. csv and gsheet reuse existing tabular_export.py targets; xlsx has NO backend yet (returns download_ready=false) — a new xlsx target is needed behind AbstractTabularExportTarget.") }}
+                {{ _("Write the results table to an export target. The format is the target, so the console runs it into a CSV target and shows the text; the Google Sheets destination needs a spreadsheet URL and is exercised from the dashboard page.") }}
             </p>
             <div class="mb-6">
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Parameters") }}</h4>
@@ -238,12 +223,6 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
                                 <td class="px-3 py-2">✅</td>
                                 <td class="px-3 py-2">{{ _("Target assembly ID") }}</td>
                             </tr>
-                            <tr>
-                                <td class="px-3 py-2 text-code">export_format</td>
-                                <td class="px-3 py-2">str</td>
-                                <td class="px-3 py-2">✅</td>
-                                <td class="px-3 py-2">csv | xlsx | gsheet</td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -252,37 +231,23 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                 <code class="text-body-sm px-2 py-1 rounded block"
                       style="background-color: var(--color-subtle-background-panels)">
-                    DashboardExport  →  {assembly_id, export_format, filename, note, download_ready}
+                    None. The console reports {assembly_id, row_count, csv} from the CSV target it passed in.
                 </code>
             </div>
             <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
                 <h4 class="text-heading-sm mb-4" style="color: var(--color-headings);">
                     <span class="mr-2">🧪</span>{{ _("Try It") }}
                 </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
-                        <select x-model="dashboardExportAssemblyId"
-                                class="w-full px-3 py-2 rounded-lg text-body-md"
-                                style="background-color: var(--color-page-background);
-                                       border: 1px solid var(--color-borders-dividers);
-                                       color: var(--color-body-text)">
-                            <option value="">{{ _("Select an assembly...") }}</option>
-                            {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Format") }}</label>
-                        <select x-model="dashboardExportFormat"
-                                class="w-full px-3 py-2 rounded-lg text-body-md"
-                                style="background-color: var(--color-page-background);
-                                       border: 1px solid var(--color-borders-dividers);
-                                       color: var(--color-body-text)">
-                            <option value="csv">csv</option>
-                            <option value="xlsx">xlsx</option>
-                            <option value="gsheet">gsheet</option>
-                        </select>
-                    </div>
+                <div class="mb-4">
+                    <label class="text-label-md block mb-1" style="color: var(--color-headings)">{{ _("Assembly") }}</label>
+                    <select x-model="dashboardExportAssemblyId"
+                            class="w-full px-3 py-2 rounded-lg text-body-md"
+                            style="background-color: var(--color-page-background);
+                                   border: 1px solid var(--color-borders-dividers);
+                                   color: var(--color-body-text)">
+                        <option value="">{{ _("Select an assembly...") }}</option>
+                        {% for assembly in assemblies %}<option value="{{ assembly.id }}">{{ assembly.title }}</option>{% endfor %}
+                    </select>
                 </div>
                 <div class="flex gap-2 mb-4">
                     <button @click="executeExportDashboard()"

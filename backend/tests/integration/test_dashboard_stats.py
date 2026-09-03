@@ -5,18 +5,24 @@ import uuid
 
 import pytest
 
+from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole, RespondentStatus
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole, GSheetExportKind, RespondentStatus
 from opendlp.service_layer.dashboard_stats import (
+    EXPORT_KIND,
+    export_dashboard_report,
+    export_dashboard_report_to_gsheet,
     get_assembly_dashboard_report,
     get_assembly_dashboard_summary,
+    get_dashboard_gsheet_config,
 )
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InsufficientPermissions
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
+from tests.fakes import FakeGSheetExportTarget
 
 
 @pytest.fixture
@@ -275,3 +281,111 @@ class TestTheReportPermissions:
     def test_a_missing_assembly_is_reported_as_not_found(self, uow, admin_user):
         with pytest.raises(AssemblyNotFoundError):
             get_assembly_dashboard_report(uow, admin_user.id, uuid.uuid4())
+
+
+_SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
+
+
+class TestExportingToCsv:
+    def test_writes_a_row_per_target_value(self, uow, admin_user, assembly, gender_category):
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 3, attributes={"Gender": "Male"})
+        target = CsvExportTarget()
+
+        export_dashboard_report(uow, admin_user.id, assembly.id, target=target)
+
+        lines = [line for line in target.getvalue().splitlines() if line]
+        assert len(lines) == 3
+        assert lines[0].lstrip("\ufeff").startswith("Category,Value,")
+        assert lines[1].startswith("Gender,Male,")
+
+    def test_an_assembly_with_no_targets_exports_headers_only(self, uow, admin_user, assembly):
+        target = CsvExportTarget()
+
+        export_dashboard_report(uow, admin_user.id, assembly.id, target=target)
+
+        assert len([line for line in target.getvalue().splitlines() if line]) == 1
+
+    def test_a_user_who_can_only_view_may_not_export(self, uow, outsider, assembly, admin_user):
+        """Export is a manage action, matching the respondent export."""
+        grant_user_assembly_role(uow, outsider.id, assembly.id, AssemblyRole.CONFIRMATION_CALLER, admin_user)
+
+        with pytest.raises(InsufficientPermissions):
+            export_dashboard_report(uow, outsider.id, assembly.id, target=CsvExportTarget())
+
+
+class TestExportingToGoogleSheets:
+    def test_writes_the_sheet_and_saves_the_config(self, uow, admin_user, assembly, gender_category):
+        target = FakeGSheetExportTarget()
+
+        export_dashboard_report_to_gsheet(
+            uow,
+            admin_user.id,
+            assembly.id,
+            spreadsheet_url=_SHEET_URL,
+            worksheet_name="Q3 results",
+            target=target,
+        )
+
+        assert [title for title, _table in target.writes] == ["Q3 results"]
+        saved = get_dashboard_gsheet_config(uow, admin_user.id, assembly.id)
+        assert saved is not None
+        assert saved.url == _SHEET_URL
+        assert saved.worksheet_name == "Q3 results"
+        assert saved.worksheet_url == target.result_url
+
+    def test_an_empty_worksheet_name_falls_back_to_the_default(self, uow, admin_user, assembly, gender_category):
+        target = FakeGSheetExportTarget()
+
+        export_dashboard_report_to_gsheet(
+            uow, admin_user.id, assembly.id, spreadsheet_url=_SHEET_URL, worksheet_name="  ", target=target
+        )
+
+        assert [title for title, _table in target.writes] == ["Results"]
+
+    def test_a_failed_write_saves_no_config(self, uow, admin_user, assembly, gender_category):
+        target = FakeGSheetExportTarget(error=ExportTargetError("no access"))
+
+        with pytest.raises(ExportTargetError):
+            export_dashboard_report_to_gsheet(
+                uow, admin_user.id, assembly.id, spreadsheet_url=_SHEET_URL, worksheet_name="Results", target=target
+            )
+
+        assert uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly.id, EXPORT_KIND) is None
+
+    def test_a_second_export_updates_the_saved_config(self, uow, admin_user, assembly, gender_category):
+        for worksheet_name in ("First", "Second"):
+            export_dashboard_report_to_gsheet(
+                uow,
+                admin_user.id,
+                assembly.id,
+                spreadsheet_url=_SHEET_URL,
+                worksheet_name=worksheet_name,
+                target=FakeGSheetExportTarget(),
+            )
+
+        assert len(list(uow.assembly_export_gsheets.all())) == 1
+        saved = get_dashboard_gsheet_config(uow, admin_user.id, assembly.id)
+        assert saved.worksheet_name == "Second"
+
+    def test_the_dashboard_sheet_is_separate_from_the_respondent_sheet(
+        self,
+        uow,
+        admin_user,
+        assembly,
+        gender_category,
+    ):
+        """Respondent data is personal; dashboard data may be published. Never one row."""
+        export_dashboard_report_to_gsheet(
+            uow,
+            admin_user.id,
+            assembly.id,
+            spreadsheet_url=_SHEET_URL,
+            worksheet_name="Results",
+            target=FakeGSheetExportTarget(),
+        )
+
+        assert uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly.id, GSheetExportKind.RESPONDENTS) is None
+        assert uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly.id, GSheetExportKind.DASHBOARD) is not None
+
+    def test_there_is_no_saved_config_before_the_first_export(self, uow, admin_user, assembly):
+        assert get_dashboard_gsheet_config(uow, admin_user.id, assembly.id) is None

@@ -7,7 +7,15 @@ import pytest
 
 from opendlp.domain.targets import TargetCategory, TargetValue, percentages_from_minmax
 from opendlp.domain.value_objects import RespondentStatus
-from opendlp.service_layer.dashboard_stats import _build_category, _matching_attribute, _value_row
+from opendlp.service_layer.dashboard_stats import (
+    CategoryValueRow,
+    DashboardCategory,
+    DashboardReport,
+    _build_category,
+    _matching_attribute,
+    _value_row,
+    build_dashboard_table,
+)
 
 
 class _StubRespondentRepository:
@@ -198,3 +206,87 @@ class TestThePercentageHelper:
 
     def test_an_empty_set_gives_no_percentages(self):
         assert percentages_from_minmax([]) == []
+
+
+def _table_row(value: str, pool_count: int, **kwargs) -> CategoryValueRow:
+    defaults = {
+        "target_min": 5,
+        "target_max": 7,
+        "target_pct": 50.0,
+        "available_count": pool_count,
+        "selected_count": 0,
+        "confirmed_count": 0,
+        "shortfall": 0,
+        "meetable": True,
+    }
+    defaults.update(kwargs)
+    return CategoryValueRow(value=value, pool_count=pool_count, **defaults)
+
+
+def _report(*categories: DashboardCategory) -> DashboardReport:
+    return DashboardReport(
+        assembly_id="a-1",
+        assembly_title="An Assembly",
+        number_to_select=30,
+        pool_size=sum(row.pool_count for c in categories for row in c.rows),
+        categories=list(categories),
+        unmet_targets=[],
+    )
+
+
+class TestBuildingTheExportTable:
+    def _gender(self, **kwargs) -> DashboardCategory:
+        return DashboardCategory(
+            name="Gender",
+            rows=[_table_row("Male", 6), _table_row("Female", 14)],
+            **kwargs,
+        )
+
+    def test_has_one_row_per_target_value(self):
+        table = build_dashboard_table(_report(self._gender()))
+
+        assert [row[1] for row in table.rows] == ["Male", "Female"]
+
+    def test_every_row_is_as_wide_as_the_headers(self):
+        """write_sheet takes a table of uniform width."""
+        table = build_dashboard_table(_report(self._gender(unmatched_count=2)))
+
+        assert all(len(row) == len(table.headers) for row in table.rows)
+
+    def test_names_the_category_on_every_row(self):
+        """Flat rather than blocked, so the sheet can be sorted and filtered."""
+        table = build_dashboard_table(
+            _report(self._gender(), DashboardCategory(name="Age", rows=[_table_row("60+", 3)]))
+        )
+
+        assert [row[0] for row in table.rows] == ["Gender", "Gender", "Age"]
+
+    def test_percentages_are_computed_over_the_category(self):
+        table = build_dashboard_table(_report(self._gender()))
+
+        # 6 and 14 of 20
+        assert [row[6] for row in table.rows] == ["30.0", "70.0"]
+
+    def test_an_empty_category_gives_zero_percentages_not_a_divide_by_zero(self):
+        table = build_dashboard_table(_report(DashboardCategory(name="Gender", rows=[_table_row("Male", 0)])))
+
+        assert table.rows[0][6] == "0.0"
+
+    def test_unmatched_respondents_get_their_own_row(self):
+        table = build_dashboard_table(_report(self._gender(unmatched_count=4)))
+
+        unmatched = table.rows[-1]
+        assert unmatched[0] == "Gender"
+        assert unmatched[1] == "Not in targets"
+        assert unmatched[5] == "4"
+        # No target band applies to a value the targets do not declare.
+        assert unmatched[2] == ""
+
+    def test_a_category_with_nothing_unmatched_gets_no_extra_row(self):
+        assert len(build_dashboard_table(_report(self._gender())).rows) == 2
+
+    def test_an_assembly_with_no_targets_still_has_headers(self):
+        table = build_dashboard_table(_report())
+
+        assert table.rows == []
+        assert table.headers[:2] == ["Category", "Value"]

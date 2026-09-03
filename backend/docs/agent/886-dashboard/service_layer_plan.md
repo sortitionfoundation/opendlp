@@ -1,6 +1,6 @@
 # Ticket 886 — Results dashboard: service-layer implementation plan
 
-Status: **in progress.** Phases 0-4 done; Phase 5 outstanding. Phase 6 is a
+Status: **implemented.** Phases 0-5 done. Phase 6 is a
 separate ticket. Revision 3 of the plan folds in Doctor Chewie's COMMENT lines
 from revisions 1 and 2.
 
@@ -371,9 +371,17 @@ only caller is the dev console.
 
 Building the `TabularData` is a pure function over a `DashboardReport` —
 `build_dashboard_table(report) -> TabularData` — so it unit-tests with no `uow`,
-the way `build_respondent_table` does. Header layout follows
-`selection_report_to_csv`: a preamble block (assembly, number to select, pool
-size), then one block per category, with the percentages computed here.
+the way `build_respondent_table` does. The percentages are computed here.
+
+**Deviation from the plan, decided while implementing.** The layout does *not*
+follow `selection_report_to_csv`'s preamble-then-blocks shape. `write_sheet` takes
+a single table of uniform width, so a preamble would have to be rows padded with
+blanks above the header — and rows above the header break sorting and filtering in
+the Google Sheet, which is the destination this shares its export path with. So it
+is flat: a header row, then one row per (category, value), with the category named
+on every row, matching `build_respondent_table`. The cost is that the assembly
+title, number to select and pool size are not in the export; add them as a
+preamble later if an organiser asks.
 
 GDPR note: unlike the respondent export, this table is aggregate counts only — no
 personal data leaves in it, and nothing is written to disk. That is what makes the
@@ -430,7 +438,7 @@ changes beyond the renames. _Tests:_ the renamed contract test gains cases for t
 kinds coexisting on one assembly and for the composite uniqueness; a migration
 check that an existing row survives with `export_kind = RESPONDENTS`.
 
-**Phase 5 — the dashboard export itself.** `build_dashboard_table`, the two
+**Phase 5 — the dashboard export itself. ✅ Done.** `build_dashboard_table`, the two
 service functions, and the dev-console handler — which has to change, because the
 service it calls no longer takes an `export_format` or returns a `DashboardExport`.
 No export button or modal on the dashboard page: that is front-end work for a
