@@ -1234,6 +1234,14 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             .count()
         )
 
+    def count_by_status(self, assembly_id: uuid.UUID) -> dict[RespondentStatus, int]:
+        rows = self.session.execute(
+            select(orm.respondents.c.selection_status, func.count().label("cnt"))
+            .where(orm.respondents.c.assembly_id == assembly_id)
+            .group_by(orm.respondents.c.selection_status)
+        ).all()
+        return {row.selection_status: row.cnt for row in rows}
+
     def delete(self, item: Respondent) -> None:
         self.session.delete(item)
 
@@ -1343,6 +1351,47 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                     orm.respondents.c.assembly_id == assembly_id,
                     orm.respondents.c.attributes[attribute_name].isnot(None),
                     orm.respondents.c.selection_status.in_(COUNTED_RESPONDENT_STATUSES),
+                )
+            )
+            .group_by(val_col)
+        ).all()
+        return {row.val: row.cnt for row in rows if row.val is not None}
+
+    def get_attribute_value_counts_by_status(
+        self,
+        assembly_id: uuid.UUID,
+        attribute_name: str,
+    ) -> dict[str, dict[RespondentStatus, int]]:
+        val_col = orm.respondents.c.attributes[attribute_name].as_string().label("val")
+        rows = self.session.execute(
+            select(val_col, orm.respondents.c.selection_status, func.count().label("cnt"))
+            .where(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.attributes[attribute_name].isnot(None),
+                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
+                )
+            )
+            .group_by(val_col, orm.respondents.c.selection_status)
+        ).all()
+        counts: dict[str, dict[RespondentStatus, int]] = {}
+        for row in rows:
+            if row.val is None:
+                continue
+            counts.setdefault(row.val, {})[row.selection_status] = row.cnt
+        return counts
+
+    def get_attribute_value_available_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
+        val_col = orm.respondents.c.attributes[attribute_name].as_string().label("val")
+        rows = self.session.execute(
+            select(val_col, func.count().label("cnt"))
+            .where(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.attributes[attribute_name].isnot(None),
+                    orm.respondents.c.selection_status == RespondentStatus.POOL,
+                    or_(orm.respondents.c.eligible == True, orm.respondents.c.eligible.is_(None)),  # noqa: E712
+                    or_(orm.respondents.c.can_attend == True, orm.respondents.c.can_attend.is_(None)),  # noqa: E712
                 )
             )
             .group_by(val_col)

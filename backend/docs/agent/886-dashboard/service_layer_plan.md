@@ -1,6 +1,6 @@
 # Ticket 886 — Results dashboard: service-layer implementation plan
 
-Status: **in progress.** Phase 0 done; Phases 1-5 outstanding. Phase 6 is a
+Status: **in progress.** Phases 0-1 done; Phases 2-5 outstanding. Phase 6 is a
 separate ticket. Revision 3 of the plan folds in Doctor Chewie's COMMENT lines
 from revisions 1 and 2.
 
@@ -394,7 +394,7 @@ commit separately.
 `_dashboard.html`. No behaviour change; the mock data stays. _Tests:_ existing ones
 stay green.
 
-**Phase 1 — repository methods.** The three from §5: abstract, SQL, fake, contract
+**Phase 1 — repository methods. ✅ Done.** The three from §5: abstract, SQL, fake, contract
 tests. Nothing calls them yet. _Tests:_ contract tests over both backends —
 empty assembly, DELETED excluded, an absent attribute, and the three-way
 `eligible` / `can_attend` states (`True` / `False` / `None`, where only explicit
