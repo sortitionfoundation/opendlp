@@ -14,6 +14,7 @@ from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import GSheetExportKind, RespondentStatus
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InvalidSelection
+from opendlp.service_layer.export_gsheet_config import save_export_gsheet_config
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
@@ -231,22 +232,11 @@ def export_respondents_to_gsheet(
     # uow rolls back on the raised ExportTargetError before this commit).
     _write_export(uow, assembly_id, assembly, status_filter, target, worksheet_name)
 
-    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
-    if config is None:
-        config = AssemblyExportGSheet(
-            assembly_id=assembly_id,
-            export_kind=EXPORT_KIND,
-            url=spreadsheet_url,
-            worksheet_name=worksheet_name,
-            spreadsheet_title=target.result_title,
-            worksheet_url=target.result_url,
-        )
-        uow.assembly_export_gsheets.add(config)
-    else:
-        config.update_values(
-            url=spreadsheet_url,
-            worksheet_name=worksheet_name,
-            spreadsheet_title=target.result_title,
-            worksheet_url=target.result_url,
-        )
-    uow.commit()
+    save_export_gsheet_config(
+        uow,
+        assembly_id,
+        EXPORT_KIND,
+        spreadsheet_url=spreadsheet_url,
+        worksheet_name=worksheet_name,
+        target=target,
+    )
