@@ -748,6 +748,20 @@ class TestGetAttributeValueCountsByStatus:
 
         assert respondent_backend.repo.get_attribute_value_counts_by_status(assembly.id, "nosuch") == {}
 
+    def test_a_non_string_value_is_keyed_as_text(self, respondent_backend: ContractBackend):
+        """``attributes`` is dict[str, Any], and the SQL reads it with ->>, which renders text.
+
+        Targets are compared against these keys as strings, so a number that came
+        in unquoted has to arrive here as "42" from both backends or the fake and
+        the real repository disagree about whether a target value matches.
+        """
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"household": 42})
+
+        assert respondent_backend.repo.get_attribute_value_counts_by_status(assembly.id, "household") == {
+            "42": {RespondentStatus.POOL: 1},
+        }
+
     def test_returns_empty_for_an_assembly_with_no_respondents(self, respondent_backend: ContractBackend):
         assert respondent_backend.repo.get_attribute_value_counts_by_status(uuid.uuid4(), "gender") == {}
 

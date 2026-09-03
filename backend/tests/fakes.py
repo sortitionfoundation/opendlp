@@ -693,6 +693,25 @@ class FakeTargetCategoryRepository(FakeRepository, TargetCategoryRepository):
         return before - len(self._items)
 
 
+def _as_text(value: Any) -> str | None:
+    """A respondent attribute as the SQL repository would return it.
+
+    ``attributes`` is a JSON column typed ``dict[str, Any]``, and every query
+    that groups by one reads it with ``.as_string()`` - Postgres ``->>``, which
+    renders whatever is there as text. So the fake has to render it the same way
+    or it keys a non-string value differently from the real repository and misses
+    matches the real one makes. JSON null is absent rather than the string
+    "null", matching ``->>``.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
 class FakeRespondentRepository(FakeRepository, RespondentRepository):
     """Fake in-memory RespondentRepository."""
 
@@ -850,7 +869,7 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
         for r in self._items:
             if r.assembly_id != assembly_id or r.selection_status == RespondentStatus.DELETED:
                 continue
-            val = r.attributes.get(attribute_name) if r.attributes else None
+            val = _as_text(r.attributes.get(attribute_name) if r.attributes else None)
             if val is None:
                 continue
             by_status = counts.setdefault(val, {})
@@ -864,7 +883,7 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                 continue
             if r.eligible is False or r.can_attend is False:
                 continue
-            val = r.attributes.get(attribute_name) if r.attributes else None
+            val = _as_text(r.attributes.get(attribute_name) if r.attributes else None)
             if val is not None:
                 counts[val] = counts.get(val, 0) + 1
         return counts
@@ -883,7 +902,7 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
         counts: dict[str, int] = {}
         for r in self._items:
             if r.assembly_id == assembly_id and r.selection_status in statuses and r.attributes:
-                val = r.attributes.get(attribute_name)
+                val = _as_text(r.attributes.get(attribute_name))
                 if val is not None:
                     counts[val] = counts.get(val, 0) + 1
         return counts
