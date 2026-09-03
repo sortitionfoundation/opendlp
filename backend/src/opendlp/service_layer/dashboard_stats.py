@@ -22,6 +22,7 @@ from opendlp.domain.value_objects import (
     RespondentStatus,
 )
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
+from opendlp.service_layer.export_gsheet_config import save_export_gsheet_config
 from opendlp.service_layer.permissions import (
     can_manage_assembly,
     can_view_assembly,
@@ -421,25 +422,14 @@ def export_dashboard_report_to_gsheet(
     # then persist the config, so a failed write saves nothing.
     export_dashboard_report(uow, user_id, assembly_id, target=target, sheet_title=worksheet_name)
 
-    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
-    if config is None:
-        config = AssemblyExportGSheet(
-            assembly_id=assembly_id,
-            export_kind=EXPORT_KIND,
-            url=spreadsheet_url,
-            worksheet_name=worksheet_name,
-            spreadsheet_title=target.result_title,
-            worksheet_url=target.result_url,
-        )
-        uow.assembly_export_gsheets.add(config)
-    else:
-        config.update_values(
-            url=spreadsheet_url,
-            worksheet_name=worksheet_name,
-            spreadsheet_title=target.result_title,
-            worksheet_url=target.result_url,
-        )
-    uow.commit()
+    save_export_gsheet_config(
+        uow,
+        assembly_id,
+        EXPORT_KIND,
+        spreadsheet_url=spreadsheet_url,
+        worksheet_name=worksheet_name,
+        target=target,
+    )
 
 
 @require_assembly_permission(can_view_assembly)
