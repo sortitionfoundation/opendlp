@@ -250,7 +250,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 request.args.get("source", ""),
             )
             summary = get_assembly_dashboard_summary(uow, current_user.id, assembly_id)
-            report = get_assembly_dashboard_report(uow, assembly_id)
+            report = get_assembly_dashboard_report(uow, current_user.id, assembly_id)
 
         dashboard_sections = _build_dashboard_sections(report)
 

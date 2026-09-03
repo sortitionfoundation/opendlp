@@ -2,11 +2,9 @@
 ABOUTME: Headline respondent counts, the per-category results table, and its export."""
 
 # =============================================================================
-# ⚠️  PARTIALLY MOCKED MODULE — ticket 886 (results dashboard)
-# =============================================================================
-# get_assembly_dashboard_summary is real. get_assembly_dashboard_report and
-# export_assembly_dashboard still return fixture data; see
-# docs/agent/886-dashboard/service_layer_plan.md for the phases that replace them.
+# ⚠️  export_assembly_dashboard is still a MOCK — ticket 886, phase 5.
+# The summary and report services below are real. See
+# docs/agent/886-dashboard/service_layer_plan.md.
 # =============================================================================
 
 from __future__ import annotations
@@ -14,7 +12,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from opendlp.domain.value_objects import HEADLINE_RESPONDENT_STATUSES, RespondentStatus
+from opendlp.domain.respondents import normalise_field_name
+from opendlp.domain.value_objects import (
+    COUNTED_RESPONDENT_STATUSES,
+    HEADLINE_RESPONDENT_STATUSES,
+    SELECTED_RESPONDENT_STATUSES,
+    RespondentStatus,
+)
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InvalidSelection
 from opendlp.service_layer.permissions import can_view_assembly, require_assembly_permission
 
@@ -22,7 +26,7 @@ if TYPE_CHECKING:
     import uuid
 
     from opendlp.domain.assembly import Assembly
-    from opendlp.domain.targets import TargetCategory
+    from opendlp.domain.targets import TargetCategory, TargetValue
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
@@ -60,13 +64,29 @@ class DashboardSummary:
 
 @dataclass
 class CategoryValueRow:
-    """One value of one target category: its target band and how the pool fills it."""
+    """One value of one target category: its target band and how the pool fills it.
+
+    Three different populations are counted here and none is interchangeable.
+    ``pool_count`` is everyone this value covers who is still one of the
+    assembly's respondents; ``available_count`` is the narrower set a selection
+    run would actually have to draw on; ``selected_count`` and
+    ``confirmed_count`` are what has been drawn so far.
+    """
 
     value: str
     target_min: int
     target_max: int
+    # TargetValue.percentage_target where it is set, else the share the band
+    # implies within its category.
+    target_pct: float
+    # COUNTED_RESPONDENT_STATUSES: pool, selected and confirmed.
     pool_count: int
-    # max(0, target_min - pool_count). > 0 means we cannot yet meet this target.
+    # In the pool, and neither ineligible nor unable to attend.
+    available_count: int
+    selected_count: int
+    confirmed_count: int
+    # max(0, target_min - available_count). > 0 means we cannot yet meet this
+    # target - measured over the respondents a selection run could actually pick.
     shortfall: int
     meetable: bool
 
@@ -80,6 +100,10 @@ class DashboardCategory:
 
     name: str
     rows: list[CategoryValueRow] = field(default_factory=list)
+    # Respondents holding a value this category does not declare. A miscategorised
+    # respondent is invisible in ``rows``, so the count says how many there are
+    # rather than letting the table quietly understate itself.
+    unmatched_count: int = 0
 
 
 @dataclass
@@ -89,7 +113,8 @@ class UnmetTarget:
     category: str
     value: str
     target_min: int
-    pool_count: int
+    # The count the shortfall was measured over, so the two always agree.
+    available_count: int
     shortfall: int
 
 
@@ -118,11 +143,6 @@ class DashboardExport:
     download_ready: bool
 
 
-# -----------------------------------------------------------------------------
-# Mock services. Real signatures are preserved so Hamish only swaps the bodies.
-# -----------------------------------------------------------------------------
-
-
 @dataclass
 class _DashboardContext:
     """The assembly and its targets, which every dashboard service starts from."""
@@ -139,29 +159,6 @@ def _load_dashboard_context(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> 
         assembly=assembly,
         categories=list(uow.target_categories.get_by_assembly_id(assembly_id)),
     )
-
-
-def _mock_categories() -> list[DashboardCategory]:
-    """Deterministic fixture categories, including one deliberately unmet target."""
-    return [
-        DashboardCategory(
-            name="Gender",
-            rows=[
-                CategoryValueRow("Male", target_min=10, target_max=12, pool_count=8, shortfall=2, meetable=False),
-                CategoryValueRow("Female", target_min=10, target_max=12, pool_count=14, shortfall=0, meetable=True),
-                CategoryValueRow("Non-binary", target_min=1, target_max=2, pool_count=3, shortfall=0, meetable=True),
-            ],
-        ),
-        DashboardCategory(
-            name="Age",
-            rows=[
-                CategoryValueRow("16-29", target_min=5, target_max=7, pool_count=9, shortfall=0, meetable=True),
-                CategoryValueRow("30-44", target_min=5, target_max=7, pool_count=6, shortfall=0, meetable=True),
-                CategoryValueRow("45-59", target_min=5, target_max=7, pool_count=5, shortfall=0, meetable=True),
-                CategoryValueRow("60+", target_min=5, target_max=7, pool_count=4, shortfall=1, meetable=False),
-            ],
-        ),
-    ]
 
 
 @require_assembly_permission(can_view_assembly)
@@ -192,24 +189,106 @@ def get_assembly_dashboard_summary(
     )
 
 
-def get_assembly_dashboard_report(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> DashboardReport:
-    """MOCK: the full per-category results table plus the unmet-targets list.
+def _matching_attribute(category_name: str, attribute_columns: list[str]) -> str:
+    """The respondent attribute a target category is about, or "" if there is none.
 
-    REAL implementation (Hamish): for each recorded target category, count the
-    pool respondents holding each value and derive the shortfall. The rows are
-    also what the front-end draws the pie charts from.
+    Matched loosely, so a "Age Range" category finds an ``age_range`` column. The
+    targets page matches the same names case-insensitively but not loosely, so a
+    category can have counts here and none there.
+    """
+    wanted = normalise_field_name(category_name)
+    for column in attribute_columns:
+        if normalise_field_name(column) == wanted:
+            return column
+    return ""
+
+
+def _value_row(
+    target: TargetValue,
+    target_pct: float,
+    by_status: dict[RespondentStatus, int],
+    available_count: int,
+) -> CategoryValueRow:
+    pool_count = sum(by_status.get(status, 0) for status in COUNTED_RESPONDENT_STATUSES)
+    shortfall = max(0, target.min - available_count)
+    return CategoryValueRow(
+        value=target.value,
+        target_min=target.min,
+        target_max=target.max,
+        target_pct=target_pct,
+        pool_count=pool_count,
+        available_count=available_count,
+        selected_count=sum(by_status.get(status, 0) for status in SELECTED_RESPONDENT_STATUSES),
+        confirmed_count=by_status.get(RespondentStatus.CONFIRMED, 0),
+        shortfall=shortfall,
+        meetable=shortfall == 0,
+    )
+
+
+def _build_category(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    category: TargetCategory,
+    attribute_columns: list[str],
+) -> DashboardCategory:
+    """One category's rows, counted from the respondents holding each of its values.
+
+    A category whose name matches no respondent attribute yields its declared
+    values with zero counts rather than disappearing: the targets are still set,
+    there is just nothing to measure them against yet.
+    """
+    attribute_name = _matching_attribute(category.name, attribute_columns)
+    counts_by_value: dict[str, dict[RespondentStatus, int]] = {}
+    available_by_value: dict[str, int] = {}
+    if attribute_name:
+        counts_by_value = uow.respondents.get_attribute_value_counts_by_status(assembly_id, attribute_name)
+        available_by_value = uow.respondents.get_attribute_value_available_counts(assembly_id, attribute_name)
+
+    target_pcts = category.percentages_from_minmax()
+    rows = [
+        _value_row(
+            target,
+            target.percentage_target if target.percentage_target is not None else fallback_pct,
+            counts_by_value.get(target.value, {}),
+            available_by_value.get(target.value, 0),
+        )
+        for target, fallback_pct in zip(category.values, target_pcts, strict=True)
+    ]
+
+    declared = {target.value for target in category.values}
+    unmatched_count = sum(
+        by_status.get(status, 0)
+        for value, by_status in counts_by_value.items()
+        if value not in declared
+        for status in COUNTED_RESPONDENT_STATUSES
+    )
+    return DashboardCategory(name=category.name, rows=rows, unmatched_count=unmatched_count)
+
+
+@require_assembly_permission(can_view_assembly)
+def get_assembly_dashboard_report(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> DashboardReport:
+    """The full per-category results table plus the unmet-targets list.
+
+    A live view of the respondents as they are now - it never reads a
+    SelectionRunRecord. Counts come from the respondents' attributes, so a
+    category is only populated once respondents carry the matching column.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     context = _load_dashboard_context(uow, assembly_id)
-    title, number_to_select = context.assembly.title, context.assembly.number_to_select
-    categories = _mock_categories()
+    attribute_columns = uow.respondents.get_attribute_columns(assembly_id)
+    categories = [_build_category(uow, assembly_id, category, attribute_columns) for category in context.categories]
 
-    # Unmet targets are a pure projection of the rows: anything with a shortfall.
     unmet_targets = [
         UnmetTarget(
             category=category.name,
             value=row.value,
             target_min=row.target_min,
-            pool_count=row.pool_count,
+            available_count=row.available_count,
             shortfall=row.shortfall,
         )
         for category in categories
@@ -217,13 +296,13 @@ def get_assembly_dashboard_report(uow: AbstractUnitOfWork, assembly_id: uuid.UUI
         if row.shortfall > 0
     ]
 
-    pool_size = sum(row.pool_count for category in categories for row in category.rows) // max(len(categories), 1)
+    status_counts = uow.respondents.count_by_status(assembly_id)
 
     return DashboardReport(
         assembly_id=str(assembly_id),
-        assembly_title=title,
-        number_to_select=number_to_select,
-        pool_size=pool_size,
+        assembly_title=context.assembly.title,
+        number_to_select=context.assembly.number_to_select,
+        pool_size=sum(status_counts.get(status, 0) for status in COUNTED_RESPONDENT_STATUSES),
         categories=categories,
         unmet_targets=unmet_targets,
     )

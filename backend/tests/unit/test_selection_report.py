@@ -286,7 +286,11 @@ class TestZeroPool:
 
 
 class TestLegacyRunsWithoutPercentages:
-    """Runs recorded before percentages existed fall back to the min/max midpoint.
+    """Runs recorded before percentages existed fall back to the min/max share.
+
+    The fallback is the share the band implies within its own category, the same
+    arithmetic the dashboard uses, so an assembly cannot show two different
+    target percentages depending on which report you open.
 
     This is the one branch only production data reaches: every snapshot written
     from now on carries `percentage_target`, so nothing else exercises it.
@@ -298,7 +302,7 @@ class TestLegacyRunsWithoutPercentages:
             del value["percentage_target"]
         return snapshot
 
-    def test_a_missing_percentage_falls_back_to_the_midpoint(self, uow):
+    def test_a_missing_percentage_falls_back_to_the_band_share(self, uow):
         assembly = _make_assembly(uow, number_to_select=4)
         _make_respondent(uow, assembly.id, "p1", {"Gender": "Man"})
         _make_respondent(uow, assembly.id, "p2", {"Gender": "Woman"})
@@ -312,9 +316,10 @@ class TestLegacyRunsWithoutPercentages:
 
         report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
 
-        # min and max are both 1, so the midpoint is 1 of 4 seats.
+        # Two values with identical bands split the category evenly, whatever
+        # the seat count.
         for row in report.categories[0].rows:
-            assert row.target_pct == pytest.approx(25.0)
+            assert row.target_pct == pytest.approx(50.0)
 
     def test_an_explicit_none_percentage_falls_back_too(self, uow):
         assembly = _make_assembly(uow, number_to_select=4)
@@ -334,9 +339,10 @@ class TestLegacyRunsWithoutPercentages:
         report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
 
         for row in report.categories[0].rows:
-            assert row.target_pct == pytest.approx(25.0)
+            assert row.target_pct == pytest.approx(50.0)
 
-    def test_no_seats_and_no_percentage_is_zero_rather_than_a_divide_by_zero(self, uow):
+    def test_no_seats_still_gets_a_share(self, uow):
+        """The share is normalised within the category, so it does not need seats."""
         assembly = _make_assembly(uow, number_to_select=0)
         record = _make_run_record(
             uow,
@@ -345,6 +351,19 @@ class TestLegacyRunsWithoutPercentages:
             remaining=[],
             targets_used=self._snapshot_without_percentages(),
         )
+
+        report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
+
+        for row in report.categories[0].rows:
+            assert row.target_pct == pytest.approx(50.0)
+
+    def test_bands_that_are_all_zero_are_zero_rather_than_a_divide_by_zero(self, uow):
+        assembly = _make_assembly(uow, number_to_select=0)
+        snapshot = self._snapshot_without_percentages()
+        for value in snapshot[0]["values"]:
+            value["min"] = 0
+            value["max"] = 0
+        record = _make_run_record(uow, assembly.id, selected=[], remaining=[], targets_used=snapshot)
 
         report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
 
