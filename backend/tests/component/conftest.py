@@ -6,7 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 from flask.testing import FlaskClient
+from flask_babel import format_datetime
 
+from opendlp.domain.assembly import Assembly
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.flask_app import create_app
@@ -251,3 +253,28 @@ def existing_assembly(fake_store, admin_user):
             first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
         )
         return assembly.create_detached_copy()
+
+
+@pytest.fixture
+def assembly_without_a_creator(fake_store):
+    """An assembly with nobody recorded as its creator.
+
+    Both an assembly created before we recorded the creator, and one whose
+    creator has since been deleted - the foreign key is SET NULL, so the two
+    are indistinguishable by the time a template sees them.
+    """
+    with FakeUnitOfWork(store=fake_store) as uow:
+        assembly = Assembly(
+            title="Orphan Assembly",
+            question="Who made this?",
+            first_assembly_date=(datetime.now(UTC).date() + timedelta(days=30)),
+        )
+        uow.assemblies.add(assembly)
+        uow.commit()
+        return assembly.create_detached_copy()
+
+
+def expected_timestamp(app, moment: datetime) -> str:
+    """Render a datetime the way the templates do, so tests do not hardcode a locale's format."""
+    with app.test_request_context():
+        return format_datetime(moment, "long")

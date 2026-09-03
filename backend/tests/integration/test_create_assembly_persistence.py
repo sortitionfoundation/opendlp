@@ -6,7 +6,7 @@ from sqlalchemy import text
 
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
-from opendlp.service_layer.assembly_service import create_assembly
+from opendlp.service_layer.assembly_service import create_assembly, get_assembly_creator_name
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -69,6 +69,32 @@ class TestCreateAssemblyPersistence:
             survivor = fresh.assemblies.get(assembly.id)
             assert survivor is not None
             assert survivor.created_by_user_id is None
+
+
+class TestCreatorNameForTheDetailsPage:
+    """The details page names the creator, which means a second query against a real user row."""
+
+    def test_names_the_creator(self, postgres_session_factory, organiser):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(uow=uow, title="Named creator", created_by_user_id=organiser.id)
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as fresh:
+            reloaded = fresh.assemblies.get(assembly.id)
+            assert get_assembly_creator_name(fresh, reloaded) == organiser.display_name
+
+    def test_deleting_the_creator_leaves_nobody_to_name(self, postgres_session_factory, organiser):
+        """SET NULL means the page falls back to the bare timestamp rather than erroring."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assembly = create_assembly(uow=uow, title="Creator departs", created_by_user_id=organiser.id)
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            uow.session.delete(uow.users.get(organiser.id))
+            uow.commit()
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as fresh:
+            assert get_assembly_creator_name(fresh, fresh.assemblies.get(assembly.id)) == ""
 
 
 class TestCreatedByColumnShape:

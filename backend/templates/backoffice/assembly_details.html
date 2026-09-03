@@ -80,7 +80,11 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                 <div class="flex flex-col sm:flex-row sm:gap-4 py-3" style="border-bottom: 1px solid var(--color-borders-dividers);">
                     <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Created") }}</dt>
                     <dd class="text-body-md" style="color: var(--color-body-text);">
-                        {{ assembly.created_at|dateformat('long') }}
+                        {% if created_by_name %}
+                            {{ _("By %(name)s at %(timestamp)s", name=created_by_name, timestamp=assembly.created_at|datetimeformat('long')) }}
+                        {% else %}
+                            {{ assembly.created_at|datetimeformat('long') }}
+                        {% endif %}
                     </dd>
                 </div>
 

@@ -28,6 +28,7 @@ from opendlp.entrypoints.forms import (
 from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
+    get_assembly_creator_name,
     get_assembly_nav_context,
     get_assembly_with_permissions,
     get_or_create_csv_config,
@@ -148,6 +149,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
+            created_by_name = get_assembly_creator_name(uow, nav.assembly)
         registration_page_rows = [
             {
                 "page": page,
@@ -166,6 +168,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
             registration_page_rows=registration_page_rows,
+            created_by_name=created_by_name,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(

@@ -912,3 +912,46 @@ class TestOrganiserIsConfinedToTheirOwnAssemblies:
         assert assembly_service.get_assembly_with_permissions(uow, mine.id, organiser.id).title == "Mine"
         assembly_service.update_assembly(uow=uow, assembly_id=mine.id, user_id=organiser.id, title="Mine, renamed")
         assembly_service.archive_assembly(uow=uow, assembly_id=mine.id, user_id=organiser.id)
+
+
+class TestGetAssemblyCreatorName:
+    """Naming the creator on the details page, and the three ways there is nobody to name."""
+
+    def test_returns_the_creators_display_name(self, uow):
+        creator = User(
+            email="creator@example.com",
+            first_name="Ada",
+            last_name="Lovelace",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(creator)
+        assembly = assembly_service.create_assembly(uow=uow, title="Theirs", created_by_user_id=creator.id)
+
+        assert assembly_service.get_assembly_creator_name(uow, assembly) == "Ada Lovelace"
+
+    def test_returns_empty_when_no_creator_was_recorded(self, uow):
+        """Assemblies created before the column existed carry no creator."""
+        assembly = Assembly(title="Predates the column", question="?")
+        uow.assemblies.add(assembly)
+
+        assert assembly_service.get_assembly_creator_name(uow, assembly) == ""
+
+    def test_returns_empty_when_the_creator_has_been_deleted(self, uow):
+        """The foreign key is SET NULL, but a stale id must not blow up the page either."""
+        assembly = Assembly(title="Orphaned", question="?", created_by_user_id=uuid.uuid4())
+        uow.assemblies.add(assembly)
+
+        assert assembly_service.get_assembly_creator_name(uow, assembly) == ""
+
+    def test_falls_back_to_the_email_prefix_when_the_creator_has_no_name(self, uow):
+        """display_name's own fallback, which matters for accounts created by invite."""
+        creator = User(
+            email="nameless@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(creator)
+        assembly = assembly_service.create_assembly(uow=uow, title="Theirs", created_by_user_id=creator.id)
+
+        assert assembly_service.get_assembly_creator_name(uow, assembly) == "nameless"

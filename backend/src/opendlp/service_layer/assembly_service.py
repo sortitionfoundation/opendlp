@@ -174,6 +174,22 @@ def get_assembly_with_permissions(
     return retrieved_assembly
 
 
+def get_assembly_creator_name(uow: AbstractUnitOfWork, assembly: Assembly) -> str:
+    """
+    Get the display name of whoever created the assembly, or "" if there is nobody to name.
+
+    Assemblies created before we recorded the creator have no creator, and the
+    foreign key is SET NULL, so a deleted account leaves nothing to show either.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`), and to
+    have already established that the user may view this assembly.
+    """
+    if assembly.created_by_user_id is None:
+        return ""
+    creator = uow.users.get(assembly.created_by_user_id)
+    return creator.display_name if creator else ""
+
+
 def archive_assembly(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,

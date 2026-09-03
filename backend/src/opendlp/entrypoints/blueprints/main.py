@@ -14,6 +14,7 @@ from opendlp.domain.value_objects import AssemblyRole
 from opendlp.feature_flags import default_dashboard_endpoint, old_dashboard_route_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
+    get_assembly_creator_name,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_or_create_selection_settings,
@@ -71,10 +72,12 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            created_by_name = get_assembly_creator_name(uow, assembly)
 
         return render_template(
             "main/view_assembly_details.html",
             assembly=assembly,
+            created_by_name=created_by_name,
             current_tab="details",
             current_page="view_assembly",
         ), 200

@@ -6,6 +6,8 @@ from datetime import UTC, datetime, timedelta
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.users import User
+from tests.component.conftest import expected_timestamp
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -125,6 +127,23 @@ class TestAssemblyViewDetail:
         assert b"Created" in response.data or b"created" in response.data
 
         assert str(existing_assembly.first_assembly_date.year).encode() in response.data
+
+    def test_view_assembly_names_the_creator(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user: User
+    ) -> None:
+        """The Created row says who made it, and when."""
+        response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}")
+        assert response.status_code == 200
+        assert f"By {admin_user.display_name} at".encode() in response.data
+
+    def test_view_assembly_without_a_creator_shows_the_timestamp_alone(
+        self, app, logged_in_admin: FlaskClient, assembly_without_a_creator: Assembly
+    ) -> None:
+        """Nothing to name, so the row must not read "By  at ..."."""
+        response = logged_in_admin.get(f"/assemblies/{assembly_without_a_creator.id}")
+        assert response.status_code == 200
+        assert b"By  at" not in response.data
+        assert expected_timestamp(app, assembly_without_a_creator.created_at).encode() in response.data
 
     def test_view_nonexistent_assembly(self, logged_in_admin: FlaskClient) -> None:
         """Test viewing non-existent assembly redirects to dashboard with error."""
