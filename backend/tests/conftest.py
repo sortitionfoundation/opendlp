@@ -145,6 +145,9 @@ SCRUBBED_ENV_PREFIXES = (FEATURE_FLAG_PREFIX, *LEAKY_ENV_PREFIXES)
 ENV_KEYS_TESTS_MAY_INHERIT = (
     "API_HOST",
     "CSV_TEST_DATA_DIR",
+    # Inherited on purpose. It only turns on SQLAlchemy's statement logging, so it
+    # cannot change a result - and being able to set DB_ECHO in .env and watch the
+    # SQL a failing test emits is worth more than the noise it adds when it is on.
     "DB_ECHO",
     "DB_HOST",
     "DB_NAME",
