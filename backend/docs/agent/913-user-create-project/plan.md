@@ -280,7 +280,7 @@ applied to `backoffice.new_assembly` and `main.create_assembly_page`. The
 service-layer check stays — defence in depth, and the CLI and dev blueprint
 (`blueprints/dev.py:521`) reach the service directly.
 
-### 4.6 UI gating
+### 4.6 UI gating — DONE
 
 - `templates/backoffice/dashboard.html:19,43` — wrap both buttons in
   `{% if perms.create_assembly %}`. The empty-state card needs different copy

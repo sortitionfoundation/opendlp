@@ -93,3 +93,46 @@ class TestOrganiserCannotReachSomeoneElsesAssembly:
 
         assert response.status_code == 302
         assert b"Not yours" not in response.data
+
+
+class TestDashboardGating:
+    """The create button and the Site Admin link follow capabilities, not roles."""
+
+    def test_backoffice_dashboard_offers_create_to_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
+        response = logged_in_organiser.get("/backoffice/dashboard")
+        assert response.status_code == 200
+        assert b"Create New Assembly" in response.data
+
+    def test_backoffice_dashboard_hides_create_from_a_user(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/backoffice/dashboard")
+        assert response.status_code == 200
+        assert b"Create New Assembly" not in response.data
+        assert b"Create Your First Assembly" not in response.data
+
+    def test_a_user_with_nothing_is_told_what_to_do(self, logged_in_user: FlaskClient) -> None:
+        """The empty state must not tell someone to create an assembly they cannot create."""
+        response = logged_in_user.get("/backoffice/dashboard")
+        assert b"ask an organiser to add you" in response.data
+
+    def test_legacy_dashboard_offers_create_to_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
+        response = logged_in_organiser.get("/dashboard")
+        assert response.status_code == 200
+        assert b"Create Assembly" in response.data
+
+    def test_legacy_dashboard_hides_create_from_a_user(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/dashboard")
+        assert response.status_code == 200
+        assert b"Create Assembly" not in response.data
+
+    def test_site_admin_link_shown_to_an_admin(self, logged_in_admin: FlaskClient) -> None:
+        response = logged_in_admin.get("/dashboard")
+        assert b"Site Admin" in response.data
+
+    def test_site_admin_link_hidden_from_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
+        """It used to be shown to organisers, and led straight to a 403."""
+        response = logged_in_organiser.get("/dashboard")
+        assert b"Site Admin" not in response.data
+
+    def test_site_admin_link_hidden_from_a_user(self, logged_in_user: FlaskClient) -> None:
+        response = logged_in_user.get("/dashboard")
+        assert b"Site Admin" not in response.data
