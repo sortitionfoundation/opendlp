@@ -37,6 +37,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.domain.registration_document import PDF_FILE_EXTENSION, DocumentValidationError, RegistrationDocument
 from opendlp.domain.registration_image import IMAGE_FILE_EXTENSION, ImageValidationError, RegistrationImage
 from opendlp.domain.registration_page import RegistrationPageNotReady
@@ -57,7 +58,7 @@ from opendlp.service_layer.assembly_service import (
     update_selection_settings,
 )
 from opendlp.service_layer.dashboard_stats import (
-    export_assembly_dashboard,
+    export_dashboard_report,
     get_assembly_dashboard_report,
     get_assembly_dashboard_summary,
 )
@@ -1504,14 +1505,22 @@ def _handle_get_assembly_dashboard_report(uow: Any, params: dict[str, Any]) -> d
     return {"status": "success", **asdict(report)}
 
 
-def _handle_export_assembly_dashboard(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
-    """Handle export_assembly_dashboard service call (MOCK). See summary handler for error handling."""
-    export = export_assembly_dashboard(
-        uow=uow,
-        assembly_id=uuid.UUID(params["assembly_id"]),
-        export_format=params.get("export_format", "csv"),
-    )
-    return {"status": "success", **asdict(export)}
+def _handle_export_dashboard_report(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
+    """Handle export_dashboard_report service call. See summary handler for error handling.
+
+    The console cannot receive a file download, so it runs the export into a CSV
+    target and shows the text. The Google Sheets destination needs a spreadsheet
+    URL and is exercised from the dashboard page instead.
+    """
+    target = CsvExportTarget()
+    export_dashboard_report(uow, current_user.id, uuid.UUID(params["assembly_id"]), target=target)
+    csv_text = target.getvalue()
+    return {
+        "status": "success",
+        "assembly_id": params["assembly_id"],
+        "row_count": csv_text.count("\n") - 1,
+        "csv": csv_text,
+    }
 
 
 # Mapping of service names to their handler functions
@@ -1560,7 +1569,7 @@ _SERVICE_HANDLERS: dict[str, Callable[[Any, dict[str, Any]], dict[str, Any]]] = 
     "auto_reply_readiness_problems": _handle_auto_reply_readiness_problems,
     "get_assembly_dashboard_summary": _handle_get_assembly_dashboard_summary,
     "get_assembly_dashboard_report": _handle_get_assembly_dashboard_report,
-    "export_assembly_dashboard": _handle_export_assembly_dashboard,
+    "export_dashboard_report": _handle_export_dashboard_report,
 }
 
 
@@ -1613,7 +1622,7 @@ SERVICE_RESPONSE_KEYS: dict[str, str] = {
     "auto_reply_readiness_problems": "auto_reply_readiness",
     "get_assembly_dashboard_summary": "dashboard_summary",
     "get_assembly_dashboard_report": "dashboard_report",
-    "export_assembly_dashboard": "dashboard_export",
+    "export_dashboard_report": "dashboard_export",
 }
 
 
