@@ -230,16 +230,62 @@ def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]
     return sections
 
 
+def _build_dashboard_tables(report: DashboardReport) -> list[dict[str, object]]:
+    """Turn the dashboard report into per-category tables (the on-screen Table view).
+
+    One table per category; one row per category value with a percentage and a
+    count column for each dataset (Target / Respondents / Selected / Confirmed),
+    matching the Figma table. All figures come straight from the report's rows:
+    ``target_pct`` is the service's own value; the Target count is the band
+    midpoint; Respondents / Selected / Confirmed percentages are each value's
+    share of that dataset's category total.
+
+    This is the on-screen shape only. The exportable table (flat, all categories,
+    with min/max/available/shortfall columns) is the service's
+    ``build_dashboard_table`` and is used by the export button, not here.
+
+    Each table is {name, rows}; each row is a dict of pre-formatted strings/ints
+    the template drops straight into cells.
+    """
+
+    def pct(part: int, whole: int) -> str:
+        return f"{(part / whole * 100):.1f}" if whole else "0.0"
+
+    tables: list[dict[str, object]] = []
+    for category in report.categories:
+        pool_total = sum(row.pool_count for row in category.rows)
+        selected_total = sum(row.selected_count for row in category.rows)
+        confirmed_total = sum(row.confirmed_count for row in category.rows)
+        rows = [
+            {
+                "value": row.value,
+                "target_pct": f"{row.target_pct:.1f}",
+                "target_count": round((row.target_min + row.target_max) / 2),
+                "respondents_pct": pct(row.pool_count, pool_total),
+                "respondents_count": row.pool_count,
+                "selected_pct": pct(row.selected_count, selected_total),
+                "selected_count": row.selected_count,
+                "confirmed_pct": pct(row.confirmed_count, confirmed_total),
+                "confirmed_count": row.confirmed_count,
+            }
+            for row in category.rows
+        ]
+        tables.append({"name": category.name, "rows": rows})
+    return tables
+
+
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard")
 @login_required
 def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly results dashboard (ticket 886).
 
-    First iteration: the header indicators (number to select / registrations) and
-    the per-category pie charts, driven by the MOCK services in
-    service_layer/dashboard_stats.py. The chart/table toggle, the export button and
-    the findings banner are not wired yet.
+    Header indicators (number to select / registrations) plus the per-category
+    results, in one of two views selected by the ``view`` query parameter:
+    "chart" (default) draws pie charts, "table" draws a table per category. Both
+    are driven by the MOCK services in service_layer/dashboard_stats.py. The
+    export button and the findings banner are not wired yet.
     """
+    view = "table" if request.args.get("view") == "table" else "chart"
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -253,6 +299,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             report = get_assembly_dashboard_report(uow, current_user.id, assembly_id)
 
         dashboard_sections = _build_dashboard_sections(report)
+        dashboard_tables = _build_dashboard_tables(report)
 
         return render_template(
             "backoffice/assembly_dashboard.html",
@@ -265,7 +312,9 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_enabled=nav.selection_enabled,
             number_to_select=summary.number_to_select,
             number_of_registrations=summary.total_respondents,
+            dashboard_view=view,
             dashboard_sections=dashboard_sections,
+            dashboard_tables=dashboard_tables,
         ), 200
     except NotFoundError as e:
         logger.warning(
