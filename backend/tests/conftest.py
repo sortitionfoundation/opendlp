@@ -103,22 +103,63 @@ def reset_logging_handlers():
 # opendlp.config, long before any fixture runs, so without this a green CI run
 # says nothing about whether the suite passes on someone's machine.
 #
-# DB_*, REDIS_*, API_HOST and CI are deliberately absent: the integration and BDD
-# suites need those from .env.
-LEAKY_ENV_PREFIXES = ("SMTP_", "OAUTH_", "MAX_")
+# tests/unit/test_env_scrub.py reads every environment variable the application
+# consults and fails if one is on neither this list nor ENV_KEYS_TESTS_MAY_INHERIT,
+# so a new setting cannot quietly reintroduce the leak.
+LEAKY_ENV_PREFIXES = (
+    "BABEL_",
+    "EMAIL_",
+    "HELP_SITE_",
+    "LOGIN_RATE_LIMIT_",
+    "MAX_",
+    "MONITOR_",
+    "OAUTH_",
+    "REGISTRATION_",
+    "SITE_BANNER_",
+    "SMTP_",
+)
 LEAKY_ENV_KEYS = (
+    "ALLOW_RESET_DB",
+    "APPLICATION_ROOT",
     "DEBUG",
-    "EMAIL_ADAPTER",
     "GOOGLE_AUTH_JSON_PATH",
     "INVITE_EXPIRY_HOURS",
+    "KNOWLEDGE_HUB_URL",
+    "LOG_ALL_REQUESTS",
     "LOG_LEVEL",
-    "MONITOR_HEALTH_MAX_AGE_MINUTES",
+    "OPENDLP_LOCALE",
     "SECRET_KEY",
-    "SITE_BANNER_TEXT",
+    "SERVER_NAME",
+    "SOLVER_BACKEND",
+    "SUPPORTED_LANGUAGES",
+    "SUPPORT_EMAIL",
     "TASK_TIMEOUT_HOURS",
+    "TOTP_ENCRYPTION_KEY",
     "USE_CSV_DATA_SOURCE",
 )
 FEATURE_FLAG_PREFIX = "FF_"
+SCRUBBED_ENV_PREFIXES = (FEATURE_FLAG_PREFIX, *LEAKY_ENV_PREFIXES)
+
+# Variables a test may safely take from .env: where the infrastructure lives, and
+# the tooling's own. FLASK_ENV is here because the fixture sets it explicitly.
+ENV_KEYS_TESTS_MAY_INHERIT = (
+    "API_HOST",
+    "CSV_TEST_DATA_DIR",
+    "DB_ECHO",
+    "DB_HOST",
+    "DB_NAME",
+    "DB_PASSWORD",
+    "DB_PORT",
+    "DB_URI",
+    "DB_USER",
+    "FLASK_ENV",
+    "GITHUB_WORKSPACE",
+    "PROJECT_ROOT",
+    "PYTEST_XDIST_WORKER",
+    "REDIS_DB",
+    "REDIS_HOST",
+    "REDIS_PORT",
+)
 
 # Flags the suite wants on whatever .env says. Applied after the scrub, and set
 # rather than defaulted, so a developer's .env cannot win.
@@ -131,11 +172,7 @@ TEST_FEATURE_FLAGS = {
 
 def _leaky_env_keys() -> list[str]:
     """Every currently-set variable a test must not inherit from .env."""
-    return [
-        key
-        for key in os.environ
-        if key.startswith(FEATURE_FLAG_PREFIX) or key.startswith(LEAKY_ENV_PREFIXES) or key in LEAKY_ENV_KEYS
-    ]
+    return [key for key in os.environ if key.startswith(SCRUBBED_ENV_PREFIXES) or key in LEAKY_ENV_KEYS]
 
 
 @pytest.fixture(autouse=True)
