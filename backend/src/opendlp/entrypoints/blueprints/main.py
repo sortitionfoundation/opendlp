@@ -20,12 +20,13 @@ from opendlp.service_layer.assembly_service import (
     update_assembly,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
-from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.permissions import can_manage_assembly_members
 from opendlp.service_layer.user_service import (
     get_assembly_members,
     get_user_assemblies,
     grant_user_assembly_role,
     revoke_user_assembly_role,
+    search_assembly_candidate_users,
 )
 from opendlp.translations import gettext as _
 
@@ -168,8 +169,8 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # Get all users not already assigned to this assembly (for add form)
             available_users = list(uow.users.get_users_not_in_assembly(assembly_id))
 
-            # Check if current user can manage this assembly
-            can_manage_assembly_users = has_global_admin(current_user)
+            # Check if current user can manage this assembly's members
+            can_manage_assembly_users = can_manage_assembly_members(current_user, assembly)
 
         add_user_form = AddUserToAssemblyForm()
 
@@ -449,15 +450,10 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         uow = bootstrap.get_flask_uow()
         with uow:
-            # Verify assembly exists and user can manage it
-            if not has_global_admin(current_user):
-                raise InsufficientPermissions(
-                    action="search_users_for_assembly",
-                    required_role="admin or assembly manager",
-                )
-
-            # Search for matching users not in assembly
-            matching_users = uow.users.search_users_not_in_assembly(assembly_id, search_term) if search_term else []
+            # The service checks the permission and decides how much of the user
+            # table this searcher may see - going straight to the repository here
+            # would let the legacy UI sidestep the exact-email rule for non-admins.
+            matching_users = search_assembly_candidate_users(uow, assembly_id, search_term, current_user)
 
         return render_template(
             "main/search_user_results.html",
@@ -467,6 +463,8 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except InsufficientPermissions:
         return render_template("main/search_user_results.html", users=[], search_term=""), 403
+    except NotFoundError:
+        return render_template("main/search_user_results.html", users=[], search_term=""), 404
     except Exception as e:
         logger.error("Error searching users for assembly", assembly_id=str(assembly_id), error=str(e))
         return render_template("main/search_user_results.html", users=[], search_term=""), 500

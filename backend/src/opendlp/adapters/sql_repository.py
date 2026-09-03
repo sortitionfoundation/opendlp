@@ -182,6 +182,22 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
 
         return self.session.query(User).filter(~orm.users.c.id.in_(user_ids_with_roles)).all()
 
+    def get_by_email_not_in_assembly(self, assembly_id: uuid.UUID, email: str) -> User | None:
+        """Find the user with exactly this email, if they have no role in the assembly."""
+        if not email:
+            return None
+
+        user_ids_with_roles = select(orm.user_assembly_roles.c.user_id).where(
+            orm.user_assembly_roles.c.assembly_id == assembly_id
+        )
+        return (
+            self.session
+            .query(User)
+            .filter(~orm.users.c.id.in_(user_ids_with_roles))
+            .filter(func.lower(orm.users.c.email) == email.strip().lower())
+            .first()
+        )
+
     def search_users_not_in_assembly(self, assembly_id: uuid.UUID, search_term: str) -> Iterable[User]:
         """Search users not in assembly by email (prioritized) and name fields.
 

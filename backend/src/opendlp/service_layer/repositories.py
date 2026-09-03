@@ -98,6 +98,25 @@ class UserRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_by_email_not_in_assembly(self, assembly_id: uuid.UUID, email: str) -> User | None:
+        """Find the user with exactly this email, if they have no role in the assembly.
+
+        Deliberately separate from search_users_not_in_assembly rather than a
+        flag on it: the two access levels are two different queries, and nobody
+        has to reason about a flag's default. Exact matching is what keeps the
+        member-adding UI from being an account-enumeration surface for
+        non-admins - see docs/personal-data.md.
+
+        Args:
+            assembly_id: The assembly to exclude users from
+            email: A full email address, matched case-insensitively
+
+        Returns:
+            The matching user, or None
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def search_users_not_in_assembly(self, assembly_id: uuid.UUID, search_term: str) -> Iterable[User]:
         """Search users not in assembly by email (prioritized) and display_name.
 

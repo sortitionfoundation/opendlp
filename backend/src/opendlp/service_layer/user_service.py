@@ -30,7 +30,13 @@ from .exceptions import (
     UserAlreadyExists,
     UserNotFoundError,
 )
-from .permissions import can_manage_assembly, can_see_all_assemblies, can_view_assembly, has_global_admin
+from .permissions import (
+    can_manage_assembly,
+    can_manage_assembly_members,
+    can_see_all_assemblies,
+    can_view_assembly,
+    has_global_admin,
+)
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
@@ -999,6 +1005,11 @@ def search_assembly_candidate_users(
     """
     Search for users who can be added to an assembly (i.e. not already members).
 
+    An admin searches the user table by partial email or name. Anyone else -
+    an assembly manager adding a colleague - matches on a full email address
+    only, so that a member-adding UI cannot be used to enumerate accounts.
+    See docs/personal-data.md.
+
     Args:
         uow: Unit of Work for database operations
         assembly_id: Assembly to search candidates for
@@ -1007,21 +1018,29 @@ def search_assembly_candidate_users(
 
     Returns:
         List of matching users who do not already have a role on the assembly.
-        Empty list when search_term is blank.
+        Empty list when search_term is blank. At most one user for a non-admin.
 
     Raises:
         InsufficientPermissions: If current_user lacks permission to manage members
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    if not has_global_admin(current_user):
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+    if not can_manage_assembly_members(current_user, assembly):
         raise InsufficientPermissions(
             action="search_assembly_candidate_users",
-            required_role="admin or organiser",
+            required_role="assembly-manager or admin",
         )
 
     if not search_term:
         return []
+
+    if not has_global_admin(current_user):
+        match = uow.users.get_by_email_not_in_assembly(assembly_id, search_term)
+        return [match.create_detached_copy()] if match else []
 
     matching = uow.users.search_users_not_in_assembly(assembly_id, search_term)
     return [user.create_detached_copy() for user in matching]

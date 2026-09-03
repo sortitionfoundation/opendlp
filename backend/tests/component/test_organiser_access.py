@@ -136,3 +136,93 @@ class TestDashboardGating:
     def test_site_admin_link_hidden_from_a_user(self, logged_in_user: FlaskClient) -> None:
         response = logged_in_user.get("/dashboard")
         assert b"Site Admin" not in response.data
+
+
+class TestAssemblyManagerManagesMembers:
+    """An organiser who creates an assembly must be able to add a colleague to it."""
+
+    def _assembly_owned_by_the_organiser(self, fake_store: FakeStore, organiser_user: User) -> Assembly:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assembly = create_assembly(uow=uow, title="Theirs to run", created_by_user_id=organiser_user.id)
+            uow.commit()
+        return assembly
+
+    def _colleague(self, fake_store: FakeStore) -> User:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            user = User(
+                email="colleague@example.com",
+                first_name="Casey",
+                last_name="Colleague",
+                global_role=GlobalRole.USER,
+                password_hash="hash",  # pragma: allowlist secret
+                email_confirmed_at=datetime.now(UTC),
+            )
+            uow.users.add(user)
+            uow.commit()
+            return user.create_detached_copy()
+
+    def test_the_members_page_offers_the_add_form(
+        self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
+    ) -> None:
+        assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
+
+        response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members")
+
+        assert response.status_code == 200
+        assert b"Add" in response.data
+
+    def test_an_exact_email_finds_the_colleague(
+        self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
+    ) -> None:
+        assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
+        colleague = self._colleague(fake_store)
+
+        response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members/search?q={colleague.email}")
+
+        assert response.status_code == 200
+        assert [row["id"] for row in response.get_json()] == [str(colleague.id)]
+
+    def test_a_fragment_finds_nothing_for_a_non_admin(
+        self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
+    ) -> None:
+        """The member-search endpoint must not be usable to enumerate accounts."""
+        assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
+        self._colleague(fake_store)
+
+        response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members/search?q=colle")
+
+        assert response.status_code == 200
+        assert response.get_json() == []
+
+    def test_an_admin_keeps_partial_search(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, existing_assembly: Assembly
+    ) -> None:
+        colleague = self._colleague(fake_store)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=colle")
+
+        assert response.status_code == 200
+        assert str(colleague.id) in [row["id"] for row in response.get_json()]
+
+    def test_a_non_member_is_refused_the_search(
+        self, logged_in_organiser: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        response = logged_in_organiser.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=anyone")
+
+        assert response.status_code == 403
+        assert response.get_json() == []
+
+    def test_the_organiser_can_add_the_colleague(
+        self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
+    ) -> None:
+        assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
+        colleague = self._colleague(fake_store)
+
+        logged_in_organiser.post(
+            f"/backoffice/assembly/{assembly.id}/members/add",
+            data={"user_id": str(colleague.id), "role": AssemblyRole.CONFIRMATION_CALLER.name},
+            follow_redirects=True,
+        )
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(colleague.id).get_assembly_role(assembly.id) == AssemblyRole.CONFIRMATION_CALLER

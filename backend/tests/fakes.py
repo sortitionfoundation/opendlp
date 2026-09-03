@@ -164,6 +164,16 @@ class FakeUserRepository(FakeRepository, UserRepository):
         users_with_roles = {user.id for user in self.get_users_for_assembly(assembly_id)}
         return [user for user in self._items if user.id not in users_with_roles]
 
+    def get_by_email_not_in_assembly(self, assembly_id: uuid.UUID, email: str) -> User | None:
+        """Find the user with exactly this email, if they have no role in the assembly."""
+        if not email:
+            return None
+        wanted = email.strip().lower()
+        for user in self.get_users_not_in_assembly(assembly_id):
+            if user.email.lower() == wanted:
+                return user
+        return None
+
     def search_users_not_in_assembly(self, assembly_id: uuid.UUID, search_term: str) -> Iterable[User]:
         """Search users not in assembly by email (prioritized) and name fields.
 

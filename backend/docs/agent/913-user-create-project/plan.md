@@ -297,7 +297,7 @@ authenticated users and a "nothing is permitted" instance for anonymous ones —
 templates must not have to guard on `current_user.is_authenticated` before
 asking.
 
-### 4.7 Assembly managers can manage their own members
+### 4.7 Assembly managers can manage their own members — DONE
 
 Without this an organiser can create an assembly and then cannot add a single
 colleague to it, so it is in scope rather than a follow-up:

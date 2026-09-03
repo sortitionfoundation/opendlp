@@ -43,7 +43,7 @@ from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
     NotFoundError,
 )
-from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.permissions import can_manage_assembly_members
 from opendlp.service_layer.registration_page_service import (
     list_registration_pages,
 )
@@ -574,7 +574,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             assembly_users = get_assembly_members(uow, assembly_id, current_user)
 
-        can_manage_assembly_users = has_global_admin(current_user)
+        can_manage_assembly_users = can_manage_assembly_members(current_user, nav.assembly)
         add_user_form = AddUserToAssemblyForm()
 
         return render_template(
@@ -757,6 +757,8 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except InsufficientPermissions:
         return jsonify([]), 403
+    except NotFoundError:
+        return jsonify([]), 404
     except Exception as e:
         logger.exception("Error searching users for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify([]), 500
