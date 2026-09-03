@@ -98,28 +98,76 @@ def reset_logging_handlers():
     user_logger.handlers = original_handlers
 
 
+# Environment variables that change how the app behaves, and so must not reach a
+# test from a developer's .env file. `.env` is merged into os.environ at import of
+# opendlp.config, long before any fixture runs, so without this a green CI run
+# says nothing about whether the suite passes on someone's machine.
+#
+# DB_*, REDIS_*, API_HOST and CI are deliberately absent: the integration and BDD
+# suites need those from .env.
+LEAKY_ENV_PREFIXES = ("SMTP_", "OAUTH_", "MAX_")
+LEAKY_ENV_KEYS = (
+    "DEBUG",
+    "EMAIL_ADAPTER",
+    "GOOGLE_AUTH_JSON_PATH",
+    "INVITE_EXPIRY_HOURS",
+    "LOG_LEVEL",
+    "MONITOR_HEALTH_MAX_AGE_MINUTES",
+    "SECRET_KEY",
+    "SITE_BANNER_TEXT",
+    "TASK_TIMEOUT_HOURS",
+    "USE_CSV_DATA_SOURCE",
+)
+FEATURE_FLAG_PREFIX = "FF_"
+
+# Flags the suite wants on whatever .env says. Applied after the scrub, and set
+# rather than defaulted, so a developer's .env cannot win.
+TEST_FEATURE_FLAGS = {
+    # Keep the legacy /dashboard available for tests that still target it.
+    "FF_OLD_DEFAULT_DASHBOARD": "true",
+    "FF_DASHBOARD_SWITCH_LINKS": "true",
+}
+
+
+def _leaky_env_keys() -> list[str]:
+    """Every currently-set variable a test must not inherit from .env."""
+    return [
+        key
+        for key in os.environ
+        if key.startswith(FEATURE_FLAG_PREFIX) or key.startswith(LEAKY_ENV_PREFIXES) or key in LEAKY_ENV_KEYS
+    ]
+
+
 @pytest.fixture(autouse=True)
 def set_test_env():
-    """Automatically set test environment for all tests."""
-    original_env = os.environ.get("FLASK_ENV")
+    """Give every test the same environment, whatever the developer's .env holds.
+
+    Feature flags are set to "false"; everything else is deleted. Two different
+    reasons for the two treatments:
+
+    * the BDD suite starts Flask as a subprocess that inherits this environment
+      and then calls load_dotenv(), which does not override a key that is already
+      set - so a deleted flag comes straight back from .env, while "false" sticks;
+    * for everything else "not set" is the state the config tests assert the
+      documented defaults against, so deleting is what restores them.
+
+    Tests that want a flag on set it and call reload_flags() themselves.
+    """
+    scrubbed = _leaky_env_keys()
+    original = {key: os.environ.get(key) for key in (*scrubbed, *TEST_FEATURE_FLAGS, "FLASK_ENV")}
+
     os.environ["FLASK_ENV"] = "testing"
-    # Keep the legacy /dashboard available for tests that still target it.
-    # Individual tests that exercise the new default can override these via
-    # monkeypatch and reload_flags().
-    ff_defaults = {
-        "FF_OLD_DEFAULT_DASHBOARD": "true",
-        "FF_DASHBOARD_SWITCH_LINKS": "true",
-    }
-    original_ffs = {key: os.environ.get(key) for key in ff_defaults}
-    for key, value in ff_defaults.items():
-        os.environ.setdefault(key, value)
+    for key in scrubbed:
+        if key.startswith(FEATURE_FLAG_PREFIX):
+            os.environ[key] = "false"
+        else:
+            del os.environ[key]
+    os.environ.update(TEST_FEATURE_FLAGS)
     reload_flags()
+
     yield
-    if original_env is not None:  # pragma: no cover
-        os.environ["FLASK_ENV"] = original_env
-    else:
-        os.environ.pop("FLASK_ENV", None)
-    for key, original_value in original_ffs.items():
+
+    for key, original_value in original.items():
         if original_value is None:
             os.environ.pop(key, None)
         else:  # pragma: no cover
