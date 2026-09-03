@@ -86,14 +86,24 @@ class FakeRepository(AbstractRepository):
         return list(self._items)
 
 
+def _parse_role_filter(role: str | None) -> GlobalRole | None:
+    """Mirror the SQL repository: an unknown role filter means no filter, not an error."""
+    if not role:
+        return None
+    try:
+        return GlobalRole(role.lower())
+    except ValueError:
+        return None
+
+
 class FakeUserRepository(FakeRepository, UserRepository):
     """Fake implementation of UserRepository."""
 
     def filter(self, role: str | None = None, active: bool | None = None) -> Iterable[User]:
         """List users filtered by criteria."""
         users = list(self._items)
-        if role:
-            role_enum = GlobalRole(role.lower())
+        role_enum = _parse_role_filter(role)
+        if role_enum:
             users = [user for user in users if user.global_role == role_enum]
         if active is not None:
             users = [user for user in users if user.is_active == active]
@@ -210,15 +220,29 @@ class FakeUserRepository(FakeRepository, UserRepository):
 class FakeAssemblyRepository(FakeRepository, AssemblyRepository):
     """Fake implementation of AssemblyRepository."""
 
+    def __init__(self, users: "FakeUserRepository | None" = None) -> None:
+        super().__init__()
+        # Needed to answer get_assemblies_for_user, which depends on the asking
+        # user's global role and assembly roles.
+        self._users = users
+
     def get_active_assemblies(self) -> Iterable[Assembly]:
         """Get all assemblies that are currently active."""
         return [assembly for assembly in self._items if assembly.is_active()]
 
     def get_assemblies_for_user(self, user_id: uuid.UUID) -> Iterable[Assembly]:
-        """Get all assemblies that a user has access to."""
-        # This would typically involve checking UserAssemblyRole records
-        # For simplicity, returning all active assemblies
-        return self.get_active_assemblies()
+        """Get the active assemblies a user has access to, mirroring the SQL repository.
+
+        Admins see every active assembly; everyone else sees only the ones they
+        hold an assembly role on.
+        """
+        user = self._users.get(user_id) if self._users else None
+        if not user:
+            return []
+        if user.global_role == GlobalRole.ADMIN:
+            return self.get_active_assemblies()
+        assembly_ids = {role.assembly_id for role in user.assembly_roles}
+        return [assembly for assembly in self.get_active_assemblies() if assembly.id in assembly_ids]
 
     def get_assemblies_by_status(self, status: AssemblyStatus) -> Iterable[Assembly]:
         """Get assemblies by their status."""
@@ -938,7 +962,7 @@ class FakeStore:
 
     def __init__(self) -> None:
         self.users = FakeUserRepository()
-        self.assemblies = FakeAssemblyRepository()
+        self.assemblies = FakeAssemblyRepository(users=self.users)
         self.assembly_gsheets = FakeAssemblyGSheetRepository()
         self.assembly_respondent_gsheets = FakeAssemblyRespondentGSheetRepository()
         self.user_invites = FakeUserInviteRepository()

@@ -295,6 +295,17 @@ assemblies = Table(
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("reply_to_name", String(255), nullable=False, server_default=""),
     Column("reply_to_email", String(255), nullable=False, server_default=""),
+    # Who created this assembly. SET NULL rather than CASCADE: deleting a user
+    # must never delete their assemblies. Nullable because assemblies created
+    # before this column existed have no recorded creator, and inventing one
+    # would be worse than an honest NULL.
+    Column(
+        "created_by_user_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    ),
     # JSON column for flexible assembly configuration
     Column("config", JSON, nullable=True),
 )

@@ -15,6 +15,7 @@ from opendlp.domain.value_objects import AssemblyRole, GlobalRole, get_role_leve
 from opendlp.feature_flags import has_feature
 from opendlp.service_layer.permissions import (
     can_call_confirmations,
+    can_create_assembly,
     can_manage_assembly,
     can_view_assembly,
     has_global_admin,
@@ -87,6 +88,44 @@ def require_global_role(required_role: GlobalRole) -> Callable[[F], F]:
 def require_admin[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires admin role."""
     return require_global_role(GlobalRole.ADMIN)(f)
+
+
+def require_capability(check: Callable[[Any], bool]) -> Callable[[F], F]:
+    """Decorator that requires a global capability, named rather than a role.
+
+    Args:
+        check: A capability function from service_layer.permissions taking a user
+
+    Returns:
+        Decorator function that enforces the capability
+    """
+
+    def decorator(f: F) -> F:
+        @wraps(f)
+        def decorated_function(*args: Any, **kwargs: Any) -> Any:
+            if not current_user.is_authenticated:
+                flash(_("Please sign in to access this page."), "error")
+                return redirect(url_for("auth.login", next=request.url))
+
+            if not check(current_user):
+                logger.warning(
+                    "User denied a capability",
+                    user_id=str(current_user.id),
+                    capability=check.__name__,
+                    endpoint=request.endpoint,
+                )
+                abort(403)
+
+            return f(*args, **kwargs)
+
+        return decorated_function  # type: ignore[return-value]
+
+    return decorator
+
+
+def require_create_assembly[F: Callable[..., Any]](f: F) -> F:
+    """Decorator that requires the capability to create an assembly."""
+    return require_capability(can_create_assembly)(f)
 
 
 def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:

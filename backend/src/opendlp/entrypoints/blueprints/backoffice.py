@@ -15,6 +15,7 @@ from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     short_url,
 )
+from opendlp.entrypoints.decorators import require_create_assembly
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
     CreateAssemblyForm,
@@ -92,6 +93,7 @@ def dashboard() -> ResponseReturnValue:
 
 @backoffice_bp.route("/assembly/new", methods=["GET", "POST"])
 @login_required
+@require_create_assembly
 def new_assembly() -> ResponseReturnValue:
     """Create a new assembly in backoffice."""
     form = CreateAssemblyForm()

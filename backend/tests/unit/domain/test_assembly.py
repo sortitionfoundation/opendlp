@@ -227,6 +227,17 @@ class TestAssembly:
         assert hash(assembly1) == hash(assembly2)
         assert hash(assembly1) != hash(assembly3)
 
+    def test_created_by_user_id_defaults_to_none(self):
+        """Assemblies created before the creator was recorded have no creator."""
+        assert Assembly(title="No creator").created_by_user_id is None
+
+    def test_create_detached_copy_preserves_created_by_user_id(self):
+        """create_detached_copy is a hand-written field list, so a new field can be silently dropped."""
+        creator_id = uuid.uuid4()
+        assembly = Assembly(title="Has a creator", created_by_user_id=creator_id)
+
+        assert assembly.create_detached_copy().created_by_user_id == creator_id
+
 
 class TestAssemblyNameFields:
     def _assembly_with_attrs(self, *attribute_dicts: dict[str, object]) -> Assembly:

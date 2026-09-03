@@ -214,7 +214,7 @@ After this, an organiser with no assembly roles has an empty dashboard and 403s
 on every assembly URL. That is the point of the change, and it is also why 4.5
 and 4.7 have to land in the same PR.
 
-### 4.5 Creator becomes assembly manager, and is recorded
+### 4.5 Creator becomes assembly manager, and is recorded — DONE
 
 Two things, both in `create_assembly`, both unconditional — admins get the same
 treatment as organisers (D5), so there is no branch here.

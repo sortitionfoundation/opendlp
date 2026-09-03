@@ -50,6 +50,7 @@ class Assembly:
         updated_at: datetime | None = None,
         reply_to_name: str = "",
         reply_to_email: str = "",
+        created_by_user_id: uuid.UUID | None = None,
     ):
         if not title or not title.strip():
             raise ValueError("Assembly title is required")
@@ -70,6 +71,9 @@ class Assembly:
         self.respondents = respondents or []
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
+        # Null for assemblies created before the creator was recorded, and for
+        # any whose creator's account is later deleted outright.
+        self.created_by_user_id = created_by_user_id
         # An assembly may have a RegistrationPage (domain.registration_page).
         # It is deliberately not wired here as an ORM relationship - it is
         # loaded via RegistrationPageRepository.get_by_assembly_id. A
@@ -166,6 +170,7 @@ class Assembly:
             updated_at=self.updated_at,
             reply_to_name=self.reply_to_name,
             reply_to_email=self.reply_to_email,
+            created_by_user_id=self.created_by_user_id,
         )
         detached_assembly.target_categories = [c.create_detached_copy() for c in self.target_categories]
         detached_assembly.respondents = [r.create_detached_copy() for r in self.respondents]

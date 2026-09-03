@@ -17,7 +17,7 @@ from opendlp.domain.selection_settings import (
     SelectionSettings,
     Teams,
 )
-from opendlp.domain.value_objects import AssemblyStatus
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus
 
 from . import target_service
 from .exceptions import (
@@ -28,7 +28,7 @@ from .exceptions import (
 )
 from .permissions import can_create_assembly, can_manage_assembly, can_view_assembly
 from .unit_of_work import AbstractUnitOfWork
-from .user_service import get_user_assemblies
+from .user_service import assign_assembly_role, get_user_assemblies
 
 
 def create_assembly(
@@ -72,9 +72,14 @@ def create_assembly(
         question=question,
         first_assembly_date=first_assembly_date,
         number_to_select=number_to_select,
+        created_by_user_id=created_by_user_id,
     )
 
     uow.assemblies.add(assembly)
+    # The creator manages what they create. Unconditional: an admin gets the
+    # same role as an organiser, so the assembly appears on their dashboard and
+    # there is no branch here to get wrong.
+    assign_assembly_role(uow, created_by_user_id, assembly.id, AssemblyRole.ASSEMBLY_MANAGER)
     return assembly.create_detached_copy()
 
 

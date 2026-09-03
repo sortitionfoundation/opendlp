@@ -82,9 +82,8 @@ class TestAssemblyCreateView:
         assert b"error" in response.data or b"Field must be" in response.data
 
     def test_create_assembly_permission_denied_for_user(self, logged_in_user: FlaskClient) -> None:
-        """Test regular users can view create form but get error on submit."""
-        response = logged_in_user.get("/assemblies/new")
-        assert response.status_code == 200
+        """A regular user cannot reach the create form at all, nor post to it."""
+        assert logged_in_user.get("/assemblies/new").status_code == 403
 
         future_date = (datetime.now(UTC) + timedelta(days=30)).date()
         response = logged_in_user.post(
@@ -94,7 +93,7 @@ class TestAssemblyCreateView:
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
             },
         )
-        assert response.status_code in [200, 302]
+        assert response.status_code == 403
 
     def test_create_assembly_redirects_when_not_logged_in(self, client: FlaskClient) -> None:
         """Test create assembly redirects to login when not authenticated."""

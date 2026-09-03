@@ -29,6 +29,7 @@ from opendlp.service_layer.user_service import (
 )
 from opendlp.translations import gettext as _
 
+from ..decorators import require_create_assembly
 from ..forms import AddUserToAssemblyForm, CreateAssemblyForm, EditAssemblyForm
 
 main_bp = Blueprint("main", __name__)
@@ -203,6 +204,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @main_bp.route("/assemblies/new", methods=["GET", "POST"])
 @login_required
+@require_create_assembly
 def create_assembly_page() -> ResponseReturnValue:
     """Create a new assembly."""
     form = CreateAssemblyForm()

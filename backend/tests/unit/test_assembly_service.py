@@ -45,8 +45,8 @@ class TestCreateAssembly:
         assert assembly.status == AssemblyStatus.ACTIVE
         assert len(uow.assemblies.all()) == 1
 
-    def test_create_assembly_success_global_organiser(self, uow):
-        """Test successful assembly creation by global organiser."""
+    def test_create_assembly_success_organiser(self, uow):
+        """Test successful assembly creation by an organiser."""
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.ORGANISER,
@@ -65,6 +65,44 @@ class TestCreateAssembly:
         )
 
         assert assembly.title == "Test Assembly"
+
+    def test_creator_becomes_assembly_manager(self, uow):
+        """An organiser can reach what they create, which needs a role on it."""
+        organiser_user = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser_user)
+
+        assembly = assembly_service.create_assembly(
+            uow=uow, title="Test Assembly", created_by_user_id=organiser_user.id
+        )
+
+        assert organiser_user.get_assembly_role(assembly.id) == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_admin_creator_also_becomes_assembly_manager(self, uow):
+        """Uniform with an organiser - the case most likely to regress if a branch reappears."""
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        assembly = assembly_service.create_assembly(uow=uow, title="Test Assembly", created_by_user_id=admin_user.id)
+
+        assert admin_user.get_assembly_role(assembly.id) == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_creator_is_recorded_on_the_assembly(self, uow):
+        organiser_user = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser_user)
+
+        assembly = assembly_service.create_assembly(
+            uow=uow, title="Test Assembly", created_by_user_id=organiser_user.id
+        )
+
+        assert assembly.created_by_user_id == organiser_user.id
 
     def test_create_assembly_insufficient_permissions(self, uow):
         """Test assembly creation fails for regular user."""

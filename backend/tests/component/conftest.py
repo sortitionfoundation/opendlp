@@ -201,6 +201,27 @@ def regular_user(fake_store):
 
 
 @pytest.fixture
+def organiser_user(fake_store):
+    """Create a confirmed organiser in the shared store, holding no assembly roles."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        user, _ = create_user(
+            uow=uow,
+            email="organiser@example.com",
+            password="uncommon-passphrase-42",  # pragma: allowlist secret
+            first_name="Test",
+            last_name="Organiser",
+            global_role=GlobalRole.ORGANISER,
+            accept_data_agreement=True,
+        )
+
+    with FakeUnitOfWork(store=fake_store) as uow:
+        user_obj = uow.users.get(user.id)
+        user_obj.confirm_email()
+        uow.commit()
+        return user_obj.create_detached_copy()
+
+
+@pytest.fixture
 def logged_in_admin(client, admin_user):
     """Client logged in as the admin user."""
     return _login(client, admin_user)
@@ -210,6 +231,12 @@ def logged_in_admin(client, admin_user):
 def logged_in_user(client, regular_user):
     """Client logged in as the regular user."""
     return _login(client, regular_user)
+
+
+@pytest.fixture
+def logged_in_organiser(client, organiser_user):
+    """Client logged in as an organiser with no assembly roles."""
+    return _login(client, organiser_user)
 
 
 @pytest.fixture
