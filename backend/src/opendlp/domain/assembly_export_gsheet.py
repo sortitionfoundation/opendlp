@@ -27,10 +27,11 @@ class AssemblyExportGSheet:
     only a destination for exported data. The organiser sets the URL and
     worksheet once; later exports of that kind reuse and can edit them.
 
-    An assembly has at most one row per ``export_kind``, and each row owns its
-    own spreadsheet rather than sharing one across kinds - the respondent export
-    carries personal data and the dashboard export does not, so they need to be
-    shareable with different people.
+    An assembly has at most one row per ``export_kind``, and each row carries its
+    own URL, so an organiser *can* send each kind to a different spreadsheet - the
+    respondent export carries personal data and the dashboard export does not, so
+    they may need to be shared with different people. Nothing forces that: two
+    kinds may point at one spreadsheet if the organiser wants them to.
     """
 
     assembly_id: uuid.UUID

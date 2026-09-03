@@ -107,10 +107,11 @@ class SelectionTaskType(Enum):
 class GSheetExportKind(Enum):
     """What an assembly's saved Google Sheet export target is for.
 
-    Each kind gets its own row, with its own spreadsheet as well as its own
-    worksheet. Respondent data is personal and its sheet must stay locked down;
-    the dashboard's is aggregate counts an organiser may want to publish, so the
-    two must never default to the same destination.
+    Each kind gets its own row, so it can have its own spreadsheet as well as its
+    own worksheet - respondent data is personal and its sheet needs tight sharing,
+    while the dashboard's is aggregate counts an organiser may want to publish.
+    Nothing stops an organiser pointing two kinds at the same spreadsheet; what
+    keeps the personal data safe is the sharing on the sheet holding it, not this.
     """
 
     RESPONDENTS = "RESPONDENTS"

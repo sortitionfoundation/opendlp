@@ -407,9 +407,11 @@ def export_dashboard_report_to_gsheet(
 ) -> None:
     """Write the results table to a Google Sheet and save the sheet config.
 
-    The config is saved under its own export kind, so it never shares a
-    spreadsheet with the respondent export - this table is aggregate counts and
-    may be published, that one is personal data and must not be.
+    The config is saved under its own export kind, so this export can have its own
+    spreadsheet rather than inheriting the respondent export's - useful because
+    this table is aggregate counts an organiser may publish, while that one is
+    personal data. Pointing both at one spreadsheet is allowed; keeping the
+    personal data private is a matter of how that sheet is shared.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -447,6 +449,12 @@ def get_dashboard_gsheet_config(
     assembly_id: uuid.UUID,
 ) -> AssemblyExportGSheet | None:
     """The saved dashboard-export sheet config, or None before the first export.
+
+    View permission, not manage - deliberately looser than the respondent
+    equivalent. That export carries personal data, which is sensitive; this one is
+    aggregate counts, which is not. Either way the config is a link to a sheet
+    rather than the data in it: whoever the sheet is shared with is what decides
+    who can read it.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
