@@ -132,7 +132,12 @@ class TestExportModal:
     ) -> None:
         with FakeUnitOfWork(store=fake_store) as uow:
             uow.assembly_export_gsheets.add(
-                AssemblyExportGSheet(assembly_id=existing_assembly.id, url=_SHEET_URL, worksheet_name="Saved Tab")
+                AssemblyExportGSheet(
+                    assembly_id=existing_assembly.id,
+                    export_kind=GSheetExportKind.RESPONDENTS,
+                    url=_SHEET_URL,
+                    worksheet_name="Saved Tab",
+                )
             )
             uow.commit()
 
@@ -153,6 +158,7 @@ class TestRespondentsPageGSheetLink:
             uow.assembly_export_gsheets.add(
                 AssemblyExportGSheet(
                     assembly_id=existing_assembly.id,
+                    export_kind=GSheetExportKind.RESPONDENTS,
                     url=_SHEET_URL,
                     worksheet_name="Export tab",
                     spreadsheet_title="Assembly Data",

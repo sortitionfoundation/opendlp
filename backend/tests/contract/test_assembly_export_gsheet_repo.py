@@ -22,6 +22,7 @@ def _add(backend: ContractBackend, assembly_id: uuid.UUID | None = None, **kwarg
         assembly_id = assembly.id
     config = AssemblyExportGSheet(
         assembly_id=assembly_id,
+        export_kind=kwargs.pop("export_kind", GSheetExportKind.RESPONDENTS),
         assembly_export_gsheet_id=uuid.uuid4(),
         url=kwargs.pop("url", TEST_GSHEET_URL),
         **kwargs,
