@@ -35,7 +35,9 @@ class AssemblyExportGSheet:
     """
 
     assembly_id: uuid.UUID
-    export_kind: GSheetExportKind = GSheetExportKind.RESPONDENTS
+    # Required, with no default: defaulting to one kind would let a new export kind
+    # silently write over the respondent export's row by forgetting to pass it.
+    export_kind: GSheetExportKind
     assembly_export_gsheet_id: uuid.UUID | None = None
     url: str = ""
     worksheet_name: str = ""
