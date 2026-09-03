@@ -102,7 +102,7 @@ class TestUser:
         # Global organiser can access any assembly
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
         assert organiser_user.can_access_assembly(assembly_id) is True

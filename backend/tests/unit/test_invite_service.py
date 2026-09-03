@@ -36,7 +36,7 @@ class TestGenerateInvite:
         """Invites are administered by admins only, so an organiser is refused."""
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
         uow.users.add(organiser_user)
@@ -327,7 +327,7 @@ class TestGetInviteDetails:
         """An organiser cannot read invite details - invites are admin-only."""
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
         uow.users.add(organiser_user)

@@ -78,7 +78,7 @@ def seed_database(
             password_hash=hash_password("organiser123"),
             first_name="Global",
             last_name="Organiser",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             created_at=now,
             is_active=True,
             email_confirmed_at=now,
@@ -119,7 +119,7 @@ def seed_database(
         uow.user_invites.add(admin_invite)
 
         organiser_invite = UserInvite(
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             created_by=admin_user_id,
             expires_in_hours=168,
             invite_id=uuid.uuid4(),

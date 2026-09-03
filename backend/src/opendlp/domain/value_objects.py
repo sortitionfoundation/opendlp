@@ -9,14 +9,14 @@ from opendlp.translations import lazy_gettext as _l
 
 class GlobalRole(Enum):
     ADMIN = "admin"
-    GLOBAL_ORGANISER = "global-organiser"
+    ORGANISER = "organiser"
     USER = "user"
 
 
 # for forms etc
 global_role_options = {
-    GlobalRole.USER.name: _l("User - Basic access to assigned assemblies"),
-    GlobalRole.GLOBAL_ORGANISER.name: _l("Global Organiser - Can create and manage all assemblies"),
+    GlobalRole.USER.name: _l("User - Access to the assemblies they are added to"),
+    GlobalRole.ORGANISER.name: _l("Organiser - Can create assemblies, and manage the ones they belong to"),
     GlobalRole.ADMIN.name: _l("Admin - Full system access including user management"),
 }
 
@@ -25,7 +25,7 @@ def get_role_level(role: GlobalRole) -> int:
     """Get numeric level for role comparison."""
     role_levels = {
         GlobalRole.USER: 1,
-        GlobalRole.GLOBAL_ORGANISER: 2,
+        GlobalRole.ORGANISER: 2,
         GlobalRole.ADMIN: 3,
     }
     return role_levels.get(role, 0)

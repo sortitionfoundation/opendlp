@@ -116,7 +116,7 @@ class TestUserRepository:
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
 

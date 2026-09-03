@@ -56,7 +56,7 @@ class TestCanManageAssembly:
         """Test global organiser can manage any assembly."""
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
 
@@ -145,7 +145,7 @@ class TestCanViewAssembly:
         """Test global organiser can view any assembly."""
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
 
@@ -278,7 +278,7 @@ class TestCanEditRespondent:
         assert can_edit_respondent(user, self._assembly()) is True
 
     def test_global_organiser_can_edit(self) -> None:
-        user = User(email="o@example.com", global_role=GlobalRole.GLOBAL_ORGANISER, password_hash="h")
+        user = User(email="o@example.com", global_role=GlobalRole.ORGANISER, password_hash="h")
         assert can_edit_respondent(user, self._assembly()) is True
 
     def test_assembly_manager_can_edit(self) -> None:
@@ -361,7 +361,7 @@ class TestGlobalRoleChecks:
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
@@ -373,19 +373,19 @@ class TestGlobalRoleChecks:
     def test_can_create_assembly(self):
         """Admins and organisers can create assemblies; plain users cannot."""
         assert can_create_assembly(_user(GlobalRole.ADMIN)) is True
-        assert can_create_assembly(_user(GlobalRole.GLOBAL_ORGANISER)) is True
+        assert can_create_assembly(_user(GlobalRole.ORGANISER)) is True
         assert can_create_assembly(_user(GlobalRole.USER)) is False
 
     def test_can_see_all_assemblies(self):
         """Only admins see every assembly."""
         assert can_see_all_assemblies(_user(GlobalRole.ADMIN)) is True
-        assert can_see_all_assemblies(_user(GlobalRole.GLOBAL_ORGANISER)) is False
+        assert can_see_all_assemblies(_user(GlobalRole.ORGANISER)) is False
         assert can_see_all_assemblies(_user(GlobalRole.USER)) is False
 
     def test_can_administer_site(self):
         """Only admins manage users, invites and the admin UI."""
         assert can_administer_site(_user(GlobalRole.ADMIN)) is True
-        assert can_administer_site(_user(GlobalRole.GLOBAL_ORGANISER)) is False
+        assert can_administer_site(_user(GlobalRole.ORGANISER)) is False
         assert can_administer_site(_user(GlobalRole.USER)) is False
 
 
@@ -399,7 +399,7 @@ class TestUserCapabilities:
 
     def test_capabilities_for_organiser(self):
         """An organiser may create assemblies and nothing else global."""
-        perms = capabilities_for(_user(GlobalRole.GLOBAL_ORGANISER))
+        perms = capabilities_for(_user(GlobalRole.ORGANISER))
         assert perms == UserCapabilities(create_assembly=True, see_all_assemblies=False, administer_site=False)
 
     def test_capabilities_for_user(self):
@@ -420,7 +420,7 @@ class TestRequireGlobalRoleDecorator:
         """Test decorator allows access with sufficient role."""
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
 
-        @require_global_role(GlobalRole.GLOBAL_ORGANISER)
+        @require_global_role(GlobalRole.ORGANISER)
         def test_function(uow, user):
             return "success"
 
@@ -432,7 +432,7 @@ class TestRequireGlobalRoleDecorator:
         """Test decorator blocks access with insufficient role."""
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
 
-        @require_global_role(GlobalRole.GLOBAL_ORGANISER)
+        @require_global_role(GlobalRole.ORGANISER)
         def test_function(uow, user):
             return "success"  # pragma: no cover
 
@@ -444,11 +444,11 @@ class TestRequireGlobalRoleDecorator:
         """Test decorator allows access with exact role match."""
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
 
-        @require_global_role(GlobalRole.GLOBAL_ORGANISER)
+        @require_global_role(GlobalRole.ORGANISER)
         def test_function(uow, user):
             return "success"
 

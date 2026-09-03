@@ -31,7 +31,7 @@ class TestListInvitesPage:
         """Invite list shows statistics cards."""
         with FakeUnitOfWork(store=fake_store) as uow:
             generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24)
-            generate_invite(uow, admin_user.id, GlobalRole.GLOBAL_ORGANISER, expires_in_hours=48)
+            generate_invite(uow, admin_user.id, GlobalRole.ORGANISER, expires_in_hours=48)
 
         response = logged_in_admin.get("/admin/invites")
         assert response.status_code == 200
@@ -62,12 +62,12 @@ class TestListInvitesPage:
         """Invite list displays role tags."""
         with FakeUnitOfWork(store=fake_store) as uow:
             generate_invite(uow, admin_user.id, GlobalRole.ADMIN, expires_in_hours=24)
-            generate_invite(uow, admin_user.id, GlobalRole.GLOBAL_ORGANISER, expires_in_hours=24)
+            generate_invite(uow, admin_user.id, GlobalRole.ORGANISER, expires_in_hours=24)
             generate_invite(uow, admin_user.id, GlobalRole.USER, expires_in_hours=24)
 
         response = logged_in_admin.get("/admin/invites")
         assert response.status_code == 200
-        assert b"Admin" in response.data and b"Global Organiser" in response.data and b"User" in response.data
+        assert b"Admin" in response.data and b"Organiser" in response.data and b"User" in response.data
 
 
 class TestCreateInvite:
@@ -139,14 +139,14 @@ class TestViewInvite:
     def test_view_invite_shows_details(self, logged_in_admin: FlaskClient, fake_store, admin_user: User):
         """View invite page shows all relevant information."""
         with FakeUnitOfWork(store=fake_store) as uow:
-            invite = generate_invite(uow, admin_user.id, GlobalRole.GLOBAL_ORGANISER, expires_in_hours=24)
+            invite = generate_invite(uow, admin_user.id, GlobalRole.ORGANISER, expires_in_hours=24)
             invite_id = invite.id
             invite_code = invite.code
 
         response = logged_in_admin.get(f"/admin/invites/{invite_id}")
         assert response.status_code == 200
         assert invite_code.encode() in response.data
-        assert b"Global Organiser" in response.data or b"GLOBAL_ORGANISER" in response.data
+        assert b"Organiser" in response.data or b"ORGANISER" in response.data
 
     def test_view_invite_shows_registration_url(self, logged_in_admin: FlaskClient, fake_store, admin_user: User):
         """View invite page shows the registration URL."""

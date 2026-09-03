@@ -111,9 +111,7 @@ def update_assembly(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="update assembly", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="update assembly", required_role="assembly-manager or admin")
 
     # Apply updates
     previous_number_to_select = assembly.number_to_select
@@ -203,9 +201,7 @@ def archive_assembly(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="archive assembly", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="archive assembly", required_role="assembly-manager or admin")
 
     # Archive the assembly
     assembly.status = AssemblyStatus.ARCHIVED
@@ -283,9 +279,7 @@ def add_assembly_gsheet(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="add gsheet to assembly", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="add gsheet to assembly", required_role="assembly-manager or admin")
 
     # Check if assembly already has a gsheet
     existing_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
@@ -344,9 +338,7 @@ def update_assembly_gsheet(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="update assembly gsheet", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="update assembly gsheet", required_role="assembly-manager or admin")
 
     # Get the existing gsheet
     assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
@@ -401,9 +393,7 @@ def remove_assembly_gsheet(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="remove assembly gsheet", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="remove assembly gsheet", required_role="assembly-manager or admin")
 
     # Get the existing gsheet
     assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
@@ -531,7 +521,7 @@ def update_selection_settings(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="update selection settings",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     if assembly.selection_settings is None:
@@ -598,7 +588,7 @@ def update_csv_config(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="update CSV configuration",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     # Create if doesn't exist
@@ -802,7 +792,7 @@ def delete_respondents_for_assembly(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="delete respondents",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     return uow.respondents.delete_all_for_assembly(assembly_id)

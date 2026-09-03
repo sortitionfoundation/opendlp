@@ -63,7 +63,7 @@ class TestCreateUser:
         """Test successful user creation with OAuth."""
         invite = UserInvite(
             code="TESTCODE",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             created_by=uuid.uuid4(),
             expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
@@ -82,7 +82,7 @@ class TestCreateUser:
         assert user.email == "test@example.com"
         assert user.first_name == "OAuth"
         assert user.last_name == "User"
-        assert user.global_role == GlobalRole.GLOBAL_ORGANISER
+        assert user.global_role == GlobalRole.ORGANISER
         assert user.password_hash is None
         assert user.oauth_provider == "google"
         assert user.oauth_id == "google123"
@@ -201,7 +201,7 @@ class TestValidateInvite:
 
         invite = UserInvite(
             code="VALIDCODE",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             created_by=uuid.uuid4(),
             expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
@@ -209,7 +209,7 @@ class TestValidateInvite:
 
         role = user_service.validate_invite(uow=uow, invite_code="VALIDCODE")
 
-        assert role == GlobalRole.GLOBAL_ORGANISER
+        assert role == GlobalRole.ORGANISER
         # Verify invite is NOT marked as used
         assert invite.used_by is None
         assert invite.used_at is None
@@ -285,7 +285,7 @@ class TestValidateAndUseInvite:
         """Test successful invite validation."""
         invite = UserInvite(
             code="VALIDCODE",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             created_by=uuid.uuid4(),
             expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
@@ -293,7 +293,7 @@ class TestValidateAndUseInvite:
 
         role = user_service.validate_and_use_invite(uow=uow, invite_code="VALIDCODE")
 
-        assert role == GlobalRole.GLOBAL_ORGANISER
+        assert role == GlobalRole.ORGANISER
 
     def test_validate_invite_not_found(self, uow):
         """Test invite validation fails when code not found."""
@@ -566,7 +566,7 @@ class TestListUsersPaginated:
         uow.users.add(
             User(
                 email="org1@example.com",
-                global_role=GlobalRole.GLOBAL_ORGANISER,
+                global_role=GlobalRole.ORGANISER,
                 is_active=True,
                 password_hash="hash",  # pragma: allowlist secret
             )
@@ -731,12 +731,12 @@ class TestUpdateUser:
             admin_user_id=admin_user.id,
             first_name="New",
             last_name="Name",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
         )
 
         assert updated_user.first_name == "New"
         assert updated_user.last_name == "Name"
-        assert updated_user.global_role == GlobalRole.GLOBAL_ORGANISER
+        assert updated_user.global_role == GlobalRole.ORGANISER
 
     def test_update_user_cannot_change_own_role(self, uow):
         """Test admin cannot change their own role."""
@@ -844,7 +844,7 @@ class TestGetUserStats:
         uow.users.add(
             User(
                 email="org1@example.com",
-                global_role=GlobalRole.GLOBAL_ORGANISER,
+                global_role=GlobalRole.ORGANISER,
                 is_active=True,
                 password_hash="hash",  # pragma: allowlist secret
             )

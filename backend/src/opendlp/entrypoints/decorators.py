@@ -66,7 +66,7 @@ def require_global_role(required_role: GlobalRole) -> Callable[[F], F]:
                 flash(_("Please sign in to access this page."), "error")
                 return redirect(url_for("auth.login", next=request.url))
 
-            # Check global role hierarchy: ADMIN > GLOBAL_ORGANISER > USER
+            # Check global role hierarchy: ADMIN > ORGANISER > USER
             user_role_level = get_role_level(current_user.global_role)
             required_role_level = get_role_level(required_role)
 
@@ -91,7 +91,7 @@ def require_admin[F: Callable[..., Any]](f: F) -> F:
 
 def require_global_organiser[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires global organiser role or higher."""
-    return require_global_role(GlobalRole.GLOBAL_ORGANISER)(f)
+    return require_global_role(GlobalRole.ORGANISER)(f)
 
 
 def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:

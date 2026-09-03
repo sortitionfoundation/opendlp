@@ -119,7 +119,7 @@ class TestDeleteRespondent:
         assert respondent.comments[0].action is RespondentAction.DELETE
 
     def test_global_organiser_can_delete(self, uow):
-        user, assembly, respondent = _seed(uow, global_role=GlobalRole.GLOBAL_ORGANISER)
+        user, assembly, respondent = _seed(uow, global_role=GlobalRole.ORGANISER)
 
         respondent_service.delete_respondent(uow, user.id, assembly.id, respondent.id, comment="gdpr request")
 

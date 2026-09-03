@@ -54,7 +54,7 @@ def test_users(postgres_session_factory, admin_user):
         organiser, _ = create_user(
             uow,
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password="SecurePass123!",  # pragma: allowlist secret
             first_name="Global",
             last_name="Organiser",

@@ -184,7 +184,7 @@ def get_user_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> list[Ass
         raise UserNotFoundError(f"User {user_id} not found")
 
     # Global admins and organisers can see all assemblies
-    if user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
+    if user.global_role in (GlobalRole.ADMIN, GlobalRole.ORGANISER):
         return list(uow.assemblies.get_active_assemblies())
 
     # Regular users see only assemblies they have specific roles for
@@ -788,7 +788,7 @@ def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[st
         "active_users": len([u for u in all_users if u.is_active]),
         "inactive_users": len([u for u in all_users if not u.is_active]),
         "admin_users": len([u for u in all_users if u.global_role == GlobalRole.ADMIN]),
-        "organiser_users": len([u for u in all_users if u.global_role == GlobalRole.GLOBAL_ORGANISER]),
+        "organiser_users": len([u for u in all_users if u.global_role == GlobalRole.ORGANISER]),
         "password_users": len(password_users),
         "users_with_2fa": len(users_with_2fa),
         "regular_users": len([u for u in all_users if u.global_role == GlobalRole.USER]),
@@ -838,7 +838,7 @@ def grant_user_assembly_role(
         if not can_manage_assembly(current_user, assembly):
             raise InsufficientPermissions(
                 action="grant_user_assembly_role",
-                required_role="admin, global-organiser, or assembly manager",
+                required_role="admin or assembly manager",
             )
 
     # Validate target user exists
@@ -924,7 +924,7 @@ def revoke_user_assembly_role(
         if not can_manage_assembly(current_user, assembly):
             raise InsufficientPermissions(
                 action="revoke_user_assembly_role",
-                required_role="admin, global-organiser, or assembly manager",
+                required_role="admin or assembly manager",
             )
 
     # Validate target user exists
@@ -1017,7 +1017,7 @@ def search_assembly_candidate_users(
     if not has_global_admin(current_user):
         raise InsufficientPermissions(
             action="search_assembly_candidate_users",
-            required_role="admin or global-organiser",
+            required_role="admin or organiser",
         )
 
     if not search_term:

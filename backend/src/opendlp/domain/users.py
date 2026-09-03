@@ -105,7 +105,7 @@ class User:
 
     def can_access_assembly(self, assembly_id: uuid.UUID) -> bool:
         """Check if user can access the given assembly."""
-        if self.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
+        if self.global_role in (GlobalRole.ADMIN, GlobalRole.ORGANISER):
             return True
 
         return any(role.assembly_id == assembly_id for role in self.assembly_roles)

@@ -77,6 +77,20 @@ class SqlAlchemyRepository:
         self.session = session
 
 
+def _parse_role_filter(role: str | None) -> GlobalRole | None:
+    """Turn a role filter from a query string into a role, ignoring anything unknown.
+
+    A bookmarked or stale filter naming a role that no longer exists is not an
+    error worth a 500 - it just means no filter.
+    """
+    if not role:
+        return None
+    try:
+        return GlobalRole(role.lower())
+    except ValueError:
+        return None
+
+
 class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
     """SQLAlchemy implementation of UserRepository."""
 
@@ -95,8 +109,8 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
     def filter(self, role: str | None = None, active: bool | None = None) -> Iterable[User]:
         """List users filtered by criteria."""
         user_query = self.session.query(User)
-        if role:
-            role_enum = GlobalRole(role.lower())
+        role_enum = _parse_role_filter(role)
+        if role_enum:
             user_query = user_query.filter(orm.users.c.global_role == role_enum)
         if active is not None:
             user_query = user_query.filter(orm.users.c.is_active == active)
@@ -115,8 +129,8 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
         user_query = self.session.query(User)
 
         # Apply role filter
-        if role:
-            role_enum = GlobalRole(role.lower())
+        role_enum = _parse_role_filter(role)
+        if role_enum:
             user_query = user_query.filter(orm.users.c.global_role == role_enum)
 
         # Apply active filter
@@ -221,7 +235,7 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
             .filter(
                 or_(
                     orm.users.c.global_role == GlobalRole.ADMIN,
-                    orm.users.c.global_role == GlobalRole.GLOBAL_ORGANISER,
+                    orm.users.c.global_role == GlobalRole.ORGANISER,
                 )
             )
             .all()
@@ -260,7 +274,7 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
         if not user:
             return []
 
-        if user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
+        if user.global_role in (GlobalRole.ADMIN, GlobalRole.ORGANISER):
             # Global users can access all active assemblies
             return self.get_active_assemblies()
 

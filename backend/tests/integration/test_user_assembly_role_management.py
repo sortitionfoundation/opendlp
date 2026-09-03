@@ -33,7 +33,7 @@ def organiser_user():
     """Create a global organiser user."""
     return User(
         email="organiser@example.com",
-        global_role=GlobalRole.GLOBAL_ORGANISER,
+        global_role=GlobalRole.ORGANISER,
         password_hash="hash123",  # pragma: allowlist secret
     )
 

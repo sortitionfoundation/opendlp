@@ -29,7 +29,7 @@ def can_manage_assembly(user: User, assembly: Assembly) -> bool:
         return True
 
     # Global organisers can manage all assemblies
-    if user.global_role == GlobalRole.GLOBAL_ORGANISER:
+    if user.global_role == GlobalRole.ORGANISER:
         return True
 
     # Check assembly-specific roles
@@ -52,7 +52,7 @@ def can_view_assembly(user: User, assembly: Assembly) -> bool:
         True if user can view the assembly
     """
     # Global admins and organisers can view all assemblies
-    if user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
+    if user.global_role in (GlobalRole.ADMIN, GlobalRole.ORGANISER):
         return True
 
     # Check assembly-specific roles
@@ -61,7 +61,7 @@ def can_view_assembly(user: User, assembly: Assembly) -> bool:
 
 def can_edit_respondent(user: User, assembly: Assembly) -> bool:
     """Who can edit respondent attributes via the backoffice edit page."""
-    if user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
+    if user.global_role in (GlobalRole.ADMIN, GlobalRole.ORGANISER):
         return True
     for role in user.assembly_roles:
         if role.assembly_id == assembly.id and role.role in (
@@ -110,7 +110,7 @@ def has_global_admin(user: User) -> bool:
 
 def can_create_assembly(user: User) -> bool:
     """Whether the user may create a new assembly."""
-    return user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER)
+    return user.global_role in (GlobalRole.ADMIN, GlobalRole.ORGANISER)
 
 
 def can_see_all_assemblies(user: User) -> bool:

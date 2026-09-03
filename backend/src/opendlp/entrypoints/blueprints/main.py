@@ -451,7 +451,7 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
             if not has_global_admin(current_user):
                 raise InsufficientPermissions(
                     action="search_users_for_assembly",
-                    required_role="admin, global-organiser, or assembly manager",
+                    required_role="admin or assembly manager",
                 )
 
             # Search for matching users not in assembly

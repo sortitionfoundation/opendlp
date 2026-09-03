@@ -49,7 +49,7 @@ class TestCreateAssembly:
         """Test successful assembly creation by global organiser."""
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
         uow.users.add(organiser_user)

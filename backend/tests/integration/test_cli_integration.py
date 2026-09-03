@@ -209,7 +209,7 @@ class TestCliUsersIntegration:
                 uow=uow,
                 email=non_admin_email,
                 password="pass123oiua",  # pragma: allowlist secret
-                global_role=GlobalRole.GLOBAL_ORGANISER,
+                global_role=GlobalRole.ORGANISER,
             )
 
         result = cli_with_session_factory(
@@ -421,7 +421,7 @@ class TestCliDatabaseIntegration:
             # Check organiser exists
             organiser_user = uow.users.get_by_email("organiser@opendlp.example")
             assert organiser_user is not None
-            assert organiser_user.global_role == GlobalRole.GLOBAL_ORGANISER
+            assert organiser_user.global_role == GlobalRole.ORGANISER
 
             # Check regular user exists
             regular_user = uow.users.get_by_email("user@opendlp.example")

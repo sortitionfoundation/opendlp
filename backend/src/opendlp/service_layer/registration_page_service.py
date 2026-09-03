@@ -34,7 +34,7 @@ from .exceptions import (
 from .permissions import can_manage_assembly, can_view_assembly
 from .unit_of_work import AbstractUnitOfWork
 
-_MANAGE_ROLE = "assembly-manager, global-organiser or admin"
+_MANAGE_ROLE = "assembly-manager or admin"
 _VIEW_ROLE = "assembly role or global privileges"
 
 

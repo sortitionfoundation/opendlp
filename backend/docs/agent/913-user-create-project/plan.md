@@ -144,7 +144,7 @@ returns. Migrate every caller of `has_global_organiser` to the right one:
 Also add `UserCapabilities` (a small frozen dataclass or a set of properties)
 for templates, injected by a context processor as `perms` — see 4.6.
 
-### 4.2 Rename the role
+### 4.2 Rename the role — DONE
 
 - `GlobalRole.GLOBAL_ORGANISER = "global-organiser"` → `ORGANISER = "organiser"`
   (D8: the stored value changes too).
@@ -167,7 +167,7 @@ for templates, injected by a context processor as `perms` — see 4.6.
   requirement ("assembly-manager or admin", "admin", etc. — the right one per
   site, not a blanket string).
 
-### 4.3 The data migration
+### 4.3 The data migration — DONE
 
 Hand-written Alembic revision (`uv run alembic revision -m "retire global-organiser role"`,
 no autogenerate). Both columns are plain strings (`EnumAsString`), so this is a

@@ -80,7 +80,7 @@ def _ensure_manage_permission(uow: AbstractUnitOfWork, user_id: uuid.UUID, assem
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="edit respondent field schema",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
 
