@@ -39,7 +39,6 @@ if TYPE_CHECKING:
 
 
 EXPORT_KIND = GSheetExportKind.DASHBOARD
-DEFAULT_SHEET_TITLE = default_worksheet_name(EXPORT_KIND)
 
 
 # -----------------------------------------------------------------------------
@@ -382,7 +381,7 @@ def export_dashboard_report(
     assembly_id: uuid.UUID,
     *,
     target: AbstractTabularExportTarget,
-    sheet_title: str = DEFAULT_SHEET_TITLE,
+    sheet_title: str = "",
 ) -> None:
     """Write the results table to the given target.
 
@@ -390,8 +389,12 @@ def export_dashboard_report(
     writes a worksheet. Requires manage permission, matching the respondent
     export.
 
+    An empty ``sheet_title`` means the default for this export kind, resolved
+    here rather than as a default argument so it lands in the caller's language.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
+    sheet_title = sheet_title or default_worksheet_name(EXPORT_KIND)
     report = get_assembly_dashboard_report(uow, user_id, assembly_id)
     target.write_sheet(sheet_title, build_dashboard_table(report))
 
@@ -416,7 +419,7 @@ def export_dashboard_report_to_gsheet(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    worksheet_name = worksheet_name.strip() or DEFAULT_SHEET_TITLE
+    worksheet_name = worksheet_name.strip() or default_worksheet_name(EXPORT_KIND)
 
     # Write first so the target's result_title/result_url are populated; only
     # then persist the config, so a failed write saves nothing.

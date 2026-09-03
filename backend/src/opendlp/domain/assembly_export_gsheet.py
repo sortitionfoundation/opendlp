@@ -7,16 +7,27 @@ from datetime import UTC, datetime
 
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import GSheetExportKind
+from opendlp.translations import lazy_gettext as _l
 
-# What an export writes to when the organiser has not named a worksheet.
+# What an export writes to when the organiser has not named a worksheet. The
+# organiser reads these as a tab in their own spreadsheet, so they are translated
+# - lazily, because this is module level and the language is only known per
+# request.
 DEFAULT_WORKSHEET_NAMES = {
-    GSheetExportKind.RESPONDENTS: "Respondents",
-    GSheetExportKind.DASHBOARD: "Results",
+    GSheetExportKind.RESPONDENTS: _l("Respondents"),
+    GSheetExportKind.DASHBOARD: _l("Results"),
 }
 
 
 def default_worksheet_name(export_kind: GSheetExportKind) -> str:
-    return DEFAULT_WORKSHEET_NAMES[export_kind]
+    """The worksheet an export writes to by default, in the caller's language.
+
+    Resolved here rather than at import, so call it where the name is needed - a
+    module-level constant or a default argument would freeze it in whatever
+    language happened to be active when the module was first imported. The result
+    is a plain str because it goes on to be stored in a String column.
+    """
+    return str(DEFAULT_WORKSHEET_NAMES[export_kind])
 
 
 @dataclass
