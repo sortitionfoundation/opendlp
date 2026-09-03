@@ -197,7 +197,7 @@ load — i.e. that account cannot log in. `docs/deploy.md:274-279` already says 
 the app, migrate, start, so there is no rolling-deploy window to worry about;
 this just means the migration is not optional.
 
-### 4.4 Narrow the blanket access
+### 4.4 Narrow the blanket access — DONE
 
 Remove `ORGANISER` from:
 

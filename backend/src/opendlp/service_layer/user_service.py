@@ -30,7 +30,7 @@ from .exceptions import (
     UserAlreadyExists,
     UserNotFoundError,
 )
-from .permissions import can_manage_assembly, can_view_assembly, has_global_admin
+from .permissions import can_manage_assembly, can_see_all_assemblies, can_view_assembly, has_global_admin
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
@@ -183,8 +183,8 @@ def get_user_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> list[Ass
     if not user:
         raise UserNotFoundError(f"User {user_id} not found")
 
-    # Global admins and organisers can see all assemblies
-    if user.global_role in (GlobalRole.ADMIN, GlobalRole.ORGANISER):
+    # Only global admins see every assembly
+    if can_see_all_assemblies(user):
         return list(uow.assemblies.get_active_assemblies())
 
     # Regular users see only assemblies they have specific roles for

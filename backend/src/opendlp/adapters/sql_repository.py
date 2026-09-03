@@ -227,20 +227,6 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
         """Get all active users."""
         return self.session.query(User).filter_by(is_active=True).all()
 
-    def get_admins(self) -> Iterable[User]:
-        """Get all users with admin privileges."""
-        return (
-            self.session
-            .query(User)
-            .filter(
-                or_(
-                    orm.users.c.global_role == GlobalRole.ADMIN,
-                    orm.users.c.global_role == GlobalRole.ORGANISER,
-                )
-            )
-            .all()
-        )
-
 
 class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
     """SQLAlchemy implementation of AssemblyRepository."""
@@ -274,8 +260,8 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
         if not user:
             return []
 
-        if user.global_role in (GlobalRole.ADMIN, GlobalRole.ORGANISER):
-            # Global users can access all active assemblies
+        if user.global_role == GlobalRole.ADMIN:
+            # Global admins can access all active assemblies
             return self.get_active_assemblies()
 
         # Regular users can only access assemblies where they have specific roles

@@ -99,13 +99,13 @@ class TestUser:
         admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
         assert admin_user.can_access_assembly(assembly_id) is True
 
-        # Global organiser can access any assembly
+        # An organiser can access only the assemblies they hold a role on
         organiser_user = User(
             email="organiser@example.com",
             global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
-        assert organiser_user.can_access_assembly(assembly_id) is True
+        assert organiser_user.can_access_assembly(assembly_id) is False
 
         # Regular user cannot access without specific role
         regular_user = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")

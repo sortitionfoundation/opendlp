@@ -136,19 +136,18 @@ class TestGrantUserAssemblyRole:
         assert assembly_role.role == AssemblyRole.CONFIRMATION_CALLER
         assert returned_user.id == data["target_user"].id
 
-    def test_global_organiser_can_grant_role(self, uow, setup_database):
-        """Global organiser can grant roles to any user on any assembly."""
+    def test_organiser_cannot_grant_role_on_an_assembly_they_have_no_role_on(self, uow, setup_database):
+        """An organiser manages the members of their own assemblies, not everyone's."""
         data = setup_database
-        assembly_role, _user = grant_user_assembly_role(
-            uow=uow,
-            user_id=data["target_user"].id,
-            assembly_id=data["assembly"].id,
-            role=AssemblyRole.ASSEMBLY_MANAGER,
-            current_user=data["organiser_user"],
-        )
 
-        assert isinstance(assembly_role, UserAssemblyRole)
-        assert assembly_role.role == AssemblyRole.ASSEMBLY_MANAGER
+        with pytest.raises(InsufficientPermissions):
+            grant_user_assembly_role(
+                uow=uow,
+                user_id=data["target_user"].id,
+                assembly_id=data["assembly"].id,
+                role=AssemblyRole.ASSEMBLY_MANAGER,
+                current_user=data["organiser_user"],
+            )
 
     def test_assembly_organiser_can_grant_role_on_their_assembly(self, uow, setup_database):
         """Assembly organiser can grant roles on their own assembly."""
@@ -275,8 +274,8 @@ class TestRevokeUserAssemblyRole:
         assert assembly_role.assembly_id == data["assembly"].id
         assert returned_user.id == data["target_user"].id
 
-    def test_global_organiser_can_revoke_role(self, uow, setup_database):
-        """Global organiser can revoke roles from any user on any assembly."""
+    def test_organiser_cannot_revoke_role_on_an_assembly_they_have_no_role_on(self, uow, setup_database):
+        """The mirror of granting: an organiser has no reach into someone else's assembly."""
         data = setup_database
         grant_user_assembly_role(
             uow=uow,
@@ -286,14 +285,13 @@ class TestRevokeUserAssemblyRole:
             current_user=data["admin_user"],
         )
 
-        assembly_role, _user = revoke_user_assembly_role(
-            uow=uow,
-            user_id=data["target_user"].id,
-            assembly_id=data["assembly"].id,
-            current_user=data["organiser_user"],
-        )
-
-        assert isinstance(assembly_role, UserAssemblyRole)
+        with pytest.raises(InsufficientPermissions):
+            revoke_user_assembly_role(
+                uow=uow,
+                user_id=data["target_user"].id,
+                assembly_id=data["assembly"].id,
+                current_user=data["organiser_user"],
+            )
 
     def test_assembly_organiser_can_revoke_role_on_their_assembly(self, uow, setup_database):
         """Assembly organiser can revoke roles on their own assembly."""

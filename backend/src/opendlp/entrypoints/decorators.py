@@ -89,11 +89,6 @@ def require_admin[F: Callable[..., Any]](f: F) -> F:
     return require_global_role(GlobalRole.ADMIN)(f)
 
 
-def require_global_organiser[F: Callable[..., Any]](f: F) -> F:
-    """Decorator that requires global organiser role or higher."""
-    return require_global_role(GlobalRole.ORGANISER)(f)
-
-
 def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
     """Decorator that requires specific assembly permission.
 
