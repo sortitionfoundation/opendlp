@@ -10,7 +10,10 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, RespondentStatus
-from opendlp.service_layer.dashboard_stats import get_assembly_dashboard_summary
+from opendlp.service_layer.dashboard_stats import (
+    get_assembly_dashboard_report,
+    get_assembly_dashboard_summary,
+)
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InsufficientPermissions
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
@@ -164,3 +167,111 @@ class TestTheSummaryPermissions:
         grant_user_assembly_role(uow, outsider.id, assembly.id, AssemblyRole.CONFIRMATION_CALLER, admin_user)
 
         assert get_assembly_dashboard_summary(uow, outsider.id, assembly.id).assembly_title == "Dashboard Assembly"
+
+
+class TestTheReportCounts:
+    def test_counts_the_respondents_holding_each_target_value(self, uow, admin_user, assembly, gender_category):
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 6, attributes={"Gender": "Male"})
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 9, attributes={"Gender": "Female"})
+        _add_respondents(uow, assembly.id, RespondentStatus.CONFIRMED, 2, attributes={"Gender": "Male"})
+
+        report = get_assembly_dashboard_report(uow, admin_user.id, assembly.id)
+
+        rows = {row.value: row for row in report.categories[0].rows}
+        assert rows["Male"].pool_count == 8
+        assert rows["Male"].confirmed_count == 2
+        assert rows["Female"].pool_count == 9
+
+    def test_the_available_count_excludes_those_ruled_out(self, uow, admin_user, assembly, gender_category):
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 4, attributes={"Gender": "Male"})
+        uow.respondents.add(
+            Respondent(
+                assembly_id=assembly.id,
+                external_id="INELIGIBLE",
+                selection_status=RespondentStatus.POOL,
+                attributes={"Gender": "Male"},
+                eligible=False,
+            )
+        )
+        uow.commit()
+
+        rows = {
+            row.value: row for row in get_assembly_dashboard_report(uow, admin_user.id, assembly.id).categories[0].rows
+        }
+        assert rows["Male"].pool_count == 5
+        assert rows["Male"].available_count == 4
+
+    def test_the_shortfall_follows_the_available_count(self, uow, admin_user, assembly, gender_category):
+        """Target min is 14; four available means ten short, whatever the wider pool says."""
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 4, attributes={"Gender": "Male"})
+        _add_respondents(uow, assembly.id, RespondentStatus.WITHDRAWN, 20, attributes={"Gender": "Male"})
+
+        rows = {
+            row.value: row for row in get_assembly_dashboard_report(uow, admin_user.id, assembly.id).categories[0].rows
+        }
+        assert rows["Male"].shortfall == 10
+        assert rows["Male"].meetable is False
+
+    def test_matches_the_attribute_column_loosely(self, uow, admin_user, assembly):
+        """A "Gender Identity" category finds a gender_identity column."""
+        category = TargetCategory(
+            assembly_id=assembly.id,
+            name="Gender Identity",
+            values=[TargetValue(value="Male", min=1, max=2)],
+        )
+        uow.target_categories.add(category)
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 3, attributes={"gender_identity": "Male"})
+
+        report = get_assembly_dashboard_report(uow, admin_user.id, assembly.id)
+
+        assert report.categories[0].rows[0].pool_count == 3
+
+    def test_reports_respondents_whose_value_is_not_a_target(self, uow, admin_user, assembly, gender_category):
+        """An unknown value is counted, not raised over - one bad cell must not break the page."""
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 2, attributes={"Gender": "Male"})
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 3, attributes={"Gender": "Prefer not to say"})
+
+        report = get_assembly_dashboard_report(uow, admin_user.id, assembly.id)
+
+        assert report.categories[0].unmatched_count == 3
+        assert [row.value for row in report.categories[0].rows] == ["Male", "Female"]
+
+    def test_the_pool_size_counts_the_whole_assembly_once(self, uow, admin_user, assembly, gender_category):
+        """Not a sum over categories, which would multiply-count a respondent."""
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 5, attributes={"Gender": "Male"})
+        _add_respondents(uow, assembly.id, RespondentStatus.WITHDRAWN, 3, attributes={"Gender": "Male"})
+        _add_respondents(uow, assembly.id, RespondentStatus.DELETED, 2, attributes={"Gender": "Male"})
+
+        assert get_assembly_dashboard_report(uow, admin_user.id, assembly.id).pool_size == 5
+
+    def test_an_assembly_with_no_targets_has_no_categories(self, uow, admin_user, assembly):
+        report = get_assembly_dashboard_report(uow, admin_user.id, assembly.id)
+
+        assert report.categories == []
+        assert report.unmet_targets == []
+
+
+class TestTheUnmetTargets:
+    def test_lists_every_value_short_of_its_minimum(self, uow, admin_user, assembly, gender_category):
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 2, attributes={"Gender": "Male"})
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 14, attributes={"Gender": "Female"})
+
+        report = get_assembly_dashboard_report(uow, admin_user.id, assembly.id)
+
+        assert [(t.value, t.shortfall, t.available_count) for t in report.unmet_targets] == [("Male", 12, 2)]
+
+    def test_is_empty_once_every_target_can_be_met(self, uow, admin_user, assembly, gender_category):
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 14, attributes={"Gender": "Male"})
+        _add_respondents(uow, assembly.id, RespondentStatus.POOL, 14, attributes={"Gender": "Female"})
+
+        assert get_assembly_dashboard_report(uow, admin_user.id, assembly.id).unmet_targets == []
+
+
+class TestTheReportPermissions:
+    def test_a_user_with_no_role_on_the_assembly_is_refused(self, uow, outsider, assembly):
+        with pytest.raises(InsufficientPermissions):
+            get_assembly_dashboard_report(uow, outsider.id, assembly.id)
+
+    def test_a_missing_assembly_is_reported_as_not_found(self, uow, admin_user):
+        with pytest.raises(AssemblyNotFoundError):
+            get_assembly_dashboard_report(uow, admin_user.id, uuid.uuid4())

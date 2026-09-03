@@ -1,25 +1,25 @@
 {#
-ABOUTME: Dashboard tab of the service docs console - MOCK results-dashboard services (ticket 886)
+ABOUTME: Dashboard tab of the service docs console - results-dashboard services (ticket 886)
 ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/report and export_assembly_dashboard
 #}
 <div class="space-y-6">
-    {# MOCK banner #}
+    {# Banner for the one service still returning fixture data #}
     <div class="rounded-lg p-4"
          style="background-color: var(--color-warning-100);
                 border: 1px solid var(--color-warning-400)">
         <h3 class="text-heading-sm mb-1" style="color: var(--color-warning-600);">
-            🧪 {{ _("Mock services — ticket 886 (results dashboard)") }}
+            🧪 {{ _("export_assembly_dashboard is still a mock — ticket 886") }}
         </h3>
         <p class="text-body-sm" style="color: var(--color-body-text);">
-            {{ _("These services return fixture data so the dashboard front-end can be built now. The real queries are Hamish's to implement — see") }}
+            {{ _("The summary and report services below are real. The export still returns fixture data — see") }}
             <code>service_layer/dashboard_stats.py</code>
             {{ _("and") }}
-            <code>docs/agent/886-dashboard/service_layer_spec.md</code>.
+            <code>docs/agent/886-dashboard/service_layer_plan.md</code>.
         </p>
     </div>
 
     {# get_assembly_dashboard_summary #}
-    {% call card(title="get_assembly_dashboard_summary()  ·  MOCK", composed=true) %}
+    {% call card(title="get_assembly_dashboard_summary()", composed=true) %}
         {% call card_body() %}
             <div class="flex items-center justify-between mb-4">
                 <code class="text-body-sm px-2 py-1 rounded"
@@ -29,7 +29,7 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
                 </code>
                 <span class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-success-100);
-                             color: var(--color-success-600)">👁️ can_view_assembly() (planned)</span>
+                             color: var(--color-success-600)">👁️ can_view_assembly()</span>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
                 {{ _("Headline stats for the dashboard's stat-tile row: respondents in each state, number to select, number of target categories, and the pool total.") }}
@@ -113,7 +113,7 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
     {% endcall %}
 
     {# get_assembly_dashboard_report #}
-    {% call card(title="get_assembly_dashboard_report()  ·  MOCK", composed=true) %}
+    {% call card(title="get_assembly_dashboard_report()", composed=true) %}
         {% call card_body() %}
             <div class="flex items-center justify-between mb-4">
                 <code class="text-body-sm px-2 py-1 rounded"
@@ -123,7 +123,7 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
                 </code>
                 <span class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-success-100);
-                             color: var(--color-success-600)">👁️ can_view_assembly() (planned)</span>
+                             color: var(--color-success-600)">👁️ can_view_assembly()</span>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
                 {{ _("The full per-category results table: for each target category, each value's target band and pool count. The rows double as the pie-chart series. Also returns the derived list of targets that cannot yet be met (pool_count < target_min).") }}
@@ -155,7 +155,7 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
                 <h4 class="text-heading-sm mb-2" style="color: var(--color-headings);">{{ _("Returns") }}</h4>
                 <code class="text-body-sm px-2 py-1 rounded block"
                       style="background-color: var(--color-subtle-background-panels)">
-                    DashboardReport  →  {assembly_id, assembly_title, number_to_select, pool_size, categories[{name, rows[{value, target_min, target_max, pool_count, shortfall, meetable}]}], unmet_targets[]}
+                    DashboardReport  →  {assembly_id, assembly_title, number_to_select, pool_size, categories[{name, unmatched_count, rows[{value, target_min, target_max, target_pct, pool_count, available_count, selected_count, confirmed_count, shortfall, meetable}]}], unmet_targets[]}
                 </code>
             </div>
             <div class="pt-4" style="border-top: 1px solid var(--color-borders-dividers)">
@@ -214,7 +214,7 @@ ABOUTME: Documents and lets an admin execute get_assembly_dashboard_summary/repo
                 </code>
                 <span class="text-body-sm px-2 py-1 rounded"
                       style="background-color: var(--color-success-100);
-                             color: var(--color-success-600)">👁️ can_view_assembly() (planned)</span>
+                             color: var(--color-success-600)">👁️ can_view_assembly()</span>
             </div>
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
                 {{ _("Export the results table. csv and gsheet reuse existing tabular_export.py targets; xlsx has NO backend yet (returns download_ready=false) — a new xlsx target is needed behind AbstractTabularExportTarget.") }}

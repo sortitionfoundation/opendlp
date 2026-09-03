@@ -8,6 +8,7 @@ import pytest
 from flask import render_template_string
 
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.feature_flags import reload_flags
 from tests.fakes import FakeUnitOfWork
@@ -24,6 +25,24 @@ def _members_url(assembly) -> str:
 def _indicator_values(html: str) -> list[str]:
     """The bold numbers in the "Number to select / Number of registrations" row."""
     return re.findall(r'font-weight: 700;">(\d+)</span>', html)
+
+
+@pytest.fixture
+def assembly_with_targets(fake_store, existing_assembly):
+    """One Gender category, so the page has a section to render."""
+    with FakeUnitOfWork(store=fake_store) as uow:
+        uow.target_categories.add(
+            TargetCategory(
+                assembly_id=existing_assembly.id,
+                name="Gender",
+                values=[
+                    TargetValue(value="Male", min=10, max=12),
+                    TargetValue(value="Female", min=10, max=12),
+                ],
+            )
+        )
+        uow.commit()
+    return existing_assembly
 
 
 @pytest.fixture
@@ -61,14 +80,19 @@ def results_dashboard_on():
 
 
 class TestTheDashboardPage:
-    def test_renders_indicators_and_sections(self, logged_in_admin, existing_assembly):
-        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+    def test_renders_indicators_and_sections(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
 
         assert "Number to select:" in html
         assert "Number of registrations:" in html
-        # one section per mock category
+        # one section per target category
         assert ">Gender<" in html
-        assert ">Age<" in html
+
+    def test_an_assembly_with_no_targets_renders_no_sections(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+
+        assert "Number to select:" in html
+        assert "conic-gradient(" not in html
 
     def test_the_registration_count_excludes_test_and_deleted_respondents(
         self,
@@ -84,8 +108,8 @@ class TestTheDashboardPage:
 
         assert _indicator_values(html) == ["0", "0"]
 
-    def test_target_pie_is_populated_and_later_datasets_are_skeletons(self, logged_in_admin, existing_assembly):
-        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+    def test_target_pie_is_populated_and_later_datasets_are_skeletons(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
 
         # Target renders a real pie
         assert "conic-gradient(" in html

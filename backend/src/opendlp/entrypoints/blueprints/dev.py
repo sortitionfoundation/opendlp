@@ -1482,11 +1482,11 @@ def _handle_auto_reply_readiness_problems(uow: Any, params: dict[str, Any]) -> d
     }
 
 
-# --- Dashboard (ticket 886) — MOCK services. See service_layer/dashboard_stats.py. ---
+# --- Dashboard (ticket 886). See service_layer/dashboard_stats.py. ---
 
 
 def _handle_get_assembly_dashboard_summary(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
-    """Handle get_assembly_dashboard_summary service call (MOCK).
+    """Handle get_assembly_dashboard_summary service call.
 
     AssemblyNotFoundError is left to reach service_docs_execute's outer handler,
     which logs the real error and returns a generic message - so no str(e)
@@ -1499,8 +1499,8 @@ def _handle_get_assembly_dashboard_summary(uow: Any, params: dict[str, Any]) -> 
 
 
 def _handle_get_assembly_dashboard_report(uow: Any, params: dict[str, Any]) -> dict[str, Any]:
-    """Handle get_assembly_dashboard_report service call (MOCK). See summary handler for error handling."""
-    report = get_assembly_dashboard_report(uow=uow, assembly_id=uuid.UUID(params["assembly_id"]))
+    """Handle get_assembly_dashboard_report service call. See summary handler for error handling."""
+    report = get_assembly_dashboard_report(uow, current_user.id, uuid.UUID(params["assembly_id"]))
     return {"status": "success", **asdict(report)}
 
 

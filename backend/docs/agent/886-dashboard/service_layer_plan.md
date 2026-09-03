@@ -1,6 +1,6 @@
 # Ticket 886 — Results dashboard: service-layer implementation plan
 
-Status: **in progress.** Phases 0-2 done; Phases 3-5 outstanding. Phase 6 is a
+Status: **in progress.** Phases 0-3 done; Phases 4-5 outstanding. Phase 6 is a
 separate ticket. Revision 3 of the plan folds in Doctor Chewie's COMMENT lines
 from revisions 1 and 2.
 
@@ -408,7 +408,7 @@ POOL+SELECTED+CONFIRMED+WITHDRAWN total, TEST and DELETED excluded); a permissio
 test for a non-member; update `tests/component/test_assembly_dashboard.py`, which
 currently asserts the mock's `44`.
 
-**Phase 3 — real `get_assembly_dashboard_report`, and the unified percentage.**
+**Phase 3 — real `get_assembly_dashboard_report`, and the unified percentage. ✅ Done.**
 Per-category counts, `target_pct` from the new shared
 `percentages_from_minmax()`, `available_count`, shortfall, `unmatched_count`,
 `unmet_targets`, `pool_size`. Delete `_mock_categories`. Change
