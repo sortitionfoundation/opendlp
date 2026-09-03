@@ -3,7 +3,7 @@ ABOUTME: Shared assembly navigation tabs macro
 ABOUTME: Ensures consistent tab display across all assembly pages
 #}
 {% from "backoffice/components/tabs.html" import tabs %}
-{% macro assembly_tabs(assembly, active_tab, data_source="", gsheet=none, targets_enabled=false, respondents_enabled=false, selection_enabled=false, preserve_scroll=true) %}
+{% macro assembly_tabs(assembly, active_tab, data_source="", gsheet=none, targets_enabled=false, respondents_enabled=false, selection_enabled=false, preserve_scroll=false) %}
     {#
     Render consistent assembly navigation tabs across all assembly pages.
 
@@ -15,7 +15,8 @@ ABOUTME: Ensures consistent tab display across all assembly pages
         targets_enabled: Whether the Targets tab should be clickable
         respondents_enabled: Whether the Respondents tab should be clickable
         selection_enabled: Whether the Selection tab should be clickable
-        preserve_scroll: Whether to preserve scroll position when switching tabs (default: true)
+        preserve_scroll: Whether to preserve scroll position when switching tabs (default: false —
+            the tab bar is sticky, so after navigation users expect to land at the top of the page)
 
     Usage:
         assembly_tabs(assembly, "details")
