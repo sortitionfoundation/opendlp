@@ -10,7 +10,7 @@ from sqlalchemy import and_, delete, distinct, func, or_, select, update
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
-from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
+from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
@@ -34,15 +34,16 @@ from opendlp.domain.value_objects import (
     SELECTED_RESPONDENT_STATUSES,
     AssemblyStatus,
     GlobalRole,
+    GSheetExportKind,
     RespondentAction,
     RespondentStatus,
     SelectionRunStatus,
     SelectionTaskType,
 )
 from opendlp.service_layer.repositories import (
+    AssemblyExportGSheetRepository,
     AssemblyGSheetRepository,
     AssemblyRepository,
-    AssemblyRespondentGSheetRepository,
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
@@ -466,27 +467,41 @@ class SqlAlchemyAssemblyGSheetRepository(SqlAlchemyRepository, AssemblyGSheetRep
         self.session.delete(item)
 
 
-class SqlAlchemyAssemblyRespondentGSheetRepository(SqlAlchemyRepository, AssemblyRespondentGSheetRepository):
-    """SQLAlchemy implementation of AssemblyRespondentGSheetRepository."""
+class SqlAlchemyAssemblyExportGSheetRepository(SqlAlchemyRepository, AssemblyExportGSheetRepository):
+    """SQLAlchemy implementation of AssemblyExportGSheetRepository."""
 
-    def add(self, item: AssemblyRespondentGSheet) -> None:
-        """Add an AssemblyRespondentGSheet to the repository."""
+    def add(self, item: AssemblyExportGSheet) -> None:
+        """Add an AssemblyExportGSheet to the repository."""
         self.session.add(item)
 
-    def get(self, item_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
-        """Get an AssemblyRespondentGSheet by its ID."""
-        return self.session.query(AssemblyRespondentGSheet).filter_by(assembly_respondent_gsheet_id=item_id).first()
+    def get(self, item_id: uuid.UUID) -> AssemblyExportGSheet | None:
+        """Get an AssemblyExportGSheet by its ID."""
+        return self.session.query(AssemblyExportGSheet).filter_by(assembly_export_gsheet_id=item_id).first()
 
-    def all(self) -> Iterable[AssemblyRespondentGSheet]:
-        """Get all AssemblyRespondentGSheets."""
-        return self.session.query(AssemblyRespondentGSheet).all()
+    def all(self) -> Iterable[AssemblyExportGSheet]:
+        """Get all AssemblyExportGSheets."""
+        return self.session.query(AssemblyExportGSheet).all()
 
-    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
-        """Get an AssemblyRespondentGSheet by its assembly ID."""
-        return self.session.query(AssemblyRespondentGSheet).filter_by(assembly_id=assembly_id).first()
+    def get_by_assembly_and_kind(
+        self,
+        assembly_id: uuid.UUID,
+        export_kind: GSheetExportKind,
+    ) -> AssemblyExportGSheet | None:
+        """Get the saved export sheet for one assembly and export kind."""
+        return (
+            self.session
+            .query(AssemblyExportGSheet)
+            .filter(
+                and_(
+                    orm.assembly_export_gsheets.c.assembly_id == assembly_id,
+                    orm.assembly_export_gsheets.c.export_kind == export_kind,
+                )
+            )
+            .first()
+        )
 
-    def delete(self, item: AssemblyRespondentGSheet) -> None:
-        """Delete an AssemblyRespondentGSheet from the repository."""
+    def delete(self, item: AssemblyExportGSheet) -> None:
+        """Delete an AssemblyExportGSheet from the repository."""
         self.session.delete(item)
 
 

@@ -104,6 +104,19 @@ class SelectionTaskType(Enum):
     TEST_SELECT_FROM_DB = "test_select_from_db"
 
 
+class GSheetExportKind(Enum):
+    """What an assembly's saved Google Sheet export target is for.
+
+    Each kind gets its own row, with its own spreadsheet as well as its own
+    worksheet. Respondent data is personal and its sheet must stay locked down;
+    the dashboard's is aggregate counts an organiser may want to publish, so the
+    two must never default to the same destination.
+    """
+
+    RESPONDENTS = "RESPONDENTS"
+    DASHBOARD = "DASHBOARD"
+
+
 class RespondentStatus(Enum):
     """Status of a respondent in the selection process.
 

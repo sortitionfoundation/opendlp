@@ -1,26 +1,43 @@
-"""ABOUTME: Google Sheet configuration for exporting respondents
-ABOUTME: Stores the spreadsheet URL and worksheet used for respondent exports"""
+"""ABOUTME: Google Sheet configuration for an assembly's exports
+ABOUTME: One saved spreadsheet and worksheet per export kind, keyed by GSheetExportKind"""
 
 import uuid
 from dataclasses import asdict, dataclass, fields
 from datetime import UTC, datetime
 
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
+from opendlp.domain.value_objects import GSheetExportKind
+
+# What an export writes to when the organiser has not named a worksheet.
+DEFAULT_WORKSHEET_NAMES = {
+    GSheetExportKind.RESPONDENTS: "Respondents",
+    GSheetExportKind.DASHBOARD: "Results",
+}
+
+
+def default_worksheet_name(export_kind: GSheetExportKind) -> str:
+    return DEFAULT_WORKSHEET_NAMES[export_kind]
 
 
 @dataclass
-class AssemblyRespondentGSheet:
-    """Google Sheet target for exporting an assembly's respondents.
+class AssemblyExportGSheet:
+    """Google Sheet target for one kind of export from an assembly.
 
     Separate from AssemblyGSheet (which drives selection): here the sheet is
-    only a destination for exported respondent data. The organiser sets the
-    URL and worksheet once; later exports reuse and can edit them.
+    only a destination for exported data. The organiser sets the URL and
+    worksheet once; later exports of that kind reuse and can edit them.
+
+    An assembly has at most one row per ``export_kind``, and each row owns its
+    own spreadsheet rather than sharing one across kinds - the respondent export
+    carries personal data and the dashboard export does not, so they need to be
+    shareable with different people.
     """
 
     assembly_id: uuid.UUID
-    assembly_respondent_gsheet_id: uuid.UUID | None = None
+    export_kind: GSheetExportKind = GSheetExportKind.RESPONDENTS
+    assembly_export_gsheet_id: uuid.UUID | None = None
     url: str = ""
-    worksheet_name: str = "Respondents"
+    worksheet_name: str = ""
     # Captured from the sheet on the last export: the spreadsheet's own title and
     # the direct link to the exported worksheet, used to show a link on the
     # respondents page. Blank until the first successful export.
@@ -31,6 +48,8 @@ class AssemblyRespondentGSheet:
 
     def __post_init__(self) -> None:
         self.url = self._validate_url(self.url.strip())
+        if not self.worksheet_name:
+            self.worksheet_name = default_worksheet_name(self.export_kind)
         if self.created_at is None:
             self.created_at = datetime.now(UTC)
         if self.updated_at is None:
@@ -43,7 +62,7 @@ class AssemblyRespondentGSheet:
 
     @classmethod
     def _updatable_fields(cls) -> list[str]:
-        non_updatable = ("assembly_id", "assembly_respondent_gsheet_id", "created_at")
+        non_updatable = ("assembly_id", "export_kind", "assembly_export_gsheet_id", "created_at")
         return [f.name for f in fields(cls) if f.name not in non_updatable]
 
     def update_values(self, url: str = "", **kwargs: str) -> None:
@@ -52,10 +71,10 @@ class AssemblyRespondentGSheet:
             self.url = self._validate_url(url.strip())
         for field_name, value in kwargs.items():
             if field_name not in self._updatable_fields():
-                raise ValueError(f"Cannot update field {field_name} in AssemblyRespondentGSheet")
+                raise ValueError(f"Cannot update field {field_name} in AssemblyExportGSheet")
             setattr(self, field_name, value)
         self.updated_at = datetime.now(UTC)
 
-    def create_detached_copy(self) -> "AssemblyRespondentGSheet":
+    def create_detached_copy(self) -> "AssemblyExportGSheet":
         """Create a detached copy for use outside SQLAlchemy sessions."""
-        return AssemblyRespondentGSheet(**asdict(self))
+        return AssemblyExportGSheet(**asdict(self))

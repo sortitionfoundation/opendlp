@@ -400,7 +400,7 @@ class TestExportRespondentsToGSheet:
         assert saved is not None
         assert saved.worksheet_name == "Second"
         # Still one config row for the assembly.
-        assert len(list(uow.assembly_respondent_gsheets.all())) == 1
+        assert len(list(uow.assembly_export_gsheets.all())) == 1
 
     def test_get_config_returns_none_when_unset(self, uow):
         user, assembly = _seed(uow)

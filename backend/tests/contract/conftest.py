@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from opendlp.adapters.sql_repository import (
+    SqlAlchemyAssemblyExportGSheetRepository,
     SqlAlchemyAssemblyGSheetRepository,
     SqlAlchemyAssemblyRepository,
-    SqlAlchemyAssemblyRespondentGSheetRepository,
     SqlAlchemyEmailConfirmationTokenRepository,
     SqlAlchemyEmailTemplateRepository,
     SqlAlchemyPasswordResetTokenRepository,
@@ -46,9 +46,9 @@ from opendlp.domain.value_objects import (
     GlobalRole,
 )
 from tests.fakes import (
+    FakeAssemblyExportGSheetRepository,
     FakeAssemblyGSheetRepository,
     FakeAssemblyRepository,
-    FakeAssemblyRespondentGSheetRepository,
     FakeEmailConfirmationTokenRepository,
     FakeEmailTemplateRepository,
     FakePasswordResetTokenRepository,
@@ -418,12 +418,10 @@ def assembly_gsheet_backend(request, postgres_session) -> ContractBackend:
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
-def assembly_respondent_gsheet_backend(request, postgres_session) -> ContractBackend:
+def assembly_export_gsheet_backend(request, postgres_session) -> ContractBackend:
     if request.param == "fake":
-        return FakeContractBackend(repo=FakeAssemblyRespondentGSheetRepository(), commit=lambda: None)
-    return SqlContractBackend(
-        repo=SqlAlchemyAssemblyRespondentGSheetRepository(postgres_session), session=postgres_session
-    )
+        return FakeContractBackend(repo=FakeAssemblyExportGSheetRepository(), commit=lambda: None)
+    return SqlContractBackend(repo=SqlAlchemyAssemblyExportGSheetRepository(postgres_session), session=postgres_session)
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])

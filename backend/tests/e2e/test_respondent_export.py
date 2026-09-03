@@ -4,6 +4,7 @@ ABOUTME: Real Flask + PostgreSQL round trip for the export download"""
 import csv
 from io import StringIO
 
+from opendlp.domain.value_objects import GSheetExportKind
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.fakes import FakeGSheetExportTarget
@@ -77,7 +78,9 @@ class TestGSheetExportSmoke:
         assert captured[0][1].writes
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            config = uow.assembly_respondent_gsheets.get_by_assembly_id(existing_assembly.id)
+            config = uow.assembly_export_gsheets.get_by_assembly_and_kind(
+                existing_assembly.id, GSheetExportKind.RESPONDENTS
+            )
             assert config is not None
             assert config.url == sheet_url
             assert config.spreadsheet_title == "Assembly Data"
