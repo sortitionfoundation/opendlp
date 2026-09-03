@@ -168,8 +168,12 @@ See [docs/configuration.md](docs/configuration.md) for complete configuration re
 
 - All primary keys are UUIDs
 - Users require valid invites for registration
-- Global roles: admin, global-organiser, user
-- Assembly roles: organiser, confirmation-caller
+- Global roles: **admin** (sees and manages every assembly, manages users and
+  invites), **organiser** (creates assemblies, and sees only the assemblies they
+  hold a role on), **user** (sees only the assemblies they hold a role on)
+- Assembly roles: assembly-manager, confirmation-caller, read-only
+- Creating an assembly makes you its assembly manager
+- Ask a capability, not a role - see [Roles and permissions](docs/roles-and-permissions.md)
 - OAuth and password authentication both supported
 
 ## Development Patterns
@@ -293,6 +297,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 
 ### General Documentation
 
+- [Roles and Permissions](docs/roles-and-permissions.md) - Who can do what, and how to ask a capability rather than a role
 - [Personal Data](docs/personal-data.md) - Cookies, PII logging, and the right to erasure
 - [Account Lockout](docs/account-lockout.md) - What disabling a user account does, and what it does not
 - [Analytics](docs/analytics.md) - Why we have none, and the constraints if you add some

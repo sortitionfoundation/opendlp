@@ -157,6 +157,26 @@ When adding a table that holds personal data, add a corresponding `DELETE` to
 `_delete_all_test_data()` in `tests/conftest.py` and to `delete_all_except_standard_users()` in
 `tests/bdd/conftest.py`, respecting foreign-key ordering.
 
+## Who can look up a user account
+
+Adding someone to an assembly means finding their account, and finding an account means
+querying the user table. Two access levels:
+
+- **Admins** search by partial email or name, across every user. They already administer the
+  whole user list, so this adds nothing.
+- **Assembly managers** — including an organiser managing an assembly they created — match on a
+  **full email address only** (`get_by_email_not_in_assembly`). A fragment matches nothing.
+
+The restriction is the point. Partial matching for a non-admin would turn the member-adding UI
+into an account-enumeration surface: anyone managing any assembly could type `@` and read back
+addresses. Exact matching still answers *"does this exact address have an account?"* for anyone
+who can manage an assembly, which is knowingly accepted — it is the minimum a member-adding UI
+can leak, and the alternative (never confirm, just attempt the add) makes a mistyped address
+impossible to debug.
+
+If you add another way to look up users, decide which of the two levels it belongs to, and say
+so here.
+
 ## Third-party embeds: the YouTube exception
 
 There is exactly **one** sanctioned third-party embed: YouTube videos in assembly
@@ -198,6 +218,8 @@ question below.
   `tests/unit/test_flask_app.py::test_index_sets_no_cookie_for_anonymous_visitor` will fail if
   that changes. That test failing is a signal to think, not a signal to update the assertion.
 - Storing personal data anywhere it **cannot be found and blanked** on request.
+- Widening **who can look up a user account**, or loosening the exact-email rule for non-admins
+  — see [Who can look up a user account](#who-can-look-up-a-user-account).
 
 Most of these need a cookie consent banner, which we do not have and do not want. All of them
 need a decision, not a commit.
@@ -211,3 +233,4 @@ need a decision, not a commit.
 - [docs/agent/code_quality_rules.md](agent/code_quality_rules.md#logging-pii--secrets) — how to write a safe log call
 - [docs/configuration.md](configuration.md) — `SESSION_COOKIE_*`, `REMEMBER_COOKIE_*`, `HELP_SITE_COOKIES`
 - [docs/account-lockout.md](account-lockout.md) — what disabling a user account does to their sessions, password and 2FA
+- [docs/roles-and-permissions.md](roles-and-permissions.md) — who can see which assemblies, and who can look up a user

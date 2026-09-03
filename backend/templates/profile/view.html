@@ -28,7 +28,10 @@
                 <div class="govuk-summary-list__row">
                     <dt class="govuk-summary-list__key">{{ _("Role") }}</dt>
                     <dd class="govuk-summary-list__value">
-                        <strong class="govuk-tag govuk-tag--blue">{{ current_user.global_role.value }}</strong>
+                        <strong class="govuk-tag govuk-tag--blue">{{ role_label }}</strong>
+                        <p class="govuk-hint govuk-!-font-size-16 govuk-!-margin-top-2 govuk-!-margin-bottom-0">
+                            {{ role_description }}
+                        </p>
                     </dd>
                 </div>
             </dl>

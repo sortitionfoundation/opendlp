@@ -20,6 +20,24 @@ global_role_options = {
     GlobalRole.ADMIN.name: _l("Admin - Full system access including user management"),
 }
 
+# Short labels, for a tag or a badge. Kept next to the role definitions so a
+# renamed role cannot leave a stale label behind somewhere.
+global_role_labels = {
+    GlobalRole.USER: _l("User"),
+    GlobalRole.ORGANISER: _l("Organiser"),
+    GlobalRole.ADMIN: _l("Admin"),
+}
+
+# What the role means, written for the person who holds it. Shown on the
+# profile page under the label.
+global_role_descriptions = {
+    GlobalRole.USER: _l("You can see the assemblies you have been added to. An organiser can add you to one."),
+    GlobalRole.ORGANISER: _l(
+        "You can create assemblies. You can see the assemblies you have been added to, and the ones you create."
+    ),
+    GlobalRole.ADMIN: _l("You can see and manage every assembly, and manage users and invites."),
+}
+
 
 def get_role_level(role: GlobalRole) -> int:
     """Get numeric level for role comparison."""

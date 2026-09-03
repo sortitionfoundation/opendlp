@@ -8,8 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from opendlp.adapters import database, orm
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.user_invites import UserInvite, generate_invite_code
-from opendlp.domain.users import User
-from opendlp.domain.value_objects import AssemblyStatus, GlobalRole
+from opendlp.domain.users import User, UserAssemblyRole
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus, GlobalRole
 from opendlp.service_layer.exceptions import UserAlreadyExists
 from opendlp.service_layer.security import hash_password
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -71,12 +71,12 @@ def seed_database(
         )
         uow.users.add(admin_user)
 
-        # Create global organiser user
+        # Create organiser user
         organiser_user = User(
             user_id=uuid.uuid4(),
             email="organiser@opendlp.example",
             password_hash=hash_password("organiser123"),
-            first_name="Global",
+            first_name="Sample",
             last_name="Organiser",
             global_role=GlobalRole.ORGANISER,
             created_at=now,
@@ -140,7 +140,9 @@ def seed_database(
         )
         uow.user_invites.add(user_invite)
 
-        # Create sample assembly
+        # Create sample assembly. The organiser owns it, and is given the
+        # assembly-manager role on it - otherwise logging in as the seeded
+        # organiser shows an empty dashboard and looks broken.
         assembly = Assembly(
             assembly_id=uuid.uuid4(),
             title="Sample Citizens' Assembly",
@@ -148,8 +150,17 @@ def seed_database(
             status=AssemblyStatus.ACTIVE,
             created_at=now,
             updated_at=now,
+            created_by_user_id=organiser_user.id,
         )
         uow.assemblies.add(assembly)
+        organiser_user.assembly_roles.append(
+            UserAssemblyRole(
+                user_id=organiser_user.id,
+                assembly_id=assembly.id,
+                role=AssemblyRole.ASSEMBLY_MANAGER,
+                created_at=now,
+            )
+        )
 
         invites = (
             admin_invite.create_detached_copy(),

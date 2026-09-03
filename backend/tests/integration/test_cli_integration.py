@@ -9,7 +9,7 @@ import pytest
 
 from opendlp.adapters.database import start_mappers
 from opendlp.domain.user_invites import UserInvite, generate_invite_code
-from opendlp.domain.value_objects import GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.entrypoints.cli import cli
 from opendlp.service_layer.invite_service import generate_invite
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -435,6 +435,19 @@ class TestCliDatabaseIntegration:
             # Check assembly exists
             assemblies = uow.assemblies.all()
             assert len(assemblies) >= 1  # At least the sample assembly
+
+    def test_seeded_organiser_owns_the_sample_assembly(self, postgres_session_factory, cli_with_session_factory):
+        """Otherwise logging in as the seeded organiser shows an empty dashboard and looks broken."""
+        result = cli_with_session_factory(cli, ["database", "seed", "--confirm"])
+        assert result.exit_code == 0, f"exit code non-zero: {result.exit_code}. Output: {result.output}"
+
+        with SqlAlchemyUnitOfWork(session_factory=postgres_session_factory) as uow:
+            organiser = uow.users.get_by_email("organiser@opendlp.example")
+            visible = list(uow.assemblies.get_assemblies_for_user(organiser.id))
+
+            assert [a.title for a in visible] == ["Sample Citizens' Assembly"]
+            assert organiser.get_assembly_role(visible[0].id) == AssemblyRole.ASSEMBLY_MANAGER
+            assert visible[0].created_by_user_id == organiser.id
 
     def test_seed_database_users_have_confirmed_email(self, postgres_session_factory, cli_with_session_factory):
         """Test that seeded users have their email auto-confirmed."""

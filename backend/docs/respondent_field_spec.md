@@ -17,7 +17,7 @@ not been decided.
 ## Access
 
 `login_required`, then the same view permission as the schema page itself
-(`can_view_assembly`: any role on the assembly, or global-organiser/admin).
+(`can_view_assembly`: any role on the assembly, or admin).
 
 | Situation                          | Response                            |
 | ---------------------------------- | ----------------------------------- |

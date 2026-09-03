@@ -328,7 +328,7 @@ colleague to it, so it is in scope rather than a follow-up:
   `docs/personal-data.md`, since that document currently has no entry for
   non-admin access to the user table.
 
-### 4.8 Profile page context
+### 4.8 Profile page context — DONE
 
 `templates/profile/view.html:30` currently renders the raw enum value
 (`global-organiser`) in a tag. Replace with the human label plus a short
@@ -349,7 +349,7 @@ natural follow-up — it turns the profile page into the answer to "why can't I
 see X?" — but it needs a service call from a route that currently makes none,
 so it is a separate issue.
 
-### 4.9 Docs, seeds and i18n
+### 4.9 Docs, seeds and i18n — DONE
 
 - `AGENTS.md` — "Global roles: admin, global-organiser, user" → new names, and
   a sentence on what each means.
