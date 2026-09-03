@@ -2,8 +2,8 @@
 
 **Issue:** none yet — the question arose while reviewing `666-target-percentage`
 **Branch:** proposed `icons-consolidation`, **not** `666-target-percentage`
-**Status:** ✅ PHASE 1 IMPLEMENTED on `666-target-percentage`; phase 2 is blocked on a design decision
-**Date:** 2026-08-27, phase 1 implemented 2026-08-27
+**Status:** ✅ PHASE 1 IMPLEMENTED on `666-target-percentage`; ✅ PHASE 2 IMPLEMENTED on `icon-set-fix` — see §9
+**Date:** 2026-08-27, phase 1 implemented 2026-08-27, phase 2 implemented 2026-09-03
 
 ## Scope of this document
 
@@ -209,7 +209,7 @@ stepper tick and 12-box checkbox tick are sized for their slots).
 That page is the artefact the designer reviews. It should be readable by
 someone who has never opened a Jinja template.
 
-## 5. Phase 2 — converge (BLOCKED)
+## 5. Phase 2 — converge (✅ DONE, see §9)
 
 Blocked on the designer choosing a family. Once chosen:
 
@@ -321,3 +321,58 @@ Note for whoever picks up phase 2: `just check` could not run as written in this
 environment — `uv tool run prek` needs to write to a read-only tools directory.
 Running `prek run --all-files` plus the other four commands directly is
 equivalent.
+
+---
+
+## 9. Phase 2 — what was decided and done (branch `icon-set-fix`, 2026-09-03)
+
+The blocking question resolved itself: the designer published the icon set on
+the "Icons" sheet of the OpenDLP - UI Figma file (node `5032:8946`, 1,767
+glyphs), and it is **Lucide** — current Lucide, post-rename names like
+`circle-question-mark` and `triangle-alert`. That also matches the §5
+headcount. Every 24-grid macro body in `icons.html` was replaced with the SVG
+exported from that sheet (via the Figma MCP asset endpoint), so the file now
+matches the design source verbatim rather than approximately.
+
+Decisions taken against the open questions in §7:
+
+1. **Family: Lucide** (the Figma sheet). Every Heroicons/Material/Tailwind
+   glyph was deleted or replaced. All `_lucide`/`_heroicons`/`_material`
+   suffixes are gone: `icon_info`, `icon_plus`, `icon_trash` (the Lucide
+   `trash-2` drawing, with the inner lines).
+2. **Small-viewBox divergence: kept, declared deliberate.** `icon_check_20`,
+   `icon_warning_20` and `icon_check_12` are drawn to fill the stepper bubble
+   and checkbox square; the showcase now documents them under "Drawn for their
+   slot" instead of flagging them for a decision. `icon_download_16` was NOT
+   kept — it was a plain duplicate, so `icon_download` (Lucide) now serves
+   both call sites, sized by the caller.
+3. **`icon_question_circle` and `icon_info` stay distinct** — Lucide itself
+   ships both (`circle-question-mark`, `info`), for help vs. information.
+4. **`icon_button` rename: still open**, untouched — unrelated to convergence.
+5. **This doc stays put** until the work gets an issue number.
+
+Further calls made during convergence:
+
+- **One stroke weight.** The `stroke_width` parameters on the chevrons and
+  `icon_copy` are gone; everything draws at Lucide's stroke-width 2. The
+  targets bulk-edit form loses its 1.5-weight variants.
+- **Concept names kept** (`icon_arrow_back`, `icon_switch`, `icon_close`,
+  `icon_edit`, `icon_undo`, `icon_more_vert`, ...) even where the Lucide sheet
+  name differs (`arrow-left`, `arrow-up-down`, `x`, `square-pen`,
+  `rotate-ccw`, `ellipsis-vertical`) — call sites name the concept, the macro
+  body names the drawing.
+- **`icon_spinner` became Lucide `loader-circle`** — the old two-opacity
+  Tailwind spinner was the last non-Lucide glyph. Visible change: the spinner
+  loses its faint full-circle track.
+- **`icon_about` (now Lucide `folder`) is still drawn by nothing** (§8.3) and
+  still flagged as such on the showcase; deleting it remains the team's call.
+- `icon_more_vert` switched from filled Material dots to Lucide's stroked
+  dots; `icon_code` gained Lucide's slash (`code-xml`); `icon_edit` is
+  `square-pen`; `icon_undo` is `rotate-ccw`, matching the circular-arrow
+  intent of the old drawing.
+
+Documentation landed with it: an "Icons" section in
+`docs/agent/frontend_design_system.md` (home, family, signature, aria-hidden,
+the action-or-status test from D2) and an icons bullet in
+`.claude/skills/sf-code-review/SKILL.md`. `tests/unit/test_icons.py` needed no
+change — its allowlist is untouched and the macro-name assertions are generic.
