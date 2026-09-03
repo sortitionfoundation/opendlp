@@ -389,3 +389,36 @@ class TestExportingToGoogleSheets:
 
     def test_there_is_no_saved_config_before_the_first_export(self, uow, admin_user, assembly):
         assert get_dashboard_gsheet_config(uow, admin_user.id, assembly.id) is None
+
+    def test_a_user_who_can_only_view_may_not_export(self, uow, outsider, assembly, admin_user):
+        grant_user_assembly_role(uow, outsider.id, assembly.id, AssemblyRole.CONFIRMATION_CALLER, admin_user)
+
+        with pytest.raises(InsufficientPermissions):
+            export_dashboard_report_to_gsheet(
+                uow,
+                outsider.id,
+                assembly.id,
+                spreadsheet_url=_SHEET_URL,
+                worksheet_name="Results",
+                target=FakeGSheetExportTarget(),
+            )
+
+    def test_a_user_who_can_only_view_may_still_read_the_saved_config(
+        self,
+        uow,
+        outsider,
+        assembly,
+        admin_user,
+    ):
+        """The config is a link to a sheet, not the data - viewing it is a read."""
+        grant_user_assembly_role(uow, outsider.id, assembly.id, AssemblyRole.CONFIRMATION_CALLER, admin_user)
+        export_dashboard_report_to_gsheet(
+            uow,
+            admin_user.id,
+            assembly.id,
+            spreadsheet_url=_SHEET_URL,
+            worksheet_name="Results",
+            target=FakeGSheetExportTarget(),
+        )
+
+        assert get_dashboard_gsheet_config(uow, outsider.id, assembly.id) is not None
