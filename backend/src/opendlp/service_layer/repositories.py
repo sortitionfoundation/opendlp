@@ -480,6 +480,15 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def count_by_status(self, assembly_id: uuid.UUID) -> dict[RespondentStatus, int]:
+        """Count an assembly's respondents grouped by selection status.
+
+        Every status is included, DELETED among them. Only statuses actually
+        present appear, so callers wanting a complete breakdown fill the zeros.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def delete(self, item: Respondent) -> None:
         """Delete a respondent."""
         raise NotImplementedError
@@ -523,6 +532,28 @@ class RespondentRepository(AbstractRepository):
     @abc.abstractmethod
     def get_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
         """Get counts of each distinct value for a given attribute across respondents in an assembly."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_attribute_value_counts_by_status(
+        self,
+        assembly_id: uuid.UUID,
+        attribute_name: str,
+    ) -> dict[str, dict[RespondentStatus, int]]:
+        """Counts of each distinct value of one attribute, broken down by selection status.
+
+        DELETED respondents are excluded: their details are blanked, so they
+        belong in no distribution. Only statuses actually present appear.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_attribute_value_available_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
+        """Counts of each distinct value among the respondents available to select.
+
+        Available means POOL, with neither ``eligible`` nor ``can_attend``
+        explicitly False - the same set the selection algorithm is given.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod

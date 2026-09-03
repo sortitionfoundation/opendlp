@@ -808,6 +808,13 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                 count += 1
         return count
 
+    def count_by_status(self, assembly_id: uuid.UUID) -> dict[RespondentStatus, int]:
+        counts: dict[RespondentStatus, int] = {}
+        for r in self._items:
+            if r.assembly_id == assembly_id:
+                counts[r.selection_status] = counts.get(r.selection_status, 0) + 1
+        return counts
+
     def count_non_pool(self, assembly_id: uuid.UUID) -> int:
         return sum(
             1
@@ -828,6 +835,34 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
 
     def get_selected_attribute_value_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
         return self._value_counts(assembly_id, attribute_name, SELECTED_RESPONDENT_STATUSES)
+
+    def get_attribute_value_counts_by_status(
+        self,
+        assembly_id: uuid.UUID,
+        attribute_name: str,
+    ) -> dict[str, dict[RespondentStatus, int]]:
+        counts: dict[str, dict[RespondentStatus, int]] = {}
+        for r in self._items:
+            if r.assembly_id != assembly_id or r.selection_status == RespondentStatus.DELETED:
+                continue
+            val = r.attributes.get(attribute_name) if r.attributes else None
+            if val is None:
+                continue
+            by_status = counts.setdefault(val, {})
+            by_status[r.selection_status] = by_status.get(r.selection_status, 0) + 1
+        return counts
+
+    def get_attribute_value_available_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for r in self._items:
+            if r.assembly_id != assembly_id or r.selection_status != RespondentStatus.POOL:
+                continue
+            if r.eligible is False or r.can_attend is False:
+                continue
+            val = r.attributes.get(attribute_name) if r.attributes else None
+            if val is not None:
+                counts[val] = counts.get(val, 0) + 1
+        return counts
 
     def get_attribute_distinct_counts(self, assembly_id: uuid.UUID, attribute_names: list[str]) -> dict[str, int]:
         return {
