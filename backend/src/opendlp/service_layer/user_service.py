@@ -960,7 +960,7 @@ def revoke_user_assembly_role(
             )
 
         if _is_last_assembly_manager(uow, user_id, assembly_id):
-            raise CannotRemoveLastAssemblyManager
+            raise CannotRemoveLastAssemblyManager()
 
     # Validate target user exists
     target_user = uow.users.get(user_id)
