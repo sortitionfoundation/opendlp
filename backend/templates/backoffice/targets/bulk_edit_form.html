@@ -3,7 +3,7 @@ ABOUTME: One form covering every target category and value, for edit-all/save-al
 ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed by save_all_parser
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_trash_material, icon_undo %}
+{% from "backoffice/components/icons.html" import icon_chevron_down, icon_chevron_up, icon_trash, icon_undo %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/components/input.html" import input %}
 {% from "backoffice/targets/missing_values.html" import missing_values_summary %}
@@ -150,7 +150,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 attrs=relink_attrs) }}
                 <span x-show="!deleted">
                     {{ button(variant="icon",
-                    icon=icon_trash_material(),
+                    icon=icon_trash(classes=""),
                     aria_label=_("Delete value"),
                     attrs=delete_attrs) }}
                 </span>
@@ -243,11 +243,11 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                    it in. Down before up, as in the Figma at node 4771:32435. #}
                 <div class="ml-auto flex items-center gap-2">
                     {{ button(variant="icon",
-                    icon=icon_chevron_down(stroke_width="1.5"),
+                    icon=icon_chevron_down(),
                     aria_label=_("Move down"),
                     attrs=move_down_attrs) }}
                     {{ button(variant="icon",
-                    icon=icon_chevron_up(stroke_width="1.5"),
+                    icon=icon_chevron_up(),
                     aria_label=_("Move up"),
                     attrs=move_up_attrs) }}
                     {{ button(_("Delete target"), variant="danger", attrs='@click="markDeleted()"') }}

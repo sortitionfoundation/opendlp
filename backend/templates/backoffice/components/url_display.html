@@ -24,9 +24,9 @@ Args:
             data-copied-label="{{ _('Copied to clipboard') }}"
             aria-label="{{ label }}">
         {# Copy icon (when not copied) #}
-        {{ icon_copy(classes="copy-icon-default h-5 w-5", stroke_width="1.5") }}
+        {{ icon_copy(classes="copy-icon-default w-5 h-5") }}
         {# Checkmark icon (when copied) #}
-        {{ icon_check(classes="copy-icon-copied hidden h-5 w-5", style="color: var(--color-success-text);") }}
+        {{ icon_check(classes="copy-icon-copied hidden w-5 h-5", style="color: var(--color-success-text);") }}
     </button>
 {% endmacro %}
 

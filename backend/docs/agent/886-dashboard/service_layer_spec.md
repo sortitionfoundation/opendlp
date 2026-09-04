@@ -1,6 +1,17 @@
 # Ticket 886 — Results dashboard: service-layer specification (MOCK stage)
 
-Status: **mock services in place, real business logic pending Hamish.**
+> **OUT OF DATE — SUPERSEDED.** This was the early plan, written against the mock
+> services so the front-end could be built before the real queries existed. It no
+> longer describes the code: the mock services, the `mock` flags and the
+> `export_assembly_dashboard(...) -> DashboardExport` contract in §3 have all been
+> replaced. It is kept for the record, and because the COMMENT lines below are the
+> decisions the real implementation was built on.
+>
+> **Read [service_layer_plan.md](service_layer_plan.md) instead** — it folds in
+> every answer below and describes what was actually built.
+
+Status: ~~mock services in place, real business logic pending Hamish.~~
+**Implemented — see the plan doc.**
 
 The dashboard front-end is being built against three mock service functions so
 that work can proceed while the back-end developer is away. This document is the

@@ -266,18 +266,6 @@ class TargetCategory:
             return True
         return abs(total - 100.0) <= tolerance
 
-    def derive_percentages_from_minmax(self) -> None:
-        """Fill in percentages from the existing min/max, normalised within the category.
-
-        Does nothing when every min and max is zero, since there is nothing to
-        infer from - which is the only case where the shares are all zero.
-        """
-        percentages = self.percentages_from_minmax()
-        if not any(percentages):
-            return
-        for value, percentage in zip(self.values, percentages, strict=True):
-            value.percentage_target = percentage
-
     def percentages_from_minmax(self) -> list[float]:
         """The percentages this category's min/max bands imply, in value order."""
         return percentages_from_minmax([(v.min, v.max) for v in self.values])

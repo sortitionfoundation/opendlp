@@ -287,8 +287,8 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     Header indicators (number to select / registrations) plus the per-category
     results, in one of two views selected by the ``view`` query parameter:
     "chart" (default) draws pie charts, "table" draws a table per category. Both
-    are driven by the MOCK services in service_layer/dashboard_stats.py. The
-    export button and the findings banner are not wired yet.
+    are driven by the services in service_layer/dashboard_stats.py. The export
+    button and the findings banner are not wired yet.
     """
     view = "table" if request.args.get("view") == "table" else "chart"
     try:

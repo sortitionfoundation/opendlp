@@ -3,7 +3,7 @@ ABOUTME: Small circled-i icon carrying a note about the thing it sits beside
 ABOUTME: Used in table headings whose column needs a sentence of explanation
 #}
 
-{% from "backoffice/components/icons.html" import icon_info_lucide %}
+{% from "backoffice/components/icons.html" import icon_info %}
 {% macro info_icon(text) %}
     {#
     An explanation attached to a label, shown on hover and read out by a screen
@@ -19,7 +19,7 @@ ABOUTME: Used in table headings whose column needs a sentence of explanation
     <span class="inline-flex shrink-0 align-middle"
           title="{{ text }}"
           style="color: var(--color-secondary-text)">
-        {{ icon_info_lucide() }}
+        {{ icon_info() }}
         <span class="sr-only">{{ text }}</span>
     </span>
 {% endmacro %}

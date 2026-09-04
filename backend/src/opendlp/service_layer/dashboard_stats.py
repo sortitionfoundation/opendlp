@@ -22,6 +22,7 @@ from opendlp.domain.value_objects import (
     RespondentStatus,
 )
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
+from opendlp.service_layer.export_gsheet_config import save_export_gsheet_config
 from opendlp.service_layer.permissions import (
     can_manage_assembly,
     can_view_assembly,
@@ -38,7 +39,6 @@ if TYPE_CHECKING:
 
 
 EXPORT_KIND = GSheetExportKind.DASHBOARD
-DEFAULT_SHEET_TITLE = default_worksheet_name(EXPORT_KIND)
 
 
 # -----------------------------------------------------------------------------
@@ -381,7 +381,7 @@ def export_dashboard_report(
     assembly_id: uuid.UUID,
     *,
     target: AbstractTabularExportTarget,
-    sheet_title: str = DEFAULT_SHEET_TITLE,
+    sheet_title: str = "",
 ) -> None:
     """Write the results table to the given target.
 
@@ -389,8 +389,12 @@ def export_dashboard_report(
     writes a worksheet. Requires manage permission, matching the respondent
     export.
 
+    An empty ``sheet_title`` means the default for this export kind, resolved
+    here rather than as a default argument so it lands in the caller's language.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
+    sheet_title = sheet_title or default_worksheet_name(EXPORT_KIND)
     report = get_assembly_dashboard_report(uow, user_id, assembly_id)
     target.write_sheet(sheet_title, build_dashboard_table(report))
 
@@ -407,37 +411,28 @@ def export_dashboard_report_to_gsheet(
 ) -> None:
     """Write the results table to a Google Sheet and save the sheet config.
 
-    The config is saved under its own export kind, so it never shares a
-    spreadsheet with the respondent export - this table is aggregate counts and
-    may be published, that one is personal data and must not be.
+    The config is saved under its own export kind, so this export can have its own
+    spreadsheet rather than inheriting the respondent export's - useful because
+    this table is aggregate counts an organiser may publish, while that one is
+    personal data. Pointing both at one spreadsheet is allowed; keeping the
+    personal data private is a matter of how that sheet is shared.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    worksheet_name = worksheet_name.strip() or DEFAULT_SHEET_TITLE
+    worksheet_name = worksheet_name.strip() or default_worksheet_name(EXPORT_KIND)
 
     # Write first so the target's result_title/result_url are populated; only
     # then persist the config, so a failed write saves nothing.
     export_dashboard_report(uow, user_id, assembly_id, target=target, sheet_title=worksheet_name)
 
-    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
-    if config is None:
-        config = AssemblyExportGSheet(
-            assembly_id=assembly_id,
-            export_kind=EXPORT_KIND,
-            url=spreadsheet_url,
-            worksheet_name=worksheet_name,
-            spreadsheet_title=target.result_title,
-            worksheet_url=target.result_url,
-        )
-        uow.assembly_export_gsheets.add(config)
-    else:
-        config.update_values(
-            url=spreadsheet_url,
-            worksheet_name=worksheet_name,
-            spreadsheet_title=target.result_title,
-            worksheet_url=target.result_url,
-        )
-    uow.commit()
+    save_export_gsheet_config(
+        uow,
+        assembly_id,
+        EXPORT_KIND,
+        spreadsheet_url=spreadsheet_url,
+        worksheet_name=worksheet_name,
+        target=target,
+    )
 
 
 @require_assembly_permission(can_view_assembly)
@@ -447,6 +442,12 @@ def get_dashboard_gsheet_config(
     assembly_id: uuid.UUID,
 ) -> AssemblyExportGSheet | None:
     """The saved dashboard-export sheet config, or None before the first export.
+
+    View permission, not manage - deliberately looser than the respondent
+    equivalent. That export carries personal data, which is sensitive; this one is
+    aggregate counts, which is not. Either way the config is a link to a sheet
+    rather than the data in it: whoever the sheet is shared with is what decides
+    who can read it.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """

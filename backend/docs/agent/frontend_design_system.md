@@ -136,6 +136,27 @@ Rules of thumb:
 - Prefer this capture pattern over inlining the wrapped macro's HTML: inlining duplicates the
   atom's markup and the copies drift apart when the atom changes.
 
+## Icons
+
+- Every UI icon lives in `templates/backoffice/components/icons.html`, one macro per glyph.
+  Import the macro; never paste an inline `<svg>` into a template
+  (`tests/unit/test_icons.py` fails the build on a raw `<svg>` outside a short allowlist).
+- The house family is **Lucide**, taken verbatim from the "Icons" sheet of the
+  OpenDLP - UI Figma file (node `5032:8946`): stroke-width 2, round caps and joins,
+  24-grid, `fill="none"`, `stroke="currentColor"`. Need a new icon? Export it from
+  that sheet and add a macro; do not draw your own or mix in another family.
+- Uniform signature `icon_name(classes="w-4 h-4")` (classes in `w-* h-*` order); an empty
+  `classes` emits no class attribute for call sites that size the glyph from CSS
+  (a `.btn-icon` slot, `.dialog-close`). A few status icons also take `style` for a colour.
+- Every glyph carries `aria-hidden="true"`. The accessible name belongs to the wrapping
+  control, per `docs/agent/component_accessibility.md`.
+- What counts as an icon: the glyph names an action or a status. Brand marks
+  (`components/brand_marks.html`), the product logo, diagram illustrations and GOV.UK
+  pagination arrows are not icons and stay where they are.
+- Three deliberate exceptions are drawn to fill their slot instead of the 24 grid:
+  the stepper's `icon_check_20`/`icon_warning_20` and the checkbox's `icon_check_12`.
+  Do not reuse them elsewhere.
+
 ## Accessibility Requirements
 
 - All interactive elements must be keyboard accessible
