@@ -7,6 +7,7 @@ from opendlp.domain.registration_page import RegistrationPageNotReady
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     CannotDisableSelf,
+    CannotRemoveLastAssemblyManager,
     CannotRemoveLastAuthMethod,
     CuratedMessage,
     DocumentQuotaExceeded,
@@ -55,6 +56,7 @@ CURATED = [
     OAuthStateError(),
     CannotRemoveLastAuthMethod(),
     CannotDisableSelf(),
+    CannotRemoveLastAssemblyManager(),
 ]
 
 UNCURATED = [

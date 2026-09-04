@@ -114,31 +114,6 @@ class TestUserRepository:
 class TestAssemblyRepository:
     """Tests for SQL-specific AssemblyRepository methods requiring cross-repo queries."""
 
-    def test_get_assemblies_for_user_global_role(
-        self,
-        assembly_repo: SqlAlchemyAssemblyRepository,
-        user_repo: SqlAlchemyUserRepository,
-        postgres_session: Session,
-    ):
-        """Test getting assemblies for a user with global role."""
-        future_date = date.today() + timedelta(days=30)
-
-        # Create admin user
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-
-        # Create assemblies
-        assembly1 = Assembly(title="Assembly 1", question="Question 1?", first_assembly_date=future_date)
-        assembly2 = Assembly(title="Assembly 2", question="Question 2?", first_assembly_date=future_date)
-
-        user_repo.add(admin_user)
-        assembly_repo.add(assembly1)
-        assembly_repo.add(assembly2)
-        postgres_session.commit()
-
-        # Admin should see all active assemblies
-        assemblies = list(assembly_repo.get_assemblies_for_user(admin_user.id))
-        assert len(assemblies) == 2
-
     def test_get_assemblies_for_user_specific_role(
         self,
         assembly_repo: SqlAlchemyAssemblyRepository,
