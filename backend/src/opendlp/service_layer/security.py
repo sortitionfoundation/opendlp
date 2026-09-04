@@ -46,15 +46,23 @@ class TempUser:
     last_name: str = ""
 
 
+# Built once: the validators are stateless, and SafeCommonPasswordValidator
+# re-reads Django's gzipped common-password list every time it is constructed.
+# The attribute names must be materialised (not a generator) because the
+# similarity validator stores the iterable it is given and iterates it on
+# every validate() call.
+_PASSWORD_VALIDATORS: tuple[pv.PasswordValidator, ...] = (
+    pv.SafeCommonPasswordValidator(),
+    pv.MinimumLengthValidator(min_length=10),
+    pv.MaximumLengthValidator(max_length=256),
+    pv.NumericPasswordValidator(),
+    # this means we check every attribute of TempUser
+    pv.UserAttributeSimilarityValidator(user_attributes=tuple(f.name for f in fields(TempUser))),
+)
+
+
 def get_password_validators() -> Iterable[pv.PasswordValidator]:
-    return (
-        pv.SafeCommonPasswordValidator(),
-        pv.MinimumLengthValidator(min_length=10),
-        pv.MaximumLengthValidator(max_length=256),
-        pv.NumericPasswordValidator(),
-        # this means we check every attribute of TempUser
-        pv.UserAttributeSimilarityValidator(user_attributes=(f.name for f in fields(TempUser))),
-    )
+    return _PASSWORD_VALIDATORS
 
 
 def validate_password_strength(password: str, user: object) -> tuple[bool, str]:
