@@ -8,7 +8,7 @@ from opendlp.domain.user_invites import UserInvite, generate_invite_code
 from opendlp.domain.value_objects import GlobalRole
 
 from .exceptions import InsufficientPermissions, InviteNotFoundError, UserNotFoundError
-from .permissions import has_global_organiser
+from .permissions import can_administer_site
 from .unit_of_work import AbstractUnitOfWork
 
 
@@ -41,9 +41,9 @@ def generate_invite(
     if not user:
         raise UserNotFoundError(f"User {created_by_user_id} not found")
 
-    # Check permissions - only global organisers and admins can create invites
-    if not has_global_organiser(user):
-        raise InsufficientPermissions(action="generate invite", required_role="global-organiser or admin")
+    # Check permissions - only admins can create invites
+    if not can_administer_site(user):
+        raise InsufficientPermissions(action="generate invite", required_role="admin")
 
     # Generate unique invite code
     code = generate_invite_code()
@@ -99,8 +99,8 @@ def generate_batch_invites(
         raise UserNotFoundError(f"User {created_by_user_id} not found")
 
     # Check permissions
-    if not has_global_organiser(user):
-        raise InsufficientPermissions(action="generate batch invites", required_role="global-organiser or admin")
+    if not can_administer_site(user):
+        raise InsufficientPermissions(action="generate batch invites", required_role="admin")
 
     invites = []
     expires_at = datetime.now(UTC) + timedelta(hours=expires_in_hours)
@@ -152,8 +152,8 @@ def list_invites(
         raise UserNotFoundError(f"User {user_id} not found")
 
     # Check permissions
-    if not has_global_organiser(user):
-        raise InsufficientPermissions(action="list invites", required_role="global-organiser or admin")
+    if not can_administer_site(user):
+        raise InsufficientPermissions(action="list invites", required_role="admin")
 
     if include_expired:
         return list(uow.user_invites.all())
@@ -192,8 +192,8 @@ def revoke_invite(
         raise InviteNotFoundError(f"Invite {invite_id} not found")
 
     # Check permissions
-    if not has_global_organiser(user):
-        raise InsufficientPermissions(action="revoke invite", required_role="global-organiser or admin")
+    if not can_administer_site(user):
+        raise InsufficientPermissions(action="revoke invite", required_role="admin")
 
     # Mark invite as used (effectively revoking it)
     invite.use(user_id)
@@ -231,8 +231,8 @@ def get_invite_details(
         raise UserNotFoundError(f"User {user_id} not found")
 
     # Check permissions
-    if not has_global_organiser(user):
-        raise InsufficientPermissions(action="view invite details", required_role="global-organiser or admin")
+    if not can_administer_site(user):
+        raise InsufficientPermissions(action="view invite details", required_role="admin")
 
     invite = uow.user_invites.get(invite_id)
     if not invite:
@@ -292,8 +292,8 @@ def get_invite_statistics(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> dict[s
         raise UserNotFoundError(f"User {user_id} not found")
 
     # Check permissions
-    if not has_global_organiser(user):
-        raise InsufficientPermissions(action="view invite statistics", required_role="global-organiser or admin")
+    if not can_administer_site(user):
+        raise InsufficientPermissions(action="view invite statistics", required_role="admin")
 
     invites = list(uow.user_invites.all())
     now = datetime.now(UTC)

@@ -22,7 +22,7 @@ from opendlp.service_layer.registration_page_service import (
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import grant_user_assembly_role
 
-from .config import ADMIN_PASSWORD, NORMAL_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
+from .config import ADMIN_PASSWORD, NORMAL_PASSWORD, ORGANISER_PASSWORD, PLAYWRIGHT_TIMEOUT, Urls
 
 # Load all scenarios from the feature files
 scenarios("../../features/backoffice.feature")
@@ -31,6 +31,7 @@ scenarios("../../features/backoffice-assembly-members.feature")
 scenarios("../../features/backoffice-assembly-gsheet.feature")
 scenarios("../../features/backoffice-csv-upload.feature")
 scenarios("../../features/backoffice-registration-editor.feature")
+scenarios("../../features/organiser-assemblies.feature")
 
 
 # Store assembly data between steps
@@ -1267,18 +1268,21 @@ def see_text_after_searching(page: Page, text: str):
 def try_access_assembly_details_page(page: Page, title: str, test_database):
     """Try to navigate directly to the assembly details page (may be unauthorized)."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    if assembly_id:
-        page.goto(Urls.backoffice_assembly_url(assembly_id))
-        page.wait_for_load_state("networkidle")
+    # Every scenario using this step has already created the assembly. Navigating
+    # nowhere would leave the browser on the previous page, and the "redirected to
+    # the dashboard" assertion that follows would pass without proving anything.
+    assert assembly_id, f"No assembly titled {title!r} to try to access"
+    page.goto(Urls.backoffice_assembly_url(assembly_id))
+    page.wait_for_load_state("networkidle")
 
 
 @when(parsers.parse('I try to access the assembly members page for "{title}"'))
 def try_access_assembly_members_page(page: Page, title: str, test_database):
     """Try to navigate directly to the assembly members page (may be unauthorized)."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    if assembly_id:
-        page.goto(Urls.backoffice_members_assembly_url(assembly_id))
-        page.wait_for_load_state("networkidle")
+    assert assembly_id, f"No assembly titled {title!r} to try to access"
+    page.goto(Urls.backoffice_members_assembly_url(assembly_id))
+    page.wait_for_load_state("networkidle")
 
 
 @then("I should be redirected to the dashboard")
@@ -1736,3 +1740,50 @@ def choose_respondent_column(page: Page, column: str):
 def add_selected_categories(page: Page):
     page.get_by_role("button", name="Add selected categories").click()
     page.wait_for_load_state("networkidle")
+
+
+# Organiser role: creating assemblies, and being confined to your own
+
+
+def _login_organiser(page: Page, organiser_user) -> None:
+    """Helper to log in as the organiser."""
+    page.context.clear_cookies()
+    page.goto(Urls.login)
+    page.fill('input[name="email"]', organiser_user.email)
+    page.fill('input[name="password"]', ORGANISER_PASSWORD)
+    page.click('button[type="submit"]')
+    page.wait_for_url(Urls.any_dashboard)
+
+
+@given("I am logged in as an organiser")
+def logged_in_as_organiser(page: Page, organiser_user):
+    """Log in as the organiser."""
+    _login_organiser(page, organiser_user)
+
+
+@given(parsers.parse('there is an assembly called "{title}" created by the organiser'))
+def create_test_assembly_by_organiser(title: str, organiser_user, test_database):
+    """Create an assembly the organiser owns, and therefore manages."""
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        assembly = create_assembly(uow=uow, title=title, created_by_user_id=organiser_user.id)
+    _assembly_name_id_cache.add_existing(title, assembly)
+
+
+@when(parsers.parse('I create an assembly called "{title}"'))
+def create_assembly_through_the_ui(page: Page, title: str, test_database):
+    """Fill in and submit the backoffice create-assembly form."""
+    page.goto(Urls.backoffice_create_assembly)
+    page.fill('input[name="title"]', title)
+    page.click('button[type="submit"]')
+    page.wait_for_load_state("networkidle")
+    _assembly_name_id_cache.find_title(title, test_database)
+
+
+@then(parsers.parse('I should see "{email}" in the search results'))
+def see_email_in_search_results(page: Page, email: str):
+    """Verify the autocomplete offered a specific account.
+
+    No sleep: the typing step already waits out the debounce, and expect()
+    retries until the listbox has the text or the timeout expires.
+    """
+    expect(page.locator("#user_id_listbox")).to_contain_text(email)

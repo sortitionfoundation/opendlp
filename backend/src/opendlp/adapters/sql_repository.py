@@ -78,6 +78,20 @@ class SqlAlchemyRepository:
         self.session = session
 
 
+def _parse_role_filter(role: str | None) -> GlobalRole | None:
+    """Turn a role filter from a query string into a role, ignoring anything unknown.
+
+    A bookmarked or stale filter naming a role that no longer exists is not an
+    error worth a 500 - it just means no filter.
+    """
+    if not role:
+        return None
+    try:
+        return GlobalRole(role.lower())
+    except ValueError:
+        return None
+
+
 class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
     """SQLAlchemy implementation of UserRepository."""
 
@@ -96,8 +110,8 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
     def filter(self, role: str | None = None, active: bool | None = None) -> Iterable[User]:
         """List users filtered by criteria."""
         user_query = self.session.query(User)
-        if role:
-            role_enum = GlobalRole(role.lower())
+        role_enum = _parse_role_filter(role)
+        if role_enum:
             user_query = user_query.filter(orm.users.c.global_role == role_enum)
         if active is not None:
             user_query = user_query.filter(orm.users.c.is_active == active)
@@ -116,8 +130,8 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
         user_query = self.session.query(User)
 
         # Apply role filter
-        if role:
-            role_enum = GlobalRole(role.lower())
+        role_enum = _parse_role_filter(role)
+        if role_enum:
             user_query = user_query.filter(orm.users.c.global_role == role_enum)
 
         # Apply active filter
@@ -169,6 +183,22 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
 
         return self.session.query(User).filter(~orm.users.c.id.in_(user_ids_with_roles)).all()
 
+    def get_by_email_not_in_assembly(self, assembly_id: uuid.UUID, email: str) -> User | None:
+        """Find the user with exactly this email, if they have no role in the assembly."""
+        if not email:
+            return None
+
+        user_ids_with_roles = select(orm.user_assembly_roles.c.user_id).where(
+            orm.user_assembly_roles.c.assembly_id == assembly_id
+        )
+        return (
+            self.session
+            .query(User)
+            .filter(~orm.users.c.id.in_(user_ids_with_roles))
+            .filter(func.lower(orm.users.c.email) == email.strip().lower())
+            .first()
+        )
+
     def search_users_not_in_assembly(self, assembly_id: uuid.UUID, search_term: str) -> Iterable[User]:
         """Search users not in assembly by email (prioritized) and name fields.
 
@@ -214,20 +244,6 @@ class SqlAlchemyUserRepository(SqlAlchemyRepository, UserRepository):
         """Get all active users."""
         return self.session.query(User).filter_by(is_active=True).all()
 
-    def get_admins(self) -> Iterable[User]:
-        """Get all users with admin privileges."""
-        return (
-            self.session
-            .query(User)
-            .filter(
-                or_(
-                    orm.users.c.global_role == GlobalRole.ADMIN,
-                    orm.users.c.global_role == GlobalRole.GLOBAL_ORGANISER,
-                )
-            )
-            .all()
-        )
-
 
 class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
     """SQLAlchemy implementation of AssemblyRepository."""
@@ -255,17 +271,17 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
         )
 
     def get_assemblies_for_user(self, user_id: uuid.UUID) -> Iterable[Assembly]:
-        """Get all assemblies that a user has access to."""
-        # First check if user has global permissions
-        user = self.session.query(User).filter_by(id=user_id).first()
-        if not user:
-            return []
+        """Get the active assemblies the user holds a role on, newest first.
 
-        if user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
-            # Global users can access all active assemblies
-            return self.get_active_assemblies()
+        Purely a role lookup - it asks no question about the user's global role.
+        Who is entitled to see more than their own assemblies is a policy
+        decision, and it lives with the other capabilities in
+        `service_layer.permissions`; `user_service.get_user_assemblies` is what
+        consults it and sends an admin to `get_active_assemblies` instead.
 
-        # Regular users can only access assemblies where they have specific roles
+        A user id with no roles - including one that names nobody - has no
+        assemblies, so there is no separate not-found case.
+        """
         assembly_ids_subquery = select(orm.user_assembly_roles.c.assembly_id).where(
             orm.user_assembly_roles.c.user_id == user_id
         )

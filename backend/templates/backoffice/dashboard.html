@@ -16,7 +16,9 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
     <section>
         <div class="flex justify-between items-center mb-6">
             <h2 style="color: var(--color-headings);" class="text-heading-lg">{{ _("Your Assemblies") }}</h2>
-            {{ button(_("Create New Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+            {% if perms.create_assembly %}
+                {{ button(_("Create New Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+            {% endif %}
         </div>
 
         {% if assemblies %}
@@ -39,8 +41,12 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
         {% else %}
             {% call card(id="no-assemblies-card") %}
                 <p style="color: var(--color-body-text);" class="text-body-md mb-2">{{ _("No assemblies yet") }}</p>
-                <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("Create your first citizens' assembly to get started.") }}</p>
-                {{ button(_("Create Your First Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+                {% if perms.create_assembly %}
+                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("Create your first citizens' assembly to get started.") }}</p>
+                    {{ button(_("Create Your First Assembly"), href=url_for('backoffice.new_assembly'), variant="primary") }}
+                {% else %}
+                    <p style="color: var(--color-secondary-text);" class="text-body-md mb-4">{{ _("You have not been added to any assemblies yet - ask an assembly manager to add you.") }}</p>
+                {% endif %}
             {% endcall %}
         {% endif %}
     </section>

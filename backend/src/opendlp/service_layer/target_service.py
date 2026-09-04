@@ -140,7 +140,7 @@ def _load_user_and_assembly(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action=action,
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
     return cast("Assembly", assembly)
 
@@ -190,7 +190,7 @@ def create_target_category(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="create target category",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     existing = uow.target_categories.get_by_assembly_id(assembly_id)
@@ -242,7 +242,7 @@ def get_targets_for_assembly(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view targets",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     categories = uow.target_categories.get_by_assembly_id(assembly_id)
@@ -276,7 +276,7 @@ def update_target_category(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="update target category",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     category = cast("TargetCategory | None", uow.target_categories.get(category_id))
@@ -312,7 +312,7 @@ def delete_target_category(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="delete target category",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     category = cast("TargetCategory | None", uow.target_categories.get(category_id))
@@ -351,7 +351,7 @@ def add_target_value(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="add target value",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     category = cast("TargetCategory | None", uow.target_categories.get(category_id))
@@ -414,7 +414,7 @@ def update_target_value(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="update target value",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     category = cast("TargetCategory | None", uow.target_categories.get(category_id))
@@ -492,7 +492,7 @@ def delete_target_value(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="delete target value",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     category = cast("TargetCategory | None", uow.target_categories.get(category_id))
@@ -530,7 +530,7 @@ def get_feature_collection_for_assembly(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="get feature collection",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     # Use SelectionData with our custom adapter
@@ -565,7 +565,7 @@ def delete_targets_for_assembly(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="delete targets",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     return uow.target_categories.delete_all_for_assembly(assembly_id)

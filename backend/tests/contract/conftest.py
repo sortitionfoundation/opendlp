@@ -40,15 +40,15 @@ from opendlp.domain.registration_document import RegistrationDocument
 from opendlp.domain.registration_image import RegistrationImage
 from opendlp.domain.registration_page import RegistrationPage
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.users import User
+from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import (
+    AssemblyRole,
     AssemblyStatus,
     GlobalRole,
 )
 from tests.fakes import (
     FakeAssemblyExportGSheetRepository,
     FakeAssemblyGSheetRepository,
-    FakeAssemblyRepository,
     FakeEmailConfirmationTokenRepository,
     FakeEmailTemplateRepository,
     FakePasswordResetTokenRepository,
@@ -65,7 +65,6 @@ from tests.fakes import (
     FakeTwoFactorAuditLogRepository,
     FakeUserBackupCodeRepository,
     FakeUserInviteRepository,
-    FakeUserRepository,
 )
 
 if TYPE_CHECKING:
@@ -193,9 +192,24 @@ class ContractBackend:
 
     repo: Any
     commit: Callable[[], None]
+    # The FakeStore behind `repo`, for the fake side of a repository that has to
+    # consult a sibling repository. The SQL side gets this for free - every
+    # repository shares one session - so a fake without it answers
+    # cross-repository questions differently, which is the exact class of bug
+    # these tests exist to catch.
+    store: Any = None
 
     def persist(self, *items: Any) -> None:
         """Persist domain objects that the repo under test depends on (e.g. Users for FK)."""
+        raise NotImplementedError
+
+    def grant_assembly_role(
+        self,
+        user: User,
+        assembly: Assembly,
+        role: AssemblyRole = AssemblyRole.ASSEMBLY_MANAGER,
+    ) -> None:
+        """Record that the user holds a role on the assembly, wherever this backend keeps roles."""
         raise NotImplementedError
 
     def fresh_get_respondent(self, respondent_id: uuid.UUID) -> Respondent | None:
@@ -267,7 +281,24 @@ class FakeContractBackend(ContractBackend):
     """Backend using in-memory fake repositories."""
 
     def persist(self, *items: Any) -> None:
-        pass  # fakes don't need FK objects persisted
+        # Without a store there are no sibling repositories to reach, and fakes
+        # enforce no foreign keys, so there is nothing to do.
+        if self.store is None:
+            return
+        for item in items:
+            if isinstance(item, User):
+                self.store.users.add(item)
+            elif isinstance(item, Assembly):
+                self.store.assemblies.add(item)
+
+    def grant_assembly_role(
+        self,
+        user: User,
+        assembly: Assembly,
+        role: AssemblyRole = AssemblyRole.ASSEMBLY_MANAGER,
+    ) -> None:
+        user.assembly_roles.append(UserAssemblyRole(user_id=user.id, assembly_id=assembly.id, role=role))
+        self.commit()
 
     def fresh_get_respondent(self, respondent_id: uuid.UUID) -> Respondent | None:
         return self.repo.get(respondent_id)  # type: ignore[no-any-return]
@@ -291,6 +322,15 @@ class SqlContractBackend(ContractBackend):
         for item in items:
             self._session.add(item)
         self._session.flush()
+
+    def grant_assembly_role(
+        self,
+        user: User,
+        assembly: Assembly,
+        role: AssemblyRole = AssemblyRole.ASSEMBLY_MANAGER,
+    ) -> None:
+        self.persist(UserAssemblyRole(user_id=user.id, assembly_id=assembly.id, role=role))
+        self.commit()
 
     def fresh_get_respondent(self, respondent_id: uuid.UUID) -> Respondent | None:
         assert self._session_factory is not None, "session_factory required for fresh reads"
@@ -367,21 +407,23 @@ def user_invite_backend(request, postgres_session) -> ContractBackend:
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
 def user_assembly_role_backend(uow, request, postgres_session) -> ContractBackend:
     if request.param == "fake":
-        return FakeContractBackend(repo=uow.user_assembly_roles, commit=lambda: None)
+        return FakeContractBackend(repo=uow.user_assembly_roles, commit=lambda: None, store=uow.store)
     return SqlContractBackend(repo=SqlAlchemyUserAssemblyRoleRepository(postgres_session), session=postgres_session)
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
-def user_repo_backend(request, postgres_session) -> ContractBackend:
+def user_repo_backend(uow, request, postgres_session) -> ContractBackend:
     if request.param == "fake":
-        return FakeContractBackend(repo=FakeUserRepository(), commit=lambda: None)
+        return FakeContractBackend(repo=uow.users, commit=lambda: None, store=uow.store)
     return SqlContractBackend(repo=SqlAlchemyUserRepository(postgres_session), session=postgres_session)
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
-def assembly_repo_backend(request, postgres_session) -> ContractBackend:
+def assembly_repo_backend(uow, request, postgres_session) -> ContractBackend:
+    """The fake side comes from the shared store, because the assembly repository
+    reads users to answer get_assemblies_for_user - exactly as the SQL one does."""
     if request.param == "fake":
-        return FakeContractBackend(repo=FakeAssemblyRepository(), commit=lambda: None)
+        return FakeContractBackend(repo=uow.assemblies, commit=lambda: None, store=uow.store)
     return SqlContractBackend(repo=SqlAlchemyAssemblyRepository(postgres_session), session=postgres_session)
 
 

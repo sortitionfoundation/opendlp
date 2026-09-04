@@ -15,7 +15,7 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
     {% set _last = current_user.last_name[0] if current_user.last_name else '' %}
     {% set account_initials = (_first ~ _last) | upper %}
     {% if not account_initials %}{% set account_initials = current_user.email[0] | upper %}{% endif %}
-    {% set _is_site_admin = current_user.global_role.value in ['admin', 'global-organiser'] %}
+    {% set _is_site_admin = perms.administer_site %}
 
     <div class="min-h-screen flex flex-col">
         {# Sticky chrome: the top bar and (where present) the page header + tabs

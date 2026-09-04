@@ -10,6 +10,7 @@ from opendlp.translations import gettext as _
 
 __all__ = [
     "AssemblyNotFoundError",
+    "CannotRemoveLastAssemblyManager",
     "CannotRemoveLastAuthMethod",
     "CuratedMessage",
     "DocumentQuotaExceeded",
@@ -319,3 +320,18 @@ class CannotDisableSelf(CuratedMessage, ServiceLayerError):
 
     def __init__(self) -> None:
         super().__init__(_("You cannot disable your own account"))
+
+
+class CannotRemoveLastAssemblyManager(CuratedMessage, ServiceLayerError):
+    """Raised when removing a role would leave an assembly with no manager.
+
+    Only non-admins are stopped. An assembly with no manager can be reached by
+    nobody but an admin, and an organiser cannot see the admin UI to ask for it
+    back - so for them this is a one-way door. An admin doing the same thing can
+    undo it, so they are allowed to.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            _("An assembly must keep at least one assembly manager. Add another one before removing this one.")
+        )

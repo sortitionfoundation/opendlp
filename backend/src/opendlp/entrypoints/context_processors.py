@@ -10,8 +10,11 @@ from functools import cache
 from pathlib import Path
 from typing import NamedTuple
 
+from flask_login import current_user
+
 from opendlp import config
 from opendlp.feature_flags import has_feature
+from opendlp.service_layer.permissions import NO_CAPABILITIES, capabilities_for
 
 
 @cache
@@ -147,6 +150,17 @@ def get_help_site_urls() -> HelpSiteUrls:
         cookies=flask_config.HELP_SITE_COOKIES,
         knowledge_hub=flask_config.KNOWLEDGE_HUB_URL,
     )
+
+
+def inject_capabilities() -> dict[str, object]:
+    """Inject the current user's global capabilities into template context as `perms`.
+
+    Anonymous visitors get an instance where nothing is permitted, so templates
+    can ask `{% if perms.create_assembly %}` without guarding on authentication.
+    """
+    if not current_user or not current_user.is_authenticated:
+        return {"perms": NO_CAPABILITIES}
+    return {"perms": capabilities_for(current_user)}
 
 
 def inject_feature_flags() -> dict[str, object]:

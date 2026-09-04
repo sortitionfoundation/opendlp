@@ -32,7 +32,11 @@
         <div class="govuk-summary-list__row">
             <dt class="govuk-summary-list__key">{{ _("Created") }}</dt>
             <dd class="govuk-summary-list__value">
-                {{ assembly.created_at|dateformat('long') }}
+                {% if created_by_name %}
+                    {{ _("By %(name)s at %(timestamp)s", name=created_by_name, timestamp=assembly.created_at|datetimeformat('long')) }}
+                {% else %}
+                    {{ assembly.created_at|datetimeformat('long') }}
+                {% endif %}
             </dd>
         </div>
         <div class="govuk-summary-list__row">

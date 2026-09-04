@@ -7,15 +7,21 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from flask import Flask
+from flask_login import LoginManager, login_user
 
+from opendlp.domain.users import User
+from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.context_processors import (
     _get_file_hash,
     get_help_site_urls,
     get_opendlp_version,
     get_service_account_email,
+    inject_capabilities,
     inject_template_globals,
     static_hashes,
 )
+from opendlp.service_layer.permissions import NO_CAPABILITIES
 
 
 class TestStaticHashes:
@@ -303,3 +309,39 @@ class TestGetServiceAccountEmail:
             email = get_service_account_email()
 
         assert email == "test@test.iam.gserviceaccount.com"
+
+
+def _app() -> Flask:
+    """A minimal Flask app with flask-login wired up, enough to resolve current_user."""
+    app = Flask(__name__)
+    app.secret_key = "test-secret"  # pragma: allowlist secret
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.user_loader(lambda _user_id: None)
+    return app
+
+
+class TestInjectCapabilities:
+    """Test the `perms` bundle injected into every template context."""
+
+    def test_anonymous_visitors_get_the_nothing_permitted_bundle(self):
+        """Templates must be able to ask `perms.x` without guarding on authentication."""
+        with _app().test_request_context("/"):
+            assert inject_capabilities() == {"perms": NO_CAPABILITIES}
+
+    def test_an_authenticated_user_gets_their_own_capabilities(self):
+        organiser = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+
+        with _app().test_request_context("/"):
+            login_user(organiser)
+            perms = inject_capabilities()["perms"]
+
+        # Spelled out rather than compared against capabilities_for(organiser),
+        # which would only assert the code agrees with itself.
+        assert perms.create_assembly is True
+        assert perms.see_all_assemblies is False
+        assert perms.administer_site is False

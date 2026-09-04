@@ -63,7 +63,7 @@ def create_respondent(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="create respondent",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     # Check for duplicate
@@ -153,7 +153,7 @@ def import_respondents_from_rows(  # noqa: C901
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="import respondents",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     if not headers:
@@ -308,7 +308,7 @@ def reset_selection_status(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="reset selection status",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     return uow.respondents.reset_all_to_pool(assembly_id)
@@ -336,7 +336,7 @@ def get_respondents_for_assembly(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view respondents",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     respondents = uow.respondents.get_by_assembly_id(assembly_id, status=status, include_deleted=include_deleted)
@@ -366,7 +366,7 @@ def get_respondents_for_assembly_paginated(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view respondents",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     respondents, total_count = uow.respondents.get_by_assembly_id_paginated(
@@ -445,7 +445,7 @@ def delete_respondent(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="delete respondent",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     respondent = uow.respondents.get(respondent_id)
@@ -485,7 +485,7 @@ def update_respondent(
     if not can_edit_respondent(user, assembly):
         raise InsufficientPermissions(
             action="edit respondent",
-            required_role="assembly-manager, confirmation-caller, global-organiser or admin",
+            required_role="assembly-manager, confirmation-caller or admin",
         )
 
     respondent = uow.respondents.get(respondent_id)
@@ -527,7 +527,7 @@ def add_respondent_comment(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="add respondent comment",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     respondent = uow.respondents.get(respondent_id)
@@ -559,7 +559,7 @@ def get_respondent(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view respondents",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     respondent = uow.respondents.get(respondent_id)
@@ -593,7 +593,7 @@ def get_respondent_with_comment_authors(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view respondents",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     respondent = uow.respondents.get(respondent_id)

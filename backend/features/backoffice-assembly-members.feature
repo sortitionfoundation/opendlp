@@ -38,10 +38,18 @@ Feature: Backoffice Assembly Team Members
     Then I should see "Team Members" as a section heading
     And I should see the team members table
 
-  Scenario: Non-admin member cannot see add user form
+  Scenario: Assembly manager can see add user form
     Given I am logged in as a normal user
     And there is an assembly called "Climate Assembly" created by admin
     And I am assigned to "Climate Assembly" as "assembly-manager"
+    When I visit the assembly members page for "Climate Assembly"
+    Then I should see "Add User to Assembly"
+    And I should see the user search dropdown
+
+  Scenario: Non-manager member cannot see add user form
+    Given I am logged in as a normal user
+    And there is an assembly called "Climate Assembly" created by admin
+    And I am assigned to "Climate Assembly" as "confirmation-caller"
     When I visit the assembly members page for "Climate Assembly"
     Then I should not see "Add User to Assembly"
     And I should not see the user search dropdown

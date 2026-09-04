@@ -17,7 +17,7 @@ from opendlp.domain.selection_settings import (
     SelectionSettings,
     Teams,
 )
-from opendlp.domain.value_objects import AssemblyStatus
+from opendlp.domain.value_objects import AssemblyRole, AssemblyStatus
 
 from . import target_service
 from .exceptions import (
@@ -26,9 +26,9 @@ from .exceptions import (
     InsufficientPermissions,
     UserNotFoundError,
 )
-from .permissions import can_manage_assembly, can_view_assembly, has_global_organiser
+from .permissions import can_create_assembly, can_manage_assembly, can_view_assembly
 from .unit_of_work import AbstractUnitOfWork
-from .user_service import get_user_assemblies
+from .user_service import assign_assembly_role, get_user_assemblies
 
 
 def create_assembly(
@@ -63,9 +63,8 @@ def create_assembly(
     if not user:
         raise UserNotFoundError(f"User {created_by_user_id} not found")
 
-    # Check permissions - only global organisers and admins can create assemblies
-    if not has_global_organiser(user):
-        raise InsufficientPermissions(action="create assembly", required_role="global-organiser or admin")
+    if not can_create_assembly(user):
+        raise InsufficientPermissions(action="create assembly", required_role="organiser or admin")
 
     # Create the assembly
     assembly = Assembly(
@@ -73,9 +72,14 @@ def create_assembly(
         question=question,
         first_assembly_date=first_assembly_date,
         number_to_select=number_to_select,
+        created_by_user_id=created_by_user_id,
     )
 
     uow.assemblies.add(assembly)
+    # The creator manages what they create. Unconditional: an admin gets the
+    # same role as an organiser, so the assembly appears on their dashboard and
+    # there is no branch here to get wrong.
+    assign_assembly_role(uow, created_by_user_id, assembly.id, AssemblyRole.ASSEMBLY_MANAGER)
     return assembly.create_detached_copy()
 
 
@@ -112,9 +116,7 @@ def update_assembly(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="update assembly", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="update assembly", required_role="assembly-manager or admin")
 
     # Apply updates
     previous_number_to_select = assembly.number_to_select
@@ -165,11 +167,27 @@ def get_assembly_with_permissions(
 
     # Check permissions
     if not can_view_assembly(user, assembly):
-        raise InsufficientPermissions(action="view assembly", required_role="assembly role or global privileges")
+        raise InsufficientPermissions(action="view assembly", required_role="assembly role or admin")
 
     # Explicit typing to satisfy mypy
     retrieved_assembly: Assembly = assembly.create_detached_copy()
     return retrieved_assembly
+
+
+def get_assembly_creator_name(uow: AbstractUnitOfWork, assembly: Assembly) -> str:
+    """
+    Get the display name of whoever created the assembly, or "" if there is nobody to name.
+
+    Assemblies created before we recorded the creator have no creator, and the
+    foreign key is SET NULL, so a deleted account leaves nothing to show either.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`), and to
+    have already established that the user may view this assembly.
+    """
+    if assembly.created_by_user_id is None:
+        return ""
+    creator = uow.users.get(assembly.created_by_user_id)
+    return creator.display_name if creator else ""
 
 
 def archive_assembly(
@@ -204,9 +222,7 @@ def archive_assembly(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="archive assembly", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="archive assembly", required_role="assembly-manager or admin")
 
     # Archive the assembly
     assembly.status = AssemblyStatus.ARCHIVED
@@ -284,9 +300,7 @@ def add_assembly_gsheet(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="add gsheet to assembly", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="add gsheet to assembly", required_role="assembly-manager or admin")
 
     # Check if assembly already has a gsheet
     existing_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
@@ -345,9 +359,7 @@ def update_assembly_gsheet(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="update assembly gsheet", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="update assembly gsheet", required_role="assembly-manager or admin")
 
     # Get the existing gsheet
     assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
@@ -402,9 +414,7 @@ def remove_assembly_gsheet(
 
     # Check permissions
     if not can_manage_assembly(user, assembly):
-        raise InsufficientPermissions(
-            action="remove assembly gsheet", required_role="assembly-manager, global-organiser or admin"
-        )
+        raise InsufficientPermissions(action="remove assembly gsheet", required_role="assembly-manager or admin")
 
     # Get the existing gsheet
     assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
@@ -447,7 +457,7 @@ def get_assembly_gsheet(
 
     # Check permissions
     if not can_view_assembly(user, assembly):
-        raise InsufficientPermissions(action="view assembly gsheet", required_role="assembly role or global privileges")
+        raise InsufficientPermissions(action="view assembly gsheet", required_role="assembly role or admin")
 
     # Get the gsheet
     assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
@@ -501,7 +511,7 @@ def get_or_create_selection_settings(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view selection settings",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     if assembly.selection_settings is None:
@@ -532,7 +542,7 @@ def update_selection_settings(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="update selection settings",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     if assembly.selection_settings is None:
@@ -566,7 +576,7 @@ def get_or_create_csv_config(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view CSV configuration",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     # Create default config if doesn't exist
@@ -599,7 +609,7 @@ def update_csv_config(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="update CSV configuration",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     # Create if doesn't exist
@@ -711,7 +721,7 @@ def get_csv_upload_status(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view CSV upload status",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     # Get targets count
@@ -803,7 +813,7 @@ def delete_respondents_for_assembly(
     if not can_manage_assembly(user, assembly):
         raise InsufficientPermissions(
             action="delete respondents",
-            required_role="assembly-manager, global-organiser or admin",
+            required_role="assembly-manager or admin",
         )
 
     return uow.respondents.delete_all_for_assembly(assembly_id)

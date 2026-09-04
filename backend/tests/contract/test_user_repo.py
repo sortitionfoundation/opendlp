@@ -6,7 +6,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from opendlp.domain.value_objects import GlobalRole
+from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from tests.contract.conftest import ContractBackend, make_user
 
 if TYPE_CHECKING:
@@ -109,3 +109,98 @@ class TestFilter:
 
         results = list(user_repo_backend.repo.filter())
         assert len(results) == 2
+
+    def test_an_unknown_role_filters_nothing_rather_than_raising(self, user_repo_backend: ContractBackend):
+        """A bookmarked ?role=global-organiser must not become a 500 after the role is retired."""
+        _add_user(user_repo_backend, email="admin@example.com", global_role=GlobalRole.ADMIN)
+        _add_user(user_repo_backend, email="user@example.com", global_role=GlobalRole.USER)
+
+        results = list(user_repo_backend.repo.filter(role="global-organiser"))
+        assert len(results) == 2
+
+    def test_a_role_filter_is_matched_case_insensitively(self, user_repo_backend: ContractBackend):
+        _add_user(user_repo_backend, email="admin@example.com", global_role=GlobalRole.ADMIN)
+
+        assert len(list(user_repo_backend.repo.filter(role="ADMIN"))) == 1
+
+
+class TestGetByEmailNotInAssembly:
+    """The exact-match lookup a non-admin gets instead of partial search.
+
+    Partial matching would make the member-adding UI an account-enumeration
+    surface, so the two backends must agree on exactly what counts as a match.
+    """
+
+    def test_finds_the_user_with_exactly_that_address(self, user_repo_backend: ContractBackend):
+        assembly = user_repo_backend.make_assembly()
+        user = _add_user(user_repo_backend, email="jane.doe@example.com")
+
+        found = user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, "jane.doe@example.com")
+        assert found is not None
+        assert found.id == user.id
+
+    def test_a_mixed_case_search_term_matches(self, user_repo_backend: ContractBackend):
+        assembly = user_repo_backend.make_assembly()
+        _add_user(user_repo_backend, email="jane.doe@example.com")
+
+        found = user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, "Jane.DOE@Example.com")
+        assert found is not None
+        assert found.email == "jane.doe@example.com"
+
+    def test_a_mixed_case_stored_address_matches(self, user_repo_backend: ContractBackend):
+        """The folding has to happen on both sides, not just the term the user typed."""
+        assembly = user_repo_backend.make_assembly()
+        _add_user(user_repo_backend, email="Jane.DOE@Example.com")
+
+        found = user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, "jane.doe@example.com")
+        assert found is not None
+        assert found.email == "Jane.DOE@Example.com"
+
+    def test_ignores_surrounding_whitespace(self, user_repo_backend: ContractBackend):
+        """A pasted address often carries a trailing space."""
+        assembly = user_repo_backend.make_assembly()
+        _add_user(user_repo_backend, email="jane.doe@example.com")
+
+        assert user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, "  jane.doe@example.com ") is not None
+
+    def test_a_partial_address_matches_nothing(self, user_repo_backend: ContractBackend):
+        """This is the whole point: no fishing with a fragment."""
+        assembly = user_repo_backend.make_assembly()
+        _add_user(user_repo_backend, email="jane.doe@example.com")
+
+        assert user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, "jane") is None
+        assert user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, "@example.com") is None
+
+    def test_a_name_matches_nothing(self, user_repo_backend: ContractBackend):
+        assembly = user_repo_backend.make_assembly()
+        _add_user(user_repo_backend, email="jane.doe@example.com", first_name="Jane", last_name="Doe")
+
+        assert user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, "Jane") is None
+
+    def test_an_unknown_address_matches_nothing(self, user_repo_backend: ContractBackend):
+        assembly = user_repo_backend.make_assembly()
+        _add_user(user_repo_backend, email="jane.doe@example.com")
+
+        assert user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, "nobody@example.com") is None
+
+    def test_an_empty_term_matches_nothing(self, user_repo_backend: ContractBackend):
+        assembly = user_repo_backend.make_assembly()
+        _add_user(user_repo_backend, email="jane.doe@example.com")
+
+        assert user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, "") is None
+
+    def test_excludes_a_user_already_in_the_assembly(self, user_repo_backend: ContractBackend):
+        assembly = user_repo_backend.make_assembly()
+        jane = _add_user(user_repo_backend, email="jane.doe@example.com")
+        user_repo_backend.grant_assembly_role(jane, assembly, AssemblyRole.CONFIRMATION_CALLER)
+
+        assert user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, jane.email) is None
+
+    def test_a_role_on_another_assembly_does_not_exclude(self, user_repo_backend: ContractBackend):
+        """Membership is per assembly, so a role elsewhere is irrelevant here."""
+        assembly = user_repo_backend.make_assembly()
+        elsewhere = user_repo_backend.make_assembly()
+        jane = _add_user(user_repo_backend, email="jane.doe@example.com")
+        user_repo_backend.grant_assembly_role(jane, elsewhere)
+
+        assert user_repo_backend.repo.get_by_email_not_in_assembly(assembly.id, jane.email) is not None

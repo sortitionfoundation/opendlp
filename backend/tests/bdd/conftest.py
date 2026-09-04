@@ -40,6 +40,8 @@ from .config import (
     DISPOSABLE_PASSWORD,
     NORMAL_EMAIL,
     NORMAL_PASSWORD,
+    ORGANISER_EMAIL,
+    ORGANISER_PASSWORD,
     PLAYWRIGHT_TIMEOUT,
     Urls,
 )
@@ -362,6 +364,34 @@ def assembly_creator(test_database, admin_user):
     return _create_assembly
 
 
+@pytest.fixture(scope="session")
+def organiser_user(test_database):
+    """Create an organiser for testing.
+
+    Kept by `delete_all_except_standard_users` alongside the admin and normal
+    users, so it survives between scenarios.
+    """
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+
+    with uow:
+        create_user(
+            uow=uow,
+            email=ORGANISER_EMAIL,
+            password=ORGANISER_PASSWORD,
+            first_name="Test",
+            last_name="Organiser",
+            global_role=GlobalRole.ORGANISER,
+            accept_data_agreement=True,
+        )
+
+    with uow:
+        fetched_user = uow.users.get_by_email(ORGANISER_EMAIL)
+        fetched_user.confirm_email()
+        uow.commit()
+        return fetched_user.create_detached_copy()
+
+
 @pytest.fixture
 def disposable_user(test_database):
     """A confirmed user that scenarios may lock out.
@@ -546,7 +576,7 @@ def delete_all_except_standard_users(session: Session) -> None:
     # Now delete assemblies (children are already deleted)
     session.execute(orm.assemblies.delete())
     # Keep admin user, clean others
-    session.execute(orm.users.delete().where(orm.users.c.email.not_in((ADMIN_EMAIL, NORMAL_EMAIL))))
+    session.execute(orm.users.delete().where(orm.users.c.email.not_in((ADMIN_EMAIL, NORMAL_EMAIL, ORGANISER_EMAIL))))
     session.commit()
 
 

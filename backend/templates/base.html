@@ -57,7 +57,7 @@
                                 <li class="govuk-header__navigation-item">
                                     <a class="govuk-header__link" href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
                                 </li>
-                                {% if current_user.global_role.value == 'admin' or current_user.global_role.value == 'global-organiser' %}
+                                {% if perms.administer_site %}
                                     <li class="govuk-header__navigation-item">
                                         <a class="govuk-header__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
                                     </li>

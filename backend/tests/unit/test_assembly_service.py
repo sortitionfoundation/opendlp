@@ -45,11 +45,11 @@ class TestCreateAssembly:
         assert assembly.status == AssemblyStatus.ACTIVE
         assert len(uow.assemblies.all()) == 1
 
-    def test_create_assembly_success_global_organiser(self, uow):
-        """Test successful assembly creation by global organiser."""
+    def test_create_assembly_success_organiser(self, uow):
+        """Test successful assembly creation by an organiser."""
         organiser_user = User(
             email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             password_hash="hash",  # pragma: allowlist secret
         )
         uow.users.add(organiser_user)
@@ -65,6 +65,44 @@ class TestCreateAssembly:
         )
 
         assert assembly.title == "Test Assembly"
+
+    def test_creator_becomes_assembly_manager(self, uow):
+        """An organiser can reach what they create, which needs a role on it."""
+        organiser_user = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser_user)
+
+        assembly = assembly_service.create_assembly(
+            uow=uow, title="Test Assembly", created_by_user_id=organiser_user.id
+        )
+
+        assert organiser_user.get_assembly_role(assembly.id) == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_admin_creator_also_becomes_assembly_manager(self, uow):
+        """Uniform with an organiser - the case most likely to regress if a branch reappears."""
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+
+        assembly = assembly_service.create_assembly(uow=uow, title="Test Assembly", created_by_user_id=admin_user.id)
+
+        assert admin_user.get_assembly_role(assembly.id) == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_creator_is_recorded_on_the_assembly(self, uow):
+        organiser_user = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser_user)
+
+        assembly = assembly_service.create_assembly(
+            uow=uow, title="Test Assembly", created_by_user_id=organiser_user.id
+        )
+
+        assert assembly.created_by_user_id == organiser_user.id
 
     def test_create_assembly_insufficient_permissions(self, uow):
         """Test assembly creation fails for regular user."""
@@ -828,3 +866,92 @@ class TestCreateTargetCategoryAutoPopulate:
         category = target_service.create_target_category(uow, admin.id, assembly.id, name="PostCode")
 
         assert category.values == []
+
+
+class TestOrganiserIsConfinedToTheirOwnAssemblies:
+    """An organiser holds nothing over an assembly they were not added to.
+
+    Creating assemblies and reading everyone else's are different capabilities;
+    before issue 913 the one role granted both.
+    """
+
+    def _setup(self, uow):
+        organiser = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser)
+        assembly = Assembly(title="Someone else's", question="?")
+        uow.assemblies.add(assembly)
+        return organiser, assembly
+
+    def test_cannot_view(self, uow):
+        organiser, assembly = self._setup(uow)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.get_assembly_with_permissions(uow, assembly.id, organiser.id)
+
+    def test_cannot_update(self, uow):
+        organiser, assembly = self._setup(uow)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.update_assembly(uow=uow, assembly_id=assembly.id, user_id=organiser.id, title="Mine now")
+
+    def test_cannot_archive(self, uow):
+        organiser, assembly = self._setup(uow)
+
+        with pytest.raises(InsufficientPermissions):
+            assembly_service.archive_assembly(uow=uow, assembly_id=assembly.id, user_id=organiser.id)
+
+    def test_can_do_all_three_on_an_assembly_they_created(self, uow):
+        """The mirror: creating it grants the assembly-manager role that permits all this."""
+        organiser, _ = self._setup(uow)
+        mine = assembly_service.create_assembly(uow=uow, title="Mine", created_by_user_id=organiser.id)
+
+        assert assembly_service.get_assembly_with_permissions(uow, mine.id, organiser.id).title == "Mine"
+        assembly_service.update_assembly(uow=uow, assembly_id=mine.id, user_id=organiser.id, title="Mine, renamed")
+        assembly_service.archive_assembly(uow=uow, assembly_id=mine.id, user_id=organiser.id)
+
+
+class TestGetAssemblyCreatorName:
+    """Naming the creator on the details page, and the three ways there is nobody to name."""
+
+    def test_returns_the_creators_display_name(self, uow):
+        creator = User(
+            email="creator@example.com",
+            first_name="Ada",
+            last_name="Lovelace",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(creator)
+        assembly = assembly_service.create_assembly(uow=uow, title="Theirs", created_by_user_id=creator.id)
+
+        assert assembly_service.get_assembly_creator_name(uow, assembly) == "Ada Lovelace"
+
+    def test_returns_empty_when_no_creator_was_recorded(self, uow):
+        """Assemblies created before the column existed carry no creator."""
+        assembly = Assembly(title="Predates the column", question="?")
+        uow.assemblies.add(assembly)
+
+        assert assembly_service.get_assembly_creator_name(uow, assembly) == ""
+
+    def test_returns_empty_when_the_creator_has_been_deleted(self, uow):
+        """The foreign key is SET NULL, but a stale id must not blow up the page either."""
+        assembly = Assembly(title="Orphaned", question="?", created_by_user_id=uuid.uuid4())
+        uow.assemblies.add(assembly)
+
+        assert assembly_service.get_assembly_creator_name(uow, assembly) == ""
+
+    def test_falls_back_to_the_email_prefix_when_the_creator_has_no_name(self, uow):
+        """display_name's own fallback, which matters for accounts created by invite."""
+        creator = User(
+            email="nameless@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(creator)
+        assembly = assembly_service.create_assembly(uow=uow, title="Theirs", created_by_user_id=creator.id)
+
+        assert assembly_service.get_assembly_creator_name(uow, assembly) == "nameless"

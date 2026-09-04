@@ -119,6 +119,12 @@ def _(page: Page, assembly_title: str):
     expect(page.locator(".main h1")).to_contain_text(assembly_title)
 
 
+@then("the user should see that they created it")
+def _(page: Page):
+    """the user should see that they created it."""
+    expect(page.locator("main")).to_contain_text("By Test Admin at")
+
+
 @then("the user should see the edited assembly")
 def _(page: Page, assembly: Assembly):
     """the user should see the edited assembly."""

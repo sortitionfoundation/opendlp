@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "admin/_role_tag.html" import role_tag %}
 {% block title %}{{ _("User Management") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-breadcrumbs">
@@ -71,12 +72,14 @@
                         <label class="govuk-label govuk-label--s" for="role">{{ _("Filter by role") }}</label>
                         <select class="govuk-select" id="role" name="role">
                             <option value="">{{ _("All roles") }}</option>
-                            <option value="user" {% if role_filter == 'user' %}selected{% endif %}>{{ _("User") }}</option>
-                            <option value="global-organiser"
-                                    {% if role_filter == 'global-organiser' %}selected{% endif %}>
-                                {{ _("Global Organiser") }}
-                            </option>
-                            <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>{{ _("Admin") }}</option>
+                            {# Driven by the role definitions, so a renamed role cannot leave a
+                               filter option here that matches nothing. #}
+                            {% for global_role, label in global_role_labels.items() %}
+                                <option value="{{ global_role.value }}"
+                                        {% if role_filter == global_role.value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
                         </select>
                     </div>
                 </div>
@@ -130,13 +133,7 @@
                         </td>
                         <td class="govuk-table__cell">{{ user.email }}</td>
                         <td class="govuk-table__cell">
-                            {% if user.global_role.value == 'admin' %}
-                                <strong class="govuk-tag govuk-tag--red">{{ _("Admin") }}</strong>
-                            {% elif user.global_role.value == 'global-organiser' %}
-                                <strong class="govuk-tag govuk-tag--blue">{{ _("Global Organiser") }}</strong>
-                            {% else %}
-                                <strong class="govuk-tag govuk-tag--grey">{{ _("User") }}</strong>
-                            {% endif %}
+                            {{ role_tag(user.global_role) }}
                         </td>
                         <td class="govuk-table__cell">
                             {% if user.is_active %}

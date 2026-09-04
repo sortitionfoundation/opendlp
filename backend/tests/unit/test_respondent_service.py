@@ -118,12 +118,12 @@ class TestDeleteRespondent:
         assert respondent.comments[0].author_id == user.id
         assert respondent.comments[0].action is RespondentAction.DELETE
 
-    def test_global_organiser_can_delete(self, uow):
-        user, assembly, respondent = _seed(uow, global_role=GlobalRole.GLOBAL_ORGANISER)
+    def test_organiser_without_a_role_cannot_delete(self, uow):
+        """Creating assemblies does not grant access to someone else's respondents."""
+        user, assembly, respondent = _seed(uow, global_role=GlobalRole.ORGANISER)
 
-        respondent_service.delete_respondent(uow, user.id, assembly.id, respondent.id, comment="gdpr request")
-
-        assert respondent.selection_status == RespondentStatus.DELETED
+        with pytest.raises(InsufficientPermissions):
+            respondent_service.delete_respondent(uow, user.id, assembly.id, respondent.id, comment="gdpr request")
 
     def test_assembly_manager_can_delete(self, uow):
         _, assembly, respondent = _seed(uow, global_role=GlobalRole.USER)

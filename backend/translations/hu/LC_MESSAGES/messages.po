@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-03 16:58+0100\n"
+"POT-Creation-Date: 2026-09-04 11:07+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -18,55 +18,55 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: src/opendlp/domain/assembly.py:317
+#: src/opendlp/domain/assembly.py:322
 #, fuzzy
 msgid "Reading spreadsheet…"
 msgstr "Google táblázat módosítása"
 
-#: src/opendlp/domain/assembly.py:318
+#: src/opendlp/domain/assembly.py:323
 #: templates/backoffice/patterns/_progress.html:157
 msgid "Writing results back to spreadsheet…"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:319
+#: src/opendlp/domain/assembly.py:324
 #, python-format
 msgid "Running selection attempt %(current)s of %(total)s"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:320
+#: src/opendlp/domain/assembly.py:325
 #, python-format
 msgid "Finding diverse committees (%(current)s of %(total)s rounds)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:321
+#: src/opendlp/domain/assembly.py:326
 #, python-format
 msgid "Optimising for maximin fairness (iteration %(current)s)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:322
+#: src/opendlp/domain/assembly.py:327
 #, python-format
 msgid "Optimising for Nash fairness (iteration %(current)s)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:323
+#: src/opendlp/domain/assembly.py:328
 #, python-format
 msgid "Optimising for leximin fairness (%(current)s of %(total)s fixed)"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:324
+#: src/opendlp/domain/assembly.py:329
 msgid "Running diversimax optimisation"
 msgstr ""
 
-#: src/opendlp/domain/assembly.py:327
+#: src/opendlp/domain/assembly.py:332
 msgid "Processing…"
 msgstr ""
 
 #: src/opendlp/domain/assembly_export_gsheet.py:17
-#: src/opendlp/entrypoints/blueprints/backoffice.py:216
+#: src/opendlp/entrypoints/blueprints/backoffice.py:223
 #: src/opendlp/service_layer/dashboard_stats.py:353
 #: templates/backoffice/assembly_respondents.html:15
 #: templates/backoffice/assembly_respondents.html:80
-#: templates/backoffice/components/assembly_tabs.html:63
+#: templates/backoffice/components/assembly_tabs.html:64
 #: templates/backoffice/respondents/export_modal.html:65
 #: templates/backoffice/service_docs.html:34
 #: templates/backoffice/targets/bulk_edit_form.html:267
@@ -142,8 +142,8 @@ msgid "Whole number"
 msgstr "Módosítsa a számot."
 
 #: src/opendlp/domain/respondent_field_schema.py:112
-#: templates/admin/invite_view.html:47 templates/admin/invites.html:66
-#: templates/admin/user_view.html:22 templates/admin/users.html:113
+#: templates/admin/invite_view.html:48 templates/admin/invites.html:67
+#: templates/admin/user_view.html:23 templates/admin/users.html:116
 #: templates/backoffice/assembly_members.html:48
 #: templates/backoffice/assembly_respondents.html:128
 #: templates/backoffice/assembly_view_respondent.html:160
@@ -179,32 +179,64 @@ msgid "URL slug '%(value)s' is reserved and cannot be used"
 msgstr ""
 
 #: src/opendlp/domain/value_objects.py:18
-msgid "User - Basic access to assigned assemblies"
+msgid "User - Access to the assemblies they are added to"
 msgstr ""
 
 #: src/opendlp/domain/value_objects.py:19
-msgid "Global Organiser - Can create and manage all assemblies"
+msgid "Organiser - Can create assemblies, and manage the ones they belong to"
 msgstr ""
 
 #: src/opendlp/domain/value_objects.py:20
 msgid "Admin - Full system access including user management"
 msgstr ""
 
-#: src/opendlp/domain/value_objects.py:42
+#: src/opendlp/domain/value_objects.py:26
+#: templates/admin/user_2fa_audit_log.html:65
+#: templates/backoffice/assembly_members.html:47
+#: templates/main/view_assembly_members.html:10
+msgid "User"
+msgstr ""
+
+#: src/opendlp/domain/value_objects.py:27
+#, fuzzy
+msgid "Organiser"
+msgstr "Regisztráció"
+
+#: src/opendlp/domain/value_objects.py:28
+msgid "Admin"
+msgstr ""
+
+#: src/opendlp/domain/value_objects.py:34
+msgid ""
+"You can see the assemblies you have been added to. An organiser can add "
+"you to one."
+msgstr ""
+
+#: src/opendlp/domain/value_objects.py:36
+msgid ""
+"You can create assemblies. You can see the assemblies you have been added"
+" to, and the ones you create."
+msgstr ""
+
+#: src/opendlp/domain/value_objects.py:38
+msgid "You can see and manage every assembly, and manage users and invites."
+msgstr ""
+
+#: src/opendlp/domain/value_objects.py:60
 msgid "Assembly Manager - Can manage the assembly and add other users"
 msgstr ""
 
-#: src/opendlp/domain/value_objects.py:43
+#: src/opendlp/domain/value_objects.py:61
 msgid "Confirmation Caller - Can call confirmations for selected participants"
 msgstr ""
 
-#: src/opendlp/domain/value_objects.py:44
+#: src/opendlp/domain/value_objects.py:62
 msgid "Read Only - Can view the assembly but cannot make changes"
 msgstr ""
 
-#: src/opendlp/entrypoints/decorators.py:67
-#: src/opendlp/entrypoints/decorators.py:112
-#: src/opendlp/entrypoints/decorators.py:179
+#: src/opendlp/entrypoints/decorators.py:64
+#: src/opendlp/entrypoints/decorators.py:104
+#: src/opendlp/entrypoints/decorators.py:142
 msgid "Please sign in to access this page."
 msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 
@@ -245,7 +277,7 @@ msgstr ""
 #: templates/backoffice/assembly_view_respondent.html:164
 #: templates/gsheets/components/view_config.html:41
 #: templates/profile/view.html:19 templates/profile/view.html:25
-#: templates/profile/view.html:43
+#: templates/profile/view.html:46
 msgid "Not set"
 msgstr ""
 
@@ -294,8 +326,8 @@ msgid "Email address"
 msgstr "Email cím"
 
 #: src/opendlp/entrypoints/forms.py:132 src/opendlp/entrypoints/forms.py:170
-#: src/opendlp/entrypoints/forms.py:526 templates/admin/user_view.html:75
-#: templates/profile/view.html:38
+#: src/opendlp/entrypoints/forms.py:526 templates/admin/user_view.html:70
+#: templates/profile/view.html:41
 msgid "Password"
 msgstr "Jelszó"
 
@@ -304,7 +336,7 @@ msgid "Keep me signed in for 7 days (sets a cookie on this device)"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:144 src/opendlp/entrypoints/forms.py:540
-#: templates/admin/invite_view.html:22
+#: templates/admin/invite_view.html:23
 msgid "Invite Code"
 msgstr "Meghívó kód"
 
@@ -314,7 +346,7 @@ msgid "Enter your invitation code to register"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
 #: src/opendlp/entrypoints/forms.py:150 src/opendlp/entrypoints/forms.py:414
-#: src/opendlp/entrypoints/forms.py:486 templates/admin/user_view.html:28
+#: src/opendlp/entrypoints/forms.py:486 templates/admin/user_view.html:29
 #: templates/profile/view.html:17
 msgid "First Name"
 msgstr "Keresztnév"
@@ -324,7 +356,7 @@ msgid "Optional - your first name"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:157 src/opendlp/entrypoints/forms.py:421
-#: src/opendlp/entrypoints/forms.py:493 templates/admin/user_view.html:38
+#: src/opendlp/entrypoints/forms.py:493 templates/admin/user_view.html:39
 #: templates/profile/view.html:23
 msgid "Last Name"
 msgstr "Vezetéknév"
@@ -589,7 +621,7 @@ msgstr "Keresztnév"
 msgid "User's last name"
 msgstr "Vezetéknév"
 
-#: src/opendlp/entrypoints/forms.py:428 templates/admin/user_view.html:48
+#: src/opendlp/entrypoints/forms.py:428 templates/admin/user_view.html:49
 #, fuzzy
 msgid "Global Role"
 msgstr "Szereped/jogosultságod"
@@ -1119,7 +1151,7 @@ msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/auth.py:388
 #: src/opendlp/entrypoints/blueprints/auth.py:551
-#: src/opendlp/entrypoints/blueprints/profile.py:321
+#: src/opendlp/entrypoints/blueprints/profile.py:326
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
@@ -1156,7 +1188,7 @@ msgid "Your password has been reset successfully. You can now log in."
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/auth.py:597
-#: src/opendlp/entrypoints/blueprints/profile.py:153
+#: src/opendlp/entrypoints/blueprints/profile.py:158
 msgid "Failed to get user information from Google"
 msgstr ""
 
@@ -1172,7 +1204,7 @@ msgid "An error occurred during Google sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:707
-#: src/opendlp/entrypoints/blueprints/profile.py:217
+#: src/opendlp/entrypoints/blueprints/profile.py:222
 msgid "Failed to get user information from Microsoft"
 msgstr ""
 
@@ -1181,28 +1213,28 @@ msgstr ""
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:112
-#: src/opendlp/entrypoints/blueprints/main.py:224
+#: src/opendlp/entrypoints/blueprints/backoffice.py:117
+#: src/opendlp/entrypoints/blueprints/main.py:230
 #, python-format
 msgid "Assembly '%(title)s' created successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:116
-#: src/opendlp/entrypoints/blueprints/main.py:228
+#: src/opendlp/entrypoints/blueprints/backoffice.py:121
+#: src/opendlp/entrypoints/blueprints/main.py:234
 msgid "You don't have permission to create assemblies"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:120
-#: src/opendlp/entrypoints/blueprints/backoffice.py:124
-#: src/opendlp/entrypoints/blueprints/main.py:232
-#: src/opendlp/entrypoints/blueprints/main.py:235
+#: src/opendlp/entrypoints/blueprints/backoffice.py:125
+#: src/opendlp/entrypoints/blueprints/backoffice.py:129
+#: src/opendlp/entrypoints/blueprints/main.py:238
+#: src/opendlp/entrypoints/blueprints/main.py:241
 msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:176
-#: src/opendlp/entrypoints/blueprints/backoffice.py:285
-#: src/opendlp/entrypoints/blueprints/backoffice.py:549
-#: src/opendlp/entrypoints/blueprints/backoffice.py:606
+#: src/opendlp/entrypoints/blueprints/backoffice.py:183
+#: src/opendlp/entrypoints/blueprints/backoffice.py:292
+#: src/opendlp/entrypoints/blueprints/backoffice.py:556
+#: src/opendlp/entrypoints/blueprints/backoffice.py:617
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:276
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:391
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:83
@@ -1222,10 +1254,10 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1047
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1117
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1442
-#: src/opendlp/entrypoints/blueprints/main.py:91
-#: src/opendlp/entrypoints/blueprints/main.py:146
-#: src/opendlp/entrypoints/blueprints/main.py:195
-#: src/opendlp/entrypoints/blueprints/main.py:311
+#: src/opendlp/entrypoints/blueprints/main.py:100
+#: src/opendlp/entrypoints/blueprints/main.py:155
+#: src/opendlp/entrypoints/blueprints/main.py:200
+#: src/opendlp/entrypoints/blueprints/main.py:317
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:173
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:201
 #: src/opendlp/entrypoints/blueprints/respondents.py:685
@@ -1239,12 +1271,12 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:182
-#: src/opendlp/entrypoints/blueprints/backoffice.py:276
-#: src/opendlp/entrypoints/blueprints/backoffice.py:357
-#: src/opendlp/entrypoints/blueprints/backoffice.py:404
-#: src/opendlp/entrypoints/blueprints/backoffice.py:540
-#: src/opendlp/entrypoints/blueprints/backoffice.py:597
+#: src/opendlp/entrypoints/blueprints/backoffice.py:189
+#: src/opendlp/entrypoints/blueprints/backoffice.py:283
+#: src/opendlp/entrypoints/blueprints/backoffice.py:364
+#: src/opendlp/entrypoints/blueprints/backoffice.py:411
+#: src/opendlp/entrypoints/blueprints/backoffice.py:547
+#: src/opendlp/entrypoints/blueprints/backoffice.py:608
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:282
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:397
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:568
@@ -1280,10 +1312,10 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1038
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1108
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1433
-#: src/opendlp/entrypoints/blueprints/main.py:81
-#: src/opendlp/entrypoints/blueprints/main.py:137
-#: src/opendlp/entrypoints/blueprints/main.py:186
-#: src/opendlp/entrypoints/blueprints/main.py:302
+#: src/opendlp/entrypoints/blueprints/main.py:90
+#: src/opendlp/entrypoints/blueprints/main.py:146
+#: src/opendlp/entrypoints/blueprints/main.py:191
+#: src/opendlp/entrypoints/blueprints/main.py:308
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:169
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:198
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:220
@@ -1318,23 +1350,23 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 msgid "Assembly not found"
 msgstr "A gyűlés oldala  nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:186
+#: src/opendlp/entrypoints/blueprints/backoffice.py:193
 #, fuzzy
 msgid "An error occurred while loading the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:214
+#: src/opendlp/entrypoints/blueprints/backoffice.py:221
 #: src/opendlp/service_layer/selection_report.py:206
 #, fuzzy
 msgid "Target"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:218
+#: src/opendlp/entrypoints/blueprints/backoffice.py:225
 #, fuzzy
 msgid "Shows respondent data once registration starts."
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:221
+#: src/opendlp/entrypoints/blueprints/backoffice.py:228
 #: src/opendlp/entrypoints/blueprints/respondents.py:459
 #: src/opendlp/service_layer/dashboard_stats.py:356
 #: src/opendlp/service_layer/selection_report.py:212
@@ -1349,11 +1381,11 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 msgid "Selected"
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:223
+#: src/opendlp/entrypoints/blueprints/backoffice.py:230
 msgid "Shows selected data once the selection process starts."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:226
+#: src/opendlp/entrypoints/blueprints/backoffice.py:233
 #: src/opendlp/entrypoints/blueprints/respondents.py:460
 #: src/opendlp/service_layer/dashboard_stats.py:358
 #: templates/backoffice/assembly_respondents.html:105
@@ -1363,102 +1395,102 @@ msgstr ""
 msgid "Confirmed"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:228
+#: src/opendlp/entrypoints/blueprints/backoffice.py:235
 #, fuzzy
 msgid "Shows confirmed data once registration closes."
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:291
+#: src/opendlp/entrypoints/blueprints/backoffice.py:298
 #, fuzzy
 msgid "An error occurred while loading the dashboard"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:321
-#: src/opendlp/entrypoints/blueprints/main.py:264
+#: src/opendlp/entrypoints/blueprints/backoffice.py:328
+#: src/opendlp/entrypoints/blueprints/main.py:270
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:330
-#: src/opendlp/entrypoints/blueprints/backoffice.py:366
-#: src/opendlp/entrypoints/blueprints/backoffice.py:398
-#: src/opendlp/entrypoints/blueprints/main.py:273
+#: src/opendlp/entrypoints/blueprints/backoffice.py:337
+#: src/opendlp/entrypoints/blueprints/backoffice.py:373
+#: src/opendlp/entrypoints/blueprints/backoffice.py:405
+#: src/opendlp/entrypoints/blueprints/main.py:279
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:339
-#: src/opendlp/entrypoints/blueprints/backoffice.py:345
-#: src/opendlp/entrypoints/blueprints/main.py:282
-#: src/opendlp/entrypoints/blueprints/main.py:290
+#: src/opendlp/entrypoints/blueprints/backoffice.py:346
+#: src/opendlp/entrypoints/blueprints/backoffice.py:352
+#: src/opendlp/entrypoints/blueprints/main.py:288
+#: src/opendlp/entrypoints/blueprints/main.py:296
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:377
+#: src/opendlp/entrypoints/blueprints/backoffice.py:384
 msgid "Please enter a valid positive number"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:389
+#: src/opendlp/entrypoints/blueprints/backoffice.py:396
 #, python-format
 msgid "Number to select updated to %(number)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:555
+#: src/opendlp/entrypoints/blueprints/backoffice.py:562
 #, fuzzy
 msgid "An error occurred while loading assembly data"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:612
+#: src/opendlp/entrypoints/blueprints/backoffice.py:623
 #, fuzzy
 msgid "An error occurred while loading team members"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:651
-#: src/opendlp/entrypoints/blueprints/main.py:355
+#: src/opendlp/entrypoints/blueprints/backoffice.py:662
+#: src/opendlp/entrypoints/blueprints/main.py:361
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:658
+#: src/opendlp/entrypoints/blueprints/backoffice.py:669
 msgid "Please select a user and role"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:664
+#: src/opendlp/entrypoints/blueprints/backoffice.py:675
 #, fuzzy, python-format
 msgid "Could not add user to assembly: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:673
-#: src/opendlp/entrypoints/blueprints/main.py:377
+#: src/opendlp/entrypoints/blueprints/backoffice.py:684
+#: src/opendlp/entrypoints/blueprints/main.py:383
 #, fuzzy
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:682
-#: src/opendlp/entrypoints/blueprints/main.py:386
+#: src/opendlp/entrypoints/blueprints/backoffice.py:693
+#: src/opendlp/entrypoints/blueprints/main.py:392
 #, fuzzy
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:702
-#: src/opendlp/entrypoints/blueprints/main.py:406
+#: src/opendlp/entrypoints/blueprints/backoffice.py:713
+#: src/opendlp/entrypoints/blueprints/main.py:412
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:710
-#: src/opendlp/entrypoints/blueprints/main.py:414
+#: src/opendlp/entrypoints/blueprints/backoffice.py:729
+#: src/opendlp/entrypoints/blueprints/main.py:428
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:719
-#: src/opendlp/entrypoints/blueprints/main.py:423
+#: src/opendlp/entrypoints/blueprints/backoffice.py:738
+#: src/opendlp/entrypoints/blueprints/main.py:437
 #, fuzzy
 msgid "You don't have permission to remove users from this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:728
-#: src/opendlp/entrypoints/blueprints/main.py:432
+#: src/opendlp/entrypoints/blueprints/backoffice.py:747
+#: src/opendlp/entrypoints/blueprints/main.py:446
 #, fuzzy
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
@@ -1905,7 +1937,7 @@ msgid "An unexpected error occurred"
 msgstr "Hiba történt a betöltés indítása közben"
 
 #: src/opendlp/entrypoints/blueprints/dev.py:166
-#: src/opendlp/service_layer/exceptions.py:84
+#: src/opendlp/service_layer/exceptions.py:85
 #, fuzzy
 msgid "Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
@@ -2132,160 +2164,160 @@ msgstr "Az oldal nem elérhető"
 msgid "Unknown task type"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/main.py:362
+#: src/opendlp/entrypoints/blueprints/main.py:368
 #, fuzzy
 msgid "Please check the form and try again"
 msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
 
-#: src/opendlp/entrypoints/blueprints/main.py:368
+#: src/opendlp/entrypoints/blueprints/main.py:374
 #, fuzzy
 msgid "Invalid user selection"
 msgstr "Kezdeti/Teszt kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:60
+#: src/opendlp/entrypoints/blueprints/profile.py:65
 #, fuzzy
 msgid "Profile updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:65
+#: src/opendlp/entrypoints/blueprints/profile.py:70
 #, fuzzy
 msgid "An error occurred while updating your profile"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:77
+#: src/opendlp/entrypoints/blueprints/profile.py:82
 msgid "You need to set a password first"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:97
+#: src/opendlp/entrypoints/blueprints/profile.py:102
 #, fuzzy
 msgid "Password changed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:101
+#: src/opendlp/entrypoints/blueprints/profile.py:106
 msgid "Current password is incorrect"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:103
+#: src/opendlp/entrypoints/blueprints/profile.py:108
 #, fuzzy, python-format
 msgid "New password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:106
+#: src/opendlp/entrypoints/blueprints/profile.py:111
 #, fuzzy
 msgid "An error occurred while changing your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:138
-#: src/opendlp/entrypoints/blueprints/profile.py:201
+#: src/opendlp/entrypoints/blueprints/profile.py:143
+#: src/opendlp/entrypoints/blueprints/profile.py:206
 msgid "Invalid OAuth linking request"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:164
+#: src/opendlp/entrypoints/blueprints/profile.py:169
 #, fuzzy
 msgid "Google account linked successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:172
+#: src/opendlp/entrypoints/blueprints/profile.py:177
 #, fuzzy
 msgid "An error occurred while linking your Google account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:228
+#: src/opendlp/entrypoints/blueprints/profile.py:233
 #, fuzzy
 msgid "Microsoft account linked successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:236
+#: src/opendlp/entrypoints/blueprints/profile.py:241
 #, fuzzy
 msgid "An error occurred while linking your Microsoft account"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:249
+#: src/opendlp/entrypoints/blueprints/profile.py:254
 #, fuzzy
 msgid "Password authentication removed successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:254
+#: src/opendlp/entrypoints/blueprints/profile.py:259
 #, fuzzy
 msgid "An error occurred while removing password authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:268
+#: src/opendlp/entrypoints/blueprints/profile.py:273
 #, fuzzy
 msgid "OAuth authentication removed successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:273
+#: src/opendlp/entrypoints/blueprints/profile.py:278
 #, fuzzy
 msgid "An error occurred while removing OAuth authentication"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:285
+#: src/opendlp/entrypoints/blueprints/profile.py:290
 msgid "You already have a password. Use 'Change password' instead."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:290
+#: src/opendlp/entrypoints/blueprints/profile.py:295
 msgid "Cannot set password without another authentication method"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:317
+#: src/opendlp/entrypoints/blueprints/profile.py:322
 #, fuzzy
 msgid "Password set successfully"
 msgstr "A '%(title)s' gyűlés sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:324
+#: src/opendlp/entrypoints/blueprints/profile.py:329
 #, fuzzy
 msgid "An error occurred while setting your password"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:344
+#: src/opendlp/entrypoints/blueprints/profile.py:349
 #, fuzzy
 msgid "An error occurred while loading 2FA settings"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:373
+#: src/opendlp/entrypoints/blueprints/profile.py:378
 #, fuzzy
 msgid "An error occurred while setting up 2FA"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:384
+#: src/opendlp/entrypoints/blueprints/profile.py:389
 msgid "Please enter the verification code from your authenticator app"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:392
+#: src/opendlp/entrypoints/blueprints/profile.py:397
 msgid "Setup session expired. Please start over."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:404
+#: src/opendlp/entrypoints/blueprints/profile.py:409
 #, fuzzy
 msgid "Two-factor authentication has been enabled successfully"
 msgstr "Google táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:412
+#: src/opendlp/entrypoints/blueprints/profile.py:417
 #, fuzzy
 msgid "An error occurred while enabling 2FA"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:423
+#: src/opendlp/entrypoints/blueprints/profile.py:428
 #, fuzzy
 msgid "Please enter your verification code to disable 2FA"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:431
+#: src/opendlp/entrypoints/blueprints/profile.py:436
 msgid "Two-factor authentication has been disabled"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/profile.py:439
+#: src/opendlp/entrypoints/blueprints/profile.py:444
 #, fuzzy
 msgid "An error occurred while disabling 2FA"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:450
+#: src/opendlp/entrypoints/blueprints/profile.py:455
 #, fuzzy
 msgid "Please enter your verification code to regenerate backup codes"
 msgstr "Add meg a meghívókódodat a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/profile.py:465
+#: src/opendlp/entrypoints/blueprints/profile.py:470
 #, fuzzy
 msgid "An error occurred while regenerating backup codes"
 msgstr "Hiba történt a gyűlés létrehozásakor"
@@ -3104,39 +3136,39 @@ msgstr ""
 msgid "parse_error_single_column"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:114
+#: src/opendlp/service_layer/exceptions.py:115
 #, python-format
 msgid "User with email '%(email)s' already exists"
 msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
 
-#: src/opendlp/service_layer/exceptions.py:114
+#: src/opendlp/service_layer/exceptions.py:115
 msgid "User already exists"
 msgstr "A felhasználó már létezik"
 
-#: src/opendlp/service_layer/exceptions.py:124
+#: src/opendlp/service_layer/exceptions.py:125
 msgid "Invalid email or password"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
-#: src/opendlp/service_layer/exceptions.py:133
+#: src/opendlp/service_layer/exceptions.py:134
 #, python-format
 msgid "Invalid invite code '%(code)s': %(reason)s"
 msgstr "Érvénytelen meghívókód: '%(code)s': %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:135
+#: src/opendlp/service_layer/exceptions.py:136
 #, python-format
 msgid "Invalid invite code '%(code)s'"
 msgstr "Érvénytelen meghívókód: '%(code)s'"
 
-#: src/opendlp/service_layer/exceptions.py:137
+#: src/opendlp/service_layer/exceptions.py:138
 #, python-format
 msgid "Invalid invite code: %(reason)s"
 msgstr "Érvénytelen meghívókód: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:139
+#: src/opendlp/service_layer/exceptions.py:140
 msgid "Invalid invite code"
 msgstr "Érvénytelen meghívókód"
 
-#: src/opendlp/service_layer/exceptions.py:151
+#: src/opendlp/service_layer/exceptions.py:152
 #, python-format
 msgid ""
 "Insufficient permissions for action: %(action)s (requires role: "
@@ -3145,99 +3177,105 @@ msgstr ""
 "Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges "
 "szerepkör: %(required_role)s)"
 
-#: src/opendlp/service_layer/exceptions.py:156
+#: src/opendlp/service_layer/exceptions.py:157
 #, python-format
 msgid "Insufficient permissions for action: %(action)s"
 msgstr "Nincs elegendő jogosultság a következő művelethez: %(action)s"
 
-#: src/opendlp/service_layer/exceptions.py:158
+#: src/opendlp/service_layer/exceptions.py:159
 #, python-format
 msgid "Insufficient permissions (requires role: %(required_role)s)"
 msgstr "Nincsenek megfelelő jogosultságok (szükséges szerepkör: %(required_role)s)"
 
-#: src/opendlp/service_layer/exceptions.py:160
+#: src/opendlp/service_layer/exceptions.py:161
 msgid "Insufficient permissions"
 msgstr "Nincsenek megfelelő jogosultságok"
 
-#: src/opendlp/service_layer/exceptions.py:171
+#: src/opendlp/service_layer/exceptions.py:172
 #, fuzzy, python-format
 msgid "Invalid password reset token: %(reason)s"
 msgstr "A jelszó túl gyenge: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:173
+#: src/opendlp/service_layer/exceptions.py:174
 #, fuzzy
 msgid "Invalid password reset token"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
-#: src/opendlp/service_layer/exceptions.py:182
+#: src/opendlp/service_layer/exceptions.py:183
 msgid "Please confirm your email address before logging in."
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:190
+#: src/opendlp/service_layer/exceptions.py:191
 #, fuzzy, python-format
 msgid "Invalid or expired confirmation link: %(reason)s"
 msgstr "A jelszó túl gyenge: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:192
+#: src/opendlp/service_layer/exceptions.py:193
 #, fuzzy
 msgid "Invalid or expired confirmation link"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: src/opendlp/service_layer/exceptions.py:203
+#: src/opendlp/service_layer/exceptions.py:204
 #, python-format
 msgid ""
 "Rate limit exceeded for %(operation)s. Please try again in %(seconds)s "
 "seconds"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:208
+#: src/opendlp/service_layer/exceptions.py:209
 #, python-format
 msgid "Rate limit exceeded for %(operation)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:210
+#: src/opendlp/service_layer/exceptions.py:211
 msgid "Rate limit exceeded. Please try again later"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:268
+#: src/opendlp/service_layer/exceptions.py:269
 #, python-format
 msgid "This registration page already has the maximum of %(limit)s images"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:275
+#: src/opendlp/service_layer/exceptions.py:276
 #, python-format
 msgid "This registration page already has the maximum of %(limit)s documents"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:291
+#: src/opendlp/service_layer/exceptions.py:292
 #, python-format
 msgid "OAuth authentication failed for %(provider)s: %(reason)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:293
+#: src/opendlp/service_layer/exceptions.py:294
 #, python-format
 msgid "OAuth authentication failed for %(provider)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:295
+#: src/opendlp/service_layer/exceptions.py:296
 #, python-format
 msgid "OAuth authentication failed: %(reason)s"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:297
+#: src/opendlp/service_layer/exceptions.py:298
 msgid "OAuth authentication failed"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:307
+#: src/opendlp/service_layer/exceptions.py:308
 msgid "Invalid OAuth state parameter"
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:314
+#: src/opendlp/service_layer/exceptions.py:315
 msgid "Cannot remove last authentication method. Add another method first."
 msgstr ""
 
-#: src/opendlp/service_layer/exceptions.py:321
+#: src/opendlp/service_layer/exceptions.py:322
 msgid "You cannot disable your own account"
+msgstr ""
+
+#: src/opendlp/service_layer/exceptions.py:336
+msgid ""
+"An assembly must keep at least one assembly manager. Add another one "
+"before removing this one."
 msgstr ""
 
 #: src/opendlp/service_layer/image_processing.py:16
@@ -3619,7 +3657,7 @@ msgstr "Menü bezárása"
 
 #: templates/backoffice/assembly_dashboard.html:10
 #: templates/backoffice/assembly_dashboard.html:36
-#: templates/backoffice/components/assembly_tabs.html:79 templates/base.html:58
+#: templates/backoffice/components/assembly_tabs.html:80 templates/base.html:58
 #: templates/errors/400.html:25 templates/errors/403.html:23
 #: templates/errors/404.html:24 templates/errors/413.html:20
 #: templates/errors/500.html:24 templates/main/create_assembly.html:11
@@ -3628,10 +3666,10 @@ msgstr "Menü bezárása"
 msgid "Dashboard"
 msgstr "Irányító pult"
 
-#: templates/admin/invite_create.html:10 templates/admin/invite_view.html:10
-#: templates/admin/invites.html:7 templates/admin/user_2fa_audit_log.html:10
-#: templates/admin/user_edit.html:10 templates/admin/user_view.html:10
-#: templates/admin/users.html:7 templates/base.html:62
+#: templates/admin/invite_create.html:10 templates/admin/invite_view.html:11
+#: templates/admin/invites.html:8 templates/admin/user_2fa_audit_log.html:10
+#: templates/admin/user_edit.html:10 templates/admin/user_view.html:11
+#: templates/admin/users.html:8 templates/base.html:62
 msgid "Site Admin"
 msgstr ""
 
@@ -3732,9 +3770,9 @@ msgid "Manage users and invites for the OpenDLP platform."
 msgstr ""
 
 #: templates/admin/index.html:11 templates/admin/user_2fa_audit_log.html:14
-#: templates/admin/user_edit.html:14 templates/admin/user_view.html:14
-#: templates/admin/users.html:2 templates/admin/users.html:9
-#: templates/admin/users.html:12
+#: templates/admin/user_edit.html:14 templates/admin/user_view.html:15
+#: templates/admin/users.html:3 templates/admin/users.html:10
+#: templates/admin/users.html:13
 #, fuzzy
 msgid "User Management"
 msgstr "Felhasználói Adatkezelési Megállapodás"
@@ -3748,8 +3786,8 @@ msgid "Manage Users"
 msgstr ""
 
 #: templates/admin/index.html:20 templates/admin/invite_create.html:14
-#: templates/admin/invite_view.html:14 templates/admin/invites.html:2
-#: templates/admin/invites.html:9 templates/admin/invites.html:12
+#: templates/admin/invite_view.html:15 templates/admin/invites.html:3
+#: templates/admin/invites.html:10 templates/admin/invites.html:13
 #, fuzzy
 msgid "Invite Management"
 msgstr "Adatkezelési megállapodás megtekintése"
@@ -3772,7 +3810,7 @@ msgstr "Vissza az irányító pulthoz"
 msgid "Create Invite"
 msgstr "Hozzon létre fiókot"
 
-#: templates/admin/invite_create.html:37 templates/admin/invites.html:18
+#: templates/admin/invite_create.html:37 templates/admin/invites.html:19
 #, fuzzy
 msgid "Create New Invite"
 msgstr "Fiók létrehozása"
@@ -3815,65 +3853,45 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 msgid "Cancel"
 msgstr "Megszakítás"
 
-#: templates/admin/invite_view.html:2 templates/admin/invite_view.html:19
+#: templates/admin/invite_view.html:3 templates/admin/invite_view.html:20
 #, fuzzy
 msgid "Invite Details"
 msgstr "Meghívó kód"
 
-#: templates/admin/invite_view.html:28
+#: templates/admin/invite_view.html:29
 #, fuzzy
 msgid "Invite code copied!"
 msgstr "Meghívó kód"
 
-#: templates/admin/invite_view.html:29
+#: templates/admin/invite_view.html:30
 msgid "Copy Code"
 msgstr ""
 
-#: templates/admin/invite_view.html:34
-#: templates/backoffice/assembly_details.html:118
+#: templates/admin/invite_view.html:35
+#: templates/backoffice/assembly_details.html:122
 #: templates/backoffice/registration/_step_form.html:88
 #: templates/backoffice/registration/_step_preview.html:49
 #, fuzzy
 msgid "Registration URL"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/admin/invite_view.html:40
+#: templates/admin/invite_view.html:41
 msgid "URL copied!"
 msgstr ""
 
-#: templates/admin/invite_view.html:41
+#: templates/admin/invite_view.html:42
 msgid "Copy URL"
 msgstr ""
 
-#: templates/admin/invite_view.html:52 templates/admin/invites.html:67
-#: templates/admin/users.html:114 templates/backoffice/assembly_members.html:49
+#: templates/admin/invite_view.html:53 templates/admin/invites.html:68
+#: templates/admin/users.html:117 templates/backoffice/assembly_members.html:49
 #: templates/main/view_assembly_members.html:12 templates/profile/view.html:29
 #, fuzzy
 msgid "Role"
 msgstr "Szereped/jogosultságod"
 
-#: templates/admin/invite_view.html:55 templates/admin/invites.html:83
-#: templates/admin/user_view.html:51 templates/admin/users.html:79
-#: templates/admin/users.html:134
-msgid "Admin"
-msgstr ""
-
-#: templates/admin/invite_view.html:57 templates/admin/invites.html:85
-#: templates/admin/user_view.html:53 templates/admin/users.html:77
-#: templates/admin/users.html:136
-msgid "Global Organiser"
-msgstr ""
-
-#: templates/admin/invite_view.html:59 templates/admin/invites.html:87
-#: templates/admin/user_2fa_audit_log.html:65 templates/admin/user_view.html:55
-#: templates/admin/users.html:74 templates/admin/users.html:138
-#: templates/backoffice/assembly_members.html:47
-#: templates/main/view_assembly_members.html:10
-msgid "User"
-msgstr ""
-
-#: templates/admin/invite_view.html:64 templates/admin/invites.html:68
-#: templates/admin/users.html:115 templates/backoffice/assembly_details.html:53
+#: templates/admin/invite_view.html:59 templates/admin/invites.html:69
+#: templates/admin/users.html:118 templates/backoffice/assembly_details.html:53
 #: templates/backoffice/assembly_respondents.html:125
 #: templates/backoffice/assembly_selection.html:172
 #: templates/backoffice/assembly_selection.html:345
@@ -3885,34 +3903,34 @@ msgstr ""
 msgid "Status"
 msgstr "Állapot"
 
-#: templates/admin/invite_view.html:67 templates/admin/invites.html:92
+#: templates/admin/invite_view.html:62 templates/admin/invites.html:87
 msgid "Used"
 msgstr ""
 
-#: templates/admin/invite_view.html:69 templates/admin/invites.html:94
-#: templates/admin/user_view.html:63 templates/admin/users.html:88
-#: templates/admin/users.html:143
+#: templates/admin/invite_view.html:64 templates/admin/invites.html:89
+#: templates/admin/user_view.html:58 templates/admin/users.html:91
+#: templates/admin/users.html:140
 #: templates/backoffice/patterns/_scroll.html:184
 #: templates/backoffice/patterns/_scroll.html:196
-#: templates/profile/view.html:41 templates/profile/view.html:74
-#: templates/profile/view.html:125
+#: templates/profile/view.html:44 templates/profile/view.html:77
+#: templates/profile/view.html:128
 msgid "Active"
 msgstr ""
 
-#: templates/admin/invite_view.html:71 templates/admin/invites.html:96
+#: templates/admin/invite_view.html:66 templates/admin/invites.html:91
 msgid "Expired"
 msgstr ""
 
-#: templates/admin/invite_view.html:76
+#: templates/admin/invite_view.html:71
 #, fuzzy
 msgid "Created At"
 msgstr "Létrehozva"
 
-#: templates/admin/invite_view.html:82
+#: templates/admin/invite_view.html:77
 msgid "Expires At"
 msgstr ""
 
-#: templates/admin/invite_view.html:89
+#: templates/admin/invite_view.html:84
 #: templates/backoffice/service_docs/_respondents.html:325
 #: templates/backoffice/service_docs/_selection.html:57
 #: templates/backoffice/service_docs/_selection.html:125
@@ -3925,19 +3943,19 @@ msgstr ""
 msgid "Used By"
 msgstr ""
 
-#: templates/admin/invite_view.html:95
+#: templates/admin/invite_view.html:90
 #, fuzzy
 msgid "Used At"
 msgstr "Elkezdve"
 
-#: templates/admin/invite_view.html:100
+#: templates/admin/invite_view.html:95
 #: templates/backoffice/assembly_selection.html:201
 #: templates/backoffice/assembly_selection.html:374
 #: templates/main/view_assembly_data.html:84
 msgid "Unknown"
 msgstr ""
 
-#: templates/admin/invite_view.html:110 templates/admin/user_edit.html:107
+#: templates/admin/invite_view.html:105 templates/admin/user_edit.html:107
 #: templates/backoffice/patterns/_floating_alerts.html:131
 #: templates/backoffice/targets/category_block.html:198
 #: templates/db_selection/components/progress.html:91
@@ -3951,64 +3969,64 @@ msgstr ""
 msgid "Warning"
 msgstr "Folyamatban"
 
-#: templates/admin/invite_view.html:111
+#: templates/admin/invite_view.html:106
 msgid ""
 "This invite is still active. Revoking it will prevent it from being used "
 "for registration."
 msgstr ""
 
-#: templates/admin/invite_view.html:124
+#: templates/admin/invite_view.html:119
 #, fuzzy
 msgid "Are you sure you want to revoke this invite? This action cannot be undone."
 msgstr ""
 "Biztos, hogy el akarja távolítani ehhez a Google Táblázathoz tartozó "
 "beállításokat? Ez a művelet nem vonható vissza."
 
-#: templates/admin/invite_view.html:125
+#: templates/admin/invite_view.html:120
 msgid "Revoke Invite"
 msgstr ""
 
-#: templates/admin/invite_view.html:130
+#: templates/admin/invite_view.html:125
 #, fuzzy
 msgid "Back to Invite List"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/admin/invites.html:13
+#: templates/admin/invites.html:14
 msgid "This is to manage invite codes for users of this site."
 msgstr ""
 
-#: templates/admin/invites.html:26
+#: templates/admin/invites.html:27
 msgid "This will permanently delete all expired, unused invites. Are you sure?"
 msgstr ""
 
-#: templates/admin/invites.html:27
+#: templates/admin/invites.html:28
 #, fuzzy
 msgid "Clean Up Expired Invites"
 msgstr "Érvénytelen vagy lejárt meghívó kód."
 
-#: templates/admin/invites.html:35
+#: templates/admin/invites.html:36
 msgid "Total Invites"
 msgstr ""
 
-#: templates/admin/invites.html:41
+#: templates/admin/invites.html:42
 #, fuzzy
 msgid "Active Invites"
 msgstr "Aktív gyűlések"
 
-#: templates/admin/invites.html:47
+#: templates/admin/invites.html:48
 msgid "Used Invites"
 msgstr ""
 
-#: templates/admin/invites.html:53
+#: templates/admin/invites.html:54
 msgid "Conversion Rate"
 msgstr ""
 
-#: templates/admin/invites.html:59
+#: templates/admin/invites.html:60
 #, python-format
 msgid "Showing %(count)s invites (including expired)"
 msgstr ""
 
-#: templates/admin/invites.html:65
+#: templates/admin/invites.html:66
 #: templates/backoffice/patterns/_dropdown.html:55
 #: templates/backoffice/patterns/_dropdown.html:167
 #: templates/backoffice/patterns/_focus.html:71
@@ -4023,7 +4041,7 @@ msgstr ""
 msgid "Code"
 msgstr ""
 
-#: templates/admin/invites.html:69 templates/admin/users.html:117
+#: templates/admin/invites.html:70 templates/admin/users.html:120
 #: templates/backoffice/assembly_details.html:81
 #: templates/backoffice/assembly_view_respondent.html:223
 #: templates/backoffice/assembly_view_respondent.html:266
@@ -4032,11 +4050,11 @@ msgstr ""
 msgid "Created"
 msgstr "Létrehozva"
 
-#: templates/admin/invites.html:70
+#: templates/admin/invites.html:71
 msgid "Expires"
 msgstr ""
 
-#: templates/admin/invites.html:71 templates/admin/users.html:118
+#: templates/admin/invites.html:72 templates/admin/users.html:121
 #: templates/backoffice/assembly_members.html:51
 #: templates/backoffice/assembly_respondents.html:129
 #: templates/backoffice/assembly_selection.html:184
@@ -4051,7 +4069,7 @@ msgstr ""
 msgid "Actions"
 msgstr "Kiválasztás"
 
-#: templates/admin/invites.html:103 templates/admin/users.html:160
+#: templates/admin/invites.html:98 templates/admin/users.html:157
 #: templates/backoffice/assembly_respondents.html:139
 #: templates/backoffice/assembly_selection.html:220
 #: templates/backoffice/assembly_selection.html:392
@@ -4059,19 +4077,19 @@ msgstr "Kiválasztás"
 msgid "View"
 msgstr ""
 
-#: templates/admin/invites.html:118
+#: templates/admin/invites.html:113
 msgid "Are you sure you want to revoke this invite?"
 msgstr ""
 
-#: templates/admin/invites.html:119
+#: templates/admin/invites.html:114
 msgid "Revoke"
 msgstr ""
 
-#: templates/admin/invites.html:130
+#: templates/admin/invites.html:125
 msgid "No invites found. Create one to get started."
 msgstr ""
 
-#: templates/admin/invites.html:136 templates/admin/users.html:245
+#: templates/admin/invites.html:131 templates/admin/users.html:242
 msgid "Back to Site Admin"
 msgstr ""
 
@@ -4104,21 +4122,21 @@ msgstr ""
 
 #: templates/admin/user_2fa_audit_log.html:34
 #: templates/backoffice/assembly_details.html:49
-#: templates/backoffice/components/assembly_tabs.html:32
+#: templates/backoffice/components/assembly_tabs.html:33
 #: templates/main/view_assembly_base.html:30
 #, fuzzy
 msgid "Details"
 msgstr "Hiba részletei"
 
-#: templates/admin/user_2fa_audit_log.html:45 templates/admin/user_view.html:85
-#: templates/admin/users.html:152 templates/profile/2fa_settings.html:25
-#: templates/profile/view.html:182
+#: templates/admin/user_2fa_audit_log.html:45 templates/admin/user_view.html:80
+#: templates/admin/users.html:149 templates/profile/2fa_settings.html:25
+#: templates/profile/view.html:185
 msgid "Enabled"
 msgstr ""
 
-#: templates/admin/user_2fa_audit_log.html:47 templates/admin/user_view.html:96
-#: templates/admin/users.html:154 templates/profile/2fa_settings.html:27
-#: templates/profile/view.html:184
+#: templates/admin/user_2fa_audit_log.html:47 templates/admin/user_view.html:91
+#: templates/admin/users.html:151 templates/profile/2fa_settings.html:27
+#: templates/profile/view.html:187
 msgid "Disabled"
 msgstr ""
 
@@ -4164,12 +4182,12 @@ msgid "Back to User Details"
 msgstr "Vissza a közösségi gyűléshez"
 
 #: templates/admin/user_edit.html:2 templates/admin/user_edit.html:41
-#: templates/admin/user_view.html:122
+#: templates/admin/user_view.html:117
 #, fuzzy
 msgid "Edit User"
 msgstr "Módosítsa a számot."
 
-#: templates/admin/user_edit.html:20 templates/admin/users.html:163
+#: templates/admin/user_edit.html:20 templates/admin/users.html:160
 #: templates/backoffice/assembly_respondents.html:142
 #: templates/backoffice/assembly_selection.html:79
 #: templates/backoffice/assembly_selection.html:285
@@ -4215,85 +4233,85 @@ msgstr ""
 msgid "Save Changes"
 msgstr "Módosítások mentése"
 
-#: templates/admin/user_view.html:2 templates/admin/user_view.html:19
+#: templates/admin/user_view.html:3 templates/admin/user_view.html:20
 #, fuzzy
 msgid "User Details"
 msgstr "Hiba részletei"
 
-#: templates/admin/user_view.html:33 templates/admin/user_view.html:43
-#: templates/admin/users.html:128
+#: templates/admin/user_view.html:34 templates/admin/user_view.html:44
+#: templates/admin/users.html:131
 msgid "Not provided"
 msgstr ""
 
-#: templates/admin/user_view.html:60
+#: templates/admin/user_view.html:55
 #, fuzzy
 msgid "Account Status"
 msgstr "Feladat állapota"
 
-#: templates/admin/user_view.html:65 templates/admin/users.html:89
-#: templates/admin/users.html:145
+#: templates/admin/user_view.html:60 templates/admin/users.html:92
+#: templates/admin/users.html:142
 #: templates/backoffice/patterns/_scroll.html:185
 #: templates/backoffice/patterns/_scroll.html:197
 msgid "Inactive"
 msgstr ""
 
-#: templates/admin/user_view.html:70
+#: templates/admin/user_view.html:65
 msgid "Authentication Method"
 msgstr ""
 
-#: templates/admin/user_view.html:73
+#: templates/admin/user_view.html:68
 msgid "OAuth"
 msgstr ""
 
-#: templates/admin/user_view.html:80 templates/auth/verify_2fa.html:2
+#: templates/admin/user_view.html:75 templates/auth/verify_2fa.html:2
 #: templates/auth/verify_2fa.html:6 templates/profile/2fa_settings.html:2
 #: templates/profile/2fa_settings.html:6 templates/profile/2fa_settings.html:22
-#: templates/profile/view.html:175
+#: templates/profile/view.html:178
 msgid "Two-Factor Authentication"
 msgstr ""
 
-#: templates/admin/user_view.html:83
+#: templates/admin/user_view.html:78
 msgid "Not applicable (OAuth user)"
 msgstr ""
 
-#: templates/admin/user_view.html:89 templates/profile/2fa_settings.html:33
+#: templates/admin/user_view.html:84 templates/profile/2fa_settings.html:33
 msgid "Enabled on"
 msgstr ""
 
-#: templates/admin/user_view.html:94 templates/admin/user_view.html:99
+#: templates/admin/user_view.html:89 templates/admin/user_view.html:94
 msgid "View 2FA audit log"
 msgstr ""
 
-#: templates/admin/user_view.html:104 templates/auth/register.html:123
+#: templates/admin/user_view.html:99 templates/auth/register.html:123
 #: templates/auth/register_google.html:31
 #: templates/auth/register_microsoft.html:31
 msgid "Data Agreement"
 msgstr "Adatkezelési Megállapodás"
 
-#: templates/admin/user_view.html:107
+#: templates/admin/user_view.html:102
 msgid "Agreed on"
 msgstr ""
 
-#: templates/admin/user_view.html:109
+#: templates/admin/user_view.html:104
 msgid "Not agreed"
 msgstr ""
 
-#: templates/admin/user_view.html:114
+#: templates/admin/user_view.html:109
 #, fuzzy
 msgid "Account Created"
 msgstr "Létrehozva"
 
-#: templates/admin/user_view.html:127
+#: templates/admin/user_view.html:122
 msgid ""
 "Are you sure you want to disable two-factor authentication for this user?"
 " This will remove their TOTP secret and backup codes."
 msgstr ""
 
-#: templates/admin/user_view.html:129
+#: templates/admin/user_view.html:124
 msgid "Disable 2FA"
 msgstr ""
 
-#: templates/admin/user_view.html:141
+#: templates/admin/user_view.html:136
 #, python-format
 msgid ""
 "Are you sure you want to disable this account? This ends every session "
@@ -4302,7 +4320,7 @@ msgid ""
 "again."
 msgstr ""
 
-#: templates/admin/user_view.html:141
+#: templates/admin/user_view.html:136
 msgid ""
 "Are you sure you want to disable this account? This ends every session "
 "they have signed in to, permanently removes their password, and switches "
@@ -4310,84 +4328,84 @@ msgid ""
 " when the account is enabled again."
 msgstr ""
 
-#: templates/admin/user_view.html:142
+#: templates/admin/user_view.html:137
 #, fuzzy
 msgid "Disable Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/admin/user_view.html:153
+#: templates/admin/user_view.html:148
 #, python-format
 msgid ""
 "Are you sure you want to enable this account? The user will be emailed to"
 " say so, and signs in with %(provider)s as before."
 msgstr ""
 
-#: templates/admin/user_view.html:153
+#: templates/admin/user_view.html:148
 msgid ""
 "Are you sure you want to enable this account? The user will be emailed "
 "telling them to request a password reset - their old password no longer "
 "works."
 msgstr ""
 
-#: templates/admin/user_view.html:154
+#: templates/admin/user_view.html:149
 #, fuzzy
 msgid "Enable Account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/admin/user_view.html:160
+#: templates/admin/user_view.html:155
 #, fuzzy
 msgid "Back to User List"
 msgstr "Vissza a közösségi gyűléshez"
 
-#: templates/admin/users.html:17
+#: templates/admin/users.html:18
 msgid "Total Users"
 msgstr ""
 
-#: templates/admin/users.html:23
+#: templates/admin/users.html:24
 #, fuzzy
 msgid "Active Users"
 msgstr "Aktív gyűlések"
 
-#: templates/admin/users.html:29
+#: templates/admin/users.html:30
 msgid "Admins"
 msgstr ""
 
-#: templates/admin/users.html:35
+#: templates/admin/users.html:36
 #, fuzzy
 msgid "Organisers"
 msgstr "Regisztráció"
 
-#: templates/admin/users.html:43
+#: templates/admin/users.html:44
 #, fuzzy
 msgid "Password Users"
 msgstr "Új jelszó"
 
-#: templates/admin/users.html:49
+#: templates/admin/users.html:50
 msgid "2FA Enabled"
 msgstr ""
 
-#: templates/admin/users.html:60
+#: templates/admin/users.html:61
 msgid "Search by name or email"
 msgstr ""
 
-#: templates/admin/users.html:66
+#: templates/admin/users.html:67
 msgid "Enter name or email..."
 msgstr ""
 
-#: templates/admin/users.html:71
+#: templates/admin/users.html:72
 msgid "Filter by role"
 msgstr ""
 
-#: templates/admin/users.html:73
+#: templates/admin/users.html:74
 msgid "All roles"
 msgstr ""
 
-#: templates/admin/users.html:85
+#: templates/admin/users.html:88
 #: templates/respondents/view_respondents.html:126
 msgid "Filter by status"
 msgstr ""
 
-#: templates/admin/users.html:87
+#: templates/admin/users.html:90
 #: templates/backoffice/assembly_respondents.html:102
 #: templates/backoffice/service_docs/_respondents.html:500
 #: templates/respondents/view_respondents.html:130
@@ -4395,20 +4413,20 @@ msgstr ""
 msgid "All statuses"
 msgstr "Feladat állapota"
 
-#: templates/admin/users.html:95
+#: templates/admin/users.html:98
 msgid "Apply Filters"
 msgstr ""
 
-#: templates/admin/users.html:96
+#: templates/admin/users.html:99
 msgid "Clear"
 msgstr ""
 
-#: templates/admin/users.html:102
+#: templates/admin/users.html:105
 #, python-format
 msgid "Showing %(start)s to %(end)s of %(total)s users"
 msgstr ""
 
-#: templates/admin/users.html:112
+#: templates/admin/users.html:115
 #: templates/backoffice/assembly_respondents.html:126
 #: templates/backoffice/components/registration_page_list.html:31
 #: templates/backoffice/service_docs/_emails.html:70
@@ -4416,15 +4434,15 @@ msgstr ""
 msgid "Name"
 msgstr "Vezetéknév"
 
-#: templates/admin/users.html:116
+#: templates/admin/users.html:119
 msgid "2FA"
 msgstr ""
 
-#: templates/admin/users.html:150
+#: templates/admin/users.html:147
 msgid "N/A (OAuth)"
 msgstr ""
 
-#: templates/admin/users.html:187
+#: templates/admin/users.html:184
 #: templates/backoffice/components/pagination.html:70
 #: templates/backoffice/components/pagination.html:76
 #: templates/main/view_assembly_data.html:130
@@ -4432,7 +4450,7 @@ msgstr ""
 msgid "Previous"
 msgstr ""
 
-#: templates/admin/users.html:216
+#: templates/admin/users.html:213
 #: templates/backoffice/components/pagination.html:99
 #: templates/backoffice/components/pagination.html:104
 #: templates/main/view_assembly_data.html:157
@@ -4440,16 +4458,16 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: templates/admin/users.html:234
+#: templates/admin/users.html:231
 msgid "No users found matching your criteria."
 msgstr ""
 
-#: templates/admin/users.html:239
+#: templates/admin/users.html:236
 #, fuzzy
 msgid "To create a user,"
 msgstr "Hozzon létre közösségi gyűlést"
 
-#: templates/admin/users.html:239
+#: templates/admin/users.html:236
 msgid "create/send them an invite code"
 msgstr ""
 
@@ -4696,7 +4714,7 @@ msgstr "Vissza a közösségi gyűléshez"
 #: templates/backoffice/assembly_selection.html:19
 #: templates/backoffice/assembly_targets.html:19
 #: templates/backoffice/respondent_field_schema/view.html:16
-#: templates/profile/view.html:203
+#: templates/profile/view.html:206
 #, fuzzy
 msgid "Back to dashboard"
 msgstr "Vissza az irányító pulthoz"
@@ -4714,7 +4732,7 @@ msgid "Number of registrations:"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/assembly_data.html:12
-#: templates/backoffice/components/assembly_tabs.html:38
+#: templates/backoffice/components/assembly_tabs.html:39
 msgid "Data"
 msgstr ""
 
@@ -4960,7 +4978,7 @@ msgstr ""
 #: templates/backoffice/assembly_data.html:304
 #: templates/backoffice/assembly_targets.html:12
 #: templates/backoffice/assembly_targets.html:93
-#: templates/backoffice/components/assembly_tabs.html:50
+#: templates/backoffice/components/assembly_tabs.html:51
 #: templates/backoffice/service_docs.html:35
 #: templates/main/view_assembly_base.html:36
 #: templates/targets/view_targets.html:2
@@ -5110,39 +5128,45 @@ msgstr "Módosítások mentése"
 msgid "Edit Settings"
 msgstr "Módosítások mentése"
 
-#: templates/backoffice/assembly_details.html:89
-#: templates/main/view_assembly_details.html:39
+#: templates/backoffice/assembly_details.html:84
+#: templates/main/view_assembly_details.html:36
+#, python-format
+msgid "By %(name)s at %(timestamp)s"
+msgstr ""
+
+#: templates/backoffice/assembly_details.html:93
+#: templates/main/view_assembly_details.html:43
 msgid "Last Updated"
 msgstr "Utoljára módosítva"
 
-#: templates/backoffice/assembly_details.html:101
+#: templates/backoffice/assembly_details.html:105
 #, fuzzy
 msgid "Registration Pages"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_details.html:119
+#: templates/backoffice/assembly_details.html:123
 #, fuzzy
 msgid "The URL for this registration form"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_details.html:125
+#: templates/backoffice/assembly_details.html:129
 #: templates/backoffice/components/registration_page_list.html:67
 #: templates/backoffice/registration/_step_preview.html:54
 msgid "Short URL"
 msgstr ""
 
-#: templates/backoffice/assembly_details.html:126
+#: templates/backoffice/assembly_details.html:130
 #: templates/backoffice/registration/_step_form.html:98
 #: templates/backoffice/registration/_step_preview.html:55
 msgid "A shorter URL for QR codes and paper invitations"
 msgstr ""
 
-#: templates/backoffice/assembly_details.html:136
+#: templates/backoffice/assembly_details.html:140
 #, fuzzy
 msgid "No registration page has been created for this assembly."
 msgstr "Vissza a közösségi gyűléshez"
 
-#: templates/backoffice/assembly_details.html:142
+#: templates/backoffice/assembly_details.html:146
 #, python-format
 msgid ""
 "To create your first registration page, edit an existing one, or add "
@@ -5150,11 +5174,11 @@ msgid ""
 "%(link_start)sRegistration tab%(link_end)s."
 msgstr ""
 
-#: templates/backoffice/assembly_details.html:151
+#: templates/backoffice/assembly_details.html:155
 #: templates/backoffice/edit_assembly.html:8
 #: templates/backoffice/edit_assembly.html:12
 #: templates/main/edit_assembly.html:2 templates/main/edit_assembly.html:23
-#: templates/main/view_assembly_details.html:48
+#: templates/main/view_assembly_details.html:52
 msgid "Edit Assembly"
 msgstr "Közösségi gyűlés szerkesztése"
 
@@ -5193,7 +5217,7 @@ msgstr "Módosítások mentése"
 
 #: templates/backoffice/assembly_members.html:13
 #: templates/backoffice/assembly_members.html:39
-#: templates/backoffice/components/assembly_tabs.html:86
+#: templates/backoffice/components/assembly_tabs.html:87
 #: templates/main/view_assembly_base.html:68
 #: templates/main/view_assembly_members.html:2
 #: templates/main/view_assembly_members.html:4
@@ -5201,44 +5225,49 @@ msgstr "Módosítások mentése"
 msgid "Team Members"
 msgstr "Maradjak bejelentkezve"
 
-#: templates/backoffice/assembly_members.html:72
+#: templates/backoffice/assembly_members.html:77
 #: templates/main/view_assembly_members.html:30
 #, python-format
 msgid "Are you sure you want to remove %(user)s from this assembly?"
 msgstr ""
 
-#: templates/backoffice/assembly_members.html:78
+#: templates/backoffice/assembly_members.html:83
 #: templates/backoffice/respondent_field_schema/view.html:229
 #: templates/backoffice/respondent_field_schema/view.html:270
-#: templates/main/view_assembly_members.html:31 templates/profile/view.html:58
+#: templates/main/view_assembly_members.html:31 templates/profile/view.html:61
 msgid "Remove"
 msgstr ""
 
-#: templates/backoffice/assembly_members.html:90
+#: templates/backoffice/assembly_members.html:88
+#, fuzzy
+msgid "Last manager"
+msgstr "Vezetéknév"
+
+#: templates/backoffice/assembly_members.html:100
 #, fuzzy
 msgid "No team members have been added to this assembly yet."
 msgstr "Vissza a közösségi gyűléshez"
 
-#: templates/backoffice/assembly_members.html:91
+#: templates/backoffice/assembly_members.html:101
 #, fuzzy
 msgid "Admin users can still manage this assembly."
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: templates/backoffice/assembly_members.html:99
-#: templates/backoffice/assembly_members.html:134
+#: templates/backoffice/assembly_members.html:109
+#: templates/backoffice/assembly_members.html:144
 #: templates/main/view_assembly_members.html:48
 #: templates/main/view_assembly_members.html:95
 #, fuzzy
 msgid "Add User to Assembly"
 msgstr "Vissza a közösségi gyűléshez"
 
-#: templates/backoffice/assembly_members.html:111
+#: templates/backoffice/assembly_members.html:121
 #: templates/main/view_assembly_members.html:61
 msgid "Type to search by email or name..."
 msgstr ""
 
 #: templates/backoffice/assembly_registration.html:13
-#: templates/backoffice/components/assembly_tabs.html:57
+#: templates/backoffice/components/assembly_tabs.html:58
 #: templates/backoffice/components/registration_page_list.html:14
 #: templates/backoffice/service_docs.html:32
 #, fuzzy
@@ -5410,7 +5439,7 @@ msgid "Configure Data Source"
 msgstr "További beállítások"
 
 #: templates/backoffice/assembly_selection.html:13
-#: templates/backoffice/components/assembly_tabs.html:70
+#: templates/backoffice/components/assembly_tabs.html:71
 #: templates/backoffice/service_docs.html:37
 #: templates/db_selection/select.html:7 templates/gsheets/select.html:2
 #: templates/gsheets/select.html:8 templates/gsheets/select.html:11
@@ -5900,26 +5929,32 @@ msgstr "Közösségi gyűlések"
 msgid "Your Assemblies"
 msgstr "Gyűléseid"
 
-#: templates/backoffice/dashboard.html:19
+#: templates/backoffice/dashboard.html:20
 #, fuzzy
 msgid "Create New Assembly"
 msgstr "Hozzon létre közösségi gyűlést"
 
-#: templates/backoffice/dashboard.html:41 templates/main/dashboard.html:67
+#: templates/backoffice/dashboard.html:43 templates/main/dashboard.html:67
 msgid "No assemblies yet"
 msgstr "Még nincsenek gyűlések"
 
-#: templates/backoffice/dashboard.html:42
+#: templates/backoffice/dashboard.html:45
 #, fuzzy
 msgid "Create your first citizens' assembly to get started."
 msgstr ""
 "Hozzon létre egy új  közösségi gyűlést a kiválasztási és mérlegelési "
 "folyamat megkezdésére."
 
-#: templates/backoffice/dashboard.html:43
+#: templates/backoffice/dashboard.html:46
 #, fuzzy
 msgid "Create Your First Assembly"
 msgstr "Hozzon létre közösségi gyűlést"
+
+#: templates/backoffice/dashboard.html:48 templates/main/dashboard.html:72
+msgid ""
+"You have not been added to any assemblies yet - ask an assembly manager "
+"to add you."
+msgstr ""
 
 #: templates/backoffice/dev_dashboard.html:8
 #: templates/backoffice/dev_dashboard.html:12
@@ -6108,7 +6143,7 @@ msgstr ""
 msgid "This page allows direct database modifications. Use with caution."
 msgstr ""
 
-#: templates/backoffice/components/assembly_tabs.html:44
+#: templates/backoffice/components/assembly_tabs.html:45
 #: templates/backoffice/respondent_field_schema/view.html:10
 #: templates/backoffice/service_docs.html:33
 msgid "Fields"
@@ -6160,7 +6195,7 @@ msgstr "Feladat állapota"
 msgid "Dismiss"
 msgstr ""
 
-#: templates/backoffice/components/assembly_tabs.html:92
+#: templates/backoffice/components/assembly_tabs.html:93
 #: templates/main/view_assembly_base.html:26
 #, fuzzy
 msgid "Assembly sections"
@@ -10855,9 +10890,9 @@ msgid "You don't have access to any assemblies at the moment."
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod."
 
 #: templates/main/dashboard.html:70
-#, python-format
-msgid "As a %(role)s, you can create new assemblies."
-msgstr "Mint %(role)s, létrehozhatsz új közösségi gyűléseket."
+#, fuzzy
+msgid "You can create a new assembly."
+msgstr "Hozzon létre közösségi gyűlést"
 
 #: templates/main/index.html:2
 msgid "Welcome"
@@ -11230,7 +11265,7 @@ msgstr "Új jelszó"
 msgid "Your password must meet the following requirements:"
 msgstr ""
 
-#: templates/profile/change_password.html:18 templates/profile/view.html:199
+#: templates/profile/change_password.html:18 templates/profile/view.html:202
 #, fuzzy
 msgid "Change password"
 msgstr "Új jelszó"
@@ -11250,7 +11285,7 @@ msgid ""
 " be able to sign in using either your password or Google OAuth."
 msgstr ""
 
-#: templates/profile/set_password.html:20 templates/profile/view.html:62
+#: templates/profile/set_password.html:20 templates/profile/view.html:65
 #, fuzzy
 msgid "Set password"
 msgstr "Új jelszó"
@@ -11260,88 +11295,88 @@ msgstr "Új jelszó"
 msgid "Profile Information"
 msgstr "Google Táblázat beállításainak eltávolítása"
 
-#: templates/profile/view.html:35
+#: templates/profile/view.html:38
 msgid "Authentication Methods"
 msgstr ""
 
-#: templates/profile/view.html:51
+#: templates/profile/view.html:54
 msgid ""
 "Are you sure you want to remove password authentication? You will only be"
 " able to sign in with Google."
 msgstr ""
 
-#: templates/profile/view.html:64
+#: templates/profile/view.html:67
 #, fuzzy
 msgid "No password set"
 msgstr "Új jelszó"
 
-#: templates/profile/view.html:71
+#: templates/profile/view.html:74
 #, fuzzy
 msgid "Google OAuth"
 msgstr "Google Táblázat teljes linkje"
 
-#: templates/profile/view.html:76 templates/profile/view.html:127
+#: templates/profile/view.html:79 templates/profile/view.html:130
 msgid "Not linked"
 msgstr ""
 
-#: templates/profile/view.html:85
+#: templates/profile/view.html:88
 msgid ""
 "Are you sure you want to unlink your Google account? You will only be "
 "able to sign in with your password."
 msgstr ""
 
-#: templates/profile/view.html:92 templates/profile/view.html:143
+#: templates/profile/view.html:95 templates/profile/view.html:146
 #, fuzzy
 msgid "Unlink"
 msgstr "Folyamatban"
 
-#: templates/profile/view.html:95 templates/profile/view.html:146
+#: templates/profile/view.html:98 templates/profile/view.html:149
 msgid "Only authentication method"
 msgstr ""
 
-#: templates/profile/view.html:108 templates/profile/view.html:109
+#: templates/profile/view.html:111 templates/profile/view.html:112
 #, fuzzy
 msgid "Link Google account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/profile/view.html:115 templates/profile/view.html:166
+#: templates/profile/view.html:118 templates/profile/view.html:169
 #, python-format
 msgid "Remove %(provider)s first"
 msgstr ""
 
-#: templates/profile/view.html:122
+#: templates/profile/view.html:125
 msgid "Microsoft OAuth"
 msgstr ""
 
-#: templates/profile/view.html:136
+#: templates/profile/view.html:139
 msgid ""
 "Are you sure you want to unlink your Microsoft account? You will only be "
 "able to sign in with your password."
 msgstr ""
 
-#: templates/profile/view.html:159 templates/profile/view.html:160
+#: templates/profile/view.html:162 templates/profile/view.html:163
 #, fuzzy
 msgid "Link Microsoft account"
 msgstr "Hozzon létre fiókot"
 
-#: templates/profile/view.html:172
+#: templates/profile/view.html:175
 msgid "Security"
 msgstr ""
 
-#: templates/profile/view.html:178
+#: templates/profile/view.html:181
 msgid "Not available"
 msgstr ""
 
-#: templates/profile/view.html:180
+#: templates/profile/view.html:183
 msgid "OAuth users rely on their provider's security"
 msgstr ""
 
-#: templates/profile/view.html:188
+#: templates/profile/view.html:191
 #, fuzzy
 msgid "Manage"
 msgstr "Vezetéknév"
 
-#: templates/profile/view.html:195
+#: templates/profile/view.html:198
 msgid "Edit profile"
 msgstr ""
 
@@ -15158,6 +15193,18 @@ msgstr ""
 
 #~ msgid "Use percentage"
 #~ msgstr "Elkezdve"
+
+#~ msgid "Global Organiser"
+#~ msgstr ""
+
+#~ msgid "As a %(role)s, you can create new assemblies."
+#~ msgstr "Mint %(role)s, létrehozhatsz új közösségi gyűléseket."
+
+#~ msgid ""
+#~ "You have not been added to any "
+#~ "assemblies yet - ask an organiser "
+#~ "to add you."
+#~ msgstr ""
 
 #~ msgid "Mock services — ticket 886 (results dashboard)"
 #~ msgstr ""

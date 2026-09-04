@@ -110,56 +110,9 @@ class TestUserRepository:
         assert len(active_users) == 1
         assert active_users[0].email == "active@example.com"
 
-    def test_get_admins(self, user_repo: SqlAlchemyUserRepository, postgres_session: Session):
-        """Test getting users with admin privileges."""
-        regular_user = User(email="regular@example.com", global_role=GlobalRole.USER, password_hash="hash")
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-        organiser_user = User(
-            email="organiser@example.com",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
-            password_hash="hash",  # pragma: allowlist secret
-        )
-
-        user_repo.add(regular_user)
-        user_repo.add(admin_user)
-        user_repo.add(organiser_user)
-        postgres_session.commit()
-
-        admins = list(user_repo.get_admins())
-        assert len(admins) == 2
-        emails = [u.email for u in admins]
-        assert "admin@example.com" in emails
-        assert "organiser@example.com" in emails
-        assert "regular@example.com" not in emails
-
 
 class TestAssemblyRepository:
     """Tests for SQL-specific AssemblyRepository methods requiring cross-repo queries."""
-
-    def test_get_assemblies_for_user_global_role(
-        self,
-        assembly_repo: SqlAlchemyAssemblyRepository,
-        user_repo: SqlAlchemyUserRepository,
-        postgres_session: Session,
-    ):
-        """Test getting assemblies for a user with global role."""
-        future_date = date.today() + timedelta(days=30)
-
-        # Create admin user
-        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
-
-        # Create assemblies
-        assembly1 = Assembly(title="Assembly 1", question="Question 1?", first_assembly_date=future_date)
-        assembly2 = Assembly(title="Assembly 2", question="Question 2?", first_assembly_date=future_date)
-
-        user_repo.add(admin_user)
-        assembly_repo.add(assembly1)
-        assembly_repo.add(assembly2)
-        postgres_session.commit()
-
-        # Admin should see all active assemblies
-        assemblies = list(assembly_repo.get_assemblies_for_user(admin_user.id))
-        assert len(assemblies) == 2
 
     def test_get_assemblies_for_user_specific_role(
         self,
@@ -192,6 +145,34 @@ class TestAssemblyRepository:
         assemblies = list(assembly_repo.get_assemblies_for_user(user.id))
         assert len(assemblies) == 1
         assert assemblies[0].title == "Assembly 1"
+
+    def test_get_assemblies_for_organiser_returns_only_their_own(
+        self,
+        assembly_repo: SqlAlchemyAssemblyRepository,
+        user_repo: SqlAlchemyUserRepository,
+        role_repo: SqlAlchemyUserAssemblyRoleRepository,
+        postgres_session: Session,
+    ):
+        """An organiser's dashboard lists the assemblies they hold a role on, not every assembly."""
+        future_date = date.today() + timedelta(days=30)
+        organiser = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        theirs = Assembly(title="Theirs", question="Question 1?", first_assembly_date=future_date)
+        someone_elses = Assembly(title="Someone else's", question="Question 2?", first_assembly_date=future_date)
+
+        user_repo.add(organiser)
+        assembly_repo.add(theirs)
+        assembly_repo.add(someone_elses)
+        postgres_session.flush()
+
+        role_repo.add(UserAssemblyRole(user_id=organiser.id, assembly_id=theirs.id, role=AssemblyRole.ASSEMBLY_MANAGER))
+        postgres_session.commit()
+
+        assemblies = list(assembly_repo.get_assemblies_for_user(organiser.id))
+        assert [a.title for a in assemblies] == ["Theirs"]
 
 
 class TestUserInviteRepository:

@@ -19,6 +19,7 @@ from .email_confirmation_service import create_confirmation_token
 from .exceptions import (
     AssemblyNotFoundError,
     CannotDisableSelf,
+    CannotRemoveLastAssemblyManager,
     CannotRemoveLastAuthMethod,
     EmailNotConfirmed,
     InsufficientPermissions,
@@ -30,7 +31,13 @@ from .exceptions import (
     UserAlreadyExists,
     UserNotFoundError,
 )
-from .permissions import can_manage_assembly, can_view_assembly, has_global_admin
+from .permissions import (
+    can_manage_assembly,
+    can_manage_assembly_members,
+    can_see_all_assemblies,
+    can_view_assembly,
+    has_global_admin,
+)
 from .security import TempUser, hash_password, validate_password_strength, verify_password
 from .unit_of_work import AbstractUnitOfWork
 
@@ -183,8 +190,8 @@ def get_user_assemblies(uow: AbstractUnitOfWork, user_id: uuid.UUID) -> list[Ass
     if not user:
         raise UserNotFoundError(f"User {user_id} not found")
 
-    # Global admins and organisers can see all assemblies
-    if user.global_role in (GlobalRole.ADMIN, GlobalRole.GLOBAL_ORGANISER):
+    # Only global admins see every assembly
+    if can_see_all_assemblies(user):
         return list(uow.assemblies.get_active_assemblies())
 
     # Regular users see only assemblies they have specific roles for
@@ -788,7 +795,7 @@ def get_user_stats(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID) -> dict[st
         "active_users": len([u for u in all_users if u.is_active]),
         "inactive_users": len([u for u in all_users if not u.is_active]),
         "admin_users": len([u for u in all_users if u.global_role == GlobalRole.ADMIN]),
-        "organiser_users": len([u for u in all_users if u.global_role == GlobalRole.GLOBAL_ORGANISER]),
+        "organiser_users": len([u for u in all_users if u.global_role == GlobalRole.ORGANISER]),
         "password_users": len(password_users),
         "users_with_2fa": len(users_with_2fa),
         "regular_users": len([u for u in all_users if u.global_role == GlobalRole.USER]),
@@ -828,7 +835,7 @@ def grant_user_assembly_role(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    # Check permissions: must be admin or global organiser or assembly manager
+    # Check permissions: must be an admin or a manager of this assembly
     if not has_global_admin(current_user):
         # Load the assembly to check if user can manage it
         assembly = uow.assemblies.get(assembly_id)
@@ -838,7 +845,7 @@ def grant_user_assembly_role(
         if not can_manage_assembly(current_user, assembly):
             raise InsufficientPermissions(
                 action="grant_user_assembly_role",
-                required_role="admin, global-organiser, or assembly manager",
+                required_role="admin or assembly manager",
             )
 
     # Validate target user exists
@@ -890,6 +897,30 @@ def grant_user_assembly_role(
     return assembly_role, detached_user
 
 
+def sole_assembly_manager_id(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> uuid.UUID | None:
+    """The only assembly-manager of this assembly, or None if there is not exactly one.
+
+    Removing that one person's role is what a non-admin is refused, so the
+    members page asks this to hide a button it knows would fail.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    managers = [
+        user.id
+        for user in uow.users.get_users_for_assembly(assembly_id)
+        if user.get_assembly_role(assembly_id) == AssemblyRole.ASSEMBLY_MANAGER
+    ]
+    return managers[0] if len(managers) == 1 else None
+
+
+def _is_last_assembly_manager(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
+    """Whether this user is the only assembly-manager the assembly has.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    return sole_assembly_manager_id(uow, assembly_id) == user_id
+
+
 def revoke_user_assembly_role(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -910,11 +941,12 @@ def revoke_user_assembly_role(
 
     Raises:
         InsufficientPermissions: If current_user lacks permission to revoke roles
+        CannotRemoveLastAssemblyManager: If a non-admin would orphan the assembly
         UserNotFoundError: If user, assembly, or role not found
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    # Check permissions: must be admin or global organiser or assembly manager
+    # Check permissions: must be an admin or a manager of this assembly
     if not has_global_admin(current_user):
         # Load the assembly to check if user can manage it
         assembly = uow.assemblies.get(assembly_id)
@@ -924,8 +956,11 @@ def revoke_user_assembly_role(
         if not can_manage_assembly(current_user, assembly):
             raise InsufficientPermissions(
                 action="revoke_user_assembly_role",
-                required_role="admin, global-organiser, or assembly manager",
+                required_role="admin or assembly manager",
             )
+
+        if _is_last_assembly_manager(uow, user_id, assembly_id):
+            raise CannotRemoveLastAssemblyManager()
 
     # Validate target user exists
     target_user = uow.users.get(user_id)
@@ -984,7 +1019,7 @@ def get_assembly_members(
     if not can_view_assembly(current_user, assembly):
         raise InsufficientPermissions(
             action="get_assembly_members",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     return uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
@@ -999,6 +1034,11 @@ def search_assembly_candidate_users(
     """
     Search for users who can be added to an assembly (i.e. not already members).
 
+    An admin searches the user table by partial email or name. Anyone else -
+    an assembly manager adding a colleague - matches on a full email address
+    only, so that a member-adding UI cannot be used to enumerate accounts.
+    See docs/personal-data.md.
+
     Args:
         uow: Unit of Work for database operations
         assembly_id: Assembly to search candidates for
@@ -1007,21 +1047,38 @@ def search_assembly_candidate_users(
 
     Returns:
         List of matching users who do not already have a role on the assembly.
-        Empty list when search_term is blank.
+        Empty list when search_term is blank. At most one user for a non-admin.
 
     Raises:
         InsufficientPermissions: If current_user lacks permission to manage members
+        AssemblyNotFoundError: If the assembly does not exist, for an admin only
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    if not has_global_admin(current_user):
-        raise InsufficientPermissions(
-            action="search_assembly_candidate_users",
-            required_role="admin or global-organiser",
-        )
+    refused = InsufficientPermissions(
+        action="search_assembly_candidate_users",
+        required_role="assembly-manager or admin",
+    )
+
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        # "No such assembly" and "not yours" must look the same to anyone who
+        # could not have used the assembly either way, or the endpoint answers
+        # whether an assembly id exists. An admin may see every assembly, so
+        # they get the honest not-found.
+        if has_global_admin(current_user):
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+        raise refused
+
+    if not can_manage_assembly_members(current_user, assembly):
+        raise refused
 
     if not search_term:
         return []
+
+    if not has_global_admin(current_user):
+        match = uow.users.get_by_email_not_in_assembly(assembly_id, search_term)
+        return [match.create_detached_copy()] if match else []
 
     matching = uow.users.search_users_not_in_assembly(assembly_id, search_term)
     return [user.create_detached_copy() for user in matching]
