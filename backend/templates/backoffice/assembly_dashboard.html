@@ -67,7 +67,30 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
         </div>
     </div>
 
-    {% if dashboard_view == 'table' %}
+    {% if not dashboard_sections %}
+        {# Empty state: no target categories, so there is nothing to chart or tabulate.
+           Illustration is a Lucide pie-chart glyph (the repo's icon set) in a muted disc —
+           decorative, so aria-hidden. #}
+        <div class="flex justify-center w-full py-16">
+            <div class="flex flex-col gap-4 items-center text-center" style="max-width: 28rem;">
+                <span class="flex items-center justify-center rounded-full"
+                      style="width: 96px; height: 96px; background-color: var(--color-neutral-100);">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+                         stroke="var(--color-neutral-400)" stroke-width="1.5"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                        <path d="M22 12A10 10 0 0 0 12 2v10z" />
+                    </svg>
+                </span>
+                <div class="flex flex-col gap-1.5 items-center">
+                    <h3 class="text-heading-lg" style="color: var(--color-headings);">{{ _("No dashboard to display yet.") }}</h3>
+                    <p class="text-body-sm" style="color: var(--color-body-text);">
+                        {{ _("Set up your targets to get started. Once they're configured, your dashboard will appear here.") }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% elif dashboard_view == 'table' %}
         {# Table view: one table per target category #}
         {% for tbl in dashboard_tables %}
             <section class="mb-10">

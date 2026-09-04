@@ -101,11 +101,20 @@ class TestTheDashboardPage:
         # one section per target category
         assert ">Gender<" in html
 
-    def test_an_assembly_with_no_targets_renders_no_sections(self, logged_in_admin, existing_assembly):
+    def test_an_assembly_with_no_targets_shows_the_empty_state(self, logged_in_admin, existing_assembly):
         html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
 
         assert "Number to select:" in html
+        # no charts or tables, and the empty-state copy instead
         assert "conic-gradient(" not in html
+        assert "No dashboard to display yet." in html
+        assert "Set up your targets to get started." in html
+
+    def test_the_empty_state_also_shows_in_the_table_view(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(f"{_dashboard_url(existing_assembly)}?view=table").get_data(as_text=True)
+
+        assert "No dashboard to display yet." in html
+        assert "Target %" not in html
 
     def test_the_registration_count_excludes_test_and_deleted_respondents(
         self,

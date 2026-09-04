@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-04 11:24+0100\n"
+"POT-Creation-Date: 2026-09-04 14:11+0200\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -64,8 +64,8 @@ msgstr ""
 #: src/opendlp/domain/assembly_export_gsheet.py:17
 #: src/opendlp/entrypoints/blueprints/backoffice.py:219
 #: src/opendlp/service_layer/dashboard_stats.py:353
-#: templates/backoffice/assembly_dashboard.html:82
-#: templates/backoffice/assembly_dashboard.html:83
+#: templates/backoffice/assembly_dashboard.html:105
+#: templates/backoffice/assembly_dashboard.html:106
 #: templates/backoffice/assembly_respondents.html:15
 #: templates/backoffice/assembly_respondents.html:80
 #: templates/backoffice/components/assembly_tabs.html:64
@@ -1327,8 +1327,8 @@ msgstr "Hiba történt a gyűlés frissítése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:217
 #: src/opendlp/service_layer/selection_report.py:206
-#: templates/backoffice/assembly_dashboard.html:80
-#: templates/backoffice/assembly_dashboard.html:81
+#: templates/backoffice/assembly_dashboard.html:103
+#: templates/backoffice/assembly_dashboard.html:104
 #, fuzzy
 msgid "Target"
 msgstr "Kezdés dátuma"
@@ -1342,8 +1342,8 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 #: src/opendlp/entrypoints/blueprints/respondents.py:459
 #: src/opendlp/service_layer/dashboard_stats.py:356
 #: src/opendlp/service_layer/selection_report.py:212
-#: templates/backoffice/assembly_dashboard.html:84
-#: templates/backoffice/assembly_dashboard.html:85
+#: templates/backoffice/assembly_dashboard.html:107
+#: templates/backoffice/assembly_dashboard.html:108
 #: templates/backoffice/assembly_respondents.html:104
 #: templates/backoffice/assembly_view_respondent.html:226
 #: templates/backoffice/components/table.html:206
@@ -1363,8 +1363,8 @@ msgstr "Vissza a regisztrációhoz"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:229
 #: src/opendlp/entrypoints/blueprints/respondents.py:460
 #: src/opendlp/service_layer/dashboard_stats.py:358
-#: templates/backoffice/assembly_dashboard.html:86
-#: templates/backoffice/assembly_dashboard.html:87
+#: templates/backoffice/assembly_dashboard.html:109
+#: templates/backoffice/assembly_dashboard.html:110
 #: templates/backoffice/assembly_respondents.html:105
 #: templates/backoffice/components/table.html:203
 #: templates/respondents/view_respondents.html:133
@@ -4729,6 +4729,16 @@ msgstr ""
 
 #: templates/backoffice/assembly_dashboard.html:56
 msgid "Table"
+msgstr ""
+
+#: templates/backoffice/assembly_dashboard.html:86
+msgid "No dashboard to display yet."
+msgstr ""
+
+#: templates/backoffice/assembly_dashboard.html:88
+msgid ""
+"Set up your targets to get started. Once they're configured, your "
+"dashboard will appear here."
 msgstr ""
 
 #: templates/backoffice/assembly_data.html:12
