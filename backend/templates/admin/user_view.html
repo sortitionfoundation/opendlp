@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "admin/_role_tag.html" import role_tag %}
 {% block title %}{{ user.email }} - {{ _("User Details") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-width-container">
@@ -47,13 +48,7 @@
                     <div class="govuk-summary-list__row">
                         <dt class="govuk-summary-list__key">{{ _("Global Role") }}</dt>
                         <dd class="govuk-summary-list__value">
-                            {% if user.global_role.value == 'admin' %}
-                                <strong class="govuk-tag govuk-tag--red">{{ _("Admin") }}</strong>
-                            {% elif user.global_role.value == 'organiser' %}
-                                <strong class="govuk-tag govuk-tag--blue">{{ _("Organiser") }}</strong>
-                            {% else %}
-                                <strong class="govuk-tag govuk-tag--grey">{{ _("User") }}</strong>
-                            {% endif %}
+                            {{ role_tag(user.global_role) }}
                         </dd>
                     </div>
                     <div class="govuk-summary-list__row">
