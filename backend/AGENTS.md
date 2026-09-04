@@ -64,10 +64,12 @@ No additional system dependencies are required. The sortition-algorithms library
 # always safe - nothing runs concurrently against the database.
 just test
 
-# Run all non-BDD tests with coverage with up to 8 parallel processes
+# Run all non-BDD tests with up to 8 parallel processes. No coverage - it adds
+# ~70% to the run; CI and `just test` still measure it, and
+# `just test-nobdd-cov` produces a local HTML report.
 just test-nobdd
 # which is
-uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
+uv run python -m pytest --tb=short --ignore=tests/bdd -n auto --maxprocesses=8
 
 # Run the JavaScript unit tests only (vitest, no browser - seconds)
 just test-js

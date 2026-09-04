@@ -45,8 +45,14 @@ test-xml: test-js build-all
 # Test the code with pytest, headless BDD, HTML report
 test: test-html
 
+# Fast non-BDD tests, no coverage (measuring adds ~70%; see test-nobdd-cov)
 test-nobdd: test-js
-  @echo "🚀 Testing code: Running pytest"
+  @echo "🚀 Testing code: Running pytest (no coverage - use test-nobdd-cov for a report)"
+  uv run python -m pytest --tb=short --ignore=tests/bdd -n auto --maxprocesses=8
+
+# Test the code with pytest and an HTML coverage report, skipping BDD
+test-nobdd-cov: test-js
+  @echo "🚀 Testing code: Running pytest with coverage"
   uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
 
 # Run BDD tests with pytest-bdd and Playwright
