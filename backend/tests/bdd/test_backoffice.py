@@ -1268,18 +1268,21 @@ def see_text_after_searching(page: Page, text: str):
 def try_access_assembly_details_page(page: Page, title: str, test_database):
     """Try to navigate directly to the assembly details page (may be unauthorized)."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    if assembly_id:
-        page.goto(Urls.backoffice_assembly_url(assembly_id))
-        page.wait_for_load_state("networkidle")
+    # Every scenario using this step has already created the assembly. Navigating
+    # nowhere would leave the browser on the previous page, and the "redirected to
+    # the dashboard" assertion that follows would pass without proving anything.
+    assert assembly_id, f"No assembly titled {title!r} to try to access"
+    page.goto(Urls.backoffice_assembly_url(assembly_id))
+    page.wait_for_load_state("networkidle")
 
 
 @when(parsers.parse('I try to access the assembly members page for "{title}"'))
 def try_access_assembly_members_page(page: Page, title: str, test_database):
     """Try to navigate directly to the assembly members page (may be unauthorized)."""
     assembly_id = _assembly_name_id_cache.find_title(title, test_database)
-    if assembly_id:
-        page.goto(Urls.backoffice_members_assembly_url(assembly_id))
-        page.wait_for_load_state("networkidle")
+    assert assembly_id, f"No assembly titled {title!r} to try to access"
+    page.goto(Urls.backoffice_members_assembly_url(assembly_id))
+    page.wait_for_load_state("networkidle")
 
 
 @then("I should be redirected to the dashboard")
@@ -1778,6 +1781,9 @@ def create_assembly_through_the_ui(page: Page, title: str, test_database):
 
 @then(parsers.parse('I should see "{email}" in the search results'))
 def see_email_in_search_results(page: Page, email: str):
-    """Verify the autocomplete offered a specific account."""
-    page.wait_for_timeout(500)
+    """Verify the autocomplete offered a specific account.
+
+    No sleep: the typing step already waits out the debounce, and expect()
+    retries until the listbox has the text or the timeout expires.
+    """
     expect(page.locator("#user_id_listbox")).to_contain_text(email)

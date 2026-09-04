@@ -21,7 +21,7 @@ from opendlp.entrypoints.context_processors import (
     inject_template_globals,
     static_hashes,
 )
-from opendlp.service_layer.permissions import NO_CAPABILITIES, capabilities_for
+from opendlp.service_layer.permissions import NO_CAPABILITIES
 
 
 class TestStaticHashes:
@@ -338,4 +338,10 @@ class TestInjectCapabilities:
 
         with _app().test_request_context("/"):
             login_user(organiser)
-            assert inject_capabilities() == {"perms": capabilities_for(organiser)}
+            perms = inject_capabilities()["perms"]
+
+        # Spelled out rather than compared against capabilities_for(organiser),
+        # which would only assert the code agrees with itself.
+        assert perms.create_assembly is True
+        assert perms.see_all_assemblies is False
+        assert perms.administer_site is False
