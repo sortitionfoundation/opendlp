@@ -299,40 +299,54 @@ class FakeUserInviteRepository(FakeRepository, UserInviteRepository):
 
 
 class FakeUserAssemblyRoleRepository(FakeRepository, UserAssemblyRoleRepository):
-    """Fake implementation for UserAssemblyRole repository."""
+    """Fake implementation for UserAssemblyRole repository.
+
+    A role can arrive two ways: added here, or appended to ``user.assembly_roles``
+    (which is what ``assign_assembly_role`` does). In SQLAlchemy those are the
+    same rows, so both are visible to both. Here they are separate lists, and a
+    fake that only read its own would report no members for every assembly
+    created through the service - so every query reads the union.
+    """
+
+    def __init__(self, users: "FakeUserRepository", items: list[Any] | None = None) -> None:
+        super().__init__(items)
+        self._users = users
+
+    def _all_roles(self) -> list[UserAssemblyRole]:
+        """Every role, however it was recorded, one per (user, assembly)."""
+        roles: dict[tuple[uuid.UUID, uuid.UUID], UserAssemblyRole] = {}
+        for role in self._items:
+            roles[(role.user_id, role.assembly_id)] = role
+        for user in self._users.all():
+            for role in user.assembly_roles:
+                roles.setdefault((role.user_id, role.assembly_id), role)
+        return list(roles.values())
 
     def get_by_user_and_assembly(self, user_id: uuid.UUID, assembly_id: uuid.UUID) -> UserAssemblyRole | None:
         """Get role for user in specific assembly."""
-        for role in self._items:
+        for role in self._all_roles():
             if role.user_id == user_id and role.assembly_id == assembly_id:
                 return role
         return None
 
     def get_roles_for_user(self, user_id: uuid.UUID) -> Iterable[UserAssemblyRole]:
         """Get all roles for a user."""
-        return [role for role in self._items if role.user_id == user_id]
+        return [role for role in self._all_roles() if role.user_id == user_id]
 
     def get_roles_for_assembly(self, assembly_id: uuid.UUID) -> Iterable[UserAssemblyRole]:
         """Get all roles for an assembly."""
-        return [role for role in self._items if role.assembly_id == assembly_id]
+        return [role for role in self._all_roles() if role.assembly_id == assembly_id]
 
     def get_users_with_roles_for_assembly(self, assembly_id: uuid.UUID) -> list[tuple[User, UserAssemblyRole]]:
         """Get all users with their roles for a specific assembly.
 
-        Note: This is a simplified implementation for testing.
-        In production, this would be a single SQL join query.
-        We need to access users from the UoW to pair them with roles.
+        In production this is a single SQL join; here it is a lookup per role.
         """
-        # This method needs access to the users repository
-        # For the fake implementation, we'll store a reference to the UoW
-        # This will be set by the FakeUnitOfWork
         results = []
-        roles = self.get_roles_for_assembly(assembly_id)
-        if hasattr(self, "_uow"):
-            for role in roles:
-                user = self._uow.users.get(role.user_id)
-                if user:
-                    results.append((user, role))
+        for role in self.get_roles_for_assembly(assembly_id):
+            user = self._users.get(role.user_id)
+            if user:
+                results.append((user, role))
         return results
 
     def remove_role(self, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
@@ -341,6 +355,10 @@ class FakeUserAssemblyRoleRepository(FakeRepository, UserAssemblyRoleRepository)
         if not role:
             return False
         self._items = [r for r in self._items if r != role]
+        # Also detach it from the user, or the union above would hand it straight back.
+        user = self._users.get(user_id)
+        if user:
+            user.assembly_roles = [r for r in user.assembly_roles if r.assembly_id != assembly_id]
         return True
 
 
@@ -978,7 +996,7 @@ class FakeStore:
         self.assembly_gsheets = FakeAssemblyGSheetRepository()
         self.assembly_respondent_gsheets = FakeAssemblyRespondentGSheetRepository()
         self.user_invites = FakeUserInviteRepository()
-        self.user_assembly_roles = FakeUserAssemblyRoleRepository()
+        self.user_assembly_roles = FakeUserAssemblyRoleRepository(users=self.users)
         self.selection_run_records = FakeSelectionRunRecordRepository()
         self.user_backup_codes = FakeUserBackupCodeRepository()
         self.two_factor_audit_logs = FakeTwoFactorAuditLogRepository()
@@ -1034,9 +1052,6 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         for name in _REPO_NAMES:
             setattr(self, f"fake_{name}", getattr(self._store, name))
         self._bind_repositories(open_context=False)
-        # Store reference to UoW in user_assembly_roles for get_users_with_roles_for_assembly.
-        # All instances sharing a store share repositories, so pointing at the latest is fine.
-        self._store.user_assembly_roles._uow = self
         self.committed = False
         self.expire_all_calls = 0
         self._snapshot: dict[str, list[Any]] | None = None

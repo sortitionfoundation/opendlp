@@ -41,6 +41,7 @@ from opendlp.service_layer.dashboard_stats import (
     get_assembly_dashboard_summary,
 )
 from opendlp.service_layer.exceptions import (
+    CannotRemoveLastAssemblyManager,
     InsufficientPermissions,
     NotFoundError,
 )
@@ -57,6 +58,7 @@ from opendlp.service_layer.user_service import (
     grant_user_assembly_role,
     revoke_user_assembly_role,
     search_assembly_candidate_users,
+    sole_assembly_manager_id,
 )
 from opendlp.translations import gettext as _
 
@@ -576,6 +578,9 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             assembly_users = get_assembly_members(uow, assembly_id, current_user)
+            # Named so the page can hide a Remove button that would be refused:
+            # a non-admin may not leave the assembly with no manager.
+            sole_manager_id = sole_assembly_manager_id(uow, assembly_id)
 
         can_manage_assembly_users = can_manage_assembly_members(current_user, nav.assembly)
         add_user_form = AddUserToAssemblyForm()
@@ -585,6 +590,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly=nav.assembly,
             assembly_users=assembly_users,
             can_manage_assembly_users=can_manage_assembly_users,
+            sole_manager_id=sole_manager_id,
             add_user_form=add_user_form,
             current_tab="members",
             data_source=nav.data_source,
@@ -708,6 +714,14 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
 
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
 
+    except CannotRemoveLastAssemblyManager as e:
+        logger.warning(
+            "Refused to leave assembly without a manager",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+        )
+        flash(e.user_msg(), "error")
+        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.error("Error removing user from assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Could not remove user from assembly: %(error)s", error=str(e)), "error")

@@ -77,8 +77,13 @@ class TestOrganiserCannotReachSomeoneElsesAssembly:
 
     def test_the_assembly_url_is_refused(self, logged_in_organiser: FlaskClient, existing_assembly: Assembly) -> None:
         """The route flashes and redirects rather than rendering someone else's assembly."""
-        response = logged_in_organiser.get(f"/backoffice/assembly/{existing_assembly.id}")
-        assert response.status_code == 302
+        response = logged_in_organiser.get(
+            f"/backoffice/assembly/{existing_assembly.id}",
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"You don&#39;t have permission to view this assembly" in response.data
         assert existing_assembly.title.encode() not in response.data
 
     def test_a_second_organiser_cannot_reach_the_first_organisers_assembly(
@@ -89,9 +94,13 @@ class TestOrganiserCannotReachSomeoneElsesAssembly:
             theirs = create_assembly(uow=uow, title="Not yours", created_by_user_id=organiser_user.id)
             uow.commit()
 
-        response = _login(client, _second_organiser(fake_store)).get(f"/backoffice/assembly/{theirs.id}")
+        response = _login(client, _second_organiser(fake_store)).get(
+            f"/backoffice/assembly/{theirs.id}",
+            follow_redirects=True,
+        )
 
-        assert response.status_code == 302
+        assert response.status_code == 200
+        assert b"You don&#39;t have permission to view this assembly" in response.data
         assert b"Not yours" not in response.data
 
 
@@ -174,7 +183,7 @@ class TestAssemblyManagerManagesMembers:
         response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members")
 
         assert response.status_code == 200
-        assert b"Add" in response.data
+        assert b"Add User to Assembly" in response.data
 
     def test_an_exact_email_finds_the_colleague(
         self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
@@ -223,11 +232,60 @@ class TestAssemblyManagerManagesMembers:
         assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
         colleague = self._colleague(fake_store)
 
-        logged_in_organiser.post(
+        response = logged_in_organiser.post(
             f"/backoffice/assembly/{assembly.id}/members/add",
             data={"user_id": str(colleague.id), "role": AssemblyRole.CONFIRMATION_CALLER.name},
             follow_redirects=True,
         )
 
+        assert response.status_code == 200
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.users.get(colleague.id).get_assembly_role(assembly.id) == AssemblyRole.CONFIRMATION_CALLER
+
+
+class TestTheAssemblyKeepsAManager:
+    """An organiser must not be able to lock themselves out of their own assembly."""
+
+    def _assembly_owned_by_the_organiser(self, fake_store: FakeStore, organiser_user: User) -> Assembly:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assembly = create_assembly(uow=uow, title="Only mine", created_by_user_id=organiser_user.id)
+            uow.commit()
+        return assembly
+
+    def test_the_sole_manager_is_not_offered_the_remove_button(
+        self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
+    ) -> None:
+        assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
+
+        response = logged_in_organiser.get(f"/backoffice/assembly/{assembly.id}/members")
+
+        assert response.status_code == 200
+        assert b"Last manager" in response.data
+        assert f"members/{organiser_user.id}/remove".encode() not in response.data
+
+    def test_posting_the_removal_anyway_is_refused(
+        self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User
+    ) -> None:
+        """Hiding the button is a courtesy; the service is what enforces it."""
+        assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
+
+        response = logged_in_organiser.post(
+            f"/backoffice/assembly/{assembly.id}/members/{organiser_user.id}/remove",
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        assert b"must keep at least one assembly manager" in response.data
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.users.get(organiser_user.id).get_assembly_role(assembly.id) == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_an_admin_is_still_offered_the_button(
+        self, logged_in_admin: FlaskClient, fake_store: FakeStore, organiser_user: User
+    ) -> None:
+        """An admin can put a manager back, so they are not stopped."""
+        assembly = self._assembly_owned_by_the_organiser(fake_store, organiser_user)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/members")
+
+        assert response.status_code == 200
+        assert f"members/{organiser_user.id}/remove".encode() in response.data

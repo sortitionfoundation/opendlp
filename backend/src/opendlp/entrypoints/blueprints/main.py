@@ -20,7 +20,11 @@ from opendlp.service_layer.assembly_service import (
     get_or_create_selection_settings,
     update_assembly,
 )
-from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
+from opendlp.service_layer.exceptions import (
+    CannotRemoveLastAssemblyManager,
+    InsufficientPermissions,
+    NotFoundError,
+)
 from opendlp.service_layer.permissions import can_manage_assembly_members
 from opendlp.service_layer.user_service import (
     get_assembly_members,
@@ -411,6 +415,14 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
 
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
 
+    except CannotRemoveLastAssemblyManager as e:
+        logger.warning(
+            "Refused to leave assembly without a manager",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+        )
+        flash(e.user_msg(), "error")
+        return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.error("Error removing user from assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Could not remove user from assembly: %(error)s", error=str(e)), "error")

@@ -19,6 +19,7 @@ from .email_confirmation_service import create_confirmation_token
 from .exceptions import (
     AssemblyNotFoundError,
     CannotDisableSelf,
+    CannotRemoveLastAssemblyManager,
     CannotRemoveLastAuthMethod,
     EmailNotConfirmed,
     InsufficientPermissions,
@@ -834,7 +835,7 @@ def grant_user_assembly_role(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    # Check permissions: must be admin or global organiser or assembly manager
+    # Check permissions: must be an admin or a manager of this assembly
     if not has_global_admin(current_user):
         # Load the assembly to check if user can manage it
         assembly = uow.assemblies.get(assembly_id)
@@ -896,6 +897,30 @@ def grant_user_assembly_role(
     return assembly_role, detached_user
 
 
+def sole_assembly_manager_id(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> uuid.UUID | None:
+    """The only assembly-manager of this assembly, or None if there is not exactly one.
+
+    Removing that one person's role is what a non-admin is refused, so the
+    members page asks this to hide a button it knows would fail.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    managers = [
+        user.id
+        for user in uow.users.get_users_for_assembly(assembly_id)
+        if user.get_assembly_role(assembly_id) == AssemblyRole.ASSEMBLY_MANAGER
+    ]
+    return managers[0] if len(managers) == 1 else None
+
+
+def _is_last_assembly_manager(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> bool:
+    """Whether this user is the only assembly-manager the assembly has.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    return sole_assembly_manager_id(uow, assembly_id) == user_id
+
+
 def revoke_user_assembly_role(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -916,11 +941,12 @@ def revoke_user_assembly_role(
 
     Raises:
         InsufficientPermissions: If current_user lacks permission to revoke roles
+        CannotRemoveLastAssemblyManager: If a non-admin would orphan the assembly
         UserNotFoundError: If user, assembly, or role not found
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    # Check permissions: must be admin or global organiser or assembly manager
+    # Check permissions: must be an admin or a manager of this assembly
     if not has_global_admin(current_user):
         # Load the assembly to check if user can manage it
         assembly = uow.assemblies.get(assembly_id)
@@ -932,6 +958,9 @@ def revoke_user_assembly_role(
                 action="revoke_user_assembly_role",
                 required_role="admin or assembly manager",
             )
+
+        if _is_last_assembly_manager(uow, user_id, assembly_id):
+            raise CannotRemoveLastAssemblyManager
 
     # Validate target user exists
     target_user = uow.users.get(user_id)
@@ -990,7 +1019,7 @@ def get_assembly_members(
     if not can_view_assembly(current_user, assembly):
         raise InsufficientPermissions(
             action="get_assembly_members",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     return uow.user_assembly_roles.get_users_with_roles_for_assembly(assembly_id)
