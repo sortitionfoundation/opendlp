@@ -1,7 +1,7 @@
 """retire the global-organiser role
 
 Revision ID: a31214157d0b
-Revises: bb9ef5dce9be
+Revises: a1f4c7d20b93
 Create Date: 2026-09-03 11:18:20.707372
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "a31214157d0b"
-down_revision: str | Sequence[str] | None = "bb9ef5dce9be"
+down_revision: str | Sequence[str] | None = "a1f4c7d20b93"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
