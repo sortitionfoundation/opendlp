@@ -28,7 +28,7 @@
     "@fontsource/lato": "^5.2.7",
     "@lezer/highlight": "^1.2.3",
     "codemirror": "^6.0.2",
-    "govuk-frontend": "^5.14.0",
+    "govuk-frontend": "^6.4.0",
     "htmx.org": "^2.0.7"
   },
   "devDependencies": {
