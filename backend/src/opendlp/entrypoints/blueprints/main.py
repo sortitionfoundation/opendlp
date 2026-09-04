@@ -169,9 +169,6 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # Get assembly users with their roles (efficient database query)
             assembly_users = get_assembly_members(uow, assembly_id, current_user)
 
-            # Get all users not already assigned to this assembly (for add form)
-            available_users = list(uow.users.get_users_not_in_assembly(assembly_id))
-
             # Check if current user can manage this assembly's members
             can_manage_assembly_users = can_manage_assembly_members(current_user, assembly)
 
@@ -181,7 +178,6 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "main/view_assembly_members.html",
             assembly=assembly,
             assembly_users=assembly_users,
-            available_users=available_users,
             can_manage_assembly_users=can_manage_assembly_users,
             add_user_form=add_user_form,
             current_tab="members",
