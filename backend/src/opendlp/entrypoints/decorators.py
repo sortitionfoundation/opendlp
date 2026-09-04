@@ -11,14 +11,11 @@ from flask import abort, flash, redirect, request, url_for
 from flask_login import current_user
 
 from opendlp.bootstrap import get_flask_uow
-from opendlp.domain.value_objects import AssemblyRole, GlobalRole, get_role_level
+from opendlp.domain.value_objects import GlobalRole, get_role_level
 from opendlp.feature_flags import has_feature
 from opendlp.service_layer.permissions import (
-    can_call_confirmations,
     can_create_assembly,
     can_manage_assembly,
-    can_view_assembly,
-    has_global_admin,
 )
 from opendlp.translations import _
 
@@ -180,80 +177,6 @@ def require_assembly_permission(permission_func: Callable) -> Callable[[F], F]:
     return decorator
 
 
-def require_assembly_view[F: Callable[..., Any]](f: F) -> F:
-    """Decorator that requires assembly view permission."""
-    return require_assembly_permission(can_view_assembly)(f)
-
-
 def require_assembly_management[F: Callable[..., Any]](f: F) -> F:
     """Decorator that requires assembly management permission."""
     return require_assembly_permission(can_manage_assembly)(f)
-
-
-def require_confirmation_calling[F: Callable[..., Any]](f: F) -> F:
-    """Decorator that requires confirmation calling permission."""
-    return require_assembly_permission(can_call_confirmations)(f)
-
-
-def require_assembly_role(required_role: AssemblyRole) -> Callable[[F], F]:
-    """Decorator that requires specific assembly role.
-
-    Args:
-        required_role: The assembly role required
-
-    Returns:
-        Decorator that enforces the assembly role requirement
-    """
-
-    def decorator(f: F) -> F:
-        @wraps(f)
-        def decorated_function(*args: Any, **kwargs: Any) -> Any:
-            if not current_user.is_authenticated:
-                flash(_("Please sign in to access this page."), "error")
-                return redirect(url_for("auth.login", next=request.url))
-
-            # Extract assembly_id from kwargs or URL
-            assembly_id = kwargs.get("assembly_id") or (
-                request.view_args.get("assembly_id") if request.view_args else None
-            )
-            if not assembly_id:
-                abort(400)
-
-            try:
-                assembly_uuid = uuid.UUID(str(assembly_id))
-
-                # Global admins bypass the assembly role check
-                if has_global_admin(current_user):
-                    return f(*args, **kwargs)
-
-                # Check specific assembly role
-                user_has_role = any(
-                    role.assembly_id == assembly_uuid and role.role == required_role
-                    for role in current_user.assembly_roles
-                )
-
-                if not user_has_role:
-                    logger.warning(
-                        f"User {current_user.id} missing role {required_role} "
-                        f"for assembly {assembly_id} at {request.endpoint}"
-                    )
-                    abort(403)
-
-                return f(*args, **kwargs)
-
-            except (ValueError, TypeError):
-                abort(400)
-
-        return decorated_function  # type: ignore[return-value]
-
-    return decorator
-
-
-def require_assembly_manager[F: Callable[..., Any]](f: F) -> F:
-    """Decorator that requires assembly manager role."""
-    return require_assembly_role(AssemblyRole.ASSEMBLY_MANAGER)(f)
-
-
-def require_confirmation_caller[F: Callable[..., Any]](f: F) -> F:
-    """Decorator that requires confirmation caller role."""
-    return require_assembly_role(AssemblyRole.CONFIRMATION_CALLER)(f)
