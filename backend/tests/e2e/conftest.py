@@ -1,3 +1,4 @@
+import os
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -9,20 +10,51 @@ from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer.assembly_service import add_assembly_gsheet, create_assembly
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
+from tests.conftest import restore_flask_app_state
 from tests.e2e.helpers import get_csrf_token
 
 
-@pytest.fixture
-def app(temp_env_vars, worker_db_url, test_redis_client):
-    """Create test Flask application."""
-    temp_env_vars(
-        DB_URI=worker_db_url,
-        REDIS_PORT="63792",
-        REDIS_DB=str(test_redis_client.connection_pool.connection_kwargs["db"]),
-    )
+@pytest.fixture(scope="session")
+def app(worker_db_url, test_redis_client):
+    """Create the test Flask application, shared by every e2e test in this worker.
+
+    create_app() is expensive (werkzeug compiles every URL rule again for each
+    new app), so the app is built once per pytest worker. The env vars must
+    stay set while any e2e test can run: bootstrap_session_factory() re-reads
+    get_db_uri() on every request, not just at app creation. They are all in
+    ENV_KEYS_TESTS_MAY_INHERIT, so the per-test env scrub leaves them alone;
+    a test asserting env-derived defaults must clear them itself (see
+    tests/unit/test_config.py). Restored at session teardown so nothing
+    launched afterwards inherits this worker's database settings.
+
+    A test that needs a differently *constructed* app overrides this fixture;
+    a test that only needs different app *config* can assign to app.config —
+    the autouse guard below restores it between tests.
+    """
+    saved_env = {key: os.environ.get(key) for key in ("DB_URI", "REDIS_PORT", "REDIS_DB")}
+    os.environ["DB_URI"] = worker_db_url
+    os.environ["REDIS_PORT"] = "63792"
+    os.environ["REDIS_DB"] = str(test_redis_client.connection_pool.connection_kwargs["db"])
     reset_celery_app()  # ensure the celery app is reset and picks up
     start_mappers()  # Initialize SQLAlchemy mappings
-    return create_app("testing_postgres")
+    yield create_app("testing_postgres")
+    for key, value in saved_env.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:  # pragma: no cover - only reached when a developer .env sets these
+            os.environ[key] = value
+
+
+@pytest.fixture(autouse=True)
+def _restore_shared_app_state(app):
+    """Undo app.config / extension mutations a test makes on the shared app.
+
+    The app outlives each test, so mutations would leak into every later test
+    in the worker (e.g. test_csrf_protection_enabled flips WTF_CSRF_ENABLED,
+    which would 400 every later POST).
+    """
+    with restore_flask_app_state(app):
+        yield
 
 
 @pytest.fixture

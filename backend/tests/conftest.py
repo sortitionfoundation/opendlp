@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import time
 import urllib.request
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -434,6 +435,25 @@ def postgres_session(postgres_session_factory):
 
     session.rollback()
     session.close()
+
+
+@contextmanager
+def restore_flask_app_state(app):
+    """Snapshot app.config and app.extensions, restoring both on exit.
+
+    The component and e2e tiers share one Flask app across tests, so a test's
+    mutations would otherwise leak into every later test in the worker. Both
+    snapshots are shallow: a test must *assign* new values (or use
+    monkeypatch.setitem), not mutate the objects a key already holds - an
+    in-place mutation survives the restore.
+    """
+    saved_config = dict(app.config)
+    saved_extensions = dict(app.extensions)
+    yield
+    app.config.clear()
+    app.config.update(saved_config)
+    app.extensions.clear()
+    app.extensions.update(saved_extensions)
 
 
 @pytest.fixture
