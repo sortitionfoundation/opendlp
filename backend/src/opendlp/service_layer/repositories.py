@@ -145,7 +145,11 @@ class AssemblyRepository(AbstractRepository):
 
     @abc.abstractmethod
     def get_assemblies_for_user(self, user_id: uuid.UUID) -> Iterable[Assembly]:
-        """Get all assemblies that a user has access to."""
+        """Get the active assemblies the user holds a role on, newest first.
+
+        A role lookup, not a permission check. Whether someone is entitled to
+        see more than this is decided by `service_layer.permissions`.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod

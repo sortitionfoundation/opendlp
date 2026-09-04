@@ -270,17 +270,17 @@ class SqlAlchemyAssemblyRepository(SqlAlchemyRepository, AssemblyRepository):
         )
 
     def get_assemblies_for_user(self, user_id: uuid.UUID) -> Iterable[Assembly]:
-        """Get all assemblies that a user has access to."""
-        # First check if user has global permissions
-        user = self.session.query(User).filter_by(id=user_id).first()
-        if not user:
-            return []
+        """Get the active assemblies the user holds a role on, newest first.
 
-        if user.global_role == GlobalRole.ADMIN:
-            # Global admins can access all active assemblies
-            return self.get_active_assemblies()
+        Purely a role lookup - it asks no question about the user's global role.
+        Who is entitled to see more than their own assemblies is a policy
+        decision, and it lives with the other capabilities in
+        `service_layer.permissions`; `user_service.get_user_assemblies` is what
+        consults it and sends an admin to `get_active_assemblies` instead.
 
-        # Regular users can only access assemblies where they have specific roles
+        A user id with no roles - including one that names nobody - has no
+        assemblies, so there is no separate not-found case.
+        """
         assembly_ids_subquery = select(orm.user_assembly_roles.c.assembly_id).where(
             orm.user_assembly_roles.c.user_id == user_id
         )

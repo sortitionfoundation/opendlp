@@ -4,9 +4,10 @@ ABOUTME: Each test runs against both fake and SQL backends to verify identical b
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from opendlp.domain.value_objects import AssemblyStatus
+from opendlp.domain.value_objects import AssemblyStatus, GlobalRole
 from tests.contract.conftest import ContractBackend, make_assembly
 
 if TYPE_CHECKING:
@@ -106,3 +107,82 @@ class TestSearchByTitle:
 
         results = list(assembly_repo_backend.repo.search_by_title("nonexistent"))
         assert len(results) == 0
+
+
+class TestGetAssembliesForUser:
+    """A role lookup, deliberately not a permission check.
+
+    Who is entitled to see more than the assemblies they hold a role on is
+    decided in service_layer.permissions, so no global role - admin included -
+    changes what this returns.
+    """
+
+    def test_returns_the_assemblies_the_user_holds_a_role_on(self, assembly_repo_backend: ContractBackend):
+        user = assembly_repo_backend.make_user()
+        theirs = _add_assembly(assembly_repo_backend, title="Theirs")
+        _add_assembly(assembly_repo_backend, title="Someone else's")
+        assembly_repo_backend.grant_assembly_role(user, theirs)
+
+        results = list(assembly_repo_backend.repo.get_assemblies_for_user(user.id))
+        assert [assembly.title for assembly in results] == ["Theirs"]
+
+    def test_returns_empty_for_a_user_with_no_roles(self, assembly_repo_backend: ContractBackend):
+        user = assembly_repo_backend.make_user()
+        _add_assembly(assembly_repo_backend, title="Someone else's")
+
+        assert list(assembly_repo_backend.repo.get_assemblies_for_user(user.id)) == []
+
+    def test_an_admin_gets_no_special_treatment(self, assembly_repo_backend: ContractBackend):
+        """The global role is not this method's business."""
+        admin = assembly_repo_backend.make_user(global_role=GlobalRole.ADMIN)
+        _add_assembly(assembly_repo_backend, title="Not theirs")
+
+        assert list(assembly_repo_backend.repo.get_assemblies_for_user(admin.id)) == []
+
+    def test_returns_empty_for_a_user_id_that_names_nobody(self, assembly_repo_backend: ContractBackend):
+        _add_assembly(assembly_repo_backend, title="Someone else's")
+
+        assert list(assembly_repo_backend.repo.get_assemblies_for_user(uuid.uuid4())) == []
+
+    def test_excludes_archived_assemblies(self, assembly_repo_backend: ContractBackend):
+        user = assembly_repo_backend.make_user()
+        archived = _add_assembly(assembly_repo_backend, title="Archived", status=AssemblyStatus.ARCHIVED)
+        assembly_repo_backend.grant_assembly_role(user, archived)
+
+        assert list(assembly_repo_backend.repo.get_assemblies_for_user(user.id)) == []
+
+    def test_orders_newest_first(self, assembly_repo_backend: ContractBackend):
+        user = assembly_repo_backend.make_user()
+        older = _add_assembly(
+            assembly_repo_backend,
+            title="Older",
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        newer = _add_assembly(
+            assembly_repo_backend,
+            title="Newer",
+            created_at=datetime(2026, 6, 1, tzinfo=UTC),
+        )
+        assembly_repo_backend.grant_assembly_role(user, older)
+        assembly_repo_backend.grant_assembly_role(user, newer)
+
+        results = list(assembly_repo_backend.repo.get_assemblies_for_user(user.id))
+        assert [assembly.title for assembly in results] == ["Newer", "Older"]
+
+
+class TestCreatedByUserId:
+    def test_round_trips_the_creator(self, assembly_repo_backend: ContractBackend):
+        creator = assembly_repo_backend.make_user()
+        assembly = _add_assembly(assembly_repo_backend, created_by_user_id=creator.id)
+
+        retrieved = assembly_repo_backend.repo.get(assembly.id)
+        assert retrieved is not None
+        assert retrieved.created_by_user_id == creator.id
+
+    def test_round_trips_no_creator(self, assembly_repo_backend: ContractBackend):
+        """Assemblies made before the column existed, and any whose creator was deleted."""
+        assembly = _add_assembly(assembly_repo_backend)
+
+        retrieved = assembly_repo_backend.repo.get(assembly.id)
+        assert retrieved is not None
+        assert retrieved.created_by_user_id is None

@@ -230,28 +230,30 @@ class FakeUserRepository(FakeRepository, UserRepository):
 class FakeAssemblyRepository(FakeRepository, AssemblyRepository):
     """Fake implementation of AssemblyRepository."""
 
-    def __init__(self, users: "FakeUserRepository | None" = None) -> None:
+    def __init__(self, users: "FakeUserRepository") -> None:
         super().__init__()
-        # Needed to answer get_assemblies_for_user, which depends on the asking
-        # user's global role and assembly roles.
+        # Required, not optional: assembly roles hang off the User in the fake,
+        # so get_assemblies_for_user cannot be answered without it. Defaulting it
+        # to None would let a caller receive a confidently empty list instead of
+        # an error.
         self._users = users
 
+    def _newest_first(self, assemblies: Iterable[Assembly]) -> list[Assembly]:
+        """Order as the SQL repository does, so a test cannot pass here and fail there."""
+        return sorted(assemblies, key=lambda assembly: assembly.created_at, reverse=True)
+
     def get_active_assemblies(self) -> Iterable[Assembly]:
-        """Get all assemblies that are currently active."""
-        return [assembly for assembly in self._items if assembly.is_active()]
+        """Get all assemblies that are currently active, newest first."""
+        return self._newest_first(assembly for assembly in self._items if assembly.is_active())
 
     def get_assemblies_for_user(self, user_id: uuid.UUID) -> Iterable[Assembly]:
-        """Get the active assemblies a user has access to, mirroring the SQL repository.
+        """Get the active assemblies the user holds a role on, newest first.
 
-        Admins see every active assembly; everyone else sees only the ones they
-        hold an assembly role on.
+        A role lookup, like the SQL repository: it asks nothing about the user's
+        global role. A user id with no roles has no assemblies.
         """
-        user = self._users.get(user_id) if self._users else None
-        if not user:
-            return []
-        if user.global_role == GlobalRole.ADMIN:
-            return self.get_active_assemblies()
-        assembly_ids = {role.assembly_id for role in user.assembly_roles}
+        user = self._users.get(user_id)
+        assembly_ids = {role.assembly_id for role in user.assembly_roles} if user else set()
         return [assembly for assembly in self.get_active_assemblies() if assembly.id in assembly_ids]
 
     def get_assemblies_by_status(self, status: AssemblyStatus) -> Iterable[Assembly]:
@@ -1038,6 +1040,11 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         self.committed = False
         self.expire_all_calls = 0
         self._snapshot: dict[str, list[Any]] | None = None
+
+    @property
+    def store(self) -> FakeStore:
+        """The backing store, for tests that need to reach a sibling repository directly."""
+        return self._store
 
     def _bind_repositories(self, open_context: bool) -> None:
         for name in _REPO_NAMES:
