@@ -13,6 +13,7 @@ from opendlp.entrypoints.flask_app import create_app
 from opendlp.service_layer import sortition
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.user_service import create_user
+from tests.conftest import restore_flask_app_state
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -163,24 +164,26 @@ def app(_component_app_and_store_holder, fake_store):
     """
     app, holder = _component_app_and_store_holder
     holder["store"] = fake_store
-    return app
+    yield app
+    # Empty the holder so a request served outside any test that set up a store
+    # fails loudly on the missing key rather than silently reading stale data.
+    holder.pop("store", None)
 
 
 @pytest.fixture(autouse=True)
 def _restore_shared_app_state(_component_app_and_store_holder):
     """Undo app.config / extension mutations a test makes on the shared app.
 
-    With a per-test app these mutations died with the app; with a shared app
-    they would leak into every later test in the worker (e.g. a test flipping
-    WTF_CSRF_ENABLED would 400 every later POST).
+    The app outlives each test, so mutations would leak into every later test
+    in the worker (e.g. a test flipping WTF_CSRF_ENABLED would 400 every later
+    POST). Deliberately depends on the session app, not `app`: a module's own
+    `app` override is per-test (mutations die with it, no guard needed), and
+    depending on `app` here would instantiate that override before the
+    module's other autouse fixtures, upsetting their ordering.
     """
-    app, _ = _component_app_and_store_holder
-    saved_config = dict(app.config)
-    saved_export_factory = app.extensions.get("gsheet_export_target_factory")
-    yield
-    app.config.clear()
-    app.config.update(saved_config)
-    app.extensions["gsheet_export_target_factory"] = saved_export_factory
+    shared_app, _ = _component_app_and_store_holder
+    with restore_flask_app_state(shared_app):
+        yield
 
 
 @pytest.fixture
