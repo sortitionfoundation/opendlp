@@ -25,7 +25,7 @@ from .registration_page_service import page_for_assembly
 from .unit_of_work import AbstractUnitOfWork
 
 _MANAGE_ROLE = "assembly-manager or admin"
-_VIEW_ROLE = "assembly role or global privileges"
+_VIEW_ROLE = "assembly role or admin"
 
 
 def _load_user_and_assembly(

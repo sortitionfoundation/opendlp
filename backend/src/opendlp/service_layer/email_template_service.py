@@ -28,7 +28,7 @@ from .unit_of_work import AbstractUnitOfWork
 logger = structlog.get_logger(__name__)
 
 _MANAGE_ROLE = "assembly-manager or admin"
-_VIEW_ROLE = "assembly role or global privileges"
+_VIEW_ROLE = "assembly role or admin"
 _EMAIL_FIELD_KEY = "email"
 
 

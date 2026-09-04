@@ -167,7 +167,7 @@ def get_assembly_with_permissions(
 
     # Check permissions
     if not can_view_assembly(user, assembly):
-        raise InsufficientPermissions(action="view assembly", required_role="assembly role or global privileges")
+        raise InsufficientPermissions(action="view assembly", required_role="assembly role or admin")
 
     # Explicit typing to satisfy mypy
     retrieved_assembly: Assembly = assembly.create_detached_copy()
@@ -457,7 +457,7 @@ def get_assembly_gsheet(
 
     # Check permissions
     if not can_view_assembly(user, assembly):
-        raise InsufficientPermissions(action="view assembly gsheet", required_role="assembly role or global privileges")
+        raise InsufficientPermissions(action="view assembly gsheet", required_role="assembly role or admin")
 
     # Get the gsheet
     assembly_gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
@@ -511,7 +511,7 @@ def get_or_create_selection_settings(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view selection settings",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     if assembly.selection_settings is None:
@@ -576,7 +576,7 @@ def get_or_create_csv_config(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view CSV configuration",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     # Create default config if doesn't exist
@@ -721,7 +721,7 @@ def get_csv_upload_status(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view CSV upload status",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     # Get targets count

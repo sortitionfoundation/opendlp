@@ -66,7 +66,7 @@ def _ensure_view_permission(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembl
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view respondent field schema",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
 

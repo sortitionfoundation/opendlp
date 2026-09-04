@@ -35,7 +35,7 @@ from .permissions import can_manage_assembly, can_view_assembly
 from .unit_of_work import AbstractUnitOfWork
 
 _MANAGE_ROLE = "assembly-manager or admin"
-_VIEW_ROLE = "assembly role or global privileges"
+_VIEW_ROLE = "assembly role or admin"
 
 
 def _load_user_and_assembly(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID):  # type: ignore[no-untyped-def]

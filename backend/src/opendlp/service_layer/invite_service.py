@@ -41,7 +41,7 @@ def generate_invite(
     if not user:
         raise UserNotFoundError(f"User {created_by_user_id} not found")
 
-    # Check permissions - only global organisers and admins can create invites
+    # Check permissions - only admins can create invites
     if not can_administer_site(user):
         raise InsufficientPermissions(action="generate invite", required_role="admin")
 

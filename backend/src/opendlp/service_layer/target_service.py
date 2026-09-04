@@ -242,7 +242,7 @@ def get_targets_for_assembly(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view targets",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     categories = uow.target_categories.get_by_assembly_id(assembly_id)
@@ -530,7 +530,7 @@ def get_feature_collection_for_assembly(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="get feature collection",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     # Use SelectionData with our custom adapter

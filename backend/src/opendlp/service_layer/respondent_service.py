@@ -336,7 +336,7 @@ def get_respondents_for_assembly(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view respondents",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     respondents = uow.respondents.get_by_assembly_id(assembly_id, status=status, include_deleted=include_deleted)
@@ -366,7 +366,7 @@ def get_respondents_for_assembly_paginated(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view respondents",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     respondents, total_count = uow.respondents.get_by_assembly_id_paginated(
@@ -559,7 +559,7 @@ def get_respondent(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view respondents",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     respondent = uow.respondents.get(respondent_id)
@@ -593,7 +593,7 @@ def get_respondent_with_comment_authors(
     if not can_view_assembly(user, assembly):
         raise InsufficientPermissions(
             action="view respondents",
-            required_role="assembly role or global privileges",
+            required_role="assembly role or admin",
         )
 
     respondent = uow.respondents.get(respondent_id)
