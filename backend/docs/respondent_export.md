@@ -11,8 +11,8 @@ the **Export** button, which opens a modal (loaded with HTMX).
 - **Google Sheets** — written into a worksheet of an existing spreadsheet via
   `gspread`, using the same service account as the selection Google Sheets
   workflow. The organiser supplies the spreadsheet URL and worksheet name; these
-  are saved to the `AssemblyRespondentGSheet` model and pre-filled on later
-  exports. The service account must have edit access to the sheet (share it with
+  are saved to the `AssemblyExportGSheet` model, under the `RESPONDENTS` export
+  kind, and pre-filled on later exports. The service account must have edit access to the sheet (share it with
   the service-account email shown in the modal).
 
 ## Filtering

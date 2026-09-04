@@ -10,7 +10,7 @@ from sqlalchemy import and_, delete, distinct, func, or_, select, update
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
-from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
+from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.email_send_record import RespondentEmailSendRecord
 from opendlp.domain.email_template import EmailTemplate
@@ -34,15 +34,16 @@ from opendlp.domain.value_objects import (
     SELECTED_RESPONDENT_STATUSES,
     AssemblyStatus,
     GlobalRole,
+    GSheetExportKind,
     RespondentAction,
     RespondentStatus,
     SelectionRunStatus,
     SelectionTaskType,
 )
 from opendlp.service_layer.repositories import (
+    AssemblyExportGSheetRepository,
     AssemblyGSheetRepository,
     AssemblyRepository,
-    AssemblyRespondentGSheetRepository,
     EmailConfirmationTokenRepository,
     EmailTemplateRepository,
     PasswordResetTokenRepository,
@@ -482,27 +483,41 @@ class SqlAlchemyAssemblyGSheetRepository(SqlAlchemyRepository, AssemblyGSheetRep
         self.session.delete(item)
 
 
-class SqlAlchemyAssemblyRespondentGSheetRepository(SqlAlchemyRepository, AssemblyRespondentGSheetRepository):
-    """SQLAlchemy implementation of AssemblyRespondentGSheetRepository."""
+class SqlAlchemyAssemblyExportGSheetRepository(SqlAlchemyRepository, AssemblyExportGSheetRepository):
+    """SQLAlchemy implementation of AssemblyExportGSheetRepository."""
 
-    def add(self, item: AssemblyRespondentGSheet) -> None:
-        """Add an AssemblyRespondentGSheet to the repository."""
+    def add(self, item: AssemblyExportGSheet) -> None:
+        """Add an AssemblyExportGSheet to the repository."""
         self.session.add(item)
 
-    def get(self, item_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
-        """Get an AssemblyRespondentGSheet by its ID."""
-        return self.session.query(AssemblyRespondentGSheet).filter_by(assembly_respondent_gsheet_id=item_id).first()
+    def get(self, item_id: uuid.UUID) -> AssemblyExportGSheet | None:
+        """Get an AssemblyExportGSheet by its ID."""
+        return self.session.query(AssemblyExportGSheet).filter_by(assembly_export_gsheet_id=item_id).first()
 
-    def all(self) -> Iterable[AssemblyRespondentGSheet]:
-        """Get all AssemblyRespondentGSheets."""
-        return self.session.query(AssemblyRespondentGSheet).all()
+    def all(self) -> Iterable[AssemblyExportGSheet]:
+        """Get all AssemblyExportGSheets."""
+        return self.session.query(AssemblyExportGSheet).all()
 
-    def get_by_assembly_id(self, assembly_id: uuid.UUID) -> AssemblyRespondentGSheet | None:
-        """Get an AssemblyRespondentGSheet by its assembly ID."""
-        return self.session.query(AssemblyRespondentGSheet).filter_by(assembly_id=assembly_id).first()
+    def get_by_assembly_and_kind(
+        self,
+        assembly_id: uuid.UUID,
+        export_kind: GSheetExportKind,
+    ) -> AssemblyExportGSheet | None:
+        """Get the saved export sheet for one assembly and export kind."""
+        return (
+            self.session
+            .query(AssemblyExportGSheet)
+            .filter(
+                and_(
+                    orm.assembly_export_gsheets.c.assembly_id == assembly_id,
+                    orm.assembly_export_gsheets.c.export_kind == export_kind,
+                )
+            )
+            .first()
+        )
 
-    def delete(self, item: AssemblyRespondentGSheet) -> None:
-        """Delete an AssemblyRespondentGSheet from the repository."""
+    def delete(self, item: AssemblyExportGSheet) -> None:
+        """Delete an AssemblyExportGSheet from the repository."""
         self.session.delete(item)
 
 
@@ -1250,6 +1265,14 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             .count()
         )
 
+    def count_by_status(self, assembly_id: uuid.UUID) -> dict[RespondentStatus, int]:
+        rows = self.session.execute(
+            select(orm.respondents.c.selection_status, func.count().label("cnt"))
+            .where(orm.respondents.c.assembly_id == assembly_id)
+            .group_by(orm.respondents.c.selection_status)
+        ).all()
+        return {row.selection_status: row.cnt for row in rows}
+
     def delete(self, item: Respondent) -> None:
         self.session.delete(item)
 
@@ -1359,6 +1382,47 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                     orm.respondents.c.assembly_id == assembly_id,
                     orm.respondents.c.attributes[attribute_name].isnot(None),
                     orm.respondents.c.selection_status.in_(COUNTED_RESPONDENT_STATUSES),
+                )
+            )
+            .group_by(val_col)
+        ).all()
+        return {row.val: row.cnt for row in rows if row.val is not None}
+
+    def get_attribute_value_counts_by_status(
+        self,
+        assembly_id: uuid.UUID,
+        attribute_name: str,
+    ) -> dict[str, dict[RespondentStatus, int]]:
+        val_col = orm.respondents.c.attributes[attribute_name].as_string().label("val")
+        rows = self.session.execute(
+            select(val_col, orm.respondents.c.selection_status, func.count().label("cnt"))
+            .where(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.attributes[attribute_name].isnot(None),
+                    orm.respondents.c.selection_status != RespondentStatus.DELETED,
+                )
+            )
+            .group_by(val_col, orm.respondents.c.selection_status)
+        ).all()
+        counts: dict[str, dict[RespondentStatus, int]] = {}
+        for row in rows:
+            if row.val is None:
+                continue
+            counts.setdefault(row.val, {})[row.selection_status] = row.cnt
+        return counts
+
+    def get_attribute_value_available_counts(self, assembly_id: uuid.UUID, attribute_name: str) -> dict[str, int]:
+        val_col = orm.respondents.c.attributes[attribute_name].as_string().label("val")
+        rows = self.session.execute(
+            select(val_col, func.count().label("cnt"))
+            .where(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.attributes[attribute_name].isnot(None),
+                    orm.respondents.c.selection_status == RespondentStatus.POOL,
+                    or_(orm.respondents.c.eligible == True, orm.respondents.c.eligible.is_(None)),  # noqa: E712
+                    or_(orm.respondents.c.can_attend == True, orm.respondents.c.can_attend.is_(None)),  # noqa: E712
                 )
             )
             .group_by(val_col)

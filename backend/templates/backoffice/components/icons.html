@@ -3,13 +3,18 @@ ABOUTME: Every UI icon in the backoffice, one macro per glyph, sized by the call
 ABOUTME: Glyphs are decorative - the accessible name belongs on the control that wraps them
 #}
 {#
+    The house icon family is Lucide. Every 24-grid drawing below is taken
+    verbatim from the "Icons" sheet of the OpenDLP - UI Figma file (node
+    5032:8946), which is the set the design standardises on. Draw at
+    stroke-width 2 with round caps and joins; do not add per-call-site weights.
+
     Each macro takes `classes` for sizing. Some call sites size their icon from
     CSS instead (a `.btn-icon` slot, `.dialog-close`), so an empty `classes`
     emits no class attribute at all.
 
-    Several concepts below are drawn more than once. Those macros carry a family
-    or grid-size suffix, and `showcase/icons.html` groups them so the team can
-    decide which to keep. See docs/agent/666-target-percentage/icons-plan.md.
+    Three glyphs are not from the 24 grid: the stepper's tick and warning (20
+    grid) and the checkbox tick (12 grid) are drawn to fill their slots, and
+    that divergence is deliberate. Everything else is the shared set.
 
     Not here: brand marks (components/brand_marks.html), the product logo
     (components/navigation.html), diagram illustrations, and the GOV.UK
@@ -18,22 +23,21 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
 {# ============================================================================
    CHEVRONS AND ARROWS
 ============================================================================ #}
-{% macro icon_chevron_down(classes="w-4 h-4", stroke_width="2") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ stroke_width }}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="6 9 12 15 18 9"/>
+{% macro icon_chevron_down(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 9L12 15L18 9"/>
     </svg>
 {% endmacro %}
 
-{% macro icon_chevron_up(classes="w-4 h-4", stroke_width="2") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ stroke_width }}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="6 15 12 9 18 15"/>
+{% macro icon_chevron_up(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 15L12 9L6 15"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_arrow_back(classes="w-6 h-6") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <line x1="19" x2="5" y1="12" y2="12"/>
-        <polyline points="12 19 5 12 12 5"/>
+        <path d="M12 5L5 12L12 19M5 12H19"/>
     </svg>
 {% endmacro %}
 
@@ -42,82 +46,58 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
 ============================================================================ #}
 {% macro icon_user(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
+        <path d="M19 21V19C19 17.9391 18.5786 16.9217 17.8284 16.1716C17.0783 15.4214 16.0609 15 15 15H9C7.93913 15 6.92172 15.4214 6.17157 16.1716C5.42143 16.9217 5 17.9391 5 19V21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_switch(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M7 3v18"/>
-        <path d="m3 8 4-5 4 5"/>
-        <path d="M17 21V3"/>
-        <path d="m13 16 4 5 4-5"/>
+        <path d="M13 16L17 20L21 16M17 20V4M11 8L7 4L3 8M7 4V20"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_data_agreement(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <path d="M14 2v6h6"/>
-        <path d="M16 13H8"/>
-        <path d="M16 17H8"/>
-        <path d="M10 9H8"/>
+        <path d="M14 2H6C5.46957 2 4.96086 2.21072 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8M14 2C14.3166 1.99949 14.6301 2.06161 14.9225 2.18277C15.215 2.30394 15.4806 2.48176 15.704 2.706L19.292 6.294C19.5168 6.51751 19.6952 6.78335 19.8167 7.07616C19.9382 7.36898 20.0005 7.68297 20 8M14 2V7C14 7.26522 14.1054 7.51957 14.2929 7.70711C14.4804 7.89464 14.7348 8 15 8L20 8M10 9H8M16 13H8M16 17H8"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_about(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+        <path d="M20 20C20.5304 20 21.0391 19.7893 21.4142 19.4142C21.7893 19.0391 22 18.5304 22 18V8C22 7.46957 21.7893 6.96086 21.4142 6.58579C21.0391 6.21071 20.5304 6 20 6H12.1C11.7655 6.00328 11.4355 5.92261 11.1403 5.76538C10.8451 5.60815 10.594 5.37938 10.41 5.1L9.6 3.9C9.41789 3.62347 9.16997 3.39648 8.8785 3.2394C8.58702 3.08231 8.26111 3.00005 7.93 3H4C3.46957 3 2.96086 3.21071 2.58579 3.58579C2.21071 3.96086 2 4.46957 2 5V18C2 18.5304 2.21071 19.0391 2.58579 19.4142C2.96086 19.7893 3.46957 20 4 20H20Z"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_logout(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-        <polyline points="16 17 21 12 16 7"/>
-        <line x1="21" x2="9" y1="12" y2="12"/>
+        <path d="M16 7L21 12L16 17M21 12H9M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_question_circle(classes="w-6 h-6") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-        <path d="M12 17h.01"/>
+        <path d="M9.08997 9.00008C9.32507 8.33175 9.78912 7.76819 10.3999 7.40921C11.0107 7.05024 11.7289 6.91902 12.4271 7.03879C13.1254 7.15857 13.7588 7.52161 14.215 8.06361C14.6713 8.60561 14.921 9.2916 14.92 10.0001C14.92 12.0001 11.92 13.0001 11.92 13.0001M12 17H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"/>
     </svg>
 {% endmacro %}
 
 {# ============================================================================
    STATUS - INFORMATION
-
-   Two glyphs for one idea. The Lucide one sits beside labels and table
-   headings; the Heroicons one heads the "configured elsewhere" panels and the
-   asset library's format hints.
 ============================================================================ #}
-{% macro icon_info_lucide(classes="w-4 h-4") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 16v-4"/>
-        <path d="M12 8h.01"/>
-    </svg>
-{% endmacro %}
-
-{% macro icon_info_heroicons(classes="w-4 h-4", style="") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+{% macro icon_info(classes="w-4 h-4", style="") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 16V12M12 8H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"/>
     </svg>
 {% endmacro %}
 
 {# ============================================================================
    STATUS - TICK
 
-   Three glyphs for one idea. The 20 and 12 grid versions are drawn for the
-   stepper bubble and the checkbox square, so their divergence may be deliberate.
+   The 20 and 12 grid versions are drawn to fill the stepper bubble and the
+   checkbox square; that divergence is deliberate.
 ============================================================================ #}
-{% macro icon_check(classes="h-5 w-5", style="") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+{% macro icon_check(classes="w-5 h-5", style="") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6L9 17L4 12"/>
     </svg>
 {% endmacro %}
 
@@ -136,11 +116,11 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
 {# ============================================================================
    STATUS - WARNING
 
-   Two glyphs for one idea. The 20 grid version is drawn for the stepper bubble.
+   The 20 grid version is drawn to fill the stepper bubble; deliberate.
 ============================================================================ #}
-{% macro icon_warning(classes="h-6 w-6", style="") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+{% macro icon_warning(classes="w-6 h-6", style="") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 9V13M12 17H12.01M21.7299 18.0002L13.7299 4.00022C13.5555 3.69243 13.3025 3.43641 12.9969 3.25829C12.6912 3.08017 12.3437 2.98633 11.9899 2.98633C11.6361 2.98633 11.2887 3.08017 10.983 3.25829C10.6773 3.43641 10.4244 3.69243 10.2499 4.00022L2.24993 18.0002C2.07361 18.3056 1.98116 18.6521 1.98194 19.0047C1.98272 19.3573 2.07671 19.7035 2.25438 20.008C2.43204 20.3126 2.68708 20.5648 2.99362 20.7391C3.30017 20.9133 3.64734 21.0034 3.99993 21.0002H19.9999C20.3508 20.9999 20.6955 20.9072 20.9992 20.7315C21.303 20.5558 21.5551 20.3033 21.7304 19.9993C21.9057 19.6954 21.998 19.3506 21.9979 18.9997C21.9978 18.6488 21.9054 18.3041 21.7299 18.0002Z"/>
     </svg>
 {% endmacro %}
 
@@ -155,113 +135,77 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
 {# ============================================================================
    STATUS - BUSY
 ============================================================================ #}
-{% macro icon_spinner(classes="animate-spin h-5 w-5", style="") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} fill="none" viewBox="0 0 24 24" aria-hidden="true">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+{% macro icon_spinner(classes="animate-spin w-5 h-5", style="") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12C20.9999 13.9006 20.3981 15.7524 19.2809 17.2899C18.1637 18.8275 16.5885 19.9719 14.7809 20.5592C12.9733 21.1464 11.0262 21.1464 9.21864 20.559C7.41109 19.9716 5.83588 18.8271 4.71876 17.2895C3.60165 15.7519 2.99999 13.9001 3 11.9995C3.00001 10.0989 3.60171 8.24711 4.71884 6.7095C5.83598 5.17189 7.4112 4.02741 9.21877 3.44008C11.0263 2.85275 12.9734 2.85272 14.781 3.44"/>
     </svg>
 {% endmacro %}
 
 {# ============================================================================
    ACTIONS - ADD
-
-   Two glyphs for one idea.
 ============================================================================ #}
-{% macro icon_plus_heroicons(classes="h-4 w-4") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-7-7h14" />
-    </svg>
-{% endmacro %}
-
-{% macro icon_plus_lucide(classes="") %}
+{% macro icon_plus(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <line x1="12" y1="5" x2="12" y2="19"/>
-        <line x1="5" y1="12" x2="19" y2="12"/>
+        <path d="M5 12H19M12 5V19"/>
     </svg>
 {% endmacro %}
 
 {# ============================================================================
    ACTIONS - DELETE
-
-   Three glyphs for one idea, in three visual languages: the registration
-   editor's outline, the targets editor's filled bin, and a Lucide one that so
-   far only the showcase draws.
 ============================================================================ #}
-{% macro icon_trash_heroicons(classes="h-4 w-4") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
-    </svg>
-{% endmacro %}
-
-{% macro icon_trash_material(classes="") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M15 4H20V6H19V19C19 19.55 18.8038 20.0204 18.4121 20.4121C18.0204 20.8038 17.55 21 17 21H7C6.45 21 5.97956 20.8038 5.58789 20.4121C5.19622 20.0204 5 19.55 5 19V6H4V4H9V3H15V4ZM7 19H17V6H7V19ZM11 8V17H9V8H11ZM15 8V17H13V8H15Z" fill="currentColor" stroke="currentColor"/>
-    </svg>
-{% endmacro %}
-
-{% macro icon_trash_lucide(classes="") %}
+{% macro icon_trash(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="3 6 5 6 21 6"/>
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        <path d="M10 11V17M14 11V17M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M3 6H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6"/>
     </svg>
 {% endmacro %}
 
 {# ============================================================================
    ACTIONS - OTHER
 ============================================================================ #}
-{% macro icon_copy(classes="h-4 w-4", stroke_width="2") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="{{ stroke_width }}" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+{% macro icon_copy(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 16C2.9 16 2 15.1 2 14V4C2 2.9 2.9 2 4 2H14C15.1 2 16 2.9 16 4M10 8H20C21.1046 8 22 8.89543 22 10V20C22 21.1046 21.1046 22 20 22H10C8.89543 22 8 21.1046 8 20V10C8 8.89543 8.89543 8 10 8Z"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_edit(classes="") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        <path d="M12 3H5C4.46957 3 3.96086 3.21071 3.58579 3.58579C3.21071 3.96086 3 4.46957 3 5V19C3 19.5304 3.21071 20.0391 3.58579 20.4142C3.96086 20.7893 4.46957 21 5 21H19C19.5304 21 20.0391 20.7893 20.4142 20.4142C20.7893 20.0391 21 19.5304 21 19V12M18.375 2.62523C18.7728 2.2274 19.3124 2.00391 19.875 2.00391C20.4376 2.00391 20.9771 2.2274 21.375 2.62523C21.7728 3.02305 21.9963 3.56262 21.9963 4.12523C21.9963 4.68784 21.7728 5.2274 21.375 5.62523L12.362 14.6392C12.1245 14.8765 11.8312 15.0501 11.509 15.1442L8.63597 15.9842C8.54992 16.0093 8.45871 16.0108 8.37188 15.9886C8.28505 15.9663 8.2058 15.9212 8.14242 15.8578C8.07904 15.7944 8.03386 15.7151 8.01162 15.6283C7.98937 15.5415 7.99087 15.4503 8.01597 15.3642L8.85597 12.4912C8.9505 12.1693 9.12451 11.8763 9.36197 11.6392L18.375 2.62523Z"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_close(classes="") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 6L6 18M6 6L18 18"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_undo(classes="") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5.63605 18.364C7.2647 19.9927 9.5147 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02945 16.9706 3 12 3C7.94209 3 5.4824 5.7045 3 8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M3 4.5V8.5H7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12C3 13.78 3.52784 15.5201 4.51677 17.0001C5.50571 18.4802 6.91131 19.6337 8.55585 20.3149C10.2004 20.9961 12.01 21.1743 13.7558 20.8271C15.5016 20.4798 17.1053 19.6226 18.364 18.364C19.6226 17.1053 20.4798 15.5016 20.8271 13.7558C21.1743 12.01 20.9961 10.2004 20.3149 8.55585C19.6337 6.91131 18.4802 5.50571 17.0001 4.51677C15.5201 3.52784 13.78 3 12 3C9.48395 3.00947 7.06897 3.99122 5.26 5.74L3 8M8 8H3V3"/>
     </svg>
 {% endmacro %}
 
-{% macro icon_code(classes="h-4 w-4") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+{% macro icon_code(classes="w-4 h-4") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 16L22 12L18 8M6 8L2 12L6 16M14.5 4L9.5 20"/>
     </svg>
 {% endmacro %}
 
-{% macro icon_more_vert(classes="h-5 w-5", style="") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+{% macro icon_more_vert(classes="w-5 h-5", style="") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} {% if style %}style="{{ style }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z"/>
+        <path d="M12 6C12.5523 6 13 5.55228 13 5C13 4.44772 12.5523 4 12 4C11.4477 4 11 4.44772 11 5C11 5.55228 11.4477 6 12 6Z"/>
+        <path d="M12 20C12.5523 20 13 19.5523 13 19C13 18.4477 12.5523 18 12 18C11.4477 18 11 18.4477 11 19C11 19.5523 11.4477 20 12 20Z"/>
     </svg>
 {% endmacro %}
 
 {# ============================================================================
    ACTIONS - DOWNLOAD
-
-   Two glyphs for one idea: the same arrow-into-tray drawn on a 24 and a 16 grid.
 ============================================================================ #}
-{% macro icon_download(classes="h-5 w-5") %}
-    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-    </svg>
-{% endmacro %}
-
-{% macro icon_download_16() %}
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M8 2v8m0 0l-3-3m3 3l3-3" />
-        <path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" />
+{% macro icon_download(classes="w-5 h-5") %}
+    <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 15V3M17 10L12 15L7 10M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"/>
     </svg>
 {% endmacro %}
 
@@ -270,19 +214,12 @@ ABOUTME: Glyphs are decorative - the accessible name belongs on the control that
 ============================================================================ #}
 {% macro icon_hand(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/>
-        <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/>
-        <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/>
-        <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+        <path d="M18 11V6C18 5.46957 17.7893 4.96086 17.4142 4.58579C17.0391 4.21071 16.5304 4 16 4C15.4696 4 14.9609 4.21071 14.5858 4.58579C14.2107 4.96086 14 5.46957 14 6M14 10V4C14 3.46957 13.7893 2.96086 13.4142 2.58579C13.0391 2.21071 12.5304 2 12 2C11.4696 2 10.9609 2.21071 10.5858 2.58579C10.2107 2.96086 10 3.46957 10 4V6M10 6V10.5M10 6C10 5.46957 9.78929 4.96086 9.41421 4.58579C9.03914 4.21071 8.53043 4 8 4C7.46957 4 6.96086 4.21071 6.58579 4.58579C6.21071 4.96086 6 5.46957 6 6V14M18.0001 8C18.0001 7.46957 18.2108 6.96086 18.5859 6.58579C18.961 6.21071 19.4697 6 20.0001 6C20.5305 6 21.0392 6.21071 21.4143 6.58579C21.7894 6.96086 22.0001 7.46957 22.0001 8V14C22.0001 16.1217 21.1572 18.1566 19.657 19.6569C18.1567 21.1571 16.1218 22 14.0001 22H12.0001C9.2001 22 7.5001 21.14 6.0101 19.66L2.4101 16.06C2.06604 15.6789 1.88169 15.1802 1.89523 14.6669C1.90876 14.1537 2.11915 13.6653 2.48282 13.303C2.8465 12.9406 3.3356 12.7319 3.84888 12.7202C4.36215 12.7085 4.86027 12.8946 5.2401 13.24L7.0001 15"/>
     </svg>
 {% endmacro %}
 
 {% macro icon_sparkles(classes="w-4 h-4") %}
     <svg xmlns="http://www.w3.org/2000/svg" {% if classes %}class="{{ classes }}"{% endif %} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
-        <path d="M20 3v4"/>
-        <path d="M22 5h-4"/>
-        <path d="M4 17v2"/>
-        <path d="M5 18H3"/>
+        <path d="M20 2V6M22 4H18M11.017 2.81395C11.0598 2.58456 11.1815 2.37737 11.3611 2.22827C11.5406 2.07917 11.7666 1.99756 12 1.99756C12.2333 1.99756 12.4593 2.07917 12.6389 2.22827C12.8184 2.37737 12.9401 2.58456 12.983 2.81395L14.034 8.37195C14.1086 8.7671 14.3006 9.13057 14.585 9.41492C14.8693 9.69928 15.2328 9.89131 15.628 9.96595L21.186 11.017C21.4153 11.0598 21.6225 11.1815 21.7716 11.3611C21.9207 11.5406 22.0023 11.7666 22.0023 12C22.0023 12.2333 21.9207 12.4593 21.7716 12.6389C21.6225 12.8184 21.4153 12.9401 21.186 12.983L15.628 14.034C15.2328 14.1086 14.8693 14.3006 14.585 14.585C14.3006 14.8693 14.1086 15.2328 14.034 15.628L12.983 21.186C12.9401 21.4153 12.8184 21.6225 12.6389 21.7716C12.4593 21.9207 12.2333 22.0023 12 22.0023C11.7666 22.0023 11.5406 21.9207 11.3611 21.7716C11.1815 21.6225 11.0598 21.4153 11.017 21.186L9.96595 15.628C9.89131 15.2328 9.69928 14.8693 9.41492 14.585C9.13057 14.3006 8.7671 14.1086 8.37195 14.034L2.81395 12.983C2.58456 12.9401 2.37737 12.8184 2.22827 12.6389C2.07917 12.4593 1.99756 12.2333 1.99756 12C1.99756 11.7666 2.07917 11.5406 2.22827 11.3611C2.37737 11.1815 2.58456 11.0598 2.81395 11.017L8.37195 9.96595C8.7671 9.89131 9.13057 9.69928 9.41492 9.41492C9.69928 9.13057 9.89131 8.7671 9.96595 8.37195L11.017 2.81395ZM6 20C6 21.1046 5.10457 22 4 22C2.89543 22 2 21.1046 2 20C2 18.8954 2.89543 18 4 18C5.10457 18 6 18.8954 6 20Z"/>
     </svg>
 {% endmacro %}

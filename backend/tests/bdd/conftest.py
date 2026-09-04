@@ -218,6 +218,16 @@ def test_server(test_database, csv_test_data_dir):
     env["DB_PORT"] = "54322"
     env["REDIS_PORT"] = "63792"
     env["FLASK_APP"] = "src/opendlp/entrypoints/flask_app.py"
+    # The server re-reads .env for itself, and load_dotenv() only fills in keys
+    # that are unset - so the scrub in tests/conftest.py does not reach it for
+    # anything it deleted. Pin the one that would actually do damage: a developer
+    # with EMAIL_ADAPTER=smtp would otherwise have the BDD run send real email.
+    env["EMAIL_ADAPTER"] = "console"
+    # Known, accepted leak: SUPPORTED_LANGUAGES and BABEL_DEFAULT_LOCALE reach the
+    # server the same way, and the steps assert on English text. Playwright sends
+    # an en-US Accept-Language, so get_locale() still picks en for anyone whose
+    # supported list contains it - which is why this is left rather than pinned.
+    # Drop en from that list in your .env and the BDD run will fail oddly.
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
     env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
@@ -558,7 +568,7 @@ def delete_all_except_standard_users(session: Session) -> None:
     session.execute(orm.email_templates.delete())
     session.execute(orm.target_categories.delete())
     session.execute(orm.assembly_gsheets.delete())
-    session.execute(orm.assembly_respondent_gsheets.delete())
+    session.execute(orm.assembly_export_gsheets.delete())
     session.execute(orm.assembly_csv.delete())
     session.execute(orm.selection_settings.delete())
     session.execute(orm.user_invites.delete())

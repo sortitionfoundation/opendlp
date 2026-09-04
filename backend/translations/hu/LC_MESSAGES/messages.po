@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-04 10:59+0000\n"
+"POT-Creation-Date: 2026-09-04 11:07+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -60,6 +60,29 @@ msgstr ""
 #: src/opendlp/domain/assembly.py:332
 msgid "Processing…"
 msgstr ""
+
+#: src/opendlp/domain/assembly_export_gsheet.py:17
+#: src/opendlp/entrypoints/blueprints/backoffice.py:223
+#: src/opendlp/service_layer/dashboard_stats.py:353
+#: templates/backoffice/assembly_respondents.html:15
+#: templates/backoffice/assembly_respondents.html:80
+#: templates/backoffice/components/assembly_tabs.html:64
+#: templates/backoffice/respondents/export_modal.html:65
+#: templates/backoffice/service_docs.html:34
+#: templates/backoffice/targets/bulk_edit_form.html:267
+#: templates/backoffice/targets/category_block.html:129
+#: templates/db_selection/select.html:43
+#: templates/main/view_assembly_base.html:42
+#: templates/respondents/view_respondents.html:2
+#: templates/targets/components/category_block.html:73
+#, fuzzy
+msgid "Respondents"
+msgstr "Válaszadókat tartalmazó lapful neve"
+
+#: src/opendlp/domain/assembly_export_gsheet.py:18
+#, fuzzy
+msgid "Results"
+msgstr "Táblázat lapfülei"
 
 #: src/opendlp/domain/respondent_field_schema.py:71
 msgid "Eligibility"
@@ -688,7 +711,7 @@ msgid "Select a CSV file containing target categories"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:583 src/opendlp/entrypoints/forms.py:593
-#: templates/backoffice/targets/bulk_edit_form.html:221
+#: templates/backoffice/targets/bulk_edit_form.html:222
 #, fuzzy
 msgid "Category Name"
 msgstr "Kategóriákat tartalmazó lapful neve"
@@ -707,7 +730,7 @@ msgid "Optional - why these targets were chosen"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:604
-#: templates/backoffice/targets/bulk_edit_form.html:228
+#: templates/backoffice/targets/bulk_edit_form.html:229
 #: templates/respondents/view_respondents.html:167
 #, fuzzy
 msgid "Source"
@@ -718,8 +741,9 @@ msgid "Optional - a link to where the percentages came from"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:614
-#: templates/backoffice/targets/bulk_edit_form.html:259
-#: templates/backoffice/targets/category_block.html:121
+#: src/opendlp/service_layer/dashboard_stats.py:349
+#: templates/backoffice/targets/bulk_edit_form.html:260
+#: templates/backoffice/targets/category_block.html:122
 #: templates/targets/components/category_block.html:69
 #: templates/targets/components/category_block.html:136
 #: templates/targets/components/category_block.html:263
@@ -740,9 +764,9 @@ msgid "Optional - min and max are calculated from this"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:627
-#: src/opendlp/service_layer/selection_report.py:231
-#: templates/backoffice/targets/bulk_edit_form.html:281
-#: templates/backoffice/targets/category_block.html:143
+#: src/opendlp/service_layer/selection_report.py:221
+#: templates/backoffice/targets/bulk_edit_form.html:282
+#: templates/backoffice/targets/category_block.html:144
 #: templates/targets/components/category_block.html:70
 #: templates/targets/components/category_block.html:147
 #: templates/targets/components/category_block.html:275
@@ -750,9 +774,9 @@ msgid "Min"
 msgstr ""
 
 #: src/opendlp/entrypoints/forms.py:632
-#: src/opendlp/service_layer/selection_report.py:232
-#: templates/backoffice/targets/bulk_edit_form.html:283
-#: templates/backoffice/targets/category_block.html:145
+#: src/opendlp/service_layer/selection_report.py:222
+#: templates/backoffice/targets/bulk_edit_form.html:284
+#: templates/backoffice/targets/category_block.html:146
 #: templates/targets/components/category_block.html:71
 #: templates/targets/components/category_block.html:158
 #: templates/targets/components/category_block.html:286
@@ -1208,9 +1232,9 @@ msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:183
-#: src/opendlp/entrypoints/blueprints/backoffice.py:290
-#: src/opendlp/entrypoints/blueprints/backoffice.py:554
-#: src/opendlp/entrypoints/blueprints/backoffice.py:615
+#: src/opendlp/entrypoints/blueprints/backoffice.py:292
+#: src/opendlp/entrypoints/blueprints/backoffice.py:556
+#: src/opendlp/entrypoints/blueprints/backoffice.py:617
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:276
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:391
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:83
@@ -1236,9 +1260,9 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/main.py:317
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:173
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:201
-#: src/opendlp/entrypoints/blueprints/respondents.py:682
-#: src/opendlp/entrypoints/blueprints/respondents.py:813
-#: src/opendlp/entrypoints/blueprints/respondents.py:969
+#: src/opendlp/entrypoints/blueprints/respondents.py:685
+#: src/opendlp/entrypoints/blueprints/respondents.py:816
+#: src/opendlp/entrypoints/blueprints/respondents.py:972
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/targets.py:152
 #: src/opendlp/entrypoints/blueprints/targets.py:393
@@ -1248,11 +1272,11 @@ msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:189
-#: src/opendlp/entrypoints/blueprints/backoffice.py:281
-#: src/opendlp/entrypoints/blueprints/backoffice.py:362
-#: src/opendlp/entrypoints/blueprints/backoffice.py:409
-#: src/opendlp/entrypoints/blueprints/backoffice.py:545
-#: src/opendlp/entrypoints/blueprints/backoffice.py:606
+#: src/opendlp/entrypoints/blueprints/backoffice.py:283
+#: src/opendlp/entrypoints/blueprints/backoffice.py:364
+#: src/opendlp/entrypoints/blueprints/backoffice.py:411
+#: src/opendlp/entrypoints/blueprints/backoffice.py:547
+#: src/opendlp/entrypoints/blueprints/backoffice.py:608
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:282
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:397
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:568
@@ -1303,16 +1327,16 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:454
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:503
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:527
-#: src/opendlp/entrypoints/blueprints/respondents.py:248
-#: src/opendlp/entrypoints/blueprints/respondents.py:383
-#: src/opendlp/entrypoints/blueprints/respondents.py:435
-#: src/opendlp/entrypoints/blueprints/respondents.py:475
-#: src/opendlp/entrypoints/blueprints/respondents.py:518
-#: src/opendlp/entrypoints/blueprints/respondents.py:673
-#: src/opendlp/entrypoints/blueprints/respondents.py:739
-#: src/opendlp/entrypoints/blueprints/respondents.py:804
-#: src/opendlp/entrypoints/blueprints/respondents.py:966
-#: src/opendlp/entrypoints/blueprints/respondents.py:1013
+#: src/opendlp/entrypoints/blueprints/respondents.py:251
+#: src/opendlp/entrypoints/blueprints/respondents.py:386
+#: src/opendlp/entrypoints/blueprints/respondents.py:438
+#: src/opendlp/entrypoints/blueprints/respondents.py:478
+#: src/opendlp/entrypoints/blueprints/respondents.py:521
+#: src/opendlp/entrypoints/blueprints/respondents.py:676
+#: src/opendlp/entrypoints/blueprints/respondents.py:742
+#: src/opendlp/entrypoints/blueprints/respondents.py:807
+#: src/opendlp/entrypoints/blueprints/respondents.py:969
+#: src/opendlp/entrypoints/blueprints/respondents.py:1016
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
@@ -1331,53 +1355,39 @@ msgstr "A gyűlés oldala  nem elérhető"
 msgid "An error occurred while loading the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:219
-#: src/opendlp/service_layer/selection_report.py:216
+#: src/opendlp/entrypoints/blueprints/backoffice.py:221
+#: src/opendlp/service_layer/selection_report.py:206
 #, fuzzy
 msgid "Target"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:221
-#: templates/backoffice/assembly_respondents.html:15
-#: templates/backoffice/assembly_respondents.html:80
-#: templates/backoffice/components/assembly_tabs.html:63
-#: templates/backoffice/respondents/export_modal.html:65
-#: templates/backoffice/service_docs.html:34
-#: templates/backoffice/targets/bulk_edit_form.html:266
-#: templates/backoffice/targets/category_block.html:128
-#: templates/db_selection/select.html:43
-#: templates/main/view_assembly_base.html:42
-#: templates/respondents/view_respondents.html:2
-#: templates/targets/components/category_block.html:73
-#, fuzzy
-msgid "Respondents"
-msgstr "Válaszadókat tartalmazó lapful neve"
-
-#: src/opendlp/entrypoints/blueprints/backoffice.py:223
+#: src/opendlp/entrypoints/blueprints/backoffice.py:225
 #, fuzzy
 msgid "Shows respondent data once registration starts."
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:226
-#: src/opendlp/entrypoints/blueprints/respondents.py:456
-#: src/opendlp/service_layer/selection_report.py:222
+#: src/opendlp/entrypoints/blueprints/backoffice.py:228
+#: src/opendlp/entrypoints/blueprints/respondents.py:459
+#: src/opendlp/service_layer/dashboard_stats.py:356
+#: src/opendlp/service_layer/selection_report.py:212
 #: templates/backoffice/assembly_respondents.html:104
 #: templates/backoffice/assembly_view_respondent.html:226
 #: templates/backoffice/components/table.html:206
 #: templates/backoffice/patterns/_file_upload.html:56
-#: templates/backoffice/targets/bulk_edit_form.html:275
-#: templates/backoffice/targets/category_block.html:137
+#: templates/backoffice/targets/bulk_edit_form.html:276
+#: templates/backoffice/targets/category_block.html:138
 #: templates/respondents/view_respondents.html:132
 #, fuzzy
 msgid "Selected"
 msgstr "Kiválasztás"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:228
+#: src/opendlp/entrypoints/blueprints/backoffice.py:230
 msgid "Shows selected data once the selection process starts."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:231
-#: src/opendlp/entrypoints/blueprints/respondents.py:457
+#: src/opendlp/entrypoints/blueprints/backoffice.py:233
+#: src/opendlp/entrypoints/blueprints/respondents.py:460
+#: src/opendlp/service_layer/dashboard_stats.py:358
 #: templates/backoffice/assembly_respondents.html:105
 #: templates/backoffice/components/table.html:203
 #: templates/respondents/view_respondents.html:133
@@ -1385,101 +1395,101 @@ msgstr ""
 msgid "Confirmed"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:233
+#: src/opendlp/entrypoints/blueprints/backoffice.py:235
 #, fuzzy
 msgid "Shows confirmed data once registration closes."
 msgstr "Vissza a regisztrációhoz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:296
+#: src/opendlp/entrypoints/blueprints/backoffice.py:298
 #, fuzzy
 msgid "An error occurred while loading the dashboard"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:326
+#: src/opendlp/entrypoints/blueprints/backoffice.py:328
 #: src/opendlp/entrypoints/blueprints/main.py:270
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:335
-#: src/opendlp/entrypoints/blueprints/backoffice.py:371
-#: src/opendlp/entrypoints/blueprints/backoffice.py:403
+#: src/opendlp/entrypoints/blueprints/backoffice.py:337
+#: src/opendlp/entrypoints/blueprints/backoffice.py:373
+#: src/opendlp/entrypoints/blueprints/backoffice.py:405
 #: src/opendlp/entrypoints/blueprints/main.py:279
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:344
-#: src/opendlp/entrypoints/blueprints/backoffice.py:350
+#: src/opendlp/entrypoints/blueprints/backoffice.py:346
+#: src/opendlp/entrypoints/blueprints/backoffice.py:352
 #: src/opendlp/entrypoints/blueprints/main.py:288
 #: src/opendlp/entrypoints/blueprints/main.py:296
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:382
+#: src/opendlp/entrypoints/blueprints/backoffice.py:384
 msgid "Please enter a valid positive number"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:394
+#: src/opendlp/entrypoints/blueprints/backoffice.py:396
 #, python-format
 msgid "Number to select updated to %(number)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:560
+#: src/opendlp/entrypoints/blueprints/backoffice.py:562
 #, fuzzy
 msgid "An error occurred while loading assembly data"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:621
+#: src/opendlp/entrypoints/blueprints/backoffice.py:623
 #, fuzzy
 msgid "An error occurred while loading team members"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:660
+#: src/opendlp/entrypoints/blueprints/backoffice.py:662
 #: src/opendlp/entrypoints/blueprints/main.py:361
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:667
+#: src/opendlp/entrypoints/blueprints/backoffice.py:669
 msgid "Please select a user and role"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:673
+#: src/opendlp/entrypoints/blueprints/backoffice.py:675
 #, fuzzy, python-format
 msgid "Could not add user to assembly: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:682
+#: src/opendlp/entrypoints/blueprints/backoffice.py:684
 #: src/opendlp/entrypoints/blueprints/main.py:383
 #, fuzzy
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:691
+#: src/opendlp/entrypoints/blueprints/backoffice.py:693
 #: src/opendlp/entrypoints/blueprints/main.py:392
 #, fuzzy
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:711
+#: src/opendlp/entrypoints/blueprints/backoffice.py:713
 #: src/opendlp/entrypoints/blueprints/main.py:412
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:727
+#: src/opendlp/entrypoints/blueprints/backoffice.py:729
 #: src/opendlp/entrypoints/blueprints/main.py:428
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:736
+#: src/opendlp/entrypoints/blueprints/backoffice.py:738
 #: src/opendlp/entrypoints/blueprints/main.py:437
 #, fuzzy
 msgid "You don't have permission to remove users from this assembly"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:745
+#: src/opendlp/entrypoints/blueprints/backoffice.py:747
 #: src/opendlp/entrypoints/blueprints/main.py:446
 #, fuzzy
 msgid "An error occurred while removing the user from the assembly"
@@ -1926,38 +1936,38 @@ msgstr "További beállítások"
 msgid "An unexpected error occurred"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:165
+#: src/opendlp/entrypoints/blueprints/dev.py:166
 #: src/opendlp/service_layer/exceptions.py:85
 #, fuzzy
 msgid "Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/dev.py:166
+#: src/opendlp/entrypoints/blueprints/dev.py:167
 msgid "(check the Flask console log for full error details)"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:183
-#: src/opendlp/entrypoints/blueprints/dev.py:203
-#: src/opendlp/entrypoints/blueprints/dev.py:1644
-#: src/opendlp/entrypoints/blueprints/dev.py:1680
+#: src/opendlp/entrypoints/blueprints/dev.py:184
+#: src/opendlp/entrypoints/blueprints/dev.py:204
+#: src/opendlp/entrypoints/blueprints/dev.py:1655
+#: src/opendlp/entrypoints/blueprints/dev.py:1691
 #, fuzzy
 msgid "You don't have permission to access developer tools"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1688
+#: src/opendlp/entrypoints/blueprints/dev.py:1699
 msgid "Success! Your changes have been saved."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1689
+#: src/opendlp/entrypoints/blueprints/dev.py:1700
 msgid "Warning: Please review the data before continuing."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1690
+#: src/opendlp/entrypoints/blueprints/dev.py:1701
 #, fuzzy
 msgid "Error: Something went wrong. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/dev.py:1691
+#: src/opendlp/entrypoints/blueprints/dev.py:1702
 msgid "Info: A new feature is available."
 msgstr ""
 
@@ -2445,208 +2455,208 @@ msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 msgid "Field removed."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:127
+#: src/opendlp/entrypoints/blueprints/respondents.py:130
 #, python-format
 msgid "Respondents uploaded with warnings: %(count)d imported, %(errors)d errors"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:140
+#: src/opendlp/entrypoints/blueprints/respondents.py:143
 #, python-format
 msgid "... and %(count)d more (see the server logs for the full list)"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:147
+#: src/opendlp/entrypoints/blueprints/respondents.py:150
 #, python-format
 msgid "Respondents uploaded successfully: %(count)d imported"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:159
-#: src/opendlp/entrypoints/blueprints/respondents.py:166
+#: src/opendlp/entrypoints/blueprints/respondents.py:162
+#: src/opendlp/entrypoints/blueprints/respondents.py:169
 #, fuzzy
 msgid "No file selected"
 msgstr "Táblázat lapfülei"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:182
+#: src/opendlp/entrypoints/blueprints/respondents.py:185
 #, python-format
 msgid ""
 "CSV is too large: limit is %(limit)d MB. Update MAX_CSV_UPLOAD_MB if a "
 "larger file is needed."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:231
-#: src/opendlp/entrypoints/blueprints/respondents.py:283
-#: src/opendlp/entrypoints/blueprints/respondents.py:345
+#: src/opendlp/entrypoints/blueprints/respondents.py:234
+#: src/opendlp/entrypoints/blueprints/respondents.py:286
+#: src/opendlp/entrypoints/blueprints/respondents.py:348
 #, fuzzy, python-format
 msgid "Invalid CSV format: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:242
+#: src/opendlp/entrypoints/blueprints/respondents.py:245
 #, fuzzy
 msgid "You don't have permission to upload respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:257
+#: src/opendlp/entrypoints/blueprints/respondents.py:260
 #, fuzzy
 msgid "An error occurred while uploading respondents"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:269
-#: src/opendlp/entrypoints/blueprints/respondents.py:323
+#: src/opendlp/entrypoints/blueprints/respondents.py:272
+#: src/opendlp/entrypoints/blueprints/respondents.py:326
 msgid "Upload session expired. Please upload the CSV again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:328
+#: src/opendlp/entrypoints/blueprints/respondents.py:331
 #, fuzzy
 msgid "Upload cancelled."
 msgstr "Kész"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:365
+#: src/opendlp/entrypoints/blueprints/respondents.py:368
 #, python-format
 msgid "Respondents deleted: %(count)d removed"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:377
-#: src/opendlp/entrypoints/blueprints/respondents.py:726
+#: src/opendlp/entrypoints/blueprints/respondents.py:380
+#: src/opendlp/entrypoints/blueprints/respondents.py:729
 #, fuzzy
 msgid "You don't have permission to delete respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:392
+#: src/opendlp/entrypoints/blueprints/respondents.py:395
 #, fuzzy
 msgid "An error occurred while deleting respondents"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:406
-#: src/opendlp/entrypoints/blueprints/respondents.py:497
+#: src/opendlp/entrypoints/blueprints/respondents.py:409
+#: src/opendlp/entrypoints/blueprints/respondents.py:500
 #, fuzzy, python-format
 msgid "Invalid export filter: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:431
-#: src/opendlp/entrypoints/blueprints/respondents.py:472
-#: src/opendlp/entrypoints/blueprints/respondents.py:515
+#: src/opendlp/entrypoints/blueprints/respondents.py:434
+#: src/opendlp/entrypoints/blueprints/respondents.py:475
+#: src/opendlp/entrypoints/blueprints/respondents.py:518
 #, fuzzy
 msgid "You don't have permission to export respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:453
-#: src/opendlp/service_layer/selection_report.py:220
+#: src/opendlp/entrypoints/blueprints/respondents.py:456
+#: src/opendlp/service_layer/selection_report.py:210
 #, fuzzy
 msgid "All respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:454
+#: src/opendlp/entrypoints/blueprints/respondents.py:457
 #, fuzzy
 msgid "Selected or confirmed"
 msgstr "Új jelszó"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:455
+#: src/opendlp/entrypoints/blueprints/respondents.py:458
 #: templates/backoffice/assembly_respondents.html:103
 #: templates/backoffice/components/table.html:200
 #: templates/respondents/view_respondents.html:131
 msgid "Pool"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:458
+#: src/opendlp/entrypoints/blueprints/respondents.py:461
 #: templates/backoffice/assembly_respondents.html:106
 #: templates/backoffice/components/table.html:209
 #: templates/respondents/view_respondents.html:134
 msgid "Withdrawn"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:459
+#: src/opendlp/entrypoints/blueprints/respondents.py:462
 msgid "Test submission"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:531
+#: src/opendlp/entrypoints/blueprints/respondents.py:534
 msgid "A Google Sheet URL is required to export to Google Sheets"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:554
+#: src/opendlp/entrypoints/blueprints/respondents.py:557
 #, fuzzy, python-format
 msgid "Could not export to Google Sheets: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:569
+#: src/opendlp/entrypoints/blueprints/respondents.py:572
 #, python-format
 msgid ""
 "Could not write to the Google Sheet. Check the URL is correct and that "
 "the sheet is shared with %(email)s."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:576
+#: src/opendlp/entrypoints/blueprints/respondents.py:579
 msgid "Could not write to the Google Sheet. Check the URL and sharing settings."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:581
+#: src/opendlp/entrypoints/blueprints/respondents.py:584
 #, fuzzy
 msgid "Respondents exported to Google Sheets."
 msgstr "Adja meg a Google táblázat beállításait"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:691
+#: src/opendlp/entrypoints/blueprints/respondents.py:694
 #, fuzzy
 msgid "An error occurred while loading assembly respondents"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:704
+#: src/opendlp/entrypoints/blueprints/respondents.py:707
 #, fuzzy
 msgid "A comment is required when deleting a respondent"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:716
+#: src/opendlp/entrypoints/blueprints/respondents.py:719
 #, fuzzy
 msgid "Respondent personal data deleted"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:735
-#: src/opendlp/entrypoints/blueprints/respondents.py:800
-#: src/opendlp/entrypoints/blueprints/respondents.py:963
-#: src/opendlp/entrypoints/blueprints/respondents.py:1010
+#: src/opendlp/entrypoints/blueprints/respondents.py:738
+#: src/opendlp/entrypoints/blueprints/respondents.py:803
+#: src/opendlp/entrypoints/blueprints/respondents.py:966
+#: src/opendlp/entrypoints/blueprints/respondents.py:1013
 #, fuzzy
 msgid "Respondent not found"
 msgstr "Az oldal nem elérhető"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:748
+#: src/opendlp/entrypoints/blueprints/respondents.py:751
 #, fuzzy
 msgid "An error occurred while deleting the respondent"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:822
+#: src/opendlp/entrypoints/blueprints/respondents.py:825
 #, fuzzy
 msgid "An error occurred while loading the respondent"
 msgstr "Hiba történt a gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:898
-#: src/opendlp/entrypoints/blueprints/respondents.py:918
+#: src/opendlp/entrypoints/blueprints/respondents.py:901
+#: src/opendlp/entrypoints/blueprints/respondents.py:921
 #, fuzzy
 msgid "You don't have permission to edit respondents"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:900
+#: src/opendlp/entrypoints/blueprints/respondents.py:903
 #, fuzzy
 msgid "Respondent updated."
 msgstr "Feladat állapota"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:928
+#: src/opendlp/entrypoints/blueprints/respondents.py:931
 #, fuzzy
 msgid "Cannot edit a deleted respondent"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:985
+#: src/opendlp/entrypoints/blueprints/respondents.py:988
 #, fuzzy
 msgid "A comment is required when changing selection status"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:990
+#: src/opendlp/entrypoints/blueprints/respondents.py:993
 msgid "Invalid target status"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1004
+#: src/opendlp/entrypoints/blueprints/respondents.py:1007
 #, fuzzy
 msgid "Status updated."
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1008
+#: src/opendlp/entrypoints/blueprints/respondents.py:1011
 #, fuzzy
 msgid "You don't have permission to change this respondent's status"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
@@ -3049,6 +3059,55 @@ msgstr ""
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
+#: src/opendlp/service_layer/dashboard_stats.py:334
+#, fuzzy
+msgid "Not in targets"
+msgstr "Kezdés dátuma"
+
+#: src/opendlp/service_layer/dashboard_stats.py:348
+#, fuzzy
+msgid "Category"
+msgstr "Kategóriákat tartalmazó lapful neve"
+
+#: src/opendlp/service_layer/dashboard_stats.py:350
+#, fuzzy
+msgid "Target %"
+msgstr "Kezdés dátuma"
+
+#: src/opendlp/service_layer/dashboard_stats.py:351
+#, fuzzy
+msgid "Target min"
+msgstr "Vezetéknév"
+
+#: src/opendlp/service_layer/dashboard_stats.py:352
+#, fuzzy
+msgid "Target max"
+msgstr "Vezetéknév"
+
+#: src/opendlp/service_layer/dashboard_stats.py:354
+#, fuzzy
+msgid "Respondents %"
+msgstr "Válaszadókat tartalmazó lapful neve"
+
+#: src/opendlp/service_layer/dashboard_stats.py:355
+#, fuzzy
+msgid "Available to select"
+msgstr "Kezdeti/Teszt kiválasztás"
+
+#: src/opendlp/service_layer/dashboard_stats.py:357
+#, fuzzy
+msgid "Selected %"
+msgstr "Kiválasztás"
+
+#: src/opendlp/service_layer/dashboard_stats.py:359
+#, fuzzy
+msgid "Confirmed %"
+msgstr "Új jelszó"
+
+#: src/opendlp/service_layer/dashboard_stats.py:360
+msgid "Shortfall"
+msgstr ""
+
 #: src/opendlp/service_layer/document_processing.py:12
 msgid "The PDF file is too large"
 msgstr ""
@@ -3293,7 +3352,7 @@ msgstr ""
 msgid "form HTML"
 msgstr "Keresztnév"
 
-#: src/opendlp/service_layer/respondent_export_service.py:48
+#: src/opendlp/service_layer/respondent_export_service.py:49
 #, python-format
 msgid "Invalid respondent status filter: %(value)s"
 msgstr ""
@@ -3355,14 +3414,14 @@ msgstr ""
 msgid "The ID Column field was pre-filled from your last upload."
 msgstr ""
 
-#: src/opendlp/service_layer/selection_report.py:204
+#: src/opendlp/service_layer/selection_report.py:194
 #: templates/backoffice/patterns/_dropdown.html:148
 #: templates/backoffice/service_docs.html:31
 #: templates/backoffice/service_docs/_config.html:64
 #: templates/backoffice/service_docs/_config.html:245
-#: templates/backoffice/service_docs/_dashboard.html:75
-#: templates/backoffice/service_docs/_dashboard.html:166
-#: templates/backoffice/service_docs/_dashboard.html:264
+#: templates/backoffice/service_docs/_dashboard.html:60
+#: templates/backoffice/service_docs/_dashboard.html:151
+#: templates/backoffice/service_docs/_dashboard.html:242
 #: templates/backoffice/service_docs/_emails.html:62
 #: templates/backoffice/service_docs/_emails.html:156
 #: templates/backoffice/service_docs/_emails.html:419
@@ -3377,41 +3436,41 @@ msgstr ""
 msgid "Assembly"
 msgstr "Közösségi gyűlés"
 
-#: src/opendlp/service_layer/selection_report.py:205
+#: src/opendlp/service_layer/selection_report.py:195
 #, fuzzy
 msgid "Selection URL"
 msgstr "Kiválasztás"
 
-#: src/opendlp/service_layer/selection_report.py:206
+#: src/opendlp/service_layer/selection_report.py:196
 #, fuzzy
 msgid "Number selected"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/service_layer/selection_report.py:207
+#: src/opendlp/service_layer/selection_report.py:197
 #, fuzzy
 msgid "Number of people available to select from"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/service_layer/selection_report.py:208
+#: src/opendlp/service_layer/selection_report.py:198
 #, fuzzy
 msgid "Number of people who have had their details deleted"
 msgstr "Kiválasztandó emberek száma"
 
-#: src/opendlp/service_layer/selection_report.py:209
+#: src/opendlp/service_layer/selection_report.py:199
 msgid ""
 "Note: counts are affected by edits and deletions after the selection was "
 "run."
 msgstr ""
 
-#: src/opendlp/service_layer/selection_report.py:229
-#: src/opendlp/service_layer/selection_report.py:233
-#: src/opendlp/service_layer/selection_report.py:235
+#: src/opendlp/service_layer/selection_report.py:219
+#: src/opendlp/service_layer/selection_report.py:223
+#: src/opendlp/service_layer/selection_report.py:225
 msgid "%"
 msgstr ""
 
-#: src/opendlp/service_layer/selection_report.py:230
-#: src/opendlp/service_layer/selection_report.py:234
-#: src/opendlp/service_layer/selection_report.py:236
+#: src/opendlp/service_layer/selection_report.py:220
+#: src/opendlp/service_layer/selection_report.py:224
+#: src/opendlp/service_layer/selection_report.py:226
 msgid "#"
 msgstr ""
 
@@ -3598,7 +3657,7 @@ msgstr "Menü bezárása"
 
 #: templates/backoffice/assembly_dashboard.html:10
 #: templates/backoffice/assembly_dashboard.html:36
-#: templates/backoffice/components/assembly_tabs.html:79 templates/base.html:58
+#: templates/backoffice/components/assembly_tabs.html:80 templates/base.html:58
 #: templates/errors/400.html:25 templates/errors/403.html:23
 #: templates/errors/404.html:24 templates/errors/413.html:20
 #: templates/errors/500.html:24 templates/main/create_assembly.html:11
@@ -3898,7 +3957,7 @@ msgstr ""
 
 #: templates/admin/invite_view.html:105 templates/admin/user_edit.html:107
 #: templates/backoffice/patterns/_floating_alerts.html:131
-#: templates/backoffice/targets/category_block.html:197
+#: templates/backoffice/targets/category_block.html:198
 #: templates/db_selection/components/progress.html:91
 #: templates/db_selection/select.html:24 templates/db_selection/select.html:54
 #: templates/gsheets/components/progress.html:101
@@ -4002,7 +4061,7 @@ msgstr ""
 #: templates/backoffice/assembly_selection.html:357
 #: templates/backoffice/components/registration_page_list.html:37
 #: templates/backoffice/respondent_field_schema/view.html:130
-#: templates/backoffice/targets/bulk_edit_form.html:287
+#: templates/backoffice/targets/bulk_edit_form.html:288
 #: templates/main/view_assembly_data.html:60
 #: templates/main/view_assembly_members.html:13
 #: templates/targets/components/category_block.html:76
@@ -4063,7 +4122,7 @@ msgstr ""
 
 #: templates/admin/user_2fa_audit_log.html:34
 #: templates/backoffice/assembly_details.html:49
-#: templates/backoffice/components/assembly_tabs.html:32
+#: templates/backoffice/components/assembly_tabs.html:33
 #: templates/main/view_assembly_base.html:30
 #, fuzzy
 msgid "Details"
@@ -4108,7 +4167,7 @@ msgid "View details"
 msgstr "Meghívó kód"
 
 #: templates/admin/user_2fa_audit_log.html:82
-#: templates/backoffice/targets/bulk_edit_form.html:180
+#: templates/backoffice/targets/bulk_edit_form.html:181
 #: templates/main/view_assembly_data.html:105
 msgid "None"
 msgstr ""
@@ -4673,7 +4732,7 @@ msgid "Number of registrations:"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/assembly_data.html:12
-#: templates/backoffice/components/assembly_tabs.html:38
+#: templates/backoffice/components/assembly_tabs.html:39
 msgid "Data"
 msgstr ""
 
@@ -4919,7 +4978,7 @@ msgstr ""
 #: templates/backoffice/assembly_data.html:304
 #: templates/backoffice/assembly_targets.html:12
 #: templates/backoffice/assembly_targets.html:93
-#: templates/backoffice/components/assembly_tabs.html:50
+#: templates/backoffice/components/assembly_tabs.html:51
 #: templates/backoffice/service_docs.html:35
 #: templates/main/view_assembly_base.html:36
 #: templates/targets/view_targets.html:2
@@ -5158,7 +5217,7 @@ msgstr "Módosítások mentése"
 
 #: templates/backoffice/assembly_members.html:13
 #: templates/backoffice/assembly_members.html:39
-#: templates/backoffice/components/assembly_tabs.html:86
+#: templates/backoffice/components/assembly_tabs.html:87
 #: templates/main/view_assembly_base.html:68
 #: templates/main/view_assembly_members.html:2
 #: templates/main/view_assembly_members.html:4
@@ -5208,7 +5267,7 @@ msgid "Type to search by email or name..."
 msgstr ""
 
 #: templates/backoffice/assembly_registration.html:13
-#: templates/backoffice/components/assembly_tabs.html:57
+#: templates/backoffice/components/assembly_tabs.html:58
 #: templates/backoffice/components/registration_page_list.html:14
 #: templates/backoffice/service_docs.html:32
 #, fuzzy
@@ -5380,7 +5439,7 @@ msgid "Configure Data Source"
 msgstr "További beállítások"
 
 #: templates/backoffice/assembly_selection.html:13
-#: templates/backoffice/components/assembly_tabs.html:70
+#: templates/backoffice/components/assembly_tabs.html:71
 #: templates/backoffice/service_docs.html:37
 #: templates/db_selection/select.html:7 templates/gsheets/select.html:2
 #: templates/gsheets/select.html:8 templates/gsheets/select.html:11
@@ -5533,9 +5592,9 @@ msgstr "Befejezve"
 #: templates/backoffice/assembly_selection.html:182
 #: templates/backoffice/assembly_selection.html:355
 #: templates/backoffice/assembly_view_respondent.html:241
-#: templates/backoffice/targets/bulk_edit_form.html:234
-#: templates/backoffice/targets/bulk_edit_form.html:285
-#: templates/backoffice/targets/category_block.html:147
+#: templates/backoffice/targets/bulk_edit_form.html:235
+#: templates/backoffice/targets/bulk_edit_form.html:286
+#: templates/backoffice/targets/category_block.html:148
 #: templates/main/view_assembly_data.html:59
 msgid "Comment"
 msgstr ""
@@ -6084,7 +6143,7 @@ msgstr ""
 msgid "This page allows direct database modifications. Use with caution."
 msgstr ""
 
-#: templates/backoffice/components/assembly_tabs.html:44
+#: templates/backoffice/components/assembly_tabs.html:45
 #: templates/backoffice/respondent_field_schema/view.html:10
 #: templates/backoffice/service_docs.html:33
 msgid "Fields"
@@ -6136,7 +6195,7 @@ msgstr "Feladat állapota"
 msgid "Dismiss"
 msgstr ""
 
-#: templates/backoffice/components/assembly_tabs.html:92
+#: templates/backoffice/components/assembly_tabs.html:93
 #: templates/main/view_assembly_base.html:26
 #, fuzzy
 msgid "Assembly sections"
@@ -6685,9 +6744,9 @@ msgstr ""
 #: templates/backoffice/service_docs/_assembly.html:294
 #: templates/backoffice/service_docs/_config.html:25
 #: templates/backoffice/service_docs/_config.html:128
-#: templates/backoffice/service_docs/_dashboard.html:39
-#: templates/backoffice/service_docs/_dashboard.html:132
-#: templates/backoffice/service_docs/_dashboard.html:223
+#: templates/backoffice/service_docs/_dashboard.html:24
+#: templates/backoffice/service_docs/_dashboard.html:117
+#: templates/backoffice/service_docs/_dashboard.html:208
 #: templates/backoffice/service_docs/_documents.html:35
 #: templates/backoffice/service_docs/_emails.html:41
 #: templates/backoffice/service_docs/_emails.html:142
@@ -6911,9 +6970,9 @@ msgstr ""
 
 #: templates/backoffice/patterns/_dropdown.html:152
 #: templates/backoffice/service_docs/_config.html:70
-#: templates/backoffice/service_docs/_dashboard.html:81
-#: templates/backoffice/service_docs/_dashboard.html:172
-#: templates/backoffice/service_docs/_dashboard.html:270
+#: templates/backoffice/service_docs/_dashboard.html:66
+#: templates/backoffice/service_docs/_dashboard.html:157
+#: templates/backoffice/service_docs/_dashboard.html:248
 #: templates/backoffice/service_docs/_emails.html:65
 #: templates/backoffice/service_docs/_emails.html:159
 #: templates/backoffice/service_docs/_emails.html:422
@@ -8663,12 +8722,12 @@ msgid "On registration form for %(key)s"
 msgstr "Vissza a regisztrációhoz"
 
 #: templates/backoffice/respondent_field_schema/view.html:205
-#: templates/backoffice/targets/bulk_edit_form.html:250
+#: templates/backoffice/targets/bulk_edit_form.html:251
 msgid "Move up"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/view.html:214
-#: templates/backoffice/targets/bulk_edit_form.html:246
+#: templates/backoffice/targets/bulk_edit_form.html:247
 msgid "Move down"
 msgstr ""
 
@@ -8873,9 +8932,9 @@ msgstr ""
 #: templates/backoffice/service_docs/_assembly.html:225
 #: templates/backoffice/service_docs/_assembly.html:333
 #: templates/backoffice/service_docs/_config.html:50
-#: templates/backoffice/service_docs/_dashboard.html:63
-#: templates/backoffice/service_docs/_dashboard.html:155
-#: templates/backoffice/service_docs/_dashboard.html:252
+#: templates/backoffice/service_docs/_dashboard.html:48
+#: templates/backoffice/service_docs/_dashboard.html:140
+#: templates/backoffice/service_docs/_dashboard.html:231
 #: templates/backoffice/service_docs/_documents.html:75
 #: templates/backoffice/service_docs/_documents.html:176
 #: templates/backoffice/service_docs/_emails.html:50
@@ -8972,9 +9031,9 @@ msgstr ""
 
 #: templates/backoffice/service_docs/_config.html:60
 #: templates/backoffice/service_docs/_config.html:240
-#: templates/backoffice/service_docs/_dashboard.html:72
-#: templates/backoffice/service_docs/_dashboard.html:163
-#: templates/backoffice/service_docs/_dashboard.html:260
+#: templates/backoffice/service_docs/_dashboard.html:57
+#: templates/backoffice/service_docs/_dashboard.html:148
+#: templates/backoffice/service_docs/_dashboard.html:239
 #: templates/backoffice/service_docs/_emails.html:59
 #: templates/backoffice/service_docs/_emails.html:153
 #: templates/backoffice/service_docs/_emails.html:216
@@ -8992,9 +9051,9 @@ msgstr ""
 
 #: templates/backoffice/service_docs/_config.html:80
 #: templates/backoffice/service_docs/_config.html:303
-#: templates/backoffice/service_docs/_dashboard.html:90
-#: templates/backoffice/service_docs/_dashboard.html:181
-#: templates/backoffice/service_docs/_dashboard.html:292
+#: templates/backoffice/service_docs/_dashboard.html:75
+#: templates/backoffice/service_docs/_dashboard.html:166
+#: templates/backoffice/service_docs/_dashboard.html:257
 #: templates/backoffice/service_docs/_emails.html:101
 #: templates/backoffice/service_docs/_emails.html:167
 #: templates/backoffice/service_docs/_emails.html:228
@@ -9012,9 +9071,9 @@ msgstr "Kiválasztás"
 
 #: templates/backoffice/service_docs/_config.html:81
 #: templates/backoffice/service_docs/_config.html:304
-#: templates/backoffice/service_docs/_dashboard.html:91
-#: templates/backoffice/service_docs/_dashboard.html:182
-#: templates/backoffice/service_docs/_dashboard.html:293
+#: templates/backoffice/service_docs/_dashboard.html:76
+#: templates/backoffice/service_docs/_dashboard.html:167
+#: templates/backoffice/service_docs/_dashboard.html:258
 #: templates/backoffice/service_docs/_emails.html:102
 #: templates/backoffice/service_docs/_emails.html:168
 #: templates/backoffice/service_docs/_emails.html:229
@@ -9033,9 +9092,9 @@ msgstr "Folyamatban"
 
 #: templates/backoffice/service_docs/_config.html:95
 #: templates/backoffice/service_docs/_config.html:325
-#: templates/backoffice/service_docs/_dashboard.html:104
-#: templates/backoffice/service_docs/_dashboard.html:195
-#: templates/backoffice/service_docs/_dashboard.html:306
+#: templates/backoffice/service_docs/_dashboard.html:89
+#: templates/backoffice/service_docs/_dashboard.html:180
+#: templates/backoffice/service_docs/_dashboard.html:271
 #: templates/backoffice/service_docs/_respondents.html:226
 #: templates/backoffice/service_docs/_respondents.html:380
 #: templates/backoffice/service_docs/_respondents.html:531
@@ -9075,34 +9134,20 @@ msgstr "Új jelszó"
 msgid "Reset"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/service_docs/_dashboard.html:11
-msgid "Mock services — ticket 886 (results dashboard)"
-msgstr ""
-
-#: templates/backoffice/service_docs/_dashboard.html:14
-msgid ""
-"These services return fixture data so the dashboard front-end can be "
-"built now. The real queries are Hamish's to implement — see"
-msgstr ""
-
-#: templates/backoffice/service_docs/_dashboard.html:16
-msgid "and"
-msgstr ""
-
-#: templates/backoffice/service_docs/_dashboard.html:35
+#: templates/backoffice/service_docs/_dashboard.html:20
 msgid ""
 "Headline stats for the dashboard's stat-tile row: respondents in each "
 "state, number to select, number of target categories, and the pool total."
 msgstr ""
 
-#: templates/backoffice/service_docs/_dashboard.html:55
-#: templates/backoffice/service_docs/_dashboard.html:148
-#: templates/backoffice/service_docs/_dashboard.html:239
+#: templates/backoffice/service_docs/_dashboard.html:40
+#: templates/backoffice/service_docs/_dashboard.html:133
+#: templates/backoffice/service_docs/_dashboard.html:224
 #, fuzzy
 msgid "Target assembly ID"
 msgstr "Hozzon létre közösségi gyűlést"
 
-#: templates/backoffice/service_docs/_dashboard.html:129
+#: templates/backoffice/service_docs/_dashboard.html:114
 msgid ""
 "The full per-category results table: for each target category, each "
 "value's target band and pool count. The rows double as the pie-chart "
@@ -9110,17 +9155,13 @@ msgid ""
 "(pool_count < target_min)."
 msgstr ""
 
-#: templates/backoffice/service_docs/_dashboard.html:220
+#: templates/backoffice/service_docs/_dashboard.html:205
 msgid ""
-"Export the results table. csv and gsheet reuse existing tabular_export.py"
-" targets; xlsx has NO backend yet (returns download_ready=false) — a new "
-"xlsx target is needed behind AbstractTabularExportTarget."
+"Write the results table to an export target. The format is the target, so"
+" the console runs it into a CSV target and shows the text; the Google "
+"Sheets destination needs a spreadsheet URL and is exercised from the "
+"dashboard page."
 msgstr ""
-
-#: templates/backoffice/service_docs/_dashboard.html:275
-#, fuzzy
-msgid "Format"
-msgstr "Keresztnév"
 
 #: templates/backoffice/service_docs/_documents.html:6
 msgid ""
@@ -9844,161 +9885,161 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 msgid "Add"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:44
+#: templates/backoffice/targets/bulk_edit_form.html:45
 #, fuzzy
 msgid "the new value"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/targets/bulk_edit_form.html:70
+#: templates/backoffice/targets/bulk_edit_form.html:71
 #, python-format
 msgid "Name of %(row)s"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:82
+#: templates/backoffice/targets/bulk_edit_form.html:83
 msgid "Min and max were set by hand, not calculated from the percentage"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:83
+#: templates/backoffice/targets/bulk_edit_form.html:84
 msgid "Set by hand"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:89
+#: templates/backoffice/targets/bulk_edit_form.html:90
 msgid "Min and max will be recalculated when you save."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:100
+#: templates/backoffice/targets/bulk_edit_form.html:101
 #, python-format
 msgid "Population share for %(row)s, in percent"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:112
+#: templates/backoffice/targets/bulk_edit_form.html:113
 #, python-format
 msgid "Minimum for %(row)s"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:122
+#: templates/backoffice/targets/bulk_edit_form.html:123
 #, python-format
 msgid "Maximum for %(row)s"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:130
+#: templates/backoffice/targets/bulk_edit_form.html:131
 msgid "Why min and max were set by hand"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:131
+#: templates/backoffice/targets/bulk_edit_form.html:132
 #, python-format
 msgid "Comment on %(row)s"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:136
-#: templates/backoffice/targets/bulk_edit_form.html:146
+#: templates/backoffice/targets/bulk_edit_form.html:137
+#: templates/backoffice/targets/bulk_edit_form.html:147
 msgid "Recalculate min and max from the percentage"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:139
-#: templates/backoffice/targets/bulk_edit_form.html:153
+#: templates/backoffice/targets/bulk_edit_form.html:140
+#: templates/backoffice/targets/bulk_edit_form.html:154
 #, fuzzy
 msgid "Delete value"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/targets/bulk_edit_form.html:157
-#: templates/backoffice/targets/bulk_edit_form.html:209
+#: templates/backoffice/targets/bulk_edit_form.html:158
+#: templates/backoffice/targets/bulk_edit_form.html:210
 msgid "Undo"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:206
+#: templates/backoffice/targets/bulk_edit_form.html:207
 #, python-format
 msgid "\"%(name)s\" and all its values will be deleted when you save."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:238
+#: templates/backoffice/targets/bulk_edit_form.html:239
 msgid "Move this target down"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:239
+#: templates/backoffice/targets/bulk_edit_form.html:240
 msgid "Move this target up"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:252
+#: templates/backoffice/targets/bulk_edit_form.html:253
 #, fuzzy
 msgid "Delete target"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/targets/bulk_edit_form.html:261
-#: templates/backoffice/targets/category_block.html:123
+#: templates/backoffice/targets/bulk_edit_form.html:262
+#: templates/backoffice/targets/category_block.html:124
 #, fuzzy, python-format
 msgid "Population (%%)"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/targets/bulk_edit_form.html:267
-#: templates/backoffice/targets/category_block.html:129
+#: templates/backoffice/targets/bulk_edit_form.html:268
+#: templates/backoffice/targets/category_block.html:130
 msgid ""
 "Counts people in the pool, and those selected or confirmed. Withdrawn "
 "people and test submissions are not counted."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:276
-#: templates/backoffice/targets/category_block.html:138
+#: templates/backoffice/targets/bulk_edit_form.html:277
+#: templates/backoffice/targets/category_block.html:139
 msgid ""
 "Counts people who have been selected, including those who have since "
 "confirmed their place."
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:319
+#: templates/backoffice/targets/bulk_edit_form.html:320
 #: templates/targets/components/category_block.html:247
 msgid "Add value"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:322
+#: templates/backoffice/targets/bulk_edit_form.html:325
 #, fuzzy
 msgid "Add values found in respondent data"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/targets/bulk_edit_form.html:325
+#: templates/backoffice/targets/bulk_edit_form.html:330
 #, python-format
 msgid "Not yet targeted: %(values)s"
 msgstr ""
 
-#: templates/backoffice/targets/bulk_edit_form.html:335
-#: templates/backoffice/targets/category_block.html:216
+#: templates/backoffice/targets/bulk_edit_form.html:340
+#: templates/backoffice/targets/category_block.html:217
 #: templates/targets/components/category_block.html:195
 msgid "Total"
 msgstr ""
 
-#: templates/backoffice/targets/category_block.html:11
-#: templates/backoffice/targets/category_block.html:14
+#: templates/backoffice/targets/category_block.html:12
+#: templates/backoffice/targets/category_block.html:15
 msgid "Manually modified"
 msgstr ""
 
-#: templates/backoffice/targets/category_block.html:18
-#: templates/backoffice/targets/category_block.html:21
+#: templates/backoffice/targets/category_block.html:19
+#: templates/backoffice/targets/category_block.html:22
 msgid "Auto calculated"
 msgstr ""
 
-#: templates/backoffice/targets/category_block.html:61
+#: templates/backoffice/targets/category_block.html:62
 #, fuzzy
 msgid "Source:"
 msgstr "Sikerült"
 
-#: templates/backoffice/targets/category_block.html:96
-#: templates/backoffice/targets/category_block.html:191
+#: templates/backoffice/targets/category_block.html:97
+#: templates/backoffice/targets/category_block.html:192
 #: templates/targets/components/category_block.html:59
 #: templates/targets/components/category_block.html:183
 #, fuzzy
 msgid "Suggestion"
 msgstr "Kiválasztás"
 
-#: templates/backoffice/targets/category_block.html:209
+#: templates/backoffice/targets/category_block.html:210
 #: templates/targets/components/category_block.html:208
 msgid "No values defined."
 msgstr ""
 
-#: templates/backoffice/targets/category_block.html:255
+#: templates/backoffice/targets/category_block.html:256
 #: templates/targets/components/category_block.html:223
 msgid "Values in respondent data not yet targeted:"
 msgstr ""
 
-#: templates/backoffice/targets/category_block.html:257
+#: templates/backoffice/targets/category_block.html:258
 msgid "Add them under \"Edit targets\"."
 msgstr ""
 
@@ -10053,6 +10094,12 @@ msgstr ""
 #, fuzzy
 msgid "Add selected categories"
 msgstr "Feladat állapota"
+
+#: templates/backoffice/targets/missing_values.html:14
+#, python-format
+msgid "and %(num)s other"
+msgid_plural "and %(num)s others"
+msgstr[0] ""
 
 #: templates/db_selection/replace.html:2
 #, fuzzy
@@ -15158,3 +15205,25 @@ msgstr ""
 #~ "assemblies yet - ask an organiser "
 #~ "to add you."
 #~ msgstr ""
+
+#~ msgid "Mock services — ticket 886 (results dashboard)"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "These services return fixture data so"
+#~ " the dashboard front-end can be "
+#~ "built now. The real queries are "
+#~ "Hamish's to implement — see"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Export the results table. csv and "
+#~ "gsheet reuse existing tabular_export.py "
+#~ "targets; xlsx has NO backend yet "
+#~ "(returns download_ready=false) — a new "
+#~ "xlsx target is needed behind "
+#~ "AbstractTabularExportTarget."
+#~ msgstr ""
+
+#~ msgid "Format"
+#~ msgstr "Keresztnév"

@@ -122,6 +122,20 @@ class SelectionTaskType(Enum):
     TEST_SELECT_FROM_DB = "test_select_from_db"
 
 
+class GSheetExportKind(Enum):
+    """What an assembly's saved Google Sheet export target is for.
+
+    Each kind gets its own row, so it can have its own spreadsheet as well as its
+    own worksheet - respondent data is personal and its sheet needs tight sharing,
+    while the dashboard's is aggregate counts an organiser may want to publish.
+    Nothing stops an organiser pointing two kinds at the same spreadsheet; what
+    keeps the personal data safe is the sharing on the sheet holding it, not this.
+    """
+
+    RESPONDENTS = "RESPONDENTS"
+    DASHBOARD = "DASHBOARD"
+
+
 class RespondentStatus(Enum):
     """Status of a respondent in the selection process.
 
@@ -157,6 +171,18 @@ COUNTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
     RespondentStatus.POOL,
     RespondentStatus.SELECTED,
     RespondentStatus.CONFIRMED,
+]
+
+# Everyone who ever became one of the assembly's respondents, withdrawals
+# included. Wider than COUNTED_RESPONDENT_STATUSES on purpose: a withdrawal is no
+# longer part of the pool a target is measured against, but it is still a
+# registration that happened, so a headline "how many people registered" figure
+# has to count it. Test submissions were never real and deleted details are gone.
+HEADLINE_RESPONDENT_STATUSES: list["RespondentStatus"] = [
+    RespondentStatus.POOL,
+    RespondentStatus.SELECTED,
+    RespondentStatus.CONFIRMED,
+    RespondentStatus.WITHDRAWN,
 ]
 
 # Confirmed is selected and then confirmed, so both count as selected.

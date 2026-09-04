@@ -8,9 +8,9 @@ from flask.testing import FlaskClient
 
 from opendlp.adapters.tabular_export import ExportTargetError
 from opendlp.domain.assembly import Assembly
-from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
+from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import GSheetExportKind, RespondentStatus
 from tests.fakes import FakeGSheetExportTarget, FakeStore, FakeUnitOfWork
 
 
@@ -131,8 +131,13 @@ class TestExportModal:
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
     ) -> None:
         with FakeUnitOfWork(store=fake_store) as uow:
-            uow.assembly_respondent_gsheets.add(
-                AssemblyRespondentGSheet(assembly_id=existing_assembly.id, url=_SHEET_URL, worksheet_name="Saved Tab")
+            uow.assembly_export_gsheets.add(
+                AssemblyExportGSheet(
+                    assembly_id=existing_assembly.id,
+                    export_kind=GSheetExportKind.RESPONDENTS,
+                    url=_SHEET_URL,
+                    worksheet_name="Saved Tab",
+                )
             )
             uow.commit()
 
@@ -150,9 +155,10 @@ class TestRespondentsPageGSheetLink:
     ) -> None:
         _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
         with FakeUnitOfWork(store=fake_store) as uow:
-            uow.assembly_respondent_gsheets.add(
-                AssemblyRespondentGSheet(
+            uow.assembly_export_gsheets.add(
+                AssemblyExportGSheet(
                     assembly_id=existing_assembly.id,
+                    export_kind=GSheetExportKind.RESPONDENTS,
                     url=_SHEET_URL,
                     worksheet_name="Export tab",
                     spreadsheet_title="Assembly Data",
@@ -220,7 +226,9 @@ class TestRunExport:
         assert captured and captured[0][0] == _SHEET_URL
         assert captured[0][1].writes  # something was written
         with FakeUnitOfWork(store=fake_store) as uow:
-            config = uow.assembly_respondent_gsheets.get_by_assembly_id(existing_assembly.id)
+            config = uow.assembly_export_gsheets.get_by_assembly_and_kind(
+                existing_assembly.id, GSheetExportKind.RESPONDENTS
+            )
             assert config is not None
             assert config.url == _SHEET_URL
             assert config.worksheet_name == "Export tab"
@@ -290,4 +298,7 @@ class TestRunExport:
         assert "Could not write to the Google Sheet" in response.get_data(as_text=True)
         # The write failed before commit, so no config row should have been saved.
         with FakeUnitOfWork(store=fake_store) as uow:
-            assert uow.assembly_respondent_gsheets.get_by_assembly_id(existing_assembly.id) is None
+            saved = uow.assembly_export_gsheets.get_by_assembly_and_kind(
+                existing_assembly.id, GSheetExportKind.RESPONDENTS
+            )
+        assert saved is None

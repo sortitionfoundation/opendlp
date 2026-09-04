@@ -1,0 +1,18 @@
+{#
+ABOUTME: Macro naming the respondent values a target category has no value for
+ABOUTME: Lists the first few and counts the rest, so a long list cannot swamp the page
+#}
+
+{#
+    A category can have dozens of values in the respondent data that nobody has
+    targeted yet, and listing them all pushes everything around them off the
+    screen. The first few say what kind of thing is missing; the count says how
+    much more of it there is. The full list is in the respondent data.
+#}
+{% macro missing_values_summary(values, limit=5) -%}
+    {%- if values | length > limit -%}
+        {{ values[:limit] | join(", ") }} {{ ngettext("and %(num)s other", "and %(num)s others", values | length - limit) }}
+    {%- else -%}
+        {{ values | join(", ") }}
+    {%- endif -%}
+{%- endmacro %}

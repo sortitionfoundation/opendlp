@@ -98,28 +98,116 @@ def reset_logging_handlers():
     user_logger.handlers = original_handlers
 
 
+# Environment variables that change how the app behaves, and so must not reach a
+# test from a developer's .env file. `.env` is merged into os.environ at import of
+# opendlp.config, long before any fixture runs, so without this a green CI run
+# says nothing about whether the suite passes on someone's machine.
+#
+# tests/unit/test_env_scrub.py reads every environment variable the application
+# consults and fails if one is on neither this list nor ENV_KEYS_TESTS_MAY_INHERIT,
+# so a new setting cannot quietly reintroduce the leak.
+LEAKY_ENV_PREFIXES = (
+    "BABEL_",
+    "EMAIL_",
+    "HELP_SITE_",
+    "LOGIN_RATE_LIMIT_",
+    "MAX_",
+    "MONITOR_",
+    "OAUTH_",
+    "REGISTRATION_",
+    "SITE_BANNER_",
+    "SMTP_",
+)
+LEAKY_ENV_KEYS = (
+    "ALLOW_RESET_DB",
+    "APPLICATION_ROOT",
+    "DEBUG",
+    "GOOGLE_AUTH_JSON_PATH",
+    "INVITE_EXPIRY_HOURS",
+    "KNOWLEDGE_HUB_URL",
+    "LOG_ALL_REQUESTS",
+    "LOG_LEVEL",
+    "OPENDLP_LOCALE",
+    "SECRET_KEY",
+    "SERVER_NAME",
+    "SOLVER_BACKEND",
+    "SUPPORTED_LANGUAGES",
+    "SUPPORT_EMAIL",
+    "TASK_TIMEOUT_HOURS",
+    "TOTP_ENCRYPTION_KEY",
+    "USE_CSV_DATA_SOURCE",
+)
+FEATURE_FLAG_PREFIX = "FF_"
+SCRUBBED_ENV_PREFIXES = (FEATURE_FLAG_PREFIX, *LEAKY_ENV_PREFIXES)
+
+# Variables a test may safely take from .env: where the infrastructure lives, and
+# the tooling's own. FLASK_ENV is here because the fixture sets it explicitly.
+ENV_KEYS_TESTS_MAY_INHERIT = (
+    "API_HOST",
+    "CSV_TEST_DATA_DIR",
+    # Inherited on purpose. It only turns on SQLAlchemy's statement logging, so it
+    # cannot change a result - and being able to set DB_ECHO in .env and watch the
+    # SQL a failing test emits is worth more than the noise it adds when it is on.
+    "DB_ECHO",
+    "DB_HOST",
+    "DB_NAME",
+    "DB_PASSWORD",
+    "DB_PORT",
+    "DB_URI",
+    "DB_USER",
+    "FLASK_ENV",
+    "GITHUB_WORKSPACE",
+    "PROJECT_ROOT",
+    "PYTEST_XDIST_WORKER",
+    "REDIS_DB",
+    "REDIS_HOST",
+    "REDIS_PORT",
+)
+
+# Flags the suite wants on whatever .env says. Applied after the scrub, and set
+# rather than defaulted, so a developer's .env cannot win.
+TEST_FEATURE_FLAGS = {
+    # Keep the legacy /dashboard available for tests that still target it.
+    "FF_OLD_DEFAULT_DASHBOARD": "true",
+    "FF_DASHBOARD_SWITCH_LINKS": "true",
+}
+
+
+def _leaky_env_keys() -> list[str]:
+    """Every currently-set variable a test must not inherit from .env."""
+    return [key for key in os.environ if key.startswith(SCRUBBED_ENV_PREFIXES) or key in LEAKY_ENV_KEYS]
+
+
 @pytest.fixture(autouse=True)
 def set_test_env():
-    """Automatically set test environment for all tests."""
-    original_env = os.environ.get("FLASK_ENV")
+    """Give every test the same environment, whatever the developer's .env holds.
+
+    Feature flags are set to "false"; everything else is deleted. Two different
+    reasons for the two treatments:
+
+    * the BDD suite starts Flask as a subprocess that inherits this environment
+      and then calls load_dotenv(), which does not override a key that is already
+      set - so a deleted flag comes straight back from .env, while "false" sticks;
+    * for everything else "not set" is the state the config tests assert the
+      documented defaults against, so deleting is what restores them.
+
+    Tests that want a flag on set it and call reload_flags() themselves.
+    """
+    scrubbed = _leaky_env_keys()
+    original = {key: os.environ.get(key) for key in (*scrubbed, *TEST_FEATURE_FLAGS, "FLASK_ENV")}
+
     os.environ["FLASK_ENV"] = "testing"
-    # Keep the legacy /dashboard available for tests that still target it.
-    # Individual tests that exercise the new default can override these via
-    # monkeypatch and reload_flags().
-    ff_defaults = {
-        "FF_OLD_DEFAULT_DASHBOARD": "true",
-        "FF_DASHBOARD_SWITCH_LINKS": "true",
-    }
-    original_ffs = {key: os.environ.get(key) for key in ff_defaults}
-    for key, value in ff_defaults.items():
-        os.environ.setdefault(key, value)
+    for key in scrubbed:
+        if key.startswith(FEATURE_FLAG_PREFIX):
+            os.environ[key] = "false"
+        else:
+            del os.environ[key]
+    os.environ.update(TEST_FEATURE_FLAGS)
     reload_flags()
+
     yield
-    if original_env is not None:  # pragma: no cover
-        os.environ["FLASK_ENV"] = original_env
-    else:
-        os.environ.pop("FLASK_ENV", None)
-    for key, original_value in original_ffs.items():
+
+    for key, original_value in original.items():
         if original_value is None:
             os.environ.pop(key, None)
         else:  # pragma: no cover
@@ -316,7 +404,7 @@ def _delete_all_test_data(session_factory):
         session.execute(orm.email_templates.delete())
         session.execute(orm.target_categories.delete())
         session.execute(orm.assembly_gsheets.delete())
-        session.execute(orm.assembly_respondent_gsheets.delete())
+        session.execute(orm.assembly_export_gsheets.delete())
         session.execute(orm.assembly_csv.delete())
         session.execute(orm.selection_settings.delete())
         session.execute(orm.user_invites.delete())

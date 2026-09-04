@@ -1,12 +1,12 @@
 {#
 ABOUTME: Showcase section listing every shared icon macro, grouped by what it means
-ABOUTME: Groups holding more than one glyph for the same idea are flagged for a decision
+ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP - UI Figma file
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle %}
-{% from "backoffice/components/icons.html" import icon_about, icon_arrow_back, icon_check, icon_check_12, icon_check_20, icon_chevron_down, icon_chevron_up, icon_close, icon_code, icon_copy, icon_data_agreement, icon_download, icon_download_16, icon_edit, icon_hand, icon_info_heroicons, icon_info_lucide, icon_logout, icon_more_vert, icon_plus_heroicons, icon_plus_lucide, icon_question_circle, icon_spinner, icon_sparkles, icon_switch, icon_trash_heroicons, icon_trash_lucide, icon_trash_material, icon_undo, icon_user, icon_warning, icon_warning_20 %}
+{% from "backoffice/components/icons.html" import icon_about, icon_arrow_back, icon_check, icon_check_12, icon_check_20, icon_chevron_down, icon_chevron_up, icon_close, icon_code, icon_copy, icon_data_agreement, icon_download, icon_edit, icon_hand, icon_info, icon_logout, icon_more_vert, icon_plus, icon_question_circle, icon_spinner, icon_sparkles, icon_switch, icon_trash, icon_undo, icon_user, icon_warning, icon_warning_20 %}
 
 {#
-    A glyph and everything a reader needs to judge it: how it looks small, how
+    A glyph and everything a reader needs to use it: how it looks small, how
     it looks large, how it reads on a dark ground, what to type to get it, and
     who already draws it.
 
@@ -43,26 +43,13 @@ ABOUTME: Groups holding more than one glyph for the same idea are flagged for a 
     </div>
 {% endmacro %}
 
-{#
-    The question a group raises, when it holds more than one drawing of the same
-    idea. Written out rather than left implicit, because the whole point of this
-    page is that somebody decides.
-#}
-{% macro decision(text) %}
-    <div class="rounded-md p-3 mt-3"
-         style="background-color: var(--color-warning-100);
-                border: 1px solid var(--color-warning-400)">
-        <p class="text-body-sm" style="color: var(--color-warning-600)">{{ text }}</p>
-    </div>
-{% endmacro %}
-
 {% macro icons_section() %}
     {% call showcase_section() %}
         {{ showcase_title("Icons") }}
         {{ showcase_description("Every icon in the backoffice, from backoffice/components/icons.html. Each row shows the glyph small, large, and on a dark ground, then the macro name, the set it comes from, and the templates that call it.") }}
 
         <p class="text-body-md" style="color: var(--color-body-text)">
-            Some ideas below are drawn more than once. Those groups carry a highlighted note, and the macros carry a family or grid-size suffix until the team picks one. Brand marks, the product logo, diagram illustrations and the GOV.UK pagination arrows are deliberately not here.
+            The house family is Lucide, taken from the Icons sheet of the OpenDLP - UI Figma file, at stroke-width 2 with round caps and joins. Need a new icon? Take it from that sheet and add a macro here; do not draw your own. The three small-grid glyphs at the bottom are drawn to fill the stepper bubble and the checkbox square, which is deliberate. Brand marks, the product logo, diagram illustrations and the GOV.UK pagination arrows are deliberately not here.
         </p>
 
         {{ showcase_subtitle("Chevrons and arrows") }}
@@ -72,14 +59,13 @@ ABOUTME: Groups holding more than one glyph for the same idea are flagged for a 
         "backoffice/components/dropdown_button.html",
         "backoffice/components/split_button.html",
         "backoffice/showcase/button_component.html",
-        "backoffice/targets/bulk_edit_form.html (stroke_width=\"1.5\")"]) }}
+        "backoffice/targets/bulk_edit_form.html"]) }}
         {{ glyph("icon_chevron_up", "Lucide", "24",
         icon_chevron_up(classes="w-4 h-4"), icon_chevron_up(classes="w-6 h-6"),
-        ["backoffice/targets/bulk_edit_form.html (stroke_width=\"1.5\")"]) }}
+        ["backoffice/targets/bulk_edit_form.html"]) }}
         {{ glyph("icon_arrow_back", "Lucide", "24",
         icon_arrow_back(classes="w-4 h-4"), icon_arrow_back(classes="w-6 h-6"),
         ["backoffice/components/page_header.html"]) }}
-        {{ decision("The chevron is drawn at stroke-width 2 everywhere except the targets editor, which uses 1.5. One weight or two?") }}
 
         {{ showcase_subtitle("Account menu and top navigation") }}
         {{ glyph("icon_user", "Lucide", "24",
@@ -99,94 +85,54 @@ ABOUTME: Groups holding more than one glyph for the same idea are flagged for a 
         ["backoffice/components/navigation.html"]) }}
         {{ glyph("icon_about", "Lucide", "24",
         icon_about(classes="w-4 h-4"), icon_about(classes="w-6 h-6"), []) }}
-        {{ decision("icon_about is drawn by nothing. It came across with the rest of the account menu set. Keep it for a menu item still to come, or delete it?") }}
 
-        {{ showcase_subtitle("Information") }}
-        {{ glyph("icon_info_lucide", "Lucide", "24",
-        icon_info_lucide(classes="w-4 h-4"), icon_info_lucide(classes="w-6 h-6"),
-        ["backoffice/components/info_icon.html"]) }}
-        {{ glyph("icon_info_heroicons", "Heroicons v1", "24",
-        icon_info_heroicons(classes="w-4 h-4"), icon_info_heroicons(classes="w-6 h-6"),
+        {{ showcase_subtitle("Status") }}
+        {{ glyph("icon_info", "Lucide", "24",
+        icon_info(classes="w-4 h-4"), icon_info(classes="w-6 h-6"),
         ["backoffice/assembly_respondents.html", "backoffice/assembly_targets.html",
-        "backoffice/registration/_assets.html", "backoffice/respondent_field_schema/view.html"]) }}
-        {{ decision("Two glyphs for one idea. The Lucide one sits beside labels and table headings; the Heroicons one heads the \"configured in Google Sheets\" panels and the asset library's format hints. Note that icon_question_circle above is a third circled glyph in the same visual neighbourhood.") }}
-
-        {{ showcase_subtitle("Tick") }}
-        {{ glyph("icon_check", "Heroicons v1", "24",
+        "backoffice/components/info_icon.html", "backoffice/registration/_assets.html",
+        "backoffice/respondent_field_schema/view.html"]) }}
+        {{ glyph("icon_check", "Lucide", "24",
         icon_check(classes="w-4 h-4"), icon_check(classes="w-6 h-6"),
         ["backoffice/assembly_data.html", "backoffice/components/url_display.html"]) }}
-        {{ glyph("icon_check_20", "unattributed", "20",
-        icon_check_20(), icon_check_20(),
-        ["backoffice/components/stepper.html"]) }}
-        {{ glyph("icon_check_12", "unattributed", "12",
-        icon_check_12(classes=""), icon_check_12(classes=""),
-        ["backoffice/components/input.html"]) }}
-        {{ decision("Three glyphs for one idea. The 20 and 12 grid versions are drawn to fill the stepper bubble and the checkbox square, so their divergence may well be deliberate - that is the question. icon_check_12 is also the only glyph in the set with a hard-coded white stroke.") }}
-
-        {{ showcase_subtitle("Warning") }}
-        {{ glyph("icon_warning", "Heroicons v1", "24",
+        {{ glyph("icon_warning", "Lucide", "24",
         icon_warning(classes="w-4 h-4"), icon_warning(classes="w-6 h-6"),
         ["backoffice/assembly_registration.html"]) }}
-        {{ glyph("icon_warning_20", "unattributed", "20",
-        icon_warning_20(), icon_warning_20(),
-        ["backoffice/components/stepper.html"]) }}
-        {{ decision("Two glyphs for one idea, and the same question as the tick: the 20 grid version is drawn for the stepper bubble.") }}
-
-        {{ showcase_subtitle("Busy") }}
-        {{ glyph("icon_spinner", "Tailwind UI", "24",
-        icon_spinner(classes="animate-spin h-4 w-4"), icon_spinner(classes="animate-spin h-6 w-6"),
+        {{ glyph("icon_spinner", "Lucide", "24",
+        icon_spinner(classes="animate-spin w-4 h-4"), icon_spinner(classes="animate-spin w-6 h-6"),
         ["backoffice/components/modal.html", "backoffice/components/search_dropdown.html"]) }}
 
-        {{ showcase_subtitle("Add") }}
-        {{ glyph("icon_plus_heroicons", "Heroicons v1", "24",
-        icon_plus_heroicons(classes="w-4 h-4"), icon_plus_heroicons(classes="w-6 h-6"),
-        ["backoffice/registration/_assets.html"]) }}
-        {{ glyph("icon_plus_lucide", "Lucide", "24",
-        icon_plus_lucide(classes="w-4 h-4"), icon_plus_lucide(classes="w-6 h-6"),
-        ["backoffice/showcase/button_component.html"]) }}
-        {{ decision("Two glyphs for one idea. Only the registration editor draws a plus in the product; the Lucide one is so far a showcase example.") }}
-
-        {{ showcase_subtitle("Delete") }}
-        {{ glyph("icon_trash_heroicons", "Heroicons v1", "24",
-        icon_trash_heroicons(classes="w-4 h-4"), icon_trash_heroicons(classes="w-6 h-6"),
-        ["backoffice/registration/_assets.html"]) }}
-        {{ glyph("icon_trash_material", "Material, filled", "24",
-        icon_trash_material(classes="w-4 h-4"), icon_trash_material(classes="w-6 h-6"),
-        ["backoffice/targets/bulk_edit_form.html"]) }}
-        {{ glyph("icon_trash_lucide", "Lucide", "24",
-        icon_trash_lucide(classes="w-4 h-4"), icon_trash_lucide(classes="w-6 h-6"),
-        ["backoffice/showcase/button_component.html"]) }}
-        {{ decision("Three glyphs for one idea, in three visual languages. The registration editor draws an outline, the targets editor a filled bin, and the showcase a Lucide one that no page uses. This is the clearest case on the page: two editors in the same product delete things with different-looking buttons.") }}
-
-        {{ showcase_subtitle("Download") }}
-        {{ glyph("icon_download", "Heroicons v1", "24",
-        icon_download(classes="w-4 h-4"), icon_download(classes="w-6 h-6"),
-        ["backoffice/registration/_step_preview.html"]) }}
-        {{ glyph("icon_download_16", "unattributed", "16",
-        icon_download_16(), icon_download_16(),
-        ["backoffice/assembly_selection.html"]) }}
-        {{ decision("The same arrow-into-tray drawn twice, on a 24 and a 16 grid. Almost certainly one icon.") }}
-
-        {{ showcase_subtitle("Other actions") }}
-        {{ glyph("icon_copy", "Heroicons v1", "24",
+        {{ showcase_subtitle("Actions") }}
+        {{ glyph("icon_plus", "Lucide", "24",
+        icon_plus(classes="w-4 h-4"), icon_plus(classes="w-6 h-6"),
+        ["backoffice/assembly_targets.html", "backoffice/registration/_assets.html",
+        "backoffice/showcase/button_component.html"]) }}
+        {{ glyph("icon_trash", "Lucide", "24",
+        icon_trash(classes="w-4 h-4"), icon_trash(classes="w-6 h-6"),
+        ["backoffice/registration/_assets.html", "backoffice/showcase/button_component.html",
+        "backoffice/targets/bulk_edit_form.html"]) }}
+        {{ glyph("icon_copy", "Lucide", "24",
         icon_copy(classes="w-4 h-4"), icon_copy(classes="w-6 h-6"),
-        ["backoffice/components/url_display.html (stroke_width=\"1.5\")",
+        ["backoffice/components/url_display.html",
         "backoffice/registration/_assets.html", "backoffice/registration/_step_email.html"]) }}
         {{ glyph("icon_edit", "Lucide", "24",
         icon_edit(classes="w-4 h-4"), icon_edit(classes="w-6 h-6"),
         ["backoffice/showcase/button_component.html"]) }}
-        {{ glyph("icon_close", "Heroicons v1", "24",
+        {{ glyph("icon_close", "Lucide", "24",
         icon_close(classes="w-4 h-4"), icon_close(classes="w-6 h-6"),
         ["backoffice/components/modal.html"]) }}
-        {{ glyph("icon_undo", "Material", "24",
+        {{ glyph("icon_undo", "Lucide", "24",
         icon_undo(classes="w-4 h-4"), icon_undo(classes="w-6 h-6"),
         ["backoffice/targets/bulk_edit_form.html"]) }}
-        {{ glyph("icon_code", "Heroicons v1", "24",
+        {{ glyph("icon_code", "Lucide", "24",
         icon_code(classes="w-4 h-4"), icon_code(classes="w-6 h-6"),
         ["backoffice/registration/_step_form.html"]) }}
-        {{ glyph("icon_more_vert", "Material, filled", "24",
+        {{ glyph("icon_more_vert", "Lucide", "24",
         icon_more_vert(classes="w-4 h-4"), icon_more_vert(classes="w-6 h-6"),
         ["backoffice/components/registration_page_list.html"]) }}
+        {{ glyph("icon_download", "Lucide", "24",
+        icon_download(classes="w-4 h-4"), icon_download(classes="w-6 h-6"),
+        ["backoffice/assembly_selection.html", "backoffice/registration/_step_preview.html"]) }}
 
         {{ showcase_subtitle("Where a target number came from") }}
         {{ glyph("icon_hand", "Lucide", "24",
@@ -195,5 +141,19 @@ ABOUTME: Groups holding more than one glyph for the same idea are flagged for a 
         {{ glyph("icon_sparkles", "Lucide", "24",
         icon_sparkles(classes="w-4 h-4"), icon_sparkles(classes="w-6 h-6"),
         ["backoffice/targets/category_block.html"]) }}
+
+        {{ showcase_subtitle("Drawn for their slot") }}
+        <p class="text-body-md" style="color: var(--color-body-text)">
+            These fill a specific control rather than a text line: the stepper bubble's tick and warning sit on a 20 grid at a heavier stroke so they read at 14px, and the checkbox tick is drawn into its 12px square with a hard-coded white stroke. Do not reuse them elsewhere; the 24-grid glyphs above scale for every other slot.
+        </p>
+        {{ glyph("icon_check_20", "slot-drawn", "20",
+        icon_check_20(), icon_check_20(),
+        ["backoffice/components/stepper.html"]) }}
+        {{ glyph("icon_warning_20", "slot-drawn", "20",
+        icon_warning_20(), icon_warning_20(),
+        ["backoffice/components/stepper.html"]) }}
+        {{ glyph("icon_check_12", "slot-drawn", "12",
+        icon_check_12(classes=""), icon_check_12(classes=""),
+        ["backoffice/components/input.html"]) }}
     {% endcall %}
 {% endmacro %}

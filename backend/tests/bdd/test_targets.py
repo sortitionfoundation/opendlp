@@ -7,6 +7,7 @@ import uuid
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from opendlp.domain.respondents import Respondent
 from opendlp.service_layer.target_service import (
     add_target_value,
     create_target_category,
@@ -18,6 +19,10 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from .config import PLAYWRIGHT_TIMEOUT, Urls
 
 scenarios("../../features/targets.feature")
+
+# Nine values in the respondent data. With the first of them targeted, the eight
+# that are left are more than the "not yet targeted" summary lists in full.
+AGE_BANDS = ["16-19", "20-24", "25-29", "30-34", "35-44", "45-54", "55-64", "65-74", "75+"]
 
 
 _target_assembly_ids: dict[str, str] = {}
@@ -82,6 +87,20 @@ def assembly_with_two_categories(title: str, assembly_creator, admin_user, test_
     with SqlAlchemyUnitOfWork(test_database) as uow:
         create_target_category(uow, admin_user.id, assembly.id, name="Gender")
         create_target_category(uow, admin_user.id, assembly.id, name="Age")
+
+
+@given("the respondent data holds nine ages, one of them targeted")
+def respondents_with_untargeted_ages(admin_user, test_database) -> None:
+    """An Age category naming one band, against respondents spread over nine."""
+    assembly_id = uuid.UUID(_current_assembly_id[0])
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        category = create_target_category(uow, admin_user.id, assembly_id, name="Age")
+        add_target_value(uow, admin_user.id, assembly_id, category.id, value=AGE_BANDS[0], percentage=100.0)
+        uow.respondents.bulk_add([
+            Respondent(assembly_id=assembly_id, external_id=f"age-{i}", attributes={"Age": band})
+            for i, band in enumerate(AGE_BANDS)
+        ])
+        uow.commit()
 
 
 @given("I am signed in as an admin user")
@@ -196,6 +215,11 @@ def _blank_or_new_row(block):
         return last
     block.get_by_role("button", name="Add value", exact=True).click()
     return block.locator("tr[data-value-row]").last
+
+
+@when("I add the values found in the respondent data")
+def add_missing_values(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Add values found in respondent data").click()
 
 
 @when(parsers.parse('I delete the "{value}" target value'))

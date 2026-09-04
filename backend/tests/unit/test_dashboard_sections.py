@@ -16,11 +16,23 @@ def _report(*categories: DashboardCategory) -> DashboardReport:
     )
 
 
+def _row(value: str, pool_count: int, shortfall: int) -> CategoryValueRow:
+    return CategoryValueRow(
+        value=value,
+        target_min=10,
+        target_max=12,
+        target_pct=50.0,
+        pool_count=pool_count,
+        available_count=pool_count,
+        selected_count=0,
+        confirmed_count=0,
+        shortfall=shortfall,
+        meetable=shortfall == 0,
+    )
+
+
 def _gender_rows() -> list[CategoryValueRow]:
-    return [
-        CategoryValueRow("Male", target_min=10, target_max=12, pool_count=8, shortfall=2, meetable=False),
-        CategoryValueRow("Female", target_min=10, target_max=12, pool_count=14, shortfall=0, meetable=True),
-    ]
+    return [_row("Male", pool_count=8, shortfall=2), _row("Female", pool_count=14, shortfall=0)]
 
 
 def test_one_section_per_category_with_four_dataset_cards():
@@ -60,7 +72,7 @@ def test_selected_and_confirmed_cards_are_skeletons_with_a_message():
 
 
 def test_respondents_card_is_a_skeleton_when_the_pool_is_empty():
-    rows = [CategoryValueRow("Male", target_min=10, target_max=12, pool_count=0, shortfall=10, meetable=False)]
+    rows = [_row("Male", pool_count=0, shortfall=10)]
     cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=rows)))[0]["cards"]
 
     # Target still populates from the band; Respondents has no data yet.

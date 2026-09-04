@@ -4,14 +4,14 @@ ABOUTME: Displays button variants and usage examples
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle, showcase_example, showcase_tokens %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_chevron_down, icon_edit, icon_plus_lucide, icon_trash_lucide %}
+{% from "backoffice/components/icons.html" import icon_chevron_down, icon_edit, icon_plus, icon_trash %}
 {% from "backoffice/components/input.html" import switch %}
 
 {# Sample icons for demonstration, drawn from the shared set #}
 {% set edit_icon %}{{ icon_edit() }}{% endset %}
 {% set chevron_down_icon %}{{ icon_chevron_down(classes="") }}{% endset %}
-{% set plus_icon %}{{ icon_plus_lucide() }}{% endset %}
-{% set trash_icon %}{{ icon_trash_lucide() }}{% endset %}
+{% set plus_icon %}{{ icon_plus(classes="") }}{% endset %}
+{% set trash_icon %}{{ icon_trash(classes="") }}{% endset %}
 
 {% macro button_section() %}
     {% call showcase_section() %}

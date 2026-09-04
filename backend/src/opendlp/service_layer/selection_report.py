@@ -9,6 +9,7 @@ from io import StringIO
 from typing import TYPE_CHECKING, Any
 
 from opendlp.domain.respondents import Respondent, normalise_field_name
+from opendlp.domain.targets import percentage_of, percentages_from_minmax
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.translations import gettext as _
 
@@ -51,25 +52,17 @@ class SelectionReport:
     categories: list[CategoryReport] = field(default_factory=list)
 
 
-def _pct(numerator: int, denominator: int) -> float:
-    if denominator == 0:
-        return 0.0
-    return round(numerator / denominator * 100, 1)
-
-
-def _target_pct(value_snapshot: dict[str, Any], number_to_select: int) -> float:
+def _target_pct(value_snapshot: dict[str, Any], fallback: float) -> float:
     """The target percentage the run was configured with.
 
-    Prefers the recorded percentage; falls back to the midpoint of min/max for
-    runs recorded before percentages existed, and for values that never had one.
+    Prefers the recorded percentage; falls back to the share the value's min/max
+    band implies within its category, for runs recorded before percentages
+    existed and for values that never had one.
     """
     stored = value_snapshot.get("percentage_target")
     if stored is not None:
         return round(float(stored), 1)
-    if number_to_select == 0:
-        return 0.0
-    midpoint = (value_snapshot["min"] + value_snapshot["max"]) / 2
-    return round(float(midpoint) / number_to_select * 100, 1)
+    return fallback
 
 
 def _attribute_value(respondent: Respondent, category_name: str) -> str:
@@ -84,7 +77,6 @@ def _build_category_report(
     category: dict[str, Any],
     pool_respondents: list[Respondent],
     selected_respondents: list[Respondent],
-    number_to_select: int,
 ) -> CategoryReport:
     name = category["name"]
     known_values = {v["value"] for v in category["values"]}
@@ -116,18 +108,19 @@ def _build_category_report(
     pool_total = sum(pool_counts.values())
     selected_total = sum(selected_counts.values())
 
+    fallback_pcts = percentages_from_minmax([(v["min"], v["max"]) for v in category["values"]])
     rows = [
         CategoryReportRow(
             value=v["value"],
             target_min=v["min"],
             target_max=v["max"],
-            target_pct=_target_pct(v, number_to_select),
+            target_pct=_target_pct(v, fallback),
             pool_count=pool_counts[v["value"]],
-            pool_pct=_pct(pool_counts[v["value"]], pool_total),
+            pool_pct=percentage_of(pool_counts[v["value"]], pool_total),
             selected_count=selected_counts[v["value"]],
-            selected_pct=_pct(selected_counts[v["value"]], selected_total),
+            selected_pct=percentage_of(selected_counts[v["value"]], selected_total),
         )
-        for v in category["values"]
+        for v, fallback in zip(category["values"], fallback_pcts, strict=True)
     ]
     return CategoryReport(name=name, rows=rows)
 
@@ -161,10 +154,7 @@ def build_selection_report(
 
     deleted_count = sum(1 for r in pool_respondents if r.selection_status == RespondentStatus.DELETED)
 
-    categories = [
-        _build_category_report(cat, pool_respondents, selected_respondents, assembly.number_to_select)
-        for cat in record.targets_used
-    ]
+    categories = [_build_category_report(cat, pool_respondents, selected_respondents) for cat in record.targets_used]
 
     selection_url = url_generator.generate_url(
         "gsheets.view_assembly_selection_with_run",

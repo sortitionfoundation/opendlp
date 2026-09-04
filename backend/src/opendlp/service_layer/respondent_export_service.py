@@ -9,16 +9,17 @@ from opendlp.adapters.tabular_export import (
     TabularData,
 )
 from opendlp.domain.assembly import Assembly
-from opendlp.domain.assembly_respondent_gsheet import AssemblyRespondentGSheet
+from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet, default_worksheet_name
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import RespondentStatus
+from opendlp.domain.value_objects import GSheetExportKind, RespondentStatus
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InvalidSelection
+from opendlp.service_layer.export_gsheet_config import save_export_gsheet_config
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
-DEFAULT_SHEET_TITLE = "Respondents"
+EXPORT_KIND = GSheetExportKind.RESPONDENTS
 
 # UI filter tokens accepted by resolve_status_filter alongside plain status names.
 STATUS_FILTER_ALL = "all"
@@ -171,7 +172,7 @@ def export_respondents(
     *,
     status_filter: list[RespondentStatus] | None,
     target: AbstractTabularExportTarget,
-    sheet_title: str = DEFAULT_SHEET_TITLE,
+    sheet_title: str = "",
 ) -> None:
     """Export an assembly's respondents to the given target.
 
@@ -180,8 +181,10 @@ def export_respondents(
     permission on the assembly. The caller is expected to manage the ``uow``
     context (``with uow: ...``).
 
-    The caller is expected to manage the `uow` context (`with uow: ...`).
+    An empty ``sheet_title`` means the default for this export kind, resolved
+    here rather than as a default argument so it lands in the caller's language.
     """
+    sheet_title = sheet_title or default_worksheet_name(EXPORT_KIND)
     assembly = _load_assembly(uow, assembly_id)
     _write_export(uow, assembly_id, assembly, status_filter, target, sheet_title)
 
@@ -191,12 +194,12 @@ def get_respondent_gsheet_config(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
-) -> "AssemblyRespondentGSheet | None":
+) -> "AssemblyExportGSheet | None":
     """Return the saved respondent-export sheet config, or None. Manage-gated.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    config = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
+    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
     return config.create_detached_copy() if config else None
 
 
@@ -215,14 +218,14 @@ def export_respondents_to_gsheet(
 
     ``target`` is the (real or fake) Google Sheets target; the caller reads its
     result URL afterwards. The spreadsheet URL and worksheet name are persisted
-    to AssemblyRespondentGSheet so later exports can pre-fill the form, along
+    to AssemblyExportGSheet so later exports can pre-fill the form, along
     with the spreadsheet's title and the direct worksheet link read off the
     target after the write, so the respondents page can link to the export. The
     caller is expected to manage the ``uow`` context (``with uow: ...``).
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
-    worksheet_name = worksheet_name.strip() or DEFAULT_SHEET_TITLE
+    worksheet_name = worksheet_name.strip() or default_worksheet_name(EXPORT_KIND)
     assembly = _load_assembly(uow, assembly_id)
 
     # Write first so the target's result_title/result_url are populated; only
@@ -230,21 +233,11 @@ def export_respondents_to_gsheet(
     # uow rolls back on the raised ExportTargetError before this commit).
     _write_export(uow, assembly_id, assembly, status_filter, target, worksheet_name)
 
-    config = uow.assembly_respondent_gsheets.get_by_assembly_id(assembly_id)
-    if config is None:
-        config = AssemblyRespondentGSheet(
-            assembly_id=assembly_id,
-            url=spreadsheet_url,
-            worksheet_name=worksheet_name,
-            spreadsheet_title=target.result_title,
-            worksheet_url=target.result_url,
-        )
-        uow.assembly_respondent_gsheets.add(config)
-    else:
-        config.update_values(
-            url=spreadsheet_url,
-            worksheet_name=worksheet_name,
-            spreadsheet_title=target.result_title,
-            worksheet_url=target.result_url,
-        )
-    uow.commit()
+    save_export_gsheet_config(
+        uow,
+        assembly_id,
+        EXPORT_KIND,
+        spreadsheet_url=spreadsheet_url,
+        worksheet_name=worksheet_name,
+        target=target,
+    )

@@ -641,6 +641,188 @@ class TestGetSelectedAttributeValueCounts:
         assert respondent_backend.repo.get_selected_attribute_value_counts(uuid.uuid4(), "gender") == {}
 
 
+class TestCountByStatus:
+    def test_groups_respondents_by_status(self, respondent_backend: ContractBackend):
+        """Every status present is counted, including DELETED."""
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001")
+        _make_respondent(respondent_backend, assembly.id, external_id="R002")
+        _make_respondent(respondent_backend, assembly.id, external_id="R003", status=RespondentStatus.SELECTED)
+        _make_respondent(respondent_backend, assembly.id, external_id="R004", status=RespondentStatus.WITHDRAWN)
+        _make_respondent(respondent_backend, assembly.id, external_id="R005", status=RespondentStatus.DELETED)
+
+        assert respondent_backend.repo.count_by_status(assembly.id) == {
+            RespondentStatus.POOL: 2,
+            RespondentStatus.SELECTED: 1,
+            RespondentStatus.WITHDRAWN: 1,
+            RespondentStatus.DELETED: 1,
+        }
+
+    def test_omits_statuses_that_are_not_present(self, respondent_backend: ContractBackend):
+        """Absent statuses have no entry - the caller fills the zeros."""
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001")
+
+        assert respondent_backend.repo.count_by_status(assembly.id) == {RespondentStatus.POOL: 1}
+
+    def test_returns_empty_for_an_assembly_with_no_respondents(self, respondent_backend: ContractBackend):
+        assert respondent_backend.repo.count_by_status(uuid.uuid4()) == {}
+
+    def test_counts_only_the_given_assembly(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        other = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001")
+        _make_respondent(respondent_backend, other.id, external_id="R002")
+
+        assert respondent_backend.repo.count_by_status(assembly.id) == {RespondentStatus.POOL: 1}
+
+
+class TestGetAttributeValueCountsByStatus:
+    def test_splits_each_value_by_status(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"gender": "Female"})
+        _make_respondent(respondent_backend, assembly.id, external_id="R002", attributes={"gender": "Female"})
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R003",
+            attributes={"gender": "Female"},
+            status=RespondentStatus.CONFIRMED,
+        )
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R004",
+            attributes={"gender": "Male"},
+            status=RespondentStatus.SELECTED,
+        )
+
+        assert respondent_backend.repo.get_attribute_value_counts_by_status(assembly.id, "gender") == {
+            "Female": {RespondentStatus.POOL: 2, RespondentStatus.CONFIRMED: 1},
+            "Male": {RespondentStatus.SELECTED: 1},
+        }
+
+    def test_excludes_deleted_respondents(self, respondent_backend: ContractBackend):
+        """A deleted respondent's details are blanked, so they belong in no distribution."""
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"gender": "Female"})
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R002",
+            attributes={"gender": "Female"},
+            status=RespondentStatus.DELETED,
+        )
+
+        assert respondent_backend.repo.get_attribute_value_counts_by_status(assembly.id, "gender") == {
+            "Female": {RespondentStatus.POOL: 1},
+        }
+
+    def test_counts_withdrawn_respondents(self, respondent_backend: ContractBackend):
+        """Withdrawn is a status like any other here - the service decides what to include."""
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R001",
+            attributes={"gender": "Female"},
+            status=RespondentStatus.WITHDRAWN,
+        )
+
+        assert respondent_backend.repo.get_attribute_value_counts_by_status(assembly.id, "gender") == {
+            "Female": {RespondentStatus.WITHDRAWN: 1},
+        }
+
+    def test_skips_respondents_without_the_attribute(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"gender": "Female"})
+        _make_respondent(respondent_backend, assembly.id, external_id="R002", attributes={"age": "30-44"})
+
+        assert respondent_backend.repo.get_attribute_value_counts_by_status(assembly.id, "gender") == {
+            "Female": {RespondentStatus.POOL: 1},
+        }
+
+    def test_returns_empty_for_an_unknown_attribute(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"gender": "Female"})
+
+        assert respondent_backend.repo.get_attribute_value_counts_by_status(assembly.id, "nosuch") == {}
+
+    def test_a_non_string_value_is_keyed_as_text(self, respondent_backend: ContractBackend):
+        """``attributes`` is dict[str, Any], and the SQL reads it with ->>, which renders text.
+
+        Targets are compared against these keys as strings, so a number that came
+        in unquoted has to arrive here as "42" from both backends or the fake and
+        the real repository disagree about whether a target value matches.
+        """
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"household": 42})
+
+        assert respondent_backend.repo.get_attribute_value_counts_by_status(assembly.id, "household") == {
+            "42": {RespondentStatus.POOL: 1},
+        }
+
+    def test_returns_empty_for_an_assembly_with_no_respondents(self, respondent_backend: ContractBackend):
+        assert respondent_backend.repo.get_attribute_value_counts_by_status(uuid.uuid4(), "gender") == {}
+
+
+class TestGetAttributeValueAvailableCounts:
+    def test_counts_pool_respondents_who_are_not_ruled_out(self, respondent_backend: ContractBackend):
+        """Unset eligible / can_attend still count - only an explicit False excludes."""
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"gender": "Female"})
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R002",
+            attributes={"gender": "Female"},
+            eligible=True,
+            can_attend=True,
+        )
+
+        assert respondent_backend.repo.get_attribute_value_available_counts(assembly.id, "gender") == {"Female": 2}
+
+    def test_excludes_the_ineligible_and_those_who_cannot_attend(self, respondent_backend: ContractBackend):
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"gender": "Female"})
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R002",
+            attributes={"gender": "Female"},
+            eligible=False,
+        )
+        _make_respondent(
+            respondent_backend,
+            assembly.id,
+            external_id="R003",
+            attributes={"gender": "Female"},
+            can_attend=False,
+        )
+
+        assert respondent_backend.repo.get_attribute_value_available_counts(assembly.id, "gender") == {"Female": 1}
+
+    def test_counts_only_the_pool(self, respondent_backend: ContractBackend):
+        """Selected, confirmed and withdrawn respondents are no longer available to select."""
+        assembly = respondent_backend.make_assembly()
+        _make_respondent(respondent_backend, assembly.id, external_id="R001", attributes={"gender": "Female"})
+        for index, status in enumerate(
+            (RespondentStatus.SELECTED, RespondentStatus.CONFIRMED, RespondentStatus.WITHDRAWN),
+        ):
+            _make_respondent(
+                respondent_backend,
+                assembly.id,
+                external_id=f"R10{index}",
+                attributes={"gender": "Female"},
+                status=status,
+            )
+
+        assert respondent_backend.repo.get_attribute_value_available_counts(assembly.id, "gender") == {"Female": 1}
+
+    def test_returns_empty_for_an_assembly_with_no_respondents(self, respondent_backend: ContractBackend):
+        assert respondent_backend.repo.get_attribute_value_available_counts(uuid.uuid4(), "gender") == {}
+
+
 class TestGetByAssemblyIdStatuses:
     def _add_with_created_at(self, backend, assembly_id, external_id, created_at, status=RespondentStatus.POOL):
         respondent = Respondent(

@@ -23,6 +23,7 @@ from sqlalchemy import (
     Table,
     Text,
     TypeDecorator,
+    UniqueConstraint,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSON
@@ -44,6 +45,7 @@ from opendlp.domain.value_objects import (
     AssemblyRole,
     AssemblyStatus,
     GlobalRole,
+    GSheetExportKind,
     RespondentSourceType,
     RespondentStatus,
     SelectionRunStatus,
@@ -439,24 +441,26 @@ assembly_csv = Table(
 )
 
 # Assembly respondent export Google Sheet table
-assembly_respondent_gsheets = Table(
-    "assembly_respondent_gsheets",
+assembly_export_gsheets = Table(
+    "assembly_export_gsheets",
     metadata,
-    Column("assembly_respondent_gsheet_id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("assembly_export_gsheet_id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
     Column(
         "assembly_id",
         PostgresUUID(as_uuid=True),
         ForeignKey("assemblies.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        unique=True,  # One export sheet per assembly
     ),
+    Column("export_kind", EnumAsString(GSheetExportKind, 50), nullable=False),
     Column("url", String(500), nullable=False, default=""),
-    Column("worksheet_name", String(100), nullable=False, default="Respondents"),
+    Column("worksheet_name", String(100), nullable=False, default=""),
     Column("spreadsheet_title", String(500), nullable=False, default=""),
     Column("worksheet_url", String(500), nullable=False, default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+    # One export sheet per assembly per kind.
+    UniqueConstraint("assembly_id", "export_kind", name="uq_assembly_export_gsheets_assembly_kind"),
 )
 
 # Selection run records table

@@ -378,30 +378,27 @@ class TestPercentageTotals:
         assert cat.percentage_total_is_plausible() is False
 
 
-class TestDerivePercentagesFromMinMax:
+class TestPercentagesFromMinMax:
     def test_normalises_within_the_category(self):
         cat = TargetCategory(assembly_id=uuid.uuid4(), name="Gender")
         cat.add_value(TargetValue(value="Man", min=10, max=20))
         cat.add_value(TargetValue(value="Woman", min=30, max=40))
-        cat.derive_percentages_from_minmax()
-        assert [v.percentage_target for v in cat.values] == [30.0, 70.0]
-        assert cat.percentage_total() == pytest.approx(100.0)
+        assert cat.percentages_from_minmax() == [30.0, 70.0]
 
-    def test_all_zero_derives_nothing(self):
+    def test_all_zero_bands_imply_nothing(self):
         """The create_target_category case, where auto-added values arrive at 0/0."""
         cat = TargetCategory(assembly_id=uuid.uuid4(), name="Gender")
         cat.add_value(TargetValue(value="Man", min=0, max=0))
-        cat.derive_percentages_from_minmax()
-        assert cat.values[0].percentage_target is None
+        assert cat.percentages_from_minmax() == [0.0]
 
     def test_rounding_drift_stays_within_tolerance(self):
+        """Three equal bands round to 33.3 each, so the shares total 99.9, not 100."""
         cat = TargetCategory(assembly_id=uuid.uuid4(), name="Age")
         for name in ("a", "b", "c"):
             cat.add_value(TargetValue(value=name, min=10, max=10))
-        cat.derive_percentages_from_minmax()
-        assert [v.percentage_target for v in cat.values] == [33.3, 33.3, 33.3]
-        assert cat.percentage_total() == pytest.approx(99.9)
-        assert cat.percentage_total_is_plausible() is True
+        shares = cat.percentages_from_minmax()
+        assert shares == [33.3, 33.3, 33.3]
+        assert sum(shares) == pytest.approx(99.9)
 
 
 class TestSourceUrlValidation:

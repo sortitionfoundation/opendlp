@@ -3,6 +3,7 @@ ABOUTME: Contains TargetCategory and TargetValue for defining selection quotas""
 
 import math
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -36,6 +37,30 @@ def min_max_for_percentage(percentage: float, number_to_select: int) -> tuple[in
     if low == high and high > 0:
         high = min(high + SLACK_SEATS, number_to_select)
     return low, high
+
+
+def percentages_from_minmax(min_max_pairs: Sequence[tuple[int, int]]) -> list[float]:
+    """Percentages implied by a set of min/max target bands, normalised within the set.
+
+    Uses (min + max) / sum(min + max), which is the ratio of midpoints with the
+    halves cancelled, so it needs no seat count and totals 100. Every percentage
+    is zero when every band is, since there is nothing to infer from.
+    """
+    denominator = sum(low + high for low, high in min_max_pairs)
+    if denominator == 0:
+        return [0.0] * len(min_max_pairs)
+    return [round((low + high) / denominator * 100, 1) for low, high in min_max_pairs]
+
+
+def percentage_of(numerator: int, denominator: int) -> float:
+    """One count as a percentage of a total, to one decimal place.
+
+    The shared rounding convention for every reported percentage, so the
+    selection report and the dashboard cannot drift apart on the arithmetic.
+    """
+    if denominator == 0:
+        return 0.0
+    return round(numerator / denominator * 100, 1)
 
 
 def validate_comment(comment: str) -> str:
@@ -241,18 +266,9 @@ class TargetCategory:
             return True
         return abs(total - 100.0) <= tolerance
 
-    def derive_percentages_from_minmax(self) -> None:
-        """Fill in percentages from the existing min/max, normalised within the category.
-
-        Uses (min + max) / sum(min + max), which is the ratio of midpoints with the
-        halves cancelled, so it needs no seat count and totals 100. Does nothing when
-        every min and max is zero, since there is nothing to infer from.
-        """
-        denominator = sum(v.min + v.max for v in self.values)
-        if denominator == 0:
-            return
-        for value in self.values:
-            value.percentage_target = round((value.min + value.max) / denominator * 100, 1)
+    def percentages_from_minmax(self) -> list[float]:
+        """The percentages this category's min/max bands imply, in value order."""
+        return percentages_from_minmax([(v.min, v.max) for v in self.values])
 
     def to_feature_dict(self) -> dict[str, dict[str, Any]]:
         """Convert to sortition-algorithms Feature dict format (value -> FeatureValueMinMax)"""

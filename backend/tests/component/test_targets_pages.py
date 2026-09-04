@@ -12,6 +12,7 @@ from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, RespondentStatus
+from opendlp.entrypoints.template_filters import MAX_URL_TEXT_LENGTH
 from opendlp.service_layer.assembly_service import add_assembly_gsheet
 from opendlp.service_layer.target_csv_import import import_targets_from_csv
 from opendlp.service_layer.target_service import (
@@ -345,6 +346,107 @@ class TestCategorySourceAndComment:
         assert b'rel="noopener noreferrer"' in response.data
         # The comment's own URL is linkified too.
         assert b'href="https://example.com/notes"' in response.data
+
+    def test_a_long_source_url_is_shortened_in_the_link_text(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Real source URLs run past 170 characters, which wraps over several lines."""
+        long_url = "https://www.ons.gov.uk/peoplepopulationandcommunity/" + "a" * 120
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            f"feature,value,min,max,source_url\nGender,Male,3,7,{long_url}\n",
+        )
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+        link_text = re.search(r'href="[^"]*ons\.gov\.uk[^"]*"[^>]*>([^<]*)</a>', html_text, re.DOTALL).group(1)
+
+        # The href is untouched - only what a reader sees is cut.
+        assert f'href="{long_url}"' in html_text
+        assert len(link_text) == MAX_URL_TEXT_LENGTH
+        assert link_text.endswith("\u2026")
+
+
+# Nine values in the respondent data, one of them targeted, so the eight that
+# are missing are more than the summary lists in full.
+AGE_BANDS = ["16-19", "20-24", "25-29", "30-34", "35-44", "45-54", "55-64", "65-74", "75+"]
+
+
+class TestMissingRespondentValues:
+    """The values respondents answered with that no target names."""
+
+    def _seed(self, fake_store, admin_user, assembly, bands):
+        """An Age category naming the first band, against respondents spread over all of them."""
+        category = _create_category(fake_store, admin_user, assembly.id, "Age")
+        _add_value(fake_store, admin_user, assembly.id, category.id, bands[0], 1, 2)
+        _add_respondents(
+            fake_store,
+            assembly.id,
+            [(f"r{i}", {"Age": band}) for i, band in enumerate(bands)],
+        )
+
+    def test_the_read_only_block_lists_the_first_five_and_counts_the_rest(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS)
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert "20-24, 25-29, 30-34, 35-44, 45-54 and 3 others" in html_text
+        assert "65-74" not in html_text
+
+    def test_the_edit_form_lists_the_first_five_and_counts_the_rest(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS)
+
+        html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert "Not yet targeted: 20-24, 25-29, 30-34, 35-44, 45-54 and 3 others" in html_text
+
+    def test_a_short_list_is_given_in_full(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS[:4])
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert "20-24, 25-29, 30-34" in html_text
+        assert "other" not in html_text
+
+    def test_one_value_over_the_limit_is_counted_in_the_singular(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS[:7])
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert "20-24, 25-29, 30-34, 35-44, 45-54 and 1 other" in html_text
+        assert "1 others" not in html_text
+
+    def test_the_edit_form_drops_the_list_with_the_button_that_adds_them(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The rows are added client-side, so the list of what is missing hangs off
+        the same flag as the button that stops being worth pressing.
+        """
+        self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS)
+
+        html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+        message = re.search(r'<span class="text-body-sm"([^>]*)>\s*Not yet targeted', html_text).group(1)
+
+        assert 'x-show="!missingAdded"' in message
+
+    def test_add_value_is_the_quieter_of_the_two_buttons(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Adding one blank row is the lesser offer beside adding every missing value."""
+        self._seed(fake_store, admin_user, existing_assembly, AGE_BANDS)
+
+        html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+        add_value = re.search(r'<button[^>]*class="([^"]*)"[^>]*>\s*<span>Add value</span>', html_text)
+
+        assert add_value is not None, "the Add value button was not found"
+        assert "btn--tertiary" in add_value.group(1)
 
 
 def _read_only_row_cells(html_text, value):

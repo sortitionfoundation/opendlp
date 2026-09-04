@@ -437,9 +437,9 @@ const EXECUTE_CALLS = [
   {
     factory: serviceDocsDashboard,
     method: "executeExportDashboard",
-    props: { dashboardExportAssemblyId: "a-1", dashboardExportFormat: "xlsx" },
-    service: "export_assembly_dashboard",
-    params: { assembly_id: "a-1", export_format: "xlsx" },
+    props: { dashboardExportAssemblyId: "a-1" },
+    service: "export_dashboard_report",
+    params: { assembly_id: "a-1" },
   },
 ];
 
