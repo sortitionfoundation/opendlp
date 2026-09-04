@@ -37,12 +37,18 @@ runs:
       with:
         version: ${{ inputs.uv-version }}
         enable-cache: "true"
-        cache-suffix: ${{ matrix.python-version }}
+        # inputs, not matrix: the matrix context is not available inside a
+        # composite action, so the old ${{ matrix.python-version }} was empty.
+        cache-suffix: ${{ inputs.python-version }}
 
     - name: Install Python dependencies
       working-directory: ${{ inputs.working-directory }}
       run: uv sync --frozen
       shell: bash
+      env:
+        # Without this, uv obeys .python-version (the local dev pin) and quietly
+        # installs 3.12 whatever python-version the caller asked for.
+        UV_PYTHON: ${{ inputs.python-version }}
 
     - name: Install Node.js dependencies and build frontend assets
       working-directory: ${{ inputs.working-directory }}
