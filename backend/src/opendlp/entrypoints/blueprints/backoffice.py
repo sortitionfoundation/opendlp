@@ -36,6 +36,7 @@ from opendlp.service_layer.assembly_service import (
     update_assembly,
 )
 from opendlp.service_layer.dashboard_stats import (
+    CategoryValueRow,
     DashboardReport,
     get_assembly_dashboard_report,
     get_assembly_dashboard_summary,
@@ -197,46 +198,92 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]]:
     """Turn the dashboard report into per-category sections of pie cards.
 
-    Each category shows four dataset cards, matching the Figma layout:
-      - Target: the target distribution (band midpoints), always populated;
-      - Respondents: the pool counts;
-      - Selected / Confirmed: still rendered as their skeleton state with a
-        message. The report does carry ``selected_count`` and ``confirmed_count``
-        per row - wiring those two cards up is a follow-up front-end ticket, so
-        the data arrives here ahead of anything drawing it.
+    Each category shows four dataset cards, matching the Figma layout: Target
+    (band midpoints), Respondents (pool), Selected and Confirmed. Each dataset's
+    pie is populated from the report's real counts; a dataset whose category total
+    is zero has ``segments = None``, which the pie card renders as a grey skeleton
+    with the given ``message``. There is no separate "has selection started" flag:
+    a selection assigns every selected person a value in every category at once, so
+    a zero ``selected_count`` total for a category is exactly "no selection yet".
 
     Each card is a dict {title, segments, message}; a falsy ``segments`` triggers
     the pie card's skeleton state, and ``message`` is the text shown in it.
     """
+
+    def segments_or_none(rows: list[CategoryValueRow], count_attr: str) -> list[dict[str, object]] | None:
+        if not sum(getattr(row, count_attr) for row in rows):
+            return None
+        return [{"label": row.value, "count": getattr(row, count_attr)} for row in rows]
+
     sections: list[dict[str, object]] = []
     for category in report.categories:
         target_segments = [
             {"label": row.value, "count": round((row.target_min + row.target_max) / 2)} for row in category.rows
         ]
-        pool_total = sum(row.pool_count for row in category.rows)
-        respondent_segments = (
-            [{"label": row.value, "count": row.pool_count} for row in category.rows] if pool_total else None
-        )
         cards = [
             {"title": _("Target"), "segments": target_segments, "message": ""},
             {
                 "title": _("Respondents"),
-                "segments": respondent_segments,
+                "segments": segments_or_none(category.rows, "pool_count"),
                 "message": _("Shows respondent data once registration starts."),
             },
             {
                 "title": _("Selected"),
-                "segments": None,
-                "message": _("Shows selected data once the selection process starts."),
+                "segments": segments_or_none(category.rows, "selected_count"),
+                "message": _("Shows selected data once selection has happened."),
             },
             {
                 "title": _("Confirmed"),
-                "segments": None,
-                "message": _("Shows confirmed data once registration closes."),
+                "segments": segments_or_none(category.rows, "confirmed_count"),
+                "message": _("Shows confirmed data once at least one selected respondent is confirmed."),
             },
         ]
         sections.append({"name": category.name, "cards": cards})
     return sections
+
+
+def _build_dashboard_tables(report: DashboardReport) -> list[dict[str, object]]:
+    """Turn the dashboard report into per-category tables (the on-screen Table view).
+
+    One table per category; one row per category value with a percentage and a
+    count column for each dataset (Target / Respondents / Selected / Confirmed),
+    matching the Figma table. All figures come straight from the report's rows:
+    ``target_pct`` is the service's own value; the Target count is the band
+    midpoint; Respondents / Selected / Confirmed percentages are each value's
+    share of that dataset's category total.
+
+    This is the on-screen shape only. The exportable table (flat, all categories,
+    with min/max/available/shortfall columns) is the service's
+    ``build_dashboard_table`` and is used by the export button, not here.
+
+    Each table is {name, rows}; each row is a dict of pre-formatted strings/ints
+    the template drops straight into cells.
+    """
+
+    def pct(part: int, whole: int) -> str:
+        return f"{(part / whole * 100):.1f}" if whole else "0.0"
+
+    tables: list[dict[str, object]] = []
+    for category in report.categories:
+        pool_total = sum(row.pool_count for row in category.rows)
+        selected_total = sum(row.selected_count for row in category.rows)
+        confirmed_total = sum(row.confirmed_count for row in category.rows)
+        rows = [
+            {
+                "value": row.value,
+                "target_pct": f"{row.target_pct:.1f}",
+                "target_count": round((row.target_min + row.target_max) / 2),
+                "respondents_pct": pct(row.pool_count, pool_total),
+                "respondents_count": row.pool_count,
+                "selected_pct": pct(row.selected_count, selected_total),
+                "selected_count": row.selected_count,
+                "confirmed_pct": pct(row.confirmed_count, confirmed_total),
+                "confirmed_count": row.confirmed_count,
+            }
+            for row in category.rows
+        ]
+        tables.append({"name": category.name, "rows": rows})
+    return tables
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard")
@@ -244,11 +291,13 @@ def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]
 def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly results dashboard (ticket 886).
 
-    First iteration: the header indicators (number to select / registrations) and
-    the per-category pie charts, driven by the services in
-    service_layer/dashboard_stats.py. The chart/table toggle, the export button and
-    the findings banner are not wired yet.
+    Header indicators (number to select / registrations) plus the per-category
+    results, in one of two views selected by the ``view`` query parameter:
+    "chart" (default) draws pie charts, "table" draws a table per category. Both
+    are driven by the services in service_layer/dashboard_stats.py. The export
+    button and the findings banner are not wired yet.
     """
+    view = "table" if request.args.get("view") == "table" else "chart"
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -262,6 +311,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             report = get_assembly_dashboard_report(uow, current_user.id, assembly_id)
 
         dashboard_sections = _build_dashboard_sections(report)
+        dashboard_tables = _build_dashboard_tables(report)
 
         return render_template(
             "backoffice/assembly_dashboard.html",
@@ -274,7 +324,9 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_enabled=nav.selection_enabled,
             number_to_select=summary.number_to_select,
             number_of_registrations=summary.total_respondents,
+            dashboard_view=view,
             dashboard_sections=dashboard_sections,
+            dashboard_tables=dashboard_tables,
         ), 200
     except NotFoundError as e:
         logger.warning(

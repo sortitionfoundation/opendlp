@@ -1,11 +1,12 @@
 {#
 ABOUTME: Backoffice assembly results dashboard page (ticket 886)
-ABOUTME: Iteration 1 — number-to-select / registrations indicators + per-category pie charts (mock services)
+ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or tables (view=table), from mock services
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/components/pie_chart_card.html" import pie_chart_card %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell %}
 
 {% block title %}{{ _("Dashboard") }} - {{ assembly.title }}{% endblock %}
 
@@ -31,33 +32,113 @@ ABOUTME: Iteration 1 — number-to-select / registrations indicators + per-categ
 {% endblock %}
 
 {% block page_content %}
-    {# Content header: title + the two headline indicators #}
-    <div class="mb-8">
-        <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Dashboard") }}</h2>
-        <div class="mt-2 flex flex-wrap items-center gap-y-1 text-body-lg">
-            <span style="color: var(--color-body-text);">
-                {{ _("Number to select:") }}
-                <span style="color: var(--color-headings); font-weight: 700;">{{ number_to_select }}</span>
-            </span>
-            <span aria-hidden="true"
-                  style="display: inline-block; width: 1px; height: 16px; margin: 0 16px; background-color: var(--color-borders-dividers);"></span>
-            <span style="color: var(--color-body-text);">
-                {{ _("Number of registrations:") }}
-                <span style="color: var(--color-headings); font-weight: 700;">{{ number_of_registrations }}</span>
-            </span>
+    {# Content header: title + indicators on the left, the Chart/Table view toggle on the right #}
+    <div class="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Dashboard") }}</h2>
+            <div class="mt-2 flex flex-wrap items-center gap-y-1 text-body-lg">
+                <span style="color: var(--color-body-text);">
+                    {{ _("Number to select:") }}
+                    <span style="color: var(--color-headings); font-weight: 700;">{{ number_to_select }}</span>
+                </span>
+                <span aria-hidden="true"
+                      style="display: inline-block; width: 1px; height: 16px; margin: 0 16px; background-color: var(--color-borders-dividers);"></span>
+                <span style="color: var(--color-body-text);">
+                    {{ _("Number of registrations:") }}
+                    <span style="color: var(--color-headings); font-weight: 700;">{{ number_of_registrations }}</span>
+                </span>
+            </div>
+        </div>
+        {# View toggle: two links (server-side ?view=), styled as a segmented pill. #}
+        <div class="flex items-center gap-3 shrink-0">
+            <span class="text-label-md" style="color: var(--color-headings);">{{ _("View") }}</span>
+            <div class="inline-flex" role="group" aria-label="{{ _('View') }}">
+                {% for opt in [{"key": "chart", "label": _("Chart")}, {"key": "table", "label": _("Table")}] %}
+                    {% set is_active = dashboard_view == opt.key %}
+                    <a href="{{ url_for('backoffice.view_assembly_dashboard', assembly_id=assembly.id, view=opt.key) }}"
+                       {% if is_active %}aria-current="true"{% endif %}
+                       class="text-label-md px-4 py-2 border transition-colors {{ 'rounded-l-full' if opt.key == 'chart' else 'rounded-r-full -ml-px' }}"
+                       style="border-color: var(--color-brand-400);
+                              {% if is_active %}background-color: var(--color-brand-400); color: var(--color-neutral-0);{% else %}background-color: transparent; color: var(--color-brand-400);{% endif %}">
+                        {{ opt.label }}
+                    </a>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
-    {# One section per target category, each a titled row of pie cards #}
-    {% for section in dashboard_sections %}
-        <section class="mb-10">
-            <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ section.name }}</h3>
-            <div class="grid gap-4"
-                 style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
-                {% for card in section.cards %}
-                    {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4") }}
-                {% endfor %}
+    {% if not dashboard_sections %}
+        {# Empty state: no target categories, so there is nothing to chart or tabulate.
+           Illustration is a Lucide pie-chart glyph (the repo's icon set) in a muted disc —
+           decorative, so aria-hidden. #}
+        <div class="flex justify-center w-full py-16">
+            <div class="flex flex-col gap-4 items-center text-center" style="max-width: 28rem;">
+                <span class="flex items-center justify-center rounded-full"
+                      style="width: 96px; height: 96px; background-color: var(--color-neutral-100);">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none"
+                         stroke="var(--color-neutral-400)" stroke-width="1.5"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                        <path d="M22 12A10 10 0 0 0 12 2v10z" />
+                    </svg>
+                </span>
+                <div class="flex flex-col gap-1.5 items-center">
+                    <h3 class="text-heading-lg" style="color: var(--color-headings);">{{ _("No dashboard to display yet.") }}</h3>
+                    <p class="text-body-sm" style="color: var(--color-body-text);">
+                        {{ _("Set up your targets to get started. Once they're configured, your dashboard will appear here.") }}
+                    </p>
+                </div>
             </div>
-        </section>
-    {% endfor %}
+        </div>
+    {% elif dashboard_view == 'table' %}
+        {# Table view: one table per target category #}
+        {% for tbl in dashboard_tables %}
+            <section class="mb-10">
+                <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ tbl.name }}</h3>
+                {% call table() %}
+                    {# Percent headers concatenate " %" outside gettext: a lone "%" in a
+                       msgid trips newstyle gettext's printf formatting ("incomplete format"). #}
+                    {{ table_head([
+                    {"label": ""},
+                    {"label": _("Target") ~ " %"},
+                    {"label": _("Target")},
+                    {"label": _("Respondents") ~ " %"},
+                    {"label": _("Respondents")},
+                    {"label": _("Selected") ~ " %"},
+                    {"label": _("Selected")},
+                    {"label": _("Confirmed") ~ " %"},
+                    {"label": _("Confirmed")}
+                    ]) }}
+                    {% call table_body() %}
+                        {% for r in tbl.rows %}
+                            {% call table_row() %}
+                                {{ table_cell(r.value, bold=true) }}
+                                {{ table_cell(r.target_pct) }}
+                                {{ table_cell(r.target_count) }}
+                                {{ table_cell(r.respondents_pct) }}
+                                {{ table_cell(r.respondents_count) }}
+                                {{ table_cell(r.selected_pct) }}
+                                {{ table_cell(r.selected_count) }}
+                                {{ table_cell(r.confirmed_pct) }}
+                                {{ table_cell(r.confirmed_count) }}
+                            {% endcall %}
+                        {% endfor %}
+                    {% endcall %}
+                {% endcall %}
+            </section>
+        {% endfor %}
+    {% else %}
+        {# Chart view: one section per target category, a titled row of pie cards #}
+        {% for section in dashboard_sections %}
+            <section class="mb-10">
+                <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ section.name }}</h3>
+                <div class="grid gap-4"
+                     style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+                    {% for card in section.cards %}
+                        {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4") }}
+                    {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+    {% endif %}
 {% endblock %}

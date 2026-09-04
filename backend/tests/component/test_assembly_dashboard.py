@@ -69,6 +69,19 @@ def assembly_with_respondents(fake_store, existing_assembly):
     return existing_assembly
 
 
+@pytest.fixture(autouse=True)
+def _results_dashboard_off_by_default(monkeypatch):
+    """Force FF_RESULTS_DASHBOARD off unless a test opts in.
+
+    A local ``.env`` may set the flag on for dev; without this, load_dotenv would
+    leak that into the test process and break the hidden-by-default expectation.
+    """
+    monkeypatch.delenv("FF_RESULTS_DASHBOARD", raising=False)
+    reload_flags()
+    yield
+    reload_flags()
+
+
 @pytest.fixture
 def results_dashboard_on():
     """Turn FF_RESULTS_DASHBOARD on for the duration of a test, then restore."""
@@ -88,11 +101,20 @@ class TestTheDashboardPage:
         # one section per target category
         assert ">Gender<" in html
 
-    def test_an_assembly_with_no_targets_renders_no_sections(self, logged_in_admin, existing_assembly):
+    def test_an_assembly_with_no_targets_shows_the_empty_state(self, logged_in_admin, existing_assembly):
         html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
 
         assert "Number to select:" in html
+        # no charts or tables, and the empty-state copy instead
         assert "conic-gradient(" not in html
+        assert "No dashboard to display yet." in html
+        assert "Set up your targets to get started." in html
+
+    def test_the_empty_state_also_shows_in_the_table_view(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(f"{_dashboard_url(existing_assembly)}?view=table").get_data(as_text=True)
+
+        assert "No dashboard to display yet." in html
+        assert "Target %" not in html
 
     def test_the_registration_count_excludes_test_and_deleted_respondents(
         self,
@@ -114,12 +136,41 @@ class TestTheDashboardPage:
         # Target renders a real pie
         assert "conic-gradient(" in html
         # Selected / Confirmed render their skeleton messages
-        assert "Shows selected data once the selection process starts." in html
-        assert "Shows confirmed data once registration closes." in html
+        assert "Shows selected data once selection has happened." in html
+        assert "Shows confirmed data once at least one selected respondent is confirmed." in html
 
     def test_route_is_reachable_even_when_the_flag_is_off(self, logged_in_admin, existing_assembly):
         # The flag only hides the tab; the route stays reachable by URL.
         assert logged_in_admin.get(_dashboard_url(existing_assembly)).status_code == 200
+
+
+class TestTheViewToggle:
+    def test_chart_is_the_default_view(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
+        # pies present, table header labels absent
+        assert "conic-gradient(" in html
+        assert "Target %" not in html
+
+    def test_both_view_links_are_present(self, logged_in_admin, existing_assembly):
+        # The toggle is in the header, so it renders regardless of whether there is data.
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+        assert f"{_dashboard_url(existing_assembly)}?view=chart" in html
+        assert f"{_dashboard_url(existing_assembly)}?view=table" in html
+
+    def test_table_view_renders_a_table_not_pies(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}?view=table").get_data(as_text=True)
+        # column headers and a category value row
+        assert "Target %" in html
+        assert "Respondents %" in html
+        assert "Confirmed" in html
+        assert "Male" in html
+        # no pie charts in the table view
+        assert "conic-gradient(" not in html
+
+    def test_unknown_view_falls_back_to_chart(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}?view=bogus").get_data(as_text=True)
+        assert "conic-gradient(" in html
+        assert "Target %" not in html
 
 
 class TestTheTabGating:
