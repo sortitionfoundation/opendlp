@@ -6,7 +6,7 @@
 
 set dotenv-load
 
-# Test the code with pytest (HTML report)
+# Run the fast non-BDD tests (no coverage report)
 default: test-nobdd
 
 # Run the JavaScript unit tests (vitest, no browser - seconds, not minutes)

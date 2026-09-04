@@ -38,7 +38,7 @@ runs:
         version: ${{ inputs.uv-version }}
         enable-cache: "true"
         # inputs, not matrix: the matrix context is not available inside a
-        # composite action, so the old ${{ matrix.python-version }} was empty.
+        # composite action, so a matrix reference here evaluates to empty.
         cache-suffix: ${{ inputs.python-version }}
 
     - name: Install Python dependencies
