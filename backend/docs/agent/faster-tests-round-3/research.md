@@ -1,8 +1,10 @@
 # Faster Tests Round 3 — Research
 
-> Status: **Research only.** All measurements were taken on 2026-09-04; the two
-> spike diffs were reverted after measuring and are reproduced in the appendix.
-> Nothing in the repo changed except this document.
+> Status: **Items 1–3 of the recommended order are implemented** (this branch),
+> along with the CI Python matrix fix, the local no-coverage default, and the
+> password-validator memoization. Still open: the coverage/`sysmon` decision
+> (needs the 3.14 story to settle) and the optional smaller items. All
+> measurements were taken on 2026-09-04.
 
 ## Summary
 
@@ -43,6 +45,10 @@ Recommended order of work:
 6. Small: memoize `get_password_validators()`.
 
 Deleting tests, by contrast, is **not** where the time is (analysis below).
+
+Decision (Doctor Chewie): do 1, 2 and 3 — plus the matrix fix, the local
+no-cov default, and the validator memoization. Revisit the rest once CI is
+green and the 3.14 matrix leg is confirmed genuine.
 
 ## Method
 
