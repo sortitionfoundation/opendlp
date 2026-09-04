@@ -71,12 +71,24 @@ def test_respondents_card_segments_use_pool_counts():
     ]
 
 
-def test_selected_and_confirmed_cards_are_skeletons_with_a_message():
+def test_selected_and_confirmed_cards_are_skeletons_when_there_is_none_yet():
+    # _gender_rows has zero selected/confirmed, so those datasets stay skeletons.
     cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=_gender_rows())))[0]["cards"]
 
     for card in (cards[2], cards[3]):
         assert card["segments"] is None
         assert card["message"]  # non-empty skeleton message
+
+
+def test_selected_and_confirmed_cards_populate_from_real_counts():
+    rows = [
+        _row("Male", pool_count=8, shortfall=0, selected_count=3, confirmed_count=1),
+        _row("Female", pool_count=14, shortfall=0, selected_count=1, confirmed_count=1),
+    ]
+    cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=rows)))[0]["cards"]
+
+    assert cards[2]["segments"] == [{"label": "Male", "count": 3}, {"label": "Female", "count": 1}]
+    assert cards[3]["segments"] == [{"label": "Male", "count": 1}, {"label": "Female", "count": 1}]
 
 
 def test_respondents_card_is_a_skeleton_when_the_pool_is_empty():

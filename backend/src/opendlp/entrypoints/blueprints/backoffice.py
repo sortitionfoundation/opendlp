@@ -34,6 +34,7 @@ from opendlp.service_layer.assembly_service import (
     update_assembly,
 )
 from opendlp.service_layer.dashboard_stats import (
+    CategoryValueRow,
     DashboardReport,
     get_assembly_dashboard_report,
     get_assembly_dashboard_summary,
@@ -188,41 +189,45 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]]:
-    """Turn the (mock) dashboard report into per-category sections of pie cards.
+    """Turn the dashboard report into per-category sections of pie cards.
 
-    Each category shows four dataset cards, matching the Figma layout:
-      - Target: the target distribution (band midpoints), always populated;
-      - Respondents / Selected / Confirmed: populated once the service exposes
-        those distributions. The mock report carries only the pool ("Respondents")
-        counts, so Selected and Confirmed render their skeleton state with a message.
+    Each category shows four dataset cards, matching the Figma layout: Target
+    (band midpoints), Respondents (pool), Selected and Confirmed. Each dataset's
+    pie is populated from the report's real counts; a dataset whose category total
+    is zero has ``segments = None``, which the pie card renders as a grey skeleton
+    with the given ``message``. There is no separate "has selection started" flag:
+    a selection assigns every selected person a value in every category at once, so
+    a zero ``selected_count`` total for a category is exactly "no selection yet".
 
     Each card is a dict {title, segments, message}; a falsy ``segments`` triggers
     the pie card's skeleton state, and ``message`` is the text shown in it.
     """
+
+    def segments_or_none(rows: list[CategoryValueRow], count_attr: str) -> list[dict[str, object]] | None:
+        if not sum(getattr(row, count_attr) for row in rows):
+            return None
+        return [{"label": row.value, "count": getattr(row, count_attr)} for row in rows]
+
     sections: list[dict[str, object]] = []
     for category in report.categories:
         target_segments = [
             {"label": row.value, "count": round((row.target_min + row.target_max) / 2)} for row in category.rows
         ]
-        pool_total = sum(row.pool_count for row in category.rows)
-        respondent_segments = (
-            [{"label": row.value, "count": row.pool_count} for row in category.rows] if pool_total else None
-        )
         cards = [
             {"title": _("Target"), "segments": target_segments, "message": ""},
             {
                 "title": _("Respondents"),
-                "segments": respondent_segments,
+                "segments": segments_or_none(category.rows, "pool_count"),
                 "message": _("Shows respondent data once registration starts."),
             },
             {
                 "title": _("Selected"),
-                "segments": None,
+                "segments": segments_or_none(category.rows, "selected_count"),
                 "message": _("Shows selected data once selection has happened."),
             },
             {
                 "title": _("Confirmed"),
-                "segments": None,
+                "segments": segments_or_none(category.rows, "confirmed_count"),
                 "message": _("Shows confirmed data once at least one selected respondent is confirmed."),
             },
         ]
