@@ -215,6 +215,12 @@ def test_server(test_database, csv_test_data_dir):
     env["FLASK_ENV"] = "testing_postgres"
     env["DB_PORT"] = "54322"
     env["REDIS_PORT"] = "63792"
+    # DB_URI is a whole-URI setting that overrides the DB_PORT pinned above,
+    # and an e2e session in the same process points it (and REDIS_DB) at a
+    # per-worker database. The server must use the BDD database and Celery's
+    # Redis database 0, whatever ran earlier in this process.
+    env.pop("DB_URI", None)
+    env["REDIS_DB"] = "0"
     env["FLASK_APP"] = "src/opendlp/entrypoints/flask_app.py"
     # The server re-reads .env for itself, and load_dotenv() only fills in keys
     # that are unset - so the scrub in tests/conftest.py does not reach it for
@@ -266,6 +272,10 @@ def test_celery_worker(test_database, csv_test_data_dir):
     env["FLASK_ENV"] = "testing_postgres"
     env["DB_PORT"] = "54322"
     env["REDIS_PORT"] = "63792"
+    # Same pinning as the Flask server above: never inherit another tier's
+    # DB_URI / REDIS_DB from this process's environment.
+    env.pop("DB_URI", None)
+    env["REDIS_DB"] = "0"
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
     env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
