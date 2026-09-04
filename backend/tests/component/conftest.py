@@ -134,14 +134,53 @@ def shared_uow(fake_store):
         yield entered
 
 
+@pytest.fixture(scope="session")
+def _component_app_and_store_holder():
+    """One Flask app shared by every component test in the session.
+
+    create_app() is expensive (werkzeug compiles every URL rule again for each
+    new app), so the app is built once per pytest worker. Routes resolve
+    get_flask_uow() at request time, so the factory registered here reads the
+    current test's FakeStore out of the holder — the `app` fixture below swaps
+    it for each test.
+    """
+    holder: dict[str, FakeStore] = {}
+    app = create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=holder["store"]))
+    return app, holder
+
+
 @pytest.fixture
-def app(fake_store):
+def app(_component_app_and_store_holder, fake_store):
     """Flask app whose UnitOfWork factory is backed by the shared FakeStore.
 
     No PostgreSQL and no Redis: routes resolve get_flask_uow() to a
     FakeUnitOfWork over fake_store, and sessions use an in-memory cachelib cache.
+
+    The Flask app instance is shared across tests; only the store is per-test.
+    A test that needs a differently *constructed* app overrides this fixture
+    (see test_oauth_flow.py); a test that only needs different app *config* can
+    assign to app.config — the autouse guard below restores it between tests.
     """
-    return create_app("testing_component", uow_factory=lambda: FakeUnitOfWork(store=fake_store))
+    app, holder = _component_app_and_store_holder
+    holder["store"] = fake_store
+    return app
+
+
+@pytest.fixture(autouse=True)
+def _restore_shared_app_state(_component_app_and_store_holder):
+    """Undo app.config / extension mutations a test makes on the shared app.
+
+    With a per-test app these mutations died with the app; with a shared app
+    they would leak into every later test in the worker (e.g. a test flipping
+    WTF_CSRF_ENABLED would 400 every later POST).
+    """
+    app, _ = _component_app_and_store_holder
+    saved_config = dict(app.config)
+    saved_export_factory = app.extensions.get("gsheet_export_target_factory")
+    yield
+    app.config.clear()
+    app.config.update(saved_config)
+    app.extensions["gsheet_export_target_factory"] = saved_export_factory
 
 
 @pytest.fixture
