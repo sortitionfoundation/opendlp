@@ -132,7 +132,11 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 54322
           DB_NAME: opendlp
-        run: uv run python -m pytest tests --ignore tests/bdd --cov --cov-config=pyproject.toml --cov-report=xml --cov-fail-under=80
+        # -n auto: pytest-xdist, one worker per CPU. Each worker gets its own
+        # opendlp_test_gwN database (created via the postgres service) and its
+        # own Redis database - see tests/conftest.py. BDD stays serial (it
+        # manages its own server processes) and runs in bdd.yml.
+        run: uv run python -m pytest tests --ignore tests/bdd -n auto --cov --cov-config=pyproject.toml --cov-report=xml --cov-fail-under=80
 
       - name: Check typing
         run: uv run mypy
