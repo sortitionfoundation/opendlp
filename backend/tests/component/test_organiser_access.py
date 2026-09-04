@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the organiser role's access boundary over a FakeUnitOfWork
 # ABOUTME: An organiser may create assemblies, and may reach only the assemblies they hold a role on
 
+import uuid
 from datetime import UTC, datetime
 
 from flask.testing import FlaskClient
@@ -225,6 +226,21 @@ class TestAssemblyManagerManagesMembers:
 
         assert response.status_code == 403
         assert response.get_json() == []
+
+    def test_an_unknown_assembly_looks_the_same_as_someone_elses(
+        self, logged_in_organiser: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """Otherwise the endpoint answers whether an assembly id exists."""
+        unknown = logged_in_organiser.get(f"/backoffice/assembly/{uuid.uuid4()}/members/search?q=anyone")
+        someone_elses = logged_in_organiser.get(f"/backoffice/assembly/{existing_assembly.id}/members/search?q=anyone")
+
+        assert unknown.status_code == someone_elses.status_code == 403
+
+    def test_an_admin_still_gets_an_honest_not_found(self, logged_in_admin: FlaskClient) -> None:
+        """An admin may see every assembly, so nothing is hidden from them."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{uuid.uuid4()}/members/search?q=anyone")
+
+        assert response.status_code == 404
 
     def test_the_organiser_can_add_the_colleague(
         self, logged_in_organiser: FlaskClient, fake_store: FakeStore, organiser_user: User

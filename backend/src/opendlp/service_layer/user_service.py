@@ -1051,18 +1051,27 @@ def search_assembly_candidate_users(
 
     Raises:
         InsufficientPermissions: If current_user lacks permission to manage members
+        AssemblyNotFoundError: If the assembly does not exist, for an admin only
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
+    refused = InsufficientPermissions(
+        action="search_assembly_candidate_users",
+        required_role="assembly-manager or admin",
+    )
+
     assembly = uow.assemblies.get(assembly_id)
     if not assembly:
-        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+        # "No such assembly" and "not yours" must look the same to anyone who
+        # could not have used the assembly either way, or the endpoint answers
+        # whether an assembly id exists. An admin may see every assembly, so
+        # they get the honest not-found.
+        if has_global_admin(current_user):
+            raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+        raise refused
 
     if not can_manage_assembly_members(current_user, assembly):
-        raise InsufficientPermissions(
-            action="search_assembly_candidate_users",
-            required_role="assembly-manager or admin",
-        )
+        raise refused
 
     if not search_term:
         return []
