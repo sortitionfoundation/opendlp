@@ -1,3 +1,4 @@
+import os
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -12,17 +13,43 @@ from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
 
 
-@pytest.fixture
-def app(temp_env_vars, worker_db_url, test_redis_client):
-    """Create test Flask application."""
-    temp_env_vars(
-        DB_URI=worker_db_url,
-        REDIS_PORT="63792",
-        REDIS_DB=str(test_redis_client.connection_pool.connection_kwargs["db"]),
-    )
+@pytest.fixture(scope="session")
+def app(worker_db_url, test_redis_client):
+    """Create the test Flask application, shared by every e2e test in this worker.
+
+    create_app() is expensive (werkzeug compiles every URL rule again for each
+    new app), so the app is built once per pytest worker. The env vars must
+    stay set for the whole worker: bootstrap_session_factory() re-reads
+    get_db_uri() on every request, not just at app creation. They are all in
+    ENV_KEYS_TESTS_MAY_INHERIT, so the per-test env scrub leaves them alone.
+
+    A test that needs a differently *constructed* app overrides this fixture;
+    a test that only needs different app *config* can assign to app.config —
+    the autouse guard below restores it between tests.
+    """
+    os.environ["DB_URI"] = worker_db_url
+    os.environ["REDIS_PORT"] = "63792"
+    os.environ["REDIS_DB"] = str(test_redis_client.connection_pool.connection_kwargs["db"])
     reset_celery_app()  # ensure the celery app is reset and picks up
     start_mappers()  # Initialize SQLAlchemy mappings
     return create_app("testing_postgres")
+
+
+@pytest.fixture(autouse=True)
+def _restore_shared_app_state(app):
+    """Undo app.config / extension mutations a test makes on the shared app.
+
+    With a per-test app these mutations died with the app; with a shared app
+    they would leak into every later test in the worker (e.g.
+    test_csrf_protection_enabled flips WTF_CSRF_ENABLED, which would 400 every
+    later POST).
+    """
+    saved_config = dict(app.config)
+    saved_export_factory = app.extensions.get("gsheet_export_target_factory")
+    yield
+    app.config.clear()
+    app.config.update(saved_config)
+    app.extensions["gsheet_export_target_factory"] = saved_export_factory
 
 
 @pytest.fixture

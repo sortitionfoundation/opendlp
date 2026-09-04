@@ -76,6 +76,7 @@ class TestFlaskConfigClass:
         """Test that Config loads expected default values."""
         # Clear FLASK_ENV to test defaults
         clear_env_vars(
+            "DB_URI",
             "DB_HOST",
             "DB_PORT",
             "DB_PASSWORD",
@@ -98,8 +99,9 @@ class TestFlaskConfigClass:
         assert config.OAUTH_GOOGLE_CLIENT_ID == ""
         assert config.OAUTH_GOOGLE_CLIENT_SECRET == ""
 
-    def test_config_with_env_vars(self, temp_env_vars):
+    def test_config_with_env_vars(self, temp_env_vars, clear_env_vars):
         """Test that Config loads from environment variables."""
+        clear_env_vars("DB_URI")  # a whole-URI setting would override the parts below
         temp_env_vars(
             DB_HOST="db.server.net",
             DB_PASSWORD="db-secret",  # pragma: allowlist secret
@@ -143,7 +145,7 @@ class TestFlaskTestConfig:
 
     def test_test_config_overrides(self, clear_env_vars):
         """Test that FlaskTestConfig overrides appropriate values."""
-        clear_env_vars("DB_HOST", "DB_PORT", "DB_PASSWORD", "DB_NAME", "SECRET_KEY")
+        clear_env_vars("DB_URI", "DB_HOST", "DB_PORT", "DB_PASSWORD", "DB_NAME", "SECRET_KEY")
         config = FlaskTestConfig()
 
         assert (
