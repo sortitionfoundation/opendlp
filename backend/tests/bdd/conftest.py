@@ -40,6 +40,8 @@ from .config import (
     DISPOSABLE_PASSWORD,
     NORMAL_EMAIL,
     NORMAL_PASSWORD,
+    ORGANISER_EMAIL,
+    ORGANISER_PASSWORD,
     PLAYWRIGHT_TIMEOUT,
     Urls,
 )
@@ -215,6 +217,12 @@ def test_server(test_database, csv_test_data_dir):
     env["FLASK_ENV"] = "testing_postgres"
     env["DB_PORT"] = "54322"
     env["REDIS_PORT"] = "63792"
+    # DB_URI is a whole-URI setting that overrides the DB_PORT pinned above,
+    # and an e2e session in the same process points it (and REDIS_DB) at a
+    # per-worker database. The server must use the BDD database and Celery's
+    # Redis database 0, whatever ran earlier in this process.
+    env.pop("DB_URI", None)
+    env["REDIS_DB"] = "0"
     env["FLASK_APP"] = "src/opendlp/entrypoints/flask_app.py"
     # The server re-reads .env for itself, and load_dotenv() only fills in keys
     # that are unset - so the scrub in tests/conftest.py does not reach it for
@@ -266,6 +274,10 @@ def test_celery_worker(test_database, csv_test_data_dir):
     env["FLASK_ENV"] = "testing_postgres"
     env["DB_PORT"] = "54322"
     env["REDIS_PORT"] = "63792"
+    # Same pinning as the Flask server above: never inherit another tier's
+    # DB_URI / REDIS_DB from this process's environment.
+    env.pop("DB_URI", None)
+    env["REDIS_DB"] = "0"
     # Use CSV data source for testing instead of Google Sheets
     env["USE_CSV_DATA_SOURCE"] = "true"
     env["CSV_TEST_DATA_DIR"] = str(csv_test_data_dir)
@@ -360,6 +372,34 @@ def assembly_creator(test_database, admin_user):
             )
 
     return _create_assembly
+
+
+@pytest.fixture(scope="session")
+def organiser_user(test_database):
+    """Create an organiser for testing.
+
+    Kept by `delete_all_except_standard_users` alongside the admin and normal
+    users, so it survives between scenarios.
+    """
+    session_factory = test_database
+    uow = SqlAlchemyUnitOfWork(session_factory)
+
+    with uow:
+        create_user(
+            uow=uow,
+            email=ORGANISER_EMAIL,
+            password=ORGANISER_PASSWORD,
+            first_name="Test",
+            last_name="Organiser",
+            global_role=GlobalRole.ORGANISER,
+            accept_data_agreement=True,
+        )
+
+    with uow:
+        fetched_user = uow.users.get_by_email(ORGANISER_EMAIL)
+        fetched_user.confirm_email()
+        uow.commit()
+        return fetched_user.create_detached_copy()
 
 
 @pytest.fixture
@@ -546,7 +586,7 @@ def delete_all_except_standard_users(session: Session) -> None:
     # Now delete assemblies (children are already deleted)
     session.execute(orm.assemblies.delete())
     # Keep admin user, clean others
-    session.execute(orm.users.delete().where(orm.users.c.email.not_in((ADMIN_EMAIL, NORMAL_EMAIL))))
+    session.execute(orm.users.delete().where(orm.users.c.email.not_in((ADMIN_EMAIL, NORMAL_EMAIL, ORGANISER_EMAIL))))
     session.commit()
 
 

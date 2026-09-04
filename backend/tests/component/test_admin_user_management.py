@@ -124,15 +124,13 @@ class TestAdminUserEdit:
         assert re.search(r'value="USER"[^>]*?checked', data) is not None, "USER radio should be checked"
         assert re.search(r'value="ADMIN"[^>]*?checked', data) is None, "ADMIN radio should not be checked"
 
-        organiser = _seed_user(fake_store, "organiser@example.com", GlobalRole.GLOBAL_ORGANISER, "Global", "Organiser")
+        organiser = _seed_user(fake_store, "organiser@example.com", GlobalRole.ORGANISER, "Global", "Organiser")
 
         response = logged_in_admin.get(f"/admin/users/{organiser.id}/edit")
         assert response.status_code == 200
 
         data = response.data.decode()
-        assert re.search(r'value="GLOBAL_ORGANISER"[^>]*?checked', data) is not None, (
-            "GLOBAL_ORGANISER radio should be checked"
-        )
+        assert re.search(r'value="ORGANISER"[^>]*?checked', data) is not None, "ORGANISER radio should be checked"
 
     def test_edit_user_role_success(self, logged_in_admin: FlaskClient, fake_store: FakeStore) -> None:
         user = _seed_user(fake_store, "role@example.com", GlobalRole.USER, "Role", "Change")
@@ -142,7 +140,7 @@ class TestAdminUserEdit:
             data={
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "global_role": GlobalRole.GLOBAL_ORGANISER.name,
+                "global_role": GlobalRole.ORGANISER.name,
                 "is_active": "y",
             },
             follow_redirects=False,

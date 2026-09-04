@@ -3,6 +3,7 @@ ABOUTME: Provides functions for secure password handling and unique invite code 
 
 from collections.abc import Iterable
 from dataclasses import dataclass, fields
+from functools import cache
 
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -46,14 +47,23 @@ class TempUser:
     last_name: str = ""
 
 
+@cache
 def get_password_validators() -> Iterable[pv.PasswordValidator]:
+    """Build the validators on first use and share them thereafter.
+
+    They are stateless, and SafeCommonPasswordValidator reads Django's gzipped
+    common-password list when constructed - too costly to repeat per password.
+    The attribute names must be materialised (not a generator) because the
+    similarity validator stores the iterable it is given and iterates it on
+    every validate() call.
+    """
     return (
         pv.SafeCommonPasswordValidator(),
         pv.MinimumLengthValidator(min_length=10),
         pv.MaximumLengthValidator(max_length=256),
         pv.NumericPasswordValidator(),
         # this means we check every attribute of TempUser
-        pv.UserAttributeSimilarityValidator(user_attributes=(f.name for f in fields(TempUser))),
+        pv.UserAttributeSimilarityValidator(user_attributes=tuple(f.name for f in fields(TempUser))),
     )
 
 

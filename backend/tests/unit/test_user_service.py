@@ -10,10 +10,11 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.user_invites import UserInvite
-from opendlp.domain.users import User
+from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer import user_service
 from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
     CannotDisableSelf,
     CannotRemoveLastAuthMethod,
     InsufficientPermissions,
@@ -63,7 +64,7 @@ class TestCreateUser:
         """Test successful user creation with OAuth."""
         invite = UserInvite(
             code="TESTCODE",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             created_by=uuid.uuid4(),
             expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
@@ -82,7 +83,7 @@ class TestCreateUser:
         assert user.email == "test@example.com"
         assert user.first_name == "OAuth"
         assert user.last_name == "User"
-        assert user.global_role == GlobalRole.GLOBAL_ORGANISER
+        assert user.global_role == GlobalRole.ORGANISER
         assert user.password_hash is None
         assert user.oauth_provider == "google"
         assert user.oauth_id == "google123"
@@ -201,7 +202,7 @@ class TestValidateInvite:
 
         invite = UserInvite(
             code="VALIDCODE",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             created_by=uuid.uuid4(),
             expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
@@ -209,7 +210,7 @@ class TestValidateInvite:
 
         role = user_service.validate_invite(uow=uow, invite_code="VALIDCODE")
 
-        assert role == GlobalRole.GLOBAL_ORGANISER
+        assert role == GlobalRole.ORGANISER
         # Verify invite is NOT marked as used
         assert invite.used_by is None
         assert invite.used_at is None
@@ -285,7 +286,7 @@ class TestValidateAndUseInvite:
         """Test successful invite validation."""
         invite = UserInvite(
             code="VALIDCODE",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
             created_by=uuid.uuid4(),
             expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
@@ -293,7 +294,7 @@ class TestValidateAndUseInvite:
 
         role = user_service.validate_and_use_invite(uow=uow, invite_code="VALIDCODE")
 
-        assert role == GlobalRole.GLOBAL_ORGANISER
+        assert role == GlobalRole.ORGANISER
 
     def test_validate_invite_not_found(self, uow):
         """Test invite validation fails when code not found."""
@@ -451,6 +452,38 @@ class TestGetUserAssemblies:
         assert assembly1 in assemblies
         assert assembly2 in assemblies
 
+    def test_get_user_assemblies_organiser_sees_only_their_own(self, uow):
+        """An organiser's dashboard lists what they hold a role on, not every assembly."""
+        organiser = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser)
+
+        theirs = Assembly(title="Theirs", question="?")
+        someone_elses = Assembly(title="Someone else's", question="?")
+        uow.assemblies.add(theirs)
+        uow.assemblies.add(someone_elses)
+        organiser.assembly_roles.append(
+            UserAssemblyRole(user_id=organiser.id, assembly_id=theirs.id, role=AssemblyRole.ASSEMBLY_MANAGER)
+        )
+
+        assemblies = user_service.get_user_assemblies(uow=uow, user_id=organiser.id)
+
+        assert [a.title for a in assemblies] == ["Theirs"]
+
+    def test_get_user_assemblies_organiser_with_no_roles_sees_nothing(self, uow):
+        organiser = User(
+            email="organiser@example.com",
+            global_role=GlobalRole.ORGANISER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(organiser)
+        uow.assemblies.add(Assembly(title="Someone else's", question="?"))
+
+        assert user_service.get_user_assemblies(uow=uow, user_id=organiser.id) == []
+
     def test_get_user_assemblies_user_not_found(self, uow):
         """Test error when user not found."""
 
@@ -566,7 +599,7 @@ class TestListUsersPaginated:
         uow.users.add(
             User(
                 email="org1@example.com",
-                global_role=GlobalRole.GLOBAL_ORGANISER,
+                global_role=GlobalRole.ORGANISER,
                 is_active=True,
                 password_hash="hash",  # pragma: allowlist secret
             )
@@ -731,12 +764,12 @@ class TestUpdateUser:
             admin_user_id=admin_user.id,
             first_name="New",
             last_name="Name",
-            global_role=GlobalRole.GLOBAL_ORGANISER,
+            global_role=GlobalRole.ORGANISER,
         )
 
         assert updated_user.first_name == "New"
         assert updated_user.last_name == "Name"
-        assert updated_user.global_role == GlobalRole.GLOBAL_ORGANISER
+        assert updated_user.global_role == GlobalRole.ORGANISER
 
     def test_update_user_cannot_change_own_role(self, uow):
         """Test admin cannot change their own role."""
@@ -844,7 +877,7 @@ class TestGetUserStats:
         uow.users.add(
             User(
                 email="org1@example.com",
-                global_role=GlobalRole.GLOBAL_ORGANISER,
+                global_role=GlobalRole.ORGANISER,
                 is_active=True,
                 password_hash="hash",  # pragma: allowlist secret
             )
@@ -1492,3 +1525,100 @@ class TestSendAccountReenabledEmail:
         )
 
         assert self._send(FakeEmailAdapter(succeed=False), user) is False
+
+
+class TestSearchAssemblyCandidateUsers:
+    """Who may search for members to add, and how much of the user table they see.
+
+    Admins keep partial search over email and name. An assembly manager matches
+    on a full email address only, so the endpoint cannot be used to enumerate
+    accounts - see docs/personal-data.md.
+    """
+
+    def _setup(self, uow, searcher_role, assembly_role=None):
+        assembly = Assembly(title="Members", question="?")
+        uow.assemblies.add(assembly)
+        searcher = User(
+            email="searcher@example.com",
+            global_role=searcher_role,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        if assembly_role:
+            searcher.assembly_roles.append(
+                UserAssemblyRole(user_id=searcher.id, assembly_id=assembly.id, role=assembly_role)
+            )
+        candidate = User(
+            email="colleague@example.com",
+            first_name="Casey",
+            last_name="Colleague",
+            global_role=GlobalRole.USER,
+            password_hash="hash",  # pragma: allowlist secret
+        )
+        uow.users.add(searcher)
+        uow.users.add(candidate)
+        return assembly, searcher, candidate
+
+    def test_admin_gets_partial_matches(self, uow):
+        assembly, admin, candidate = self._setup(uow, GlobalRole.ADMIN)
+
+        results = user_service.search_assembly_candidate_users(uow, assembly.id, "colle", admin)
+
+        assert [u.id for u in results] == [candidate.id]
+
+    def test_admin_can_match_on_a_name(self, uow):
+        assembly, admin, candidate = self._setup(uow, GlobalRole.ADMIN)
+
+        results = user_service.search_assembly_candidate_users(uow, assembly.id, "Casey", admin)
+
+        assert [u.id for u in results] == [candidate.id]
+
+    def test_assembly_manager_gets_an_exact_email_match(self, uow):
+        assembly, manager, candidate = self._setup(uow, GlobalRole.USER, AssemblyRole.ASSEMBLY_MANAGER)
+
+        results = user_service.search_assembly_candidate_users(uow, assembly.id, "colleague@example.com", manager)
+
+        assert [u.id for u in results] == [candidate.id]
+
+    def test_assembly_manager_gets_nothing_from_a_fragment(self, uow):
+        """The privacy-relevant case: no fishing for accounts with a partial address."""
+        assembly, manager, _ = self._setup(uow, GlobalRole.USER, AssemblyRole.ASSEMBLY_MANAGER)
+
+        assert user_service.search_assembly_candidate_users(uow, assembly.id, "colle", manager) == []
+
+    def test_assembly_manager_gets_nothing_from_a_name(self, uow):
+        assembly, manager, _ = self._setup(uow, GlobalRole.USER, AssemblyRole.ASSEMBLY_MANAGER)
+
+        assert user_service.search_assembly_candidate_users(uow, assembly.id, "Casey", manager) == []
+
+    def test_an_organiser_managing_the_assembly_may_search(self, uow):
+        """An organiser can add colleagues to the assemblies they created."""
+        assembly, organiser, candidate = self._setup(uow, GlobalRole.ORGANISER, AssemblyRole.ASSEMBLY_MANAGER)
+
+        results = user_service.search_assembly_candidate_users(uow, assembly.id, "colleague@example.com", organiser)
+
+        assert [u.id for u in results] == [candidate.id]
+
+    def test_an_organiser_with_no_role_on_the_assembly_is_refused(self, uow):
+        assembly, organiser, _ = self._setup(uow, GlobalRole.ORGANISER)
+
+        with pytest.raises(InsufficientPermissions):
+            user_service.search_assembly_candidate_users(uow, assembly.id, "colleague@example.com", organiser)
+
+    def test_a_confirmation_caller_is_refused(self, uow):
+        """Managing members is the assembly manager's job, not every member's."""
+        assembly, caller, _ = self._setup(uow, GlobalRole.USER, AssemblyRole.CONFIRMATION_CALLER)
+
+        with pytest.raises(InsufficientPermissions):
+            user_service.search_assembly_candidate_users(uow, assembly.id, "colleague@example.com", caller)
+
+    def test_a_blank_search_term_returns_nothing(self, uow):
+        assembly, admin, _ = self._setup(uow, GlobalRole.ADMIN)
+
+        assert user_service.search_assembly_candidate_users(uow, assembly.id, "", admin) == []
+
+    def test_an_unknown_assembly_is_not_found(self, uow):
+        admin = User(email="a@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin)
+
+        with pytest.raises(AssemblyNotFoundError):
+            user_service.search_assembly_candidate_users(uow, uuid.uuid4(), "anything", admin)

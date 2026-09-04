@@ -124,3 +124,35 @@ class TestRemoveRole:
     def test_returns_false_for_nonexistent_role(self, user_assembly_role_backend: ContractBackend):
         success = user_assembly_role_backend.repo.remove_role(uuid.uuid4(), uuid.uuid4())
         assert success is False
+
+
+class TestGetUsersWithRolesForAssembly:
+    """What the members page renders, so an empty answer is an empty table."""
+
+    def test_pairs_each_member_with_their_role(self, user_assembly_role_backend: ContractBackend):
+        user = user_assembly_role_backend.make_user()
+        assembly = user_assembly_role_backend.make_assembly()
+        _make_role(user_assembly_role_backend, user.id, assembly.id, AssemblyRole.CONFIRMATION_CALLER)
+
+        pairs = user_assembly_role_backend.repo.get_users_with_roles_for_assembly(assembly.id)
+
+        assert [(u.id, r.role) for u, r in pairs] == [(user.id, AssemblyRole.CONFIRMATION_CALLER)]
+
+    def test_finds_a_role_recorded_on_the_user(self, user_assembly_role_backend: ContractBackend):
+        """assign_assembly_role appends to user.assembly_roles rather than adding here.
+
+        In SQLAlchemy those are the same rows. A fake that kept them apart would
+        report no members for every assembly created through the service.
+        """
+        user = user_assembly_role_backend.make_user()
+        assembly = user_assembly_role_backend.make_assembly()
+        user_assembly_role_backend.grant_assembly_role(user, assembly)
+
+        pairs = user_assembly_role_backend.repo.get_users_with_roles_for_assembly(assembly.id)
+
+        assert [(u.id, r.role) for u, r in pairs] == [(user.id, AssemblyRole.ASSEMBLY_MANAGER)]
+
+    def test_returns_empty_for_an_assembly_with_no_members(self, user_assembly_role_backend: ContractBackend):
+        assembly = user_assembly_role_backend.make_assembly()
+
+        assert user_assembly_role_backend.repo.get_users_with_roles_for_assembly(assembly.id) == []

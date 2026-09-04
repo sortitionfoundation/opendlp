@@ -50,7 +50,7 @@ jobs:
       - name: Set up the environment
         uses: ./.github/actions/setup-python-env
         with:
-          python-version: ${{ matrix.python-version }}
+          # No matrix here - BDD runs once, on the action's default Python.
           working-directory: ./backend
 
       - name: Install Playwright browsers

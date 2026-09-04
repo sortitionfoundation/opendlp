@@ -8,6 +8,7 @@ from flask_login import current_user, login_required
 from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
+from opendlp.domain.value_objects import global_role_descriptions, global_role_labels
 from opendlp.entrypoints.extensions import oauth
 from opendlp.entrypoints.forms import ChangeOwnPasswordForm, EditOwnProfileForm, SetPasswordForm
 from opendlp.service_layer import two_factor_service
@@ -37,7 +38,11 @@ logger = structlog.get_logger(__name__)
 @login_required
 def view() -> ResponseReturnValue:
     """View own profile."""
-    return render_template("profile/view.html"), 200
+    return render_template(
+        "profile/view.html",
+        role_label=global_role_labels[current_user.global_role],
+        role_description=global_role_descriptions[current_user.global_role],
+    ), 200
 
 
 @profile_bp.route("/profile/edit", methods=["GET", "POST"])

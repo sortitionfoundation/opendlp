@@ -1,6 +1,6 @@
 {#
 ABOUTME: Backoffice assembly team members page
-ABOUTME: Displays team members table with add/remove functionality for admins
+ABOUTME: Displays team members table, with add/remove for anyone who can manage the assembly
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/page_header.html" import page_header %}
@@ -64,20 +64,30 @@ ABOUTME: Displays team members table with add/remove functionality for admins
                                     </span>
                                 </td>
                                 {% if can_manage_assembly_users %}
+                                    {# An assembly must keep a manager, and only an admin can restore
+                                       one, so a non-admin is not offered the button that would be
+                                       refused. The cell itself stays, or the row loses a column. #}
+                                    {% set is_sole_manager = user.id == sole_manager_id %}
                                     <td class="px-6 py-4 text-right">
-                                        <form method="post"
-                                              action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
-                                              class="inline"
-                                              x-data
-                                              @submit.prevent="$confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}', $el)">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                            {# TODO: Add danger variant and size parameter to button component in design system #}
-                                            <button type="submit"
-                                                    class="text-button-sm px-3 py-1.5 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:opacity-90"
-                                                    style="background-color: var(--color-primary-action); color: var(--color-page-background);">
-                                                {{ _("Remove") }}
-                                            </button>
-                                        </form>
+                                        {% if perms.administer_site or not is_sole_manager %}
+                                            <form method="post"
+                                                  action="{{ url_for('backoffice.remove_user_from_assembly', assembly_id=assembly.id, user_id=user.id) }}"
+                                                  class="inline"
+                                                  x-data
+                                                  @submit.prevent="$confirm('{{ _('Are you sure you want to remove %(user)s from this assembly?', user=user.display_name) }}', $el)">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                {# TODO: Add danger variant and size parameter to button component in design system #}
+                                                <button type="submit"
+                                                        class="text-button-sm px-3 py-1.5 rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 hover:opacity-90"
+                                                        style="background-color: var(--color-primary-action); color: var(--color-page-background);">
+                                                    {{ _("Remove") }}
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                                                {{ _("Last manager") }}
+                                            </span>
+                                        {% endif %}
                                     </td>
                                 {% endif %}
                             </tr>

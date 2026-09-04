@@ -14,21 +14,28 @@ from opendlp.domain.value_objects import AssemblyRole
 from opendlp.feature_flags import default_dashboard_endpoint, old_dashboard_route_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
+    get_assembly_creator_name,
     get_assembly_gsheet,
     get_assembly_with_permissions,
     get_or_create_selection_settings,
     update_assembly,
 )
-from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError
-from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.exceptions import (
+    CannotRemoveLastAssemblyManager,
+    InsufficientPermissions,
+    NotFoundError,
+)
+from opendlp.service_layer.permissions import can_manage_assembly_members
 from opendlp.service_layer.user_service import (
     get_assembly_members,
     get_user_assemblies,
     grant_user_assembly_role,
     revoke_user_assembly_role,
+    search_assembly_candidate_users,
 )
 from opendlp.translations import gettext as _
 
+from ..decorators import require_create_assembly
 from ..forms import AddUserToAssemblyForm, CreateAssemblyForm, EditAssemblyForm
 
 main_bp = Blueprint("main", __name__)
@@ -69,10 +76,12 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+            created_by_name = get_assembly_creator_name(uow, assembly)
 
         return render_template(
             "main/view_assembly_details.html",
             assembly=assembly,
+            created_by_name=created_by_name,
             current_tab="details",
             current_page="view_assembly",
         ), 200
@@ -164,11 +173,8 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             # Get assembly users with their roles (efficient database query)
             assembly_users = get_assembly_members(uow, assembly_id, current_user)
 
-            # Get all users not already assigned to this assembly (for add form)
-            available_users = list(uow.users.get_users_not_in_assembly(assembly_id))
-
-            # Check if current user can manage this assembly
-            can_manage_assembly_users = has_global_admin(current_user)
+            # Check if current user can manage this assembly's members
+            can_manage_assembly_users = can_manage_assembly_members(current_user, assembly)
 
         add_user_form = AddUserToAssemblyForm()
 
@@ -176,7 +182,6 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             "main/view_assembly_members.html",
             assembly=assembly,
             assembly_users=assembly_users,
-            available_users=available_users,
             can_manage_assembly_users=can_manage_assembly_users,
             add_user_form=add_user_form,
             current_tab="members",
@@ -203,6 +208,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @main_bp.route("/assemblies/new", methods=["GET", "POST"])
 @login_required
+@require_create_assembly
 def create_assembly_page() -> ResponseReturnValue:
     """Create a new assembly."""
     form = CreateAssemblyForm()
@@ -409,6 +415,14 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
 
         return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
 
+    except CannotRemoveLastAssemblyManager as e:
+        logger.warning(
+            "Refused to leave assembly without a manager",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+        )
+        flash(e.user_msg(), "error")
+        return redirect(url_for("main.view_assembly_members", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.error("Error removing user from assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Could not remove user from assembly: %(error)s", error=str(e)), "error")
@@ -447,15 +461,10 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         uow = bootstrap.get_flask_uow()
         with uow:
-            # Verify assembly exists and user can manage it
-            if not has_global_admin(current_user):
-                raise InsufficientPermissions(
-                    action="search_users_for_assembly",
-                    required_role="admin, global-organiser, or assembly manager",
-                )
-
-            # Search for matching users not in assembly
-            matching_users = uow.users.search_users_not_in_assembly(assembly_id, search_term) if search_term else []
+            # The service checks the permission and decides how much of the user
+            # table this searcher may see - going straight to the repository here
+            # would let the legacy UI sidestep the exact-email rule for non-admins.
+            matching_users = search_assembly_candidate_users(uow, assembly_id, search_term, current_user)
 
         return render_template(
             "main/search_user_results.html",
@@ -465,6 +474,8 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except InsufficientPermissions:
         return render_template("main/search_user_results.html", users=[], search_term=""), 403
+    except NotFoundError:
+        return render_template("main/search_user_results.html", users=[], search_term=""), 404
     except Exception as e:
         logger.error("Error searching users for assembly", assembly_id=str(assembly_id), error=str(e))
         return render_template("main/search_user_results.html", users=[], search_term=""), 500

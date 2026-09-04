@@ -18,6 +18,7 @@ from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer.assembly_service import create_assembly
 from opendlp.service_layer.permissions import can_view_assembly
 from opendlp.service_layer.user_service import create_user, grant_user_assembly_role
+from tests.component.conftest import expected_timestamp
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -110,6 +111,36 @@ class TestBackofficeAssemblyDetails:
         """A QR code encodes the short URL, so it 404s when no such registration page exists."""
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/registration/no-slug/qr-code.png")
         assert response.status_code == 404
+
+
+class TestDetailsShowsWhoCreatedIt:
+    """The Created row names the creator, when there is one to name."""
+
+    def test_created_row_names_the_creator(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user: User
+    ) -> None:
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+
+        assert response.status_code == 200
+        assert f"By {admin_user.display_name} at".encode() in response.data
+
+    def test_created_row_shows_the_creation_time(
+        self, app, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """Not just the date - the row promises a timestamp."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}")
+
+        assert expected_timestamp(app, existing_assembly.created_at).encode() in response.data
+
+    def test_created_row_falls_back_to_the_timestamp_alone(
+        self, app, logged_in_admin: FlaskClient, assembly_without_a_creator: Assembly
+    ) -> None:
+        """Assemblies predating the created_by column, and those whose creator was deleted."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_without_a_creator.id}")
+
+        assert response.status_code == 200
+        assert b"By  at" not in response.data
+        assert expected_timestamp(app, assembly_without_a_creator.created_at).encode() in response.data
 
 
 class TestBackofficeAssemblyCreate:

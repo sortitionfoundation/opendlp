@@ -6,6 +6,8 @@ from datetime import UTC, datetime, timedelta
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.users import User
+from tests.component.conftest import expected_timestamp
 from tests.fakes import FakeStore, FakeUnitOfWork
 
 
@@ -82,9 +84,8 @@ class TestAssemblyCreateView:
         assert b"error" in response.data or b"Field must be" in response.data
 
     def test_create_assembly_permission_denied_for_user(self, logged_in_user: FlaskClient) -> None:
-        """Test regular users can view create form but get error on submit."""
-        response = logged_in_user.get("/assemblies/new")
-        assert response.status_code == 200
+        """A regular user cannot reach the create form at all, nor post to it."""
+        assert logged_in_user.get("/assemblies/new").status_code == 403
 
         future_date = (datetime.now(UTC) + timedelta(days=30)).date()
         response = logged_in_user.post(
@@ -94,7 +95,7 @@ class TestAssemblyCreateView:
                 "first_assembly_date": future_date.strftime("%Y-%m-%d"),
             },
         )
-        assert response.status_code in [200, 302]
+        assert response.status_code == 403
 
     def test_create_assembly_redirects_when_not_logged_in(self, client: FlaskClient) -> None:
         """Test create assembly redirects to login when not authenticated."""
@@ -126,6 +127,23 @@ class TestAssemblyViewDetail:
         assert b"Created" in response.data or b"created" in response.data
 
         assert str(existing_assembly.first_assembly_date.year).encode() in response.data
+
+    def test_view_assembly_names_the_creator(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user: User
+    ) -> None:
+        """The Created row says who made it, and when."""
+        response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}")
+        assert response.status_code == 200
+        assert f"By {admin_user.display_name} at".encode() in response.data
+
+    def test_view_assembly_without_a_creator_shows_the_timestamp_alone(
+        self, app, logged_in_admin: FlaskClient, assembly_without_a_creator: Assembly
+    ) -> None:
+        """Nothing to name, so the row must not read "By  at ..."."""
+        response = logged_in_admin.get(f"/assemblies/{assembly_without_a_creator.id}")
+        assert response.status_code == 200
+        assert b"By  at" not in response.data
+        assert expected_timestamp(app, assembly_without_a_creator.created_at).encode() in response.data
 
     def test_view_nonexistent_assembly(self, logged_in_admin: FlaskClient) -> None:
         """Test viewing non-existent assembly redirects to dashboard with error."""

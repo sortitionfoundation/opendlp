@@ -264,3 +264,48 @@ def test_search_users_whitespace_handling(users_for_search, assembly, user_repo)
     # Leading/trailing whitespace should be trimmed
     results3 = list(user_repo.search_users_not_in_assembly(assembly.id, "  jane doe  "))
     assert len(results3) == len(results2)
+
+
+class TestGetByEmailNotInAssembly:
+    """The exact-match lookup a non-admin gets instead of partial search.
+
+    Partial matching would make the member-adding UI an account-enumeration
+    surface; an exact address confirms only what the person adding already knew.
+    """
+
+    def test_finds_the_user_with_exactly_that_address(self, users_for_search, assembly, user_repo):
+        found = user_repo.get_by_email_not_in_assembly(assembly.id, "jane.doe@example.com")
+        assert found is not None
+        assert found.id == users_for_search[1].id
+
+    def test_matches_case_insensitively(self, users_for_search, assembly, user_repo):
+        found = user_repo.get_by_email_not_in_assembly(assembly.id, "Jane.DOE@Example.com")
+        assert found is not None
+        assert found.email == "jane.doe@example.com"
+
+    def test_ignores_surrounding_whitespace(self, users_for_search, assembly, user_repo):
+        """A pasted address often carries a trailing space."""
+        assert user_repo.get_by_email_not_in_assembly(assembly.id, "  jane.doe@example.com ") is not None
+
+    def test_a_partial_address_matches_nothing(self, users_for_search, assembly, user_repo):
+        """This is the whole point: no fishing with a fragment."""
+        assert user_repo.get_by_email_not_in_assembly(assembly.id, "jane") is None
+        assert user_repo.get_by_email_not_in_assembly(assembly.id, "@example.com") is None
+
+    def test_a_name_matches_nothing(self, users_for_search, assembly, user_repo):
+        assert user_repo.get_by_email_not_in_assembly(assembly.id, "Jane") is None
+
+    def test_an_unknown_address_matches_nothing(self, users_for_search, assembly, user_repo):
+        assert user_repo.get_by_email_not_in_assembly(assembly.id, "nobody@example.com") is None
+
+    def test_an_empty_term_matches_nothing(self, users_for_search, assembly, user_repo):
+        assert user_repo.get_by_email_not_in_assembly(assembly.id, "") is None
+
+    def test_excludes_a_user_already_in_the_assembly(self, users_for_search, assembly, user_repo, postgres_session):
+        jane = users_for_search[1]
+        postgres_session.add(
+            UserAssemblyRole(user_id=jane.id, assembly_id=assembly.id, role=AssemblyRole.CONFIRMATION_CALLER)
+        )
+        postgres_session.commit()
+
+        assert user_repo.get_by_email_not_in_assembly(assembly.id, jane.email) is None

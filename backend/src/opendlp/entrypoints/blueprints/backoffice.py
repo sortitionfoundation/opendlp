@@ -15,6 +15,7 @@ from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     short_url,
 )
+from opendlp.entrypoints.decorators import require_create_assembly
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
     CreateAssemblyForm,
@@ -27,6 +28,7 @@ from opendlp.entrypoints.forms import (
 from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
+    get_assembly_creator_name,
     get_assembly_nav_context,
     get_assembly_with_permissions,
     get_or_create_csv_config,
@@ -40,10 +42,11 @@ from opendlp.service_layer.dashboard_stats import (
     get_assembly_dashboard_summary,
 )
 from opendlp.service_layer.exceptions import (
+    CannotRemoveLastAssemblyManager,
     InsufficientPermissions,
     NotFoundError,
 )
-from opendlp.service_layer.permissions import has_global_admin
+from opendlp.service_layer.permissions import can_manage_assembly_members
 from opendlp.service_layer.registration_page_service import (
     list_registration_pages,
 )
@@ -56,6 +59,7 @@ from opendlp.service_layer.user_service import (
     grant_user_assembly_role,
     revoke_user_assembly_role,
     search_assembly_candidate_users,
+    sole_assembly_manager_id,
 )
 from opendlp.translations import gettext as _
 
@@ -93,6 +97,7 @@ def dashboard() -> ResponseReturnValue:
 
 @backoffice_bp.route("/assembly/new", methods=["GET", "POST"])
 @login_required
+@require_create_assembly
 def new_assembly() -> ResponseReturnValue:
     """Create a new assembly in backoffice."""
     form = CreateAssemblyForm()
@@ -147,6 +152,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             registration_pages = list_registration_pages(uow, current_user.id, assembly_id)
+            created_by_name = get_assembly_creator_name(uow, nav.assembly)
         registration_page_rows = [
             {
                 "page": page,
@@ -165,6 +171,7 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
             registration_page_rows=registration_page_rows,
+            created_by_name=created_by_name,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(
@@ -625,8 +632,11 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             assembly_users = get_assembly_members(uow, assembly_id, current_user)
+            # Named so the page can hide a Remove button that would be refused:
+            # a non-admin may not leave the assembly with no manager.
+            sole_manager_id = sole_assembly_manager_id(uow, assembly_id)
 
-        can_manage_assembly_users = has_global_admin(current_user)
+        can_manage_assembly_users = can_manage_assembly_members(current_user, nav.assembly)
         add_user_form = AddUserToAssemblyForm()
 
         return render_template(
@@ -634,6 +644,7 @@ def view_assembly_members(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly=nav.assembly,
             assembly_users=assembly_users,
             can_manage_assembly_users=can_manage_assembly_users,
+            sole_manager_id=sole_manager_id,
             add_user_form=add_user_form,
             current_tab="members",
             data_source=nav.data_source,
@@ -757,6 +768,14 @@ def remove_user_from_assembly(assembly_id: uuid.UUID, user_id: uuid.UUID) -> Res
 
         return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
 
+    except CannotRemoveLastAssemblyManager as e:
+        logger.warning(
+            "Refused to leave assembly without a manager",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+        )
+        flash(e.user_msg(), "error")
+        return redirect(url_for("backoffice.view_assembly_members", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.error("Error removing user from assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("Could not remove user from assembly: %(error)s", error=str(e)), "error")
@@ -809,6 +828,8 @@ def search_users(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except InsufficientPermissions:
         return jsonify([]), 403
+    except NotFoundError:
+        return jsonify([]), 404
     except Exception as e:
         logger.exception("Error searching users for assembly", assembly_id=str(assembly_id), error=str(e))
         return jsonify([]), 500

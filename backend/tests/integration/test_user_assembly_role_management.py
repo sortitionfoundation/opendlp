@@ -10,11 +10,16 @@ from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
+    CannotRemoveLastAssemblyManager,
     InsufficientPermissions,
     NotFoundError,
     UserNotFoundError,
 )
-from opendlp.service_layer.user_service import grant_user_assembly_role, revoke_user_assembly_role
+from opendlp.service_layer.user_service import (
+    grant_user_assembly_role,
+    revoke_user_assembly_role,
+    sole_assembly_manager_id,
+)
 from tests.fakes import FakeUnitOfWork
 
 
@@ -33,7 +38,7 @@ def organiser_user():
     """Create a global organiser user."""
     return User(
         email="organiser@example.com",
-        global_role=GlobalRole.GLOBAL_ORGANISER,
+        global_role=GlobalRole.ORGANISER,
         password_hash="hash123",  # pragma: allowlist secret
     )
 
@@ -136,19 +141,18 @@ class TestGrantUserAssemblyRole:
         assert assembly_role.role == AssemblyRole.CONFIRMATION_CALLER
         assert returned_user.id == data["target_user"].id
 
-    def test_global_organiser_can_grant_role(self, uow, setup_database):
-        """Global organiser can grant roles to any user on any assembly."""
+    def test_organiser_cannot_grant_role_on_an_assembly_they_have_no_role_on(self, uow, setup_database):
+        """An organiser manages the members of their own assemblies, not everyone's."""
         data = setup_database
-        assembly_role, _user = grant_user_assembly_role(
-            uow=uow,
-            user_id=data["target_user"].id,
-            assembly_id=data["assembly"].id,
-            role=AssemblyRole.ASSEMBLY_MANAGER,
-            current_user=data["organiser_user"],
-        )
 
-        assert isinstance(assembly_role, UserAssemblyRole)
-        assert assembly_role.role == AssemblyRole.ASSEMBLY_MANAGER
+        with pytest.raises(InsufficientPermissions):
+            grant_user_assembly_role(
+                uow=uow,
+                user_id=data["target_user"].id,
+                assembly_id=data["assembly"].id,
+                role=AssemblyRole.ASSEMBLY_MANAGER,
+                current_user=data["organiser_user"],
+            )
 
     def test_assembly_organiser_can_grant_role_on_their_assembly(self, uow, setup_database):
         """Assembly organiser can grant roles on their own assembly."""
@@ -275,8 +279,8 @@ class TestRevokeUserAssemblyRole:
         assert assembly_role.assembly_id == data["assembly"].id
         assert returned_user.id == data["target_user"].id
 
-    def test_global_organiser_can_revoke_role(self, uow, setup_database):
-        """Global organiser can revoke roles from any user on any assembly."""
+    def test_organiser_cannot_revoke_role_on_an_assembly_they_have_no_role_on(self, uow, setup_database):
+        """The mirror of granting: an organiser has no reach into someone else's assembly."""
         data = setup_database
         grant_user_assembly_role(
             uow=uow,
@@ -286,14 +290,13 @@ class TestRevokeUserAssemblyRole:
             current_user=data["admin_user"],
         )
 
-        assembly_role, _user = revoke_user_assembly_role(
-            uow=uow,
-            user_id=data["target_user"].id,
-            assembly_id=data["assembly"].id,
-            current_user=data["organiser_user"],
-        )
-
-        assert isinstance(assembly_role, UserAssemblyRole)
+        with pytest.raises(InsufficientPermissions):
+            revoke_user_assembly_role(
+                uow=uow,
+                user_id=data["target_user"].id,
+                assembly_id=data["assembly"].id,
+                current_user=data["organiser_user"],
+            )
 
     def test_assembly_organiser_can_revoke_role_on_their_assembly(self, uow, setup_database):
         """Assembly organiser can revoke roles on their own assembly."""
@@ -393,3 +396,151 @@ class TestRevokeUserAssemblyRole:
                 assembly_id=data["assembly"].id,
                 current_user=data["admin_user"],
             )
+
+
+class TestTheAssemblyKeepsAManager:
+    """An assembly with no manager can be reached by nobody but an admin.
+
+    An organiser cannot see the admin UI to ask for it back, so removing the
+    last manager is a one-way door for them, and they are stopped. An admin can
+    undo it, so they are not.
+    """
+
+    def _second_manager(self, uow, data):
+        grant_user_assembly_role(
+            uow=uow,
+            user_id=data["target_user"].id,
+            assembly_id=data["assembly"].id,
+            role=AssemblyRole.ASSEMBLY_MANAGER,
+            current_user=data["admin_user"],
+        )
+
+    def test_the_sole_manager_cannot_remove_themselves(self, uow, setup_database):
+        data = setup_database
+
+        with pytest.raises(CannotRemoveLastAssemblyManager):
+            revoke_user_assembly_role(
+                uow=uow,
+                user_id=data["assembly_organiser_user"].id,
+                assembly_id=data["assembly"].id,
+                current_user=data["assembly_organiser_user"],
+            )
+
+    def test_the_role_survives_the_refusal(self, uow, setup_database):
+        """The refusal has to happen before anything is removed."""
+        data = setup_database
+
+        with pytest.raises(CannotRemoveLastAssemblyManager):
+            revoke_user_assembly_role(
+                uow=uow,
+                user_id=data["assembly_organiser_user"].id,
+                assembly_id=data["assembly"].id,
+                current_user=data["assembly_organiser_user"],
+            )
+
+        still_there = uow.users.get(data["assembly_organiser_user"].id)
+        assert still_there.get_assembly_role(data["assembly"].id) == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_a_manager_may_step_down_once_there_is_another(self, uow, setup_database):
+        data = setup_database
+        self._second_manager(uow, data)
+
+        assembly_role, _user = revoke_user_assembly_role(
+            uow=uow,
+            user_id=data["assembly_organiser_user"].id,
+            assembly_id=data["assembly"].id,
+            current_user=data["assembly_organiser_user"],
+        )
+
+        assert assembly_role.role == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_a_manager_may_remove_a_second_manager(self, uow, setup_database):
+        """Two managers, so removing one leaves the assembly reachable."""
+        data = setup_database
+        self._second_manager(uow, data)
+
+        assembly_role, _user = revoke_user_assembly_role(
+            uow=uow,
+            user_id=data["target_user"].id,
+            assembly_id=data["assembly"].id,
+            current_user=data["assembly_organiser_user"],
+        )
+
+        assert assembly_role.role == AssemblyRole.ASSEMBLY_MANAGER
+
+    def test_an_admin_may_remove_the_last_manager(self, uow, setup_database):
+        """An admin can always put one back, so they are not stopped."""
+        data = setup_database
+
+        assembly_role, _user = revoke_user_assembly_role(
+            uow=uow,
+            user_id=data["assembly_organiser_user"].id,
+            assembly_id=data["assembly"].id,
+            current_user=data["admin_user"],
+        )
+
+        assert assembly_role.role == AssemblyRole.ASSEMBLY_MANAGER
+        assert sole_assembly_manager_id(uow, data["assembly"].id) is None
+
+    def test_removing_a_non_manager_is_unaffected(self, uow, setup_database):
+        """The guard is about managers, not about being the last member."""
+        data = setup_database
+        grant_user_assembly_role(
+            uow=uow,
+            user_id=data["target_user"].id,
+            assembly_id=data["assembly"].id,
+            role=AssemblyRole.CONFIRMATION_CALLER,
+            current_user=data["admin_user"],
+        )
+
+        assembly_role, _user = revoke_user_assembly_role(
+            uow=uow,
+            user_id=data["target_user"].id,
+            assembly_id=data["assembly"].id,
+            current_user=data["assembly_organiser_user"],
+        )
+
+        assert assembly_role.role == AssemblyRole.CONFIRMATION_CALLER
+
+
+class TestSoleAssemblyManagerId:
+    def test_names_the_only_manager(self, uow, setup_database):
+        data = setup_database
+
+        assert sole_assembly_manager_id(uow, data["assembly"].id) == data["assembly_organiser_user"].id
+
+    def test_is_none_when_there_are_two(self, uow, setup_database):
+        data = setup_database
+        grant_user_assembly_role(
+            uow=uow,
+            user_id=data["target_user"].id,
+            assembly_id=data["assembly"].id,
+            role=AssemblyRole.ASSEMBLY_MANAGER,
+            current_user=data["admin_user"],
+        )
+
+        assert sole_assembly_manager_id(uow, data["assembly"].id) is None
+
+    def test_is_none_when_there_are_none(self, uow, setup_database):
+        data = setup_database
+        revoke_user_assembly_role(
+            uow=uow,
+            user_id=data["assembly_organiser_user"].id,
+            assembly_id=data["assembly"].id,
+            current_user=data["admin_user"],
+        )
+
+        assert sole_assembly_manager_id(uow, data["assembly"].id) is None
+
+    def test_ignores_other_roles(self, uow, setup_database):
+        """A confirmation-caller is not a manager."""
+        data = setup_database
+        grant_user_assembly_role(
+            uow=uow,
+            user_id=data["target_user"].id,
+            assembly_id=data["assembly"].id,
+            role=AssemblyRole.CONFIRMATION_CALLER,
+            current_user=data["admin_user"],
+        )
+
+        assert sole_assembly_manager_id(uow, data["assembly"].id) == data["assembly_organiser_user"].id

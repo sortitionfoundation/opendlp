@@ -1,0 +1,13 @@
+{#
+ABOUTME: Macro rendering a global role as a GOV.UK tag
+ABOUTME: Labels come from global_role_labels, so a renamed role cannot leave a stale one here
+#}
+{# Colour is presentation, so it lives here rather than beside the role definitions.
+   Anything unmapped falls back to grey rather than rendering an invalid class. #}
+{% set _role_tag_colours = {"ADMIN": "red", "ORGANISER": "blue", "USER": "grey"} %}
+
+{% macro role_tag(global_role) %}
+    <strong class="govuk-tag govuk-tag--{{ _role_tag_colours.get(global_role.name, "grey") }}">
+        {{ global_role_labels[global_role] }}
+    </strong>
+{% endmacro %}

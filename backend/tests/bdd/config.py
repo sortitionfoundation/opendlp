@@ -13,6 +13,8 @@ ADMIN_EMAIL = "admin@opendlp.example"
 ADMIN_PASSWORD = "admin8d2wpass"  # pragma: allowlist secret
 NORMAL_EMAIL = "normal@opendlp.example"
 NORMAL_PASSWORD = "normal8d2wpass"  # pragma: allowlist secret
+ORGANISER_EMAIL = "organiser@opendlp.example"
+ORGANISER_PASSWORD = "organis3r8d2wpass"  # pragma: allowlist secret
 # A user scenarios are free to break - see the disposable_user fixture
 DISPOSABLE_EMAIL = "locked-out@opendlp.example"
 DISPOSABLE_PASSWORD = "thrown4w9yspass"  # pragma: allowlist secret

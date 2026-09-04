@@ -111,6 +111,11 @@ jobs:
       matrix:
         python-version: ["3.12", "3.13", "3.14"]
       fail-fast: false
+    env:
+      # Make every uv invocation (sync and run) use the matrix interpreter.
+      # Without this, uv obeys .python-version (the local dev pin, 3.12) and
+      # all three matrix legs silently test the same interpreter.
+      UV_PYTHON: ${{ matrix.python-version }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -132,7 +137,13 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 54322
           DB_NAME: opendlp
-        run: uv run python -m pytest tests --ignore tests/bdd --cov --cov-config=pyproject.toml --cov-report=xml --cov-fail-under=80
+        # -n auto: pytest-xdist, one worker per CPU. Each worker gets its own
+        # opendlp_test_gwN database (created via the postgres service) and its
+        # own Redis database - see tests/conftest.py, which supports at most 15
+        # workers (Redis has 16 databases, 0 is Celery's) - hence the cap,
+        # which also matches the justfile. BDD stays serial (it manages its
+        # own server processes) and runs in bdd.yml.
+        run: uv run python -m pytest tests --ignore tests/bdd -n auto --maxprocesses=8 --cov --cov-config=pyproject.toml --cov-report=xml --cov-fail-under=80
 
       - name: Check typing
         run: uv run mypy
