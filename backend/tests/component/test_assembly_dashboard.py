@@ -216,3 +216,66 @@ class TestThePieChartAtom:
         assert "Shows respondent data once registration starts." in html
         assert 'aria-hidden="true"' in html
         assert 'role="img"' not in html
+
+
+class TestTargetPrecision:
+    """The Target pie and table must show what the user entered, not midpoints.
+
+    Regression for PR #275 review: bands like 30-31 / 29-30 / 0-1 have midpoints
+    that banker's-round to 30 / 30 / 0, turning entered targets of 50/49/1 percent
+    into a displayed 50/50/0.
+    """
+
+    @pytest.fixture
+    def assembly_with_precise_targets(self, fake_store, existing_assembly):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="Gender",
+                    values=[
+                        TargetValue(value="Female", min=30, max=31, percentage_target=50.0),
+                        TargetValue(value="Male", min=29, max=30, percentage_target=49.0),
+                        TargetValue(value="Non-binary", min=0, max=1, percentage_target=1.0),
+                    ],
+                )
+            )
+            uow.commit()
+        return existing_assembly
+
+    def test_target_pie_shows_entered_percentages_and_bands(self, logged_in_admin, assembly_with_precise_targets):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_precise_targets)).get_data(as_text=True)
+
+        assert "Female 50% (30–31)" in html
+        assert "Male 49% (29–30)" in html
+        assert "Non-binary 1% (0–1)" in html
+
+    def test_table_target_column_shows_the_band(self, logged_in_admin, assembly_with_precise_targets):
+        html = logged_in_admin.get(f"{_dashboard_url(assembly_with_precise_targets)}?view=table").get_data(as_text=True)
+
+        assert "30–31" in html
+        assert "29–30" in html
+        assert "0–1" in html
+        # the percentage column carries the service's value, not one recomputed from counts
+        assert "50.0" in html
+        assert "49.0" in html
+        assert "1.0" in html
+
+    def test_band_collapses_to_one_number_when_min_equals_max(self, logged_in_admin, fake_store, existing_assembly):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="Region",
+                    values=[
+                        TargetValue(value="North", min=15, max=15),
+                        TargetValue(value="South", min=15, max=15),
+                    ],
+                )
+            )
+            uow.commit()
+
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+
+        assert "North 50% (15)" in html
+        assert "15–15" not in html

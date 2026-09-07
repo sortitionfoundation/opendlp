@@ -20,9 +20,12 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
 
     Args:
       title: card heading — the target category name, e.g. "Gender".
-      segments: list of dicts, each {"label": str, "count": int, "color": <optional css colour>}.
-                When missing/empty or the counts sum to zero, the card renders its
-                skeleton state instead of a chart.
+      segments: list of dicts, each {"label": str, "count": int|float, "color": <optional css colour>,
+                "display": <optional str>}. When missing/empty or the counts sum to zero,
+                the card renders its skeleton state instead of a chart. "count" is the
+                slice weight; "display" replaces it in the legend/aria parenthetical —
+                for slices weighted by something other than a countable quantity
+                (e.g. the Target pie is weighted by percentage but shows its min–max band).
       message: text shown beneath the skeleton chart when there is no data. It is an
                incoming parameter so the surrounding context decides what to say
                (e.g. "Shows respondent data once registration starts.").
@@ -110,7 +113,7 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
             <div class="flex flex-col gap-2 w-full">
                 <div class="flex items-center justify-center w-full" style="height: {{ size }}px;">
                     <div role="img"
-                         aria-label="{{ title }}: {% for seg in segments %}{{ seg.label }} {{ (seg.count / total * 100) | round | int }}% ({{ seg.count }}){% if not loop.last %}, {% endif %}{% endfor %}"
+                         aria-label="{{ title }}: {% for seg in segments %}{{ seg.label }} {{ (seg.count / total * 100) | round | int }}% ({{ seg.get('display') or seg.count }}){% if not loop.last %}, {% endif %}{% endfor %}"
                          style="width: {{ size }}px; height: {{ size }}px; border-radius: 9999px;
                                 background: conic-gradient({{ ns.stops | join(', ') }});"></div>
                 </div>
@@ -121,7 +124,7 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
                         <div class="flex gap-1.5 items-center rounded"
                              style="background-color: var(--color-subtle-background-panels); padding: 4px 8px;">
                             <span style="width: 8px; height: 8px; border-radius: 2px; background-color: {{ color }};"></span>
-                            <span class="text-caption whitespace-nowrap" style="color: var(--color-headings);">{{ seg.label }} {{ (seg.count / total * 100) | round | int }}% ({{ seg.count }})</span>
+                            <span class="text-caption whitespace-nowrap" style="color: var(--color-headings);">{{ seg.label }} {{ (seg.count / total * 100) | round | int }}% ({{ seg.get('display') or seg.count }})</span>
                         </div>
                     {% endfor %}
                 </div>
