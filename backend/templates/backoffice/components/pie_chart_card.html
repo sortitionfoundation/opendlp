@@ -53,39 +53,31 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
         </div>
         {% if segments and total > 0 %}
             {# ---- Data present: pie + legends ---- #}
-            {# Build the conic-gradient control points with a running cursor. Each slice
-               boundary carries a thin card-coloured divider (the white gaps in the design),
-               and every transition is FEATHERED by `f` on each side rather than a hard stop.
-               A hard conic stop renders an aliased (jagged) radial edge — the browser only
-               anti-aliases the outer circle — so the feather is what smooths the straight
-               edges. `hw` is the divider half-width; `f` is the feather half-width.
-               The 0deg/360deg seam is kept card-coloured on both sides so its unavoidable
-               discontinuity is invisible (a divider sits on the seam, matching the design). #}
-            {% set gap = 0.9 %}
+            {# Build the conic-gradient control points with a running cursor. Slices sit
+               flush against each other, but every boundary is FEATHERED by `f` on each
+               side rather than a hard stop. A hard conic stop renders an aliased (jagged)
+               radial edge — the browser only anti-aliases the outer circle — so the
+               feather is what smooths the straight edges. The 0deg/360deg seam cannot
+               feather across the wrap, so the last slice blends into the first slice's
+               colour just before 100%, which reads the same. #}
             {% set f = 0.4 %}
-            {% set hw = gap / 2 %}
+            {% set first_color = segments[0].get("color") or _pie_palette[0] %}
             {% set ns = namespace(cursor=0.0, stops=[]) %}
-            {# seam divider, right half #}
-            {% set _ = ns.stops.append("var(--color-tables-cards) 0.0000%") %}
-            {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format([hw - f, 0.0] | max)) %}
             {% for seg in segments %}
                 {% set pct = seg.count / total * 100 %}
                 {% set color = seg.get("color") or _pie_palette[loop.index0 % (_pie_palette | length)] %}
                 {% set start = ns.cursor %}
                 {% set end = ns.cursor + pct %}
-                {# blend into the slice colour, then its solid core #}
-                {% set _ = ns.stops.append("%s %.4f%%" | format(color, start + hw + f)) %}
-                {% set _ = ns.stops.append("%s %.4f%%" | format(color, end - hw - f)) %}
-                {% if not loop.last %}
-                    {# card-coloured divider centred on the interior boundary at `end` #}
-                    {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format(end - hw + f)) %}
-                    {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format(end + hw - f)) %}
+                {# blend from the previous slice into this one, then its solid core #}
+                {% set _ = ns.stops.append("%s %.4f%%" | format(color, start + f if not loop.first else 0.0)) %}
+                {% if loop.last %}
+                    {% set _ = ns.stops.append("%s %.4f%%" | format(color, [end - 2 * f, start] | max)) %}
+                    {% set _ = ns.stops.append("%s 100.0000%%" | format(first_color)) %}
+                {% else %}
+                    {% set _ = ns.stops.append("%s %.4f%%" | format(color, end - f)) %}
                 {% endif %}
                 {% set ns.cursor = end %}
             {% endfor %}
-            {# seam divider, left half #}
-            {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format([100.0 - hw + f, 100.0] | min)) %}
-            {% set _ = ns.stops.append("var(--color-tables-cards) 100.0000%") %}
             <div class="flex flex-col gap-2 w-full">
                 <div class="flex items-center justify-center w-full" style="height: {{ size }}px;">
                     <div role="img"
