@@ -101,23 +101,18 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
             {# ---- No data: skeleton circle + message ---- #}
             <div class="w-full">
                 <div class="flex items-center justify-center w-full" style="height: {{ size }}px;">
-                    {# Two grey halves split by a vertical divider. Feathered at the 50%
-                       (bottom) and 0/100 (top, on the seam) boundaries, same as the data
-                       pie, so the straight edges are anti-aliased rather than jagged.
+                    {# Two grey halves sitting flush, feathered at the 50% (bottom) and
+                       0/100 (top, on the seam) boundaries, same as the data pie, so the
+                       straight edges are anti-aliased rather than jagged.
                        neutral-200/300 are used directly: there is no semantic skeleton token. #}
                     <div aria-hidden="true"
                          style="width: {{ size }}px; height: {{ size }}px; border-radius: 9999px;
                                 background: conic-gradient(
-                                var(--color-tables-cards) 0.0000%,
-                                var(--color-tables-cards) 0.0500%,
-                                var(--color-neutral-300) 0.8500%,
-                                var(--color-neutral-300) 49.1500%,
-                                var(--color-tables-cards) 49.9500%,
-                                var(--color-tables-cards) 50.0500%,
-                                var(--color-neutral-200) 50.8500%,
-                                var(--color-neutral-200) 99.1500%,
-                                var(--color-tables-cards) 99.9500%,
-                                var(--color-tables-cards) 100.0000%);"></div>
+                                var(--color-neutral-300) 0.0000%,
+                                var(--color-neutral-300) 49.6000%,
+                                var(--color-neutral-200) 50.4000%,
+                                var(--color-neutral-200) 99.2000%,
+                                var(--color-neutral-300) 100.0000%);"></div>
                 </div>
             </div>
             {% if message %}
