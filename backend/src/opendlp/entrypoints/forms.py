@@ -601,7 +601,7 @@ class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     source_url = StringField(
-        _l("Source"),
+        _l("Data Source"),
         validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH), SourceUrlValidator()],
         description=_l("Optional - a link to where the percentages came from"),
     )
