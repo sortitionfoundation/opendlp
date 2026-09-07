@@ -213,7 +213,7 @@ class TargetCategory:
         source_url: str = "",
     ):
         if not name.strip():
-            raise ValueError("Category name is required")
+            raise ValueError("Target name is required")
 
         self.id = category_id or uuid.uuid4()
         self.assembly_id = assembly_id

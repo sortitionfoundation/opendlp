@@ -580,7 +580,7 @@ class AddTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for adding a new target category."""
 
     name = StringField(
-        _l("Category Name"),
+        _l("Target Name"),
         validators=[DataRequired(), Length(min=1, max=255)],
         description=_l("e.g. Gender, Age, Ethnicity"),
     )
@@ -590,7 +590,7 @@ class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for editing a target category's name, comment and source."""
 
     name = StringField(
-        _l("Category Name"),
+        _l("Target Name"),
         validators=[DataRequired(), Length(min=1, max=255)],
     )
 

@@ -553,7 +553,7 @@ target_categories = Table(
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Index("ix_target_categories_assembly_sort", "assembly_id", "sort_order"),
-    # Ensure category names are unique per assembly
+    # Ensure target category names are unique per assembly
     Index("ix_target_categories_assembly_name", "assembly_id", "name", unique=True),
 )
 
