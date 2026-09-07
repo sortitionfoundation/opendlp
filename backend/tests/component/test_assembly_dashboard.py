@@ -279,3 +279,20 @@ class TestTargetPrecision:
 
         assert "North 50% (15)" in html
         assert "15–15" not in html
+
+
+class TestTheExportButton:
+    def test_export_button_opens_the_modal_fragment(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
+        assert f"{_dashboard_url(assembly_with_targets)}/export/modal" in html
+        assert 'id="export-modal-container"' in html
+
+    def test_export_button_is_hidden_on_the_empty_state(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+        assert f"{_dashboard_url(existing_assembly)}/export/modal" not in html
+
+    def test_modal_offers_csv_only(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}/export/modal").get_data(as_text=True)
+        assert 'value="csv" checked' in html
+        assert 'value="xlsx" disabled' in html
+        assert 'value="gsheet" disabled' in html
