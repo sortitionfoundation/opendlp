@@ -14,7 +14,7 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
 "var(--color-success-400)",
 "var(--color-warning-400)"
 ] %}
-{% macro pie_chart_card(title, segments=none, message="", size=180, title_tag="p") %}
+{% macro pie_chart_card(title, segments=none, message="", size=180, title_tag="p", gaps=false) %}
     {#
     Pie chart card (stateless).
 
@@ -29,6 +29,8 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
       size: pie diameter in px (default 180, matching the Figma atom).
       title_tag: "p" (default) or "h4" — pass "h4" when the card sits under section
                  headings so the document outline stays clean.
+      gaps: draw a thin card-coloured divider between slices (and on the skeleton's
+            halves), as in the original Figma atom. Default false: slices sit flush.
 
     Data present:
       {{ pie_chart_card("Gender", segments=[
@@ -53,31 +55,58 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
         </div>
         {% if segments and total > 0 %}
             {# ---- Data present: pie + legends ---- #}
-            {# Build the conic-gradient control points with a running cursor. Slices sit
-               flush against each other, but every boundary is FEATHERED by `f` on each
-               side rather than a hard stop. A hard conic stop renders an aliased (jagged)
-               radial edge — the browser only anti-aliases the outer circle — so the
-               feather is what smooths the straight edges. The 0deg/360deg seam cannot
-               feather across the wrap, so the last slice blends into the first slice's
-               colour just before 100%, which reads the same. #}
+            {# Build the conic-gradient control points with a running cursor. Every
+               boundary is FEATHERED by `f` on each side rather than a hard stop — a hard
+               conic stop renders an aliased (jagged) radial edge; the browser only
+               anti-aliases the outer circle — so the feather is what smooths the
+               straight edges.
+
+               With gaps, each boundary carries a thin card-coloured divider (`hw` is its
+               half-width), and the 0deg/360deg seam hides its discontinuity under the
+               divider that sits on it. Without gaps, slices sit flush and blend directly
+               into each other; the seam cannot feather across the wrap, so the last
+               slice blends into the first slice's colour just before 100%, which reads
+               the same. #}
             {% set f = 0.4 %}
+            {% set hw = 0.45 %}
             {% set first_color = segments[0].get("color") or _pie_palette[0] %}
             {% set ns = namespace(cursor=0.0, stops=[]) %}
+            {% if gaps %}
+                {# seam divider, right half #}
+                {% set _ = ns.stops.append("var(--color-tables-cards) 0.0000%") %}
+                {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format([hw - f, 0.0] | max)) %}
+            {% endif %}
             {% for seg in segments %}
                 {% set pct = seg.count / total * 100 %}
                 {% set color = seg.get("color") or _pie_palette[loop.index0 % (_pie_palette | length)] %}
                 {% set start = ns.cursor %}
                 {% set end = ns.cursor + pct %}
-                {# blend from the previous slice into this one, then its solid core #}
-                {% set _ = ns.stops.append("%s %.4f%%" | format(color, start + f if not loop.first else 0.0)) %}
-                {% if loop.last %}
-                    {% set _ = ns.stops.append("%s %.4f%%" | format(color, [end - 2 * f, start] | max)) %}
-                    {% set _ = ns.stops.append("%s 100.0000%%" | format(first_color)) %}
+                {% if gaps %}
+                    {# blend out of the divider into the slice colour, then its solid core #}
+                    {% set _ = ns.stops.append("%s %.4f%%" | format(color, start + hw + f)) %}
+                    {% set _ = ns.stops.append("%s %.4f%%" | format(color, end - hw - f)) %}
+                    {% if not loop.last %}
+                        {# card-coloured divider centred on the interior boundary at `end` #}
+                        {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format(end - hw + f)) %}
+                        {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format(end + hw - f)) %}
+                    {% endif %}
                 {% else %}
-                    {% set _ = ns.stops.append("%s %.4f%%" | format(color, end - f)) %}
+                    {# blend from the previous slice into this one, then its solid core #}
+                    {% set _ = ns.stops.append("%s %.4f%%" | format(color, start + f if not loop.first else 0.0)) %}
+                    {% if loop.last %}
+                        {% set _ = ns.stops.append("%s %.4f%%" | format(color, [end - 2 * f, start] | max)) %}
+                        {% set _ = ns.stops.append("%s 100.0000%%" | format(first_color)) %}
+                    {% else %}
+                        {% set _ = ns.stops.append("%s %.4f%%" | format(color, end - f)) %}
+                    {% endif %}
                 {% endif %}
                 {% set ns.cursor = end %}
             {% endfor %}
+            {% if gaps %}
+                {# seam divider, left half #}
+                {% set _ = ns.stops.append("var(--color-tables-cards) %.4f%%" | format([100.0 - hw + f, 100.0] | min)) %}
+                {% set _ = ns.stops.append("var(--color-tables-cards) 100.0000%") %}
+            {% endif %}
             <div class="flex flex-col gap-2 w-full">
                 <div class="flex items-center justify-center w-full" style="height: {{ size }}px;">
                     <div role="img"
@@ -101,18 +130,33 @@ ABOUTME: Stateless — renders a categorical pie + legends from segment counts, 
             {# ---- No data: skeleton circle + message ---- #}
             <div class="w-full">
                 <div class="flex items-center justify-center w-full" style="height: {{ size }}px;">
-                    {# Two grey halves sitting flush, feathered at the 50% (bottom) and
-                       0/100 (top, on the seam) boundaries, same as the data pie, so the
-                       straight edges are anti-aliased rather than jagged.
-                       neutral-200/300 are used directly: there is no semantic skeleton token. #}
+                    {# Two grey halves, mirroring the data pie's boundary treatment for the
+                       chosen `gaps` setting: divided by a card-coloured line, or flush.
+                       Either way the 50% (bottom) and 0/100 (top, on the seam) boundaries
+                       are feathered so the straight edges are anti-aliased rather than
+                       jagged. neutral-200/300 are used directly: there is no semantic
+                       skeleton token. #}
+                    {% if gaps %}
+                        {% set skeleton_stops = "var(--color-tables-cards) 0.0000%,
+                        var(--color-tables-cards) 0.0500%,
+                        var(--color-neutral-300) 0.8500%,
+                        var(--color-neutral-300) 49.1500%,
+                        var(--color-tables-cards) 49.9500%,
+                        var(--color-tables-cards) 50.0500%,
+                        var(--color-neutral-200) 50.8500%,
+                        var(--color-neutral-200) 99.1500%,
+                        var(--color-tables-cards) 99.9500%,
+                        var(--color-tables-cards) 100.0000%" %}
+                    {% else %}
+                        {% set skeleton_stops = "var(--color-neutral-300) 0.0000%,
+                        var(--color-neutral-300) 49.6000%,
+                        var(--color-neutral-200) 50.4000%,
+                        var(--color-neutral-200) 99.2000%,
+                        var(--color-neutral-300) 100.0000%" %}
+                    {% endif %}
                     <div aria-hidden="true"
                          style="width: {{ size }}px; height: {{ size }}px; border-radius: 9999px;
-                                background: conic-gradient(
-                                var(--color-neutral-300) 0.0000%,
-                                var(--color-neutral-300) 49.6000%,
-                                var(--color-neutral-200) 50.4000%,
-                                var(--color-neutral-200) 99.2000%,
-                                var(--color-neutral-300) 100.0000%);"></div>
+                                background: conic-gradient({{ skeleton_stops }});"></div>
                 </div>
             </div>
             {% if message %}

@@ -30,7 +30,14 @@ ABOUTME: Demonstrates the data-present state (pie + legends) and the no-data ske
 
 {# No data — skeleton + an incoming message set by the context #}
             {{ pie_chart_card("Respondents",
-            message="Shows respondent data once registration starts.") }}') %}
+            message="Shows respondent data once registration starts.") }}
+
+{# gaps=true restores the card-coloured dividers between slices #}
+            {{ pie_chart_card("Gender (gaps=true)", segments=[
+            {"label": "Male", "count": 10},
+            {"label": "Female", "count": 9},
+            {"label": "Non-binary", "count": 1},
+            ], gaps=true) }}') %}
             <div class="flex flex-wrap gap-4 items-stretch">
                 <div style="width: 306px;">
                     {{ pie_chart_card("Gender", segments=[
@@ -51,6 +58,13 @@ ABOUTME: Demonstrates the data-present state (pie + legends) and the no-data ske
                 <div style="width: 306px;">
                     {{ pie_chart_card("Respondents",
                     message="Shows respondent data once registration starts.") }}
+                </div>
+                <div style="width: 306px;">
+                    {{ pie_chart_card("Gender (gaps=true)", segments=[
+                    {"label": "Male", "count": 10},
+                    {"label": "Female", "count": 9},
+                    {"label": "Non-binary", "count": 1}
+                    ], gaps=true) }}
                 </div>
             </div>
         {% endcall %}
