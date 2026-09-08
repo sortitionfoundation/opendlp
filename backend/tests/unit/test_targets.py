@@ -76,7 +76,7 @@ class TestTargetCategory:
         assert cat.values == []
 
     def test_validate_empty_name(self):
-        with pytest.raises(ValueError, match="Category name is required"):
+        with pytest.raises(ValueError, match="Target name is required"):
             TargetCategory(assembly_id=uuid.uuid4(), name="")
 
     def test_add_value(self):

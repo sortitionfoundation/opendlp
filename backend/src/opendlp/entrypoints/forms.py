@@ -580,7 +580,7 @@ class AddTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for adding a new target category."""
 
     name = StringField(
-        _l("Category Name"),
+        _l("Target Name"),
         validators=[DataRequired(), Length(min=1, max=255)],
         description=_l("e.g. Gender, Age, Ethnicity"),
     )
@@ -590,7 +590,7 @@ class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for editing a target category's name, comment and source."""
 
     name = StringField(
-        _l("Category Name"),
+        _l("Target Name"),
         validators=[DataRequired(), Length(min=1, max=255)],
     )
 
@@ -601,7 +601,7 @@ class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     source_url = StringField(
-        _l("Source"),
+        _l("Data Source"),
         validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH), SourceUrlValidator()],
         description=_l("Optional - a link to where the percentages came from"),
     )

@@ -195,7 +195,7 @@ def create_target_category(
 
     existing = uow.target_categories.get_by_assembly_id(assembly_id)
     if any(c.name.lower() == name.lower() for c in existing):
-        raise ValueError(f"A category named '{name}' already exists")
+        raise ValueError(f"A target named '{name}' already exists")
 
     if sort_order is None:
         sort_order = max((c.sort_order for c in existing), default=0) + SORT_ORDER_STEP
@@ -208,7 +208,7 @@ def create_target_category(
         source_url=source_url,
     )
 
-    # Auto-add values if category name matches a low-cardinality respondent column
+    # Auto-add values if target category name matches a low-cardinality respondent column
     attribute_columns = get_respondent_attribute_columns(uow, assembly_id)
     columns_lower = {col.lower(): col for col in attribute_columns}
     matched_col = columns_lower.get(name.lower())
@@ -736,7 +736,7 @@ def _save_one_category(
 
 
 class _CategoryNaming:
-    """Guards category names and hands out sort orders during a bulk save.
+    """Guards target category names and hands out sort orders during a bulk save.
 
     `(assembly_id, name)` carries a unique index, so a clash is a database error
     rather than a mistake we can shrug at. Checking here turns it into a
@@ -764,7 +764,7 @@ class _CategoryNaming:
         """Reserve a name, refusing one that belongs to a different category."""
         key = name.strip().lower()
         if key in self._taken and key != self._own.get(category_id):
-            raise ValueError(f"A category named '{name.strip()}' already exists")
+            raise ValueError(f"A target named '{name.strip()}' already exists")
         self._taken.add(key)
 
     def next_sort_order(self) -> int:

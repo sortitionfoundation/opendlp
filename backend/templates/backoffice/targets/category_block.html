@@ -5,7 +5,6 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
 {% from "backoffice/components/icons.html" import icon_hand, icon_sparkles %}
 {% from "backoffice/components/info_icon.html" import info_icon %}
 {% from "backoffice/targets/missing_values.html" import missing_values_summary %}
-
 {% macro provenance_icon(manual) %}
     {% if manual %}
         <span class="inline-flex shrink-0"
@@ -23,7 +22,6 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
         </span>
     {% endif %}
 {% endmacro %}
-
 {#
     A min or max cell, tinted to say where the number came from: calculated from
     the percentage, or typed in by hand. A value with no percentage has nothing
@@ -39,7 +37,6 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
         </span>
     </td>
 {% endmacro %}
-
 {% set has_counts = respondent_counts is defined and respondent_counts %}
 {% set show_selected = has_selected is defined and has_selected and selected_counts is defined and selected_counts %}
 {% set col_count = 5 + (1 if has_counts else 0) + (1 if show_selected else 0) %}
@@ -54,12 +51,12 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
          style="border-bottom: 1px solid var(--color-borders-dividers)">
         <h3 class="text-heading-lg" style="color: var(--color-headings);">{{ category.name }}</h3>
     </div>
-    {# ── Source and Comment ───────────────────────────── #}
+    {# ── Data Source and Comment ───────────────────────────── #}
     {% if category.source_url or category.comment %}
         <div class="px-6 pt-4">
             {% if category.source_url %}
                 <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
-                    {{ _("Source:") }}
+                    {{ _("Data Source:") }}
                     <a href="{{ category.source_url }}"
                        class="underline"
                        style="color: var(--color-links)"
@@ -160,14 +157,10 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                             {% endif %}
                         </td>
                         {% if has_counts %}
-                            <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
-                                {{ respondent_counts.get(val.value, 0) }}
-                            </td>
+                            <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ respondent_counts.get(val.value, 0) }}</td>
                         {% endif %}
                         {% if show_selected %}
-                            <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">
-                                {{ selected_counts.get(val.value, 0) }}
-                            </td>
+                            <td class="py-3 px-4 text-right" style="color: var(--color-body-text)">{{ selected_counts.get(val.value, 0) }}</td>
                         {% endif %}
                         {% set has_percentage = val.percentage_target is not none %}
                         {{ minmax_cell(val.min, val.minmax_manual, has_percentage) }}
@@ -178,7 +171,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                             {% if val.comment %}{{ val.comment | linkify }}{% endif %}
                         </td>
                     </tr>
-                        {# ── Value Annotations Row ── #}
+                    {# ── Value Annotations Row ── #}
                     {% if value_annotations is defined and value_annotations.get(val.value) %}
                         <tr>
                             <td colspan="{{ col_count }}" class="px-0 py-1" style="border: none;">
@@ -207,7 +200,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                     <tr>
                         <td colspan="{{ col_count }}"
                             class="py-3"
-                            style="color: var(--color-secondary-text);">{{ _("No values defined.") }}</td>
+                            style="color: var(--color-secondary-text)">{{ _("No values defined.") }}</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -216,7 +209,7 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
                     <th class="py-3 pr-4 text-left text-label-md"
                         style="color: var(--color-headings)">{{ _("Total") }}</th>
                     <td class="py-3 px-4 text-right text-label-md font-bold"
-                        style="color: {{ 'var(--color-warning-600)' if not percentages_plausible else 'var(--color-headings)' }}">
+                        style="color: {{ 'var(--color-warning-600) ' if not percentages_plausible else 'var(--color-headings)' }}">
                         {% if percentage_total is not none %}
                             {{ percentage_total }}%
                         {% else %}
