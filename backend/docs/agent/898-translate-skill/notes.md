@@ -334,3 +334,62 @@ pre-existing duplicates in §1.
 
 **Nothing here has been reviewed by a Hungarian speaker.** Every entry this run
 touched is `fuzzy`, so a review pass is expected before the `.mo` is built.
+
+## 7. What the review answers changed (2026-09-08)
+
+`hu-review-questions.md` came back answered. Applying them was mostly mechanical
+— the point of asking 35 decisions rather than reviewing 2027 strings — but a
+few things only became visible once the answers were in hand.
+
+**E24 was the big lever, and it was a source change, not a catalogue one.**
+483 of the run's entries were developer-only documentation. `babel.cfg` now
+ignores the pattern reference, the service docs, the component showcase, the dev
+dashboard and `blueprints/dev.py`; `pybabel extract` supports `[ignore: …]`
+sections, and they have to come before the `python:`/`jinja2:` ones because the
+first matching pattern wins. That took the catalogue from 2214 entries to 1743.
+The strings stay wrapped in `_()` and render in English, which is what they were
+anyway.
+
+**Two answers landed on the same Hungarian word.** *respondent* → *jelentkező*
+(B8) and *pool* → *jelentkezők* (B6) were answered separately. They are
+coherent — a respondent **is** someone in the pool — but sentences that need
+both now repeat themselves, and "Reset %(count)s respondents to Pool status"
+had to become "%(count)s **fő** visszaállítva Jelentkező állapotba" to stay
+readable. Worth a sanity check with the reviewer.
+
+**One answer could not be applied.** B11 asked for the dashboard to be named for
+what it shows — the assembly list on one page, statistics on the other. The
+`Dashboard` msgid serves both, so it cannot. It takes the generic *Vezérlőpult*
+until the source string is split. `Back to Dashboard` is unambiguous and does
+say "Vissza a közösségi gyűlések listájához".
+
+**The clean entries needed more than a register pass.** §5 predicted a
+consistency pass over the 137 non-fuzzy entries would be worthwhile. It found
+more than register: `An error occurred during registration` said "during
+login", `You don't have permission to create assemblies` said "you don't have
+access to any assemblies", `Skip to main content` said "go to the home page",
+three permission messages named the wrong action, and `Respondents Tab` had a
+typo ("lapful") that the term sweep could not see. Same class of defect as §6 —
+bad fuzzy matches auto-accepted at some point — and the same lesson: a non-fuzzy
+entry is not evidence that anyone read it. Those entries keep their non-fuzzy
+flag, because marking them fuzzy would swap working Hungarian for English.
+
+**Five of §6's six known-bad entries no longer exist.** They went with the
+obsolete cleanup and the renames. Only `Assembly Role` survived, and it is
+fixed. The style guide's table is replaced by the lesson.
+
+**The §2 watch item is now enforced.** `just translate-check` fails if the POT
+or a catalogue has no `sortition_algorithms` occurrence, so losing the trailing
+library path from `translate-regen` is a build failure rather than 104 silently
+discarded translations. Verified by stripping the occurrences from a copy of the
+POT and watching it exit 1.
+
+**Not done, deliberately.** F28 (`Assembly Question`: "fő témája" or "kérdése"?)
+and F35 (two badly worded English strings) came back unanswered and need a
+person who knows where the strings appear. `tests/unit/test_error_translation.py`
+still mocks gettext with stale key-based keys, so it passes for the wrong reason
+— flagged in §2 as adjacent, and still adjacent.
+
+**Still unreviewed.** Every entry this touched was already fuzzy and stays
+fuzzy. The catalogue now follows the guide; that is not the same as a Hungarian
+speaker having read the 1606 sentences.
