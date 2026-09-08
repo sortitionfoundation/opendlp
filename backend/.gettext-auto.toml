@@ -1,0 +1,16 @@
+# gettext-auto config - https://github.com/cartertemm/gettext-auto/
+# Read by `uv run gettext-auto` / the `/translate <lang>` skill.
+# Every key is optional; only the ones that change behaviour for this project
+# are set. Run `uv run gettext-auto init-config --cwd <tmpdir>` to see the rest.
+
+# Passed to the model verbatim on every batch. This is the only project context
+# that reaches the translator without an agent remembering to open a file, so it
+# earns its keep by disambiguating words that mean something else elsewhere:
+# "assembly" is a civic body and not a build artefact or a machine instruction
+# set, "selection" is the sortition draw, "pool" is the group drawn from.
+context = "OpenDLP runs stratified random selection (sortition) for Citizens' Assemblies. Two audiences share the same catalogue: assembly organisers, who use the backoffice, and members of the public invited to take part, who see the registration pages and the emails. Domain terms: an assembly is the civic body being convened; selection is the lottery that picks its members; a respondent is a member of the public who replied to an invitation; targets are the demographic quotas the selection has to hit."
+
+# The default, set explicitly because the whole review process depends on it:
+# new translations land fuzzy, msgfmt leaves fuzzy entries out of the .mo, so
+# nothing an agent wrote reaches a user until a human clears the flag.
+mark_fuzzy = true
