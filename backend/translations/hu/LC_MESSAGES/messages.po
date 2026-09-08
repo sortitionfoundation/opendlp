@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-08 13:47+0100\n"
+"POT-Creation-Date: 2026-09-08 13:48+0100\n"
 "PO-Revision-Date: 2026-09-07 21:56+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -4659,10 +4659,10 @@ msgstr "Az email cím biztonsági okokból nem módosítható."
 #, fuzzy, python-format
 msgid ""
 "Whether the account is active is changed from the <a class=\"govuk-link\""
-" href=\"%(url) s\">user's page</a>, not here."
+" href=\"%(url)s\">user's page</a>, not here."
 msgstr ""
-"Azt, hogy a fiók aktív-e, a <a class=\"govuk-link\" href=\"%(url) "
-"s\">felhasználó oldalán</a> lehet módosítani, nem itt."
+"Azt, hogy a fiók aktív-e, a <a class=\"govuk-link\" "
+"href=\"%(url)s\">felhasználó oldalán</a> lehet módosítani, nem itt."
 
 #: templates/admin/user_edit.html:108
 #, fuzzy
@@ -5059,10 +5059,10 @@ msgstr "Fiók létrehozása"
 #, fuzzy, python-format
 msgid ""
 "You need an invitation code to create an account. If you do not have one,"
-" please contact <a href=\"mailto:%(email) s\">OpenDLP Support</a>."
+" please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>."
 msgstr ""
 "Fiók létrehozásához meghívókódra van szükséged. Ha nincs ilyened, lépj "
-"kapcsolatba az <a href=\"mailto:%(email) s\">OpenDLP "
+"kapcsolatba az <a href=\"mailto:%(email)s\">OpenDLP "
 "ügyfélszolgálatával</a>."
 
 #: templates/auth/register.html:14
@@ -12089,10 +12089,10 @@ msgstr "Az OpenDLP csapata"
 #: templates/emails/password_reset.html:111
 #: templates/emails/user_invite.html:109
 #, fuzzy, python-format
-msgid "Need help? Contact us at <a href=\"mailto:%(email) s\">%(email)s</a>"
+msgid "Need help? Contact us at <a href=\"mailto:%(email)s\">%(email)s</a>"
 msgstr ""
-"Segítségre van szükséged? Írj nekünk: <a href=\"mailto:%(email) "
-"s\">%(email)s</a>"
+"Segítségre van szükséged? Írj nekünk: <a "
+"href=\"mailto:%(email)s\">%(email)s</a>"
 
 #: templates/emails/assembly_role_assigned.html:6
 #, fuzzy
@@ -12708,10 +12708,10 @@ msgstr "Készen állsz, hogy részt vegyél a demokratikus döntéshozásban?"
 #: templates/main/index.html:88
 #, fuzzy, python-format
 msgid ""
-"Contact <a href=\"mailto:%(email) s\">OpenDLP Support</a> for an "
+"Contact <a href=\"mailto:%(email)s\">OpenDLP Support</a> for an "
 "invitation code."
 msgstr ""
-"Meghívókódért fordulj az <a href=\"mailto:%(email) s\">OpenDLP "
+"Meghívókódért fordulj az <a href=\"mailto:%(email)s\">OpenDLP "
 "ügyfélszolgálatához</a>."
 
 #: templates/main/index.html:91
