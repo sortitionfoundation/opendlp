@@ -123,7 +123,7 @@ msgstr "Egyéb"
 #: src/opendlp/domain/respondent_field_schema.py:105
 #, fuzzy
 msgid "Text"
-msgstr "Kezdés dátuma"
+msgstr "Szöveg"
 
 #: src/opendlp/domain/respondent_field_schema.py:106
 #, fuzzy
@@ -208,8 +208,10 @@ msgstr ""
 "Szervező – Létrehozhat gyűléseket, és kezelheti azokat, amelyekhez tartozik"
 
 #: src/opendlp/domain/value_objects.py:20
+#, fuzzy
 msgid "Admin - Full system access including user management"
 msgstr ""
+"Adminisztrátor – Teljes rendszerhozzáférés, beleértve a felhasználókezelést"
 
 #: src/opendlp/domain/value_objects.py:26
 #: templates/admin/user_2fa_audit_log.html:65
@@ -255,12 +257,17 @@ msgstr ""
 "a meghívókat."
 
 #: src/opendlp/domain/value_objects.py:60
+#, fuzzy
 msgid "Assembly Manager - Can manage the assembly and add other users"
 msgstr ""
+"Gyűléskezelő – Kezelheti a gyűlést és további felhasználókat adhat hozzá"
 
 #: src/opendlp/domain/value_objects.py:61
+#, fuzzy
 msgid "Confirmation Caller - Can call confirmations for selected participants"
 msgstr ""
+"Megerősítő hívó – Felhívhatja a kiválasztott résztvevőket megerősítés "
+"céljából"
 
 #: src/opendlp/domain/value_objects.py:62
 #, fuzzy
@@ -349,11 +356,12 @@ msgstr "Érvénytelen email cím"
 #: src/opendlp/entrypoints/forms.py:77
 #, fuzzy
 msgid "This email address is already registered."
-msgstr "A(z) „%(email)s” e-mail címmel rendelkező felhasználó már létezik"
+msgstr "Ezen az emailcímen már van regisztráció."
 
 #: src/opendlp/entrypoints/forms.py:98
+#, fuzzy
 msgid "Number cannot be negative"
-msgstr ""
+msgstr "A szám nem lehet negatív"
 
 #: src/opendlp/entrypoints/forms.py:121
 #, fuzzy
@@ -394,8 +402,9 @@ msgid "First Name"
 msgstr "Keresztnév"
 
 #: src/opendlp/entrypoints/forms.py:152
+#, fuzzy
 msgid "Optional - your first name"
-msgstr ""
+msgstr "Keresztnév - nem kötelező"
 
 #: src/opendlp/entrypoints/forms.py:157 src/opendlp/entrypoints/forms.py:421
 #: src/opendlp/entrypoints/forms.py:493 templates/admin/user_view.html:39
@@ -404,36 +413,37 @@ msgid "Last Name"
 msgstr "Vezetéknév"
 
 #: src/opendlp/entrypoints/forms.py:159
+#, fuzzy
 msgid "Optional - your last name"
-msgstr ""
+msgstr "Vezetéknév - nem kötelező"
 
 #: src/opendlp/entrypoints/forms.py:174 src/opendlp/entrypoints/forms.py:530
 #, fuzzy
 msgid "Confirm Password"
-msgstr "Új jelszó"
+msgstr "Jelszó megerősítése"
 
 #: src/opendlp/entrypoints/forms.py:175 src/opendlp/entrypoints/forms.py:231
 #: src/opendlp/entrypoints/forms.py:517 src/opendlp/entrypoints/forms.py:531
 #, fuzzy
 msgid "Passwords must match"
-msgstr "Új jelszó"
+msgstr "A jelszavaknak egyeznie kell"
 
 #: src/opendlp/entrypoints/forms.py:180 src/opendlp/entrypoints/forms.py:546
 #, fuzzy
 msgid "Accept Data Agreement"
-msgstr "Adatkezelési megállapodás megtekintése"
+msgstr "Adatkezelési megállapodás elfogadása"
 
 #: src/opendlp/entrypoints/forms.py:181 src/opendlp/entrypoints/forms.py:547
 #, fuzzy
 msgid "You must accept the data agreement to register"
 msgstr ""
 "A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
-"megállapodásunkat."
+"megállapodásunkat"
 
 #: src/opendlp/entrypoints/forms.py:182 src/opendlp/entrypoints/forms.py:548
 #, fuzzy
 msgid "I agree to the data agreement"
-msgstr "Adatkezelési megállapodás megtekintése"
+msgstr "Elfogadom az adatkezelési megállapodást"
 
 #: src/opendlp/entrypoints/forms.py:193 src/opendlp/entrypoints/forms.py:559
 msgid "Invalid or expired invite code."
@@ -457,17 +467,17 @@ msgstr "Új jelszó"
 #: src/opendlp/entrypoints/forms.py:230 src/opendlp/entrypoints/forms.py:516
 #, fuzzy
 msgid "Confirm New Password"
-msgstr "Új jelszó"
+msgstr "Új jelszó megerősítése"
 
 #: src/opendlp/entrypoints/forms.py:240
 #, fuzzy
 msgid "Assembly Title"
-msgstr "Közösségi gyűlés"
+msgstr "Gyűlés címe"
 
 #: src/opendlp/entrypoints/forms.py:242
 #, fuzzy
 msgid "Enter the title for this assembly"
-msgstr "Érvénytelen feladat azonosító ehhez a közösségi gyűléshez"
+msgstr "Adja meg a gyűlés címét"
 
 #: src/opendlp/entrypoints/forms.py:246
 #: templates/backoffice/assembly_details.html:40
@@ -476,8 +486,10 @@ msgid "Assembly Question"
 msgstr "A gyűlés fő témája"
 
 #: src/opendlp/entrypoints/forms.py:248
+#, fuzzy
 msgid "Optional - the key question this assembly will address"
 msgstr ""
+"Választható - a fő kérdés, amellyel ez a közösségi gyűlés foglalkozni fog"
 
 #: src/opendlp/entrypoints/forms.py:253
 #: templates/backoffice/assembly_details.html:64
@@ -486,8 +498,9 @@ msgid "First Assembly Date"
 msgstr "Első gyűlés időpontja"
 
 #: src/opendlp/entrypoints/forms.py:255
+#, fuzzy
 msgid "Optional - when the first assembly meeting will take place"
-msgstr ""
+msgstr "Választható - az első közösségi gyűlés időpontja"
 
 #: src/opendlp/entrypoints/forms.py:259
 #: templates/backoffice/assembly_details.html:73
@@ -496,8 +509,11 @@ msgid "Number to Select"
 msgstr "Kiválasztandó emberek száma"
 
 #: src/opendlp/entrypoints/forms.py:261
+#, fuzzy
 msgid "The number of participants to select for this assembly"
 msgstr ""
+"Választható - a résztvevők száma, akiket ki kell választani ehhez a "
+"gyűléshez"
 
 #: src/opendlp/entrypoints/forms.py:278
 #, fuzzy
@@ -505,8 +521,10 @@ msgid "Google Spreadsheet URL"
 msgstr "Google Táblázat teljes linkje"
 
 #: src/opendlp/entrypoints/forms.py:280
+#, fuzzy
 msgid "Full URL of the Google Spreadsheet containing respondent data"
 msgstr ""
+"A regisztrált válaszadók adatait tartalmazó Google Táblázat teljes URL címe"
 
 #: src/opendlp/entrypoints/forms.py:299
 #, fuzzy
@@ -521,45 +539,61 @@ msgstr ""
 #: src/opendlp/entrypoints/forms.py:310 src/opendlp/entrypoints/forms.py:326
 #, fuzzy
 msgid "Respondents Tab Name"
-msgstr "Válaszadókat tartalmazó lapful neve"
+msgstr "Regisztrált válaszadók adatait tartalmazó lapfül neve"
 
 #: src/opendlp/entrypoints/forms.py:312
+#, fuzzy
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - for "
 "initial Selection"
 msgstr ""
+"A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a "
+"kezdeti kiválasztáshoz"
 
 #: src/opendlp/entrypoints/forms.py:318 src/opendlp/entrypoints/forms.py:334
 #, fuzzy
 msgid "Targets Tab Name"
-msgstr "Vezetéknév"
+msgstr "Célszámok lapfül neve"
 
 #: src/opendlp/entrypoints/forms.py:320
+#, fuzzy
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "initial Selection"
 msgstr ""
+"A kategóriákat, kategóriaértékeket és célszámokat tartalmazó lapfül neve - a"
+" kezdeti kiválasztásnál"
 
 #: src/opendlp/entrypoints/forms.py:328
+#, fuzzy
 msgid ""
 "Name of the tab containing respondents data in the Google Spreadsheet - for "
 "Replacements"
 msgstr ""
+"A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a "
+"kieső emberek pótlásához"
 
 #: src/opendlp/entrypoints/forms.py:336
+#, fuzzy
 msgid ""
 "Name of the tab containing categories, category values and targets - for "
 "Replacements"
 msgstr ""
+"A kategóriákat, kategóriaértékeket és célokat tartalmazó lapfül neve - Kieső"
+" emberek pótlásához"
 
 #: src/opendlp/entrypoints/forms.py:341
+#, fuzzy
 msgid "Already Selected Tab Name"
-msgstr ""
+msgstr "Már kiválasztottak lapfül neve"
 
 #: src/opendlp/entrypoints/forms.py:343
+#, fuzzy
 msgid ""
 "Name of the tab containing already selected people (used for Replacements)"
 msgstr ""
+"A Google Táblázatban a regisztráltak adatait tartalmazó lapfül neve - a "
+"kieső emberek pótlásához"
 
 #: src/opendlp/entrypoints/forms.py:348 src/opendlp/entrypoints/forms.py:685
 #: templates/backoffice/assembly_data.html:171
@@ -569,8 +603,9 @@ msgid "Check Same Address"
 msgstr "Címegyezés ellenőrzése"
 
 #: src/opendlp/entrypoints/forms.py:349
+#, fuzzy
 msgid "Enable checking for participants with the same address"
-msgstr ""
+msgstr "Ellenőrizze hogy azonos címen van-e másik személy a résztvevők közül"
 
 #: src/opendlp/entrypoints/forms.py:354
 #: templates/backoffice/assembly_data.html:177
@@ -579,41 +614,48 @@ msgid "Generate Remaining Tab"
 msgstr "Fennmaradó résztvevők lap generálása"
 
 #: src/opendlp/entrypoints/forms.py:355
+#, fuzzy
 msgid "Create a tab with remaining participants after selection"
-msgstr ""
+msgstr "Hozzon létre egy lapot a fennmaradó résztvevőkkel a kiválasztás után"
 
 #: src/opendlp/entrypoints/forms.py:360
 #: templates/backoffice/assembly_data.html:187
 #, fuzzy
 msgid "Team Configuration"
-msgstr "Google Táblázat beállításainak eltávolítása"
+msgstr "Csapat beállítás"
 
 #: src/opendlp/entrypoints/forms.py:362
 #: templates/backoffice/assembly_data.html:189
+#, fuzzy
 msgid "UK Team"
-msgstr ""
+msgstr "Egyesült Királyság csapat"
 
 #: src/opendlp/entrypoints/forms.py:363
 #: templates/backoffice/assembly_data.html:190
+#, fuzzy
 msgid "EU Team"
-msgstr ""
+msgstr "EU csapat"
 
 #: src/opendlp/entrypoints/forms.py:364
 #: templates/backoffice/assembly_data.html:191
+#, fuzzy
 msgid "Australia Team"
-msgstr ""
+msgstr "Ausztrália csapat"
 
 #: src/opendlp/entrypoints/forms.py:365
 #: templates/backoffice/assembly_data.html:192
 #, fuzzy
 msgid "Custom configuration"
-msgstr "Beállítások mentése"
+msgstr "Egyedi beállítások"
 
 #: src/opendlp/entrypoints/forms.py:370
+#, fuzzy
 msgid ""
 "Select the team configuration to use for default settings for ID Column, "
 "Address Columns and Columns To Keep."
 msgstr ""
+"Válassza ki az ID oszlop, a Cím oszlopok és a Megőrizendő oszlopok "
+"alapértelmezett beállításaihoz használni kívánt Csoport beállítást."
 
 #: src/opendlp/entrypoints/forms.py:375 src/opendlp/entrypoints/forms.py:673
 #: templates/backoffice/assembly_data.html:205
@@ -641,11 +683,15 @@ msgid "Address Columns"
 msgstr "Cím oszlopok"
 
 #: src/opendlp/entrypoints/forms.py:387
+#, fuzzy
 msgid ""
 "Comma-separated list of column names used for checking same address (e.g., "
 "primary_address1, zip_royal_mail). Note will be overridden if the Team "
 "Configuration is not 'Custom'."
 msgstr ""
+"Ugyanazon cím ellenőrzésére használt oszlopnevek vesszővel elválasztott "
+"listája (pl. primary_address1, zip_royal_mail). Megjegyzés: felülírásra "
+"kerül, ha a Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py:393
 #: templates/backoffice/assembly_data.html:221
@@ -655,11 +701,15 @@ msgid "Columns to Keep"
 msgstr "Megtartandó oszlopok"
 
 #: src/opendlp/entrypoints/forms.py:396
+#, fuzzy
 msgid ""
 "Comma-separated list of column names to keep in output (e.g., first_name, "
 "last_name, email). Note will be overridden if the Team Configuration is not "
 "'Custom'."
 msgstr ""
+"Az export fájlban megtartandó oszlopnevek vesszővel elválasztott listája "
+"(pl. keresztnév, vezetéknév, e-mail). Megjegyzés: felülírásra kerül, ha a "
+"Csapat beállítás nem 'Egyedi'."
 
 #: src/opendlp/entrypoints/forms.py:416
 #, fuzzy
@@ -677,16 +727,21 @@ msgid "Global Role"
 msgstr "Globális szerepkör"
 
 #: src/opendlp/entrypoints/forms.py:432
+#, fuzzy
 msgid "User's global role determines their permissions across the system"
 msgstr ""
+"A felhasználó globális szerepköre határozza meg a rendszerbeli "
+"jogosultságait"
 
 #: src/opendlp/entrypoints/forms.py:440
+#, fuzzy
 msgid "Role for New User"
-msgstr ""
+msgstr "Az új felhasználó szerepköre"
 
 #: src/opendlp/entrypoints/forms.py:444
+#, fuzzy
 msgid "The role that will be granted to the user who uses this invite"
-msgstr ""
+msgstr "Az a szerepkör, amelyet a meghívót felhasználó felhasználó kap"
 
 #: src/opendlp/entrypoints/forms.py:449
 #, fuzzy
@@ -694,18 +749,23 @@ msgid "Email Address (Optional)"
 msgstr "Email cím"
 
 #: src/opendlp/entrypoints/forms.py:451
+#, fuzzy
 msgid "Optional - if provided, the invite will be emailed to this address"
-msgstr ""
+msgstr "Nem kötelező – ha megadod, a meghívót erre a címre küldjük el"
 
 #: src/opendlp/entrypoints/forms.py:456
+#, fuzzy
 msgid "Expires In (Hours)"
-msgstr ""
+msgstr "Lejárat (óra)"
 
 #: src/opendlp/entrypoints/forms.py:458
+#, fuzzy
 msgid ""
 "Optional - number of hours until the invite expires (default: 168 hours / 7 "
 "days)"
 msgstr ""
+"Nem kötelező – hány óra múlva jár le a meghívó (alapértelmezett: 168 óra / 7"
+" nap)"
 
 #: src/opendlp/entrypoints/forms.py:467
 #, fuzzy
@@ -715,16 +775,17 @@ msgstr "Hiba részletei"
 #: src/opendlp/entrypoints/forms.py:469
 #, fuzzy
 msgid "Select a user to add to this assembly"
-msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
+msgstr "Adja meg a gyűlés címét"
 
 #: src/opendlp/entrypoints/forms.py:473
 #, fuzzy
 msgid "Assembly Role"
-msgstr "Közösségi gyűlés"
+msgstr "Gyűlés címe"
 
 #: src/opendlp/entrypoints/forms.py:477
+#, fuzzy
 msgid "Select the role this user will have on the assembly"
-msgstr ""
+msgstr "Válaszd ki, milyen szerepköre lesz ennek a felhasználónak a gyűlésen"
 
 #: src/opendlp/entrypoints/forms.py:488
 #, fuzzy
@@ -4515,7 +4576,7 @@ msgstr "Végrehajtotta"
 #: templates/main/view_assembly_base.html:30
 #, fuzzy
 msgid "Details"
-msgstr "Hiba részletei"
+msgstr "Részletek"
 
 #: templates/admin/user_2fa_audit_log.html:45
 #: templates/admin/user_view.html:80 templates/admin/users.html:149
@@ -4890,16 +4951,18 @@ msgstr "Nem értelmezhető (OAuth)"
 #: templates/backoffice/components/pagination.html:76
 #: templates/main/view_assembly_data.html:130
 #: templates/respondents/view_respondents.html:205
+#, fuzzy
 msgid "Previous"
-msgstr ""
+msgstr "Előző"
 
 #: templates/admin/users.html:213
 #: templates/backoffice/components/pagination.html:99
 #: templates/backoffice/components/pagination.html:104
 #: templates/main/view_assembly_data.html:157
 #: templates/respondents/view_respondents.html:232
+#, fuzzy
 msgid "Next"
-msgstr ""
+msgstr "Következő"
 
 #: templates/admin/users.html:231
 #, fuzzy
@@ -5243,7 +5306,7 @@ msgstr ""
 #: templates/backoffice/assembly_data.html:46
 #, fuzzy
 msgid "Choose how you want to import participant data for this assembly."
-msgstr "Frissítse a közösségi gyűléshez tartozó Google Táblázat beállításait."
+msgstr "Válaszd ki, hogyan szeretnéd importálni a gyűlés résztvevői adatait."
 
 #: templates/backoffice/assembly_data.html:66
 #: templates/gsheets/components/view_config_collapsed.html:4
@@ -6121,7 +6184,7 @@ msgstr "Kiválasztások előzményei"
 #: templates/main/view_assembly_data.html:55
 #, fuzzy
 msgid "Task Type"
-msgstr "Kész"
+msgstr "Feladat azonosítója"
 
 #: templates/backoffice/assembly_selection.html:176
 #: templates/backoffice/assembly_selection.html:349
@@ -6558,7 +6621,7 @@ msgstr "Hozd létre az első közösségi gyűlésedet a kezdéshez."
 #: templates/backoffice/dashboard.html:46
 #, fuzzy
 msgid "Create Your First Assembly"
-msgstr "Hozzon létre közösségi gyűlést"
+msgstr "Hozd létre az első közösségi gyűlésedet"
 
 #: templates/backoffice/dashboard.html:48 templates/main/dashboard.html:72
 #, fuzzy
@@ -7682,8 +7745,9 @@ msgstr "Megvalósítások"
 #: templates/backoffice/patterns/_progress.html:179
 #: templates/backoffice/patterns/_scroll.html:254
 #: templates/backoffice/patterns/_scroll.html:420
+#, fuzzy
 msgid "File"
-msgstr ""
+msgstr "Fájl"
 
 #: templates/backoffice/patterns/_dropdown.html:96
 #: templates/backoffice/patterns/_dropdown.html:219
@@ -8870,8 +8934,9 @@ msgstr "Görgetésmegőrzés nélkül"
 
 #: templates/backoffice/patterns/_scroll.html:183
 #: templates/backoffice/patterns/_scroll.html:195
+#, fuzzy
 msgid "All"
-msgstr ""
+msgstr "Összes"
 
 #: templates/backoffice/patterns/_scroll.html:189
 #, fuzzy
@@ -9783,12 +9848,14 @@ msgid "PNG format, 400x400 pixels"
 msgstr "PNG formátum, 400x400 képpont"
 
 #: templates/backoffice/registration/_step_preview.html:111
+#, fuzzy
 msgid "Publish"
-msgstr ""
+msgstr "Közzététel"
 
 #: templates/backoffice/registration/_step_preview.html:120
+#, fuzzy
 msgid "Unpublish"
-msgstr ""
+msgstr "Közzététel visszavonása"
 
 #: templates/backoffice/respondent_field_schema/view.html:42
 #, fuzzy
@@ -9868,8 +9935,9 @@ msgid "Field key"
 msgstr "Mezőkulcs"
 
 #: templates/backoffice/respondent_field_schema/view.html:129
+#, fuzzy
 msgid "Order"
-msgstr ""
+msgstr "Sorrend"
 
 #: templates/backoffice/respondent_field_schema/view.html:142
 #, python-format, fuzzy
@@ -10768,8 +10836,9 @@ msgid "Field Key"
 msgstr "Mezőkulcs"
 
 #: templates/backoffice/service_docs/_fields.html:113
+#, fuzzy
 msgid "Group"
-msgstr ""
+msgstr "Csoport"
 
 #: templates/backoffice/service_docs/_fields.html:139
 #, fuzzy
@@ -12734,11 +12803,12 @@ msgstr "Folyamatban"
 #: templates/main/view_assembly_data.html:72
 #, fuzzy
 msgid "Completed"
-msgstr "Befejezve"
+msgstr "Kész"
 
 #: templates/main/view_assembly_data.html:74
+#, fuzzy
 msgid "Failed"
-msgstr ""
+msgstr "Sikertelen"
 
 #: templates/main/view_assembly_data.html:76
 #, fuzzy
@@ -13171,7 +13241,7 @@ msgstr "Ha kérdésed van, fordulj az esemény szervezőihez."
 #: templates/register/form.html:3
 #, fuzzy
 msgid "Register"
-msgstr "Vissza a regisztrációhoz"
+msgstr "Regisztráció"
 
 #: templates/register/form.html:12
 #, fuzzy
@@ -13465,10 +13535,11 @@ msgstr ""
 "Úgy tűnik, néhány változónak nincs értéke. Eredeti kivétel: %(error)s."
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:49
-#, python-format
+#, python-format, fuzzy
 msgid ""
 "the header row in the %(tab_name)s tab contains duplicates: %(duplicates)s"
 msgstr ""
+"a(z) %(tab_name)s lapfül fejlécsora ismétlődéseket tartalmaz: %(duplicates)s"
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:53
 #, fuzzy
