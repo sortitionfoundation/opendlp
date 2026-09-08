@@ -20,6 +20,7 @@ apt-get install -qyy \
   build-essential \
   ca-certificates \
   libffi-dev \
+  git \
   python3-setuptools \
   python3.12-dev
 EOT
