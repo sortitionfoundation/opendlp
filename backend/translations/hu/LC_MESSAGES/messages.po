@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-08 13:48+0100\n"
+"POT-Creation-Date: 2026-09-08 14:04+0100\n"
 "PO-Revision-Date: 2026-09-07 21:56+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -3450,14 +3450,6 @@ msgid ""
 msgstr ""
 "Az email cím megadása nem kötelező a regisztrációs oldalon, így azok a "
 "válaszadók, akik üresen hagyják, nem kapják meg az automatikus választ."
-
-#: src/opendlp/service_layer/error_translation.py:102
-msgid "parse_error_multi_column"
-msgstr ""
-
-#: src/opendlp/service_layer/error_translation.py:108
-msgid "parse_error_single_column"
-msgstr ""
 
 #: src/opendlp/service_layer/exceptions.py:115
 #, python-format

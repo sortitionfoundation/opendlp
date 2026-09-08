@@ -115,7 +115,7 @@ check:
   @uv run deptry src
   @echo "🚀 Checking the UnitOfWork convention"
   @uv run python scripts/check_uow_convention.py
-  @echo "🚀 Checking the translation catalogues compile"
+  @echo "🚀 Checking the translation catalogues"
   @just translate-check
   @echo "🚀 Checking the if any db migrations need to be created"
   @uv run alembic check 2>&1 | grep -v '^INFO'
@@ -138,7 +138,7 @@ check-ci:
   @uv run deptry src
   @echo "🚀 Checking the UnitOfWork convention"
   @uv run python scripts/check_uow_convention.py
-  @echo "🚀 Checking the translation catalogues compile"
+  @echo "🚀 Checking the translation catalogues"
   @just translate-check
   @echo "🚀 Checking the if any db migrations need to be created"
   @uv run alembic check 2>&1 | grep -v '^INFO'
@@ -262,9 +262,9 @@ translate-regen:
     --ignore-dirs=thirdparty \
     --ignore-dirs=.venv \
     . `uv run python -c "import sortition_algorithms, pathlib; print(pathlib.Path(sortition_algorithms.__file__).parent.relative_to(pathlib.Path.cwd()))"`
-  # --ignore-obsolete: an obsolete `#~` entry whose msgid also exists as a live
-  # entry is a fatal duplicate definition to msgfmt, so letting them accumulate
-  # eventually stops the catalogue compiling at all.
+  @# --ignore-obsolete: an obsolete `#~` entry whose msgid also exists as a live
+  @# entry is a fatal duplicate definition to msgfmt, so letting them accumulate
+  @# eventually stops the catalogue compiling at all.
   uv run pybabel update --ignore-obsolete \
     --input-file=translations/messages.pot --output-dir=translations
 
@@ -280,6 +280,19 @@ translate-check:
   @command -v msgfmt >/dev/null 2>&1 || { echo "msgfmt not found - install gettext"; exit 1; }
   @for po in translations/*/LC_MESSAGES/messages.po; do \
     msgfmt --check --output-file=/dev/null "$po" || exit 1; \
+  done
+  @# a msgid shaped like an identifier is the signature of a Babel extraction
+  @# artefact: `_(MESSAGES["some_key"])` makes the extractor take the dict key for
+  @# a message, because it collects every string literal between the parens of a
+  @# `_(` call. The resulting msgid is untranslatable dead weight - at runtime
+  @# `_()` is handed the dict value, never the key. Keep the literal out of the
+  @# `_()` call (see src/opendlp/service_layer/error_translation.py).
+  @for cat in translations/messages.pot translations/*/LC_MESSAGES/messages.po; do \
+    [ -f "$cat" ] || continue; \
+    if grep -nE '^msgid "[a-z0-9]+(_[a-z0-9]+)+"$' "$cat"; then \
+      echo "^ identifier-shaped msgid in $cat - see the note by translate-check"; \
+      exit 1; \
+    fi; \
   done
 
 # shut down docker
