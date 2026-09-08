@@ -151,12 +151,12 @@ Ten templates wrote `%(email) s` / `%(url) s`, with a space before the
 conversion character — not the two this note first claimed. All four affected
 msgids are shared across several templates:
 
-| msgid                                                        | templates |
-| ------------------------------------------------------------ | --------- |
-| `Need help? Contact us at <a href="mailto:%(email) s">…`      | 5 emails  |
-| `You need an invitation code to create an account…`           | 3 auth    |
-| `Whether the account is active is changed from the…`          | 1 admin   |
-| `Contact <a href="mailto:%(email) s">OpenDLP Support</a>…`    | 1 main    |
+| msgid                                                      | templates |
+| ---------------------------------------------------------- | --------- |
+| `Need help? Contact us at <a href="mailto:%(email) s">…`   | 5 emails  |
+| `You need an invitation code to create an account…`        | 3 auth    |
+| `Whether the account is active is changed from the…`       | 1 admin   |
+| `Contact <a href="mailto:%(email) s">OpenDLP Support</a>…` | 1 main    |
 
 **The claim that these "almost certainly do not interpolate correctly" was
 wrong.** A space is a valid Python conversion flag, so `"%(url) s" % {...}`
@@ -187,19 +187,58 @@ Jinja's i18n extension with newstyle gettext, which returns `Markup` for the
 - **Done.** `--ignore-obsolete` on `pybabel update` (§1b), and
   `docs/translations.md` now points at the `just` recipes rather than giving
   raw `pybabel` commands that omit the flag.
-- One thing to watch: `msgfmt` is a system binary from GNU gettext, not a
-  Python dependency. It is present on the GitHub `ubuntu-latest` runner, but if
-  CI ever reports "msgfmt not found - install gettext", that is why.
+- **Done.** `msgfmt` is a system binary from GNU gettext, not a Python
+  dependency, and the `ubuntu-latest` runner does **not** carry it — the first
+  CI run after `translate-check` landed failed with "msgfmt not found - install
+  gettext", exactly as this note predicted. The quality job in
+  `.github/workflows/main.yml` now installs `gettext` (the package that provides
+  `msgfmt`; `gettext-base` does not). The recipe exiting 1 rather than skipping
+  is what made this a two-minute diagnosis.
 - **Done.** `just translate-check` also fails on any msgid shaped like an
   identifier — the signature of the §2 artefact. The pattern needs at least one
   underscore (`^[a-z0-9]+(_[a-z0-9]+)+$`): the bare `^[a-z0-9_]+$` first
   suggested here matches fourteen legitimate msgids.
-- `gettext-auto apply` deliberately leaves every entry it writes flagged
-  `fuzzy`, so `gettext-auto scan` keeps returning them. The skill's stated loop
-  ("repeat until scan returns zero entries") therefore never terminates on this
-  project. This run was driven from a frozen snapshot of the initial scan
-  instead. Worth writing that down in the skill, or having the skill track what
-  it has already offered a translation for.
+- **Done.** `gettext-auto apply` deliberately leaves every entry it writes
+  flagged `fuzzy`, so `gettext-auto scan` keeps returning them, and the skill's
+  stated loop ("repeat until scan returns zero entries") could never terminate
+  on this project — it would retranslate the catalogue until someone stopped it.
+  This run was driven from a frozen snapshot of the initial scan instead, and
+  `.claude/skills/gettext-auto/SKILL.md` now says to do that, with the reason.
+  The skill also gained a step to run `just translate-check` at the end: `apply`
+  writes `#. AUTOTRANS-ERROR:` comments for entries it cannot verify, and
+  nothing in the protocol was surfacing them.
+- **Done.** `docs/translations.md` had *two* sections describing the workflow.
+  The lower one was fixed to use the `just` recipes; the Quick Start above it
+  still gave raw pybabel, including `pybabel update` with no `--ignore-obsolete`
+  — the exact command that caused §1b. Quick Start is now the canonical list and
+  the other section points at it, because two copies is how the wrong one
+  survived.
+- **Done.** The i18n section of `AGENTS.md` names `just translate-check` as well
+  as `translate-regen`, and records the two msgid constructs that look right and
+  are not (§2's dict key, §3's lone `%`), plus the fact that rewording a msgid
+  silently discards its translation in every language.
+- **Done.** `.claude/skills/sf-code-review/SKILL.md` gained two check items for
+  source-side i18n hygiene. Three of the four problems in this document
+  originated in `.py` and `.html`, not in the catalogue, and the skill had one
+  i18n item, about JavaScript. Its "do not report" exclusion was also narrowed
+  from `translations/**/*` to the generated `.po`/`.pot`/`.mo`, so a
+  hand-written file under `translations/` is still reviewable.
+- **Done.** `translations/styleguide-hu.md` holds the §5 conventions and
+  glossary, each tagged with the `hu-review-questions.md` question it awaits,
+  plus the §6 known-bad entries so nobody copies one as an example. The skill
+  reads `styleguide-<lang>.md` before translating. It lives beside the
+  catalogues rather than in `.claude/skills/`, because a human reviewing the
+  `.po` needs the same glossary and will not look in `.claude/`.
+- **Done.** `.gettext-auto.toml` sets `context`, which the skill passes to the
+  model verbatim on every batch — the only project context that reaches the
+  translator without an agent remembering to open a file, so it carries the
+  domain words that mean something else outside civic tech ("assembly",
+  "selection", "pool").
+- The `Dockerfile` calls `pybabel compile` directly, since there is no `just` in
+  the build image. Left as is and commented: compile is the one subcommand with
+  no flags we depend on, and the publish workflow needs the quality job — which
+  runs `translate-check` — before it builds an image, so a broken catalogue
+  cannot reach a registry.
 
 ## 5. Translation conventions used
 
@@ -259,7 +298,9 @@ might find the rest.
 ## Files in this directory
 
 - `hu-review-questions.md` — 35 questions for a native Hungarian speaker,
-  each standing in for a whole class of entries. Start here for review.
+  each standing in for a whole class of entries. Start here for review. The
+  decisions they are asking about are recorded in `translations/styleguide-hu.md`,
+  which is where the answers should land.
 - `duplicate-msgids.txt` — the 80 duplicated msgids (§1). Historical record;
   they are all resolved, so nothing regenerates this list.
 - `chunk.py` — prints a slice of a frozen `gettext-auto scan` JSON snapshot as
