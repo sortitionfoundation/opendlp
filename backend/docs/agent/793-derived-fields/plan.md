@@ -102,7 +102,7 @@ Independently useful; deferrable behind steps 2/4 if we want year-of-birth brack
 
 ---
 
-## 4. Step 4 — `service_layer/derivation_service.py`
+## 4. Step 4 — `service_layer/derivation_service.py` ✅ DONE
 
 The surface from research §8, adjusted to what the code actually offers:
 
@@ -139,7 +139,7 @@ Details:
 | `respondent_service.import_respondents_from_rows` | load schema + `load_mapping_lookups` **once before the row loop**; for large mappings prefetch the batch's distinct source values via `get_many` and close over an in-memory dict; pass into `respondent_from_row` as optional args (stays pure, no `uow`); append overwrite notes to `errors` |
 | `respondent_service.update_respondent` | after `apply_edit`, before commit |
 
-## 6. Step 6 — Source-field protection (`respondent_field_schema_service.py`)
+## 6. Step 6 — Source-field protection (`respondent_field_schema_service.py`) ✅ DONE
 
 Per research §7, each mutator calls `derivations_depending_on` first:
 

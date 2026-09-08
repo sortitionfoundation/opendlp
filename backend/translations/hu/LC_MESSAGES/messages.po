@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-08 16:12+0000\n"
+"POT-Creation-Date: 2026-09-08 16:26+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -3141,6 +3141,69 @@ msgstr "Új jelszó"
 msgid "Shortfall"
 msgstr ""
 
+#: src/opendlp/service_layer/derivation_service.py:131
+#, python-format
+msgid "Field '%(key)s' is not a derived field"
+msgstr ""
+
+#: src/opendlp/service_layer/derivation_service.py:138
+#, fuzzy, python-format
+msgid "Source field '%(key)s' does not exist in this assembly"
+msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
+
+#: src/opendlp/service_layer/derivation_service.py:142
+#, python-format
+msgid "Source field '%(key)s' is itself derived — derivations cannot chain"
+msgstr ""
+
+#: src/opendlp/service_layer/derivation_service.py:148
+#, python-format
+msgid ""
+"A '%(source_type)s' field cannot be derived from with this rule — it "
+"needs one of: %(allowed)s"
+msgstr ""
+
+#: src/opendlp/service_layer/derivation_service.py:160
+msgid "A large mapping needs its output values declared when the field is created"
+msgstr ""
+
+#: src/opendlp/service_layer/derivation_service.py:322
+#: src/opendlp/service_layer/respondent_field_schema_service.py:261
+#, fuzzy
+msgid "Field key cannot be empty"
+msgstr "Utoljára módosítva"
+
+#: src/opendlp/service_layer/derivation_service.py:324
+#: src/opendlp/service_layer/respondent_field_schema_service.py:266
+#, python-format
+msgid "Field '%(key)s' already exists in this assembly"
+msgstr ""
+
+#: src/opendlp/service_layer/derivation_service.py:475
+#, python-format
+msgid "Field '%(key)s' does not use a large mapping"
+msgstr ""
+
+#: src/opendlp/service_layer/derivation_service.py:480
+msgid "The mapping file is empty"
+msgstr ""
+
+#: src/opendlp/service_layer/derivation_service.py:485
+#, python-format
+msgid "The mapping file has too many rows (%(count)s) — the limit is %(limit)s"
+msgstr ""
+
+#: src/opendlp/service_layer/derivation_service.py:513
+#, python-format
+msgid ""
+"The mapping file contains output values not in the field's options: "
+"%(values)s"
+msgstr ""
+
+#: src/opendlp/service_layer/derivation_service.py:543
+msgid "The mapping file needs two columns: input value and output value"
+msgstr ""
+
 #: src/opendlp/service_layer/document_processing.py:12
 msgid "The PDF file is too large"
 msgstr ""
@@ -3390,52 +3453,59 @@ msgstr "Keresztnév"
 msgid "Invalid respondent status filter: %(value)s"
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:264
-#, fuzzy
-msgid "Field key cannot be empty"
-msgstr "Utoljára módosítva"
+#: src/opendlp/service_layer/respondent_field_schema_service.py:317
+#, fuzzy, python-format
+msgid "You can't change the type of '%(key)s' — it is used to derive: %(deps)s"
+msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:269
-#, python-format
-msgid "Field '%(key)s' already exists in this assembly"
-msgstr ""
-
-#: src/opendlp/service_layer/respondent_field_schema_service.py:325
+#: src/opendlp/service_layer/respondent_field_schema_service.py:332
 #, fuzzy
 msgid "You can't change the type or options of a fixed field"
 msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:437
+#: src/opendlp/service_layer/respondent_field_schema_service.py:335
+#, fuzzy
+msgid ""
+"You can't change the type or options of a derived field — they are owned "
+"by its derivation"
+msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:448
 msgid "Options can only be set on choice fields"
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:440
-#: src/opendlp/service_layer/respondent_field_schema_service.py:471
+#: src/opendlp/service_layer/respondent_field_schema_service.py:451
+#: src/opendlp/service_layer/respondent_field_schema_service.py:482
 #, fuzzy
 msgid "Option value cannot be blank"
 msgstr "Kiválasztás"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:443
-#: src/opendlp/service_layer/respondent_field_schema_service.py:476
+#: src/opendlp/service_layer/respondent_field_schema_service.py:454
+#: src/opendlp/service_layer/respondent_field_schema_service.py:487
 #, fuzzy, python-format
 msgid "Option '%(value)s' already exists"
 msgstr "A felhasználó már létezik"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:505
+#: src/opendlp/service_layer/respondent_field_schema_service.py:561
 msgid "A choice field must keep at least one option"
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:558
+#: src/opendlp/service_layer/respondent_field_schema_service.py:617
 #, python-format
 msgid "Fixed field '%(key)s' cannot be deleted"
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:743
+#: src/opendlp/service_layer/respondent_field_schema_service.py:622
+#, python-format
+msgid "'%(key)s' cannot be deleted — it is used to derive: %(deps)s"
+msgstr ""
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:811
 #, python-format
 msgid "%(columns)s and %(count)d more"
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:753
+#: src/opendlp/service_layer/respondent_field_schema_service.py:821
 #, python-format
 msgid ""
 "This CSV has no column called \"%(id_column)s\". Its columns are: "
@@ -3443,7 +3513,7 @@ msgid ""
 "the first column (\"%(first)s\")."
 msgstr ""
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:761
+#: src/opendlp/service_layer/respondent_field_schema_service.py:829
 msgid "The ID Column field was pre-filled from your last upload."
 msgstr ""
 

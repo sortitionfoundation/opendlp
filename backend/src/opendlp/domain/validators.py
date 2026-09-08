@@ -213,7 +213,7 @@ _MAX_DATE_FIELD_AGE_YEARS = 120
 _UK_DATE_RE = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})")
 
 
-def _parse_date_text(text: str) -> date | None:
+def parse_date_text(text: str) -> date | None:
     """Parse ISO ``yyyy-mm-dd`` or UK ``dd/mm/yyyy``. Returns None when unparsable."""
     uk_match = _UK_DATE_RE.fullmatch(text)
     try:
@@ -234,7 +234,7 @@ def validate_date_field(str_value: str) -> tuple[str | None, str | None]:
     """
     if not str_value:
         return None, "This field is required"
-    parsed = _parse_date_text(str_value.strip())
+    parsed = parse_date_text(str_value.strip())
     if parsed is None:
         return None, "Please enter a valid date"
     today = datetime.now(UTC).date()

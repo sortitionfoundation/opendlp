@@ -290,6 +290,26 @@ class RespondentFieldDefinition:
         if changed:
             self.updated_at = datetime.now(UTC)
 
+    def set_derivation(
+        self,
+        derivation_type: DerivationType,
+        derivation_config: dict[str, Any],
+        options: "list[ChoiceOption]",
+    ) -> None:
+        """Replace the derivation and its generated options in one step.
+
+        This is the derivation service's write path: a derived field's type,
+        options and config are owned by the derivation, so ``update()`` refuses
+        them and this method is the only way to change them together.
+        """
+        if not self.is_derived:
+            raise DerivedFieldError("set_derivation is only valid on a derived field")
+        _validate_type_and_options(self.field_type, options)
+        self.derivation_type = derivation_type
+        self.derivation_config = dict(derivation_config)
+        self.options = list(options)
+        self.updated_at = datetime.now(UTC)
+
     def _update_type_and_options(self, field_type: FieldType | None, options: "list[ChoiceOption] | None") -> None:
         if self.is_fixed:
             raise FixedFieldError("Cannot change field_type or options on a fixed field")

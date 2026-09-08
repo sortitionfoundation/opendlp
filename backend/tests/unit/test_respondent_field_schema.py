@@ -641,3 +641,54 @@ class TestNormaliseFieldKey:
     )
     def test_normalise(self, raw: str, expected: str) -> None:
         assert normalise_field_key(raw) == expected
+
+
+class TestSetDerivation:
+    def _derived_field(self) -> RespondentFieldDefinition:
+        return RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="age_bracket",
+            label="Age bracket",
+            group=RespondentFieldGroup.DERIVED,
+            sort_order=10,
+            is_derived=True,
+            derived_from=["date_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2026-05-13"},
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="16-99"), ChoiceOption(value="UNKNOWN")],
+        )
+
+    def test_replaces_type_config_and_options(self) -> None:
+        field = self._derived_field()
+        field.set_derivation(
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2027-01-01", "min_age": 18},
+            options=[ChoiceOption(value="under-18"), ChoiceOption(value="18-99"), ChoiceOption(value="UNKNOWN")],
+        )
+        assert field.derivation_config == {"as_of_date": "2027-01-01", "min_age": 18}
+        assert [o.value for o in field.options] == ["under-18", "18-99", "UNKNOWN"]
+
+    def test_rejects_non_derived_field(self) -> None:
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="plain",
+            label="Plain",
+            group=RespondentFieldGroup.OTHER,
+            sort_order=10,
+        )
+        with pytest.raises(DerivedFieldError):
+            field.set_derivation(
+                derivation_type=DerivationType.AGE_BRACKET,
+                derivation_config={"as_of_date": "2026-05-13"},
+                options=[ChoiceOption(value="x")],
+            )
+
+    def test_rejects_empty_options(self) -> None:
+        field = self._derived_field()
+        with pytest.raises(ValueError):
+            field.set_derivation(
+                derivation_type=DerivationType.AGE_BRACKET,
+                derivation_config={"as_of_date": "2026-05-13"},
+                options=[],
+            )
