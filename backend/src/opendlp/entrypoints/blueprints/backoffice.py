@@ -386,7 +386,7 @@ def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Run a dashboard export from the modal. CSV download only in this iteration."""
     dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
     if request.form.get("file_type", "csv") != "csv":
-        flash(_("Only CSV export is available yet"), "error")
+        flash(_("Only CSV export is available for now"), "error")
         return redirect(dashboard_url)
 
     # Built inline rather than injected: pure in-memory work, no seam needed
