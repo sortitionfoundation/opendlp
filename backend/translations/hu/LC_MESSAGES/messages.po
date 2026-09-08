@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-08 12:32+0200\n"
+"POT-Creation-Date: 2026-09-08 16:08+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -86,64 +86,74 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 msgid "Results"
 msgstr "Táblázat lapfülei"
 
-#: src/opendlp/domain/respondent_field_schema.py:71
+#: src/opendlp/domain/respondent_derivation.py:83
+#, python-format
+msgid "I will be at least %(min_age)s years old on %(as_of_date)s."
+msgstr ""
+
+#: src/opendlp/domain/respondent_field_schema.py:90
 msgid "Eligibility"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:72
+#: src/opendlp/domain/respondent_field_schema.py:91
 msgid "Name and contact"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:73
+#: src/opendlp/domain/respondent_field_schema.py:92
 #, fuzzy
 msgid "Address"
 msgstr "Email cím"
 
-#: src/opendlp/domain/respondent_field_schema.py:74
+#: src/opendlp/domain/respondent_field_schema.py:93
 msgid "About you"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:75
+#: src/opendlp/domain/respondent_field_schema.py:94
 #: templates/backoffice/assembly_view_respondent.html:169
 #: templates/respondents/view_respondents.html:165
 msgid "Consent"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:76
+#: src/opendlp/domain/respondent_field_schema.py:95
 msgid "Other"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:105
+#: src/opendlp/domain/respondent_field_schema.py:96
+#: templates/backoffice/respondent_field_schema/view.html:174
+msgid "Derived"
+msgstr ""
+
+#: src/opendlp/domain/respondent_field_schema.py:125
 #, fuzzy
 msgid "Text"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/domain/respondent_field_schema.py:106
+#: src/opendlp/domain/respondent_field_schema.py:126
 msgid "Long text"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:107
+#: src/opendlp/domain/respondent_field_schema.py:127
 msgid "Yes / No"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:108
+#: src/opendlp/domain/respondent_field_schema.py:128
 msgid "Yes / No / Not set"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:109
+#: src/opendlp/domain/respondent_field_schema.py:129
 msgid "Choice (radios)"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:110
+#: src/opendlp/domain/respondent_field_schema.py:130
 msgid "Choice (dropdown)"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:111
+#: src/opendlp/domain/respondent_field_schema.py:131
 #, fuzzy
 msgid "Whole number"
 msgstr "Módosítsa a számot."
 
-#: src/opendlp/domain/respondent_field_schema.py:112
+#: src/opendlp/domain/respondent_field_schema.py:132
 #: templates/admin/invite_view.html:48 templates/admin/invites.html:67
 #: templates/admin/user_view.html:23 templates/admin/users.html:116
 #: templates/backoffice/assembly_members.html:48
@@ -8771,10 +8781,6 @@ msgstr ""
 
 #: templates/backoffice/respondent_field_schema/view.html:160
 msgid "Fixed"
-msgstr ""
-
-#: templates/backoffice/respondent_field_schema/view.html:174
-msgid "Derived"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/view.html:183
