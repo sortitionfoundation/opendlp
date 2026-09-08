@@ -49,7 +49,7 @@ same register.
 
 - [ ] Informal everywhere (what I did)
 - [ ] Formal everywhere
-- [ ] Informal in the backoffice, formal in public registration pages + emails
+- [x] Informal in the backoffice, formal in public registration pages + emails
 - [ ] Formal in the backoffice, informal in public pages + emails
 
 **Applies to:** all 2027 entries; ~63 have an unmistakable informal verb form
@@ -68,7 +68,7 @@ I kept the pre-existing "Hiba történt a bejelentkezés során. Kérjük, prób
 imperative *próbáld*. To an English ear this is unremarkable; I am told it can
 read as inconsistent in Hungarian.
 
-- [ ] Fine as is, keep "Kérjük, próbáld újra"
+- [x] Fine as is, keep "Kérjük, próbáld újra"
 - [ ] Drop the *kérjük*: "Próbáld újra"
 - [ ] Something else
 
@@ -94,7 +94,7 @@ passive-ish phrasing that doesn't put a "we" behind the software.
 **Applies to:** several hundred status, flash and progress messages.
 
 **Answer:**
-
+I like the third (mixed) option, however I am not sure in which point is a real person in the background. If such a case exists, I wold communicate clearly: "an assembly manager modified the value" or similar. But in general I prefer the impersonal or passive modus, and not personalising the algorithm. It is a bit 90' style for me with Clippy.
 ---
 
 ### A4. Button and menu labels: noun or imperative?
@@ -102,14 +102,14 @@ passive-ish phrasing that doesn't put a "we" behind the software.
 I used the noun form throughout — "Mentés", "Törlés", "Exportálás",
 "Fiók létrehozása" — rather than imperatives ("Ments", "Töröld").
 
-- [ ] Noun form (what I did)
+- [x] Noun form (what I did)
 - [ ] Imperative
 - [ ] Noun for toolbar/short buttons, imperative for full-sentence CTAs
 
 **Applies to:** ~200 button and menu labels.
 
 **Answer:**
-
+Same as above: nobody things there is a person behind the scene when a machine saves something, so definitely the Noun. This is the default nowadays, unless we wanna explicitly behave as a cute assistant on your phone, like a smart bird who teaches you Japanese and called Duolingo.
 ---
 
 # B. Core domain vocabulary
@@ -128,14 +128,14 @@ usually clear) and kept "közösségi gyűlés" only where the full term reads
 better — which is inconsistent.
 
 - [ ] *gyűlés* everywhere
-- [ ] *közösségi gyűlés* everywhere
+- [x] *közösségi gyűlés* everywhere
 - [ ] *közösségi gyűlés* on first mention / headings, *gyűlés* in running text
 - [ ] Something else (*állampolgári gyűlés*? *polgári gyűlés*?)
 
 **Applies to:** 106 entries.
 
 **Answer:**
-
+We can consider using abbreviation when it appears too many times repeatedly, like 'k. gyűlés'. Not very beautiful, but practical, and 'gyűlés' alone sound odd for me, even though the user would understand from of the context.
 ---
 
 ### B6. "pool" → *merítés*?
@@ -154,7 +154,7 @@ name ("Merítés állapotba") and lowercase otherwise ("marad a merítésben").
 - [ ] *jelentkezői kör*
 - [ ] *meríthető kör* / *alapsokaság*
 - [ ] Keep the English "Pool" — it's a term of art the organisers already use
-- [ ] Something else:
+- [x] Something else: *jelentkezők* is definitely the best option. Maybe "regisztráltak", but I feel a bit confusion, sounds like the users of some application, while "jelentkezők" is absolutely clear.
 
 **Applies to:** 16 entries, but they are high-traffic ones (a status shown in
 every respondent table).
@@ -176,7 +176,7 @@ category".
 - [ ] *célszám* / *célkategória* (what I did)
 - [ ] *kvóta* — the standard word for this in sampling
 - [ ] *cél* plain
-- [ ] Something else:
+- [x] Something else: target = *célszám*  / *kiválasztási szempont*
 
 The form labels `Target Name` and `New target name` are the sharp end of this.
 They name a category (the form class is `AddTargetCategoryForm` and the hint is
@@ -187,6 +187,8 @@ you pick one word for both senses these get simpler — and so does the English.
 **Applies to:** 45 entries.
 
 **Answer:**
+"Célszám" is perfect for target, while target category is hard to translate. The "célkategória" is definitely wrong. We have to express that we talk about an attribute of the person which we set a target number for. We can simple use the "jellemző" which is "attribute", but it does not express the relationship with the "célszám" (target). Maybe "keresett jellemző" (searched-for attribute) or "kiválasztási szempont" (selection criterion)
+
 
 ---
 
@@ -199,14 +201,14 @@ the word is inherited from survey research.
 I used **válaszadó** (following the existing catalogue).
 
 - [ ] *válaszadó* (existing convention, what I did)
-- [ ] *jelentkező* — "applicant", arguably more accurate for what they did
+- [x] *jelentkező* — "applicant", arguably more accurate for what they did
 - [ ] *regisztráló*
 - [ ] Something else:
 
 **Applies to:** 102 entries.
 
 **Answer:**
-
+Yes, I would be consistent with the above "jelentkező", and yes, it is not a survey for the first place anyways even they answered a couple of questions.
 ---
 
 ### B9. "replacement" → *pótkiválasztás*?
@@ -220,12 +222,12 @@ I used **pótkiválasztás** for the process and **pótrésztvevő** for the per
 
 - [ ] *pótkiválasztás* / *pótrésztvevő* (what I did)
 - [ ] *pótlás* / *pótszemély*
-- [ ] Something else:
+- [x] Something else: "résztvevő pótlása" / "pótszemély"
 
 **Applies to:** 11 entries.
 
 **Answer:**
-
+I would say "résztvevő pótlása" (replacement of a participant) is not longer but more clear, then the odd "pótkiválasztás". "pótszemély" is a bit odd, but no alternative exists, and it is understandable.
 ---
 
 ### B10. Spreadsheet "tab" → *lapfül*?
@@ -234,7 +236,7 @@ Google Sheets terminology. I used **lapfül** (following the existing
 catalogue), e.g. "Válaszadók lapfül neve".
 
 - [ ] *lapfül* (what I did)
-- [ ] *munkalap* — which is what Google Sheets Hungarian actually calls it
+- [x] *munkalap* — which is what Google Sheets Hungarian actually calls it
 - [ ] *fül*
 
 Worth checking against the Hungarian Google Sheets UI, since users will be
@@ -243,7 +245,7 @@ looking at both screens side by side.
 **Applies to:** 56 entries.
 
 **Answer:**
-
+What about "GS Munkalap" to keep it sort but link to Google Sheet?
 ---
 
 ### B11. "Dashboard" → *irányítópult* (one word) or *Irányító pult* (two)?
@@ -256,12 +258,12 @@ a reviewed, non-fuzzy entry so I left it alone.
 
 - [ ] *irányítópult* — fix the old entry too
 - [ ] *Irányító pult* — I'm wrong, revert mine
-- [ ] Something else (*vezérlőpult*?)
+- [x] Something else (*vezérlőpult*?): Vezérlőpult
 
 **Applies to:** ~10 entries, plus one pre-existing entry to correct.
 
 **Answer:**
-
+"Vezérlőpult" is the common translation however, we do not have a real dashboard in its original meaning. One of them is the "Közösségi gyűlések listája" (list of citizen assemblies) while the other is "Statisztikák" (statistics)
 ---
 
 # C. Role names
@@ -278,10 +280,13 @@ I coined **gyűléskezelő**. It's compact but "kezelő" is a bit machine-operat
 - [ ] *gyűléskezelő*
 - [ ] *gyűlésszervező* — but this collides with the global "Organiser" role (C14)
 - [ ] *gyűlésfelelős*
-- [ ] Something else:
+- [x] Something else: *Szervező* on the UI, "A gyűlés szervezője" in descriptive textual contexts
 
 **Answer:**
-
+First answer was "Szervező" on the UI, "A gyűlés szervezője" in descriptive
+textual contexts — but that collided with the global "Organiser" role.
+Final decision in C14: Assembly Manager = **gyűlésszervező** (global
+Organiser = *főszervező*).
 ---
 
 ### C13. "Confirmation Caller" → *megerősítő hívó*?
@@ -294,11 +299,12 @@ it reads like "a caller who confirms" rather than "someone who makes
 confirmation calls".
 
 - [ ] *megerősítő hívó*
-- [ ] *visszaigazoló* / *visszaigazolást kérő*
+- [x] *visszaigazoló* / *visszaigazolást kérő*
 - [ ] *kapcsolattartó* — "contact person", less literal but clearer
 - [ ] Something else:
 
 **Answer:**
+*visszaigazoló*
 
 ---
 
@@ -311,6 +317,9 @@ I used *szervező* and *gyűléskezelő*. Do those stay distinct in Hungarian, o
 does one need reworking to make the contrast obvious?
 
 **Answer:**
+Global "Organiser" → **főszervező**; per-assembly "Assembly Manager" →
+**gyűlésszervező**. (This supersedes the bare "Szervező" in C12 — the pair
+keeps the contrast obvious.)
 
 ---
 
@@ -321,10 +330,11 @@ English: `Read Only - Can view the assembly but cannot make changes`
 I used **csak olvasó** for the person and *csak olvasható* for the state.
 
 - [ ] *csak olvasó* / *csak olvasható*
-- [ ] *megtekintő*
+- [x] *megtekintő*
 - [ ] Something else:
 
 **Answer:**
+*megtekintő*
 
 ---
 
@@ -346,11 +356,14 @@ the sentence so the placeholder never follows an article — e.g.
 - [ ] `a(z)` is fine, keep it
 - [ ] Prefer rewriting to avoid the article (more work, nicer result)
 - [ ] Rewrite where it's easy, `a(z)` where it isn't
+- [x] Drop the article entirely — no `a(z)`, no rewrite needed
 
 **Applies to:** 32 entries directly, and it's the default I'd apply to any
 future string with a leading placeholder.
 
 **Answer:**
+We do not need the article: "'%(email)s' felhasználó sikeresen frissítve" is
+fine. Drop `a(z)` everywhere.
 
 ---
 
@@ -364,12 +377,13 @@ Hungarian takes the singular after a numeral. I wrote:
 Confirming this is right, and that it reads naturally even when the number is
 large or is a placeholder the reader can't see.
 
-- [ ] Correct, singular throughout
+- [x] Correct, singular throughout
 - [ ] Needs care in some of these — see notes
 
 **Applies to:** ~80 entries with a count placeholder.
 
 **Answer:**
+Correct, singular throughout.
 
 ---
 
@@ -383,12 +397,12 @@ literal data:
 > `A(z) "%(id_column)s" nevű oszlop...`  (kept ASCII — it's a column name)
 > `Használd inkább a „Jelszó megváltoztatása" lehetőséget.`  (Hungarian — it's a UI label)
 
-- [ ] That distinction is right
+- [x] That distinction is right
 - [ ] Use `„…"` everywhere
 - [ ] Use ASCII everywhere (simpler, matches the English)
 
 **Answer:**
-
+The distinction is right — keep it.
 ---
 
 ### D19. Dashes: `–` vs `-`
@@ -400,11 +414,12 @@ I replaced the English hyphen-as-parenthetical with an en dash:
 Used 63 times. Is the en dash right for Hungarian typography here, and does it
 survive in places where the string ends up in a plain-text email or a CSV?
 
-- [ ] En dash is right
+- [x] En dash is right
 - [ ] Use a plain hyphen
 - [ ] Use `:` instead in the role-description pattern
 
 **Answer:**
+En dash is right.
 
 ---
 
@@ -417,12 +432,13 @@ My understanding is that Hungarian orthography prefers **e-mail**, which would
 make the whole catalogue wrong.
 
 - [ ] "email" — fine, keep it
-- [ ] "e-mail" — correct it everywhere, including the old entries
+- [x] "e-mail" — correct it everywhere, including the old entries
 - [ ] "e-mail-cím" as one hyphenated compound
 
 **Applies to:** 92 entries.
 
 **Answer:**
+"e-mail" — correct it everywhere, including the old entries.
 
 ---
 
@@ -432,13 +448,14 @@ English uses Title Case for headings and buttons ("Create New Invite", "Delete
 Configuration"). Hungarian normally doesn't. I used **sentence case**
 ("Új meghívó létrehozása", "Beállítás törlése").
 
-- [ ] Sentence case (what I did)
+- [x] Sentence case (what I did)
 - [ ] Match the English Title Case
 - [ ] Sentence case, but capitalise proper nouns and product names
 
 **Applies to:** ~300 headings and buttons.
 
 **Answer:**
+Sentence case.
 
 ---
 
@@ -452,6 +469,7 @@ that read correctly when the number is injected at runtime, or is
 "iteráció: %(current)s" safer?
 
 **Answer:**
+The ordinal form "%(current)s. iteráció" is fine — keep it.
 
 ---
 
@@ -461,12 +479,13 @@ English: `N/A` and `N/A (OAuth)`, shown in table cells where a value doesn't
 apply. I used an em dash **—** for the bare one and "Nem értelmezhető (OAuth)"
 for the other, which is inconsistent.
 
-- [ ] `—` for both (short, fine in a table)
+- [x] `—` for both (short, fine in a table)
 - [ ] "Nem értelmezhető" for both
 - [ ] "N.A." / "n.a."
 - [ ] Something else:
 
 **Answer:**
+`—` for both, i.e. "—" and "— (OAuth)".
 
 ---
 
@@ -483,7 +502,7 @@ technical reference ("Alpine.js x-model binding for the editable value",
 I translated them because they were in the catalogue. It may be that they should
 never have been extracted for translation in the first place.
 
-- [ ] Don't translate them — remove them from extraction, and drop my
+- [x] Don't translate them — remove them from extraction, and drop my
       translations
 - [ ] Translate them; developers on the team may not all read English
 - [ ] Leave them translated now, decide later
@@ -492,6 +511,7 @@ never have been extracted for translation in the first place.
 answering "don't translate" cuts the review burden by a quarter.
 
 **Answer:**
+Don't translate — remove them from extraction and drop the translations.
 
 ---
 
@@ -501,10 +521,11 @@ I deliberately did **not** translate: `OAuth`, `CSV`, `PDF`, `URL`, `AJAX`,
 `Alpine.js`, `CSP`, `HTML`, `Jinja`, `QR`, `SHA-256`, `backoffice`, and the
 algorithm names `maximin`, `leximin`, `Nash`, `diversimax`, `legacy`.
 
-- [ ] All correct to leave in English
+- [x] All correct to leave in English
 - [ ] Some of these should be translated — namely:
 
 **Answer:**
+All correct to leave in English.
 
 ---
 
@@ -519,11 +540,12 @@ But English column-name examples like `e.g., primary_address1, zip_royal_mail`
 and `e.g., first_name, last_name, email` I left **in English**, because those
 are literal spreadsheet column names a UK team would actually have.
 
-- [ ] That split is right
+- [x] That split is right
 - [ ] Localise the column names too
 - [ ] Leave all examples in English
 
 **Answer:**
+The split is right.
 
 ---
 
@@ -534,9 +556,10 @@ csapat"). They might be better as untranslated proper names, since a Hungarian
 user picking a preset is picking *the UK team's settings*.
 
 - [ ] Translate (what I did)
-- [ ] Leave as "UK Team" etc.
+- [x] Leave as "UK Team" etc.
 
 **Answer:**
+Leave as "UK Team" etc. — untranslated proper names.
 
 ---
 
@@ -557,6 +580,8 @@ better rendering of what the field means?
 - [ ] They're different fields and both are fine
 
 **Answer:**
+UNANSWERED — needs more thought and context (where the field appears in the
+app). Revisit later.
 
 ---
 
@@ -569,10 +594,12 @@ I translated the fallback as "**Barátunk**". In an email from an official civic
 process to a stranger, that may be too familiar or simply odd.
 
 - [ ] "Barátunk"
-- [ ] "Kedves Olvasó" / "Kedves Résztvevő"
+- [x] "Kedves Olvasó" / "Kedves Résztvevő"
 - [ ] Something else:
 
 **Answer:**
+"Kedves Résztvevő" — i.e. the fallback word is *Résztvevő*, so the greeting
+renders as "Kedves Résztvevő!" when no first name is known.
 
 ---
 
@@ -583,10 +610,11 @@ is the Hungarian letter convention. Also: is *Szia* right for an official email
 about a civic process, or does it want *Kedves %(name)s!*?
 
 - [ ] "Szia %(name)s!"
-- [ ] "Kedves %(name)s!"
+- [x] "Kedves %(name)s!"
 - [ ] Depends on A1
 
 **Answer:**
+"Kedves %(name)s!" — consistent with A1 (formal in emails) and F29.
 
 ---
 
@@ -601,9 +629,12 @@ right instinct — a tab groups people, a status describes one — or it may jus
 inconsistent.
 
 - [ ] The split is right
-- [ ] Use one form throughout — namely:
+- [x] Use one form throughout — namely: past participles
 
 **Answer:**
+Use the past participles everywhere, tabs included (Kiválasztva, Megerősítve,
+Visszalépett, Törölve...). Exception: `Pool` is governed by B6 and stays
+*jelentkezők* — it has no participle form.
 
 ---
 
@@ -618,12 +649,18 @@ that these reports are read by organisers, not mathematicians.
 
 - [ ] "személy" — right call
 - [ ] Keep the technical "ügynök"
-- [ ] "jelölt" / "résztvevő"
+- [x] "jelölt" / "résztvevő"
 
 **Applies to:** the 101 sortition-library messages, which are shown verbatim in
 run reports.
 
 **Answer:**
+**jelölt**. Why: at the point these reports are generated the person is still
+only in the pool — a candidate for selection, not yet a participant — so
+*jelölt* is the accurate term. *Résztvevő* would overstate their status (and
+is already used as the email greeting fallback in F29); *ügynök* is jargon the
+organisers reading these reports don't use; *személy* is accurate but says
+nothing about their role in the process.
 
 ---
 
@@ -638,9 +675,27 @@ that as "panel".
 
 - [ ] "bizottság" for committee, "panel" for panel
 - [ ] Use "panel" for both — they mean the same thing here
-- [ ] Something else:
+- [x] Something else: **csoport-összeállítás** for both
 
 **Answer:**
+Use **csoport-összeállítás** for both "committee" and "panel" — one Hungarian
+word for one concept, dropping the English source's inconsistency.
+
+Reasoning: each "committee/panel" is one complete candidate composition of the
+whole assembly — the algorithm builds many alternative full line-ups and draws
+one. The main information is that they are a *set of people*, one possible
+line-up, not a body with a role. So:
+
+- *bizottság* wrongly suggests an official standing committee;
+- *alcsoport* was considered and rejected — it suggests the assembly gets
+  divided into subgroups, which is the wrong picture;
+- *panel* (the runner-up) is short, matches the headline success message and
+  HU sortition usage, but is borrowed jargon and vaguer;
+- *csoport-összeállítás* says exactly what the thing is in plain Hungarian.
+  Known costs, accepted as cosmetic: it is a heavy 9-syllable compound in
+  dense report lines, and in the success message ("1 csoport-összeállítás
+  kiválasztva") the selected thing becomes the actual assembly, which reads
+  slightly oddly.
 
 ---
 
@@ -654,10 +709,19 @@ I translated the library's "feature" as **jellemző** and the app's "category" a
 users who see both.
 
 - [ ] Keep them distinct (faithful to source)
-- [ ] Translate both as "kategória" so the UI is coherent
+- [x] Translate both the same so the UI is coherent — as **kiválasztási szempont**
 - [ ] Something else:
 
 **Answer:**
+Translate both the library's "feature" and the app's "category" as
+**kiválasztási szempont**, aligning with B7 (target = *célszám*, target
+category = *kiválasztási szempont*). They name the same thing (Gender, Age…),
+and users see both in one workflow — configure the szempontok on the targets
+page, then read the run report about the same fields — so one term everywhere.
+This also quietly fixes the English source's own feature/category
+inconsistency. In dense report lines the bare short form **szempont** is
+allowed where context is clear (same pattern as the B5 "k. gyűlés"
+abbreviation idea).
 
 ---
 
@@ -675,6 +739,7 @@ fix the source we should fix both languages at once.
    differently. Worth unifying in English before translating.
 
 **Answer:**
+UNANSWERED — could not decide, review later (together with F28).
 
 ---
 
