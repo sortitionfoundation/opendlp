@@ -178,7 +178,13 @@ category".
 - [ ] *cél* plain
 - [ ] Something else:
 
-**Applies to:** 42 entries.
+The form labels `Target Name` and `New target name` are the sharp end of this.
+They name a category (the form class is `AddTargetCategoryForm` and the hint is
+"e.g. Gender, Age, Ethnicity"), not a number, so I translated them
+*Célkategória neve* and *Új célkategória neve* rather than *Célszám neve*. If
+you pick one word for both senses these get simpler — and so does the English.
+
+**Applies to:** 45 entries.
 
 **Answer:**
 

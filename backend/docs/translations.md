@@ -64,10 +64,16 @@ In Jinja2 templates:
 
 ### Managing Translations
 
-1. **Extract new strings**: Run `pybabel extract` after adding translatable strings
-2. **Update PO files**: Run `pybabel update` to merge new strings into existing translations
-3. **Translate**: Edit `.po` files in `translations/[locale]/LC_MESSAGES/messages.po`
-4. **Compile**: Run `pybabel compile` to generate `.mo` files for production
+1. **Extract and update**: Run `just translate-regen` after adding translatable
+   strings. It runs `pybabel extract` then `pybabel update` with the right flags
+   for this project — in particular `--ignore-obsolete`, without which entries
+   for deleted strings pile up as `#~` and eventually collide with live msgids,
+   which stops the catalogue compiling at all.
+2. **Translate**: Edit `.po` files in `translations/[locale]/LC_MESSAGES/messages.po`
+3. **Check**: Run `just translate-check`. `pybabel compile` accepts a catalogue
+   with duplicate msgids without complaint, so this runs `msgfmt --check`, which
+   does not. `just check` runs it too.
+4. **Compile**: Run `just translate-compile` to generate `.mo` files for production
 
 **Important:** The `.mo` (compiled) files must be regenerated after any `.po` file changes for translations to take effect. The application reads from `.mo` files, not `.po` files.
 

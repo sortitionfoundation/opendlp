@@ -57,18 +57,27 @@ That is the right trade here — parked translations were never resurrected by
 msgmerge anyway (which is how this mess arose), and the parking cost us a
 compilable catalogue.
 
-## 1c. The checked-in POT is stale (NOT fixed)
+## 1c. The POT was stale — FIXED
 
 `translations/messages.pot` is gitignored, so whatever a developer has locally
-is whatever their last `just translate-regen` produced. Running it now picks up
-the renames from the top of this branch: `Source:` → `Data Source:`,
-`Category Name` → `Target Name`, `New category name` → `New target name`,
-`Add category` dropped. Three new untranslated entries, four translations
-discarded.
+is whatever their last `just translate-regen` produced, and nobody had run it
+since the renames at the top of this branch. Regenerating dropped four strings
+(`Source:`, `Category Name`, `New category name`, `Add category`) and added
+three, which were translated in the same pass and flagged fuzzy like the rest
+of the run:
 
-Worth doing deliberately as its own commit, with the three new strings
-translated in the same pass, rather than as a side effect of someone else's
-regen.
+| msgid           | msgstr                |
+| --------------- | --------------------- |
+| Data Source:    | Adatforrás:           |
+| Target Name     | Célkategória neve     |
+| New target name | Új célkategória neve  |
+
+`msgmerge`'s fuzzy matching had guessed *Adatforrás* (losing the colon) and
+*Célszám neve* for both of the others. *Célszám* is wrong here: these label a
+target **category** — the form class is `AddTargetCategoryForm` and the hint is
+"e.g. Gender, Age, Ethnicity" — not a target number. See question B7.
+
+The rest of that commit is reference-comment churn from line numbers moving.
 
 ## 2. Extraction artefacts: msgids that are dict keys, not messages
 
@@ -107,11 +116,17 @@ COMMENT: ERROR_MESSAGES is defined in the external package sortition-algorithms 
 
 ## 4. Stopping this coming back
 
-- Add `msgfmt -c -o /dev/null translations/*/LC_MESSAGES/messages.po` to
-  `just check` (or a prek hook). It catches duplicates, broken placeholders and
-  bad plural forms in one go, and it is fast. Still to do — the catalogue
-  compiles today (§1b) but nothing stops it regressing.
-- `--ignore-obsolete` on `pybabel update` is done (§1b).
+- **Done.** `just translate-check` runs `msgfmt --check` over every catalogue,
+  and `just check` / `just check-ci` call it. It catches duplicates, broken
+  placeholders and bad plural forms in one go, and it is fast. `pybabel
+  compile` is no substitute — it compiled the 80-duplicate catalogue happily,
+  which is why this went unnoticed for so long.
+- **Done.** `--ignore-obsolete` on `pybabel update` (§1b), and
+  `docs/translations.md` now points at the `just` recipes rather than giving
+  raw `pybabel` commands that omit the flag.
+- One thing to watch: `msgfmt` is a system binary from GNU gettext, not a
+  Python dependency. It is present on the GitHub `ubuntu-latest` runner, but if
+  CI ever reports "msgfmt not found - install gettext", that is why.
 - Consider a check that no msgid looks like an identifier (`^[a-z0-9_]+$` with
   no spaces) — that is the signature of the §2 artefact.
 - `gettext-auto apply` deliberately leaves every entry it writes flagged
