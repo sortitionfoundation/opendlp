@@ -115,6 +115,8 @@ check:
   @uv run deptry src
   @echo "🚀 Checking the UnitOfWork convention"
   @uv run python scripts/check_uow_convention.py
+  @echo "🚀 Checking the translation catalogues compile"
+  @just translate-check
   @echo "🚀 Checking the if any db migrations need to be created"
   @uv run alembic check 2>&1 | grep -v '^INFO'
   @echo "🚀 Checking there is only one db migration head"
@@ -136,6 +138,8 @@ check-ci:
   @uv run deptry src
   @echo "🚀 Checking the UnitOfWork convention"
   @uv run python scripts/check_uow_convention.py
+  @echo "🚀 Checking the translation catalogues compile"
+  @just translate-check
   @echo "🚀 Checking the if any db migrations need to be created"
   @uv run alembic check 2>&1 | grep -v '^INFO'
   @echo "🚀 Checking there is only one db migration head"
@@ -267,6 +271,16 @@ translate-regen:
 # compile translations from .po files so flask can use them
 translate-compile:
   uv run pybabel compile --directory=translations
+
+# verify every catalogue compiles. `pybabel compile` will not do: it accepts a
+# catalogue with duplicate msgids without a murmur, which is how the Hungarian
+# catalogue spent a while unable to build a .mo at all. msgfmt --check also
+# validates format placeholders and plural forms.
+translate-check:
+  @command -v msgfmt >/dev/null 2>&1 || { echo "msgfmt not found - install gettext"; exit 1; }
+  @for po in translations/*/LC_MESSAGES/messages.po; do \
+    msgfmt --check --output-file=/dev/null "$po" || exit 1; \
+  done
 
 # shut down docker
 stop-docker:
