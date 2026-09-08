@@ -48,7 +48,8 @@ The catalogue carried **873** obsolete (`#~`) entries, not the 580 first
 counted here (580 were untranslated; the rest carried the translations
 recovered in §1). Removed with polib after the recovery, which also cleared
 every duplicate from §1. `msgfmt -c` now passes and `pybabel compile` reports
-2205 of 2207 messages translated — the two stragglers being the §2 artefacts.
+2205 of 2207 messages translated — the two stragglers being the §2 artefacts,
+since removed, taking the count to 2204 of 2204.
 
 `just translate-regen` now passes `--ignore-obsolete` to `pybabel update` so
 they cannot accumulate again. That flag is not free: a string deleted from the
@@ -79,30 +80,70 @@ target **category** — the form class is `AddTargetCategoryForm` and the hint i
 
 The rest of that commit is reference-comment churn from line numbers moving.
 
-## 2. Extraction artefacts: msgids that are dict keys, not messages
+## 2. Extraction artefacts: msgids that are dict keys, not messages — FIXED
 
-`src/opendlp/service_layer/error_translation.py` does:
+`src/opendlp/service_layer/error_translation.py` did:
 
 ```python
 context = _(ERROR_MESSAGES["parse_error_multi_column"]) % {...}
 ```
 
-Babel cannot evaluate the subscript, so it extracts the **key** string. The POT
-therefore contains:
+Babel's Python extractor is token-based: it takes **every string literal**
+between the parens of a `_(` call. The only literal here is the dict key, so
+`parse_error_multi_column` and `parse_error_single_column` landed in the POT as
+msgids. Nothing ever looks them up — at runtime `_()` is handed the dict
+_value_ — so they were dead weight, and they were what kept
+`pybabel compile --statistics` reporting 2205 of 2207 for ever. They were left
+untranslated during the run rather than filled with plausible-looking nonsense.
 
-- `parse_error_multi_column`
-- `parse_error_single_column`
+The rest of this section's original diagnosis was wrong, and so was the worry
+in the COMMENT below it. **The library i18n pipeline already works end to
+end.** The `N_()` no-op markers on the `ERROR_MESSAGES` and `REPORT_MESSAGES`
+values — the pattern that exists precisely so a library can be
+translation-ready without a gettext dependency — are picked up by the
+`--keyword=N_` in `just translate-regen`, which extracts from the installed
+package as well as from `src/`. 104 entries in the Hungarian catalogue carry
+occurrences from `site-packages/sortition_algorithms/`, translated. Verified by
+compiling with `--use-fuzzy` and rendering a real `ParseTableMultiError`
+through the app: both the core message and its row/column context come out in
+Hungarian, on the single- and multi-column paths.
 
-At runtime `_()` is called with the _value_ from `ERROR_MESSAGES`, so translating
-these two msgids has no effect whatsoever. They were left untranslated rather
-than filled with plausible-looking nonsense.
+So no change was needed in sortition-algorithms, and `_l()` on the dict values
+would have been worse — it would force a gettext dependency on the library.
 
-Fix direction: mark the `ERROR_MESSAGES` values with `_l()` where the dict is
-defined, so the real format strings land in the POT, and drop the `_()` at the
-call site. Check whether the same pattern appears elsewhere —
-`grep -rn '_(\w*\[' src/`.
+Fixed by hoisting the two templates to module constants, so no literal sits
+inside a `_()` call, and by extending `just translate-check` to fail on any
+msgid shaped like an identifier. Note that §4's suggested `^[a-z0-9_]+$` would
+have flagged fourteen legitimate msgids (`login`, `page`, `values`, `px`, …);
+requiring at least one underscore gives zero false positives. The check reads
+the POT when one is present as well as the committed `.po` files, but it is
+still a lagging indicator: an artefact only shows up after a
+`just translate-regen`.
 
-COMMENT: ERROR_MESSAGES is defined in the external package sortition-algorithms (that we own). That does not have gettext as a dependency. You can see the plan I was trying to follow at thirdparty/sortition-algorithms/docs/i18n.md (which is in a copy of the repo for that package, excluded from git for this project). Fixing this might take some research. It might be a whole branch in itself. For now, add a new .md file in this directory to describe the problem in more detail, if you think that would be useful.
+`thirdparty/sortition-algorithms/docs/i18n.md` described a different,
+_key_-based scheme throughout — msgids like `errors.missing_column`, reached
+via `_(f"errors.{code}")`. That scheme cannot work with this toolchain, because
+Babel cannot extract an interpolated f-string, so the msgid list would have to
+be hand-maintained. The code has always used the value-based scheme. That doc
+has been rewritten to match reality (and to warn about the literal-in-`_()`
+trap); it is deliberately **not** committed here, since it belongs to the other
+repo.
+
+Two things left as watch items rather than fixed:
+
+- The msgid _is_ the upstream English string, so a reworded template in a new
+  sortition-algorithms release changes the msgid. With §1b's `--ignore-obsolete`
+  the old translation is now discarded outright rather than parked as `#~`. Still
+  the right trade, but the 104 library entries are the most exposed to it.
+- `just translate-regen` depends on the trailing library path argument. Drop it
+  and those 104 msgids vanish silently, taking their translations with them. A
+  one-line assertion that the POT contains a `sortition_algorithms` occurrence
+  would be cheap insurance.
+
+Adjacent, not part of this: `tests/unit/test_error_translation.py:130` mocks
+gettext with stale key-based keys (`"errors.not_a_number"`), which never match,
+so the fake is a pass-through and the test asserts against the real English. It
+passes for the wrong reason.
 
 ## 3. Stray spaces in format placeholders — FIXED
 
@@ -149,8 +190,10 @@ Jinja's i18n extension with newstyle gettext, which returns `Markup` for the
 - One thing to watch: `msgfmt` is a system binary from GNU gettext, not a
   Python dependency. It is present on the GitHub `ubuntu-latest` runner, but if
   CI ever reports "msgfmt not found - install gettext", that is why.
-- Consider a check that no msgid looks like an identifier (`^[a-z0-9_]+$` with
-  no spaces) — that is the signature of the §2 artefact.
+- **Done.** `just translate-check` also fails on any msgid shaped like an
+  identifier — the signature of the §2 artefact. The pattern needs at least one
+  underscore (`^[a-z0-9]+(_[a-z0-9]+)+$`): the bare `^[a-z0-9_]+$` first
+  suggested here matches fourteen legitimate msgids.
 - `gettext-auto apply` deliberately leaves every entry it writes flagged
   `fuzzy`, so `gettext-auto scan` keeps returning them. The skill's stated loop
   ("repeat until scan returns zero entries") therefore never terminates on this
