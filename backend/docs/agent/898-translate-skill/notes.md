@@ -1,7 +1,7 @@
 # Notes from the Hungarian `/gettext-auto hu` run
 
 Working notes taken while running the `gettext-auto` skill over
-`translations/hu/LC_MESSAGES/messages.po`. Nothing here was fixed *during* the
+`translations/hu/LC_MESSAGES/messages.po`. Nothing here was fixed _during_ the
 translation pass — the skill's protocol says never touch a non-fuzzy entry and
 never clear a fuzzy flag, so all of it was left alone deliberately and picked
 up afterwards. Sections are marked FIXED as they are dealt with.
@@ -14,7 +14,7 @@ reached users.
 
 The diagnosis in the first draft of this note was wrong. There were **no
 duplicates among live entries at all**. Every one of the 80 was a clash between
-a live entry and an *obsolete* (`#~`) entry carrying the same msgid — msgfmt
+a live entry and an _obsolete_ (`#~`) entry carrying the same msgid — msgfmt
 treats that as a fatal duplicate definition. So §1 and §1b were the same defect
 wearing two hats.
 
@@ -66,14 +66,14 @@ since the renames at the top of this branch. Regenerating dropped four strings
 three, which were translated in the same pass and flagged fuzzy like the rest
 of the run:
 
-| msgid           | msgstr                |
-| --------------- | --------------------- |
-| Data Source:    | Adatforrás:           |
-| Target Name     | Célkategória neve     |
-| New target name | Új célkategória neve  |
+| msgid           | msgstr               |
+| --------------- | -------------------- |
+| Data Source:    | Adatforrás:          |
+| Target Name     | Célkategória neve    |
+| New target name | Új célkategória neve |
 
-`msgmerge`'s fuzzy matching had guessed *Adatforrás* (losing the colon) and
-*Célszám neve* for both of the others. *Célszám* is wrong here: these label a
+`msgmerge`'s fuzzy matching had guessed _Adatforrás_ (losing the colon) and
+_Célszám neve_ for both of the others. _Célszám_ is wrong here: these label a
 target **category** — the form class is `AddTargetCategoryForm` and the hint is
 "e.g. Gender, Age, Ethnicity" — not a target number. See question B7.
 
@@ -102,25 +102,47 @@ defined, so the real format strings land in the POT, and drop the `_()` at the
 call site. Check whether the same pattern appears elsewhere —
 `grep -rn '_(\w*\[' src/`.
 
-COMMENT: ERROR_MESSAGES is defined in the external package sortition-algorithms (that we own). That does not have gettext as a dependency. You can see the plan I was trying to follow at thirdparty/sortition-algorithms/docs/i18n.md (which is in a copy of the repo for that package, excluded from git for this project). Fixing this might take some research.
+COMMENT: ERROR_MESSAGES is defined in the external package sortition-algorithms (that we own). That does not have gettext as a dependency. You can see the plan I was trying to follow at thirdparty/sortition-algorithms/docs/i18n.md (which is in a copy of the repo for that package, excluded from git for this project). Fixing this might take some research. It might be a whole branch in itself. For now, add a new .md file in this directory to describe the problem in more detail, if you think that would be useful.
 
-## 3. Source-string bugs found while translating
+## 3. Stray spaces in format placeholders — FIXED
 
-- `templates/admin/user_edit.html:101` — `href="%(url) s"` has a stray space
-  inside the placeholder (should be `%(url)s`). Same shape in
-  `templates/auth/register.html:9`: `mailto:%(email) s`. These almost certainly
-  do not interpolate correctly at runtime. The Hungarian translations reproduce
-  the typo verbatim so the msgstr keeps matching the msgid — **fix the source
-  and the translations together**, or the fixed msgid becomes a new
-  untranslated entry.
+Ten templates wrote `%(email) s` / `%(url) s`, with a space before the
+conversion character — not the two this note first claimed. All four affected
+msgids are shared across several templates:
+
+| msgid                                                        | templates |
+| ------------------------------------------------------------ | --------- |
+| `Need help? Contact us at <a href="mailto:%(email) s">…`      | 5 emails  |
+| `You need an invitation code to create an account…`           | 3 auth    |
+| `Whether the account is active is changed from the…`          | 1 admin   |
+| `Contact <a href="mailto:%(email) s">OpenDLP Support</a>…`    | 1 main    |
+
+**The claim that these "almost certainly do not interpolate correctly" was
+wrong.** A space is a valid Python conversion flag, so `"%(url) s" % {...}`
+produces exactly what `%(url)s` does. Verified by rendering `/auth/register`
+and `/` through the test client: the links come out correct.
+
+Fixed anyway — it is inconsistent with every other placeholder in the
+codebase, it reads as a bug, and it is a trap for translators, who have to
+reproduce the oddity verbatim or trip a placeholder checker. The msgids and
+the four msgstrs (which reproduced the typo faithfully) were renamed in the
+same commit, so nothing was orphaned; a following `just translate-regen`
+adds and drops nothing.
+
+One thing checked along the way and found to be fine: several of these
+templates embed an `<a>` inside `_()` **without** `| safe` and still render
+the anchor unescaped. That is not an autoescape hole. Flask-Babel installs
+Jinja's i18n extension with newstyle gettext, which returns `Markup` for the
+(developer-written) msgid while escaping the interpolated values — so the
+`| safe` on the other templates is redundant rather than load-bearing.
 
 ## 4. Stopping this coming back
 
 - **Done.** `just translate-check` runs `msgfmt --check` over every catalogue,
   and `just check` / `just check-ci` call it. It catches duplicates, broken
-  placeholders and bad plural forms in one go, and it is fast. `pybabel
-  compile` is no substitute — it compiled the 80-duplicate catalogue happily,
-  which is why this went unnoticed for so long.
+  placeholders and bad plural forms in one go, and it is fast.
+  `pybabel compile` is no substitute — it compiled the 80-duplicate
+  catalogue happily, which is why this went unnoticed for so long.
 - **Done.** `--ignore-obsolete` on `pybabel update` (§1b), and
   `docs/translations.md` now points at the `just` recipes rather than giving
   raw `pybabel` commands that omit the flag.
