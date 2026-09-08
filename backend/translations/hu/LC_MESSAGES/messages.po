@@ -282,7 +282,7 @@ msgstr "Megtekintő – Megtekintheti a közösségi gyűlést, de nem módosít
 #: src/opendlp/entrypoints/decorators.py:104
 #: src/opendlp/entrypoints/decorators.py:142
 msgid "Please sign in to access this page."
-msgstr "Az oldal eléréséhez kérjük jelentkezz be."
+msgstr "Az oldal eléréséhez kérjük, jelentkezz be."
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:43
 #: src/opendlp/entrypoints/edit_respondent_form.py:47
@@ -486,7 +486,7 @@ msgstr "A közösségi gyűlés fő témája"
 #, fuzzy
 msgid "Optional - the key question this assembly will address"
 msgstr ""
-"Választható - a fő kérdés, amellyel ez a közösségi gyűlés foglalkozni fog"
+"Nem kötelező – a fő kérdés, amellyel ez a közösségi gyűlés foglalkozni fog"
 
 #: src/opendlp/entrypoints/forms.py:253
 #: templates/backoffice/assembly_details.html:64
@@ -497,7 +497,7 @@ msgstr "Első közösségi gyűlés időpontja"
 #: src/opendlp/entrypoints/forms.py:255
 #, fuzzy
 msgid "Optional - when the first assembly meeting will take place"
-msgstr "Választható - az első közösségi gyűlés időpontja"
+msgstr "Nem kötelező – az első közösségi gyűlés időpontja"
 
 #: src/opendlp/entrypoints/forms.py:259
 #: templates/backoffice/assembly_details.html:73
@@ -508,9 +508,7 @@ msgstr "Kiválasztandó emberek száma"
 #: src/opendlp/entrypoints/forms.py:261
 #, fuzzy
 msgid "The number of participants to select for this assembly"
-msgstr ""
-"Választható - a résztvevők száma, akiket ki kell választani ehhez a "
-"közösségi gyűléshez"
+msgstr "A közösségi gyűlésre kiválasztandó résztvevők száma"
 
 #: src/opendlp/entrypoints/forms.py:278
 #, fuzzy
@@ -608,7 +606,7 @@ msgstr "Ellenőrizze hogy azonos címen van-e másik személy a résztvevők kö
 #: templates/backoffice/assembly_data.html:177
 #: templates/gsheets/components/view_config.html:54
 msgid "Generate Remaining Tab"
-msgstr "Fennmaradó résztvevők lap generálása"
+msgstr "Fennmaradók munkalapjának létrehozása"
 
 #: src/opendlp/entrypoints/forms.py:355
 #, fuzzy
@@ -776,7 +774,7 @@ msgstr "Adja meg a közösségi gyűlés címét"
 #: src/opendlp/entrypoints/forms.py:473
 #, fuzzy
 msgid "Assembly Role"
-msgstr "Közösségi gyűlés címe"
+msgstr "Szerepkör a közösségi gyűlésben"
 
 #: src/opendlp/entrypoints/forms.py:477
 #, fuzzy
@@ -1331,7 +1329,7 @@ msgstr "A jelszó túl gyenge: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/auth.py:391
 msgid "An error occurred during registration. Please try again."
-msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
+msgstr "Hiba történt a regisztráció során. Kérjük, próbáld újra."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:411
 #: src/opendlp/entrypoints/blueprints/auth.py:426
@@ -1409,7 +1407,7 @@ msgstr "A '%(title)s' közösségi gyűlés sikeresen létrehozva"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:124
 #: src/opendlp/entrypoints/blueprints/main.py:234
 msgid "You don't have permission to create assemblies"
-msgstr "Jelenleg egy közösségi gyűlés eléréséhez sincs jogosultságod"
+msgstr "Nincs jogosultságod közösségi gyűlés létrehozására"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:128
 #: src/opendlp/entrypoints/blueprints/backoffice.py:132
@@ -1456,7 +1454,7 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:109
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:757
 msgid "You don't have permission to view this assembly"
-msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
+msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:192
 #: src/opendlp/entrypoints/blueprints/backoffice.py:352
@@ -1536,7 +1534,7 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:176
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:754
 msgid "Assembly not found"
-msgstr "A közösségi gyűlés oldala  nem elérhető"
+msgstr "A közösségi gyűlés nem található"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:196
 #, fuzzy
@@ -1623,7 +1621,7 @@ msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:524
 #: src/opendlp/entrypoints/blueprints/main.py:279
 msgid "You don't have permission to edit this assembly"
-msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
+msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:465
 #: src/opendlp/entrypoints/blueprints/backoffice.py:471
@@ -2041,7 +2039,7 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1247
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1290
 msgid "You don't have permission to manage this assembly"
-msgstr "Nincs jogosultsága a közösségi gyűlés szerkesztéséhez"
+msgstr "Nincs jogosultságod a közösségi gyűlés kezeléséhez"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:128
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:201
@@ -2294,12 +2292,12 @@ msgstr "Váratlan hiba történt a pótlási feladat indítása közben"
 #: src/opendlp/entrypoints/blueprints/gsheets.py:927
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:118
 msgid "Google Spreadsheet configuration updated successfully"
-msgstr "Google táblázat beállításai sikeresen frissítve"
+msgstr "Google Táblázat beállításai sikeresen frissítve"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:930
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:100
 msgid "Google Spreadsheet configuration created successfully"
-msgstr "Google táblázat beállításai sikeresen létrehozva"
+msgstr "Google Táblázat beállításai sikeresen létrehozva"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:940
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:128
@@ -2320,34 +2318,34 @@ msgstr ""
 msgid ""
 "You don't have permission to manage Google Spreadsheet for this assembly"
 msgstr ""
-"Nincs jogosultsága a közösségi gyűléshez tartozó Google táblázat "
-"megtekintéséhez"
+"Nincs jogosultságod a közösségi gyűléshez tartozó Google Táblázat "
+"kezeléséhez"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:971
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:154
 msgid "Please check your input and try again"
-msgstr "Kérjük, ellenőrizze a beírt adatokat, és próbálja meg újra"
+msgstr "Kérjük, ellenőrizd a beírt adatokat, és próbáld újra"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:974
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1009
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:163
 msgid "An error occurred while saving the Google Spreadsheet configuration"
-msgstr "Hiba történt a Google táblázat beállításainak mentése közben"
+msgstr "Hiba történt a Google Táblázat beállításainak mentése közben"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1021
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:203
 msgid "Google Spreadsheet configuration removed successfully"
-msgstr "Google táblázat beállításai sikeresen eltávolítva"
+msgstr "Google Táblázat beállításai sikeresen eltávolítva"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1027
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:211
 msgid "Google Spreadsheet configuration not found"
-msgstr "Google táblázat beállításai nem találhatóak"
+msgstr "Google Táblázat beállításai nem találhatóak"
 
 #: src/opendlp/entrypoints/blueprints/gsheets.py:1037
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:229
 msgid "An error occurred while removing the Google Spreadsheet configuration"
-msgstr "Hiba történt a Google táblázat beállításainak törlésekor"
+msgstr "Hiba történt a Google Táblázat beállításainak törlésekor"
 
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:498
 #, fuzzy, python-format
@@ -4008,7 +4006,7 @@ msgstr "Open Democratic Lottery Platform"
 
 #: templates/base.html:25 templates/base_public.html:25
 msgid "Skip to main content"
-msgstr "Ugrás a főoldalra"
+msgstr "Ugrás a fő tartalomra"
 
 #: templates/base.html:39
 msgid "Sortition Foundation Logo"
@@ -4070,7 +4068,7 @@ msgstr "Kilépés"
 #: templates/errors/404.html:28 templates/errors/413.html:24
 #: templates/errors/500.html:28 templates/main/index.html:17
 msgid "Sign in"
-msgstr "Jelentkezzen be"
+msgstr "Bejelentkezés"
 
 #: templates/auth/register.html:146 templates/base.html:102
 #: templates/main/index.html:31
@@ -4087,7 +4085,7 @@ msgstr "Fiók létrehozása"
 #: templates/respondents/view_respondents.html:13
 #: templates/targets/view_targets.html:220
 msgid "There is a problem"
-msgstr "Valami probléma van"
+msgstr "Probléma merült fel"
 
 #: templates/base.html:140 templates/profile/2fa_backup_codes.html:9
 msgid "Success"
@@ -4123,8 +4121,8 @@ msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
 msgstr ""
-"Az OpenDLPegy nyílt forráskódú platform közösségi gyűlések szervezésére és a"
-" résztvevők véletlenszerű kiválasztására."
+"Az OpenDLP egy nyílt forráskódú platform közösségi gyűlések szervezésére és "
+"a résztvevők véletlenszerű kiválasztására."
 
 #: templates/base_public.html:35
 #, fuzzy
@@ -5049,7 +5047,7 @@ msgstr "Vagy létrehozhatsz fiókot e-mail címmel és jelszóval"
 #: templates/auth/register_microsoft.html:33
 msgid "Please read and accept our data agreement to proceed."
 msgstr ""
-"A folytatáshoz kérjük, olvassa el és fogadja el az adatkezelési "
+"A folytatáshoz kérjük, olvasd el és fogadd el az adatkezelési "
 "megállapodásunkat."
 
 #: templates/auth/register.html:129 templates/auth/register_google.html:37
@@ -5275,7 +5273,7 @@ msgstr ""
 #: templates/backoffice/assembly_data.html:66
 #: templates/gsheets/components/view_config_collapsed.html:4
 msgid "Google Spreadsheet Configuration"
-msgstr "Google táblázat beállításai"
+msgstr "Google Táblázat beállításai"
 
 #: templates/backoffice/assembly_data.html:69
 #, fuzzy
@@ -5348,7 +5346,7 @@ msgstr "Állítsd be a kezdeti kiválasztási folyamathoz használt munkalapokat
 #: templates/backoffice/assembly_data.html:142
 #: templates/gsheets/components/view_config.html:27
 msgid "Respondents Tab"
-msgstr "Jelentkezőket tartalmazó lapful neve"
+msgstr "Jelentkezők munkalapja"
 
 #: templates/backoffice/assembly_data.html:119
 #: templates/backoffice/assembly_data.html:144
@@ -5365,7 +5363,7 @@ msgstr "A kiválasztáshoz használt jelentkezői adatokat tartalmazó munkalap.
 #: templates/backoffice/assembly_data.html:150
 #: templates/gsheets/components/view_config.html:32
 msgid "Categories Tab"
-msgstr "Kiválasztási szempontokat tartalmazó lapful neve"
+msgstr "Kiválasztási szempontok munkalapja"
 
 #: templates/backoffice/assembly_data.html:127
 #: templates/backoffice/assembly_data.html:152
@@ -5384,7 +5382,7 @@ msgstr ""
 #: templates/gsheets/create_config.html:93
 #: templates/gsheets/edit_config.html:91
 msgid "Replacement"
-msgstr "Kieső emberek pótlása új kiválasztással"
+msgstr "Résztvevő pótlása"
 
 #: templates/backoffice/assembly_data.html:138
 #, fuzzy
@@ -6548,7 +6546,7 @@ msgstr "Váltás az oldal adminisztrációra"
 #: templates/main/create_assembly.html:34
 #: templates/main/create_assembly.html:95 templates/main/dashboard.html:24
 msgid "Create Assembly"
-msgstr "Hozzon létre közösségi gyűlést"
+msgstr "Közösségi gyűlés létrehozása"
 
 #: templates/backoffice/create_assembly.html:14
 #, fuzzy
@@ -6617,7 +6615,7 @@ msgstr "Google Táblázat"
 #: templates/backoffice/edit_assembly.html:14
 #: templates/main/edit_assembly.html:24
 msgid "Update the details for this citizens' assembly."
-msgstr "Frissítse a közösségi gyűlés részleteit."
+msgstr "Frissítsd a közösségi gyűlés adatait."
 
 #: templates/backoffice/components/account_menu.html:44
 #, fuzzy
@@ -6731,7 +6729,7 @@ msgstr "A feladat megszakítva"
 #: templates/db_selection/components/progress.html:11
 #: templates/gsheets/components/progress.html:11
 msgid "Full Run Report"
-msgstr "Teljesen lefuttatott riport"
+msgstr "Teljes futási jelentés"
 
 #: templates/backoffice/components/db_selection_progress_modal.html:104
 #: templates/backoffice/components/manage_tabs_progress_modal.html:89
@@ -8445,7 +8443,7 @@ msgstr "A kiválasztandók száma <b>%(number_to_select)s ember</b>."
 
 #: templates/db_selection/select.html:14 templates/gsheets/select.html:18
 msgid "Edit the number."
-msgstr "Módosítsa a számot."
+msgstr "Módosítsd a számot."
 
 #: templates/db_selection/select.html:25
 #, fuzzy
@@ -8981,7 +8979,7 @@ msgstr ""
 #: templates/errors/400.html:21 templates/errors/403.html:19
 #: templates/errors/404.html:20 templates/errors/500.html:20
 msgid "Go Home"
-msgstr "Menjen a főoldalra"
+msgstr "Vissza a főoldalra"
 
 #: templates/errors/403.html:2 templates/errors/403.html:11
 msgid "Access Denied"
@@ -9001,7 +8999,7 @@ msgstr ""
 msgid ""
 "If you believe this is an error, please contact your assembly administrator."
 msgstr ""
-"Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a közösségi gyűlés "
+"Ha úgy gondolod, hogy ez hiba, lépj kapcsolatba a közösségi gyűlés "
 "adminisztrátorával."
 
 #: templates/errors/404.html:2 templates/errors/404.html:12
@@ -9051,15 +9049,14 @@ msgstr ""
 #: templates/errors/500.html:33
 msgid "If this problem persists, please contact your system administrator."
 msgstr ""
-"Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a rendszer "
-"adminisztrátoroddal."
+"Ha ez a probléma továbbra is fennáll, lépj kapcsolatba a rendszergazdáddal."
 
 #: templates/gsheets/create_config.html:2
 #: templates/gsheets/create_config.html:8
 #: templates/gsheets/create_config.html:29
 #: templates/main/view_assembly_data.html:9
 msgid "Configure Google Spreadsheet"
-msgstr "Adja meg a Google táblázat beállításait"
+msgstr "Google Táblázat beállítása"
 
 #: templates/gsheets/create_config.html:6 templates/gsheets/edit_config.html:6
 #: templates/gsheets/manage_tabs.html:6 templates/gsheets/replace.html:6
@@ -9073,20 +9070,20 @@ msgid ""
 "Set up Google Spreadsheet integration for this assembly to manage respondent"
 " data and selection results."
 msgstr ""
-"Állítsa be a Google Táblázat integrációt ehhez a közösségi gyűléshez a "
+"Állítsd be a Google Táblázat integrációt ehhez a közösségi gyűléshez a "
 "jelentkezők adatainak és a kiválasztási eredményeknek a kezelésére."
 
 #: templates/gsheets/edit_config.html:2 templates/gsheets/edit_config.html:29
 msgid "Edit Google Spreadsheet Configuration"
-msgstr "Módosítsa a közösségi gyűléshez tartozó Google Táblázat beállításait."
+msgstr "Google Táblázat beállításainak módosítása"
 
 #: templates/gsheets/edit_config.html:8
 msgid "Edit Google Spreadsheet"
-msgstr "Google táblázat módosítása"
+msgstr "Google Táblázat módosítása"
 
 #: templates/gsheets/edit_config.html:30
 msgid "Update the Google Spreadsheet settings for this assembly."
-msgstr "Frissítse a közösségi gyűléshez tartozó Google Táblázat beállításait."
+msgstr "Frissítsd a közösségi gyűléshez tartozó Google Táblázat beállításait."
 
 #: templates/gsheets/edit_config.html:239
 #: templates/gsheets/edit_config.html:249
@@ -9098,16 +9095,16 @@ msgid ""
 "If you no longer need this Google Spreadsheet configuration, you can remove "
 "it."
 msgstr ""
-"Ha már nincs szüksége ehhez a Google Táblázathoz tartozó beállításokra, "
-"eltávolíthatja azokat."
+"Ha már nincs szükséged ezekre a Google Táblázat beállításokra, "
+"eltávolíthatod őket."
 
 #: templates/gsheets/edit_config.html:248
 msgid ""
 "Are you sure you want to remove this Google Spreadsheet configuration? This "
 "action cannot be undone."
 msgstr ""
-"Biztos, hogy el akarja távolítani ehhez a Google Táblázathoz tartozó "
-"beállításokat? Ez a művelet nem vonható vissza."
+"Biztosan eltávolítod ezeket a Google Táblázat beállításokat? Ez a művelet "
+"nem vonható vissza."
 
 #: templates/gsheets/manage_tabs.html:13
 #, fuzzy
@@ -9214,8 +9211,8 @@ msgid ""
 "Run the democratic lottery selection for this assembly using Google "
 "Spreadsheet data."
 msgstr ""
-"Futtassa a demokratikus sorsolást ehhez a közösségi gyűléshez Google "
-"Táblázat adatainak felhasználásával."
+"Futtasd le a demokratikus sorsolást ehhez a közösségi gyűléshez a Google "
+"Táblázat adataival."
 
 #: templates/gsheets/select.html:53
 #, fuzzy
@@ -9414,7 +9411,7 @@ msgstr "A kiválasztás és a pótlás engedélyezéséhez:"
 
 #: templates/main/view_assembly_data.html:31
 msgid "Configure Google Spreadsheet settings first."
-msgstr "Kezdje a Google táblázat beállításainak megadásával."
+msgstr "Kezdd a Google Táblázat beállításainak megadásával."
 
 #: templates/main/view_assembly_data.html:41
 #, fuzzy
@@ -10139,7 +10136,7 @@ msgstr "Logikai hiba – új munkalap létrehozása az utótag kiválasztása el
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:38
 #, fuzzy, python-format
 msgid "Google spreadsheet not found: %(spreadsheet_name)s."
-msgstr "A Google táblázat nem található: %(spreadsheet_name)s."
+msgstr "A Google Táblázat nem található: %(spreadsheet_name)s."
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:40
 #, fuzzy, python-format
@@ -10147,7 +10144,7 @@ msgid ""
 "Error in Google sheet: no tab called '%(tab_name)s' found in spreadsheet "
 "'%(spreadsheet_title)s'."
 msgstr ""
-"Hiba a Google táblázatban: nem található '%(tab_name)s' nevű munkalap "
+"Hiba a Google Táblázatban: nem található '%(tab_name)s' nevű munkalap "
 "'%(spreadsheet_title)s' táblázatban."
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:43
@@ -10510,7 +10507,7 @@ msgstr ""
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:40
 #, fuzzy, python-format
 msgid "Reading in '%(tab_name)s' tab in above Google sheet."
-msgstr "'%(tab_name)s' munkalap beolvasása a fenti Google táblázatból."
+msgstr "'%(tab_name)s' munkalap beolvasása a fenti Google Táblázatból."
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:41
 #, fuzzy
@@ -10531,7 +10528,7 @@ msgid ""
 " sheet."
 msgstr ""
 "'%(tab_name)s' munkalap beolvasása (fejléc %(header_row)s. sorban) a fenti "
-"Google táblázatból."
+"Google Táblázatból."
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:46
 #, fuzzy, python-format
