@@ -52,13 +52,13 @@ def test_one_section_per_category_with_four_dataset_cards():
     assert len(cards) == 4
 
 
-def test_target_card_segments_use_band_midpoints():
+def test_target_card_segments_are_weighted_by_pct_and_display_the_band():
     cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=_gender_rows())))[0]["cards"]
 
-    # (10 + 12) / 2 -> 11 for both values
+    # the slice weight is the service's target_pct; the legend shows the band as entered
     assert cards[0]["segments"] == [
-        {"label": "Male", "count": 11},
-        {"label": "Female", "count": 11},
+        {"label": "Male", "count": 50.0, "display": "10–12"},
+        {"label": "Female", "count": 50.0, "display": "10–12"},
     ]
 
 
@@ -95,8 +95,8 @@ def test_respondents_card_is_a_skeleton_when_the_pool_is_empty():
     rows = [_row("Male", pool_count=0, shortfall=10)]
     cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=rows)))[0]["cards"]
 
-    # Target still populates from the band; Respondents has no data yet.
-    assert cards[0]["segments"] == [{"label": "Male", "count": 11}]
+    # Target still populates from the entered targets; Respondents has no data yet.
+    assert cards[0]["segments"] == [{"label": "Male", "count": 50.0, "display": "10–12"}]
     assert cards[1]["segments"] is None
     assert cards[1]["message"]
 
@@ -109,13 +109,13 @@ class TestBuildDashboardTables:
         assert tables[0]["name"] == "Gender"
         assert [r["value"] for r in tables[0]["rows"]] == ["Male", "Female"]
 
-    def test_target_uses_the_service_pct_and_the_band_midpoint(self):
+    def test_target_uses_the_service_pct_and_the_band_as_entered(self):
         rows = _build_dashboard_tables(_report(DashboardCategory(name="Gender", rows=_gender_rows())))[0]["rows"]
         male = rows[0]
 
-        # target_pct comes straight from the row; the count is the band midpoint (10+12)/2
+        # target_pct comes straight from the row; the count column shows the min-max band
         assert male["target_pct"] == "50.0"
-        assert male["target_count"] == 11
+        assert male["target_count"] == "10–12"
 
     def test_respondent_percentages_are_each_value_share_of_the_pool(self):
         male, female = _build_dashboard_tables(_report(DashboardCategory(name="Gender", rows=_gender_rows())))[0][
