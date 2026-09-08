@@ -15,29 +15,49 @@ Currently only **Hungarian (`hu`)** translation is available. The default config
    BABEL_DEFAULT_LOCALE=en
    ```
 
-2. **Extract messages** to create/update POT file:
+2. **Extract and update catalogues** after adding or changing translatable
+   strings:
 
    ```bash
-   uv run pybabel extract -F babel.cfg -k _l -o translations/messages.pot .
+   just translate-regen
    ```
 
-3. **Initialize new language**:
+3. **Initialize a new language** (one-off, before its first
+   `just translate-regen`):
 
    ```bash
    uv run pybabel init -i translations/messages.pot -d translations -l es
    ```
 
-4. **Update existing translations**:
+4. **Check the catalogues compile**:
 
    ```bash
-   uv run pybabel update -i translations/messages.pot -d translations
+   just translate-check
    ```
 
-5. **Compile translations**:
+5. **Compile translations** to the `.mo` files the application actually reads:
 
    ```bash
-   uv run pybabel compile -d translations
+   just translate-compile
    ```
+
+**Use the `just` recipes, not raw `pybabel`.** The recipes carry flags and
+arguments that are not optional, and a bare `pybabel` invocation quietly does
+the wrong thing:
+
+- `pybabel update` without `--ignore-obsolete` leaves an entry behind for every
+  string you delete. Once one of those `#~` entries collides with a live msgid
+  it is a duplicate definition, and the catalogue stops compiling altogether.
+  This is not hypothetical: it is how the Hungarian catalogue accumulated 873 of
+  them.
+- `pybabel extract` over `.` alone misses the ~100 msgids the
+  `sortition-algorithms` library contributes, and walks `thirdparty/` and
+  `.venv/`. `translate-regen` passes the installed library's path as a second
+  source argument and excludes both directories.
+
+`pybabel init` in step 3 is the one raw command that is still correct — it
+creates a fresh catalogue from the POT and takes no flags we care about. From
+then on the new language is picked up by `translate-regen` like any other.
 
 ## Translation Workflow
 
@@ -64,16 +84,13 @@ In Jinja2 templates:
 
 ### Managing Translations
 
-1. **Extract and update**: Run `just translate-regen` after adding translatable
-   strings. It runs `pybabel extract` then `pybabel update` with the right flags
-   for this project — in particular `--ignore-obsolete`, without which entries
-   for deleted strings pile up as `#~` and eventually collide with live msgids,
-   which stops the catalogue compiling at all.
-2. **Translate**: Edit `.po` files in `translations/[locale]/LC_MESSAGES/messages.po`
-3. **Check**: Run `just translate-check`. `pybabel compile` accepts a catalogue
-   with duplicate msgids without complaint, so this runs `msgfmt --check`, which
-   does not. `just check` runs it too.
-4. **Compile**: Run `just translate-compile` to generate `.mo` files for production
+The commands are in [Quick Start](#quick-start) above, which is the canonical
+list. Don't restate them here: a second copy drifts from the first, and the
+copy that drifts is the one somebody follows.
+
+The only step with any human work in it is the middle one: edit the `.po` files
+under `translations/[locale]/LC_MESSAGES/messages.po` between
+`just translate-regen` and `just translate-check`.
 
 **Important:** The `.mo` (compiled) files must be regenerated after any `.po` file changes for translations to take effect. The application reads from `.mo` files, not `.po` files.
 
