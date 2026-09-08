@@ -3,7 +3,7 @@ ABOUTME: Showcase section listing every shared icon macro, grouped by what it me
 ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP - UI Figma file
 #}
 {% from "backoffice/components/showcase_section.html" import showcase_section, showcase_title, showcase_description, showcase_subtitle %}
-{% from "backoffice/components/icons.html" import icon_about, icon_arrow_back, icon_check, icon_check_12, icon_check_20, icon_chevron_down, icon_chevron_up, icon_close, icon_code, icon_copy, icon_data_agreement, icon_download, icon_edit, icon_hand, icon_info, icon_logout, icon_more_vert, icon_plus, icon_question_circle, icon_spinner, icon_sparkles, icon_switch, icon_trash, icon_undo, icon_user, icon_warning, icon_warning_20 %}
+{% from "backoffice/components/icons.html" import icon_about, icon_arrow_back, icon_check, icon_check_12, icon_check_20, icon_chevron_down, icon_chevron_up, icon_close, icon_code, icon_copy, icon_data_agreement, icon_download, icon_edit, icon_hand, icon_info, icon_logout, icon_more_vert, icon_pie_chart, icon_plus, icon_question_circle, icon_spinner, icon_sparkles, icon_switch, icon_trash, icon_undo, icon_user, icon_warning, icon_warning_20 %}
 
 {#
     A glyph and everything a reader needs to use it: how it looks small, how
@@ -141,6 +141,11 @@ ABOUTME: The set is Lucide throughout, matching the Icons sheet of the OpenDLP -
         {{ glyph("icon_sparkles", "Lucide", "24",
         icon_sparkles(classes="w-4 h-4"), icon_sparkles(classes="w-6 h-6"),
         ["backoffice/targets/category_block.html"]) }}
+
+        {{ showcase_subtitle("Dashboard") }}
+        {{ glyph("icon_pie_chart", "Lucide", "24",
+        icon_pie_chart(classes="w-4 h-4"), icon_pie_chart(classes="w-6 h-6"),
+        ["backoffice/assembly_dashboard.html"]) }}
 
         {{ showcase_subtitle("Drawn for their slot") }}
         <p class="text-body-md" style="color: var(--color-body-text)">
