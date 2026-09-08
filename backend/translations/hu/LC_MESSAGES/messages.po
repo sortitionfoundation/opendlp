@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-08 16:08+0000\n"
+"POT-Creation-Date: 2026-09-08 16:12+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -123,37 +123,37 @@ msgstr ""
 msgid "Derived"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:125
+#: src/opendlp/domain/respondent_field_schema.py:126
 #, fuzzy
 msgid "Text"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/domain/respondent_field_schema.py:126
+#: src/opendlp/domain/respondent_field_schema.py:127
 msgid "Long text"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:127
+#: src/opendlp/domain/respondent_field_schema.py:128
 msgid "Yes / No"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:128
+#: src/opendlp/domain/respondent_field_schema.py:129
 msgid "Yes / No / Not set"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:129
+#: src/opendlp/domain/respondent_field_schema.py:130
 msgid "Choice (radios)"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:130
+#: src/opendlp/domain/respondent_field_schema.py:131
 msgid "Choice (dropdown)"
 msgstr ""
 
-#: src/opendlp/domain/respondent_field_schema.py:131
+#: src/opendlp/domain/respondent_field_schema.py:132
 #, fuzzy
 msgid "Whole number"
 msgstr "Módosítsa a számot."
 
-#: src/opendlp/domain/respondent_field_schema.py:132
+#: src/opendlp/domain/respondent_field_schema.py:133
 #: templates/admin/invite_view.html:48 templates/admin/invites.html:67
 #: templates/admin/user_view.html:23 templates/admin/users.html:116
 #: templates/backoffice/assembly_members.html:48
@@ -164,28 +164,33 @@ msgstr "Módosítsa a számot."
 msgid "Email"
 msgstr ""
 
+#: src/opendlp/domain/respondent_field_schema.py:134
+#, fuzzy
+msgid "Date"
+msgstr "Kiválasztás"
+
 #: src/opendlp/domain/respondents.py:343
 #, fuzzy
 msgid "Name deleted"
 msgstr "Kiválasztás"
 
-#: src/opendlp/domain/validators.py:54
+#: src/opendlp/domain/validators.py:55
 #, fuzzy
 msgid "URL slug cannot be empty"
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/domain/validators.py:56
+#: src/opendlp/domain/validators.py:57
 #, python-format
 msgid "URL slug cannot be longer than %(max)s characters"
 msgstr ""
 
-#: src/opendlp/domain/validators.py:60
+#: src/opendlp/domain/validators.py:61
 msgid ""
 "URL slug must be lowercase letters, numbers and hyphens, with no leading "
 "or trailing hyphen"
 msgstr ""
 
-#: src/opendlp/domain/validators.py:63
+#: src/opendlp/domain/validators.py:64
 #, python-format
 msgid "URL slug '%(value)s' is reserved and cannot be used"
 msgstr ""

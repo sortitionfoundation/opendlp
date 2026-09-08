@@ -176,7 +176,8 @@
             "choice_radio",
             "choice_dropdown",
             "integer",
-            "email"
+            "email",
+            "date"
           ],
           "description": "The effective type: for a fixed field the hardcoded FIXED_FIELD_TYPES entry wins over the stored one."
         },

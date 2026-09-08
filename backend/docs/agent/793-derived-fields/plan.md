@@ -76,7 +76,7 @@ All domain + adapters + tests; no behaviour yet.
 
 ---
 
-## 2. Step 2 — Rule classes: `domain/respondent_derivation.py`
+## 2. Step 2 — Rule classes: `domain/respondent_derivation.py` ✅ DONE
 
 New module, pure domain, exhaustively unit-tested, no DB/Flask anywhere.
 
@@ -89,7 +89,7 @@ New module, pure domain, exhaustively unit-tested, no DB/Flask anywhere.
 
 ---
 
-## 3. Step 3 — `FieldType.DATE`, domain + service slice only
+## 3. Step 3 — `FieldType.DATE`, domain + service slice only ✅ DONE
 
 Independently useful; deferrable behind steps 2/4 if we want year-of-birth brackets shipping first (research §13).
 

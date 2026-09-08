@@ -322,3 +322,116 @@ class TestEnumDrivenValidation:
 
         assert result.respondent is None
         assert "gender" in result.field_errors
+
+
+class TestDateFields:
+    """DATE fields accept the GOV.UK three-part day/month/year inputs and a
+    single value under the bare key, storing an ISO string either way."""
+
+    def test_three_part_input_is_assembled_and_stored_as_iso(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "date_of_birth", field_type=FieldType.DATE)
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={"date_of_birth-day": "7", "date_of_birth-month": "3", "date_of_birth-year": "1985"},
+            is_test=False,
+        )
+
+        assert result.field_errors == {}
+        assert result.respondent is not None
+        assert result.respondent.attributes["date_of_birth"] == "1985-03-07"
+
+    def test_single_iso_value_under_the_bare_key(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "date_of_birth", field_type=FieldType.DATE)
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={"date_of_birth": "1985-03-07"},
+            is_test=False,
+        )
+
+        assert result.field_errors == {}
+        assert result.respondent is not None
+        assert result.respondent.attributes["date_of_birth"] == "1985-03-07"
+
+    def test_single_uk_format_value_is_canonicalised(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "date_of_birth", field_type=FieldType.DATE)
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={"date_of_birth": "07/03/1985"},
+            is_test=False,
+        )
+
+        assert result.field_errors == {}
+        assert result.respondent is not None
+        assert result.respondent.attributes["date_of_birth"] == "1985-03-07"
+
+    def test_invalid_date_attaches_error_to_the_bare_key(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "date_of_birth", field_type=FieldType.DATE)
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={"date_of_birth-day": "31", "date_of_birth-month": "2", "date_of_birth-year": "1985"},
+            is_test=False,
+        )
+
+        assert result.respondent is None
+        assert "date_of_birth" in result.field_errors
+
+    def test_required_date_missing_entirely_returns_error(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "date_of_birth", field_type=FieldType.DATE)
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={},
+            is_test=False,
+        )
+
+        assert result.respondent is None
+        assert "date_of_birth" in result.field_errors
+
+    def test_optional_date_left_blank_is_accepted(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(
+            uow,
+            assembly,
+            "date_of_birth",
+            field_type=FieldType.DATE,
+            on_registration_page=FieldOnRegistrationPage.YES_OPTIONAL,
+        )
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={"date_of_birth-day": "", "date_of_birth-month": "", "date_of_birth-year": ""},
+            is_test=False,
+        )
+
+        assert result.field_errors == {}
+        assert result.respondent is not None
+        assert "date_of_birth" not in result.respondent.attributes
+
+    def test_partial_three_part_input_returns_error(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "date_of_birth", field_type=FieldType.DATE)
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={"date_of_birth-day": "7", "date_of_birth-month": "", "date_of_birth-year": "1985"},
+            is_test=False,
+        )
+
+        assert result.respondent is None
+        assert "date_of_birth" in result.field_errors

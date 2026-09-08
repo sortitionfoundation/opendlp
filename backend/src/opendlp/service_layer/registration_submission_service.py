@@ -13,7 +13,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
 )
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.validators import validate_choice, validate_email_field, validate_integer
+from opendlp.domain.validators import validate_choice, validate_date_field, validate_email_field, validate_integer
 from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
 from opendlp.service_layer.registration_page_service import (
     find_registration_page_by_url_slug,
@@ -104,7 +104,27 @@ def _validate_field_value(
     if fd.effective_field_type == FieldType.INTEGER:
         return validate_integer(str_value)
 
+    if fd.effective_field_type == FieldType.DATE:
+        return validate_date_field(str_value)
+
     return str_value, None
+
+
+def _date_form_value(form_data: Mapping[str, Any], key: str) -> Any:
+    """Resolve a DATE field's raw form value.
+
+    Registration HTML is authored by the organiser, so both shapes must work:
+    the GOV.UK three-part inputs (``key-day``/``key-month``/``key-year``) when
+    any of them is present, otherwise a single value under the bare key. The
+    three parts assemble to ``dd/mm/yyyy`` for the date validator; a partly
+    filled trio assembles to something it rejects.
+    """
+    parts = [str(form_data.get(f"{key}-{suffix}", "")).strip() for suffix in ("day", "month", "year")]
+    if any(parts):
+        return "/".join(parts)
+    if all(f"{key}-{suffix}" in form_data for suffix in ("day", "month", "year")):
+        return ""  # three-part inputs present but all blank: treat as no value
+    return form_data.get(key, "")
 
 
 def _validate_form_data(
@@ -127,7 +147,10 @@ def _validate_form_data(
             continue
         key = fd.field_key
         required = fd.on_registration_page == FieldOnRegistrationPage.YES_REQUIRED
-        value = form_data.get(key, "")
+        if fd.effective_field_type == FieldType.DATE:
+            value = _date_form_value(form_data, key)
+        else:
+            value = form_data.get(key, "")
 
         cleaned_value, error = _validate_field_value(fd, value, required=required)
         if error:

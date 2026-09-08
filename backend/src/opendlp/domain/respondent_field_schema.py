@@ -106,6 +106,7 @@ class FieldType(Enum):
     CHOICE_DROPDOWN = "choice_dropdown"
     INTEGER = "integer"
     EMAIL = "email"
+    DATE = "date"
 
 
 class FieldOnRegistrationPage(Enum):
@@ -130,6 +131,7 @@ FIELD_TYPE_LABELS: dict[FieldType, str] = {
     FieldType.CHOICE_DROPDOWN: _l("Choice (dropdown)"),
     FieldType.INTEGER: _l("Whole number"),
     FieldType.EMAIL: _l("Email"),
+    FieldType.DATE: _l("Date"),
 }
 
 

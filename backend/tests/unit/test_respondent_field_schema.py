@@ -464,7 +464,8 @@ class TestFieldType:
         assert FieldType.CHOICE_DROPDOWN.value == "choice_dropdown"
         assert FieldType.INTEGER.value == "integer"
         assert FieldType.EMAIL.value == "email"
-        assert len(list(FieldType)) == 8
+        assert FieldType.DATE.value == "date"
+        assert len(list(FieldType)) == 9
 
     def test_field_type_labels_cover_every_value(self) -> None:
         assert set(FIELD_TYPE_LABELS) == set(FieldType)
