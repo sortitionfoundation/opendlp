@@ -127,11 +127,13 @@ roles and must not read as synonyms. *(C14)*
 **tab** is *munkalap*, which is what the Hungarian Google Sheets UI calls it —
 users will have both screens open side by side. Not *lapfül*. *(B10)*
 
-**dashboard** has no single translation here, because neither page in this app is
-a dashboard in the original sense. *Vezérlőpult* is the usual word, but prefer to
-name what the page actually shows: the per-assembly results tab is
-**Statisztikák**, and the page listing assemblies is the **közösségi gyűlések
-listája**. *(B11)*
+**dashboard** is *Vezérlőpult*, but under protest: neither page in this app is a
+dashboard in the original sense. One is the **közösségi gyűlések listája** and
+the other is **Statisztikák**, and where a string clearly means one of those —
+`Back to Dashboard`, which always goes to the assembly list — say so instead.
+The bare `Dashboard` msgid cannot: the source uses the one string for both the
+per-assembly statistics tab and the nav link to the assembly list, so it takes
+the generic word until someone splits it. *(B11)*
 
 ### Left in English on purpose
 
@@ -196,7 +198,9 @@ compound in dense report lines — accepted as cosmetic. *(F33)*
 - **Email greeting:** `Hi %(name)s,` is "Kedves %(name)s!" — the exclamation mark
   is the Hungarian letter convention, and *Kedves* rather than *Szia* follows the
   formal register for email. *(F30)* Where there is no first name, the fallback
-  word is *Résztvevő*, so the greeting renders "Kedves Résztvevő!". *(F29)*
+  word is *Résztvevő*, so the greeting renders "Kedves Résztvevő!". *(F29)* The
+  transactional emails have their own nameless greeting, `Hi,`, which is
+  "Kedves Címzett!" — same family, no invented name.
 
 ## Not translated
 
@@ -225,20 +229,18 @@ whatever a reviewer says.
 - **Run `just translate-check`** after editing. `pybabel compile` accepts a
   catalogue that `msgfmt` rejects.
 
-## Known-bad entries — do not imitate
+## Known-bad entries — fixed, but read this anyway
 
-A handful of older entries were auto-accepted from bad fuzzy matches and are
-simply wrong. They are still in the catalogue and still marked reviewed, so do
-not take a nearby entry as a worked example without reading it:
+A handful of older entries had been auto-accepted from bad fuzzy matches and
+said something else entirely — `Assembly Role` rendered as "Gyűlés címe"
+(Assembly *Title*), `You don't have permission to create assemblies` as "you
+don't have access to any assemblies", `An error occurred during registration`
+as "an error occurred during *login*". Those are corrected.
 
-| msgid | current msgstr | actually means |
-| ----- | -------------- | -------------- |
-| `Assembly Role` | Gyűlés címe | Assembly Title |
-| `Repeat for confirmation` | Google Táblázat beállításainak eltávolítása | Remove Google Sheet settings |
-| `Password confirmation` | Beállítások mentése | Save settings |
-| `New password confirmation` | Google Táblázat beállításainak eltávolítása | Remove Google Sheet settings |
-| `You don't have permission to upload targets` | Nincs jogosultsága a közösségi gyűlés megtekintéséhez | You don't have permission to view the assembly |
-| `An error occurred while uploading targets` | Hiba történt a gyűlés frissítése közben | An error occurred while updating the assembly |
+The lesson survives the fix: **an entry not marked `fuzzy` is not evidence that
+anyone read it.** A bad fuzzy match auto-accepted years ago looks exactly like a
+reviewed translation. Do not take a neighbouring entry as a worked example
+without checking it against the English.
 
 ## Still open
 
