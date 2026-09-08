@@ -87,6 +87,22 @@ RUN --mount=type=cache,target=/root/.cache \
 
 # Create the .mo files from the .po files
 # Note that .mo files are in the .gitignore
+#
+# This is the one place we call pybabel directly rather than through the `just`
+# recipe that wraps it (`just translate-compile`), because there is no `just` in
+# the build image. It is a safe exception: compile is the only pybabel
+# subcommand with no flags we depend on. Do NOT do the same for extract or
+# update - see docs/translations.md for what those drop when called bare.
+#
+# Two things that look like bugs and are not:
+# - Fuzzy entries are left out of the .mo, which is the point of the flag: they
+#   are machine translations awaiting review. A language can be almost fully
+#   translated in the .po and still come out mostly English here. Do not reach
+#   for --use-fuzzy to "fix" that; get the entries reviewed instead.
+# - pybabel compile accepts a catalogue that msgfmt rejects, so it cannot be
+#   relied on to catch a broken one. `just translate-check` does that, and the
+#   publish workflow needs the quality job (which runs it) before it builds an
+#   image, so nothing reaches a registry unchecked.
 RUN uv run pybabel compile -d translations
 
 # Now install the rest from `/src`: The APPLICATION w/o dependencies.
