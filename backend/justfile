@@ -294,6 +294,17 @@ translate-check:
       exit 1; \
     fi; \
   done
+  @# sortition-algorithms marks its own messages with N_() and translate-regen
+  @# picks them up by way of the library path it passes as a trailing argument.
+  @# Drop that argument and ~100 msgids vanish from the POT, silently taking
+  @# their translations with them on the next update.
+  @for cat in translations/messages.pot translations/*/LC_MESSAGES/messages.po; do \
+    [ -f "$cat" ] || continue; \
+    grep -q 'sortition_algorithms' "$cat" || { \
+      echo "no sortition_algorithms occurrences in $cat - did translate-regen lose the library path?"; \
+      exit 1; \
+    }; \
+  done
 
 # shut down docker
 stop-docker:
