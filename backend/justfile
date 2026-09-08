@@ -258,7 +258,11 @@ translate-regen:
     --ignore-dirs=thirdparty \
     --ignore-dirs=.venv \
     . `uv run python -c "import sortition_algorithms, pathlib; print(pathlib.Path(sortition_algorithms.__file__).parent.relative_to(pathlib.Path.cwd()))"`
-  uv run pybabel update --input-file=translations/messages.pot --output-dir=translations
+  # --ignore-obsolete: an obsolete `#~` entry whose msgid also exists as a live
+  # entry is a fatal duplicate definition to msgfmt, so letting them accumulate
+  # eventually stops the catalogue compiling at all.
+  uv run pybabel update --ignore-obsolete \
+    --input-file=translations/messages.pot --output-dir=translations
 
 # compile translations from .po files so flask can use them
 translate-compile:
