@@ -4,11 +4,12 @@ ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source
 import uuid
 
 import structlog
-from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.entrypoints.blueprints.registration import (
@@ -36,7 +37,9 @@ from opendlp.service_layer.assembly_service import (
     update_assembly,
 )
 from opendlp.service_layer.dashboard_stats import (
+    CategoryValueRow,
     DashboardReport,
+    export_dashboard_report,
     get_assembly_dashboard_report,
     get_assembly_dashboard_summary,
 )
@@ -194,49 +197,110 @@ def view_assembly(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
 
 
+def _target_band(row: CategoryValueRow) -> str:
+    """The target band as entered: "30-31", collapsed to "30" when min == max.
+
+    Shown instead of a single count: any single number would be a midpoint of our
+    own invention, rounded to look plausible while matching nothing the user set.
+    """
+    if row.target_min == row.target_max:
+        return str(row.target_min)
+    return f"{row.target_min}–{row.target_max}"
+
+
 def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]]:
     """Turn the dashboard report into per-category sections of pie cards.
 
-    Each category shows four dataset cards, matching the Figma layout:
-      - Target: the target distribution (band midpoints), always populated;
-      - Respondents: the pool counts;
-      - Selected / Confirmed: still rendered as their skeleton state with a
-        message. The report does carry ``selected_count`` and ``confirmed_count``
-        per row - wiring those two cards up is a follow-up front-end ticket, so
-        the data arrives here ahead of anything drawing it.
+    Each category shows four dataset cards, matching the Figma layout: Target,
+    Respondents (pool), Selected and Confirmed. The Target pie is weighted by the
+    service's ``target_pct`` — the user-set percentage where given, else the exact
+    share the band implies — with the min-max band in the legend; deriving counts
+    from band midpoints rounded away what the user actually entered. The other
+    datasets' pies are populated from the report's real counts; a dataset whose
+    category total is zero has ``segments = None``, which the pie card renders as
+    a grey skeleton with the given ``message``. There is no separate "has
+    selection started" flag: a selection assigns every selected person a value in
+    every category at once, so a zero ``selected_count`` total for a category is
+    exactly "no selection yet".
 
     Each card is a dict {title, segments, message}; a falsy ``segments`` triggers
     the pie card's skeleton state, and ``message`` is the text shown in it.
     """
+
+    def segments_or_none(rows: list[CategoryValueRow], count_attr: str) -> list[dict[str, object]] | None:
+        if not sum(getattr(row, count_attr) for row in rows):
+            return None
+        return [{"label": row.value, "count": getattr(row, count_attr)} for row in rows]
+
     sections: list[dict[str, object]] = []
     for category in report.categories:
         target_segments = [
-            {"label": row.value, "count": round((row.target_min + row.target_max) / 2)} for row in category.rows
+            {"label": row.value, "count": row.target_pct, "display": _target_band(row)} for row in category.rows
         ]
-        pool_total = sum(row.pool_count for row in category.rows)
-        respondent_segments = (
-            [{"label": row.value, "count": row.pool_count} for row in category.rows] if pool_total else None
-        )
         cards = [
             {"title": _("Target"), "segments": target_segments, "message": ""},
             {
                 "title": _("Respondents"),
-                "segments": respondent_segments,
+                "segments": segments_or_none(category.rows, "pool_count"),
                 "message": _("Shows respondent data once registration starts."),
             },
             {
                 "title": _("Selected"),
-                "segments": None,
-                "message": _("Shows selected data once the selection process starts."),
+                "segments": segments_or_none(category.rows, "selected_count"),
+                "message": _("Shows selected data once selection has happened."),
             },
             {
                 "title": _("Confirmed"),
-                "segments": None,
-                "message": _("Shows confirmed data once registration closes."),
+                "segments": segments_or_none(category.rows, "confirmed_count"),
+                "message": _("Shows confirmed data once at least one selected respondent is confirmed."),
             },
         ]
         sections.append({"name": category.name, "cards": cards})
     return sections
+
+
+def _build_dashboard_tables(report: DashboardReport) -> list[dict[str, object]]:
+    """Turn the dashboard report into per-category tables (the on-screen Table view).
+
+    One table per category; one row per category value with a percentage and a
+    count column for each dataset (Target / Respondents / Selected / Confirmed),
+    matching the Figma table. All figures come straight from the report's rows:
+    ``target_pct`` is the service's own value; the Target count is the min-max
+    band as entered; Respondents / Selected / Confirmed percentages are each
+    value's share of that dataset's category total.
+
+    This is the on-screen shape only. The exportable table (flat, all categories,
+    with min/max/available/shortfall columns) is the service's
+    ``build_dashboard_table`` and is used by the export button, not here.
+
+    Each table is {name, rows}; each row is a dict of pre-formatted strings/ints
+    the template drops straight into cells.
+    """
+
+    def pct(part: int, whole: int) -> str:
+        return f"{(part / whole * 100):.1f}" if whole else "0.0"
+
+    tables: list[dict[str, object]] = []
+    for category in report.categories:
+        pool_total = sum(row.pool_count for row in category.rows)
+        selected_total = sum(row.selected_count for row in category.rows)
+        confirmed_total = sum(row.confirmed_count for row in category.rows)
+        rows = [
+            {
+                "value": row.value,
+                "target_pct": f"{row.target_pct:.1f}",
+                "target_count": _target_band(row),
+                "respondents_pct": pct(row.pool_count, pool_total),
+                "respondents_count": row.pool_count,
+                "selected_pct": pct(row.selected_count, selected_total),
+                "selected_count": row.selected_count,
+                "confirmed_pct": pct(row.confirmed_count, confirmed_total),
+                "confirmed_count": row.confirmed_count,
+            }
+            for row in category.rows
+        ]
+        tables.append({"name": category.name, "rows": rows})
+    return tables
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard")
@@ -244,11 +308,13 @@ def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]
 def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly results dashboard (ticket 886).
 
-    First iteration: the header indicators (number to select / registrations) and
-    the per-category pie charts, driven by the services in
-    service_layer/dashboard_stats.py. The chart/table toggle, the export button and
-    the findings banner are not wired yet.
+    Header indicators (number to select / registrations) plus the per-category
+    results, in one of two views selected by the ``view`` query parameter:
+    "chart" (default) draws pie charts, "table" draws a table per category. Both
+    are driven by the services in service_layer/dashboard_stats.py. The findings
+    banner is not wired yet.
     """
+    view = "table" if request.args.get("view") == "table" else "chart"
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -262,6 +328,7 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             report = get_assembly_dashboard_report(uow, current_user.id, assembly_id)
 
         dashboard_sections = _build_dashboard_sections(report)
+        dashboard_tables = _build_dashboard_tables(report)
 
         return render_template(
             "backoffice/assembly_dashboard.html",
@@ -274,7 +341,9 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_enabled=nav.selection_enabled,
             number_to_select=summary.number_to_select,
             number_of_registrations=summary.total_respondents,
+            dashboard_view=view,
             dashboard_sections=dashboard_sections,
+            dashboard_tables=dashboard_tables,
         ), 200
     except NotFoundError as e:
         logger.warning(
@@ -297,6 +366,56 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
         flash(_("An error occurred while loading the dashboard"), "error")
         return redirect(url_for("backoffice.dashboard"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/modal")
+@login_required
+def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Render the dashboard export modal fragment (HTMX-loaded).
+
+    Needs no server data while CSV is the only enabled file type, but stays a
+    fragment route so later iterations can preload e.g. the saved Google Sheet
+    config, matching the respondents export modal.
+    """
+    return render_template("backoffice/dashboard_export_modal.html", assembly_id=assembly_id), 200
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/run", methods=["POST"])
+@login_required
+def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Run a dashboard export from the modal. CSV download only in this iteration."""
+    dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
+    if request.form.get("file_type", "csv") != "csv":
+        flash(_("Only CSV export is available for now"), "error")
+        return redirect(dashboard_url)
+
+    # Built inline rather than injected: pure in-memory work, no seam needed
+    # (see the respondents CSV export for the same reasoning).
+    target = CsvExportTarget()
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            export_dashboard_report(uow, current_user.id, assembly_id, target=target)
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions to export dashboard",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to export the dashboard"), "error")
+        return redirect(dashboard_url)
+    except NotFoundError as e:
+        logger.warning("Assembly not found for dashboard export", assembly_id=str(assembly_id), error=str(e))
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    filename = f"dashboard-{str(assembly_id)[:8]}.csv"
+    return Response(
+        target.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/edit", methods=["GET", "POST"])

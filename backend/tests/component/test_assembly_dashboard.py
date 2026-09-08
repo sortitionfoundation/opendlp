@@ -3,6 +3,7 @@ ABOUTME: Covers the page render, the FF_RESULTS_DASHBOARD tab gating, and the at
 
 import os
 import re
+import uuid
 
 import pytest
 from flask import render_template_string
@@ -69,6 +70,19 @@ def assembly_with_respondents(fake_store, existing_assembly):
     return existing_assembly
 
 
+@pytest.fixture(autouse=True)
+def _results_dashboard_off_by_default(monkeypatch):
+    """Force FF_RESULTS_DASHBOARD off unless a test opts in.
+
+    A local ``.env`` may set the flag on for dev; without this, load_dotenv would
+    leak that into the test process and break the hidden-by-default expectation.
+    """
+    monkeypatch.delenv("FF_RESULTS_DASHBOARD", raising=False)
+    reload_flags()
+    yield
+    reload_flags()
+
+
 @pytest.fixture
 def results_dashboard_on():
     """Turn FF_RESULTS_DASHBOARD on for the duration of a test, then restore."""
@@ -88,11 +102,20 @@ class TestTheDashboardPage:
         # one section per target category
         assert ">Gender<" in html
 
-    def test_an_assembly_with_no_targets_renders_no_sections(self, logged_in_admin, existing_assembly):
+    def test_an_assembly_with_no_targets_shows_the_empty_state(self, logged_in_admin, existing_assembly):
         html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
 
         assert "Number to select:" in html
+        # no charts or tables, and the empty-state copy instead
         assert "conic-gradient(" not in html
+        assert "No dashboard to display yet." in html
+        assert "Set up your targets to get started." in html
+
+    def test_the_empty_state_also_shows_in_the_table_view(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(f"{_dashboard_url(existing_assembly)}?view=table").get_data(as_text=True)
+
+        assert "No dashboard to display yet." in html
+        assert "Target %" not in html
 
     def test_the_registration_count_excludes_test_and_deleted_respondents(
         self,
@@ -114,12 +137,41 @@ class TestTheDashboardPage:
         # Target renders a real pie
         assert "conic-gradient(" in html
         # Selected / Confirmed render their skeleton messages
-        assert "Shows selected data once the selection process starts." in html
-        assert "Shows confirmed data once registration closes." in html
+        assert "Shows selected data once selection has happened." in html
+        assert "Shows confirmed data once at least one selected respondent is confirmed." in html
 
     def test_route_is_reachable_even_when_the_flag_is_off(self, logged_in_admin, existing_assembly):
         # The flag only hides the tab; the route stays reachable by URL.
         assert logged_in_admin.get(_dashboard_url(existing_assembly)).status_code == 200
+
+
+class TestTheViewToggle:
+    def test_chart_is_the_default_view(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
+        # pies present, table header labels absent
+        assert "conic-gradient(" in html
+        assert "Target %" not in html
+
+    def test_both_view_links_are_present(self, logged_in_admin, existing_assembly):
+        # The toggle is in the header, so it renders regardless of whether there is data.
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+        assert f"{_dashboard_url(existing_assembly)}?view=chart" in html
+        assert f"{_dashboard_url(existing_assembly)}?view=table" in html
+
+    def test_table_view_renders_a_table_not_pies(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}?view=table").get_data(as_text=True)
+        # column headers and a category value row
+        assert "Target %" in html
+        assert "Respondents %" in html
+        assert "Confirmed" in html
+        assert "Male" in html
+        # no pie charts in the table view
+        assert "conic-gradient(" not in html
+
+    def test_unknown_view_falls_back_to_chart(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}?view=bogus").get_data(as_text=True)
+        assert "conic-gradient(" in html
+        assert "Target %" not in html
 
 
 class TestTheTabGating:
@@ -165,3 +217,101 @@ class TestThePieChartAtom:
         assert "Shows respondent data once registration starts." in html
         assert 'aria-hidden="true"' in html
         assert 'role="img"' not in html
+
+
+class TestTargetPrecision:
+    """The Target pie and table must show what the user entered, not midpoints.
+
+    Regression for PR #275 review: bands like 30-31 / 29-30 / 0-1 have midpoints
+    that banker's-round to 30 / 30 / 0, turning entered targets of 50/49/1 percent
+    into a displayed 50/50/0.
+    """
+
+    @pytest.fixture
+    def assembly_with_precise_targets(self, fake_store, existing_assembly):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="Gender",
+                    values=[
+                        TargetValue(value="Female", min=30, max=31, percentage_target=50.0),
+                        TargetValue(value="Male", min=29, max=30, percentage_target=49.0),
+                        TargetValue(value="Non-binary", min=0, max=1, percentage_target=1.0),
+                    ],
+                )
+            )
+            uow.commit()
+        return existing_assembly
+
+    def test_target_pie_shows_entered_percentages_and_bands(self, logged_in_admin, assembly_with_precise_targets):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_precise_targets)).get_data(as_text=True)
+
+        assert "Female 50% (30–31)" in html
+        assert "Male 49% (29–30)" in html
+        assert "Non-binary 1% (0–1)" in html
+
+    def test_table_target_column_shows_the_band(self, logged_in_admin, assembly_with_precise_targets):
+        html = logged_in_admin.get(f"{_dashboard_url(assembly_with_precise_targets)}?view=table").get_data(as_text=True)
+
+        assert "30–31" in html
+        assert "29–30" in html
+        assert "0–1" in html
+        # the percentage column carries the service's value, not one recomputed from counts
+        assert "50.0" in html
+        assert "49.0" in html
+        assert "1.0" in html
+
+    def test_band_collapses_to_one_number_when_min_equals_max(self, logged_in_admin, fake_store, existing_assembly):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="Region",
+                    values=[
+                        TargetValue(value="North", min=15, max=15),
+                        TargetValue(value="South", min=15, max=15),
+                    ],
+                )
+            )
+            uow.commit()
+
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+
+        assert "North 50% (15)" in html
+        assert "15–15" not in html
+
+
+class TestTheExportButton:
+    def test_export_button_opens_the_modal_fragment(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
+        assert f"{_dashboard_url(assembly_with_targets)}/export/modal" in html
+        assert 'id="export-modal-container"' in html
+
+    def test_export_button_is_hidden_on_the_empty_state(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+        assert f"{_dashboard_url(existing_assembly)}/export/modal" not in html
+
+    def test_modal_offers_csv_only(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}/export/modal").get_data(as_text=True)
+        assert 'value="csv" checked' in html
+        assert 'value="xlsx" disabled' in html
+        assert 'value="gsheet" disabled' in html
+
+    def test_export_requires_manage_permission(self, logged_in_user, existing_assembly):
+        response = logged_in_user.post(
+            f"{_dashboard_url(existing_assembly)}/export/run",
+            data={"file_type": "csv"},
+            follow_redirects=True,
+        )
+
+        assert b"You don&#39;t have permission to export the dashboard" in response.data
+
+    def test_export_of_a_missing_assembly_redirects_to_the_dashboard(self, logged_in_admin):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{uuid.uuid4()}/dashboard/export/run",
+            data={"file_type": "csv"},
+            follow_redirects=True,
+        )
+
+        assert b"Assembly not found" in response.data
