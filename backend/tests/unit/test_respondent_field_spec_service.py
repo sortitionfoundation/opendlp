@@ -9,6 +9,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    DerivationType,
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
@@ -133,7 +134,8 @@ class TestCsvColumns:
                 sort_order=20,
                 is_derived=True,
                 derived_from=["postcode"],
-                derivation_kind="postcode_lookup",
+                derivation_type=DerivationType.LARGE_MAPPING,
+                derivation_config={"fallback": "UNKNOWN"},
             )
 
             spec = build_field_spec(uow, user.id, assembly.id)
@@ -142,7 +144,8 @@ class TestCsvColumns:
         region = _field_by_key(spec, "region")
         assert region["is_derived"] is True
         assert region["derived_from"] == ["postcode"]
-        assert region["derivation_kind"] == "postcode_lookup"
+        assert region["derivation_type"] == "large_mapping"
+        assert region["derivation_config"] == {"fallback": "UNKNOWN"}
         # A derived field is never collected, so it is never on the form either.
         assert region["on_registration_page"] == FieldOnRegistrationPage.NO.value
 

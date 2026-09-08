@@ -120,7 +120,8 @@
             "address",
             "about_you",
             "consent",
-            "other"
+            "other",
+            "derived"
           ]
         },
         "sort_order": {
@@ -145,9 +146,25 @@
           },
           "description": "Field keys this one is computed from. Null unless is_derived."
         },
-        "derivation_kind": {
-          "type": "string",
-          "description": "How the derivation is done. Empty unless is_derived."
+        "derivation_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "age_bracket",
+            "small_mapping",
+            "large_mapping",
+            null
+          ],
+          "description": "How the derivation is done. Null unless is_derived."
+        },
+        "derivation_config": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The derivation's parameters (as-of date, boundaries, mapping, fallback...). Shape depends on derivation_type. Null unless is_derived."
         },
         "field_type": {
           "type": "string",
@@ -202,7 +219,8 @@
         "is_fixed",
         "is_derived",
         "derived_from",
-        "derivation_kind",
+        "derivation_type",
+        "derivation_config",
         "field_type",
         "options",
         "on_registration_page",

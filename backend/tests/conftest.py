@@ -397,6 +397,7 @@ def _delete_all_test_data(session_factory):
         session.execute(orm.selection_run_records.delete())
         session.execute(orm.respondent_email_send_records.delete())
         session.execute(orm.respondents.delete())
+        session.execute(orm.respondent_field_mapping_entries.delete())
         session.execute(orm.respondent_field_definitions.delete())
         session.execute(orm.registration_documents.delete())
         session.execute(orm.registration_images.delete())

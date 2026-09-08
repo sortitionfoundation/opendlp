@@ -1,13 +1,13 @@
 # Derived Fields — Research
 
-**Status:** Reviewed — decisions taken, ready to turn into a plan
-**Date:** 2026-08-12, revised 2026-08-14 after review
+**Status:** Reviewed — all questions answered, ready to turn into a plan
+**Date:** 2026-08-12, revised 2026-08-14 after review, final answers integrated 2026-09-08
 **Issue:** 793
 **Scope:** How derived respondent fields (age bracket, small mapping, large mapping) should be modelled in the domain, computed in the service layer, and reconciled with existing respondent data. Intersection is explicitly out of scope for MVP.
 
-The options below are kept for the record, but each now records the decision taken in review. [§12](#12-questions-for-you) lists the two things still open and the ideas we have deliberately parked.
+The options below are kept for the record, but each now records the decision taken in review. [§12](#12-questions-for-you) records the questions raised in review — all now answered — and the ideas we have deliberately parked.
 
-**Decisions at a glance:** full Option C storage from the start (§2.4) · reuse `options` for output values (§2.7) · one `AGE_BRACKET` type, precision follows the source field (§3.1) · `as_of_date` is a required fixed date, never "today" (§3.3) · `min_age` must be > 0 · new `DERIVED` field group · rules do **not** share a `derive()` signature (§2.6) · exact matching only for large mappings, pending a team check on postcode-list granularity (§5.3) · recompute applies directly, dry-run preview parked (§6).
+**Decisions at a glance:** full Option C storage from the start (§2.4) · reuse `options` for output values (§2.7) · one `AGE_BRACKET` type, precision follows the source field (§3.1) · `as_of_date` is a required fixed date, never "today" (§3.3) · `min_age` must be > 0 · new `DERIVED` field group, sorted last after `OTHER` (§2.8) · rules do **not** share a `derive()` signature (§2.6) · exact matching only for large mappings, confirmed against real tables (§5.3) · fallback value defaults to the literal `"UNKNOWN"` (§4.5) · recompute applies directly, dry-run preview parked (§6).
 
 ---
 
@@ -25,14 +25,16 @@ The options below are kept for the record, but each now records the decision tak
 
 The design note that introduced them ([446 respondent_field_schema.md](../history/446-grouped-registrant-view/respondent_field_schema.md)) says explicitly: _"Derived-field placeholders ship now, derivation logic does not."_
 
-Everywhere `is_derived` is consulted today, the field is simply skipped or badged:
+Everywhere `is_derived` is consulted today, the field is simply skipped or badged (line numbers re-checked 2026-09-08):
 
 - `entrypoints/edit_respondent_form.py:119` — no form control is built for a derived field.
-- `entrypoints/blueprints/respondents.py:834, 929` — excluded from attribute collection and from the edit page's groups.
-- `service_layer/respondent_field_schema_service.py:366` — `guess_field_types` skips derived rows.
+- `entrypoints/blueprints/respondents.py:850, 948` — excluded from attribute collection and from the edit page's groups.
+- `entrypoints/blueprints/respondent_field_schema.py:142` — excluded when gating the "Guess field types" button.
+- `service_layer/respondent_field_schema_service.py:377` — `guess_field_types` skips derived rows.
+- `service_layer/respondent_field_spec_service.py:65-67, 113` — **new since this research was first written** (landed 2026-08-25): the hidden JSON field-spec endpoint serialises `is_derived`, `derived_from` and `derivation_kind`, with a closed JSON Schema (`src/opendlp/schemas/json_api/respondent-field-spec.schema.json`) that lists all three as `required` and enumerates `field_type` and `group` as closed enums. Renaming `derivation_kind`, adding `derivation_config`, `FieldType.DATE` or a `DERIVED` group therefore also means updating that schema and re-recording `tests/fixtures/json_api/respondent-field-spec.json`.
 - `templates/backoffice/assembly_view_respondent.html:34` — renders the literal string _"(derivation not yet implemented)"_.
-- `templates/backoffice/respondent_field_schema/view.html:182` — yellow "Derived" tag, `on_registration_page` shown as "Not shown".
-- Derived fields are omitted from the registration form because `generate_starter_form_html*` filters on `on_registration_page != NO`.
+- `templates/backoffice/respondent_field_schema/view.html:174, 177` — yellow "Derived" tag, `on_registration_page` shown as "Not shown".
+- Derived fields are omitted from the registration form because `generate_starter_form_html*` filters on `on_registration_page != NO` (which `__init__` forces for derived fields — note `update()` does **not** re-apply that invariant today).
 
 So the schema-side plumbing (table, ORM, repository, detached copies, display) is already there. What is missing is (a) somewhere to put the _parameters_ of a derivation, and (b) anything that computes.
 
@@ -64,7 +66,7 @@ Google Sheet-backed assemblies do not store respondents in the database at all, 
 | Source field(s)   | one `DATE` field, **or** one `INTEGER` year-of-birth field (see §3) | one `CHOICE_RADIO`/`CHOICE_DROPDOWN` field | one `TEXT` field                      |
 | Output values     | computed bracket labels                                             | fixed list (eventually target values)      | fixed list (eventually target values) |
 | Parameters        | as-of date (required), min age, max age, boundaries                 | —                                          | none in MVP (see §5.3)                |
-| Lookup table size | none                                                                | ≤ ~20 entries                              | tens of thousands of entries          |
+| Lookup table size | none                                                                | ≤ ~20 entries                              | up to a few hundred thousand entries  |
 
 The size asymmetry between small and large mapping is the thing that drives the storage decision.
 
@@ -82,11 +84,11 @@ class DerivationType(Enum):
 
 ```jsonc
 // age bracket
-{"as_of_date": "2026-05-13", "min_age": 16, "max_age": 100, "boundaries": [22, 30, 55], "fallback": "unknown"}
+{"as_of_date": "2026-05-13", "min_age": 16, "max_age": 100, "boundaries": [22, 30, 55], "fallback": "UNKNOWN"}
 // small mapping
-{"mapping": {"White British": "White", "White Irish": "White", ...}, "fallback": "unknown"}
+{"mapping": {"White British": "White", "White Irish": "White", ...}, "fallback": "UNKNOWN"}
 // large mapping — the whole table inline
-{"mapping": {"SW1A 1AA": "London", ...}, "fallback": "unknown"}
+{"mapping": {"SW1A 1AA": "London", ...}, "fallback": "UNKNOWN"}
 ```
 
 - **For:** no new table, no new repository, no migration beyond two columns, the whole config travels with `create_detached_copy()` for free, and it matches the existing JSON-heavy style of the codebase (`options`, `comments`, `attributes`).
@@ -144,7 +146,7 @@ class AgeBracketRule:
     min_age: int = 16                   # must be > 0
     max_age: int = 100
     boundaries: tuple[int, ...] = ()
-    fallback: str = "unknown"
+    fallback: str = "UNKNOWN"
 
     def bracket_labels(self) -> list[str]: ...     # ["under-16", "16-21", ..., "100+"]
     def eligibility_sentence(self) -> str: ...     # see §3.2
@@ -154,12 +156,12 @@ class AgeBracketRule:
 @dataclass(frozen=True)
 class SmallMappingRule:
     mapping: Mapping[str, str]
-    fallback: str = "unknown"
+    fallback: str = "UNKNOWN"
     def derive(self, value: str) -> str: ...
 
 @dataclass(frozen=True)
 class LargeMappingRule:
-    fallback: str = "unknown"
+    fallback: str = "UNKNOWN"
     # No mapping data here: the lookup is injected by the caller so the domain
     # stays pure and we never load 50,000 rows into a value object.
     def derive(self, value: str, lookup: Callable[[str], str | None]) -> str: ...
@@ -199,7 +201,7 @@ The one wrinkle: `RespondentFieldDefinition.update()` currently raises `FixedFie
 
 ### 2.8 A new `DERIVED` field group
 
-Derived fields get their own `RespondentFieldGroup.DERIVED` rather than sitting in `ABOUT_YOU` next to fields the registrant actually filled in. Concretely: a new enum member, an entry in `GROUP_DISPLAY_ORDER` (proposing between `CONSENT` and `OTHER`, so derived values sit near the bottom of the registrant detail page but above the catch-all), and a `GROUP_LABELS` entry — `_l("Derived")`. `field_group` is stored via `EnumAsString`, so no migration is needed. New derived fields default to this group; the organiser can still move them, since group is freely editable.
+Derived fields get their own `RespondentFieldGroup.DERIVED` rather than sitting in `ABOUT_YOU` next to fields the registrant actually filled in. Concretely: a new enum member, an entry in `GROUP_DISPLAY_ORDER` **after `OTHER` — right at the bottom of the registrant detail page** (settled in review, was Q-C), and a `GROUP_LABELS` entry — `_l("Derived")`. `field_group` is stored via `EnumAsString`, so no migration is needed. New derived fields default to this group; the organiser can still move them, since group is freely editable.
 
 One knock-on: `respondent_field_schema_heuristics.classify_field_key` must never classify an imported CSV header into `DERIVED` — that group is only ever set deliberately.
 
@@ -313,7 +315,7 @@ Intersection (post-MVP) derives from two fields that may themselves be derived. 
 Decision taken: **store a fallback value, accept the submission.** Concretely:
 
 - Age: below `min_age` → `under-16` (using the configured minimum), above `max_age` → `100+`. These are real brackets in your example, not errors — an assembly with a 16+ eligibility rule still wants to see that someone under 16 registered despite ticking the eligibility box (§3.2). Missing or unparsable date / year → the configured fallback. A year-of-birth outside a sane range (say, before 1900 or in the future) is a typo, not a person, so it takes the fallback rather than producing a `100+`.
-- Mappings: no match → the configured fallback (default `"unknown"`).
+- Mappings: no match → the configured fallback (default `"UNKNOWN"` — all caps, the house convention; the shouting is a feature, since it reads as "needs attention" in target counts).
 - The fallback value **must** be in the field's `options` so the value round-trips through the edit form and export cleanly, and so the organiser can see it in target counts. Suggest the config UI adds it automatically.
 - Every fallback is worth counting: knowing _how many_ respondents fell back is the organiser's signal that their postcode table has holes. That is what `RecomputeReport` carries (§8).
 
@@ -329,7 +331,7 @@ Config UI: pick the source choice field, declare the output values, then one row
 
 - Two columns. Match headers by normalised name (`normalise_field_name` in `domain/respondents.py` already does the lowercase/strip work) against the source field key and the derived field key — your "postcode" / "region" example. Fall back to positional (first = input, second = output) with a warning if the headers don't match, rather than rejecting.
 - Validate outputs against the declared option list; report unknown outputs with counts and offer "add these as options" vs "reject".
-- Tens of thousands of rows is the normal case, not the extreme one (§5.3): an invite list of 50,000 postcodes is routine. Upload is a normal form POST parsed in memory then `bulk_add`. Suggest a row cap around 250,000 with a clear error above it — well clear of real invite lists, and low enough that a request-cycle upload stays sane. Beyond that we would want the Celery path ([docs/background_tasks.md](../../background_tasks.md)), which is not MVP.
+- Hundreds of thousands of rows is a real case, not a hypothetical (§5.3): a recent Scotland table held over 220,000 full postcodes. Upload is a normal form POST parsed in memory then `bulk_add`. Suggest a row cap around 500,000 with a clear error above it — the original 250,000 proposal was too close to that real 220k table for comfort, and half a million two-column rows is still a manageable request-cycle upload. Beyond that we would want the Celery path ([docs/background_tasks.md](../../background_tasks.md)), which is not MVP. Worth timing the delete-then-`bulk_add` replace at the 250k scale during implementation, since it now sits on the synchronous path.
 - **GDPR:** a postcode→region table is reference data, not personal data, so storing it long-term is fine and does not touch the erasure story in [docs/personal-data.md](../../personal-data.md). The _uploaded file_ must not be persisted — parse to rows, discard the file. That is the existing rule and this path obeys it naturally.
 
 ### 5.3 Match modes — the postcode problem
@@ -342,14 +344,14 @@ Options:
 - (b) **A `match_mode` on the rule: `EXACT` or `LONGEST_PREFIX`.** Longest-prefix normalises both sides and finds the longest stored key that is a prefix of the input — so `SW1A1AA` matches a stored `SW1A`, and one table can mix granularities. A small number of prefix queries per lookup, or in memory for the batch case.
 - (c) Postcode-specific normalisation baked in (split off the inward code, match on the outward code). Too special-cased; prefix matching gets the same result generically.
 
-**Decided (provisionally): (a), exact matching only.** Your point in review kills the premise of my original recommendation — the postcode list is usually **the list of postcodes we sent invites to**, not the whole country. A 50,000-row invite list matched exactly is a completely reasonable table, and 50,000 rows is comfortable in the entries table with an index on `(field_id, lookup_key)`.
+**Decided: (a), exact matching only — confirmed against real tables (was Q-A).** Your point in review kills the premise of my original recommendation — the postcode list is usually **the list of postcodes we sent invites to**, not the whole country. And the follow-up check confirmed it: the tables actually used hold **full postcodes**, not outcodes — a recent Scotland example had over 220,000 rows, and other tables were consumed via spreadsheet `vlookup()`, which is exact matching by construction. So exact matching at full-postcode granularity is how this data is already used today; we are reproducing the existing workflow, not imposing a new constraint. A table that size is comfortable in the entries table with an index on `(field_id, lookup_key)`.
 
 Two consequences worth being deliberate about:
 
 - **Normalisation is now doing all the work.** With full postcodes on both sides, `SW1A 1AA` / `sw1a1aa` / `SW1A  1AA` must all collapse to the same key, on upload _and_ on lookup, or the match rate quietly craters. One normalisation function, applied in both places, unit-tested against the messy variants — this is the single highest-risk detail in the large-mapping work.
 - **A non-match is now meaningful information**, not just a gap. If the table is the invite list, an unmatched postcode means the registrant is outside the invited area, has moved, or has typo'd. That makes the unmatched-inputs list in the recompute report genuinely worth surfacing rather than a nice-to-have.
 
-`match_mode` is **not** stored in MVP — absent means exact. It is a JSON config key, so adding `LONGEST_PREFIX` later needs no migration and no config-shape change. Still open pending your check with the team (§12, Q-A): if the tables turn out to be outcode-level in practice, prefix matching comes back and it is a bigger piece of work than it looks.
+`match_mode` is **not** stored in MVP — absent means exact. It is a JSON config key, so adding `LONGEST_PREFIX` later needs no migration and no config-shape change — but with full-postcode tables confirmed as the norm, prefix matching stays firmly parked.
 
 ---
 
@@ -361,7 +363,7 @@ Options considered:
 
 - (a) **Forbid once respondents exist.** Simplest, and wrong for the actual workflow.
 - (b) **Allow, apply to new respondents only.** Leaves the pool half-derived — the worst outcome, because the resulting target counts are quietly wrong.
-- (c) **(Decided) Allow, and recompute every affected respondent, synchronously.** Creating or editing a derivation recomputes the pool and reports what happened — "1,204 respondents updated, 37 fell back to _unknown_".
+- (c) **(Decided) Allow, and recompute every affected respondent, synchronously.** Creating or editing a derivation recomputes the pool and reports what happened — "1,204 respondents updated, 37 fell back to _UNKNOWN_".
 - (d) As (c) but via Celery for large pools. Keep it synchronous for MVP with batched commits, and lift it into a task if real-world timings demand it. The existing task system is there if we need it.
 
 **A dry-run preview before applying is parked, not built.** Your point stands: the common case is configuring these fields on an assembly with no respondents yet, where a preview shows nothing and costs a click. The report after the fact carries the same numbers. Recorded here so it is easy to pick up if organisers start configuring derivations against live pools: `derived_value_for` is pure, so a `preview_recompute` that shares the apply path is a small addition whenever we want it.
@@ -442,7 +444,7 @@ One Alembic migration (`uv run alembic revision --autogenerate`, then hand-check
 2. Create `respondent_field_mapping_entries` (Option C, from the start — §2.4).
 3. `tests/conftest.py::_delete_all_test_data` — add the new table _before_ `respondent_field_definitions`. Same for `delete_all_except_standard_users()` in `tests/bdd/conftest.py`.
 
-Neither `FieldType.DATE` nor `RespondentFieldGroup.DERIVED` needs a migration — both columns are `EnumAsString`. But `src/js/components/service-docs/fields.js` and `templates/backoffice/service_docs/_fields.html` enumerate field types and will need the new value, and anything iterating `GROUP_DISPLAY_ORDER` picks up the new group for free.
+Neither `FieldType.DATE` nor `RespondentFieldGroup.DERIVED` needs a migration — both columns are `EnumAsString`. `templates/backoffice/service_docs/_fields.html` enumerates both field types and groups (three places for types, two for groups) and will need the new values; `src/js/components/service-docs/fields.js` turns out **not** to enumerate types (it only defaults `addFieldType: "text"`), so it needs no change. The respondent-field-spec JSON Schema and its recorded fixture (§1) enumerate `field_type` and `group` as closed enums and must be updated in the same change. Anything iterating `GROUP_DISPLAY_ORDER` picks up the new group for free — including `list_by_assembly`, which sorts by it in Python.
 
 ---
 
@@ -459,23 +461,13 @@ Per the no-exceptions policy, all three layers:
 
 ## 12. Open questions, and what we parked
 
-### Still open
+### Answered after review (2026-09-08)
 
-**Q-A — Confirm the granularity of real postcode mapping tables (§5.3).**
-You said you would check with the team. The design now assumes exact matching against an invite-list-sized table (tens of thousands of full postcodes). If it turns out organisers typically hold outcode- or district-level tables, longest-prefix matching comes back into scope — and it is a bigger change than it looks, because it changes the lookup from an index hit to a prefix search and changes how the batch import path loads its lookups. Worth settling before the large-mapping step starts, not during it.
+**Q-A — Granularity of real postcode mapping tables (§5.3).** Checked against tables actually used: they hold **full postcodes**, not outcodes. A recent Scotland example had over 220,000 rows; other tables were consumed via spreadsheet `vlookup()`, which is exact matching by construction. Exact matching stands, `LONGEST_PREFIX` stays parked, and the upload row cap moves to 500,000 so the real 220k case has headroom (§5.2).
 
-**Answer:**
+**Q-B — The fallback value.** The house convention is the literal `"UNKNOWN"` — all caps. Still editable per field and auto-added to the options list. With exact postcode matching this value appears for everyone outside the invited area, so its "needs attention" reading in target counts is doing real work (§4.5).
 
-**Q-B — The fallback value (was Q5).**
-Still unanswered. Proposing the literal `"unknown"`, editable per field, auto-added to the options list. Is there a house convention to match instead (`""`, `"not specified"`, `"other"`)? It shows up in target counts, so it wants to read as "needs attention" to an organiser scanning the page. With exact postcode matching (§5.3) this value will appear more often than it would have with prefix matching — everyone outside the invited area lands on it — which makes the wording matter more than it did.
-
-**Answer:**
-COMMENT: "UNKNOWN" as the fallback value is what we tend to use - note the all-caps.
-
-**Q-C — Where the `DERIVED` group sits in `GROUP_DISPLAY_ORDER` (§2.8).**
-Proposing between `CONSENT` and `OTHER`. Trivial to change later; flagging only because it affects every registrant detail page.
-
-**Answer:**
+**Q-C — Where the `DERIVED` group sits in `GROUP_DISPLAY_ORDER`.** After `OTHER`, right at the bottom of the registrant detail page (§2.8).
 
 ### Settled in review
 
@@ -488,10 +480,11 @@ Proposing between `CONSENT` and `OTHER`. Trivial to change later; flagging only 
 | Year of birth          | 1 January assumption, no alternatives (§3.1)                                                                       |
 | As-of date             | Required fixed date, pre-filled from `first_assembly_date`; never "today"; cannot save without one (§3.3)          |
 | `min_age`              | Must be > 0                                                                                                        |
-| Field group            | New `RespondentFieldGroup.DERIVED` (§2.8)                                                                          |
+| Field group            | New `RespondentFieldGroup.DERIVED`, sorted after `OTHER` — last on the page (§2.8)                                 |
+| Fallback value         | The literal `"UNKNOWN"` (all caps), editable per field, auto-added to `options` (§4.5)                             |
 | Eligibility sentence   | Domain function only; delivery mechanism deferred (§3.2)                                                           |
 | Import precedence      | Derive when sources are usable, else keep the supplied value, else fall back (§4.3)                                |
-| Large mapping matching | Exact only, pending Q-A (§5.3)                                                                                     |
+| Large mapping matching | Exact only — real tables are full-postcode granularity, 220k+ rows seen in practice (§5.3)                         |
 | Recompute              | Applies directly on save; no comment per respondent; warn when selection runs exist (§6)                           |
 
 ### Parked ideas

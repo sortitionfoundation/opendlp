@@ -35,6 +35,7 @@ from opendlp.domain.email_send_record import EmailSendOutcome
 from opendlp.domain.registration_page import RegistrationPageActivity, RegistrationPageSource, RegistrationPageStatus
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    DerivationType,
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldGroup,
@@ -620,7 +621,8 @@ respondent_field_definitions = Table(
     Column("is_fixed", Boolean, nullable=False, default=False),
     Column("is_derived", Boolean, nullable=False, default=False),
     Column("derived_from", JSON, nullable=True),
-    Column("derivation_kind", String(100), nullable=False, default=""),
+    Column("derivation_type", EnumAsString(DerivationType, 32), nullable=True),
+    Column("derivation_config", JSON, nullable=True),
     Column("field_type", EnumAsString(FieldType, 32), nullable=False, default=FieldType.TEXT),
     Column("options", ChoiceOptionListJSON, nullable=True),
     Column(
@@ -635,6 +637,25 @@ respondent_field_definitions = Table(
     Index("ix_respondent_field_definitions_assembly_key", "assembly_id", "field_key", unique=True),
     # Composite index for grouped display (ordered read path)
     Index("ix_respondent_field_definitions_assembly_group_order", "assembly_id", "field_group", "sort_order"),
+)
+
+# Large-mapping lookup rows for derived fields (e.g. postcode -> region).
+# Kept out of respondent_field_definitions so the hot schema read never drags
+# a table of hundreds of thousands of entries out of Postgres.
+respondent_field_mapping_entries = Table(
+    "respondent_field_mapping_entries",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "field_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("respondent_field_definitions.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("lookup_key", String(255), nullable=False),
+    Column("output_value", String(255), nullable=False),
+    # Unique lookup_key per field; also the index the batch lookup hits.
+    Index("ix_respondent_field_mapping_entries_field_key", "field_id", "lookup_key", unique=True),
 )
 
 # Registration pages table — an assembly may have many, for A/B variants and languages.

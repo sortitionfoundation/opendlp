@@ -95,3 +95,9 @@ class TestClassifyFieldKey:
         assert (
             classify_field_key("first_name", target_category_names=["", "---"]) == RespondentFieldGroup.NAME_AND_CONTACT
         )
+
+    def test_never_classifies_into_derived(self) -> None:
+        """DERIVED is only ever set deliberately — no imported CSV header may land there."""
+        for key in ["derived", "age_bracket", "region", "derived_field", "Derived"]:
+            assert classify_field_key(key) != RespondentFieldGroup.DERIVED
+            assert classify_field_key(key, target_category_names=[key]) != RespondentFieldGroup.DERIVED

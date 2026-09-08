@@ -11,7 +11,7 @@ import pytest
 from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
-from opendlp.domain.respondent_field_schema import RespondentFieldDefinition, RespondentFieldGroup
+from opendlp.domain.respondent_field_schema import DerivationType, RespondentFieldDefinition, RespondentFieldGroup
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentSourceType, RespondentStatus
@@ -73,6 +73,8 @@ def _field(field_key: str, *, is_fixed: bool = False, is_derived: bool = False) 
         is_fixed=is_fixed,
         is_derived=is_derived,
         derived_from=["age_range"] if is_derived else None,
+        derivation_type=DerivationType.SMALL_MAPPING if is_derived else None,
+        derivation_config={"mapping": {}, "fallback": "UNKNOWN"} if is_derived else None,
     )
 
 

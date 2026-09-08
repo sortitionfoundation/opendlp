@@ -42,7 +42,7 @@ an unmatched one, all in one response.
 
 ```jsonc
 {
-  "spec_version": 2,
+  "spec_version": 3,
   "assembly": {
     "id": "...", "title": "Existing Assembly", "number_to_select": 40
   },
@@ -64,6 +64,11 @@ reason it is there.
 
 Version 2 renamed `description` to `comment` on both a target value and a target
 category, and added `minmax_manual` to a value and `source_url` to a category.
+
+Version 3 replaced the never-populated `derivation_kind` string with
+`derivation_type` (`age_bracket`, `small_mapping`, `large_mapping` or `null`)
+and `derivation_config` (an object of derivation parameters, `null` unless
+`is_derived`), and added `derived` to the `group` values.
 
 ### `csv`
 
@@ -88,11 +93,13 @@ Every field in the schema, in the order the schema page and the CSV export use:
 | ---------------------- | --------------------------------------------------------------------------------------- |
 | `field_key`            | The CSV column header, and the `Respondent.attributes` key                                |
 | `label`                | Organiser-facing display label. Typed by an organiser, so not translated                  |
-| `group`                | One of `eligibility`, `name_and_contact`, `address`, `about_you`, `consent`, `other`      |
+| `group`                | One of `eligibility`, `name_and_contact`, `address`, `about_you`, `consent`, `other`, `derived` |
 | `sort_order`           | Position within the group                                                                 |
 | `is_fixed`             | A reserved top-level `Respondent` field; its type and options cannot be edited            |
 | `is_derived`           | Computed from other fields, never collected — **excluded from `csv.columns`**             |
 | `derived_from`         | Field keys it is computed from; `null` unless `is_derived`                                |
+| `derivation_type`      | `age_bracket`, `small_mapping` or `large_mapping`; `null` unless `is_derived`             |
+| `derivation_config`    | The derivation's parameters (shape depends on `derivation_type`); `null` unless `is_derived` |
 | `field_type`           | See the table below                                                                       |
 | `options`              | Permitted values for a choice field; `null` for every other type                          |
 | `on_registration_page` | `no`, `yes_optional` or `yes_required` — governs the public form, **not** CSV import      |

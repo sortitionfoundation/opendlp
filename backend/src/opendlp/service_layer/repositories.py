@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from opendlp.domain.registration_document import RegistrationDocument
     from opendlp.domain.registration_image import RegistrationImage
     from opendlp.domain.registration_page import RegistrationPage, RegistrationPageHtml
-    from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
+    from opendlp.domain.respondent_field_schema import RespondentFieldDefinition, RespondentFieldMappingEntry
     from opendlp.domain.respondents import Respondent
     from opendlp.domain.targets import TargetCategory
     from opendlp.domain.totp_attempts import TotpVerificationAttempt
@@ -634,6 +634,49 @@ class RespondentFieldDefinitionRepository(AbstractRepository):
     @abc.abstractmethod
     def delete_all_for_assembly(self, assembly_id: uuid.UUID) -> int:
         """Delete all field definitions for an assembly. Returns count deleted."""
+        raise NotImplementedError
+
+
+class RespondentFieldMappingEntryRepository(AbstractRepository):
+    """Repository interface for RespondentFieldMappingEntry domain objects.
+
+    Holds the large-mapping lookup rows for derived fields. Tables can run to
+    hundreds of thousands of rows, so the interface is built around bulk
+    operations and batch lookups rather than row-by-row editing.
+    """
+
+    @abc.abstractmethod
+    def add(self, item: RespondentFieldMappingEntry) -> None:
+        """Add a mapping entry."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def bulk_add(self, items: list[RespondentFieldMappingEntry]) -> None:
+        """Add many mapping entries in one go."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_many(self, field_id: uuid.UUID, lookup_keys: list[str]) -> list[RespondentFieldMappingEntry]:
+        """Return the entries for a field whose lookup_key is in the given list.
+
+        This is the batch lookup the import path uses: one query for a whole
+        batch of source values, never one query per respondent.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def list_for_field(self, field_id: uuid.UUID, limit: int | None = None) -> list[RespondentFieldMappingEntry]:
+        """Return entries for a field ordered by lookup_key, optionally capped at ``limit``."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def count_for_field(self, field_id: uuid.UUID) -> int:
+        """Count the entries for a field."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete_all_for_field(self, field_id: uuid.UUID) -> int:
+        """Delete all entries for a field. Returns count deleted."""
         raise NotImplementedError
 
 
