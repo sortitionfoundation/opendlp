@@ -193,6 +193,25 @@ def load_mapping_lookups(
     return lookups
 
 
+def load_mapping_lookups_for_batch(
+    uow: AbstractUnitOfWork,
+    field_defs: list[RespondentFieldDefinition],
+    source_values: Mapping[str, list[str]],
+) -> dict[uuid.UUID, Callable[[str], str | None]]:
+    """Prefetched lookups for a batch: one ``get_many`` per large-mapping field.
+
+    ``source_values`` maps a source field key to every raw value the batch
+    holds for it, so a 5,000-row import costs one query per mapping field
+    rather than one per row.
+    """
+    lookups: dict[uuid.UUID, Callable[[str], str | None]] = {}
+    for field in field_defs:
+        if field.is_derived and field.derivation_type == DerivationType.LARGE_MAPPING:
+            raw_values = source_values.get((field.derived_from or [""])[0], [])
+            lookups[field.id] = _prefetched_lookup(uow, field, raw_values)
+    return lookups
+
+
 def _single_key_lookup(uow: AbstractUnitOfWork, field_id: uuid.UUID) -> Callable[[str], str | None]:
     def lookup(key: str) -> str | None:
         entries = uow.respondent_field_mapping_entries.get_many(field_id, [key])

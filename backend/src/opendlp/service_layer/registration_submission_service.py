@@ -15,6 +15,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.validators import validate_choice, validate_date_field, validate_email_field, validate_integer
 from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
+from opendlp.service_layer.derivation_service import apply_derivations, load_mapping_lookups
 from opendlp.service_layer.registration_page_service import (
     find_registration_page_by_url_slug,
     resolve_visibility,
@@ -166,9 +167,13 @@ def _create_and_save_respondent(
     assembly_id: uuid.UUID,
     cleaned_data: dict[str, Any],
     is_test: bool,
+    field_definitions: list[RespondentFieldDefinition],
     registration_page_id: uuid.UUID | None = None,
 ) -> Respondent:
-    """Build a Respondent from cleaned form data, persist it, and return a detached copy.
+    """Build a Respondent from cleaned form data, derive, persist, and return a detached copy.
+
+    ``field_definitions`` is the already-loaded schema — both callers have it
+    in hand for validation, so it is passed down rather than re-queried.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -205,6 +210,8 @@ def _create_and_save_respondent(
         author_id=system_author_id,
         action=RespondentAction.CREATE,
     )
+
+    apply_derivations(respondent, field_definitions, load_mapping_lookups(uow, field_definitions))
 
     uow.respondents.add(respondent)
     uow.commit()
@@ -267,7 +274,7 @@ def submit_registration(
             is_test=is_test,
         )
 
-    respondent = _create_and_save_respondent(uow, page.assembly_id, cleaned_data, is_test, page.id)
+    respondent = _create_and_save_respondent(uow, page.assembly_id, cleaned_data, is_test, field_definitions, page.id)
 
     return RegistrationSubmissionResult(
         respondent=respondent,
@@ -329,7 +336,7 @@ def submit_registration_by_assembly_id(
             is_test=is_test,
         )
 
-    respondent = _create_and_save_respondent(uow, assembly_id, cleaned_data, is_test)
+    respondent = _create_and_save_respondent(uow, assembly_id, cleaned_data, is_test, field_definitions)
 
     return RegistrationSubmissionResult(
         respondent=respondent,

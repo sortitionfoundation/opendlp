@@ -130,7 +130,7 @@ Details:
 - **`apply_derivations`** implements precedence (c) from research §4.3: source usable → derive; else supplied value present → keep; else fallback. Returns a small `DerivationOutcome` (which fields were overwritten vs kept) so the import path can add its notes to `errors`.
 - **`derived_value_for`** is the pure `match derivation_type` dispatch; for age it reads the *source* field's `field_type` to pick `derive_from_date` vs `derive_from_year`.
 
-## 5. Step 5 — Wire the four write paths
+## 5. Step 5 — Wire the four write paths ✅ DONE
 
 | Path | Change |
 | --- | --- |
@@ -149,7 +149,7 @@ Per research §7, each mutator calls `derivations_depending_on` first:
 - `remove_choice_option` on a small-mapping source → drop the mapping entry (value now falls back); the report/return notes it.
 - `update_field` on a derived field's own `field_type`/`options` → blocked via `DerivedFieldError` (domain, step 1.1), translated to `FieldDefinitionConflictError` like `FixedFieldError` is at line 325.
 
-## 7. Step 7 — Tests
+## 7. Step 7 — Tests ✅ DONE (landed with each step; BDD deferred to the UI chunk)
 
 Unit, contract and integration land with their steps (listed above); the full matrix is research §11. Explicitly **in** this chunk: all unit tests for rules/normalisation/dispatch/date-validation, contract tests for the new repository, integration tests for the four write paths, recompute idempotence, import precedence, source-field protection, and the batch-lookup-not-N-queries check. Explicitly **out** (UI chunk): BDD scenarios — they need the config pages that don't exist yet.
 
