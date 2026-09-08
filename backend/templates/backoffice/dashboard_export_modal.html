@@ -1,0 +1,45 @@
+{#
+ABOUTME: Export modal fragment (HTMX-loaded) for the assembly results dashboard
+ABOUTME: File type selector — CSV enabled; Xls and Google Sheet arrive in later iterations
+#}
+{% from "backoffice/components/modal.html" import modal %}
+{% from "backoffice/components/button.html" import button %}
+
+{# The shared modal() component supplies the isOpen/canClose/close/closeIfAllowed
+   contract the modal() macro expects (see the respondents export modal). #}
+<div x-data="modal({ initialOpen: true })">
+    {% call modal(id="dashboard-export-modal", title=_("Export")) %}
+        <form method="post"
+              action="{{ url_for('backoffice.run_dashboard_export', assembly_id=assembly_id) }}"
+              class="flex flex-col gap-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                {{ _("Export includes only the data currently displayed in the table view.") }}
+            </p>
+
+            <fieldset class="flex flex-col gap-2">
+                <legend class="text-body-md font-medium mb-1" style="color: var(--color-headings);">
+                    {{ _("File type") }}
+                </legend>
+                <label class="flex items-center gap-2 text-body-md">
+                    <input type="radio" name="file_type" value="csv" checked>
+                    {{ _("CSV") }}
+                </label>
+                <label class="flex items-center gap-2 text-body-md" style="color: var(--color-secondary-text);">
+                    <input type="radio" name="file_type" value="xlsx" disabled>
+                    {{ _("Xls") }}
+                </label>
+                <label class="flex items-center gap-2 text-body-md" style="color: var(--color-secondary-text);">
+                    <input type="radio" name="file_type" value="gsheet" disabled>
+                    {{ _("Google Sheet") }}
+                </label>
+            </fieldset>
+
+            <div class="flex justify-end gap-2 pt-2">
+                {{ button(_("Cancel"), variant="secondary", attrs='@click="close()"') }}
+                {{ button(_("Export"), type="submit", variant="primary") }}
+            </div>
+        </form>
+    {% endcall %}
+</div>

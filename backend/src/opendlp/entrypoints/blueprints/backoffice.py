@@ -4,11 +4,12 @@ ABOUTME: Provides /backoffice/* routes for dashboard, assembly CRUD, data source
 import uuid
 
 import structlog
-from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.value_objects import AssemblyRole
 from opendlp.entrypoints.blueprints.registration import (
@@ -38,6 +39,7 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.dashboard_stats import (
     CategoryValueRow,
     DashboardReport,
+    export_dashboard_report,
     get_assembly_dashboard_report,
     get_assembly_dashboard_summary,
 )
@@ -309,8 +311,8 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
     Header indicators (number to select / registrations) plus the per-category
     results, in one of two views selected by the ``view`` query parameter:
     "chart" (default) draws pie charts, "table" draws a table per category. Both
-    are driven by the services in service_layer/dashboard_stats.py. The export
-    button and the findings banner are not wired yet.
+    are driven by the services in service_layer/dashboard_stats.py. The findings
+    banner is not wired yet.
     """
     view = "table" if request.args.get("view") == "table" else "chart"
     try:
@@ -364,6 +366,56 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
         flash(_("An error occurred while loading the dashboard"), "error")
         return redirect(url_for("backoffice.dashboard"))
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/modal")
+@login_required
+def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Render the dashboard export modal fragment (HTMX-loaded).
+
+    Needs no server data while CSV is the only enabled file type, but stays a
+    fragment route so later iterations can preload e.g. the saved Google Sheet
+    config, matching the respondents export modal.
+    """
+    return render_template("backoffice/dashboard_export_modal.html", assembly_id=assembly_id), 200
+
+
+@backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/run", methods=["POST"])
+@login_required
+def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Run a dashboard export from the modal. CSV download only in this iteration."""
+    dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
+    if request.form.get("file_type", "csv") != "csv":
+        flash(_("Only CSV export is available for now"), "error")
+        return redirect(dashboard_url)
+
+    # Built inline rather than injected: pure in-memory work, no seam needed
+    # (see the respondents CSV export for the same reasoning).
+    target = CsvExportTarget()
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            export_dashboard_report(uow, current_user.id, assembly_id, target=target)
+    except InsufficientPermissions as e:
+        logger.warning(
+            "Insufficient permissions to export dashboard",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("You don't have permission to export the dashboard"), "error")
+        return redirect(dashboard_url)
+    except NotFoundError as e:
+        logger.warning("Assembly not found for dashboard export", assembly_id=str(assembly_id), error=str(e))
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    filename = f"dashboard-{str(assembly_id)[:8]}.csv"
+    return Response(
+        target.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/edit", methods=["GET", "POST"])

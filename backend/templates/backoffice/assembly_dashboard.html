@@ -8,6 +8,7 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
 {% from "backoffice/components/pie_chart_card.html" import pie_chart_card %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell %}
 {% from "backoffice/components/icons.html" import icon_pie_chart %}
+{% from "backoffice/components/button.html" import button %}
 
 {% block title %}{{ _("Dashboard") }} - {{ assembly.title }}{% endblock %}
 
@@ -50,23 +51,30 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
                 </span>
             </div>
         </div>
-        {# View toggle: two links (server-side ?view=), styled as a segmented pill. #}
-        <div class="flex items-center gap-3 shrink-0">
-            <span class="text-label-md" style="color: var(--color-headings);">{{ _("View") }}</span>
-            <div class="inline-flex" role="group" aria-label="{{ _('View') }}">
-                {% for opt in [{"key": "chart", "label": _("Chart")}, {"key": "table", "label": _("Table")}] %}
-                    {% set is_active = dashboard_view == opt.key %}
-                    <a href="{{ url_for('backoffice.view_assembly_dashboard', assembly_id=assembly.id, view=opt.key) }}"
-                       {% if is_active %}aria-current="true"{% endif %}
-                       class="text-label-md px-4 py-2 border transition-colors {{ 'rounded-l-full' if opt.key == 'chart' else 'rounded-r-full -ml-px' }}"
-                       style="border-color: var(--color-brand-400);
-                              {% if is_active %}background-color: var(--color-brand-400); color: var(--color-neutral-0);{% else %}background-color: transparent; color: var(--color-brand-400);{% endif %}">
-                        {{ opt.label }}
-                    </a>
-                {% endfor %}
+        {# View toggle (two server-side ?view= links styled as a segmented pill) + Export #}
+        <div class="flex items-center gap-4 shrink-0">
+            <div class="flex items-center gap-3">
+                <span class="text-label-md" style="color: var(--color-headings);">{{ _("View") }}</span>
+                <div class="inline-flex" role="group" aria-label="{{ _('View') }}">
+                    {% for opt in [{"key": "chart", "label": _("Chart")}, {"key": "table", "label": _("Table")}] %}
+                        {% set is_active = dashboard_view == opt.key %}
+                        <a href="{{ url_for('backoffice.view_assembly_dashboard', assembly_id=assembly.id, view=opt.key) }}"
+                           {% if is_active %}aria-current="true"{% endif %}
+                           class="text-label-md px-4 py-2 border transition-colors {{ 'rounded-l-full' if opt.key == 'chart' else 'rounded-r-full -ml-px' }}"
+                           style="border-color: var(--color-brand-400);
+                                  {% if is_active %}background-color: var(--color-brand-400); color: var(--color-neutral-0);{% else %}background-color: transparent; color: var(--color-brand-400);{% endif %}">
+                            {{ opt.label }}
+                        </a>
+                    {% endfor %}
+                </div>
             </div>
+            {% if dashboard_sections %}
+                {{ button(_("Export"), variant="primary",
+                attrs='hx-get="' ~ url_for('backoffice.dashboard_export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
+            {% endif %}
         </div>
     </div>
+    <div id="export-modal-container"></div>
 
     {% if not dashboard_sections %}
         {# Empty state: no target categories, so there is nothing to chart or tabulate.

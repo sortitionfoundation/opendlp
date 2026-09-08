@@ -3,6 +3,7 @@ ABOUTME: Covers the page render, the FF_RESULTS_DASHBOARD tab gating, and the at
 
 import os
 import re
+import uuid
 
 import pytest
 from flask import render_template_string
@@ -279,3 +280,38 @@ class TestTargetPrecision:
 
         assert "North 50% (15)" in html
         assert "15–15" not in html
+
+
+class TestTheExportButton:
+    def test_export_button_opens_the_modal_fragment(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
+        assert f"{_dashboard_url(assembly_with_targets)}/export/modal" in html
+        assert 'id="export-modal-container"' in html
+
+    def test_export_button_is_hidden_on_the_empty_state(self, logged_in_admin, existing_assembly):
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+        assert f"{_dashboard_url(existing_assembly)}/export/modal" not in html
+
+    def test_modal_offers_csv_only(self, logged_in_admin, assembly_with_targets):
+        html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}/export/modal").get_data(as_text=True)
+        assert 'value="csv" checked' in html
+        assert 'value="xlsx" disabled' in html
+        assert 'value="gsheet" disabled' in html
+
+    def test_export_requires_manage_permission(self, logged_in_user, existing_assembly):
+        response = logged_in_user.post(
+            f"{_dashboard_url(existing_assembly)}/export/run",
+            data={"file_type": "csv"},
+            follow_redirects=True,
+        )
+
+        assert b"You don&#39;t have permission to export the dashboard" in response.data
+
+    def test_export_of_a_missing_assembly_redirects_to_the_dashboard(self, logged_in_admin):
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{uuid.uuid4()}/dashboard/export/run",
+            data={"file_type": "csv"},
+            follow_redirects=True,
+        )
+
+        assert b"Assembly not found" in response.data
