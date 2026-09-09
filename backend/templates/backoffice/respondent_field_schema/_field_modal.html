@@ -3,9 +3,11 @@ ABOUTME: Add/edit field modal fragment — served over HTMX or rendered open on 
 ABOUTME: Real form + hx-post enhancement; type changes and option rows round-trip through the server
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, textarea, select, radio_group %}
 {% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
 {% set values = modal_ctx["values"] %}
 {% set is_derived_flow = modal_ctx["is_derived"] or values["type_choice"] == "derived" %}
+{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-target="#field-modal-container" hx-swap="innerHTML"' %}
 {# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
@@ -51,38 +53,28 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                     </div>
                 {% endif %}
                 {% if is_derived_flow and modal_ctx["mode"] == "new" %}
-                    <div class="mb-4 govuk-hint text-body-sm">
+                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
                         {{ _("A derived field takes its name and field key from the target it feeds.") }}
-                    </div>
+                    </p>
                 {% else %}
                     <div class="mb-4">
-                        <label class="govuk-label" for="field-modal-label">{{ _("Label") }}</label>
-                        <input type="text"
-                               id="field-modal-label"
-                               name="label"
-                               value="{{ values['label'] }}"
-                               required
-                               class="govuk-input">
+                        {{ input("label", label=_("Label"), value=values["label"], required=true, id="field-modal-label") }}
                     </div>
                 {% endif %}
                 {% if modal_ctx["mode"] == "new" and not is_derived_flow %}
                     <details class="mb-4">
                         <summary class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Change the field key") }}</summary>
                         <div class="mt-2">
-                            <label class="govuk-label" for="field-modal-key">{{ _("Field key") }}</label>
-                            <div class="govuk-hint text-body-sm">
-                                {{ _("Left blank, it is generated from the label — lowercase letters, numbers and underscores.") }}
-                            </div>
-                            <input type="text"
-                                   id="field-modal-key"
-                                   name="field_key"
-                                   value="{{ values['field_key'] }}"
-                                   class="govuk-input">
+                            {{ input("field_key",
+                            label=_("Field key"),
+                            hint=_("Left blank, it is generated from the label — lowercase letters, numbers and underscores."),
+                            value=values["field_key"],
+                            id="field-modal-key") }}
                         </div>
                     </details>
                 {% elif modal_ctx["mode"] == "edit" %}
                     <div class="mb-4">
-                        <span class="govuk-label">{{ _("Field key") }}</span>
+                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Field key") }}</span>
                         <code>{{ modal_ctx["field"].field_key }}</code>
                     </div>
                 {% endif %}
@@ -90,73 +82,71 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                     {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
                 {% elif modal_ctx["type_locked"] %}
                     <div class="mb-4">
-                        <span class="govuk-label">{{ _("Type") }}</span>
+                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Type") }}</span>
                         <span class="text-body-sm">{{ field_type_labels_by_value[modal_ctx["field"].effective_field_type.value] }}</span>
                         <strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>
-                        <div class="govuk-hint text-body-sm">{{ _("Fixed fields keep their built-in type.") }}</div>
+                        <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Fixed fields keep their built-in type.") }}</div>
                     </div>
                 {% else %}
-                    <fieldset class="mb-4">
-                        <legend class="govuk-label">{{ _("Type") }}</legend>
-                        {% for choice_value, choice_label in modal_ctx["type_choices"] %}
-                            {% set derived_disabled = choice_value == "derived" and not modal_ctx["has_targets"] %}
-                            <div class="govuk-radios__item">
-                                <input class="govuk-radios__input"
-                                       type="radio"
-                                       id="field-modal-type-{{ choice_value }}"
-                                       name="type_choice"
-                                       value="{{ choice_value }}"
-                                       {% if values["type_choice"] == choice_value %}checked{% endif %}
-                                       {% if derived_disabled %}disabled{% endif %}
-                                       hx-get="{{ modal_ctx['refresh_url'] }}"
-                                       hx-include="closest form"
-                                       hx-target="#field-modal-container"
-                                       hx-swap="innerHTML">
-                                <label class="govuk-label govuk-radios__label" for="field-modal-type-{{ choice_value }}">{{ choice_label }}</label>
-                                {% if derived_disabled %}
-                                    <div class="govuk-hint govuk-radios__hint text-body-sm">{{ _("Create targets first — a derived field feeds one.") }}</div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                    </fieldset>
+                    <div class="mb-4">
+                        {{ radio_group("type_choice",
+                        label=_("Type"),
+                        options=modal_ctx["type_choices"],
+                        value=values["type_choice"],
+                        id="field-modal-type",
+                        attrs=refresh_attrs) }}
+                        {% if modal_ctx["mode"] == "new" and not modal_ctx["has_targets"] %}
+                            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
+                                {{ _("Create targets first to add a derived field — it feeds one.") }}
+                            </p>
+                        {% endif %}
+                    </div>
                     <noscript>
                         {# Without JS the radios can't re-render the form, so offer an explicit refresh. #}
                         {{ button(_("Update the form for this type") , type="submit", variant="secondary", attrs='name="form_action" value="refresh"') }}
                     </noscript>
                     {% if values["type_choice"] == "free_text" %}
                         <div class="mb-4 pl-4">
-                            <label class="govuk-label" for="field-modal-subtype">{{ _("Kind of text") }}</label>
-                            <select id="field-modal-subtype" name="free_text_subtype" class="govuk-select">
-                                <option value="text" {% if values["free_text_subtype"] == "text" %}selected{% endif %}>{{ _("Text") }}</option>
-                                <option value="email" {% if values["free_text_subtype"] == "email" %}selected{% endif %}>{{ _("Email") }}</option>
-                                <option value="integer" {% if values["free_text_subtype"] == "integer" %}selected{% endif %}>{{ _("Number") }}</option>
-                            </select>
+                            {{ select("free_text_subtype",
+                            label=_("Kind of text"),
+                            options=[
+                            {"value": "text", "label": _("Text")},
+                            {"value": "email", "label": _("Email")},
+                            {"value": "integer", "label": _("Number")},
+                            ],
+                            value=values["free_text_subtype"],
+                            id="field-modal-subtype") }}
                         </div>
                     {% endif %}
                     {% if values["type_choice"] == "choice" %}
                         <div class="mb-4 pl-4">
-                            <label class="govuk-label" for="field-modal-choice-style">{{ _("Shown on the form as") }}</label>
-                            <select id="field-modal-choice-style" name="choice_style" class="govuk-select">
-                                <option value="choice_radio" {% if values["choice_style"] == "choice_radio" %}selected{% endif %}>{{ _("Radio buttons") }}</option>
-                                <option value="choice_dropdown" {% if values["choice_style"] == "choice_dropdown" %}selected{% endif %}>{{ _("Dropdown") }}</option>
-                            </select>
+                            {{ select("choice_style",
+                            label=_("Shown on the form as"),
+                            options=[
+                            {"value": "choice_radio", "label": _("Radio buttons")},
+                            {"value": "choice_dropdown", "label": _("Dropdown")},
+                            ],
+                            value=values["choice_style"],
+                            id="field-modal-choice-style") }}
                         </div>
                         <fieldset class="mb-4">
-                            <legend class="govuk-label">{{ _("Options") }}</legend>
+                            <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
                             {% for option in values["options"] %}
-                                <div class="flex gap-2 items-center mb-2">
-                                    <input type="text"
-                                           name="option_value"
-                                           value="{{ option['value'] }}"
-                                           class="govuk-input"
-                                           aria-label="{{ _('Option %(n)d value', n=loop.index) }}"
-                                           placeholder="{{ _('value') }}">
-                                    <input type="text"
-                                           name="option_help"
-                                           value="{{ option['help_text'] }}"
-                                           class="govuk-input"
-                                           aria-label="{{ _('Option %(n)d help text', n=loop.index) }}"
-                                           placeholder="{{ _('help text (optional)') }}">
+                                <div class="flex gap-2 items-end mb-2">
+                                    <div class="flex-1">
+                                        {{ input("option_value",
+                                        value=option["value"],
+                                        placeholder=_("value"),
+                                        aria_label=_('Option %(n)d value', n=loop.index),
+                                        id="field-modal-option-value-" ~ loop.index0) }}
+                                    </div>
+                                    <div class="flex-1">
+                                        {{ input("option_help",
+                                        value=option["help_text"],
+                                        placeholder=_("help text (optional)"),
+                                        aria_label=_('Option %(n)d help text', n=loop.index),
+                                        id="field-modal-option-help-" ~ loop.index0) }}
+                                    </div>
                                     {{ button(_("Remove") , type="submit", variant="tertiary",
                                     attrs='name="form_action" value="remove_option_' ~ loop.index0 ~ '"',
                                     aria_label=_('Remove option %(n)d', n=loop.index)) }}
@@ -170,25 +160,21 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                     {% endif %}
                 {% endif %}
                 <div class="mb-4">
-                    <label class="govuk-label" for="field-modal-help-text">{{ _("Help text") }}</label>
-                    <div class="govuk-hint text-body-sm">{{ _("Optional hint shown beneath the field on the registration form.") }}</div>
-                    <textarea id="field-modal-help-text" name="help_text" rows="2" class="govuk-textarea">{{ values["help_text"] }}</textarea>
+                    {{ textarea("help_text",
+                    label=_("Help text"),
+                    hint=_("Optional hint shown beneath the field on the registration form."),
+                    value=values["help_text"],
+                    rows=2,
+                    id="field-modal-help-text") }}
                 </div>
                 {% if not is_derived_flow %}
-                    <fieldset class="mb-4">
-                        <legend class="govuk-label">{{ _("On the registration form") }}</legend>
-                        {% for choice_value, choice_label in on_registration_page_choices %}
-                            <div class="govuk-radios__item">
-                                <input class="govuk-radios__input"
-                                       type="radio"
-                                       id="field-modal-onreg-{{ choice_value }}"
-                                       name="on_registration_page"
-                                       value="{{ choice_value }}"
-                                       {% if values["on_registration_page"] == choice_value %}checked{% endif %}>
-                                <label class="govuk-label govuk-radios__label" for="field-modal-onreg-{{ choice_value }}">{{ choice_label }}</label>
-                            </div>
-                        {% endfor %}
-                    </fieldset>
+                    <div class="mb-4">
+                        {{ radio_group("on_registration_page",
+                        label=_("On the registration form"),
+                        options=on_registration_page_choices,
+                        value=values["on_registration_page"],
+                        id="field-modal-onreg") }}
+                    </div>
                 {% endif %}
             </div>
             <div class="dialog-footer">

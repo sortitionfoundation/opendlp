@@ -3,6 +3,7 @@ ABOUTME: Read-only schema editor fragment — summary rows with section/order/ac
 ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; included by view.html
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import select %}
 {# oob=true marks the fragment for an out-of-band swap: HTMX replaces #schema-editor
    in place while the (otherwise empty) response body clears #field-modal-container,
    closing whichever modal triggered the mutation. #}
@@ -115,16 +116,13 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                                           x-data
                                           x-preserve-scroll-on-submit>
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <select name="group"
-                                                class="govuk-select"
-                                                aria-label="{{ _('Section for %(key)s', key=field.field_key) }}">
-                                            {% for value, label in group_choices %}
-                                                <option value="{{ value }}"
-                                                        {% if field.group.value == value %}selected{% endif %}>
-                                                    {{ label }}
-                                                </option>
-                                            {% endfor %}
-                                        </select>
+                                        <div class="flex-1">
+                                            {{ select("group",
+                                            options=group_choices,
+                                            value=field.group.value,
+                                            id="row-group-" ~ field.id,
+                                            attrs='aria-label="' ~ (_('Section for %(key)s', key=field.field_key) | e) ~ '"') }}
+                                        </div>
                                         {{ button(_("Move") , type="submit", variant="tertiary") }}
                                     </form>
                                 </td>

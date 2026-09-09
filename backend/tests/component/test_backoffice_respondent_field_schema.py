@@ -935,17 +935,30 @@ class TestDerivedFieldModal:
         data.update(overrides)
         return data
 
-    def test_derived_radio_is_disabled_without_targets(
+    def test_derived_type_is_not_offered_without_targets(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
+        """A derived field feeds a target, so the option is left off the picker with a hint."""
         _seed_schema(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.get(
             f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
         )
         body = response.get_data(as_text=True)
-        assert 'value="derived"' in body
+        assert 'value="derived"' not in body
         assert "Create targets first" in body
+
+    def test_derived_type_is_offered_once_targets_exist(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        )
+        body = response.get_data(as_text=True)
+        assert 'value="derived"' in body
+        assert "Create targets first" not in body
 
     def test_derived_panel_lists_targets_and_filters_sources_by_method(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

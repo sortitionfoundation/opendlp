@@ -130,16 +130,16 @@ def _parse_on_registration_page(raw: str | None) -> FieldOnRegistrationPage | No
 # and "choice" to CHOICE_RADIO/CHOICE_DROPDOWN.
 # ---------------------------------------------------------------------------
 
-_STANDARD_TYPE_CHOICES: list[tuple[str, Any]] = [
-    ("bool", FIELD_TYPE_LABELS[FieldType.BOOL]),
-    ("free_text", FIELD_TYPE_LABELS[FieldType.TEXT]),
-    ("choice", FIELD_TYPE_LABELS[FieldType.CHOICE_RADIO]),
-    ("date", FIELD_TYPE_LABELS[FieldType.DATE]),
+_STANDARD_TYPE_CHOICES: list[dict[str, Any]] = [
+    {"value": "bool", "label": FIELD_TYPE_LABELS[FieldType.BOOL]},
+    {"value": "free_text", "label": FIELD_TYPE_LABELS[FieldType.TEXT]},
+    {"value": "choice", "label": FIELD_TYPE_LABELS[FieldType.CHOICE_RADIO]},
+    {"value": "date", "label": FIELD_TYPE_LABELS[FieldType.DATE]},
 ]
 
-_LEGACY_TYPE_CHOICES: dict[FieldType, tuple[str, Any]] = {
-    FieldType.LONGTEXT: ("longtext", FIELD_TYPE_LABELS[FieldType.LONGTEXT]),
-    FieldType.BOOL_OR_NONE: ("bool_or_none", FIELD_TYPE_LABELS[FieldType.BOOL_OR_NONE]),
+_LEGACY_TYPE_CHOICES: dict[FieldType, dict[str, Any]] = {
+    FieldType.LONGTEXT: {"value": "longtext", "label": FIELD_TYPE_LABELS[FieldType.LONGTEXT]},
+    FieldType.BOOL_OR_NONE: {"value": "bool_or_none", "label": FIELD_TYPE_LABELS[FieldType.BOOL_OR_NONE]},
 }
 
 _FREE_TEXT_SUBTYPES: dict[str, FieldType] = {
@@ -185,7 +185,7 @@ def _taxonomy_from_field_type(field_type: FieldType) -> dict[str, str]:
     elif field_type == FieldType.DATE:
         values["type_choice"] = "date"
     elif field_type in _LEGACY_TYPE_CHOICES:
-        values["type_choice"] = _LEGACY_TYPE_CHOICES[field_type][0]
+        values["type_choice"] = _LEGACY_TYPE_CHOICES[field_type]["value"]
     return values
 
 
@@ -298,15 +298,21 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
         action_url = url_for("respondent_field_schema.add_derived_field_view", assembly_id=assembly_id)
     else:
         action_url = url_for("respondent_field_schema.add_field_view", assembly_id=assembly_id)
+    # Without targets the Derived option is left off the type picker entirely —
+    # a derived field feeds one, so there is nothing it could be pointed at.
+    has_targets = _assembly_has_targets(assembly_id)
+    type_choices = list(_STANDARD_TYPE_CHOICES)
+    if has_targets:
+        type_choices.append({"value": "derived", "label": _l("Derived (computed from another field)")})
     return {
         "mode": "new",
         "field": None,
         "action_url": action_url,
         "refresh_url": url_for("respondent_field_schema.new_field_modal", assembly_id=assembly_id),
-        "type_choices": [*_STANDARD_TYPE_CHOICES, ("derived", _l("Derived (computed from another field)"))],
+        "type_choices": type_choices,
         "type_locked": False,
         "is_derived": False,
-        "has_targets": _assembly_has_targets(assembly_id),
+        "has_targets": has_targets,
         "derived": derived,
         "error": error,
         "values": _normalise_modal_values(values),
@@ -536,6 +542,16 @@ def _build_derived_ctx(assembly_id: uuid.UUID, values: dict[str, Any], target_lo
         "mismatch_labels": mismatch_labels,
         "map_rows": map_rows,
         "fallback": DEFAULT_FALLBACK,
+        "method_options": [
+            {"value": DerivationType.AGE_BRACKET.value, "label": _("Age brackets")},
+            {"value": DerivationType.SMALL_MAPPING.value, "label": _("Map choices")},
+            {"value": DerivationType.LARGE_MAPPING.value, "label": _("Lookup table")},
+        ],
+        "method_help": {
+            DerivationType.AGE_BRACKET.value: _("From a date of birth or a year of birth"),
+            DerivationType.SMALL_MAPPING.value: _("Map each answer of an existing choice field to a target value"),
+            DerivationType.LARGE_MAPPING.value: _("Upload a CSV mapping, e.g. postcode to region"),
+        },
     }
 
 
@@ -597,13 +613,13 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
         "mapping_row_counts": mapping_row_counts,
         "assembly": assembly,
         "sections": sections,
-        "group_choices": [(group.value, GROUP_LABELS[group]) for group in GROUP_DISPLAY_ORDER],
+        "group_choices": [{"value": group.value, "label": GROUP_LABELS[group]} for group in GROUP_DISPLAY_ORDER],
         "field_type_labels_by_value": {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType},
         "derivation_type_labels": _derivation_type_labels(),
         "on_registration_page_choices": [
-            (FieldOnRegistrationPage.NO.value, _("Not shown")),
-            (FieldOnRegistrationPage.YES_OPTIONAL.value, _("Optional")),
-            (FieldOnRegistrationPage.YES_REQUIRED.value, _("Required")),
+            {"value": FieldOnRegistrationPage.NO.value, "label": _("Not shown")},
+            {"value": FieldOnRegistrationPage.YES_OPTIONAL.value, "label": _("Optional")},
+            {"value": FieldOnRegistrationPage.YES_REQUIRED.value, "label": _("Required")},
         ],
         "schema_has_rows": schema_has_rows,
         "show_guess_button": show_guess_button,

@@ -146,7 +146,7 @@ def save_choice_field_via_modal(admin_logged_in_page: Page, label: str, first: s
     """Fill the modal: label, choice type (HTMX re-render), two option rows, save."""
     page = admin_logged_in_page
     page.fill('input[name="label"]', label)
-    page.check("#field-modal-type-choice")
+    page.check('input[name="type_choice"][value="choice"]')
     # The type change re-renders the form fragment; the options editor appears.
     first_option = page.locator('input[name="option_value"]').first
     expect(first_option).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
@@ -168,17 +168,20 @@ def create_age_bracket_derived_field(admin_logged_in_page: Page, target: str, so
     page = admin_logged_in_page
     page.get_by_role("button", name="Add a field").click()
     expect(page.get_by_role("dialog")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    page.check("#field-modal-type-derived")
+    page.check('input[name="type_choice"][value="derived"]')
     target_select = page.locator("#derived-target")
     expect(target_select).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    target_select.select_option(target)
-    # Choosing the target re-renders the panel and pre-fills the brackets from
-    # its "16-24"-style values — wait for that swap before touching inputs.
+    # Each select change round-trips through the server and swaps the form
+    # fragment back in. Waiting on the response itself (not just its rendered
+    # side-effects) stops the next action racing the swap.
+    with page.expect_response(lambda r: "new-modal" in r.url):
+        target_select.select_option(target)
+    # Choosing the target pre-fills the brackets from its "16-24"-style values.
     expect(page.locator('input[name="boundaries"]')).to_have_value("25", timeout=PLAYWRIGHT_TIMEOUT)
-    source_select = page.locator("#derived-source")
-    source_select.select_option(source_key)
-    # The source change re-renders again; the 1-January note only exists in the
-    # refreshed panel because year_of_birth is an INTEGER source.
+    with page.expect_response(lambda r: "new-modal" in r.url):
+        page.locator("#derived-source").select_option(source_key)
+    # The 1-January note only exists in the refreshed panel because
+    # year_of_birth is an INTEGER source.
     expect(page.get_by_text("1 January")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     # The as-of date stays blank (the assembly has no first date), so fill it.
     page.fill('input[name="as_of_day"]', "1")
