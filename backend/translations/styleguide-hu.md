@@ -12,7 +12,7 @@ September 2026. The questions put to them, and their reasoning, are in
 each decision here is tagged with the question it came from, like *(A1)*, so you
 can go and read why.
 
-Three things are still open and are listed under [Still open](#still-open) at the
+Two things are still open and are listed under [Still open](#still-open) at the
 foot of this file. Everything else is settled — follow it as written, and if you
 disagree, change this guide and the catalogue together rather than translating
 around it.
@@ -70,6 +70,7 @@ they are the same thing.
 | replacement (the process) | résztvevő pótlása | *(B9)* |
 | replacement (the person) | pótszemély | *(B9)* |
 | invite | meghívó | |
+| assembly question | a közösségi gyűlés témája | *(F28)* |
 
 **assembly** is *közösségi gyűlés* in full. Bare *gyűlés* is too vague — it is any
 old meeting. Where the full term repeats several times in one short block of text
@@ -96,6 +97,12 @@ lines the short form **szempont** is fine where the context is clear. *(F34)*
 **target** stays *célszám* — it really is a target number. But a *target
 category* is not a number, so it takes the *kiválasztási szempont* above:
 `Target Name` is "Kiválasztási szempont neve", not "Célszám neve". *(B7)*
+
+**assembly question** is *a közösségi gyűlés **témája*** — the topic, not the
+question. `Assembly Question` names the field where an organiser writes what the
+assembly is convened to decide, and Hungarian says that as a topic; *kérdése*
+reads as a query someone asked. No *fő*: the field is not one of several topics.
+The help text goes with it — "a fő téma, amellyel…", not "a fő kérdés". *(F28)*
 
 ### Roles
 
@@ -125,7 +132,9 @@ roles and must not read as synonyms. *(C14)*
 | backup code | tartalék kód | |
 
 **tab** is *munkalap*, which is what the Hungarian Google Sheets UI calls it —
-users will have both screens open side by side. Not *lapfül*. *(B10)*
+users will have both screens open side by side. Not *lapfül*, in compounds
+either: *Munkalapkezelés* and *Munkalaplista*, not *Lapfülkezelés* and
+*Lapfüllista*. A term sweep that matches whole words will miss those. *(B10)*
 
 **dashboard** is *Vezérlőpult*, but under protest: neither page in this app is a
 dashboard in the original sense. One is the **közösségi gyűlések listája** and
@@ -244,16 +253,15 @@ without checking it against the English.
 
 ## Still open
 
-1. **`Assembly Question`** — the reviewed catalogue says "A gyűlés fő témája"
-   (the assembly's main topic) in one place and "A gyűlés kérdése" in another.
-   Needs someone to look at where each appears in the app before deciding, and
-   possibly to decide whether "topic" is the better rendering of what the field
-   means. *(F28)*
-2. **Two English strings that are badly worded** — `Not in targets`, and the pair
+1. **Two English strings that are badly worded** — `Not in targets`, and the pair
    `Reset %(count)s respondents to Pool status` / `Reset all respondents to
    Pool`. Fix the English first, then both languages at once. *(F35)*
-3. **`GS munkalap`** — proposed as a short form that ties *munkalap* back to
-   Google Sheets. Not adopted, because "GS" appears nowhere in the product's own
-   UI, so it would be a coinage the reader has to decode. Where the Google Sheet
-   needs naming, the strings spell it out. Worth revisiting if *munkalap* alone
-   turns out to be ambiguous on screen. *(B10)*
+2. **Naming the Google Sheet** — the reviewer proposed the short form **`GS
+   munkalap`** to tie *munkalap* back to Google Sheets, and when asked expanded
+   it to "Google Sheets munkalap". What that means for the strings is still
+   open: the catalogue calls the spreadsheet **Google Táblázat** (the localised
+   Sheets name) in 62 entries and uses bare *munkalap* for a tab, and the
+   expansion could mean keeping that, renaming *Google Táblázat* to *Google
+   Sheets* throughout, or prefixing every standalone tab label — which would
+   lose the brevity the "GS" form was after. Asked in full as question G36;
+   nothing changed pending an answer. *munkalap* itself is settled. *(B10, G36)*
