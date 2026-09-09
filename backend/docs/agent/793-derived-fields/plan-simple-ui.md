@@ -328,7 +328,7 @@ Domain/data/service only; no template changes (per review: migration work first)
 
 Commit: `feat(793): add field-level help text`
 
-### Step 2 — main page becomes read-only rows
+### Step 2 — main page becomes read-only rows ✅ DONE (landed with step 3 in one commit)
 
 1. Rewrite the editor branch of `view.html`: summary rows per §4 (label + key +
    help text, type/options summary with truncation, chips), section select with
@@ -343,7 +343,7 @@ Commit: `feat(793): add field-level help text`
 
 Commit: `refactor(793): read-only field rows on the Fields tab`
 
-### Step 3 — add/edit modal for ordinary fields
+### Step 3 — add/edit modal for ordinary fields ✅ DONE
 
 1. Fragment templates: modal shell (from the `dialog-*` atoms, `json-to-htmx`
    style), form partial, options add-another partial.

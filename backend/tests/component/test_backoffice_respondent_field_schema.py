@@ -49,14 +49,17 @@ class TestViewSchemaPage:
 
 
 class TestOnRegistrationPage:
-    def test_schema_page_renders_registration_column(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_schema_page_renders_registration_state_as_chips(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The row shows the registration state as a read-only chip, not an inline select."""
         _seed_schema(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.get_data(as_text=True)
-        assert "On registration form" in body
-        assert 'name="on_registration_page"' in body
+        assert "Required" in body
+        assert 'name="on_registration_page"' not in body
 
     def test_update_sets_on_registration_page(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
@@ -106,9 +109,10 @@ class TestMoveField:
 
 
 class TestAddField:
-    def test_add_choice_field_seeds_placeholder_option(
+    def test_add_choice_field_without_options_is_rejected(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
+        """The modal submits options wholesale, so a choice field with none is an error, not a seed."""
         _seed_schema(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.post(
@@ -117,15 +121,14 @@ class TestAddField:
                 "field_key": "preferred_contact",
                 "field_type": FieldType.CHOICE_RADIO.value,
             },
-            follow_redirects=False,
+            follow_redirects=True,
         )
-        assert response.status_code == 302
+        assert response.status_code == 200
+        assert b"at least one option" in response.data
 
-        added = next(
-            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "preferred_contact"
+        assert not any(
+            f.field_key == "preferred_contact" for f in _get_schema(fake_store, admin_user, existing_assembly)
         )
-        assert added.field_type == FieldType.CHOICE_RADIO
-        assert [opt.value for opt in added.options] == ["option_1"]
 
     def test_add_duplicate_key_is_rejected(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
@@ -156,13 +159,15 @@ class TestAddField:
         after = len(_get_schema(fake_store, admin_user, existing_assembly))
         assert after == before
 
-    def test_add_form_renders_when_schema_exists(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_add_button_links_to_the_modal_when_schema_exists(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         assert b"Add a field" in response.data
-        assert f"/assembly/{existing_assembly.id}/respondent-schema/fields/add".encode() in response.data
+        assert f"/assembly/{existing_assembly.id}/respondent-schema/fields/new-modal".encode() in response.data
 
     def test_add_form_absent_without_schema(self, logged_in_admin, existing_assembly):
         # No schema yet: the Initialise prompt shows instead of the add form.
@@ -202,13 +207,13 @@ class TestFieldsTab:
 
 
 class TestFieldTypeAndOptions:
-    def test_schema_page_renders_type_column(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_schema_page_renders_type_summary(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.data
-        assert b"Type" in body
+        assert b"Summary" in body
         assert b"Yes / No / Not set" in body  # fixed flags render as BOOL_OR_NONE
         assert b"Email" in body  # email fixed row renders as EMAIL type
 
@@ -232,26 +237,29 @@ class TestFieldTypeAndOptions:
         field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
         assert field.field_type == FieldType.LONGTEXT
 
-    def test_changing_to_choice_seeds_default_option(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_changing_to_choice_without_options_is_rejected(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The old seed-option_1 hack is gone: a choice type needs options in the same submission."""
         _seed_schema(fake_store, admin_user, existing_assembly)
         custom = next(
             f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
         )
 
-        logged_in_admin.post(
+        response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{custom.id}/update",
             data={
                 "label": custom.label,
                 "group": custom.group.value,
                 "field_type": FieldType.CHOICE_RADIO.value,
             },
-            follow_redirects=False,
+            follow_redirects=True,
         )
+        assert response.status_code == 200
+        assert b"options list" in response.data
 
         field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
-        assert field.field_type == FieldType.CHOICE_RADIO
-        assert field.options is not None
-        assert len(field.options) >= 1
+        assert field.field_type == FieldType.TEXT
 
     def test_remove_option_drops_from_choice_field(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
@@ -314,7 +322,8 @@ class TestFieldTypeAndOptions:
         assert [o.value for o in field.options] == ["renamed", "other"]
         assert field.options[0].help_text == "updated help"
 
-    def test_update_option_renders_edit_form(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_choice_options_render_as_a_summary_line(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """Options are listed read-only on the row; the inline option editor is gone."""
         _seed_schema(fake_store, admin_user, existing_assembly)
         custom = next(
             f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
@@ -326,17 +335,37 @@ class TestFieldTypeAndOptions:
                 existing_assembly.id,
                 custom.id,
                 field_type=FieldType.CHOICE_RADIO,
-                options=[ChoiceOption(value="one", help_text="first option")],
+                options=[ChoiceOption(value="one", help_text="first option"), ChoiceOption(value="two")],
             )
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.data
-        # The option value and help_text should both appear as editable input values.
-        assert b'value="one"' in body
-        assert b'value="first option"' in body
-        # The update action URL should be wired up.
-        assert f"/respondent-schema/fields/{custom.id}/options/update".encode() in body
+        assert b"one, two" in body
+        assert f"/respondent-schema/fields/{custom.id}/options/update".encode() not in body
+
+    def test_long_option_lists_truncate_on_the_row(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """More than six options collapse to a count on the summary row."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                custom.id,
+                field_type=FieldType.CHOICE_DROPDOWN,
+                options=[ChoiceOption(value=f"opt_{i}") for i in range(9)],
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "opt_5" in body
+        assert "opt_6" not in body
+        assert "and 3 more" in body
 
     def test_guess_button_shown_when_conditions_met(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
@@ -423,6 +452,333 @@ class TestFieldTypeAndOptions:
         email_field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "email")
         # Still EMAIL — the attempt was refused.
         assert email_field.field_type == FieldType.EMAIL
+
+
+class TestFieldModal:
+    """The HTMX add/edit field modal: fragments, full-page fallback, and saves."""
+
+    def _base(self, existing_assembly):
+        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+
+    def test_new_modal_htmx_returns_a_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """With HX-Request the route serves just the dialog, not a whole page."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "<html" not in body
+        assert 'role="dialog"' in body
+        assert "Add a field" in body
+
+    def test_new_modal_plain_request_renders_the_page_with_the_modal_open(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Without JS, opening the modal is a full page load with the dialog rendered in."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(f"{self._base(existing_assembly)}/fields/new-modal")
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "<html" in body
+        assert 'role="dialog"' in body
+
+    def test_edit_modal_prefills_the_field(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """The edit modal echoes label, help text, checked type radio and option rows."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                custom.id,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="one", help_text="first option")],
+                help_text="pick one",
+            )
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert 'value="Custom notes"' in body
+        assert "pick one" in body
+        assert 'value="choice" checked' in body.replace("\n", " ") or ('value="choice"' in body and "checked" in body)
+        assert 'value="one"' in body
+        assert 'value="first option"' in body
+
+    def test_add_via_modal_creates_field_with_options_and_help_text(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Preferred contact",
+                "field_key": "",
+                "type_choice": "choice",
+                "choice_style": "choice_dropdown",
+                "option_value": ["Phone", "Email", ""],
+                "option_help": ["Call me", "", ""],
+                "help_text": "How should we reach you?",
+                "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        field = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "preferred_contact"
+        )
+        assert field.label == "Preferred contact"
+        assert field.field_type == FieldType.CHOICE_DROPDOWN
+        assert [(o.value, o.help_text) for o in field.options] == [("Phone", "Call me"), ("Email", "")]
+        assert field.help_text == "How should we reach you?"
+        assert field.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL
+
+    def test_add_via_modal_generates_the_field_key_from_the_label(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Favourite Colour!",
+                "type_choice": "free_text",
+                "free_text_subtype": "text",
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert any(f.field_key == "favourite_colour" for f in _get_schema(fake_store, admin_user, existing_assembly))
+
+    def test_add_via_modal_htmx_success_returns_oob_editor_fragment(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A successful HTMX save swaps the editor out of band, which also closes the modal."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Dietary needs",
+                "type_choice": "free_text",
+                "free_text_subtype": "text",
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert 'id="schema-editor"' in body
+        assert "hx-swap-oob" in body
+        assert "dietary_needs" in body
+
+    def test_add_via_modal_duplicate_key_returns_422_modal_with_the_error(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Custom notes",
+                "type_choice": "free_text",
+                "free_text_subtype": "text",
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        body = response.get_data(as_text=True)
+        assert "already exists" in body
+        assert 'value="Custom notes"' in body
+
+    def test_add_option_action_re_renders_the_form_with_an_extra_row(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The options editor's add-another button round-trips without saving anything."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        before = len(_get_schema(fake_store, admin_user, existing_assembly))
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "add_option",
+                "label": "Preferred contact",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Phone"],
+                "option_help": ["Call me"],
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert body.count('name="option_value"') == 2
+        assert 'value="Phone"' in body
+        assert len(_get_schema(fake_store, admin_user, existing_assembly)) == before
+
+    def test_remove_option_action_drops_the_row(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "remove_option_0",
+                "label": "Preferred contact",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Phone", "Email"],
+                "option_help": ["", ""],
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert 'value="Phone"' not in body
+        assert 'value="Email"' in body
+
+    def test_edit_via_modal_updates_type_options_and_help_text(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Notes",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Yes", "No"],
+                "option_help": ["", ""],
+                "help_text": "a hint",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
+        assert field.label == "Notes"
+        assert field.field_type == FieldType.CHOICE_RADIO
+        assert [o.value for o in field.options] == ["Yes", "No"]
+        assert field.help_text == "a hint"
+        assert field.on_registration_page == FieldOnRegistrationPage.NO
+
+    def test_edit_via_modal_on_a_fixed_field_updates_label_and_help_only(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A fixed field's modal has no type radios; saving changes label/help/registration state only."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        email_field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "email")
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{email_field.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Email address",
+                "help_text": "We only use this to contact you",
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "email")
+        assert field.label == "Email address"
+        assert field.help_text == "We only use this to contact you"
+        assert field.field_type == FieldType.EMAIL  # stored type untouched
+
+    def test_section_select_change_over_htmx_returns_the_editor_fragment(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The row's section select posts just the group and gets the refreshed editor back."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/update",
+            data={"group": RespondentFieldGroup.ABOUT_YOU.value},
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert 'id="schema-editor"' in body
+        assert "hx-swap-oob" not in body
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
+        assert field.group == RespondentFieldGroup.ABOUT_YOU
+
+    def test_editing_a_legacy_typed_field_offers_its_type(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """LONGTEXT is excluded from the picker but shown, selected, when the field already has it."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.update_field(
+                uow, admin_user.id, existing_assembly.id, custom.id, field_type=FieldType.LONGTEXT
+            )
+
+        edit = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+        )
+        assert edit.status_code == 200
+        assert 'value="longtext"' in edit.get_data(as_text=True)
+
+        new = logged_in_admin.get(f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"})
+        assert 'value="longtext"' not in new.get_data(as_text=True)
+
+    def test_row_help_text_is_rendered_on_the_page(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.update_field(
+                uow, admin_user.id, existing_assembly.id, custom.id, help_text="shown under the field"
+            )
+
+        response = logged_in_admin.get(self._base(existing_assembly))
+        assert response.status_code == 200
+        assert b"shown under the field" in response.data
 
 
 class TestFieldSpecJson:

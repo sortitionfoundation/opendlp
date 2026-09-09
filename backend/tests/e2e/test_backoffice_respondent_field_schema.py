@@ -166,6 +166,81 @@ class TestAddField:
             assert added.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL
 
 
+class TestFieldModal:
+    def test_add_choice_field_via_modal_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Open the modal, save a choice field with options and help text, see it stored."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        modal = logged_in_admin.get(f"{base}/fields/new-modal", headers={"HX-Request": "true"})
+        assert modal.status_code == 200
+        assert b'role="dialog"' in modal.data
+
+        response = logged_in_admin.post(
+            f"{base}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Preferred contact",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Phone", "Email"],
+                "option_help": ["Call me", ""],
+                "help_text": "How should we reach you?",
+                "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            added = next(f for f in schema if f.field_key == "preferred_contact")
+            assert added.field_type == FieldType.CHOICE_RADIO
+            assert [o.value for o in added.options] == ["Phone", "Email"]
+            assert added.help_text == "How should we reach you?"
+
+    def test_edit_modal_prefills_and_saves(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """The edit modal shows the stored values and a save round-trips through Postgres."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            custom_field = next(f for f in schema if f.field_key == "custom_notes")
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        modal = logged_in_admin.get(f"{base}/fields/{custom_field.id}/edit-modal", headers={"HX-Request": "true"})
+        assert modal.status_code == 200
+        assert b"custom_notes" in modal.data
+
+        response = logged_in_admin.post(
+            f"{base}/fields/{custom_field.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Notes",
+                "type_choice": "free_text",
+                "free_text_subtype": "text",
+                "help_text": "anything else we should know",
+                "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in schema if f.field_key == "custom_notes")
+            assert field.label == "Notes"
+            assert field.help_text == "anything else we should know"
+
+
 class TestDeleteField:
     def test_delete_non_fixed_field(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
