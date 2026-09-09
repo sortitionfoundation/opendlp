@@ -1387,6 +1387,53 @@ class TestGenerateStarterFormHtml:
         assert 'aria-describedby="gender-1-item-hint"' in html
         assert "gender-2-item-hint" not in html
 
+    def test_date_field_renders_three_part_inputs_on_one_line(self):
+        """A DATE field becomes day/month/year inputs the submission service already accepts."""
+        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+        html = generate_starter_form_html(fields)
+
+        assert "<legend>Date of birth</legend>" in html
+        for part, size in (("day", "2"), ("month", "2"), ("year", "4")):
+            assert (
+                f'<input type="text" inputmode="numeric" name="date_of_birth-{part}" size="{size}" '
+                f"value=\"{{{{ value('date_of_birth-{part}') }}}}\">"
+            ) in html
+        # The parts sit in a flex row so they share a line even unstyled.
+        assert "display: flex" in html
+        assert "{{ field_errors('date_of_birth') }}" in html
+        # No single bare input remains for the field itself.
+        assert 'name="date_of_birth"' not in html
+
+    def test_required_date_field_marks_each_part_required(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html(fields)
+
+        for part in ("day", "month", "year"):
+            assert f"value=\"{{{{ value('date_of_birth-{part}') }}}}\" required>" in html
+
+    def test_date_field_hint_describes_the_fieldset(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                help_text="For example, 27 3 1985",
+            )
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert '<fieldset aria-describedby="date_of_birth-hint">' in html
+        assert '<p class="hint" id="date_of_birth-hint">For example, 27 3 1985</p>' in html
+
 
 class TestGenerateStarterFormHtmlGovuk:
     def test_empty_schema_minimal_form(self):
@@ -1799,3 +1846,54 @@ class TestGenerateStarterFormHtmlGovuk:
 
         assert '<div class="govuk-hint" id="gender-hint">field hint</div>' in html
         assert '<div class="govuk-hint govuk-radios__hint" id="gender-item-hint">option hint</div>' in html
+
+    def test_date_field_renders_the_govuk_date_input_pattern(self):
+        """A DATE field renders the design-system date input: three labelled parts in a fieldset."""
+        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<fieldset class="govuk-fieldset" role="group">' in html
+        assert ('<legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Date of birth</legend>') in html
+        assert '<div class="govuk-date-input" id="date_of_birth">' in html
+        for part, width, label in (("day", "2", "Day"), ("month", "2", "Month"), ("year", "4", "Year")):
+            assert (
+                f'<label class="govuk-label govuk-date-input__label" for="date_of_birth-{part}">{label}</label>'
+            ) in html
+            assert (
+                f'<input class="govuk-input govuk-date-input__input govuk-input--width-{width}" '
+                f'type="text" inputmode="numeric" id="date_of_birth-{part}" name="date_of_birth-{part}" '
+                f"value=\"{{{{ value('date_of_birth-{part}') }}}}\">"
+            ) in html
+        assert "{{ field_errors('date_of_birth') }}" in html
+        assert html.count("govuk-date-input__item") == 3
+        assert 'name="date_of_birth"' not in html
+
+    def test_required_date_field_marks_each_part_required(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        for part in ("day", "month", "year"):
+            assert f"value=\"{{{{ value('date_of_birth-{part}') }}}}\" required>" in html
+
+    def test_date_field_hint_describes_the_fieldset(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                help_text="For example, 27 3 1985",
+            )
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<fieldset class="govuk-fieldset" role="group" aria-describedby="date_of_birth-hint">' in html
+        assert '<div class="govuk-hint" id="date_of_birth-hint">For example, 27 3 1985</div>' in html
