@@ -5,6 +5,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
 {% from "backoffice/components/button.html" import button %}
 {% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
 {% set values = modal_ctx["values"] %}
+{% set is_derived_flow = modal_ctx["is_derived"] or values["type_choice"] == "derived" %}
 {# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
@@ -49,16 +50,22 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         <p class="text-body-sm" style="color: var(--color-error-text);">{{ modal_ctx["error"] }}</p>
                     </div>
                 {% endif %}
-                <div class="mb-4">
-                    <label class="govuk-label" for="field-modal-label">{{ _("Label") }}</label>
-                    <input type="text"
-                           id="field-modal-label"
-                           name="label"
-                           value="{{ values['label'] }}"
-                           required
-                           class="govuk-input">
-                </div>
-                {% if modal_ctx["mode"] == "new" %}
+                {% if is_derived_flow and modal_ctx["mode"] == "new" %}
+                    <div class="mb-4 govuk-hint text-body-sm">
+                        {{ _("A derived field takes its name and field key from the target it feeds.") }}
+                    </div>
+                {% else %}
+                    <div class="mb-4">
+                        <label class="govuk-label" for="field-modal-label">{{ _("Label") }}</label>
+                        <input type="text"
+                               id="field-modal-label"
+                               name="label"
+                               value="{{ values['label'] }}"
+                               required
+                               class="govuk-input">
+                    </div>
+                {% endif %}
+                {% if modal_ctx["mode"] == "new" and not is_derived_flow %}
                     <details class="mb-4">
                         <summary class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Change the field key") }}</summary>
                         <div class="mt-2">
@@ -73,16 +80,14 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                                    class="govuk-input">
                         </div>
                     </details>
-                {% else %}
+                {% elif modal_ctx["mode"] == "edit" %}
                     <div class="mb-4">
                         <span class="govuk-label">{{ _("Field key") }}</span>
                         <code>{{ modal_ctx["field"].field_key }}</code>
                     </div>
                 {% endif %}
                 {% if modal_ctx["is_derived"] %}
-                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("This field's type and options come from its derivation, so they can't be edited here.") }}
-                    </p>
+                    {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
                 {% elif modal_ctx["type_locked"] %}
                     <div class="mb-4">
                         <span class="govuk-label">{{ _("Type") }}</span>
@@ -94,6 +99,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                     <fieldset class="mb-4">
                         <legend class="govuk-label">{{ _("Type") }}</legend>
                         {% for choice_value, choice_label in modal_ctx["type_choices"] %}
+                            {% set derived_disabled = choice_value == "derived" and not modal_ctx["has_targets"] %}
                             <div class="govuk-radios__item">
                                 <input class="govuk-radios__input"
                                        type="radio"
@@ -101,11 +107,15 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                                        name="type_choice"
                                        value="{{ choice_value }}"
                                        {% if values["type_choice"] == choice_value %}checked{% endif %}
+                                       {% if derived_disabled %}disabled{% endif %}
                                        hx-get="{{ modal_ctx['refresh_url'] }}"
                                        hx-include="closest form"
                                        hx-target="#field-modal-container"
                                        hx-swap="innerHTML">
                                 <label class="govuk-label govuk-radios__label" for="field-modal-type-{{ choice_value }}">{{ choice_label }}</label>
+                                {% if derived_disabled %}
+                                    <div class="govuk-hint govuk-radios__hint text-body-sm">{{ _("Create targets first — a derived field feeds one.") }}</div>
+                                {% endif %}
                             </div>
                         {% endfor %}
                     </fieldset>
@@ -155,13 +165,16 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                             {{ button(_("Add another option") , type="submit", variant="secondary", attrs='name="form_action" value="add_option"') }}
                         </fieldset>
                     {% endif %}
+                    {% if values["type_choice"] == "derived" and modal_ctx["derived"] %}
+                        {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
+                    {% endif %}
                 {% endif %}
                 <div class="mb-4">
                     <label class="govuk-label" for="field-modal-help-text">{{ _("Help text") }}</label>
                     <div class="govuk-hint text-body-sm">{{ _("Optional hint shown beneath the field on the registration form.") }}</div>
                     <textarea id="field-modal-help-text" name="help_text" rows="2" class="govuk-textarea">{{ values["help_text"] }}</textarea>
                 </div>
-                {% if not modal_ctx["is_derived"] %}
+                {% if not is_derived_flow %}
                     <fieldset class="mb-4">
                         <legend class="govuk-label">{{ _("On the registration form") }}</legend>
                         {% for choice_value, choice_label in on_registration_page_choices %}

@@ -2,7 +2,9 @@
 ABOUTME: Read-only schema rows plus an HTMX add/edit field modal; move, delete, initialise"""
 
 import contextlib
+import re
 import uuid
+from datetime import date
 from itertools import zip_longest
 from typing import Any
 
@@ -12,6 +14,13 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.domain.respondent_derivation import (
+    DEFAULT_FALLBACK,
+    AgeBracketRule,
+    DerivationRule,
+    LargeMappingRule,
+    SmallMappingRule,
+)
 from opendlp.domain.respondent_field_schema import (
     CHOICE_TYPES,
     FIELD_TYPE_LABELS,
@@ -32,6 +41,12 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_tab_enabled_states,
+)
+from opendlp.service_layer.derivation_service import (
+    RecomputeReport,
+    compatible_source_fields,
+    create_derived_field,
+    update_derivation,
 )
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
@@ -55,6 +70,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
 )
 from opendlp.service_layer.respondent_field_spec_service import build_field_spec
 from opendlp.translations import gettext as _
+from opendlp.translations import lazy_gettext as _l
 
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
@@ -190,20 +206,55 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
         "help_text": source.get("help_text", ""),
         "on_registration_page": source.get("on_registration_page", FieldOnRegistrationPage.YES_REQUIRED.value),
         "options": options,
+        "target_name": source.get("target_name", ""),
+        "derivation_method": source.get("derivation_method", DerivationType.AGE_BRACKET.value),
+        "source_key": source.get("source_key", ""),
+        "as_of_day": source.get("as_of_day", ""),
+        "as_of_month": source.get("as_of_month", ""),
+        "as_of_year": source.get("as_of_year", ""),
+        "min_age": source.get("min_age", ""),
+        "max_age": source.get("max_age", ""),
+        "boundaries": source.get("boundaries", ""),
+        "map_source": source.getlist("map_source"),
+        "map_target": source.getlist("map_target"),
     }
 
 
 def _modal_values_from_field(field: RespondentFieldDefinition) -> dict[str, Any]:
     """The modal form state for editing an existing field."""
-    values: dict[str, Any] = {
+    values = _default_modal_values()
+    values.update({
         "label": field.label,
         "field_key": field.field_key,
         "help_text": field.help_text,
         "on_registration_page": field.on_registration_page.value,
         "options": [{"value": o.value, "help_text": o.help_text} for o in field.options or []],
-    }
+    })
     values.update(_taxonomy_from_field_type(field.field_type))
+    if field.is_derived:
+        values["type_choice"] = "derived"
+        values["derivation_method"] = field.derivation_type.value if field.derivation_type else ""
+        values["source_key"] = (field.derived_from or [""])[0]
+        values["target_name"] = field.field_key
+        _seed_config_values(values, field)
     return values
+
+
+def _seed_config_values(values: dict[str, Any], field: RespondentFieldDefinition) -> None:
+    """Fill the method-config form values from a derived field's stored derivation_config."""
+    config = field.derivation_config or {}
+    if field.derivation_type == DerivationType.AGE_BRACKET:
+        raw_date = config.get("as_of_date", "")
+        if raw_date:
+            year, month, day = raw_date.split("-")
+            values.update({"as_of_year": year, "as_of_month": str(int(month)), "as_of_day": str(int(day))})
+        values["min_age"] = str(config.get("min_age", 16))
+        values["max_age"] = str(config.get("max_age", 100))
+        values["boundaries"] = ", ".join(str(b) for b in config.get("boundaries", []))
+    elif field.derivation_type == DerivationType.SMALL_MAPPING:
+        mapping = config.get("mapping", {})
+        values["map_source"] = list(mapping.keys())
+        values["map_target"] = list(mapping.values())
 
 
 def _default_modal_values() -> dict[str, Any]:
@@ -216,6 +267,17 @@ def _default_modal_values() -> dict[str, Any]:
         "help_text": "",
         "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
         "options": [],
+        "target_name": "",
+        "derivation_method": DerivationType.AGE_BRACKET.value,
+        "source_key": "",
+        "as_of_day": "",
+        "as_of_month": "",
+        "as_of_year": "",
+        "min_age": "",
+        "max_age": "",
+        "boundaries": "",
+        "map_source": [],
+        "map_target": [],
     }
 
 
@@ -227,14 +289,22 @@ def _normalise_modal_values(values: dict[str, Any]) -> dict[str, Any]:
 
 
 def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = "") -> dict[str, Any]:
+    is_derived_choice = values["type_choice"] == "derived"
+    derived = _build_derived_ctx(assembly_id, values, target_locked=False) if is_derived_choice else None
+    if is_derived_choice:
+        action_url = url_for("respondent_field_schema.add_derived_field_view", assembly_id=assembly_id)
+    else:
+        action_url = url_for("respondent_field_schema.add_field_view", assembly_id=assembly_id)
     return {
         "mode": "new",
         "field": None,
-        "action_url": url_for("respondent_field_schema.add_field_view", assembly_id=assembly_id),
+        "action_url": action_url,
         "refresh_url": url_for("respondent_field_schema.new_field_modal", assembly_id=assembly_id),
-        "type_choices": list(_STANDARD_TYPE_CHOICES),
+        "type_choices": [*_STANDARD_TYPE_CHOICES, ("derived", _l("Derived (computed from another field)"))],
         "type_locked": False,
         "is_derived": False,
+        "has_targets": _assembly_has_targets(assembly_id),
+        "derived": derived,
         "error": error,
         "values": _normalise_modal_values(values),
     }
@@ -246,14 +316,23 @@ def _edit_modal_ctx(
     type_choices = list(_STANDARD_TYPE_CHOICES)
     if field.field_type in _LEGACY_TYPE_CHOICES:
         type_choices.append(_LEGACY_TYPE_CHOICES[field.field_type])
+    derived = _build_derived_ctx(assembly_id, values, target_locked=True) if field.is_derived else None
+    if field.is_derived:
+        action_url = url_for(
+            "respondent_field_schema.update_derivation_view", assembly_id=assembly_id, field_id=field.id
+        )
+    else:
+        action_url = url_for("respondent_field_schema.update_field_view", assembly_id=assembly_id, field_id=field.id)
     return {
         "mode": "edit",
         "field": field,
-        "action_url": url_for("respondent_field_schema.update_field_view", assembly_id=assembly_id, field_id=field.id),
+        "action_url": action_url,
         "refresh_url": url_for("respondent_field_schema.edit_field_modal", assembly_id=assembly_id, field_id=field.id),
         "type_choices": type_choices,
         "type_locked": field.is_fixed,
         "is_derived": field.is_derived,
+        "has_targets": True,
+        "derived": derived,
         "error": error,
         "values": _normalise_modal_values(values),
     }
@@ -280,6 +359,179 @@ def _submitted_options(values: dict[str, Any]) -> list[ChoiceOption]:
         for row in values["options"]
         if row["value"].strip()
     ]
+
+
+# ---------------------------------------------------------------------------
+# The derived-field panel: source filtering, config parsing, and pre-fills.
+# ---------------------------------------------------------------------------
+
+_UNDER_RE = re.compile(r"^under-(\d+)$")
+_PLUS_RE = re.compile(r"^(\d+)\+$")
+_RANGE_RE = re.compile(r"^(\d+)-(\d+)$")
+
+
+def parse_boundaries(raw: str) -> tuple[int, ...]:
+    """A comma-separated boundaries string as sorted unique ints. Raises ValueError."""
+    parts = [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
+    try:
+        return tuple(sorted({int(p) for p in parts}))
+    except ValueError:
+        raise ValueError(_("Boundaries must be whole numbers separated by commas, e.g. 25, 40, 60")) from None
+
+
+def parse_age_rule(values: dict[str, Any]) -> AgeBracketRule:
+    """Build an AgeBracketRule from the modal's age-config values. Raises ValueError."""
+    try:
+        as_of = date(int(values["as_of_year"]), int(values["as_of_month"]), int(values["as_of_day"]))
+    except (TypeError, ValueError):
+        raise ValueError(_("Enter a valid as-of date (day, month and year)")) from None
+    try:
+        min_age = int(values["min_age"] or 16)
+        max_age = int(values["max_age"] or 100)
+    except ValueError:
+        raise ValueError(_("Minimum and maximum age must be whole numbers")) from None
+    return AgeBracketRule(
+        as_of_date=as_of,
+        min_age=min_age,
+        max_age=max_age,
+        boundaries=parse_boundaries(values["boundaries"]),
+    )
+
+
+def parse_small_mapping_rule(values: dict[str, Any]) -> SmallMappingRule:
+    """Build a SmallMappingRule from the modal's mapping-table rows. Raises ValueError.
+
+    A row whose target select was left on the fall-back entry is simply not in
+    the mapping — those source values fall back to UNKNOWN at derivation time.
+    """
+    mapping = {
+        source.strip(): target.strip()
+        for source, target in zip_longest(values["map_source"], values["map_target"], fillvalue="")
+        if source.strip() and target.strip()
+    }
+    if not mapping:
+        raise ValueError(_("Map at least one answer to a target value"))
+    return SmallMappingRule(mapping=mapping)
+
+
+def parse_derivation_rule(values: dict[str, Any]) -> DerivationRule:
+    """The rule the modal's derived-panel values describe. Raises ValueError."""
+    method = values["derivation_method"]
+    if method == DerivationType.AGE_BRACKET.value:
+        return parse_age_rule(values)
+    if method == DerivationType.SMALL_MAPPING.value:
+        return parse_small_mapping_rule(values)
+    if method == DerivationType.LARGE_MAPPING.value:
+        return LargeMappingRule()
+    raise ValueError(_("Choose how the field should be derived"))
+
+
+def age_prefill_from_target(target_values: list[str]) -> dict[str, str] | None:
+    """min/max/boundaries form values parsed from "16-24"-style target value names.
+
+    Returns None when the target's values don't look like a complete bracket
+    set — the caller leaves the inputs blank for the user to fill in (Q9).
+    """
+    min_age: int | None = None
+    max_age: int | None = None
+    lowers: list[int] = []
+    for value in target_values:
+        if under := _UNDER_RE.match(value):
+            min_age = int(under.group(1))
+        elif plus := _PLUS_RE.match(value):
+            max_age = int(plus.group(1))
+        elif rng := _RANGE_RE.match(value):
+            lowers.append(int(rng.group(1)))
+        else:
+            return None
+    if not lowers or max_age is None:
+        return None
+    lowers = sorted(set(lowers))
+    if min_age is None:
+        min_age = lowers[0]
+    boundaries = [lower for lower in lowers if lower != min_age]
+    return {
+        "min_age": str(min_age),
+        "max_age": str(max_age),
+        "boundaries": ", ".join(str(b) for b in boundaries),
+    }
+
+
+def _assembly_has_targets(assembly_id: uuid.UUID) -> bool:
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        return bool(list(uow.target_categories.get_by_assembly_id(assembly_id)))
+
+
+def _apply_age_prefills(values: dict[str, Any], selected_target: dict[str, Any] | None, first_date: Any) -> None:
+    """Pre-fill blank age-config inputs: the as-of date from the assembly, brackets from the target."""
+    if not (values["as_of_day"] or values["as_of_month"] or values["as_of_year"]) and first_date is not None:
+        values["as_of_day"] = str(first_date.day)
+        values["as_of_month"] = str(first_date.month)
+        values["as_of_year"] = str(first_date.year)
+    if selected_target and not values["boundaries"] and not values["min_age"] and not values["max_age"]:
+        prefill = age_prefill_from_target(selected_target["values"])
+        if prefill:
+            values.update(prefill)
+    values["min_age"] = values["min_age"] or "16"
+    values["max_age"] = values["max_age"] or "100"
+
+
+def _build_derived_ctx(assembly_id: uuid.UUID, values: dict[str, Any], target_locked: bool) -> dict[str, Any]:
+    """Everything the derived panel needs: targets, compatible sources, pre-fills and warnings."""
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        assembly = uow.assemblies.get(assembly_id)
+        first_date = assembly.first_assembly_date if assembly else None
+        categories = list(uow.target_categories.get_by_assembly_id(assembly_id))
+        targets: list[dict[str, Any]] = [{"name": c.name, "values": [v.value for v in c.values]} for c in categories]
+        schema = [f.create_detached_copy() for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)]
+
+    method = values["derivation_method"]
+    try:
+        derivation_type = DerivationType(method)
+    except ValueError:
+        derivation_type = DerivationType.AGE_BRACKET
+        values["derivation_method"] = derivation_type.value
+
+    sources = sorted(compatible_source_fields(schema, derivation_type), key=lambda f: f.field_key)
+    selected_target = next((t for t in targets if t["name"].lower() == values["target_name"].lower()), None)
+    selected_source = next((f for f in sources if f.field_key == values["source_key"]), None)
+
+    preview_labels: list[str] = []
+    mismatch_labels: list[str] = []
+    if derivation_type == DerivationType.AGE_BRACKET:
+        _apply_age_prefills(values, selected_target, first_date)
+        try:
+            rule = parse_age_rule(values)
+        except ValueError:
+            pass  # incomplete config — no preview or mismatch warning yet
+        else:
+            preview_labels = [*rule.bracket_labels(), rule.fallback]
+            if selected_target:
+                target_value_set = set(selected_target["values"])
+                mismatch_labels = [label for label in rule.bracket_labels() if label not in target_value_set]
+
+    map_rows: list[dict[str, str]] = []
+    if derivation_type == DerivationType.SMALL_MAPPING and selected_source and selected_source.options:
+        submitted = dict(zip_longest(values["map_source"], values["map_target"], fillvalue=""))
+        map_rows = [
+            {"source_value": option.value, "target_value": submitted.get(option.value, "")}
+            for option in selected_source.options
+        ]
+
+    return {
+        "targets": targets,
+        "selected_target": selected_target,
+        "sources": sources,
+        "selected_source": selected_source,
+        "source_is_integer": selected_source is not None and selected_source.effective_field_type == FieldType.INTEGER,
+        "target_locked": target_locked,
+        "preview_labels": preview_labels,
+        "mismatch_labels": mismatch_labels,
+        "map_rows": map_rows,
+        "fallback": DEFAULT_FALLBACK,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -606,6 +858,155 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return _render_editor_fragment(assembly_id, oob=True)
     flash(_("Field added."), "success")
     return _schema_page_redirect(assembly_id)
+
+
+def _report_response(assembly_id: uuid.UUID, report: RecomputeReport, title: str) -> ResponseReturnValue:
+    """Show the recompute report in the modal (Q11) and refresh the editor behind it."""
+    page_ctx = _schema_page_context(assembly_id)
+    report_ctx = {"report": report, "title": title}
+    if _is_htmx():
+        report_html = render_template(
+            "backoffice/respondent_field_schema/_derivation_report_modal.html", report_ctx=report_ctx, **page_ctx
+        )
+        editor_html = render_template("backoffice/respondent_field_schema/_editor.html", oob=True, **page_ctx)
+        return report_html + editor_html, 200
+    return render_template(
+        "backoffice/respondent_field_schema/view.html",
+        modal_ctx={"mode": "report", "report_ctx": report_ctx},
+        **page_ctx,
+    ), 200
+
+
+def _try_create_derived(assembly_id: uuid.UUID, values: dict[str, Any]) -> tuple[RecomputeReport | None, str]:
+    """Validate and create the derived field; returns (report, error-message)."""
+    target_name = values["target_name"].strip()
+    if not target_name:
+        return None, _("Choose the target this field feeds")
+    if not values["source_key"]:
+        return None, _("Choose the field to derive from")
+    try:
+        rule = parse_derivation_rule(values)
+    except ValueError as e:
+        return None, str(e)
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            categories = list(uow.target_categories.get_by_assembly_id(assembly_id))
+            target = next((c for c in categories if c.name.lower() == target_name.lower()), None)
+            if target is None:
+                return None, _("Choose the target this field feeds")
+            # The field key is the target's name verbatim: selection pairs a
+            # target category with a respondent column by exact string match,
+            # and the field-spec join is a case-insensitive name match.
+            field, report = create_derived_field(
+                uow,
+                current_user.id,
+                assembly_id,
+                field_key=target.name.strip(),
+                label=target.name.strip(),
+                source_field_key=values["source_key"],
+                rule=rule,
+                output_values=[v.value for v in target.values],
+            )
+            if values["help_text"].strip():
+                update_field(uow, current_user.id, assembly_id, field.id, help_text=values["help_text"].strip())
+    except FieldDefinitionConflictError as e:
+        return None, str(e)
+    except InsufficientPermissions:
+        return None, _("You don't have permission to edit the schema")
+    except NotFoundError:
+        return None, _("Assembly not found")
+    return report, ""
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/add-derived",
+    methods=["POST"],
+)
+@login_required
+def add_derived_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Create a derived field from the modal's derived panel.
+
+    Success shows the recompute report in the modal (the save recomputes the
+    whole pool synchronously); failure re-renders the panel at 422.
+    """
+    form_action = request.form.get("form_action", "save")
+    values = _modal_values_from_request(request.form)
+    values["type_choice"] = "derived"
+
+    if form_action != "save":
+        return _modal_roundtrip_response(assembly_id, _new_modal_ctx(assembly_id, values))
+
+    report, error = _try_create_derived(assembly_id, values)
+    if error or report is None:
+        return _modal_roundtrip_response(assembly_id, _new_modal_ctx(assembly_id, values, error=error), status=422)
+    return _report_response(assembly_id, report, _("Derived field created"))
+
+
+def _try_update_derivation(
+    assembly_id: uuid.UUID, field: RespondentFieldDefinition, values: dict[str, Any]
+) -> tuple[RecomputeReport | None, str]:
+    """Validate and apply a derivation edit; returns (report, error-message)."""
+    try:
+        rule = parse_derivation_rule(values)
+    except ValueError as e:
+        return None, str(e)
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            categories = list(uow.target_categories.get_by_assembly_id(assembly_id))
+            target = next((c for c in categories if c.name.lower() == field.field_key.lower()), None)
+            output_values = [v.value for v in target.values] if target else None
+            _field, report = update_derivation(
+                uow, current_user.id, assembly_id, field.id, rule, output_values=output_values
+            )
+            update_field(
+                uow,
+                current_user.id,
+                assembly_id,
+                field.id,
+                label=values["label"].strip() or None,
+                help_text=values["help_text"],
+            )
+    except FieldDefinitionConflictError as e:
+        return None, str(e)
+    except FieldDefinitionNotFoundError:
+        return None, _("Field not found.")
+    except InsufficientPermissions:
+        return None, _("You don't have permission to edit the schema")
+    except NotFoundError:
+        return None, _("Assembly not found")
+    return report, ""
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/derivation",
+    methods=["POST"],
+)
+@login_required
+def update_derivation_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
+    """Edit a derived field's method config (and label/help text) from the modal.
+
+    The source and target cannot be changed here — delete and recreate instead
+    (the modal says so). Success shows the recompute report.
+    """
+    form_action = request.form.get("form_action", "save")
+    values = _modal_values_from_request(request.form)
+    values["type_choice"] = "derived"
+
+    field = _load_field(assembly_id, field_id)
+    if field is None or not field.is_derived:
+        return _field_missing_response(assembly_id, oob=True)
+
+    if form_action != "save":
+        return _modal_roundtrip_response(assembly_id, _edit_modal_ctx(assembly_id, field, values))
+
+    report, error = _try_update_derivation(assembly_id, field, values)
+    if error or report is None:
+        return _modal_roundtrip_response(
+            assembly_id, _edit_modal_ctx(assembly_id, field, values, error=error), status=422
+        )
+    return _report_response(assembly_id, report, _("Derivation updated"))
 
 
 @respondent_field_schema_bp.route(

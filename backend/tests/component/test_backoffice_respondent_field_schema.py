@@ -859,3 +859,267 @@ class TestFieldSpecJson:
         assert [v["value"] for v in gender_field["target_values"]] == ["Male", "Female"]
         assert gender_field["target_values"][0]["min"] == 18
         assert body["unmatched_target_categories"] == []
+
+
+class TestDerivedFieldModal:
+    """The derived-field flow: panel rendering, creation per method, editing, and reports."""
+
+    def _base(self, existing_assembly):
+        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+
+    def _seed_sources_and_targets(self, fake_store, admin_user, existing_assembly):
+        """A year_of_birth INTEGER source, a gender choice source, and matching targets."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.add_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                field_key="year_of_birth",
+                field_type=FieldType.INTEGER,
+            )
+            gender = next(
+                f
+                for f in respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+                if f.field_key == "gender"
+            )
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                gender.id,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
+            )
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="age bracket",
+                    values=[
+                        TargetValue(value="16-24", min=5, max=10),
+                        TargetValue(value="25-39", min=5, max=10),
+                        TargetValue(value="40-59", min=5, max=10),
+                        TargetValue(value="60+", min=5, max=10),
+                    ],
+                )
+            )
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="gender group",
+                    values=[
+                        TargetValue(value="Women", min=10, max=12),
+                        TargetValue(value="Men", min=10, max=12),
+                    ],
+                )
+            )
+
+    def _derived_form(self, **overrides):
+        data = {
+            "modal": "1",
+            "form_action": "save",
+            "type_choice": "derived",
+            "target_name": "age bracket",
+            "derivation_method": "age_bracket",
+            "source_key": "year_of_birth",
+            "as_of_day": "1",
+            "as_of_month": "6",
+            "as_of_year": "2026",
+            "min_age": "16",
+            "max_age": "60",
+            "boundaries": "25, 40",
+            "help_text": "",
+            "label": "",
+        }
+        data.update(overrides)
+        return data
+
+    def test_derived_radio_is_disabled_without_targets(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        )
+        body = response.get_data(as_text=True)
+        assert 'value="derived"' in body
+        assert "Create targets first" in body
+
+    def test_derived_panel_lists_targets_and_filters_sources_by_method(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Age brackets offer the INTEGER source but not the choice field; targets fill the select."""
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal",
+            query_string={"modal": "1", "type_choice": "derived", "derivation_method": "age_bracket"},
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert 'value="age bracket"' in body
+        assert 'value="gender group"' in body
+        assert 'value="year_of_birth"' in body
+        assert 'value="gender"' not in body  # a choice field can't feed an age bracket
+
+    def test_age_config_prefills_boundaries_from_the_target_and_date_from_the_assembly(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Choosing a "16-24"-style target pre-fills min/max/boundaries; the as-of date comes from the assembly."""
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal",
+            query_string={
+                "modal": "1",
+                "type_choice": "derived",
+                "derivation_method": "age_bracket",
+                "target_name": "age bracket",
+            },
+            headers={"HX-Request": "true"},
+        )
+        body = response.get_data(as_text=True)
+        assert 'name="min_age"' in body
+        assert 'value="16"' in body
+        assert 'value="60"' in body
+        assert 'value="25, 40"' in body
+        # The as-of date inputs are pre-filled from first_assembly_date (set on the fixture).
+        assert f'value="{existing_assembly.first_assembly_date.year}"' in body
+
+    def test_create_age_bracket_derived_field_shows_the_recompute_report(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "Derived field created" in body
+        assert "Respondents recomputed" in body
+        assert 'id="schema-editor"' in body
+        assert "hx-swap-oob" in body
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
+        assert field.is_derived
+        assert field.derived_from == ["year_of_birth"]
+        assert field.derivation_config["boundaries"] == [25, 40]
+        assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40-59", "60+", "UNKNOWN"]
+
+    def test_create_small_mapping_derived_field(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(
+                target_name="gender group",
+                derivation_method="small_mapping",
+                source_key="gender",
+                map_source=["Female", "Male"],
+                map_target=["Women", "Men"],
+            ),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender group")
+        assert field.derivation_config["mapping"] == {"Female": "Women", "Male": "Men"}
+        assert [o.value for o in field.options] == ["Women", "Men", "UNKNOWN"]
+
+    def test_create_large_mapping_derived_field_with_an_empty_table(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(
+                target_name="gender group",
+                derivation_method="large_mapping",
+                source_key="postcode",
+            ),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender group")
+        assert field.derivation_config == {"fallback": "UNKNOWN"}
+        assert [o.value for o in field.options] == ["Women", "Men", "UNKNOWN"]
+
+    def test_invalid_age_config_returns_422_with_the_error_inline(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(as_of_month="13"),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        assert "as-of date" in response.get_data(as_text=True)
+
+    def test_missing_target_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(target_name=""),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        assert "Choose the target" in response.get_data(as_text=True)
+
+    def _create_derived(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+        logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(),
+            headers={"HX-Request": "true"},
+        )
+        return next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
+
+    def test_edit_modal_for_a_derived_field_prefills_the_config(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{field.id}/edit-modal", headers={"HX-Request": "true"}
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert 'value="25, 40"' in body
+        assert "delete this field and create it again" in body
+        assert 'name="on_registration_page"' not in body  # derived fields are never collected
+
+    def test_update_derivation_config_recomputes_and_reports(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{field.id}/derivation",
+            data=self._derived_form(boundaries="30", label="Age bracket", help_text="derived from year of birth"),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert "Derivation updated" in response.get_data(as_text=True)
+
+        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
+        assert stored.derivation_config["boundaries"] == [30]
+        assert stored.help_text == "derived from year of birth"
+
+    def test_derived_row_summarises_source_and_method(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = logged_in_admin.get(self._base(existing_assembly))
+        body = response.get_data(as_text=True)
+        assert "Derived from year_of_birth" in body
+        assert "Age brackets" in body
+        assert "Not on form" in body

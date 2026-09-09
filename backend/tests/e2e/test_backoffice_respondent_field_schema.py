@@ -241,6 +241,66 @@ class TestFieldModal:
             assert field.help_text == "anything else we should know"
 
 
+class TestDerivedFieldModal:
+    def test_create_age_bracket_derived_field_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Seed a source and target in Postgres, create the derived field via the modal, read it back."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            respondent_field_schema_service.add_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                field_key="year_of_birth",
+                field_type=FieldType.INTEGER,
+            )
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="age bracket",
+                    values=[
+                        TargetValue(value="16-24", min=5, max=10),
+                        TargetValue(value="25-39", min=5, max=10),
+                        TargetValue(value="40+", min=5, max=10),
+                    ],
+                )
+            )
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        response = logged_in_admin.post(
+            f"{base}/fields/add-derived",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "type_choice": "derived",
+                "target_name": "age bracket",
+                "derivation_method": "age_bracket",
+                "source_key": "year_of_birth",
+                "as_of_day": "1",
+                "as_of_month": "6",
+                "as_of_year": "2026",
+                "min_age": "16",
+                "max_age": "40",
+                "boundaries": "25",
+                "help_text": "",
+                "label": "",
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert b"Respondents recomputed" in response.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in schema if f.field_key == "age bracket")
+            assert field.is_derived
+            assert field.derived_from == ["year_of_birth"]
+            assert field.derivation_config["as_of_date"] == "2026-06-01"
+            assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40+", "UNKNOWN"]
+
+
 class TestDeleteField:
     def test_delete_non_fixed_field(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:

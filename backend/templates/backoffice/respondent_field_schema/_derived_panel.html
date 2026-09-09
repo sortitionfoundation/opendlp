@@ -1,0 +1,206 @@
+{#
+ABOUTME: Derived-field panel inside the field modal — target, method, source and per-method config
+ABOUTME: Selects re-render the form over HTMX; the age preview is a client-only Alpine enhancement
+#}
+{% set derived = modal_ctx["derived"] %}
+{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-target="#field-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
+<div class="mb-4 pl-4"
+     style="border-left: 3px solid var(--color-borders-dividers);">
+    {% if derived["target_locked"] %}
+        <input type="hidden" name="target_name" value="{{ values['target_name'] }}">
+        <input type="hidden" name="source_key" value="{{ values['source_key'] }}">
+        <div class="mb-4 text-body-sm">
+            <div>
+                {{ _("Feeds the target:") }} <strong>{{ values["target_name"] }}</strong>
+            </div>
+            <div>
+                {{ _("Derived from:") }} <code>{{ values["source_key"] }}</code>
+            </div>
+            <div class="govuk-hint text-body-sm">
+                {{ _("To change the source or the target, delete this field and create it again.") }}
+            </div>
+        </div>
+    {% else %}
+        <div class="mb-4">
+            <label class="govuk-label" for="derived-target">{{ _("Target it feeds") }}</label>
+            <div class="govuk-hint text-body-sm">
+                {{ _("The field takes its name and its set of values from this target.") }}
+            </div>
+            <select id="derived-target" name="target_name" class="govuk-select" {{ refresh_attrs | safe }}>
+                <option value="">{{ _("Choose a target…") }}</option>
+                {% for target in derived["targets"] %}
+                    <option value="{{ target['name'] }}"
+                            {% if derived["selected_target"] and derived["selected_target"]["name"] == target["name"] %}selected{% endif %}>
+                        {{ target["name"] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    {% endif %}
+    <fieldset class="mb-4">
+        <legend class="govuk-label">{{ _("How is it derived?") }}</legend>
+        {% for method_value, method_label, method_hint in [
+        ("age_bracket", _("Age brackets"), _("From a date of birth or a year of birth")),
+        ("small_mapping", _("Map choices"), _("Map each answer of an existing choice field to a target value")),
+        ("large_mapping", _("Lookup table"), _("Upload a CSV mapping, e.g. postcode to region")),
+        ] %}
+        <div class="govuk-radios__item">
+            <input class="govuk-radios__input"
+                   type="radio"
+                   id="derived-method-{{ method_value }}"
+                   name="derivation_method"
+                   value="{{ method_value }}"
+                   {% if values["derivation_method"] == method_value %}checked{% endif %}
+                   {{ refresh_attrs | safe }}>
+            <label class="govuk-label govuk-radios__label" for="derived-method-{{ method_value }}">{{ method_label }}</label>
+            <div class="govuk-hint govuk-radios__hint text-body-sm">{{ method_hint }}</div>
+        </div>
+        {% endfor %}
+    </fieldset>
+    {% if not derived["target_locked"] %}
+        <div class="mb-4">
+            <label class="govuk-label" for="derived-source">{{ _("Field it derives from") }}</label>
+            {% if derived["sources"] %}
+                <select id="derived-source" name="source_key" class="govuk-select" {{ refresh_attrs | safe }}>
+                    <option value="">{{ _("Choose a field…") }}</option>
+                    {% for source in derived["sources"] %}
+                        <option value="{{ source.field_key }}"
+                                {% if values["source_key"] == source.field_key %}selected{% endif %}>
+                            {{ source.label }} ({{ source.field_key }})
+                        </option>
+                    {% endfor %}
+                </select>
+            {% else %}
+                <div class="govuk-hint text-body-sm">
+                    {{ _("No compatible field exists yet — add the source field first, then come back.") }}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+    {% if values["derivation_method"] == "age_bracket" %}
+        <div x-data="ageBracketPreview"
+             data-fallback="{{ derived['fallback'] }}"
+             data-target-values="{{ (derived['selected_target']['values'] if derived['selected_target'] else []) | tojson }}"
+             @input="recalc()">
+            {% if derived["source_is_integer"] %}
+                <div class="govuk-hint text-body-sm mb-2">
+                    {{ _("Year-of-birth sources assume a 1 January birthday, so some people land one bracket up from their true age. Year of birth is still the recommended, data-minimising source.") }}
+                </div>
+            {% endif %}
+            <fieldset class="mb-4">
+                <legend class="govuk-label">{{ _("Ages as of") }}</legend>
+                <div class="govuk-hint text-body-sm">{{ _("Usually the first assembly date. Never left to \"today\" — brackets must not shift with the calendar.") }}</div>
+                <div class="flex gap-2">
+                    <div>
+                        <label class="govuk-label text-body-sm" for="derived-as-of-day">{{ _("Day") }}</label>
+                        <input class="govuk-input govuk-input--width-2"
+                               id="derived-as-of-day"
+                               name="as_of_day"
+                               type="text"
+                               inputmode="numeric"
+                               value="{{ values['as_of_day'] }}">
+                    </div>
+                    <div>
+                        <label class="govuk-label text-body-sm" for="derived-as-of-month">{{ _("Month") }}</label>
+                        <input class="govuk-input govuk-input--width-2"
+                               id="derived-as-of-month"
+                               name="as_of_month"
+                               type="text"
+                               inputmode="numeric"
+                               value="{{ values['as_of_month'] }}">
+                    </div>
+                    <div>
+                        <label class="govuk-label text-body-sm" for="derived-as-of-year">{{ _("Year") }}</label>
+                        <input class="govuk-input govuk-input--width-4"
+                               id="derived-as-of-year"
+                               name="as_of_year"
+                               type="text"
+                               inputmode="numeric"
+                               value="{{ values['as_of_year'] }}">
+                    </div>
+                </div>
+            </fieldset>
+            <div class="flex gap-4 mb-4">
+                <div>
+                    <label class="govuk-label" for="derived-min-age">{{ _("Minimum age") }}</label>
+                    <input class="govuk-input govuk-input--width-3"
+                           id="derived-min-age"
+                           name="min_age"
+                           type="text"
+                           inputmode="numeric"
+                           value="{{ values['min_age'] }}">
+                </div>
+                <div>
+                    <label class="govuk-label" for="derived-max-age">{{ _("Maximum age") }}</label>
+                    <input class="govuk-input govuk-input--width-3"
+                           id="derived-max-age"
+                           name="max_age"
+                           type="text"
+                           inputmode="numeric"
+                           value="{{ values['max_age'] }}">
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="govuk-label" for="derived-boundaries">{{ _("Bracket boundaries") }}</label>
+                <div class="govuk-hint text-body-sm">
+                    {{ _("Ages where a new bracket starts, separated by commas — e.g. 25, 40, 60.") }}
+                </div>
+                <input class="govuk-input"
+                       id="derived-boundaries"
+                       name="boundaries"
+                       type="text"
+                       value="{{ values['boundaries'] }}">
+            </div>
+            <p class="text-body-sm mb-1">
+                {{ _("Generated brackets:") }}
+                <strong x-text="previewText">{{ derived["preview_labels"] | join(", ") }}</strong>
+            </p>
+            {% if derived["selected_target"] %}
+                <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
+                    {{ _("The target expects:") }} {{ derived["selected_target"]["values"] | join(", ") }}
+                </p>
+            {% endif %}
+            <p class="text-body-sm mb-2"
+               style="color: var(--color-error-text);"
+               x-show="mismatchLabels"
+               {% if not derived["mismatch_labels"] %}x-cloak{% endif %}>
+                {{ _("These brackets don't match the target's values, so those people won't count towards its quotas:") }}
+                <span x-text="mismatchLabels">{{ derived["mismatch_labels"] | join(", ") }}</span>
+            </p>
+        </div>
+    {% elif values["derivation_method"] == "small_mapping" %}
+        {% if not derived["selected_target"] %}
+            <div class="govuk-hint text-body-sm mb-4">{{ _("Choose a target first — its values are what the answers map to.") }}</div>
+        {% elif not derived["selected_source"] %}
+            <div class="govuk-hint text-body-sm mb-4">{{ _("Choose the choice field to map from.") }}</div>
+        {% else %}
+            <fieldset class="mb-4">
+                <legend class="govuk-label">{{ _("Map each answer to a target value") }}</legend>
+                {% for row in derived["map_rows"] %}
+                    <div class="flex gap-2 items-center mb-2">
+                        <input type="hidden" name="map_source" value="{{ row['source_value'] }}">
+                        <span class="text-body-sm" style="min-width: 12rem;">{{ row["source_value"] }}</span>
+                        <span aria-hidden="true">→</span>
+                        <select name="map_target"
+                                class="govuk-select"
+                                aria-label="{{ _('Target value for %(value)s', value=row['source_value']) }}">
+                            <option value="" {% if not row["target_value"] %}selected{% endif %}>
+                                {{ _("(fall back to %(fallback)s)", fallback=derived["fallback"]) }}
+                            </option>
+                            {% for target_value in derived["selected_target"]["values"] %}
+                                <option value="{{ target_value }}"
+                                        {% if row["target_value"] == target_value %}selected{% endif %}>
+                                    {{ target_value }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endfor %}
+            </fieldset>
+        {% endif %}
+    {% elif values["derivation_method"] == "large_mapping" %}
+        <div class="govuk-hint text-body-sm mb-4">
+            {{ _("The field is created with an empty lookup table — upload the CSV from its row on the Fields tab afterwards. Values with no table entry fall back to %(fallback)s.", fallback=derived["fallback"]) }}
+        </div>
+    {% endif %}
+</div>

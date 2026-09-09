@@ -361,7 +361,7 @@ Commit: `refactor(793): read-only field rows on the Fields tab`
 
 Commit: `feat(793): add and edit fields in a modal`
 
-### Step 4 — derived-field flow
+### Step 4 — derived-field flow ✅ DONE (create + edit landed in one commit)
 
 1. Public helper for source compatibility in `derivation_service` (§9); unit
    test.
