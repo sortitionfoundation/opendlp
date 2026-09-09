@@ -791,6 +791,41 @@ class TestEditRespondentPage:
             **kwargs,
         )
 
+    def test_derived_field_shows_recalculation_note_instead_of_an_input(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        """A derived field is not editable: the form shows its label and a will-recalculate note."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            import_respondents_from_csv(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                "external_id,year_of_birth\nR001,1990\n",
+                replace_existing=True,
+            )
+            schema = get_schema(uow, admin_user.id, existing_assembly.id)
+            source = next(f for f in schema if f.field_key == "year_of_birth")
+            update_field(uow, admin_user.id, existing_assembly.id, source.id, field_type=FieldType.INTEGER)
+            create_derived_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                field_key="age bracket",
+                label="Age bracket",
+                source_field_key="year_of_birth",
+                rule=AgeBracketRule(as_of_date=date(2026, 6, 1), min_age=16, max_age=100, boundaries=(30, 60)),
+            )
+            resp_id = uow.respondents.get_by_assembly_id(existing_assembly.id)[0].id
+
+        response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id))
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "Age bracket" in body
+        assert "recalculated when saved" in body
+        # No editable control for the derived value — and no stale value shown at all.
+        assert 'name="attr_age bracket"' not in body
+        assert "30-59" not in body
+
     def test_get_renders_form_grouped_by_schema(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
     ) -> None:

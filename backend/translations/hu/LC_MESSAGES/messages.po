@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-09 13:22+0000\n"
+"POT-Creation-Date: 2026-09-09 13:35+0000\n"
 "PO-Revision-Date: 2025-10-06 11:07+0200\n"
 "Last-Translator: \n"
 "Language: hu\n"
@@ -109,7 +109,7 @@ msgid "About you"
 msgstr ""
 
 #: src/opendlp/domain/respondent_field_schema.py:94
-#: templates/backoffice/assembly_view_respondent.html:169
+#: templates/backoffice/assembly_view_respondent.html:167
 #: templates/respondents/view_respondents.html:165
 msgid "Consent"
 msgstr ""
@@ -159,7 +159,7 @@ msgstr "Módosítsa a számot."
 #: templates/admin/user_view.html:23 templates/admin/users.html:116
 #: templates/backoffice/assembly_members.html:48
 #: templates/backoffice/assembly_respondents.html:128
-#: templates/backoffice/assembly_view_respondent.html:160
+#: templates/backoffice/assembly_view_respondent.html:158
 #: templates/backoffice/respondent_field_schema/_field_modal.html:114
 #: templates/main/view_assembly_members.html:11
 #: templates/respondents/view_respondents.html:163
@@ -261,11 +261,11 @@ msgstr "Az oldal eléréséhez kérjük jelentkezz be."
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:43
 #: src/opendlp/entrypoints/edit_respondent_form.py:47
-#: templates/backoffice/assembly_edit_respondent.html:59
-#: templates/backoffice/assembly_edit_respondent.html:67
-#: templates/backoffice/assembly_view_respondent.html:58
-#: templates/backoffice/assembly_view_respondent.html:67
-#: templates/backoffice/assembly_view_respondent.html:162
+#: templates/backoffice/assembly_edit_respondent.html:68
+#: templates/backoffice/assembly_edit_respondent.html:76
+#: templates/backoffice/assembly_view_respondent.html:57
+#: templates/backoffice/assembly_view_respondent.html:66
+#: templates/backoffice/assembly_view_respondent.html:160
 #: templates/backoffice/components/input.html:335
 #: templates/backoffice/components/table.html:246
 #: templates/backoffice/patterns/_custom.html:78
@@ -277,11 +277,11 @@ msgstr ""
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:43
 #: src/opendlp/entrypoints/edit_respondent_form.py:47
-#: templates/backoffice/assembly_edit_respondent.html:59
-#: templates/backoffice/assembly_edit_respondent.html:67
-#: templates/backoffice/assembly_view_respondent.html:58
-#: templates/backoffice/assembly_view_respondent.html:67
-#: templates/backoffice/assembly_view_respondent.html:163
+#: templates/backoffice/assembly_edit_respondent.html:68
+#: templates/backoffice/assembly_edit_respondent.html:76
+#: templates/backoffice/assembly_view_respondent.html:57
+#: templates/backoffice/assembly_view_respondent.html:66
+#: templates/backoffice/assembly_view_respondent.html:161
 #: templates/backoffice/components/input.html:335
 #: templates/backoffice/components/table.html:248
 #: templates/backoffice/patterns/_custom.html:98
@@ -291,9 +291,9 @@ msgid "No"
 msgstr ""
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:47
-#: templates/backoffice/assembly_edit_respondent.html:67
-#: templates/backoffice/assembly_view_respondent.html:67
-#: templates/backoffice/assembly_view_respondent.html:164
+#: templates/backoffice/assembly_edit_respondent.html:76
+#: templates/backoffice/assembly_view_respondent.html:66
+#: templates/backoffice/assembly_view_respondent.html:162
 #: templates/gsheets/components/view_config.html:41
 #: templates/profile/view.html:19 templates/profile/view.html:25
 #: templates/profile/view.html:46
@@ -306,13 +306,13 @@ msgid "The current value for '%(label)s' is not in the options list: %(value)s."
 msgstr ""
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:87
-#: templates/backoffice/assembly_edit_respondent.html:72
-#: templates/backoffice/assembly_edit_respondent.html:88
+#: templates/backoffice/assembly_edit_respondent.html:81
+#: templates/backoffice/assembly_edit_respondent.html:97
 msgid "— none —"
 msgstr ""
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:175
-#: templates/backoffice/assembly_edit_respondent.html:125
+#: templates/backoffice/assembly_edit_respondent.html:134
 #, fuzzy
 msgid "Change note"
 msgstr "Új jelszó"
@@ -1281,7 +1281,7 @@ msgstr "Hiba történt a gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:768
 #: src/opendlp/entrypoints/blueprints/respondents.py:685
 #: src/opendlp/entrypoints/blueprints/respondents.py:816
-#: src/opendlp/entrypoints/blueprints/respondents.py:972
+#: src/opendlp/entrypoints/blueprints/respondents.py:974
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
 #: src/opendlp/entrypoints/blueprints/targets.py:152
 #: src/opendlp/entrypoints/blueprints/targets.py:393
@@ -1362,8 +1362,8 @@ msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondents.py:676
 #: src/opendlp/entrypoints/blueprints/respondents.py:742
 #: src/opendlp/entrypoints/blueprints/respondents.py:807
-#: src/opendlp/entrypoints/blueprints/respondents.py:969
-#: src/opendlp/entrypoints/blueprints/respondents.py:1016
+#: src/opendlp/entrypoints/blueprints/respondents.py:971
+#: src/opendlp/entrypoints/blueprints/respondents.py:1018
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
@@ -1402,7 +1402,7 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 #: templates/backoffice/assembly_dashboard.html:110
 #: templates/backoffice/assembly_dashboard.html:111
 #: templates/backoffice/assembly_respondents.html:104
-#: templates/backoffice/assembly_view_respondent.html:226
+#: templates/backoffice/assembly_view_respondent.html:224
 #: templates/backoffice/components/table.html:206
 #: templates/backoffice/patterns/_file_upload.html:56
 #: templates/backoffice/targets/bulk_edit_form.html:267
@@ -2758,8 +2758,8 @@ msgstr "Válaszadókat tartalmazó lapful neve"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:738
 #: src/opendlp/entrypoints/blueprints/respondents.py:803
-#: src/opendlp/entrypoints/blueprints/respondents.py:966
-#: src/opendlp/entrypoints/blueprints/respondents.py:1013
+#: src/opendlp/entrypoints/blueprints/respondents.py:968
+#: src/opendlp/entrypoints/blueprints/respondents.py:1015
 #, fuzzy
 msgid "Respondent not found"
 msgstr "Az oldal nem elérhető"
@@ -2790,21 +2790,21 @@ msgstr "Feladat állapota"
 msgid "Cannot edit a deleted respondent"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:988
+#: src/opendlp/entrypoints/blueprints/respondents.py:990
 #, fuzzy
 msgid "A comment is required when changing selection status"
 msgstr "Hiba történt a gyűlés létrehozásakor"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:993
+#: src/opendlp/entrypoints/blueprints/respondents.py:995
 msgid "Invalid target status"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1007
+#: src/opendlp/entrypoints/blueprints/respondents.py:1009
 #, fuzzy
 msgid "Status updated."
 msgstr "Utoljára módosítva"
 
-#: src/opendlp/entrypoints/blueprints/respondents.py:1011
+#: src/opendlp/entrypoints/blueprints/respondents.py:1013
 #, fuzzy
 msgid "You don't have permission to change this respondent's status"
 msgstr "Nincs jogosultsága a közösségi gyűlés megtekintéséhez"
@@ -4041,9 +4041,9 @@ msgstr "Add meg a meghívókódodat a regisztrációhoz"
 #: templates/admin/invite_create.html:96 templates/admin/user_edit.html:115
 #: templates/backoffice/assembly_data.html:260
 #: templates/backoffice/assembly_data.html:538
-#: templates/backoffice/assembly_edit_respondent.html:134
+#: templates/backoffice/assembly_edit_respondent.html:143
 #: templates/backoffice/assembly_form.html:96
-#: templates/backoffice/assembly_view_respondent.html:302
+#: templates/backoffice/assembly_view_respondent.html:300
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:87
 #: templates/backoffice/dashboard_export_modal.html:40
@@ -4264,8 +4264,8 @@ msgstr ""
 
 #: templates/admin/invites.html:70 templates/admin/users.html:120
 #: templates/backoffice/assembly_details.html:81
-#: templates/backoffice/assembly_view_respondent.html:223
-#: templates/backoffice/assembly_view_respondent.html:266
+#: templates/backoffice/assembly_view_respondent.html:221
+#: templates/backoffice/assembly_view_respondent.html:264
 #: templates/main/dashboard.html:46
 #: templates/main/view_assembly_details.html:33
 msgid "Created"
@@ -4334,7 +4334,7 @@ msgid "Timestamp"
 msgstr ""
 
 #: templates/admin/user_2fa_audit_log.html:32
-#: templates/backoffice/assembly_view_respondent.html:240
+#: templates/backoffice/assembly_view_respondent.html:238
 #, fuzzy
 msgid "Action"
 msgstr "Kiválasztás"
@@ -4415,8 +4415,8 @@ msgstr "Módosítsa a számot."
 #: templates/backoffice/assembly_selection.html:79
 #: templates/backoffice/assembly_selection.html:285
 #: templates/backoffice/assembly_view_respondent.html:20
-#: templates/backoffice/assembly_view_respondent.html:224
-#: templates/backoffice/assembly_view_respondent.html:310
+#: templates/backoffice/assembly_view_respondent.html:222
+#: templates/backoffice/assembly_view_respondent.html:308
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:71
 #: templates/backoffice/respondent_field_schema/_editor.html:153
@@ -5453,11 +5453,15 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
-#: templates/backoffice/assembly_edit_respondent.html:126
+#: templates/backoffice/assembly_edit_respondent.html:59
+msgid "Will be recalculated when saved."
+msgstr ""
+
+#: templates/backoffice/assembly_edit_respondent.html:135
 msgid "Why are you making this change?"
 msgstr ""
 
-#: templates/backoffice/assembly_edit_respondent.html:133
+#: templates/backoffice/assembly_edit_respondent.html:142
 #: templates/profile/edit.html:40
 #, fuzzy
 msgid "Save changes"
@@ -5644,7 +5648,7 @@ msgid "Status:"
 msgstr "Állapot"
 
 #: templates/backoffice/assembly_respondents.html:107
-#: templates/backoffice/assembly_view_respondent.html:227
+#: templates/backoffice/assembly_view_respondent.html:225
 #: templates/backoffice/components/table.html:212
 #, fuzzy
 msgid "Deleted"
@@ -5833,7 +5837,7 @@ msgstr "Befejezve"
 
 #: templates/backoffice/assembly_selection.html:182
 #: templates/backoffice/assembly_selection.html:355
-#: templates/backoffice/assembly_view_respondent.html:241
+#: templates/backoffice/assembly_view_respondent.html:239
 #: templates/backoffice/targets/bulk_edit_form.html:226
 #: templates/backoffice/targets/bulk_edit_form.html:277
 #: templates/backoffice/targets/category_block.html:145
@@ -6012,108 +6016,104 @@ msgstr ""
 msgid "Back to respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/assembly_view_respondent.html:35
-msgid "(derivation not yet implemented)"
-msgstr ""
-
-#: templates/backoffice/assembly_view_respondent.html:94
+#: templates/backoffice/assembly_view_respondent.html:92
 msgid "Personal data deleted"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:98
+#: templates/backoffice/assembly_view_respondent.html:96
 #, python-format
 msgid "Deleted on %(date)s by %(who)s"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:102
+#: templates/backoffice/assembly_view_respondent.html:100
 #, fuzzy, python-format
 msgid "Deleted on %(date)s"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/assembly_view_respondent.html:111
+#: templates/backoffice/assembly_view_respondent.html:109
 msgid "External ID:"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:157
+#: templates/backoffice/assembly_view_respondent.html:155
 msgid "Contact and eligibility"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:167
+#: templates/backoffice/assembly_view_respondent.html:165
 #: templates/respondents/view_respondents.html:166
 msgid "Eligible"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:168
+#: templates/backoffice/assembly_view_respondent.html:166
 msgid "Can attend"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:170
+#: templates/backoffice/assembly_view_respondent.html:168
 msgid "Stay on database"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:196
+#: templates/backoffice/assembly_view_respondent.html:194
 #, fuzzy
 msgid "Attributes"
 msgstr "Megtartandó oszlopok"
 
-#: templates/backoffice/assembly_view_respondent.html:204
+#: templates/backoffice/assembly_view_respondent.html:202
 #, fuzzy
 msgid "No attributes recorded."
 msgstr "Megtartandó oszlopok"
 
-#: templates/backoffice/assembly_view_respondent.html:215
+#: templates/backoffice/assembly_view_respondent.html:213
 #, fuzzy
 msgid "Activity"
 msgstr "Aktív gyűlések"
 
-#: templates/backoffice/assembly_view_respondent.html:225
+#: templates/backoffice/assembly_view_respondent.html:223
 #, fuzzy
 msgid "Status change"
 msgstr "Módosítások mentése"
 
-#: templates/backoffice/assembly_view_respondent.html:230
+#: templates/backoffice/assembly_view_respondent.html:228
 #, fuzzy
 msgid "CSV import"
 msgstr "Fontos"
 
-#: templates/backoffice/assembly_view_respondent.html:231
+#: templates/backoffice/assembly_view_respondent.html:229
 msgid "manual entry"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:232
+#: templates/backoffice/assembly_view_respondent.html:230
 #, fuzzy
 msgid "registration form"
 msgstr "Vissza a regisztrációhoz"
 
-#: templates/backoffice/assembly_view_respondent.html:233
+#: templates/backoffice/assembly_view_respondent.html:231
 msgid "NationBuilder sync"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:238
+#: templates/backoffice/assembly_view_respondent.html:236
 msgid "When"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:239
+#: templates/backoffice/assembly_view_respondent.html:237
 msgid "Author"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:267
+#: templates/backoffice/assembly_view_respondent.html:265
 #, fuzzy, python-format
 msgid "Created via %(source)s"
 msgstr "További beállítások"
 
-#: templates/backoffice/assembly_view_respondent.html:273
+#: templates/backoffice/assembly_view_respondent.html:271
 #, fuzzy
 msgid "No activity recorded."
 msgstr "Megtartandó oszlopok"
 
-#: templates/backoffice/assembly_view_respondent.html:281
-#: templates/backoffice/assembly_view_respondent.html:286
+#: templates/backoffice/assembly_view_respondent.html:279
+#: templates/backoffice/assembly_view_respondent.html:284
 #, fuzzy
 msgid "Delete personal data"
 msgstr "Válaszadókat tartalmazó lapful neve"
 
-#: templates/backoffice/assembly_view_respondent.html:283
+#: templates/backoffice/assembly_view_respondent.html:281
 msgid ""
 "Under GDPR, a person may request that their personal data be deleted. "
 "This action blanks the respondent's contact details, attribute values, "
@@ -6121,21 +6121,21 @@ msgid ""
 "selection can still reference them. This action is irreversible."
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:293
+#: templates/backoffice/assembly_view_respondent.html:291
 #: templates/backoffice/components/respondent_status_form.html:78
 msgid "Reason (required)"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:299
+#: templates/backoffice/assembly_view_respondent.html:297
 msgid "e.g. GDPR deletion request from the participant"
 msgstr ""
 
-#: templates/backoffice/assembly_view_respondent.html:301
+#: templates/backoffice/assembly_view_respondent.html:299
 #, fuzzy
 msgid "Confirm delete"
 msgstr "Új jelszó"
 
-#: templates/backoffice/assembly_view_respondent.html:312
+#: templates/backoffice/assembly_view_respondent.html:310
 #, fuzzy
 msgid "Back to Respondents"
 msgstr "Válaszadókat tartalmazó lapful neve"
@@ -15855,4 +15855,7 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "Create targets first — a derived field feeds one."
+#~ msgstr ""
+
+#~ msgid "(derivation not yet implemented)"
 #~ msgstr ""

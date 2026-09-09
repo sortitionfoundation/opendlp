@@ -943,9 +943,11 @@ def edit_respondent(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respons
         for warning in warnings:
             flash(warning, "warning")
 
+        # Derived fields stay in the sections: the form builder creates no input
+        # for them, and the template shows a will-be-recalculated note instead.
         ordered_sections = []
         for group in GROUP_DISPLAY_ORDER:
-            fields_in_group = [f for f in grouped_schema.get(group, []) if not f.is_derived]
+            fields_in_group = grouped_schema.get(group, [])
             if fields_in_group:
                 ordered_sections.append({"label": GROUP_LABELS[group], "fields": fields_in_group})
 
