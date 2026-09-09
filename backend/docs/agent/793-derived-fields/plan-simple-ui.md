@@ -393,7 +393,12 @@ Commits: `feat(793): create derived fields from the modal` then
 
 Commit: `feat(793): lookup table upload and recompute from the Fields tab`
 
-### Step 6 — BDD, translations, polish
+### Step 6 — BDD, translations, polish ✅ DONE
+
+All six steps are implemented and committed on `793-derived-fields-ui`
+(2026-09-09). One pre-existing BDD failure is unrelated to this work:
+`tests/bdd/test_replacement_selection.py::test_replacement_modal_shows_loading_state`
+fails identically on the pre-spike commit `df2c6271` (spinner-visibility race).
 
 1. BDD scenarios per §10; update `delete_all_except_standard_users()` only if
    new tables appeared (none expected).
