@@ -209,6 +209,7 @@ class RespondentFieldDefinition:
         field_type: FieldType = FieldType.TEXT,
         options: list[ChoiceOption] | None = None,
         on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
+        help_text: str = "",
         field_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
@@ -245,6 +246,7 @@ class RespondentFieldDefinition:
         self.options = list(options) if options else None
         # A derived field is computed, never collected on the registration form.
         self.on_registration_page = FieldOnRegistrationPage.NO if is_derived else on_registration_page
+        self.help_text = help_text.strip()
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
 
@@ -260,6 +262,7 @@ class RespondentFieldDefinition:
         field_type: FieldType | None = None,
         options: list[ChoiceOption] | None = _UNSET,
         on_registration_page: FieldOnRegistrationPage | None = None,
+        help_text: str | None = None,
     ) -> None:
         """Update mutable fields. Touches ``updated_at`` on any change.
 
@@ -286,6 +289,9 @@ class RespondentFieldDefinition:
         if on_registration_page is not None:
             # A derived field is computed, never collected — same invariant as __init__.
             self.on_registration_page = FieldOnRegistrationPage.NO if self.is_derived else on_registration_page
+            changed = True
+        if help_text is not None:
+            self.help_text = help_text.strip()
             changed = True
         if changed:
             self.updated_at = datetime.now(UTC)
@@ -348,6 +354,7 @@ class RespondentFieldDefinition:
             field_type=self.field_type,
             options=list(self.options) if self.options else None,
             on_registration_page=self.on_registration_page,
+            help_text=self.help_text,
             field_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,

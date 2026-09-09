@@ -441,6 +441,68 @@ class TestFieldOnRegistrationPage:
         assert FIXED_FIELD_ON_REGISTRATION_PAGE["stay_on_db"] == FieldOnRegistrationPage.YES_OPTIONAL
 
 
+class TestHelpText:
+    def _field(self, **kwargs: object) -> RespondentFieldDefinition:
+        defaults: dict = {
+            "assembly_id": uuid.uuid4(),
+            "field_key": "x",
+            "label": "X",
+            "group": RespondentFieldGroup.OTHER,
+            "sort_order": 10,
+        }
+        defaults.update(kwargs)
+        return RespondentFieldDefinition(**defaults)
+
+    def test_help_text_defaults_to_empty_string(self) -> None:
+        """A field created without help_text has the empty string, not None."""
+        field = self._field()
+        assert field.help_text == ""
+
+    def test_constructor_accepts_help_text(self) -> None:
+        """help_text passed at construction is stored, stripped of surrounding whitespace."""
+        field = self._field(help_text="  As shown on your passport  ")
+        assert field.help_text == "As shown on your passport"
+
+    def test_update_changes_help_text_and_touches_updated_at(self) -> None:
+        """update(help_text=...) stores the new text and bumps updated_at."""
+        field = self._field(help_text="old hint")
+        before = field.updated_at
+        field.update(help_text="new hint")
+        assert field.help_text == "new hint"
+        assert field.updated_at >= before
+
+    def test_update_can_clear_help_text(self) -> None:
+        """Passing the empty string clears an existing hint."""
+        field = self._field(help_text="old hint")
+        field.update(help_text="")
+        assert field.help_text == ""
+
+    def test_update_leaves_help_text_unchanged_when_omitted(self) -> None:
+        """Omitting help_text from update() leaves the stored value alone."""
+        field = self._field(help_text="keep me")
+        field.update(label="New label")
+        assert field.help_text == "keep me"
+
+    def test_help_text_editable_on_derived_field(self) -> None:
+        """help_text is plain mutable text, not derivation-owned, so derived fields accept it."""
+        field = self._field(
+            is_derived=True,
+            derived_from=["year_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2026-01-01"},
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption("16-24")],
+        )
+        field.update(help_text="Computed from your year of birth")
+        assert field.help_text == "Computed from your year of birth"
+
+    def test_create_detached_copy_preserves_help_text(self) -> None:
+        """create_detached_copy carries help_text across."""
+        original = self._field(help_text="a hint")
+        copy = original.create_detached_copy()
+        assert copy.help_text == "a hint"
+
+
 class TestGroupMetadata:
     def test_display_order_contains_every_group_exactly_once(self) -> None:
         assert set(GROUP_DISPLAY_ORDER) == set(RespondentFieldGroup)

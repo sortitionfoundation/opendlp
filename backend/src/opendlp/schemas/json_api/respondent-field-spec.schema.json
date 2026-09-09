@@ -200,6 +200,10 @@
           ],
           "description": "Whether the public registration form collects this field, and how strictly. Governs the form, not CSV import - import accepts any column."
         },
+        "help_text": {
+          "type": "string",
+          "description": "Organiser-written hint shown beneath the field on the registration form. Empty when none was written. Not translated - it is typed by the organiser."
+        },
         "target_values": {
           "type": [
             "array",
@@ -225,6 +229,7 @@
         "field_type",
         "options",
         "on_registration_page",
+        "help_text",
         "target_values"
       ],
       "additionalProperties": false

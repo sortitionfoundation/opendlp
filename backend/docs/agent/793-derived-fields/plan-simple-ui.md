@@ -312,7 +312,7 @@ Each step ends green (`just check` + relevant test suites) and committed.
 Run `just translate-regen` in any step that adds user-facing strings.
 Regenerate `../.secrets.baseline` if test edits shift flagged line numbers.
 
-### Step 1 — `help_text` backend slice
+### Step 1 — `help_text` backend slice ✅ DONE
 
 Domain/data/service only; no template changes (per review: migration work first).
 

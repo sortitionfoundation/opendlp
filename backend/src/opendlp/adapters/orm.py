@@ -631,6 +631,7 @@ respondent_field_definitions = Table(
         nullable=False,
         default=FieldOnRegistrationPage.YES_REQUIRED,
     ),
+    Column("help_text", Text, nullable=False, default="", server_default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Unique field_key per assembly

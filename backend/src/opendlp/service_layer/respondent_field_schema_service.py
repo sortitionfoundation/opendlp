@@ -228,6 +228,7 @@ def add_field(
     field_type: FieldType = FieldType.TEXT,
     options: list[ChoiceOption] | None = None,
     on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
+    help_text: str = "",
 ) -> RespondentFieldDefinition:
     """Add a single field to an assembly's schema.
 
@@ -244,6 +245,7 @@ def add_field(
         group: Which section the field belongs to; defaults to GENERAL.
         field_type: The data type; defaults to TEXT.
         options: For choice fields, the list of options.
+        help_text: Optional hint shown beneath the field on forms.
 
     Returns:
         The newly created RespondentFieldDefinition.
@@ -281,6 +283,7 @@ def add_field(
         field_type=field_type,
         options=options,
         on_registration_page=on_registration_page,
+        help_text=help_text,
     )
     uow.respondent_field_definitions.add(field)
     return field.create_detached_copy()
@@ -297,9 +300,10 @@ def update_field(
     field_type: FieldType | None = None,
     options: list[ChoiceOption] | None = _UNSET_OPTIONS,
     on_registration_page: FieldOnRegistrationPage | None = None,
+    help_text: str | None = None,
 ) -> RespondentFieldDefinition:
-    """Update a field's label, group, sort_order, field_type, options, or
-    on_registration_page.
+    """Update a field's label, group, sort_order, field_type, options,
+    on_registration_page, or help_text.
 
     ``options`` uses a sentinel to distinguish "leave alone" from "set to None".
 
@@ -327,6 +331,7 @@ def update_field(
             field_type=field_type,
             options=options,
             on_registration_page=on_registration_page,
+            help_text=help_text,
         )
     except FixedFieldError as exc:
         raise FieldDefinitionConflictError(_l("You can't change the type or options of a fixed field")) from exc

@@ -42,7 +42,7 @@ an unmatched one, all in one response.
 
 ```jsonc
 {
-  "spec_version": 3,
+  "spec_version": 4,
   "assembly": {
     "id": "...", "title": "Existing Assembly", "number_to_select": 40
   },
@@ -69,6 +69,9 @@ Version 3 replaced the never-populated `derivation_kind` string with
 `derivation_type` (`age_bracket`, `small_mapping`, `large_mapping` or `null`)
 and `derivation_config` (an object of derivation parameters, `null` unless
 `is_derived`), and added `derived` to the `group` values.
+
+Version 4 added `help_text` to each field: the organiser-written hint shown
+beneath the field on the registration form (empty string when none was written).
 
 ### `csv`
 
@@ -103,6 +106,7 @@ Every field in the schema, in the order the schema page and the CSV export use:
 | `field_type`           | See the table below                                                                       |
 | `options`              | Permitted values for a choice field; `null` for every other type                          |
 | `on_registration_page` | `no`, `yes_optional` or `yes_required` — governs the public form, **not** CSV import      |
+| `help_text`            | Organiser-written hint shown beneath the field on the form; empty string when none        |
 | `target_values`        | Quotas from the matching target category; `null` when none matches                        |
 
 `field_type` is the *effective* type. For a fixed field the hardcoded
