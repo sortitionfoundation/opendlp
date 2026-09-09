@@ -295,6 +295,46 @@ These look like the result of a bad fuzzy-match auto-accept. A pass that
 re-fuzzies entries whose msgstr length is wildly out of line with the msgid
 might find the rest.
 
+## 8. The two follow-up answers (2026-09-09)
+
+Of the three things §7 left open, F28 came back and B10's loose end did not
+quite.
+
+**F28 is settled: `Assembly Question` is "A közösségi gyűlés témája".** The
+field is a topic, not a question, and it drops the *fő* the reviewed entry
+carried. Four entries: the form label, the registration step and the
+role-assigned email (which between them said "fő témája" and "kérdése"), and the
+help text `Optional - the key question this assembly will address`, whose "fő
+kérdés" became "fő téma" so the label and its hint agree on what the field
+holds. The label was non-fuzzy and stays non-fuzzy — the change came *from* the
+reviewer, so it is more reviewed than it was.
+
+**B10's "GS munkalap" is still open.** The reviewer expanded it to "Google Sheets
+munkalap", which settles the coinage but not the strings: the catalogue names
+the spreadsheet **Google Táblázat** — the localised Sheets name — in 62 entries,
+and uses bare *munkalap* for a tab (73 entries, only 9 of which name Google at
+all). The expansion could mean leaving that alone, renaming *Google Táblázat* to
+*Google Sheets* throughout, or prefixing every standalone tab label ("Jelentkezők
+Google Sheets munkalapja"), which would undo the brevity the "GS" form was
+reaching for. Asked back as **G36** at the foot of `hu-review-questions.md`,
+with the three readings spelled out and the case endings each would need;
+nothing moved in the catalogue.
+
+G36 also puts the English back to us: the source calls the same thing `Google
+Spreadsheet` (38), `Google Sheets` (11), `Google Sheet` (7) and two lowercase
+variants, once in a single string — "A Google Sheet URL is required to export to
+Google Sheets". Settling the Hungarian without settling that just picks one of
+our own inconsistencies to be faithful to.
+
+**Two strays the B10 sweep missed.** `Manage Tabs Progress` and `Loading tab
+list` still said *lapfül* — the sweep matched the whole word and these are
+compounds ("Lapfülkezelés", "Lapfüllista"). Now *Munkalapkezelés* and
+*Munkalaplista*. A term sweep over a Hungarian catalogue has to look inside
+compounds, which is the same lesson as `Respondents Tab`'s "lapful" typo in §7.
+
+**F35 is still unanswered** — it is a source-English question, not a Hungarian
+one, and needs someone who knows where the strings appear.
+
 ## Files in this directory
 
 - `hu-review-questions.md` — 35 questions for a native Hungarian speaker,

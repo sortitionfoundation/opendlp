@@ -18,6 +18,8 @@ in the catalogue hang off it.
 - The English source is quoted exactly as it appears in the app, so if a
   question is really "the English is unclear", say so — that is a bug in the
   source, and worth more than a translation fix.
+- **G36** at the foot was added on 2026-09-09, after the first round of answers
+  came back. It is the only one that still needs a decision, along with F35.
 
 Counts below are entries **in this run**, from `grep`-style counts over the
 translated strings. They are indicative, not exact.
@@ -246,6 +248,11 @@ looking at both screens side by side.
 
 **Answer:**
 What about "GS Munkalap" to keep it sort but link to Google Sheet?
+
+**Follow-up (2026-09-09):** "GS munkalap = Google Sheets munkalap". *munkalap*
+itself is settled and applied. What the expansion means for the strings is not,
+so it is asked in full as **[G36](#g36-gs-munkalap--how-should-the-strings-name-the-google-sheet-follow-up-to-b10)**
+at the foot of this file.
 ---
 
 ### B11. "Dashboard" → *irányítópult* (one word) or *Irányító pult* (two)?
@@ -580,8 +587,14 @@ better rendering of what the field means?
 - [ ] They're different fields and both are fine
 
 **Answer:**
-UNANSWERED — needs more thought and context (where the field appears in the
-app). Revisit later.
+"**A gyűlés témája**" — topic, not question, and without *fő*. Applied as "A
+közösségi gyűlés témája" to follow B5.
+
+Four entries: `Assembly Question` (the form label, which said "fő témája"),
+`Assembly question` and `Assembly question:` (the registration step and the
+role-assigned email, which said "kérdése"), and the help text `Optional - the
+key question this assembly will address`, whose "fő kérdés" became "fő téma" so
+the label and its hint do not disagree on what the field holds.
 
 ---
 
@@ -739,7 +752,88 @@ fix the source we should fix both languages at once.
    differently. Worth unifying in English before translating.
 
 **Answer:**
-UNANSWERED — could not decide, review later (together with F28).
+UNANSWERED — could not decide, review later. (F28 came back on 2026-09-09; this
+one did not.)
+
+---
+
+# G. Follow-up questions (2026-09-09)
+
+### G36. "GS munkalap" — how should the strings name the Google Sheet? (follow-up to B10)
+
+Thank you — **munkalap** is settled and applied everywhere (73 entries), and the
+old *lapfül* is gone, including the two compounds the first sweep missed
+(*Lapfülkezelés* → *Munkalapkezelés*, *Lapfüllista* → *Munkalaplista*).
+
+What is not settled is what "**Google Sheets** munkalap" should do to the
+strings, because the catalogue already has a name for the spreadsheet and it is
+a different one.
+
+**Where we are now.** Two separate words are in play:
+
+| | Hungarian now | entries |
+| --- | --- | --- |
+| the spreadsheet (the whole file) | **Google Táblázat** — the name the Hungarian Google UI itself uses | 62 |
+| a tab inside it | **munkalap**, on its own | 73, of which only 9 also name Google |
+
+So a standalone label says just *munkalap*:
+
+- `Respondents Tab` → "Jelentkezők **munkalapja**"
+- `Categories Tab` → "Kiválasztási szempontok **munkalapja**"
+- `Spreadsheet Tabs` → "Táblázat **munkalapjai**"
+- `List Old Tabs` → "Régi **munkalapok** listázása"
+
+and the sheet gets named only where the English names it:
+
+- `Name of the tab containing respondents data in the Google Spreadsheet - for
+  initial Selection` → "A **Google Táblázatban** a regisztráltak adatait
+  tartalmazó **munkalap** neve – a kezdeti kiválasztáshoz"
+- `View and delete old selection output tabs from your Google Spreadsheet.` →
+  "Nézd meg és töröld a régi kiválasztási kimeneti **munkalapokat** a **Google
+  Táblázatodból**."
+
+**The three things "Google Sheets munkalap" could mean.** Please pick one.
+
+- [ ] **1. Leave the strings as they are.** You were expanding the "GS" for us,
+      not asking for a change: don't coin "GS", keep *Google Táblázat* as the
+      product name, keep bare *munkalap* for a tab. Nothing to do.
+
+- [ ] **2. Rename the product: *Google Táblázat* → *Google Sheets*.** You wrote
+      the English product name, and that is what Hungarian users actually say
+      out loud even though the localised UI says *Google Táblázatok*. This
+      changes 62 entries and all their case endings — "a Google
+      **Táblázatban**" becomes "a Google **Sheetsben**", "a Google
+      **Táblázatodból**" becomes "a Google **Sheetsedből**", and so on. Is that
+      what you want, and do those suffixed forms read acceptably to you? (If
+      only *some* of them do, say which — e.g. keep the English name in the
+      nominative and rephrase the rest to avoid a suffix.)
+
+- [ ] **3. Prefix every tab mention: *Google Sheets munkalap*.** Every
+      standalone label ties itself back to the sheet: "Jelentkezők **Google
+      Sheets munkalapja**", "Kiválasztási szempontok **Google Sheets
+      munkalapja**", "Régi **Google Sheets munkalapok** listázása". This is the
+      clearest, but it is also the longest — and length is what "GS munkalap"
+      was trying to avoid, so it may be the opposite of what you meant. Some of
+      these are table headings and buttons where the extra 14 characters will
+      wrap.
+
+- [ ] **Something else:**
+
+**Answer:**
+
+**And one more thing, which is a bug in the English rather than in the
+Hungarian.** The source itself cannot decide what to call this thing: it says
+`Google Spreadsheet` 38 times, `Google Sheets` 11, `Google Sheet` 7, plus
+lowercase `Google sheet` and `Google spreadsheet` — twice within a single
+string, "A Google **Sheet** URL is required to export to Google **Sheets**". If
+we are settling the Hungarian we should settle the English too, rather than
+faithfully reproducing our own muddle. Do you have a preference, or shall we
+just pick one and make the English consistent first? *(Same class of problem as
+F35.)*
+
+**Answer:**
+
+**Applies to:** 62 entries directly, up to 73 more under option 3.
 
 ---
 
