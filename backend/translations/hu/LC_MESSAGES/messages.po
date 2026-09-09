@@ -480,13 +480,13 @@ msgstr "Adja meg a közösségi gyűlés címét"
 #: templates/backoffice/assembly_details.html:40
 #: templates/main/view_assembly_details.html:6
 msgid "Assembly Question"
-msgstr "A közösségi gyűlés fő témája"
+msgstr "A közösségi gyűlés témája"
 
 #: src/opendlp/entrypoints/forms.py:248
 #, fuzzy
 msgid "Optional - the key question this assembly will address"
 msgstr ""
-"Nem kötelező – a fő kérdés, amellyel ez a közösségi gyűlés foglalkozni fog"
+"Nem kötelező – a fő téma, amellyel ez a közösségi gyűlés foglalkozni fog"
 
 #: src/opendlp/entrypoints/forms.py:253
 #: templates/backoffice/assembly_details.html:64
@@ -6833,7 +6833,7 @@ msgstr "Szerkesztés folytatása"
 #: templates/backoffice/components/manage_tabs_progress_modal.html:10
 #, fuzzy
 msgid "Manage Tabs Progress"
-msgstr "Lapfülkezelés előrehaladása"
+msgstr "Munkalapkezelés előrehaladása"
 
 #: templates/backoffice/components/manage_tabs_progress_modal.html:21
 #: templates/backoffice/components/modal.html:388
@@ -7595,7 +7595,7 @@ msgstr "A közösségi gyűlés címe"
 #: templates/backoffice/registration/_step_email.html:139
 #, fuzzy
 msgid "Assembly question"
-msgstr "A közösségi gyűlés kérdése"
+msgstr "A közösségi gyűlés témája"
 
 #: templates/backoffice/registration/_step_email.html:140
 #, fuzzy
@@ -8769,7 +8769,7 @@ msgstr "Az Ön szerepköre:"
 #: templates/emails/assembly_role_assigned.html:90
 #, fuzzy
 msgid "Assembly question:"
-msgstr "A közösségi gyűlés kérdése:"
+msgstr "A közösségi gyűlés témája:"
 
 #: templates/emails/assembly_role_assigned.html:94
 #, fuzzy
@@ -9154,7 +9154,7 @@ msgstr "Lista frissítése"
 #: templates/gsheets/manage_tabs.html:50
 #, fuzzy
 msgid "Loading tab list"
-msgstr "Lapfüllista betöltése"
+msgstr "Munkalaplista betöltése"
 
 #: templates/gsheets/manage_tabs.html:52
 #, fuzzy
