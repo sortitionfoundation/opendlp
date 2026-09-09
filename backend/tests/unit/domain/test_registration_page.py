@@ -1367,6 +1367,26 @@ class TestGenerateStarterFormHtml:
         assert '<p class="hint" id="eligible-hint">You must live in the area</p>' in html
         assert 'aria-describedby="eligible-hint"' in html
 
+    def test_choice_radio_option_help_text_renders_hints(self):
+        """A ChoiceOption's help_text becomes a hint paragraph its radio points at."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[
+                    ChoiceOption(value="Female", help_text="Includes trans women"),
+                    ChoiceOption(value="Male"),
+                ],
+            ),
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert '<p class="hint" id="gender-1-item-hint">Includes trans women</p>' in html
+        assert 'aria-describedby="gender-1-item-hint"' in html
+        assert "gender-2-item-hint" not in html
+
 
 class TestGenerateStarterFormHtmlGovuk:
     def test_empty_schema_minimal_form(self):
@@ -1725,3 +1745,57 @@ class TestGenerateStarterFormHtmlGovuk:
         select_pos = html.find('<select class="govuk-select"')
         assert -1 < hint_pos < select_pos
         assert 'aria-describedby="region-hint"' in html
+
+    def test_choice_radio_option_help_text_renders_as_item_hints(self):
+        """A ChoiceOption's help_text becomes a govuk-radios__hint its radio points at."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[
+                    ChoiceOption(value="Female", help_text="Includes trans women"),
+                    ChoiceOption(value="Male"),
+                ],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert ('<div class="govuk-hint govuk-radios__hint" id="gender-item-hint">Includes trans women</div>') in html
+        assert 'aria-describedby="gender-item-hint"' in html
+        # The option without help text gets no hint element and no aria-describedby.
+        assert "gender-2-item-hint" not in html
+
+    def test_choice_radio_option_help_text_is_escaped(self):
+        """Organiser-typed option help text is HTML-escaped."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Other", help_text="e.g. <b>self-described</b> & more")],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert "e.g. &lt;b&gt;self-described&lt;/b&gt; &amp; more" in html
+        assert "<b>self-described</b>" not in html
+
+    def test_option_and_field_hints_coexist_with_distinct_ids(self):
+        """A field-level hint and an option hint don't collide on ids."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Female", help_text="option hint")],
+                help_text="field hint",
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<div class="govuk-hint" id="gender-hint">field hint</div>' in html
+        assert '<div class="govuk-hint govuk-radios__hint" id="gender-item-hint">option hint</div>' in html

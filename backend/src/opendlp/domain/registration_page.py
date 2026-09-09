@@ -506,11 +506,21 @@ def _render_choice_radios(field: RespondentFieldDefinition) -> list[str]:
     parts = [f"<fieldset{aria_attr}>", f"<legend>{legend}</legend>"]
     if hint_html:
         parts.append(hint_html)
-    for opt in field.options or []:
+    for i, opt in enumerate(field.options or [], start=1):
         value_attr = html_lib.escape(opt.value, quote=True)
         text = html_lib.escape(opt.value)
         checked_expr = _jinja_call("checked", field.field_key, opt.value)
-        parts.append(f'<label><input type="radio" name="{key}" value="{value_attr}" {checked_expr}> {text}</label>')
+        opt_aria = ""
+        opt_hint = ""
+        if opt.help_text:
+            hint_id = f"{key}-{i}-item-hint"
+            opt_aria = f' aria-describedby="{hint_id}"'
+            opt_hint = f'<p class="hint" id="{hint_id}">{html_lib.escape(opt.help_text)}</p>'
+        parts.append(
+            f'<label><input type="radio" name="{key}" value="{value_attr}" {checked_expr}{opt_aria}> {text}</label>'
+        )
+        if opt_hint:
+            parts.append(opt_hint)
     parts.append(_jinja_call("field_errors", field.field_key))
     parts.append("</fieldset>")
     return parts
@@ -641,12 +651,23 @@ def _render_choice_radios_govuk(field: RespondentFieldDefinition) -> list[str]:
         value_attr = html_lib.escape(opt.value, quote=True)
         text = html_lib.escape(opt.value)
         checked_expr = _jinja_call("checked", field.field_key, opt.value)
+        opt_aria = ""
+        opt_hint = ""
+        if opt.help_text:
+            # "-item-hint" keeps the id clear of the field-level "{key}-hint".
+            hint_id = f"{item_id}-item-hint"
+            opt_aria = f' aria-describedby="{hint_id}"'
+            opt_hint = (
+                f'<div class="govuk-hint govuk-radios__hint" id="{hint_id}">{html_lib.escape(opt.help_text)}</div>'
+            )
         parts.append('<div class="govuk-radios__item">')
         parts.append(
             f'<input class="govuk-radios__input" type="radio" id="{item_id}" name="{key}" '
-            f'value="{value_attr}" {checked_expr}>'
+            f'value="{value_attr}" {checked_expr}{opt_aria}>'
         )
         parts.append(f'<label class="govuk-label govuk-radios__label" for="{item_id}">{text}</label>')
+        if opt_hint:
+            parts.append(opt_hint)
         parts.append("</div>")
     parts.append(_jinja_call("field_errors", field.field_key))
     parts.append("</div>")
