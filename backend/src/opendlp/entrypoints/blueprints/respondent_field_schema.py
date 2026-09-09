@@ -472,7 +472,9 @@ def _apply_age_prefills(values: dict[str, Any], selected_target: dict[str, Any] 
         values["as_of_day"] = str(first_date.day)
         values["as_of_month"] = str(first_date.month)
         values["as_of_year"] = str(first_date.year)
-    if selected_target and not values["boundaries"] and not values["min_age"] and not values["max_age"]:
+    # While no boundaries have been entered, the target's values own the whole
+    # bracket config — so a successful parse overwrites min/max defaults too.
+    if selected_target and not values["boundaries"]:
         prefill = age_prefill_from_target(selected_target["values"])
         if prefill:
             values.update(prefill)
