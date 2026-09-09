@@ -27,6 +27,32 @@ ABOUTME: Shown in place of the field modal after a derivation save; Done closes 
                     </p>
                 </div>
             {% endif %}
+            {% if report_ctx.get("upload_report") %}
+                {% set upload_report = report_ctx["upload_report"] %}
+                <dl class="mb-4">
+                    <div class="flex gap-2">
+                        <dt class="text-label-lg">{{ _("Rows stored:") }}</dt>
+                        <dd class="text-body-md">{{ upload_report.row_count }}</dd>
+                    </div>
+                    {% if upload_report.duplicate_keys %}
+                        <div class="flex gap-2">
+                            <dt class="text-label-lg">{{ _("Duplicate keys (last row wins):") }}</dt>
+                            <dd class="text-body-md">{{ upload_report.duplicate_keys | join(", ") }}</dd>
+                        </div>
+                    {% endif %}
+                    {% if upload_report.unknown_outputs %}
+                        <div class="flex gap-2">
+                            <dt class="text-label-lg">{{ _("New output values added:") }}</dt>
+                            <dd class="text-body-md">{{ upload_report.unknown_outputs.keys() | join(", ") }}</dd>
+                        </div>
+                    {% endif %}
+                    {% if upload_report.used_positional_headers %}
+                        <div class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("The header row didn't name the fields, so the first column was read as the input and the second as the output.") }}
+                        </div>
+                    {% endif %}
+                </dl>
+            {% endif %}
             <dl class="mb-4">
                 <div class="flex gap-2">
                     <dt class="text-label-lg">{{ _("Respondents recomputed:") }}</dt>

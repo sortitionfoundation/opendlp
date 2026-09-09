@@ -83,6 +83,8 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
             {% if modal_ctx and modal_ctx["mode"] == "report" %}
                 {% set report_ctx = modal_ctx["report_ctx"] %}
                 {% include "backoffice/respondent_field_schema/_derivation_report_modal.html" %}
+            {% elif modal_ctx and modal_ctx["mode"] == "mapping" %}
+                {% include "backoffice/respondent_field_schema/_mapping_upload_modal.html" %}
             {% elif modal_ctx %}
                 {% include "backoffice/respondent_field_schema/_field_modal.html" %}
             {% endif %}

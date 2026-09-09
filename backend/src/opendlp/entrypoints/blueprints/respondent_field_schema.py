@@ -43,10 +43,13 @@ from opendlp.service_layer.assembly_service import (
     get_tab_enabled_states,
 )
 from opendlp.service_layer.derivation_service import (
+    MappingUploadReport,
     RecomputeReport,
     compatible_source_fields,
     create_derived_field,
+    recompute_derived_field,
     update_derivation,
+    upload_large_mapping,
 )
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
@@ -580,11 +583,16 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
     has_guessable_text_rows = any(
         not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
     )
+    large_mapping_fields = [f for f in all_fields if f.is_derived and f.derivation_type == DerivationType.LARGE_MAPPING]
     with uow:
         has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
+        mapping_row_counts = {
+            f.id: uow.respondent_field_mapping_entries.count_for_field(f.id) for f in large_mapping_fields
+        }
     show_guess_button = has_guessable_text_rows and has_respondents
 
     return {
+        "mapping_row_counts": mapping_row_counts,
         "assembly": assembly,
         "sections": sections,
         "group_choices": [(group.value, GROUP_LABELS[group]) for group in GROUP_DISPLAY_ORDER],
@@ -860,10 +868,15 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     return _schema_page_redirect(assembly_id)
 
 
-def _report_response(assembly_id: uuid.UUID, report: RecomputeReport, title: str) -> ResponseReturnValue:
+def _report_response(
+    assembly_id: uuid.UUID,
+    report: RecomputeReport,
+    title: str,
+    upload_report: MappingUploadReport | None = None,
+) -> ResponseReturnValue:
     """Show the recompute report in the modal (Q11) and refresh the editor behind it."""
     page_ctx = _schema_page_context(assembly_id)
-    report_ctx = {"report": report, "title": title}
+    report_ctx = {"report": report, "title": title, "upload_report": upload_report}
     if _is_htmx():
         report_html = render_template(
             "backoffice/respondent_field_schema/_derivation_report_modal.html", report_ctx=report_ctx, **page_ctx
@@ -1007,6 +1020,117 @@ def update_derivation_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> Respo
             assembly_id, _edit_modal_ctx(assembly_id, field, values, error=error), status=422
         )
     return _report_response(assembly_id, report, _("Derivation updated"))
+
+
+def _render_mapping_modal(
+    assembly_id: uuid.UUID,
+    field: RespondentFieldDefinition,
+    error: str = "",
+    allow_new_outputs: bool = False,
+    status: int = 200,
+) -> ResponseReturnValue:
+    modal_ctx = {"mode": "mapping", "field": field, "error": error, "allow_new_outputs": allow_new_outputs}
+    if _is_htmx():
+        return render_template(
+            "backoffice/respondent_field_schema/_mapping_upload_modal.html",
+            modal_ctx=modal_ctx,
+            **_schema_page_context(assembly_id),
+        ), status
+    return _render_schema_page(assembly_id, modal_ctx=modal_ctx, status=status)
+
+
+def _load_large_mapping_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> RespondentFieldDefinition | None:
+    field = _load_field(assembly_id, field_id)
+    if field is None or not field.is_derived or field.derivation_type != DerivationType.LARGE_MAPPING:
+        return None
+    return field
+
+
+@respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/mapping-modal")
+@login_required
+def mapping_upload_modal(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
+    """Serve the lookup-table upload dialog (HTMX fragment / full-page fallback)."""
+    field = _load_large_mapping_field(assembly_id, field_id)
+    if field is None:
+        flash(_("Field not found."), "error")
+        return redirect(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
+    try:
+        return _render_mapping_modal(assembly_id, field)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/mapping-upload",
+    methods=["POST"],
+)
+@login_required
+def mapping_upload_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
+    """Replace a lookup table from an uploaded CSV, recompute, and show the combined report.
+
+    The file is parsed in memory and never persisted — only the normalised
+    rows are stored (see upload_large_mapping).
+    """
+    field = _load_large_mapping_field(assembly_id, field_id)
+    if field is None:
+        return _field_missing_response(assembly_id, oob=True)
+    allow_new_outputs = request.form.get("allow_new_outputs") == "1"
+
+    def _fail(message: str) -> ResponseReturnValue:
+        return _render_mapping_modal(assembly_id, field, error=message, allow_new_outputs=allow_new_outputs, status=422)
+
+    upload = request.files.get("mapping_file")
+    if upload is None or not upload.filename:
+        return _fail(_("Choose a CSV file to upload."))
+    try:
+        csv_content = upload.read().decode("utf-8")
+    except UnicodeDecodeError:
+        return _fail(_("Could not read the file — it must be UTF-8 encoded CSV."))
+
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            upload_report = upload_large_mapping(
+                uow, current_user.id, assembly_id, field_id, csv_content, allow_new_outputs=allow_new_outputs
+            )
+            report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
+    except FieldDefinitionConflictError as e:
+        return _fail(str(e))
+    except FieldDefinitionNotFoundError:
+        return _fail(_("Field not found."))
+    except InsufficientPermissions:
+        return _fail(_("You don't have permission to edit the schema"))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _report_response(assembly_id, report, _("Lookup table uploaded"), upload_report=upload_report)
+
+
+@respondent_field_schema_bp.route(
+    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/recompute",
+    methods=["POST"],
+)
+@login_required
+def recompute_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
+    """Recompute one derived field across the pool and show the report."""
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
+    except (FieldDefinitionConflictError, FieldDefinitionNotFoundError):
+        flash(_("Field not found."), "error")
+        return _schema_page_redirect(assembly_id)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to edit the schema"), "error")
+        return _schema_page_redirect(assembly_id)
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    return _report_response(assembly_id, report, _("Recompute complete"))
 
 
 @respondent_field_schema_bp.route(

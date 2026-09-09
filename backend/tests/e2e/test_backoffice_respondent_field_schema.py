@@ -1,6 +1,8 @@
 """ABOUTME: End-to-end PostgreSQL happy-path smokes for the respondent field schema UI
 ABOUTME: Behavioural coverage (validation, render, transitions) lives in tests/component/"""
 
+import io
+
 import pytest
 
 from opendlp.domain.respondent_field_schema import (
@@ -299,6 +301,63 @@ class TestDerivedFieldModal:
             assert field.derived_from == ["year_of_birth"]
             assert field.derivation_config["as_of_date"] == "2026-06-01"
             assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40+", "UNKNOWN"]
+
+
+class TestMappingUpload:
+    def test_upload_lookup_table_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Create a large-mapping derived field, upload a table, and read the rows back from Postgres."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="region",
+                    values=[
+                        TargetValue(value="North", min=5, max=10),
+                        TargetValue(value="South", min=5, max=10),
+                    ],
+                )
+            )
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        create = logged_in_admin.post(
+            f"{base}/fields/add-derived",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "type_choice": "derived",
+                "target_name": "region",
+                "derivation_method": "large_mapping",
+                "source_key": "postcode",
+                "help_text": "",
+                "label": "",
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert create.status_code == 200
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in schema if f.field_key == "region")
+
+        csv_content = "postcode,region\nSW1A 1AA,South\nM1 1AE,North\n"
+        upload = logged_in_admin.post(
+            f"{base}/fields/{field.id}/mapping-upload",
+            data={
+                "mapping_file": (io.BytesIO(csv_content.encode("utf-8")), "mapping.csv"),
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            content_type="multipart/form-data",
+            headers={"HX-Request": "true"},
+        )
+        assert upload.status_code == 200
+        assert b"Rows stored:" in upload.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
 
 
 class TestDeleteField:

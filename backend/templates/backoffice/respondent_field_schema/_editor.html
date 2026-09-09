@@ -76,6 +76,17 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                                             {%- endif %}
                                         </div>
                                     {% endif %}
+                                    {% if field.is_derived and field.derivation_type and field.derivation_type.value == "large_mapping" %}
+                                        {% set mapping_rows = mapping_row_counts.get(field.id, 0) %}
+                                        <div class="text-body-sm mt-1"
+                                             {% if mapping_rows == 0 %}style="color: var(--color-error-text);"{% endif %}>
+                                            {% if mapping_rows == 0 %}
+                                                {{ _("0 rows — upload a lookup table") }}
+                                            {% else %}
+                                                {{ _("%(count)d lookup rows", count=mapping_rows) }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
                                 </td>
                                 <td class="py-3 pr-4 align-top">
                                     <div class="flex flex-wrap gap-1">
@@ -157,6 +168,25 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                                             </form>
                                         {% endif %}
                                     </div>
+                                    {% if field.is_derived %}
+                                        <div class="flex gap-2 items-center mt-1">
+                                            <form method="post"
+                                                  action="{{ url_for('respondent_field_schema.recompute_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                  hx-post="{{ url_for('respondent_field_schema.recompute_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                  hx-target="#field-modal-container"
+                                                  hx-swap="innerHTML"
+                                                  class="inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                {{ button(_("Recompute") , type="submit", variant="tertiary") }}
+                                            </form>
+                                            {% if field.derivation_type and field.derivation_type.value == "large_mapping" %}
+                                                {{ button(_("Upload lookup table") ,
+                                                variant="tertiary",
+                                                href=url_for('respondent_field_schema.mapping_upload_modal', assembly_id=assembly.id, field_id=field.id),
+                                                attrs='hx-get="' ~ url_for('respondent_field_schema.mapping_upload_modal', assembly_id=assembly.id, field_id=field.id) ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}

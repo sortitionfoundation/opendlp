@@ -382,7 +382,7 @@ Commit: `feat(793): add and edit fields in a modal`
 Commits: `feat(793): create derived fields from the modal` then
 `feat(793): edit derivation config` (split if the step runs long).
 
-### Step 5 — lookup-table upload and recompute actions
+### Step 5 — lookup-table upload and recompute actions ✅ DONE
 
 1. `GET fields/<id>/mapping-modal` + `POST fields/<id>/mapping-upload`
    (upload then recompute, combined report) + `POST fields/<id>/recompute`.

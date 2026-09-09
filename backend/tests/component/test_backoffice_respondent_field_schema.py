@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the respondent field schema management UI over a FakeUnitOfWork
 # ABOUTME: Drives the real backoffice schema routes + services against a seeded fake store (no PostgreSQL)
 
+import io
 import uuid
 
 from opendlp.domain.respondent_field_schema import (
@@ -10,7 +11,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.targets import TargetCategory, TargetValue
-from opendlp.service_layer import respondent_field_schema_service
+from opendlp.service_layer import derivation_service, respondent_field_schema_service
 from opendlp.service_layer.respondent_field_spec_service import SPEC_VERSION
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from tests.fakes import FakeUnitOfWork
@@ -1123,3 +1124,190 @@ class TestDerivedFieldModal:
         assert "Derived from year_of_birth" in body
         assert "Age brackets" in body
         assert "Not on form" in body
+
+
+class TestMappingUploadAndRecompute:
+    """The lookup-table upload dialog and the per-row recompute action."""
+
+    def _base(self, existing_assembly):
+        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+
+    def _create_large_mapping_field(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """A postcode → region large-mapping derived field, created through the modal."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="region",
+                    values=[
+                        TargetValue(value="North", min=5, max=10),
+                        TargetValue(value="South", min=5, max=10),
+                    ],
+                )
+            )
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "type_choice": "derived",
+                "target_name": "region",
+                "derivation_method": "large_mapping",
+                "source_key": "postcode",
+                "help_text": "",
+                "label": "",
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        return next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "region")
+
+    def test_row_shows_the_zero_rows_nudge_and_the_upload_action(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = logged_in_admin.get(self._base(existing_assembly))
+        body = response.get_data(as_text=True)
+        assert "0 rows — upload a lookup table" in body
+        assert f"/fields/{field.id}/mapping-modal" in body
+        assert f"/fields/{field.id}/recompute" in body
+
+    def test_mapping_modal_renders_as_a_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{field.id}/mapping-modal", headers={"HX-Request": "true"}
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "<html" not in body
+        assert 'name="mapping_file"' in body
+        assert 'name="allow_new_outputs"' in body
+
+    def test_mapping_modal_for_a_non_mapping_field_is_refused(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        plain = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "postcode")
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{plain.id}/mapping-modal", follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"Field not found." in response.data
+
+    def _upload(self, logged_in_admin, existing_assembly, field, csv_content, allow_new_outputs=False):
+        data = {"mapping_file": (io.BytesIO(csv_content.encode("utf-8")), "mapping.csv")}
+        if allow_new_outputs:
+            data["allow_new_outputs"] = "1"
+        return logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{field.id}/mapping-upload",
+            data=data,
+            content_type="multipart/form-data",
+            headers={"HX-Request": "true"},
+        )
+
+    def test_upload_stores_the_table_and_shows_the_combined_report(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = self._upload(
+            logged_in_admin,
+            existing_assembly,
+            field,
+            "postcode,region\nSW1A 1AA,South\nM1 1AE,North\n",
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "Lookup table uploaded" in body
+        assert "Rows stored:" in body
+        assert "Respondents recomputed" in body
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
+
+    def test_missing_file_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{field.id}/mapping-upload",
+            data={},
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        assert b"Choose a CSV file" in response.data
+
+    def test_empty_file_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = self._upload(logged_in_admin, existing_assembly, field, "")
+        assert response.status_code == 422
+        assert b"empty" in response.data
+
+    def test_row_cap_is_enforced(self, logged_in_admin, existing_assembly, admin_user, fake_store, monkeypatch):
+        """The 500k cap, exercised with a lowered limit rather than a 500k-row file."""
+        monkeypatch.setattr(derivation_service, "MAX_MAPPING_ROWS", 2)
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = self._upload(
+            logged_in_admin,
+            existing_assembly,
+            field,
+            "postcode,region\nA,North\nB,South\nC,North\n",
+        )
+        assert response.status_code == 422
+        assert b"too many rows" in response.data
+
+    def test_unknown_outputs_rejected_without_the_checkbox(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = self._upload(logged_in_admin, existing_assembly, field, "postcode,region\nA,East\n")
+        assert response.status_code == 422
+        assert b"output values not in the field" in response.data
+
+    def test_unknown_outputs_accepted_with_the_checkbox_and_extend_the_options(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = self._upload(
+            logged_in_admin, existing_assembly, field, "postcode,region\nA,East\n", allow_new_outputs=True
+        )
+        assert response.status_code == 200
+        assert b"New output values added:" in response.data
+
+        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "region")
+        assert "East" in [o.value for o in stored.options]
+
+    def test_recompute_action_shows_the_report(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{field.id}/recompute",
+            data={},
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "Recompute complete" in body
+        assert "Respondents recomputed" in body
+        assert 'id="schema-editor"' in body
+
+    def test_recompute_on_a_non_derived_field_is_refused(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        plain = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "postcode")
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{plain.id}/recompute",
+            data={},
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Field not found." in response.data
