@@ -304,6 +304,7 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
     type_choices = list(_STANDARD_TYPE_CHOICES)
     if has_targets:
         type_choices.append({"value": "derived", "label": _l("Derived (computed from another field)")})
+    choice_candidate_key = _choice_candidate_key(values) if values["type_choice"] == "choice" else ""
     return {
         "mode": "new",
         "field": None,
@@ -314,6 +315,8 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
         "is_derived": False,
         "has_targets": has_targets,
         "derived": derived,
+        "choice_candidate_key": choice_candidate_key,
+        "choice_target": _matching_choice_target(assembly_id, choice_candidate_key),
         "error": error,
         "values": _normalise_modal_values(values),
     }
@@ -332,6 +335,8 @@ def _edit_modal_ctx(
         )
     else:
         action_url = url_for("respondent_field_schema.update_field_view", assembly_id=assembly_id, field_id=field.id)
+    offers_choice = values["type_choice"] == "choice" and not field.is_fixed and not field.is_derived
+    choice_candidate_key = _choice_candidate_key(values, field) if offers_choice else ""
     return {
         "mode": "edit",
         "field": field,
@@ -342,6 +347,8 @@ def _edit_modal_ctx(
         "is_derived": field.is_derived,
         "has_targets": True,
         "derived": derived,
+        "choice_candidate_key": choice_candidate_key,
+        "choice_target": _matching_choice_target(assembly_id, choice_candidate_key),
         "error": error,
         "values": _normalise_modal_values(values),
     }
@@ -358,6 +365,43 @@ def _apply_option_action(values: dict[str, Any], form_action: str) -> dict[str, 
             return values
         if 0 <= index < len(values["options"]):
             values["options"].pop(index)
+    return values
+
+
+def _choice_candidate_key(values: dict[str, Any], field: RespondentFieldDefinition | None = None) -> str:
+    """The field key this choice field will carry — what a target's name has to match."""
+    if field is not None:
+        return field.field_key
+    return normalise_field_key(values["field_key"] or values["label"])
+
+
+def _matching_choice_target(assembly_id: uuid.UUID, candidate_key: str) -> dict[str, Any] | None:
+    """The target category whose name matches the field key, for the copy-options button.
+
+    Case-insensitive exact name match — the same join the field spec and
+    selection use, so a copy also means the field will actually feed the target.
+    """
+    if not candidate_key:
+        return None
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        for category in uow.target_categories.get_by_assembly_id(assembly_id):
+            if category.name.lower() == candidate_key.lower():
+                return {"name": category.name, "values": [v.value for v in category.values]}
+    return None
+
+
+def _copy_target_options(assembly_id: uuid.UUID, values: dict[str, Any], candidate_key: str) -> dict[str, Any]:
+    """Replace the option rows with the matching target's values (a one-off copy, no link).
+
+    Help text already written against a matching value survives the copy;
+    without a matching target this is a no-op re-render.
+    """
+    target = _matching_choice_target(assembly_id, candidate_key)
+    if target is None:
+        return values
+    existing_help = {row["value"]: row["help_text"] for row in values["options"]}
+    values["options"] = [{"value": value, "help_text": existing_help.get(value, "")} for value in target["values"]]
     return values
 
 
@@ -868,11 +912,13 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     values = _modal_values_from_request(request.form)
 
     if is_modal and form_action != "save":
-        # An options-editor round-trip (add/remove a row) or a no-JS type refresh
-        # — re-render the form with the entered values, saving nothing.
-        return _modal_roundtrip_response(
-            assembly_id, _new_modal_ctx(assembly_id, _apply_option_action(values, form_action))
-        )
+        # An options-editor round-trip (add/remove/copy rows) or a no-JS type
+        # refresh — re-render the form with the entered values, saving nothing.
+        if form_action == "copy_target_options":
+            values = _copy_target_options(assembly_id, values, _choice_candidate_key(values))
+        else:
+            values = _apply_option_action(values, form_action)
+        return _modal_roundtrip_response(assembly_id, _new_modal_ctx(assembly_id, values))
 
     error = _try_add_field(assembly_id, values, is_modal)
     if error:
@@ -1172,9 +1218,11 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
         return _field_missing_response(assembly_id, oob=is_modal)
 
     if is_modal and form_action != "save":
-        return _modal_roundtrip_response(
-            assembly_id, _edit_modal_ctx(assembly_id, field, _apply_option_action(values, form_action))
-        )
+        if form_action == "copy_target_options":
+            values = _copy_target_options(assembly_id, values, _choice_candidate_key(values, field))
+        else:
+            values = _apply_option_action(values, form_action)
+        return _modal_roundtrip_response(assembly_id, _edit_modal_ctx(assembly_id, field, values))
 
     if is_modal:
         update_kwargs, error = _modal_update_kwargs(field, values)

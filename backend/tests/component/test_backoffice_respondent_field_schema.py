@@ -1324,3 +1324,144 @@ class TestMappingUploadAndRecompute:
         )
         assert response.status_code == 200
         assert b"Field not found." in response.data
+
+
+class TestCopyOptionsFromTarget:
+    """The Choice type's one-off copy of a matching target's values into the option rows."""
+
+    def _base(self, existing_assembly):
+        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+
+    def _seed_with_gender_target(self, fake_store, admin_user, existing_assembly):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="gender",
+                    values=[
+                        TargetValue(value="Female", min=10, max=12),
+                        TargetValue(value="Male", min=10, max=12),
+                        TargetValue(value="Non-binary", min=1, max=3),
+                    ],
+                )
+            )
+
+    def _modal_form(self, **overrides):
+        data = {
+            "modal": "1",
+            "label": "Gender",
+            "field_key": "",
+            "type_choice": "choice",
+            "choice_style": "choice_radio",
+            "option_value": [],
+            "option_help": [],
+            "help_text": "",
+            "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+        }
+        data.update(overrides)
+        return data
+
+    def test_button_offered_when_the_field_key_matches_a_target(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A label that normalises to a target's name enables the copy button."""
+        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal",
+            query_string=self._modal_form(),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "Copy options from the" in body
+        assert 'value="copy_target_options"' in body
+
+    def test_button_greyed_out_with_a_hint_when_no_target_matches(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal",
+            query_string=self._modal_form(label="Favourite colour"),
+            headers={"HX-Request": "true"},
+        )
+        body = response.get_data(as_text=True)
+        assert 'value="copy_target_options"' not in body
+        assert "Copy options from a target" in body
+        assert "disabled" in body
+        assert "favourite_colour" in body  # the hint names the key that found no target
+        assert "change the label or field key to match" in body
+
+    def test_copy_action_fills_the_option_rows_without_saving(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
+        before = len(_get_schema(fake_store, admin_user, existing_assembly))
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data=self._modal_form(form_action="copy_target_options"),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert 'value="Female"' in body
+        assert 'value="Male"' in body
+        assert 'value="Non-binary"' in body
+        assert len(_get_schema(fake_store, admin_user, existing_assembly)) == before
+
+    def test_copy_keeps_help_text_on_options_whose_value_matches(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A copy is a replace, but help text already written for a matching value survives."""
+        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data=self._modal_form(
+                form_action="copy_target_options",
+                option_value=["Female", "Woman"],
+                option_help=["Includes trans women", "dropped with its row"],
+            ),
+            headers={"HX-Request": "true"},
+        )
+        body = response.get_data(as_text=True)
+        assert 'value="Includes trans women"' in body
+        assert 'value="Woman"' not in body
+        assert "dropped with its row" not in body
+
+    def test_copy_works_when_editing_an_existing_choice_field(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The edit modal matches on the stored field key."""
+        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
+        gender = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                gender.id,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="F"), ChoiceOption(value="M")],
+            )
+
+        modal = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{gender.id}/edit-modal", headers={"HX-Request": "true"}
+        )
+        assert 'value="copy_target_options"' in modal.get_data(as_text=True)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{gender.id}/update",
+            data=self._modal_form(form_action="copy_target_options", option_value=["F", "M"], option_help=["", ""]),
+            headers={"HX-Request": "true"},
+        )
+        body = response.get_data(as_text=True)
+        assert 'value="Female"' in body
+        assert 'value="Non-binary"' in body
+
+        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
+        assert [o.value for o in stored.options] == ["F", "M"]  # nothing saved yet

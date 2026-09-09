@@ -153,6 +153,24 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                                 </div>
                             {% endfor %}
                             {{ button(_("Add another option") , type="submit", variant="secondary", attrs='name="form_action" value="add_option"') }}
+                            <div class="mt-3">
+                                {% if modal_ctx["choice_target"] %}
+                                    {{ button(_("Copy options from the \"%(name)s\" target", name=modal_ctx["choice_target"]["name"]),
+                                    type="submit", variant="secondary", attrs='name="form_action" value="copy_target_options"') }}
+                                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                                        {{ _("Replaces the options with the target's values so they line up exactly — a one-off copy you can edit afterwards. Help text on matching options is kept.") }}
+                                    </p>
+                                {% else %}
+                                    {{ button(_("Copy options from a target") , variant="secondary", disabled=true) }}
+                                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                                        {% if modal_ctx["choice_candidate_key"] %}
+                                            {{ _("No target is named \"%(key)s\". To copy a target's values (and have selection count this field against that target), change the label or field key to match the target's name.", key=modal_ctx["choice_candidate_key"]) }}
+                                        {% else %}
+                                            {{ _("Enter a label first — options can be copied from a target whose name matches the field key.") }}
+                                        {% endif %}
+                                    </p>
+                                {% endif %}
+                            </div>
                         </fieldset>
                     {% endif %}
                     {% if values["type_choice"] == "derived" and modal_ctx["derived"] %}
