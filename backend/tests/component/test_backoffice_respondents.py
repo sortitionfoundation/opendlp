@@ -2,17 +2,20 @@
 # ABOUTME: Drives the real respondents Flask routes + services against a seeded fake store, no PostgreSQL
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from io import BytesIO
 
 import msgspec
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondent_derivation import AgeBracketRule
+from opendlp.domain.respondent_field_schema import FieldType
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.assembly_service import create_assembly
-from opendlp.service_layer.respondent_field_schema_service import initialise_empty_schema
+from opendlp.service_layer.derivation_service import create_derived_field
+from opendlp.service_layer.respondent_field_schema_service import get_schema, initialise_empty_schema, update_field
 from opendlp.service_layer.respondent_service import (
     create_respondent,
     delete_respondent,
@@ -498,6 +501,39 @@ class TestBackofficeViewSingleRespondent:
         assert b"extra-info" in body
         assert b"Activity" in body
         assert b"<details" in body
+
+    def test_view_respondent_shows_the_derived_value(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        """A derived field renders its computed value from the respondent's attributes."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            import_respondents_from_csv(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                "external_id,year_of_birth\nR001,1990\n",
+                replace_existing=True,
+            )
+            schema = get_schema(uow, admin_user.id, existing_assembly.id)
+            source = next(f for f in schema if f.field_key == "year_of_birth")
+            update_field(uow, admin_user.id, existing_assembly.id, source.id, field_type=FieldType.INTEGER)
+            create_derived_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                field_key="age bracket",
+                label="Age bracket",
+                source_field_key="year_of_birth",
+                rule=AgeBracketRule(as_of_date=date(2026, 6, 1), min_age=16, max_age=100, boundaries=(30, 60)),
+            )
+            respondent = uow.respondents.get_by_assembly_id(existing_assembly.id)[0]
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        assert response.status_code == 200
+        body = response.data
+        assert b"Age bracket" in body
+        assert b"30-59" in body  # born 1990, as of 2026 -> age 36
+        assert b"derivation not yet implemented" not in body
 
     def test_view_respondent_wrong_assembly(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
