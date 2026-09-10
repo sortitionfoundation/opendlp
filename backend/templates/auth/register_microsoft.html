@@ -6,7 +6,7 @@
         <div class="govuk-grid-column-two-thirds">
             <h1 class="govuk-heading-xl">{{ _("Create an Account with Microsoft") }}</h1>
             <div class="govuk-inset-text">
-                {{ _("You need an invitation code to create an account. If you do not have one, please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>.", email=support_email_address) | safe }}
+                {{ _("You need an invite code to create an account. If you do not have one, please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>.", email=support_email_address) | safe }}
             </div>
             <form method="POST" novalidate>
                 {{ form.hidden_tag() }}

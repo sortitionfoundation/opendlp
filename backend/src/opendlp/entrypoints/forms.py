@@ -143,7 +143,7 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
     invite_code = StringField(
         _l("Invite Code"),
         validators=[DataRequired(), Length(min=5, max=50)],
-        description=_l("Enter your invitation code to register"),
+        description=_l("Enter your invite code to register"),
     )
 
     first_name = StringField(
@@ -543,7 +543,7 @@ class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
     invite_code = StringField(
         _l("Invite Code"),
         validators=[DataRequired(), Length(min=5, max=50)],
-        description=_l("Enter your invitation code to register"),
+        description=_l("Enter your invite code to register"),
     )
 
     accept_data_agreement = BooleanField(
