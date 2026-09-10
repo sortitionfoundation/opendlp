@@ -232,14 +232,15 @@ After adding or changing translatable strings, regenerate and check:
 
 ```bash
 just translate-regen   # extract + update every catalogue
-just translate-check   # msgfmt --check; also run by `just check`
+just translate-check   # msgfmt --check and pybabel compile; also run by `just check`
 ```
 
 `translate-check` is not optional politeness. `pybabel compile` accepts a
 catalogue with duplicate msgids without a murmur and emits a `.mo` missing
 translations, which is how the Hungarian catalogue spent months unable to build
 correctly with nothing reporting a problem. `msgfmt --check` catches duplicates,
-broken placeholders and bad plural forms.
+broken placeholders and bad plural forms. It skips fuzzy entries, though, whose
+placeholders `pybabel compile` does check - so the recipe runs both.
 
 Note also that rewording an existing msgid silently discards its translation -
 the string simply reverts to English in every language. Nothing catches this, so
