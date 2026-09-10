@@ -16,7 +16,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 import opendlp.logging
 from opendlp import bootstrap, config
-from opendlp.domain.value_objects import global_role_labels
+from opendlp.domain.value_objects import assembly_status_labels, global_role_labels
 from opendlp.entrypoints.context_processors import (
     inject_capabilities,
     inject_feature_flags,
@@ -123,6 +123,7 @@ def register_context_processors(app: Flask) -> None:
     app.jinja_env.globals["feature"] = has_feature
     # Same reason: the role tag macro is imported, and needs the labels.
     app.jinja_env.globals["global_role_labels"] = global_role_labels
+    app.jinja_env.globals["assembly_status_labels"] = assembly_status_labels
 
     @app.context_processor
     def inject_csp_nonce() -> dict[str, str]:

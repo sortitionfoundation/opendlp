@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-08 16:05+0100\n"
+"POT-Creation-Date: 2026-09-10 11:07+0100\n"
 "PO-Revision-Date: 2026-09-08 13:35+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language-Team: hu <LL@li.org>\n"
@@ -277,6 +277,18 @@ msgstr ""
 #, fuzzy
 msgid "Read Only - Can view the assembly but cannot make changes"
 msgstr "Megtekintő – Megtekintheti a közösségi gyűlést, de nem módosíthat"
+
+#: src/opendlp/domain/value_objects.py:74 templates/admin/invite_view.html:64
+#: templates/admin/invites.html:89 templates/admin/user_view.html:58
+#: templates/admin/users.html:91 templates/admin/users.html:140
+#: templates/profile/view.html:44 templates/profile/view.html:77
+#: templates/profile/view.html:128
+msgid "Active"
+msgstr "Aktív"
+
+#: src/opendlp/domain/value_objects.py:75
+msgid "Archived"
+msgstr "Archivált"
 
 #: src/opendlp/entrypoints/decorators.py:64
 #: src/opendlp/entrypoints/decorators.py:104
@@ -4289,14 +4301,6 @@ msgstr "Állapot"
 #, fuzzy
 msgid "Used"
 msgstr "Felhasznált"
-
-#: templates/admin/invite_view.html:64 templates/admin/invites.html:89
-#: templates/admin/user_view.html:58 templates/admin/users.html:91
-#: templates/admin/users.html:140 templates/profile/view.html:44
-#: templates/profile/view.html:77 templates/profile/view.html:128
-#, fuzzy
-msgid "Active"
-msgstr "Aktív"
 
 #: templates/admin/invite_view.html:66 templates/admin/invites.html:91
 #, fuzzy

@@ -9,7 +9,12 @@ import pytest
 
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import AssemblyStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import (
+    AssemblyStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
+    assembly_status_labels,
+)
 
 
 class TestAssembly:
@@ -346,3 +351,12 @@ class TestSelectionRunRecordTargetsUsed:
 
         assert copy.targets_used == snapshot
         assert copy.targets_used is not record.targets_used
+
+
+@pytest.mark.parametrize("status", list(AssemblyStatus))
+class TestEveryStatusIsLabelled:
+    """A status added later must not fall back to its raw enum value, which is
+    untranslatable and renders as lowercase English in every language."""
+
+    def test_has_a_short_label(self, status):
+        assert assembly_status_labels[status]

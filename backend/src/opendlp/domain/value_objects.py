@@ -68,6 +68,14 @@ class AssemblyStatus(Enum):
     ARCHIVED = "archived"
 
 
+# Short labels, for a tag or a badge. Kept next to the status definitions so a
+# renamed status cannot leave a stale label behind somewhere.
+assembly_status_labels = {
+    AssemblyStatus.ACTIVE: _l("Active"),
+    AssemblyStatus.ARCHIVED: _l("Archived"),
+}
+
+
 class SelectionRunStatus(Enum):
     PENDING = "pending"
     RUNNING = "running"
