@@ -357,7 +357,7 @@ class TestResetSelectionStatus:
 
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
-            assert any("Reset 2 respondents to Pool status" in msg for msg in flash_messages)
+            assert any("Reset 2 respondents to the pool" in msg for msg in flash_messages)
 
     def test_reset_status_with_no_respondents(self, logged_in_admin, existing_assembly):
         """Test resetting when there are no respondents shows zero count."""
@@ -371,4 +371,4 @@ class TestResetSelectionStatus:
 
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
-            assert any("Reset 0 respondents to Pool status" in msg for msg in flash_messages)
+            assert any("Reset 0 respondents to the pool" in msg for msg in flash_messages)

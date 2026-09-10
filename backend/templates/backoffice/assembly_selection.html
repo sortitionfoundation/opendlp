@@ -89,7 +89,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                 {{ _("%(count)s respondents have been selected", count=csv_selected_count) }}
                             </p>
                             <p class="text-body-sm" style="color: var(--color-body-text);">
-                                {{ _("A selection has already been run. To run a new initial selection, you must first reset all respondents to Pool status.") }}
+                                {{ _("A selection has already been run. To run a new initial selection, you must first reset all respondents to the pool.") }}
                             </p>
                         </div>
                     {% else %}
@@ -111,7 +111,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                               action="{{ url_for('db_selection_backoffice.reset_db_selection', assembly_id=assembly.id) }}"
                               class="inline"
                               x-data
-                              @submit.prevent="$confirm('{{ _("Are you sure you want to reset all selected respondents to Pool status? This action cannot be undone.") }}', $el)">
+                              @submit.prevent="$confirm('{{ _("Are you sure you want to reset all selected respondents to the pool? This action cannot be undone.") }}', $el)">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {{ button(_("Reset Selected People") , type="submit", variant="danger", disabled=settings_missing) }}
                         </form>

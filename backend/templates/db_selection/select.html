@@ -62,7 +62,7 @@
                     {{ _("— select replacements from the remaining pool") }}
                 </li>
                 <li>
-                    {{ _("Reset all respondents to Pool status, then run a fresh selection") }}
+                    {{ _("Reset all respondents to the pool, then run a fresh selection") }}
                 </li>
             </ul>
             <form method="post"
@@ -70,8 +70,8 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="govuk-button govuk-button--warning govuk-!-margin-bottom-6"
                         data-module="govuk-button"
-                        data-confirm="{{ _('Are you sure? This will reset all respondents to Pool status.') }}">
-                    {{ _("Reset all respondents to Pool") }}
+                        data-confirm="{{ _('Are you sure? This will reset all respondents to the pool.') }}">
+                    {{ _("Reset all respondents to the pool") }}
                 </button>
             </form>
         {% endif %}

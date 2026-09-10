@@ -407,13 +407,13 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @login_required
 @require_assembly_management
 def reset_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Reset all respondents to Pool status, allowing a fresh selection."""
+    """Reset all respondents to the pool, allowing a fresh selection."""
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
             count = reset_selection_status(uow, current_user.id, assembly_id)
 
-        flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
+        flash(_("Reset %(count)s respondents to the pool", count=count), "success")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
     except NotFoundError:

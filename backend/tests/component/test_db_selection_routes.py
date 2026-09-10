@@ -751,7 +751,7 @@ class TestNonPoolRespondentWarning:
 
         assert response.status_code == 200
         assert b"already have a selection status" in response.data
-        assert b"Reset all respondents to Pool" in response.data
+        assert b"Reset all respondents to the pool" in response.data
 
     def test_selection_buttons_disabled_with_non_pool_respondents(
         self, logged_in_admin, admin_user, assembly_for_db_selection, fake_store
@@ -798,7 +798,7 @@ class TestNonPoolRespondentWarning:
 
         assert response.status_code == 200
         assert b"already have a selection status" not in response.data
-        assert b"Reset all respondents to Pool" not in response.data
+        assert b"Reset all respondents to the pool" not in response.data
 
     def test_reset_respondents_from_selection_page(
         self, logged_in_admin, admin_user, assembly_for_db_selection, fake_store
@@ -831,7 +831,7 @@ class TestNonPoolRespondentWarning:
 
         assert response.status_code == 200
         assert b"Reset" in response.data
-        assert b"Pool status" in response.data
+        assert b"to the pool" in response.data
 
     def test_after_reset_warning_disappears(self, logged_in_admin, admin_user, assembly_for_db_selection, fake_store):
         assembly = assembly_for_db_selection
