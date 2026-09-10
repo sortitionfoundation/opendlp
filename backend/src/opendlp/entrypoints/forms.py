@@ -275,9 +275,9 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for configuring Google Spreadsheet settings for an assembly."""
 
     url = StringField(
-        _l("Google Spreadsheet URL"),
+        _l("Google Sheets URL"),
         validators=[DataRequired(), GoogleSpreadsheetURLValidator()],
-        description=_l("Full URL of the Google Spreadsheet containing respondent data"),
+        description=_l("Full URL of the Google Sheets spreadsheet containing respondent data"),
         render_kw={"placeholder": "https://docs.google.com/spreadsheets/d/..."},
     )
 
@@ -309,7 +309,9 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Respondents Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing respondents data in the Google Spreadsheet - for initial Selection"),
+        description=_l(
+            "Name of the tab containing respondents data in the Google Sheets spreadsheet - for initial Selection"
+        ),
         default="Respondents",
     )
 
@@ -325,7 +327,9 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Respondents Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing respondents data in the Google Spreadsheet - for Replacements"),
+        description=_l(
+            "Name of the tab containing respondents data in the Google Sheets spreadsheet - for Replacements"
+        ),
         default="Remaining",
     )
 

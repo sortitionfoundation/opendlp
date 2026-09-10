@@ -4,8 +4,8 @@ I want to be able to configure the system
 So that I can do the selection.
 
 Note that there are multiple ways we will do this.
-- The registrant data could be in a Google Spreadsheet, a CSV or could be in the local database.
-- The categories and targets could be read from a Google Spreadsheet, a CSV, or could be set in the web app.
+- The registrant data could be in a Google Sheets spreadsheet, a CSV or could be in the local database.
+- The categories and targets could be read from a Google Sheets spreadsheet, a CSV, or could be set in the web app.
 - The options could all be chosen manually, or the app could suggest values with the user reviewing and editing.
 
   Scenario: Configure selection

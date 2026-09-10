@@ -97,7 +97,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
                             check_same_address_cols_string=form.check_same_address_cols_string.data,
                             columns_to_keep_string=form.columns_to_keep_string.data,
                         )
-                        flash(_("Google Spreadsheet configuration created successfully"), "success")
+                        flash(_("Google Sheets configuration created successfully"), "success")
                     else:
                         update_assembly_gsheet(
                             uow=uow,
@@ -115,7 +115,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
                             check_same_address_cols_string=form.check_same_address_cols_string.data,
                             columns_to_keep_string=form.columns_to_keep_string.data,
                         )
-                        flash(_("Google Spreadsheet configuration updated successfully"), "success")
+                        flash(_("Google Sheets configuration updated successfully"), "success")
 
                     # Soft validation warning - check if columns_to_keep is empty
                     # Team defaults may have populated columns_to_keep even if the form field was empty
@@ -141,7 +141,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
                         user_id=str(current_user.id),
                         error=str(e),
                     )
-                    flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
+                    flash(_("You don't have permission to manage Google Sheets for this assembly"), "error")
                     return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
                 except NotFoundError as e:
                     logger.error(
@@ -160,7 +160,7 @@ def manage_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:  # no
                         user_id=str(current_user.id),
                         error=str(e),
                     )
-                    flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
+                    flash(_("An error occurred while saving the Google Sheets configuration"), "error")
 
         return render_template(template, form=form, assembly=assembly, gsheet=existing_gsheet, current_tab="data"), 200
     except NotFoundError as e:
@@ -200,7 +200,7 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             remove_assembly_gsheet(uow, assembly_id, current_user.id)
 
-        flash(_("Google Spreadsheet configuration removed successfully"), "success")
+        flash(_("Google Sheets configuration removed successfully"), "success")
         return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except NotFoundError as e:
         logger.warning(
@@ -208,7 +208,7 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("Google Spreadsheet configuration not found"), "error")
+        flash(_("Google Sheets configuration not found"), "error")
         return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
@@ -217,7 +217,7 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
+        flash(_("You don't have permission to manage Google Sheets for this assembly"), "error")
         return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
     except Exception as e:
         logger.error(
@@ -226,7 +226,7 @@ def delete_assembly_gsheet(assembly_id: uuid.UUID) -> ResponseReturnValue:
             user_id=str(current_user.id),
             error=str(e),
         )
-        flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
+        flash(_("An error occurred while removing the Google Sheets configuration"), "error")
         return redirect(url_for("main.view_assembly_data", assembly_id=assembly_id))
 
 
@@ -850,7 +850,7 @@ def start_gsheet_replace_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
             assembly_id=str(assembly_id),
             error=str(e),
         )
-        flash(_("Could not start task to read gsheet: %(error)s", error=str(e)), "error")
+        flash(_("Could not start task to read the spreadsheet: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets_legacy.replace_assembly_gsheet", assembly_id=assembly_id))
 
     except NotFoundError as e:

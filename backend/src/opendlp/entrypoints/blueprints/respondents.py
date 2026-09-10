@@ -531,7 +531,7 @@ def _run_gsheet_export(
     spreadsheet_url = request.form.get("spreadsheet_url", "").strip()
     worksheet_name = request.form.get("worksheet_name", "").strip()
     if not spreadsheet_url:
-        flash(_("A Google Sheet URL is required to export to Google Sheets"), "error")
+        flash(_("A spreadsheet URL is required to export to Google Sheets"), "error")
         return redirect(respondents_url)
 
     # The Google Sheets target is injected via an app factory (registered in
@@ -569,14 +569,14 @@ def _run_gsheet_export(
         if service_account_email:
             flash(
                 _(
-                    "Could not write to the Google Sheet. Check the URL is correct and that "
-                    "the sheet is shared with %(email)s.",
+                    "Could not write to the spreadsheet. Check the URL is correct and that "
+                    "the spreadsheet is shared with %(email)s.",
                     email=service_account_email,
                 ),
                 "error",
             )
         else:
-            flash(_("Could not write to the Google Sheet. Check the URL and sharing settings."), "error")
+            flash(_("Could not write to the spreadsheet. Check the URL and sharing settings."), "error")
         return redirect(respondents_url)
 
     # The direct link to the exported worksheet is saved on the export config and
@@ -638,7 +638,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
             # The saved respondent-export sheet config (if the organiser has exported
-            # to Google Sheets) drives the "Exported to Google Spreadsheet" link.
+            # to Google Sheets) drives the "Exported to Google Sheets" link.
             # No export config is expected until the first Google Sheets export, which
             # the repository reports as None rather than as an error.
             respondent_gsheet = None

@@ -424,7 +424,7 @@ class TestBackofficeSelectionTab:
 
             # Should redirect back to selection page with error flash
             assert response.status_code == 200
-            assert b"configure" in response.data.lower() or b"Google Spreadsheet" in response.data
+            assert b"configure" in response.data.lower() or b"Google Sheets" in response.data
 
     def test_selection_load_handles_insufficient_permissions(self, logged_in_admin, assembly_with_gsheet):
         """Test that load endpoint handles InsufficientPermissions gracefully."""

@@ -451,7 +451,7 @@ def start_selection_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for load task", error=str(e))
-        flash(_("Please configure a Google Spreadsheet first"), "error")
+        flash(_("Please configure Google Sheets first"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for load task", error=str(e))
@@ -485,7 +485,7 @@ def start_selection_run(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for selection task", error=str(e))
-        flash(_("Please configure a Google Spreadsheet first"), "error")
+        flash(_("Please configure Google Sheets first"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for selection task", error=str(e))
@@ -551,7 +551,7 @@ def start_manage_tabs_list(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for manage tabs list", error=str(e))
-        flash(_("Please configure a Google Spreadsheet first"), "error")
+        flash(_("Please configure Google Sheets first"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for manage tabs list", error=str(e))
@@ -578,7 +578,7 @@ def start_manage_tabs_delete(assembly_id: uuid.UUID) -> ResponseReturnValue:
         )
     except NotFoundError as e:
         logger.warning("Assembly or gsheet not found for manage tabs delete", error=str(e))
-        flash(_("Please configure a Google Spreadsheet first"), "error")
+        flash(_("Please configure Google Sheets first"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning("Insufficient permissions for manage tabs delete", error=str(e))
@@ -768,7 +768,7 @@ def start_replacement_load(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     except InvalidSelection as e:
         logger.warning("Invalid selection attempted with replacement load", assembly_id=str(assembly_id), error=str(e))
-        flash(_("Could not start task to read gsheet: %(error)s", error=str(e)), "error")
+        flash(_("Could not start task to read the spreadsheet: %(error)s", error=str(e)), "error")
         return redirect(url_for("gsheets.view_assembly_replacement", assembly_id=assembly_id))
 
     except NotFoundError as e:
@@ -924,10 +924,10 @@ def _handle_gsheet_save_success(
 
     if is_update:
         update_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
-        flash(_("Google Spreadsheet configuration updated successfully"), "success")
+        flash(_("Google Sheets configuration updated successfully"), "success")
     else:
         add_assembly_gsheet(uow=uow, assembly_id=assembly_id, user_id=user_id, **form_data)
-        flash(_("Google Spreadsheet configuration created successfully"), "success")
+        flash(_("Google Sheets configuration created successfully"), "success")
 
     # Soft validation warning - check if columns_to_keep is empty
     # Team defaults may have populated columns_to_keep even if the form field was empty
@@ -964,14 +964,14 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     return _handle_gsheet_save_success(uow, assembly_id, current_user.id, form, is_update)
             except InsufficientPermissions as e:
                 logger.warning("Insufficient permissions for gsheet save", error=str(e))
-                flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
+                flash(_("You don't have permission to manage Google Sheets for this assembly"), "error")
                 return redirect(url_for("backoffice.dashboard"))
             except NotFoundError as e:
                 logger.error("Gsheet save validation error for assembly", assembly_id=str(assembly_id), error=str(e))
                 flash(_("Please check your input and try again"), "error")
             except Exception as e:
                 logger.error("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
-                flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
+                flash(_("An error occurred while saving the Google Sheets configuration"), "error")
 
         # Form validation failed or service error - re-render the page with errors.
         # Reuse the UnitOfWork from the lookup above.
@@ -1006,7 +1006,7 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Gsheet save error for assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("An error occurred while saving the Google Spreadsheet configuration"), "error")
+        flash(_("An error occurred while saving the Google Sheets configuration"), "error")
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="gsheet"))
 
 
@@ -1018,21 +1018,21 @@ def delete_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             remove_assembly_gsheet(uow, assembly_id, current_user.id)
-        flash(_("Google Spreadsheet configuration removed successfully"), "success")
+        flash(_("Google Sheets configuration removed successfully"), "success")
         # Redirect without source param - selector will be unlocked allowing user to choose again
         return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
 
     except NotFoundError as e:
         logger.warning("Gsheet config not found for delete", error=str(e))
-        flash(_("Google Spreadsheet configuration not found"), "error")
+        flash(_("Google Sheets configuration not found"), "error")
         return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to delete gsheet for assembly", assembly_id=str(assembly_id), error=str(e)
         )
-        flash(_("You don't have permission to manage Google Spreadsheet for this assembly"), "error")
+        flash(_("You don't have permission to manage Google Sheets for this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
     except Exception as e:
         logger.exception("Gsheet delete error for assembly", assembly_id=str(assembly_id), error=str(e))
-        flash(_("An error occurred while removing the Google Spreadsheet configuration"), "error")
+        flash(_("An error occurred while removing the Google Sheets configuration"), "error")
         return redirect_preserving_scroll(url_for("backoffice.view_assembly_data", assembly_id=assembly_id))

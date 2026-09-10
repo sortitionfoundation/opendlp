@@ -122,14 +122,14 @@ class GoogleSpreadsheetURLValidator:
 
         # Check that it uses HTTPS
         if parsed_url.scheme != "https":
-            raise ValidationError(self.message or "Google Spreadsheet URLs must use HTTPS.")
+            raise ValidationError(self.message or "Google Sheets URLs must use HTTPS.")
 
         # Try to extract Google Spreadsheet ID using gspread
         try:
             gspread.utils.extract_id_from_url(url)
         except Exception as err:
             raise ValidationError(
-                self.message or "Invalid Google Spreadsheet URL - could not find spreadsheet key."
+                self.message or "Invalid Google Sheets URL - could not find spreadsheet key."
             ) from err
 
 

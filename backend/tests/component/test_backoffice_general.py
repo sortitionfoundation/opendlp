@@ -257,7 +257,7 @@ class TestBackofficeDataSourceLocking:
         # Selector should be disabled
         assert b"disabled" in response.data
         # Should show gsheet content (auto-selected)
-        assert b"Google Spreadsheet Configuration" in response.data
+        assert b"Google Sheets Configuration" in response.data
         # Should show locked message
         assert b"locked" in response.data.lower()
 
@@ -270,7 +270,7 @@ class TestBackofficeDataSourceLocking:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=csv")
         assert response.status_code == 200
         # Should show gsheet content, not csv
-        assert b"Google Spreadsheet Configuration" in response.data
+        assert b"Google Sheets Configuration" in response.data
         # Should NOT show csv content
         assert b"Upload a CSV file" not in response.data
 

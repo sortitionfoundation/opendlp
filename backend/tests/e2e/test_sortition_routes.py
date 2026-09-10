@@ -27,7 +27,7 @@ class TestSortitionRoutes:
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_select")
 
         assert response.status_code == 200
-        assert b"Google Spreadsheet Configuration" in response.data
+        assert b"Google Sheets Configuration" in response.data
         assert b"Check Spreadsheet" in response.data
 
     def test_progress_endpoint_returns_fragment_for_running_task(

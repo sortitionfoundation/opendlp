@@ -1,11 +1,11 @@
 {% extends "main/view_assembly_base.html" %}
-{% block title %}{{ _("Edit Google Spreadsheet Configuration") }} - {{ assembly.title }} - OpenDLP{% endblock %}
+{% block title %}{{ _("Edit Google Sheets Configuration") }} - {{ assembly.title }} - OpenDLP{% endblock %}
 {% block assembly_breadcrumbs %}
     <li class="govuk-breadcrumbs__list-item">
         <a class="govuk-breadcrumbs__link"
            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">{{ _("Data & Selection") }}</a>
     </li>
-    <li class="govuk-breadcrumbs__list-item">{{ _("Edit Google Spreadsheet") }}</li>
+    <li class="govuk-breadcrumbs__list-item">{{ _("Edit Google Sheets") }}</li>
 {% endblock %}
 {% block assembly_content %}
     {% if form.errors %}
@@ -26,8 +26,8 @@
             </div>
         </div>
     {% endif %}
-    <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Edit Google Spreadsheet Configuration") }}</h2>
-    <p class="govuk-body">{{ _("Update the Google Spreadsheet settings for this assembly.") }}</p>
+    <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Edit Google Sheets Configuration") }}</h2>
+    <p class="govuk-body">{{ _("Update the Google Sheets settings for this assembly.") }}</p>
     <form method="post"
           novalidate
           x-data="teamSelector('{{ form.team.data or 'other' }}')">
@@ -237,7 +237,7 @@
     {% if gsheet %}
         <div class="govuk-!-margin-top-9">
             <h2 class="govuk-heading-m">{{ _("Remove Configuration") }}</h2>
-            <p class="govuk-body">{{ _("If you no longer need this Google Spreadsheet configuration, you can remove it.") }}</p>
+            <p class="govuk-body">{{ _("If you no longer need this Google Sheets configuration, you can remove it.") }}</p>
             <form method="post"
                   action="{{ url_for('gsheets_legacy.delete_assembly_gsheet', assembly_id=assembly.id) }}"
                   class="govuk-!-margin-top-4">
@@ -245,7 +245,7 @@
                 <button type="submit"
                         class="govuk-button govuk-button--warning"
                         data-module="govuk-button"
-                        data-confirm="{{ _("Are you sure you want to remove this Google Spreadsheet configuration? This action cannot be undone.") }}">
+                        data-confirm="{{ _("Are you sure you want to remove this Google Sheets configuration? This action cannot be undone.") }}">
                     {{ _("Remove Configuration") }}
                 </button>
             </form>

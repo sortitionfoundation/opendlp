@@ -38,7 +38,7 @@ ABOUTME: Displays data source selection and data management for assemblies
             name="data_source",
             label=_("Data Source"),
             options=[
-            {"value": "gsheet", "label": _("Google Spreadsheet")},
+            {"value": "gsheet", "label": _("Google Sheets")},
             {"value": "csv", "label": _("CSV file")}
             ],
             value=data_source,
@@ -63,7 +63,7 @@ ABOUTME: Displays data source selection and data management for assemblies
     {% set is_new = gsheet_mode == "new" or not gsheet %}
     <section class="mb-8">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Google Spreadsheet Configuration") }}</h2>
+            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Google Sheets Configuration") }}</h2>
             {% if readonly %}
                 <div class="flex gap-2">
                     {{ button(_("Edit Configuration") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet&mode=edit", variant="outline") }}
@@ -73,7 +73,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                           class="inline"
                           x-data
                           data-preserve-scroll
-                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete this Google Spreadsheet configuration? This action cannot be undone.") }}', $el)">
+                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete this Google Sheets configuration? This action cannot be undone.") }}', $el)">
                         {{ gsheet_form.hidden_tag() }}
                         {{ button(_("Delete") , type="submit", variant="danger") }}
                     </form>
@@ -82,7 +82,7 @@ ABOUTME: Displays data source selection and data management for assemblies
         </div>
         {% if is_new %}
             <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
-                {{ _("Configure a Google Spreadsheet to import and manage participant data for this assembly.") }}
+                {{ _("Configure a Google Sheets spreadsheet to import and manage participant data for this assembly.") }}
             </p>
         {% endif %}
         {# Configuration Form / View #}
@@ -99,7 +99,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                 type="url",
                 value=gsheet_form.url.data or "",
                 placeholder="https://docs.google.com/spreadsheets/d/...",
-                hint=_("Enter the full URL of your Google Spreadsheet.") ~ (" " ~ _("Ensure it is shared with:") ~ " " ~ google_service_account_email if google_service_account_email and google_service_account_email != "UNKNOWN" else ""),
+                hint=_("Enter the full URL of your Google Sheets spreadsheet.") ~ (" " ~ _("Ensure it is shared with:") ~ " " ~ google_service_account_email if google_service_account_email and google_service_account_email != "UNKNOWN" else ""),
                 required=true,
                 readonly=readonly,
                 link_url=gsheet_form.url.data if gsheet and readonly else "",
@@ -271,7 +271,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                           action="{{ url_for('gsheets.delete_gsheet_config', assembly_id=assembly.id) }}"
                           x-data
                           data-preserve-scroll
-                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete this Google Spreadsheet configuration? This action cannot be undone.") }}', $el)">
+                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete this Google Sheets configuration? This action cannot be undone.") }}', $el)">
                         {{ gsheet_form.hidden_tag() }}
                         {{ button(_("Delete Configuration") , type="submit", variant="danger") }}
                     </form>

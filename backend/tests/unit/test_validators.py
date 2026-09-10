@@ -46,14 +46,14 @@ class TestGoogleSpreadsheetURLValidator:
         """HTTP URL (not HTTPS) should raise ValidationError."""
         validator = GoogleSpreadsheetURLValidator()
 
-        with pytest.raises(ValidationError, match="Google Spreadsheet URLs must use HTTPS"):
+        with pytest.raises(ValidationError, match="Google Sheets URLs must use HTTPS"):
             validator.validate_str("http://docs.google.com/spreadsheets/d/1234567890/edit")
 
     def test_validate_str_https_url_without_extractable_key_raises_validation_error(self):
         """HTTPS URL without extractable Google Spreadsheet ID should raise ValidationError."""
         validator = GoogleSpreadsheetURLValidator()
 
-        with pytest.raises(ValidationError, match="Invalid Google Spreadsheet URL"):
+        with pytest.raises(ValidationError, match="Invalid Google Sheets URL"):
             validator.validate_str("https://example.com/not-a-spreadsheet")
 
     def test_validate_str_valid_google_spreadsheet_url_passes(self):
@@ -102,7 +102,7 @@ class TestGoogleSpreadsheetURLValidator:
         """HTTPS URL that's not a Google Spreadsheet should raise ValidationError."""
         validator = GoogleSpreadsheetURLValidator()
 
-        with pytest.raises(ValidationError, match="Invalid Google Spreadsheet URL"):
+        with pytest.raises(ValidationError, match="Invalid Google Sheets URL"):
             validator.validate_str("https://github.com/some/repo")
 
     def test_validate_str_malformed_google_spreadsheet_url_raises_validation_error(self):
@@ -110,7 +110,7 @@ class TestGoogleSpreadsheetURLValidator:
         validator = GoogleSpreadsheetURLValidator()
 
         # Missing spreadsheet ID
-        with pytest.raises(ValidationError, match="Invalid Google Spreadsheet URL"):
+        with pytest.raises(ValidationError, match="Invalid Google Sheets URL"):
             validator.validate_str("https://docs.google.com/spreadsheets/d/")
 
     def test_validate_str_custom_error_message(self):

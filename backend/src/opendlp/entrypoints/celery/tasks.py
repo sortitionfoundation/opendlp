@@ -217,7 +217,7 @@ def _internal_load_gsheet(
     except errors.NotNativeGoogleSheetError as error:
         user_msg = _(
             "The file '%(file_name)s' has the format '%(common_name)s', "
-            "rather than being a native Google Sheet. Open it in Google Sheets and choose "
+            "rather than being a native Google Sheets spreadsheet. Open it in Google Sheets and choose "
             "File \u2192 Save as Google Sheets, then use that new file.",
             file_name=error.file_name,
             common_name=error.common_name_for(error.mimetype),
@@ -347,7 +347,7 @@ def _internal_load_gsheet(
         # no hint to the user as to what happened, so we deal with it differently here.
         service_account_email = get_service_account_email()
         error_msg = _(
-            "Failed to load gsheet due to permissions issues. Check the spreadsheet is shared with %(email)s",
+            "Failed to load the spreadsheet due to permissions issues. Check the spreadsheet is shared with %(email)s",
             email=service_account_email,
         )
         _update_selection_record(
@@ -361,7 +361,7 @@ def _internal_load_gsheet(
         )
         return False, None, None, None, report
     except Exception as err:
-        error_msg = _("Failed to load gsheet: %(error)s", error=str(err))
+        error_msg = _("Failed to load the spreadsheet: %(error)s", error=str(err))
         traceback_msg = traceback.format_exc()
 
         # TODO: add to logs - just say "error occurred, contact admins" to the user
@@ -943,7 +943,7 @@ def manage_old_tabs(
         # no hint to the user as to what happened, so we deal with it differently here.
         service_account_email = get_service_account_email()
         error_msg = _(
-            "Failed to load gsheet due to permissions issues. Check the spreadsheet is shared with %(email)s",
+            "Failed to load the spreadsheet due to permissions issues. Check the spreadsheet is shared with %(email)s",
             email=service_account_email,
         )
         _update_selection_record(
