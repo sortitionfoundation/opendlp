@@ -33,6 +33,10 @@ are dropped from the `.mo`, since `translate-compile` does not pass
 `--use-fuzzy`. Worth remembering: a correct-looking `msgstr` in the catalogue is
 not a translation the user will see.
 
+`selection_task_type_labels` covers `SelectionTaskType` — §5 below.
+`SelectionRunRecord.task_type_verbose` now looks the label up rather than
+assembling one, so the nine templates that render it needed no change.
+
 ## What is left
 
 ### 1. `AssemblyRole` has no short labels
@@ -89,8 +93,11 @@ right thing with an `if` chain, so this is the least broken of the set. But:
 
 `RespondentSourceType` has no labels at all.
 
-### 5. `task_type_verbose` builds an English sentence with string surgery
+### 5. `task_type_verbose` builds an English sentence with string surgery — fixed
 
+Fixed by `selection_task_type_labels` in `domain/value_objects.py`, with the
+parametrised test in `tests/unit/domain/test_assembly.py`. The property stayed,
+as a lookup, rather than being deleted. What it used to do, for the record, at
 `src/opendlp/domain/assembly.py:316`:
 
 ```python
@@ -155,7 +162,7 @@ so this is not a hypothetical failure mode — it is the one that actually
 happened, twice.
 
 It only guards enums that already have a labels dict. It cannot say anything
-about an enum that has none, which is every enum in §1-5 above.
+about an enum that has none, which is every enum in §1-4 above.
 
 ### Not written: the check that would close it
 
