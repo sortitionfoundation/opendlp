@@ -4228,7 +4228,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/targets/components/category_block.html:298
 #: templates/targets/components/category_name_edit.html:24
 msgid "Cancel"
-msgstr "Megszakítás"
+msgstr "Mégse"
 
 #: templates/admin/invite_view.html:3 templates/admin/invite_view.html:20
 #, fuzzy

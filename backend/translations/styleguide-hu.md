@@ -127,9 +127,16 @@ roles and must not read as synonyms. *(C14)*
 | --- | --- | --- |
 | spreadsheet | (Google) Táblázat | |
 | tab (in a spreadsheet) | munkalap | *(B10)* |
+| cancel (button) | Mégse | |
 | URL slug | URL-azonosító | |
 | 2FA / two-factor authentication | kétlépcsős azonosítás | |
 | backup code | tartalék kód | |
+
+**cancel** as a button — backing out of a dialog or form without doing anything —
+is **Mégse**, the word every Hungarian UI uses for that button. Not
+*Megszakítás*, which is the other sense of cancel: stopping something already
+running. That sense keeps *megszakít* — "Feladat megszakítása", "A feltöltés
+megszakítva".
 
 **tab** is *munkalap*, which is what the Hungarian Google Sheets UI calls it —
 users will have both screens open side by side. Not *lapfül*, in compounds
