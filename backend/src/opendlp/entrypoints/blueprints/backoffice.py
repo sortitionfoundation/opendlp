@@ -415,13 +415,13 @@ def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Only CSV and Google Sheet exports are available for now"), "error")
         return redirect(dashboard_url)
 
-    # The CSV target is built inline rather than injected: pure in-memory work, no
-    # seam needed. The Google Sheets target is injected via an app factory instead
-    # (see _run_dashboard_gsheet_export and the respondents export).
-    target = CsvExportTarget()
     try:
         if file_type == "gsheet":
             return _run_dashboard_gsheet_export(assembly_id, dashboard_url)
+        # The CSV target is built inline rather than injected: pure in-memory work,
+        # no seam needed. The Google Sheets target is injected via an app factory
+        # instead (see _run_dashboard_gsheet_export and the respondents export).
+        target = CsvExportTarget()
         uow = bootstrap.get_flask_uow()
         with uow:
             export_dashboard_report(uow, current_user.id, assembly_id, target=target)

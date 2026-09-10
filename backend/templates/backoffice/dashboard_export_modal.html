@@ -41,10 +41,11 @@ ABOUTME: File type selector — CSV always; Google Sheet when the source is a sh
                     </label>
                 {% else %}
                     <label class="flex items-center gap-2 text-body-md" style="color: var(--color-secondary-text);">
-                        <input type="radio" name="file_type" value="gsheet" disabled>
+                        <input type="radio" name="file_type" value="gsheet" disabled
+                               aria-describedby="dashboard-export-gsheet-hint">
                         {{ _("Google Sheet") }}
                     </label>
-                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                    <p id="dashboard-export-gsheet-hint" class="text-body-sm" style="color: var(--color-secondary-text);">
                         {{ _("Available when the assembly uses a Google Sheet data source.") }}
                     </p>
                 {% endif %}

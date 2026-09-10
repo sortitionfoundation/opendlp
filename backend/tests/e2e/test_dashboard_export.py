@@ -90,7 +90,8 @@ class TestDashboardGSheetExportSmoke:
         without_source = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/modal")
         assert without_source.status_code == 200
         body = without_source.get_data(as_text=True)
-        assert '<input type="radio" name="file_type" value="gsheet" disabled>' in body
+        assert 'value="gsheet" disabled' in body
+        assert 'aria-describedby="dashboard-export-gsheet-hint"' in body
         assert 'name="worksheet_name"' not in body
 
     def test_export_writes_the_source_spreadsheet_and_saves_config(
@@ -119,9 +120,7 @@ class TestDashboardGSheetExportSmoke:
             assert config.worksheet_name == "Results"
             assert config.spreadsheet_title == "Assembly with GSheet"
 
-    def test_export_without_a_gsheet_source_is_rejected(
-        self, logged_in_admin, existing_assembly, postgres_session_factory
-    ):
+    def test_export_without_a_gsheet_source_is_rejected(self, logged_in_admin, existing_assembly):
         captured = []
         logged_in_admin.application.extensions["gsheet_export_target_factory"] = _fake_target_factory(captured)
 
@@ -134,9 +133,7 @@ class TestDashboardGSheetExportSmoke:
         assert "Google Sheet export is only available" in response.get_data(as_text=True)
         assert not captured
 
-    def test_export_refuses_to_overwrite_a_source_tab(
-        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory
-    ):
+    def test_export_refuses_to_overwrite_a_source_tab(self, logged_in_admin, assembly_with_gsheet):
         assembly, _gsheet = assembly_with_gsheet
         captured = []
         logged_in_admin.application.extensions["gsheet_export_target_factory"] = _fake_target_factory(captured)
