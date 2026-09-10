@@ -1,5 +1,10 @@
-name: "Setup Python Environment"
-description: "Set up Python environment for the given Python version"
+name: "Setup Environment"
+description: >
+  Install the toolchains and dependencies a job needs, and build the artefacts
+  that are gitignored and so absent from a fresh checkout: the frontend bundles
+  and the compiled translation catalogues. A job that runs the app - the test
+  suites, the BDD browser run - needs all of it, so it lives here rather than
+  in each workflow, where it can be forgotten one workflow at a time.
 
 inputs:
   python-version:
@@ -58,4 +63,16 @@ runs:
       run: |
         npm ci
         npm run build
+      shell: bash
+
+    - name: Compile translation catalogues
+      working-directory: ${{ inputs.working-directory }}
+      # The .mo files are gitignored, exactly like the frontend bundles built
+      # above, and are needed for the same reason: without them every gettext
+      # lookup falls back to its msgid and the app is silently monolingual
+      # English. That is not a hypothetical - CI ran without catalogues for as
+      # long as no test asserted a translated string. The Dockerfile compiles
+      # them into the image; this is the same step for a job that runs from a
+      # checkout. Costs about a second.
+      run: uv run pybabel compile --directory=translations
       shell: bash

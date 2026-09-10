@@ -15,7 +15,7 @@ test-js:
   @npm run test
 
 # Test the code with pytest, headless BDD, HTML report (includes BDD subprocess coverage)
-test-html: test-js build-all
+test-html: test-js build-all translate-compile
   #!/usr/bin/env bash
   set -uo pipefail
   rm -f .coverage .coverage.bdd-*
@@ -29,7 +29,7 @@ test-html: test-js build-all
   exit $PYTEST_EXIT
 
 # Test the code with pytest, headless BDD, XML report (includes BDD subprocess coverage)
-test-xml: test-js build-all
+test-xml: test-js build-all translate-compile
   #!/usr/bin/env bash
   set -uo pipefail
   rm -f .coverage .coverage.bdd-*
@@ -46,17 +46,17 @@ test-xml: test-js build-all
 test: test-html
 
 # Fast non-BDD tests, no coverage (measuring adds ~70%; see test-nobdd-cov)
-test-nobdd: test-js
+test-nobdd: test-js translate-compile
   @echo "🚀 Testing code: Running pytest (no coverage - use test-nobdd-cov for a report)"
   uv run python -m pytest --tb=short --ignore=tests/bdd -n auto --maxprocesses=8
 
 # Test the code with pytest and an HTML coverage report, skipping BDD
-test-nobdd-cov: test-js
+test-nobdd-cov: test-js translate-compile
   @echo "🚀 Testing code: Running pytest with coverage"
   uv run python -m pytest --tb=short --ignore=tests/bdd --cov --cov-config=pyproject.toml --cov-report=html -n auto --maxprocesses=8
 
 # Run BDD tests with pytest-bdd and Playwright
-test-bdd: build-all
+test-bdd: build-all translate-compile
   @echo "🚀 Running BDD tests"
   CI=true uv run python -m pytest tests/bdd/ --verbose --tb=short
   echo "Independent processes for flask and celery - if not expected you might need to re-run:"
@@ -64,11 +64,11 @@ test-bdd: build-all
   ps -ef | grep celery | grep solo
 
 # Run backoffice BDD tests only
-test-backoffice: build-all
+test-backoffice: build-all translate-compile
   @echo "🚀 Running backoffice BDD tests"
   CI=true uv run python -m pytest tests/bdd/test_backoffice.py --verbose --tb=short
 
-test-bdd-not-headless: build-all
+test-bdd-not-headless: build-all translate-compile
   @echo "🚀 Running BDD tests"
   uv run python -m pytest tests/bdd/ --verbose --tb=short
   echo "Independent processes for flask and celery - if not expected you might need to re-run:"
@@ -76,7 +76,7 @@ test-bdd-not-headless: build-all
   ps -ef | grep celery | grep solo
 
 # Run BDD tests in headless mode (for CI)
-test-bdd-headless: build-all
+test-bdd-headless: build-all translate-compile
   @echo "🚀 Running BDD tests (headless)"
   @CI=true uv run python -m pytest tests/bdd/ --verbose --tracing=retain-on-failure
   echo "Independent processes for flask and celery - if not expected you might need to re-run:"
@@ -115,6 +115,8 @@ check:
   @uv run deptry src
   @echo "🚀 Checking the UnitOfWork convention"
   @uv run python scripts/check_uow_convention.py
+  @echo "🚀 Checking the translation catalogues"
+  @just translate-check
   @echo "🚀 Checking the if any db migrations need to be created"
   @uv run alembic check 2>&1 | grep -v '^INFO'
   @echo "🚀 Checking there is only one db migration head"
@@ -136,6 +138,8 @@ check-ci:
   @uv run deptry src
   @echo "🚀 Checking the UnitOfWork convention"
   @uv run python scripts/check_uow_convention.py
+  @echo "🚀 Checking the translation catalogues"
+  @just translate-check
   @echo "🚀 Checking the if any db migrations need to be created"
   @uv run alembic check 2>&1 | grep -v '^INFO'
   @echo "🚀 Checking there is only one db migration head"
@@ -232,7 +236,7 @@ build-vendor:
 build-all: build-all-css build-js build-vendor
 
 # run flask locally
-run: build-all flask
+run: build-all translate-compile flask
 
 # connect to docker postgres (local services)
 psql:
@@ -258,11 +262,57 @@ translate-regen:
     --ignore-dirs=thirdparty \
     --ignore-dirs=.venv \
     . `uv run python -c "import sortition_algorithms, pathlib; print(pathlib.Path(sortition_algorithms.__file__).parent.relative_to(pathlib.Path.cwd()))"`
-  uv run pybabel update --input-file=translations/messages.pot --output-dir=translations
+  @# --ignore-obsolete: an obsolete `#~` entry whose msgid also exists as a live
+  @# entry is a fatal duplicate definition to msgfmt, so letting them accumulate
+  @# eventually stops the catalogue compiling at all.
+  uv run pybabel update --ignore-obsolete \
+    --input-file=translations/messages.pot --output-dir=translations
 
 # compile translations from .po files so flask can use them
+#
+# A dependency of every test recipe and of `run`, because the .mo files are
+# gitignored build artefacts: a fresh clone has none, every gettext lookup then
+# falls back to the msgid, and the app is silently monolingual. That is not
+# hypothetical - it is why the CI runs went red while the same tests passed on a
+# machine that happened to have compiled catalogues lying about. The CI
+# workflows call pytest directly rather than through `just`, so they carry their
+# own compile step; keep the two in step.
 translate-compile:
   uv run pybabel compile --directory=translations
+
+# verify every catalogue compiles. `pybabel compile` will not do: it accepts a
+# catalogue with duplicate msgids without a murmur, which is how the Hungarian
+# catalogue spent a while unable to build a .mo at all. msgfmt --check also
+# validates format placeholders and plural forms.
+translate-check:
+  @command -v msgfmt >/dev/null 2>&1 || { echo "msgfmt not found - install gettext"; exit 1; }
+  @for po in translations/*/LC_MESSAGES/messages.po; do \
+    msgfmt --check --output-file=/dev/null "$po" || exit 1; \
+  done
+  @# a msgid shaped like an identifier is the signature of a Babel extraction
+  @# artefact: `_(MESSAGES["some_key"])` makes the extractor take the dict key for
+  @# a message, because it collects every string literal between the parens of a
+  @# `_(` call. The resulting msgid is untranslatable dead weight - at runtime
+  @# `_()` is handed the dict value, never the key. Keep the literal out of the
+  @# `_()` call (see src/opendlp/service_layer/error_translation.py).
+  @for cat in translations/messages.pot translations/*/LC_MESSAGES/messages.po; do \
+    [ -f "$cat" ] || continue; \
+    if grep -nE '^msgid "[a-z0-9]+(_[a-z0-9]+)+"$' "$cat"; then \
+      echo "^ identifier-shaped msgid in $cat - see the note by translate-check"; \
+      exit 1; \
+    fi; \
+  done
+  @# sortition-algorithms marks its own messages with N_() and translate-regen
+  @# picks them up by way of the library path it passes as a trailing argument.
+  @# Drop that argument and ~100 msgids vanish from the POT, silently taking
+  @# their translations with them on the next update.
+  @for cat in translations/messages.pot translations/*/LC_MESSAGES/messages.po; do \
+    [ -f "$cat" ] || continue; \
+    grep -q 'sortition_algorithms' "$cat" || { \
+      echo "no sortition_algorithms occurrences in $cat - did translate-regen lose the library path?"; \
+      exit 1; \
+    }; \
+  done
 
 # shut down docker
 stop-docker:

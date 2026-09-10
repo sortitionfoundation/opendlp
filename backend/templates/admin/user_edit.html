@@ -98,7 +98,7 @@
                         </fieldset>
                     </div>
                     <p class="govuk-body">
-                        {{ _("Whether the account is active is changed from the <a class=\"govuk-link\" href=\"%(url) s\">user's page</a>, not here.", url=url_for('admin.view_user', user_id=user.id))|safe }}
+                        {{ _("Whether the account is active is changed from the <a class=\"govuk-link\" href=\"%(url)s\">user's page</a>, not here.", url=url_for('admin.view_user', user_id=user.id))|safe }}
                     </p>
                     {% if user.id == current_user.id %}
                         <div class="govuk-warning-text">

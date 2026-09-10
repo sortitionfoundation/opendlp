@@ -51,6 +51,7 @@ dev = [
   "celery-types>=0.23.0",
   "covdefaults>=2.3.0",
   "deptry>=0.23.1",
+  "gettext-auto@git+https://github.com/cartertemm/gettext-auto@0a4c870a263c8e7e7ba909f73f8acb1335d302e2",
   "jsonschema>=4.26.0",
   "mypy>=1.17.1",
   "playwright>=1.54.0",

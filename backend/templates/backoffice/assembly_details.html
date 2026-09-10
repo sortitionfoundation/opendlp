@@ -53,7 +53,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                     <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Status") }}</dt>
                     <dd class="text-body-md" style="color: var(--color-body-text);">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm" style="background-color: var(--color-success-background, #d4edda); color: var(--color-success-text, #155724);">
-                            {{ assembly.status.value }}
+                            {{ assembly_status_labels[assembly.status] }}
                         </span>
                     </dd>
                 </div>

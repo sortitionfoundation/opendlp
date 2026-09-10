@@ -29,11 +29,19 @@ jobs:
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
+        uses: ./.github/actions/setup-env
         with:
           working-directory: ./backend
 
       - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+
+      # `just translate-check` shells out to msgfmt, which is a GNU gettext
+      # binary rather than a Python dependency, so uv sync does not provide it.
+      # The runner image does not carry it either (msgfmt lives in `gettext`,
+      # not the `gettext-base` that some images do ship), and the recipe exits
+      # 1 rather than skipping when it is missing.
+      - name: Install gettext (provides msgfmt)
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends gettext
 
       - name: Run checks
         run: just check-ci
@@ -123,7 +131,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
+        uses: ./.github/actions/setup-env
         with:
           python-version: ${{ matrix.python-version }}
           working-directory: ./backend
