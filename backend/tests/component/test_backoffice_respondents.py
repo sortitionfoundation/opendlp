@@ -84,9 +84,9 @@ class TestBackofficeUploadRespondents:
 
         with logged_in_admin.session_transaction() as session:
             messages = [msg[1] for msg in session.get("_flashes", [])]
-        assert any('no column called "nonexistent_column"' in m for m in messages)
+        assert any("no column called 'nonexistent_column'" in m for m in messages)
         assert any("name, email, age" in m for m in messages)
-        assert any('clear it to use the first column ("name")' in m for m in messages)
+        assert any("clear it to use the first column ('name')" in m for m in messages)
 
     def test_upload_shows_success_message(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """A successful upload flashes a success message."""
@@ -211,7 +211,7 @@ class TestUploadFormIdColumnHint:
         )
 
         body = self._data_page(logged_in_admin, existing_assembly.id)
-        assert 'Using "nationbuilder_id" from your last upload.' in body
+        assert "Using 'nationbuilder_id' from your last upload." in body
         assert 'value="nationbuilder_id"' in body
 
     def test_hint_escapes_the_remembered_column_name(
@@ -277,7 +277,7 @@ class TestUploadDiffConfirmation:
 
         with logged_in_admin.session_transaction() as session:
             messages = [msg[1] for msg in session.get("_flashes", [])]
-        assert any('no column called "nationbuilder_id"' in m for m in messages)
+        assert any("no column called 'nationbuilder_id'" in m for m in messages)
         assert any("person_ref, first_name, postcode" in m for m in messages)
         assert any("pre-filled from your last upload" in m for m in messages)
 

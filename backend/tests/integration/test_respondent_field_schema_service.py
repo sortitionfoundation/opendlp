@@ -893,7 +893,7 @@ class TestReconciliation:
             )
 
         message = str(exc_info.value)
-        assert 'no column called "nationbuilder_id"' in message
+        assert "no column called 'nationbuilder_id'" in message
         assert "person_ref, first_name" in message
         assert "pre-filled from your last upload" in message
 
@@ -911,7 +911,7 @@ class TestReconciliation:
                 explicit_id_column="typo_id",
             )
 
-        assert 'no column called "typo_id"' in str(exc_info.value)
+        assert "no column called 'typo_id'" in str(exc_info.value)
 
     def test_compute_diff_for_pending_csv_rejects_empty_csv(self, uow, admin_user, test_assembly):
         with pytest.raises(InvalidSelection):

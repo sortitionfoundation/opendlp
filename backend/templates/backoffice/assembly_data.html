@@ -426,7 +426,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         any upload fails files that have no column of that name. #}
                         {% set has_previous_upload = csv_config and csv_config.last_import_timestamp and csv_config.csv_id_column %}
                         {% if has_previous_upload %}
-                            {% set id_column_hint = _('Using "%(id_column)s" from your last upload. Change it if this file uses a different column, or clear it to use the first column.', id_column=csv_config.csv_id_column) %}
+                            {% set id_column_hint = _("Using '%(id_column)s' from your last upload. Change it if this file uses a different column, or clear it to use the first column.", id_column=csv_config.csv_id_column) %}
                         {% else %}
                             {% set id_column_hint = _("Name of column containing unique identifiers. If blank, the first column in the CSV will be used.") %}
                         {% endif %}
