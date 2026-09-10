@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-10 15:06+0100\n"
+"POT-Creation-Date: 2026-09-10 15:17+0100\n"
 "PO-Revision-Date: 2026-09-08 13:35+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -4677,6 +4677,7 @@ msgstr "Vissza a bejelentkezéshez"
 #: templates/backoffice/assembly_dashboard.html:13
 #: templates/backoffice/assembly_dashboard.html:40
 #: templates/backoffice/components/assembly_tabs.html:80
+#: templates/backoffice/dashboard.html:9 templates/backoffice/dashboard.html:12
 #: templates/main/dashboard.html:2 templates/main/dashboard.html:7
 msgid "Dashboard"
 msgstr "Vezérlőpult"
@@ -5881,9 +5882,24 @@ msgstr "Közösségi gyűlés létrehozása"
 msgid "Set up a new citizens' assembly."
 msgstr "Hozz létre egy új közösségi gyűlést."
 
+#: templates/backoffice/dashboard.html:13
+#, fuzzy, python-format
+msgid "Welcome back, %(name)s!"
+msgstr "Üdvözlünk újra az OpenDLP-ben"
+
 #: templates/backoffice/dashboard.html:20
 msgid "Create New Assembly"
 msgstr "Új közösségi gyűlés létrehozása"
+
+#: templates/backoffice/dashboard.html:27
+#, fuzzy, python-format
+msgid "Created: %(date)s"
+msgstr "Létrehozva"
+
+#: templates/backoffice/dashboard.html:35
+#, fuzzy, python-format
+msgid "Starts: %(date)s"
+msgstr "Az állapot frissítve."
 
 #: templates/backoffice/dashboard.html:43 templates/main/dashboard.html:67
 msgid "No assemblies yet"
