@@ -450,7 +450,7 @@ class TestAssemblyGSheetValidation:
         assert (
             b"Warning" in response.data
             or b"No columns to keep" in response.data
-            or b"participant data columns" in response.data
+            or b"respondent data columns" in response.data
         )
 
     def test_create_gsheet_soft_validation_empty_columns_to_keep_with_team_does_not_show_warning(
@@ -480,7 +480,7 @@ class TestAssemblyGSheetValidation:
         assert (
             b"Warning" not in response.data
             and b"No columns to keep" not in response.data
-            and b"participant data columns" not in response.data
+            and b"respondent data columns" not in response.data
         )
 
     def test_edit_gsheet_hard_validation_check_address_without_columns(
@@ -538,5 +538,5 @@ class TestAssemblyGSheetValidation:
         assert (
             b"Warning" in response.data
             or b"No columns to keep" in response.data
-            or b"participant data columns" in response.data
+            or b"respondent data columns" in response.data
         )

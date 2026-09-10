@@ -350,13 +350,13 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     check_same_address = BooleanField(
         _l("Check Same Address"),
-        description=_l("Enable checking for participants with the same address"),
+        description=_l("Enable checking for respondents with the same address"),
         default=True,
     )
 
     generate_remaining_tab = BooleanField(
         _l("Generate Remaining Tab"),
-        description=_l("Create a tab with remaining participants after selection"),
+        description=_l("Create a tab with the remaining respondents after selection"),
         default=True,
     )
 
@@ -688,7 +688,7 @@ class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
     check_same_address = BooleanField(
         _l("Check Same Address"),
         default=True,
-        description=_l("Prevent selecting multiple participants from the same address"),
+        description=_l("Prevent selecting multiple respondents from the same address"),
     )
 
     check_same_address_cols_string = StringField(

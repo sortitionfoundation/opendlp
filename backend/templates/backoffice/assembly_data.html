@@ -43,7 +43,7 @@ ABOUTME: Displays data source selection and data management for assemblies
             ],
             value=data_source,
             placeholder=_("Select Data Source"),
-            hint=_("Data source is locked because a configuration already exists. Delete the configuration to change the data source.") if data_source_locked else _("Choose how you want to import participant data for this assembly."),
+            hint=_("Data source is locked because a configuration already exists. Delete the configuration to change the data source.") if data_source_locked else _("Choose how you want to import respondent data for this assembly."),
             disabled=data_source_locked,
             attrs='x-model="selected" @change="navigate($event)" data-focus-id="data-source"' if not data_source_locked else 'data-focus-id="data-source"'
             ) }}
@@ -82,7 +82,7 @@ ABOUTME: Displays data source selection and data management for assemblies
         </div>
         {% if is_new %}
             <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
-                {{ _("Configure a Google Sheets spreadsheet to import and manage participant data for this assembly.") }}
+                {{ _("Configure a Google Sheets spreadsheet to import and manage respondent data for this assembly.") }}
             </p>
         {% endif %}
         {# Configuration Form / View #}
@@ -170,13 +170,13 @@ ABOUTME: Displays data source selection and data management for assemblies
                     {{ checkbox(name="check_same_address",
                     label=_("Check Same Address") ,
                     checked=gsheet_form.check_same_address.data,
-                    hint=_("Prevent selecting multiple participants from the same address."),
+                    hint=_("Prevent selecting multiple respondents from the same address."),
                     readonly=readonly
                     ) }}
                     {{ checkbox(name="generate_remaining_tab",
                     label=_("Generate Remaining Tab") ,
                     checked=gsheet_form.generate_remaining_tab.data,
-                    hint=_("Automatically generate a tab with remaining (unselected) participants."),
+                    hint=_("Automatically generate a tab with the remaining respondents."),
                     readonly=readonly
                     ) }}
                 </fieldset>
@@ -205,7 +205,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                             label=_("ID Column") ,
                             value=gsheet_form.id_column.data or "",
                             placeholder=_("e.g., ID"),
-                            hint=_("Column name containing unique participant identifiers."),
+                            hint=_("Column name containing unique respondent identifiers."),
                             readonly=readonly,
                             error=e(gsheet_form.id_column.errors)
                             ) }}
@@ -234,7 +234,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         {{ input(name="id_column",
                         label=_("ID Column") ,
                         value=gsheet_form.id_column.data or "",
-                        hint=_("Column name containing unique participant identifiers."),
+                        hint=_("Column name containing unique respondent identifiers."),
                         readonly=readonly
                         ) }}
                         {{ input(name="check_same_address_cols_string",
@@ -468,7 +468,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                     {{ checkbox(name="check_same_address",
                     label=_("Check Same Address") ,
                     checked=csv_settings_form.check_same_address.data,
-                    hint=_("Prevent selecting multiple participants from the same address."),
+                    hint=_("Prevent selecting multiple respondents from the same address."),
                     readonly=csv_readonly
                     ) }}
                     {# Available Columns Info - only show in edit mode #}

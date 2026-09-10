@@ -938,7 +938,7 @@ def _handle_gsheet_save_success(
         flash(
             _(
                 "Warning: No columns to keep specified. "
-                "This means the output will only include participant data columns "
+                "This means the output will only include respondent data columns "
                 "used for the targets and address checking. Is this intentional?"
             ),
             "warning",
