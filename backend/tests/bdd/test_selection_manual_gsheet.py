@@ -217,8 +217,8 @@ def _(page: Page):
 @when("I start the replacements")
 def _(page: Page):
     """I start the replacements."""
-    # Click the "Run Replacements" button
-    button = page.get_by_role("button", name="Run Replacements")
+    # Click the "Run Replacement Selection" button
+    button = page.get_by_role("button", name="Run Replacement Selection")
     expect(button).to_be_visible()
     expect(button).to_be_enabled()
     button.click()

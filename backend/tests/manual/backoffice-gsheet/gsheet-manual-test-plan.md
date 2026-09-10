@@ -447,8 +447,8 @@ After testing, clean up:
   - [ ] "Number to select: X" info box showing assembly's number_to_select value
   - [ ] "Check Spreadsheet", "Run Test Selection", "Run Selection" buttons (disabled in Phase 1)
 - [ ] "Replacement Selection" card visible with:
-  - [ ] Description text about replacement participants
-  - [ ] "Check Spreadsheet", "Run Replacements" buttons (disabled in Phase 1)
+  - [ ] Description text about replacements
+  - [ ] "Check Spreadsheet", "Run Replacement Selection" buttons (disabled in Phase 1)
 - [ ] "Manage Generated Tabs" card visible with:
   - [ ] Description text about cleaning up old tabs
   - [ ] "List Old Tabs" button (disabled in Phase 1)

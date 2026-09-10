@@ -16,7 +16,7 @@
 State logic:
 1. No run_record: show initial form (Check Spreadsheet)
 2. Task running: show progress with polling
-3. Task finished + has min/max: show form (Run Replacements) - load task succeeded
+3. Task finished + has min/max: show form (Run Replacement Selection) - load task succeeded
 4. Task finished + no min/max: show result (completed/failed/cancelled selection task)
 #}
 {% set show_initial_form = not replacement_run_record %}
@@ -33,10 +33,10 @@ htmx_poll_url=htmx_poll_url
 {% if show_initial_form %}
         {# INITIAL STATE - No task yet, show Check Spreadsheet form #}
     <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-        {{ _("Select replacement participants when original selections decline or cannot participate.") }}
+        {{ _("Select replacements when original selections decline or cannot participate.") }}
     </p>
     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-        {{ _("First check the spreadsheet to see how many replacement participants are available.") }}
+        {{ _("First check the spreadsheet to see how many replacements can be selected.") }}
     </p>
     <form method="post"
           action="{{ url_for('gsheets.start_replacement_load', assembly_id=assembly.id) }}">
@@ -50,17 +50,17 @@ htmx_poll_url=htmx_poll_url
     {{ spinner(_("Processing...") ) }}
     {{ message_log(replacement_log_messages) }}
 {% elif show_form_with_minmax %}
-        {# FORM STATE - Load task completed successfully, show Run Replacements form #}
+        {# FORM STATE - Load task completed successfully, show Run Replacement Selection form #}
     <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-        {{ _("Select replacement participants when original selections decline or cannot participate.") }}
+        {{ _("Select replacements when original selections decline or cannot participate.") }}
     </p>
     <div class="rounded-lg p-4 mb-4"
          style="background-color: var(--color-subtle-background-panels);
                 border: 1px solid var(--color-borders-dividers)">
         <div class="flex items-center gap-2 mb-2">
             <span class="text-label-lg"
-                  style="color: var(--color-headings)">{{ _("Available replacements:") }}</span>
-            <span class="text-body-md" style="color: var(--color-body-text);">{{ _("%(min)s to %(max)s participants", min=replacement_min_select, max=replacement_max_select) }}</span>
+                  style="color: var(--color-headings)">{{ _("Replacements you can select:") }}</span>
+            <span class="text-body-md" style="color: var(--color-body-text);">{{ _("%(min)s to %(max)s", min=replacement_min_select, max=replacement_max_select) }}</span>
         </div>
     </div>
     <form method="post"
@@ -85,7 +85,7 @@ htmx_poll_url=htmx_poll_url
                    value="{{ replacement_min_select }}"
                    required>
         </div>
-        <div class="flex gap-2 flex-wrap">{{ button(_("Run Replacements") , type="submit", variant="primary") }}</div>
+        <div class="flex gap-2 flex-wrap">{{ button(_("Run Replacement Selection") , type="submit", variant="primary") }}</div>
     </form>
         {# Re-check spreadsheet as separate form #}
     <form method="post"
