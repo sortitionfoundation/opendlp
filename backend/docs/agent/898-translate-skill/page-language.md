@@ -2,7 +2,7 @@
 
 Found while fixing `<html lang="en">`, which every base template hardcoded even
 when the body was Hungarian. That attribute is fixed — it now follows the
-negotiated locale. Fixing it exposed two cases where the *negotiated* locale is
+negotiated locale. Fixing it exposed two cases where the _negotiated_ locale is
 itself the wrong answer, and one where negotiation cannot happen at all.
 
 ## Background: how the language is chosen
@@ -31,14 +31,14 @@ is served.
 
 `blueprints/registration.py:148` renders `register/form.html` with
 `rendered_form` and `is_test` and nothing else, so the public form comes out in
-whatever locale the *visitor's* browser negotiated. An organiser who builds a
+whatever locale the _visitor's_ browser negotiated. An organiser who builds a
 Hungarian registration page and sends the link to Hungarian speakers gets an
 English form for anyone whose browser says `Accept-Language: en`.
 
 This is the case where negotiation is simply the wrong policy. A registration
 page has one authoritative language — the organiser chose it, the surrounding
 letter or poster is in it, and the questions on the page are written in it. The
-visitor's browser setting is not evidence about which language *this page* is
+visitor's browser setting is not evidence about which language _this page_ is
 in.
 
 What it needs:
@@ -101,6 +101,42 @@ Deciding this needs a product answer, not just a patch:
   the `lang` attribute in the five email templates should then be set from the
   same value rather than left literal.
 
+### The registration auto-reply is not one of these
+
+Worth stating, because it looks like it belongs in this section and does not.
+The auto-reply a respondent gets after submitting a registration page never
+enters the locale story at all:
+
+- Its subject and body are an organiser-authored `EmailTemplate` row, not a
+  file under `templates/emails/`.
+- `EmailTemplate.render` goes through `domain/email_template_render.py`, a
+  sandboxed Jinja environment doing placeholder substitution. That module
+  imports no gettext, and the context it renders against
+  (`build_email_context`) is assembly and respondent data, not translated
+  strings.
+- So there is no msgid, no catalogue lookup, no `<html lang>` of ours, and
+  nothing for `get_locale()` to get wrong. The language is whatever the
+  organiser typed.
+
+And it is already resolved per page rather than per assembly, deliberately.
+`send_registration_auto_reply` (`service_layer/email_send_service.py:80`) looks
+the template up from `respondent.registration_page_id`, and its docstring says
+why: "an assembly's variants each carry their own auto-reply, so resolving by
+assembly could send a registrant the wrong language."
+
+That is the same argument §1 makes about the form itself, reached earlier and
+already implemented — which is the strongest evidence that §1's premise is
+right. A page's language belongs to the page. The auto-reply honours that; the
+form the respondent filled in on the way to it does not.
+
+One consequence worth naming: because the auto-reply carries no `lang`
+attribute of its own, an organiser writing a Hungarian auto-reply produces mail
+that a screen reader will announce in the client's default language. Fixing
+that means the *organiser's* stated page language has to reach the send path —
+which is §1's data question (`page.language` is unvalidated free text) arriving
+by another road, and another reason to settle that field before either.
+
+
 ## Suggested order
 
 The user language preference (step 3) is the keystone: it makes mail-to-users
@@ -110,6 +146,10 @@ read, so it is the more urgent of the two. Case 2's invite question can wait
 behind the preference field, but the Celery observation should be recorded
 wherever the background-task work is planned, since it turns a quiet
 English-fallback assumption into a crash.
+
+Validating `page.language` is the shared prerequisite. §1 cannot force a locale
+from free text, and the auto-reply cannot carry a `lang` attribute without it
+either. It is the cheapest piece here and it unblocks the most.
 
 ## What is already done
 
