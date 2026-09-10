@@ -290,13 +290,12 @@ before sweeping the source.
    your Google Sheets spreadsheet"), so "Address Fields" and "Fields to Keep" are
    the likely answer, but this is waiting on a team discussion.
 4. **The Your Assemblies page's own heading.** Every link to the list now says
-   "Your Assemblies", but the backoffice page itself has a hard-coded, untranslated
-   `<h1>Dashboard</h1>` with "Your Assemblies" as the `<h2>` beneath it (and
-   "Welcome back" and "Created:" are untranslated too). Renaming the `<h1>`
-   alone would stack two identical headings. _Recommend_ an `<h1>` of "Your
-   Assemblies", dropping the `<h2>` but keeping the "Create New Assembly" button
-   beside it, and wrapping the remaining strings for translation. The legacy list
-   page has the same pair of headings, and can stay as it is until it is retired.
+   "Your Assemblies", but the backoffice page itself has an `<h1>` and page title
+   of "Dashboard", with "Your Assemblies" as the `<h2>` beneath it. Renaming the
+   `<h1>` alone would stack two identical headings. _Recommend_ an `<h1>` of
+   "Your Assemblies", dropping the `<h2>` but keeping the "Create New Assembly"
+   button beside it. The legacy list page has the same pair of headings, and can
+   stay as it is until it is retired.
 5. **Capitalising "Citizens' Assembly".** The glossary writes "citizens'
    assembly" in lowercase, but the home page, the footer and the invite email
    capitalise it in running prose — "a platform for supporting Citizens'
