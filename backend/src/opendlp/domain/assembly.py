@@ -14,7 +14,13 @@ from opendlp import config
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource
 from opendlp.domain.respondents import normalise_field_name
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator, validate_email
-from opendlp.domain.value_objects import AssemblyStatus, ProgressInfo, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import (
+    AssemblyStatus,
+    ProgressInfo,
+    SelectionRunStatus,
+    SelectionTaskType,
+    selection_task_type_labels,
+)
 from opendlp.translations import lazy_gettext as _l
 
 if TYPE_CHECKING:
@@ -314,7 +320,7 @@ class SelectionRunRecord:
 
     @property
     def task_type_verbose(self) -> str:
-        return self.task_type.value.replace("_", " ").replace("gsheet", "Google Spreadsheet").capitalize()
+        return str(selection_task_type_labels[self.task_type])
 
     # Phase → user-facing label mapping for sortition-algorithms progress.
     # Labels use gettext format strings with %(current)s and %(total)s placeholders.

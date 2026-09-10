@@ -18,7 +18,7 @@ from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
 
 
-def _make_mock_run_record(assembly_id, *, status="running", task_type_verbose="Load Google Spreadsheet", **overrides):
+def _make_mock_run_record(assembly_id, *, status="running", task_type_verbose="Load from Google Sheets", **overrides):
     """Create a MagicMock run record with sensible defaults."""
     record = MagicMock()
     record.status.value = status
@@ -55,7 +55,7 @@ class TestReplacementProgressModal:
         assembly, _gsheet = assembly_with_gsheet
         run_id = uuid.uuid4()
 
-        mock_record = _make_mock_run_record(assembly.id, task_type_verbose="Load Replacement Google Spreadsheet")
+        mock_record = _make_mock_run_record(assembly.id, task_type_verbose="Load replacements from Google Sheets")
         mock_result = _make_mock_result(mock_record, log_messages=["Loading replacement data..."])
 
         with (
@@ -80,7 +80,7 @@ class TestReplacementProgressModal:
             assembly.id,
             status="completed",
             completed_at=datetime.now(UTC),
-            task_type_verbose="Load Replacement Google Spreadsheet",
+            task_type_verbose="Load replacements from Google Sheets",
         )
         mock_result = _make_mock_result(mock_record, log_messages=["Done"])
 
@@ -636,7 +636,7 @@ class TestSelectionPageWithReplacementContext:
 
         mock_record = _make_mock_run_record(
             assembly.id,
-            task_type_verbose="Load Replacement Google Spreadsheet",
+            task_type_verbose="Load replacements from Google Sheets",
             task_type=SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
         )
         mock_result = _make_mock_result(mock_record, log_messages=["Loading replacement data..."])
@@ -661,7 +661,7 @@ class TestSelectionPageWithReplacementContext:
             assembly.id,
             status="completed",
             completed_at=datetime.now(UTC),
-            task_type_verbose="Load Replacement Google Spreadsheet",
+            task_type_verbose="Load replacements from Google Sheets",
             task_type=SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
         )
 

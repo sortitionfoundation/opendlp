@@ -419,7 +419,7 @@ def history_shows_replacement(admin_logged_in_page: Page):
 def task_type_shows_replace(admin_logged_in_page: Page):
     """Verify task type shows as replacement selection."""
     page = admin_logged_in_page
-    # The verbose text is "Select replacement google spreadsheet"
+    # The verbose text is "Select replacements from Google Sheets"
     # Scope to table and use .first to avoid strict mode violation
     # (multiple cells may contain "replacement" - task type and comment)
     history_table = page.locator("table")

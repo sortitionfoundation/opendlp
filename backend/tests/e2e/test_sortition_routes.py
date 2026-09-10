@@ -330,8 +330,8 @@ class TestSelectionRunHistory:
         assert b"Completed" in response.data
         assert b"Failed" in response.data
         # Check task types (using task_type_verbose formatting)
-        assert b"Select google spreadsheet" in response.data
-        assert b"Load google spreadsheet" in response.data
+        assert b"Select from Google Sheets" in response.data
+        assert b"Load from Google Sheets" in response.data
         # Check comment appears
         assert b"Initial selection" in response.data
 

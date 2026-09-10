@@ -364,7 +364,7 @@ class TestBackofficeSelectionTab:
         mock_run_record.is_completed = False
         mock_run_record.is_failed = False
         mock_run_record.is_cancelled = False
-        mock_run_record.task_type_verbose = "Load Google Spreadsheet"
+        mock_run_record.task_type_verbose = "Load from Google Sheets"
         mock_run_record.log_messages = ["Loading data...", "Processing..."]
 
         mock_result = MagicMock()
@@ -560,7 +560,7 @@ class TestBackofficeSelectionTab:
         mock_run_record.is_completed = True
         mock_run_record.is_failed = False
         mock_run_record.is_cancelled = False
-        mock_run_record.task_type_verbose = "Select Google Spreadsheet"
+        mock_run_record.task_type_verbose = "Select from Google Sheets"
 
         mock_result = MagicMock()
         mock_result.run_record = mock_run_record
@@ -598,7 +598,7 @@ class TestBackofficeSelectionTab:
         mock_run_record.is_completed = False
         mock_run_record.is_failed = True
         mock_run_record.is_cancelled = False
-        mock_run_record.task_type_verbose = "Select Google Spreadsheet"
+        mock_run_record.task_type_verbose = "Select from Google Sheets"
 
         mock_result = MagicMock()
         mock_result.run_record = mock_run_record
@@ -661,7 +661,7 @@ class TestBackofficeSelectionTab:
         mock_run_record.is_completed = False
         mock_run_record.is_failed = False
         mock_run_record.is_cancelled = False
-        mock_run_record.task_type_verbose = "Load Google Spreadsheet"
+        mock_run_record.task_type_verbose = "Load from Google Sheets"
 
         mock_result = MagicMock()
         mock_result.run_record = mock_run_record

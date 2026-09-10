@@ -130,6 +130,21 @@ class SelectionTaskType(Enum):
     TEST_SELECT_FROM_DB = "test_select_from_db"
 
 
+# Labels for the run history table and the "Task:" line of the progress modals.
+# Kept next to the task types so a task type added later cannot go unlabelled.
+selection_task_type_labels = {
+    SelectionTaskType.LOAD_GSHEET: _l("Load from Google Sheets"),
+    SelectionTaskType.SELECT_GSHEET: _l("Select from Google Sheets"),
+    SelectionTaskType.TEST_SELECT_GSHEET: _l("Test select from Google Sheets"),
+    SelectionTaskType.LOAD_REPLACEMENT_GSHEET: _l("Load replacements from Google Sheets"),
+    SelectionTaskType.SELECT_REPLACEMENT_GSHEET: _l("Select replacements from Google Sheets"),
+    SelectionTaskType.LIST_OLD_TABS: _l("List old tabs"),
+    SelectionTaskType.DELETE_OLD_TABS: _l("Delete old tabs"),
+    SelectionTaskType.SELECT_FROM_DB: _l("Select from database"),
+    SelectionTaskType.TEST_SELECT_FROM_DB: _l("Test select from database"),
+}
+
+
 class GSheetExportKind(Enum):
     """What an assembly's saved Google Sheet export target is for.
 
