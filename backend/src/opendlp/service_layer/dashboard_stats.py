@@ -82,8 +82,12 @@ class CategoryValueRow:
     value: str
     target_min: int
     target_max: int
-    # TargetValue.percentage_target where it is set, else the share the band
-    # implies within its category.
+    # TargetValue.percentage_target as entered ("Population (%)" in the targets
+    # editor), or None when the organiser has not set one. Kept separate from
+    # ``target_pct``: the population share and the seat quota deliberately
+    # differ when a group is over-sampled, and blending them proved confusing.
+    population_pct: float | None
+    # The share the min/max band implies within its category (midpoint ratio).
     target_pct: float
     # COUNTED_RESPONDENT_STATUSES: pool, selected and confirmed.
     pool_count: int
@@ -208,6 +212,7 @@ def _value_row(
         value=target.value,
         target_min=target.min,
         target_max=target.max,
+        population_pct=target.percentage_target,
         target_pct=target_pct,
         pool_count=pool_count,
         available_count=available_count,
@@ -241,11 +246,11 @@ def _build_category(
     rows = [
         _value_row(
             target,
-            target.percentage_target if target.percentage_target is not None else fallback_pct,
+            band_pct,
             counts_by_value.get(target.value, {}),
             available_by_value.get(target.value, 0),
         )
-        for target, fallback_pct in zip(category.values, target_pcts, strict=True)
+        for target, band_pct in zip(category.values, target_pcts, strict=True)
     ]
 
     declared = {target.value for target in category.values}
@@ -310,7 +315,10 @@ def _export_row(category_name: str, row: CategoryValueRow, totals: tuple[int, in
     return [
         category_name,
         row.value,
-        _format_pct(row.target_pct),
+        # Blank rather than a fallback when no population share was entered:
+        # substituting the band-implied share is the conflation the dashboard
+        # split this column to remove.
+        _format_pct(row.population_pct) if row.population_pct is not None else "",
         str(row.target_min),
         str(row.target_max),
         str(row.pool_count),
@@ -347,7 +355,7 @@ def build_dashboard_table(report: DashboardReport) -> TabularData:
     headers = [
         _("Target"),
         _("Value"),
-        _("Target %"),
+        _("Population %"),
         _("Target min"),
         _("Target max"),
         _("Respondents"),

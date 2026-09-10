@@ -216,17 +216,20 @@ def _target_band(row: CategoryValueRow) -> str:
 def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]]:
     """Turn the dashboard report into per-category sections of pie cards.
 
-    Each category shows four dataset cards, matching the Figma layout: Target,
-    Respondents (pool), Selected and Confirmed. The Target pie is weighted by the
-    service's ``target_pct`` — the user-set percentage where given, else the exact
-    share the band implies — with the min-max band in the legend; deriving counts
-    from band midpoints rounded away what the user actually entered. The other
-    datasets' pies are populated from the report's real counts; a dataset whose
-    category total is zero has ``segments = None``, which the pie card renders as
-    a grey skeleton with the given ``message``. There is no separate "has
-    selection started" flag: a selection assigns every selected person a value in
-    every category at once, so a zero ``selected_count`` total for a category is
-    exactly "no selection yet".
+    Each category shows five dataset cards: Population, Target, Respondents
+    (pool), Selected and Confirmed. Population is weighted by the population
+    shares entered in the targets editor and Target by the share each min/max
+    band implies — kept as two pies because the two deliberately differ when a
+    group is over-sampled, and one pie showing sometimes-one, sometimes-the-other
+    proved confusing. The Population pie only renders once every value in the
+    category has a population share: charting the values that happen to have one
+    would misrepresent the split. The other datasets' pies are populated from
+    the report's real counts; a dataset whose category total is zero has
+    ``segments = None``, which the pie card renders as a grey skeleton with the
+    given ``message``. There is no separate "has selection started" flag: a
+    selection assigns every selected person a value in every category at once,
+    so a zero ``selected_count`` total for a category is exactly "no selection
+    yet".
 
     Each card is a dict {title, segments, message}; a falsy ``segments`` triggers
     the pie card's skeleton state, and ``message`` is the text shown in it.
@@ -237,12 +240,25 @@ def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]
             return None
         return [{"label": row.value, "count": getattr(row, count_attr)} for row in rows]
 
+    def population_segments(rows: list[CategoryValueRow]) -> list[dict[str, object]] | None:
+        segments: list[dict[str, object]] = []
+        for row in rows:
+            if row.population_pct is None:
+                return None
+            segments.append({"label": row.value, "count": row.population_pct, "display": f"{row.population_pct:.1f}%"})
+        return segments
+
     sections: list[dict[str, object]] = []
     for category in report.categories:
         target_segments = [
             {"label": row.value, "count": row.target_pct, "display": _target_band(row)} for row in category.rows
         ]
         cards = [
+            {
+                "title": _("Population"),
+                "segments": population_segments(category.rows),
+                "message": _("Shows the population split once every value has a population % set in the targets."),
+            },
             {"title": _("Target"), "segments": target_segments, "message": ""},
             {
                 "title": _("Respondents"),
@@ -268,11 +284,13 @@ def _build_dashboard_tables(report: DashboardReport) -> list[dict[str, object]]:
     """Turn the dashboard report into per-category tables (the on-screen Table view).
 
     One table per category; one row per category value with a percentage and a
-    count column for each dataset (Target / Respondents / Selected / Confirmed),
-    matching the Figma table. All figures come straight from the report's rows:
-    ``target_pct`` is the service's own value; the Target count is the min-max
-    band as entered; Respondents / Selected / Confirmed percentages are each
-    value's share of that dataset's category total.
+    count column for each dataset (Population / Target / Respondents / Selected
+    / Confirmed). All figures come straight from the report's rows:
+    ``population_pct`` is the population share as entered in the targets editor
+    (an em dash when unset — no band-derived fallback, that conflation is what
+    these columns were split to remove); the Target column is the min-max band
+    as entered; Respondents / Selected / Confirmed percentages are each value's
+    share of that dataset's category total.
 
     This is the on-screen shape only. The exportable table (flat, all categories,
     with min/max/available/shortfall columns) is the service's
@@ -293,7 +311,7 @@ def _build_dashboard_tables(report: DashboardReport) -> list[dict[str, object]]:
         rows = [
             {
                 "value": row.value,
-                "target_pct": f"{row.target_pct:.1f}",
+                "population_pct": f"{row.population_pct:.1f}" if row.population_pct is not None else "—",
                 "target_count": _target_band(row),
                 "respondents_pct": pct(row.pool_count, pool_total),
                 "respondents_count": row.pool_count,

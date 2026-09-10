@@ -256,6 +256,31 @@ class TestTheReportCounts:
         assert report.categories == []
         assert report.unmet_targets == []
 
+    def test_population_and_target_shares_are_kept_apart(self, uow, admin_user, assembly):
+        """The population share is passed through raw (None when unset) and the
+        target share always comes from the min/max bands - the two must never be
+        blended, that being the confusion the split removed."""
+        uow.target_categories.add(
+            TargetCategory(
+                assembly_id=assembly.id,
+                name="Gender",
+                values=[
+                    TargetValue(value="Male", min=14, max=16, percentage_target=70.0),
+                    TargetValue(value="Female", min=14, max=16),
+                ],
+            )
+        )
+        uow.commit()
+
+        rows = {
+            row.value: row for row in get_assembly_dashboard_report(uow, admin_user.id, assembly.id).categories[0].rows
+        }
+        assert rows["Male"].population_pct == 70.0
+        assert rows["Female"].population_pct is None
+        # Equal bands imply an even split, whatever the population shares say
+        assert rows["Male"].target_pct == 50.0
+        assert rows["Female"].target_pct == 50.0
+
 
 class TestTheUnmetTargets:
     def test_lists_every_value_short_of_its_minimum(self, uow, admin_user, assembly, gender_category):
@@ -295,8 +320,26 @@ class TestExportingToCsv:
 
         lines = [line for line in target.getvalue().splitlines() if line]
         assert len(lines) == 3
-        assert lines[0].lstrip("\ufeff").startswith("Target,Value,")
-        assert lines[1].startswith("Gender,Male,")
+        assert lines[0].lstrip("\ufeff").startswith("Target,Value,Population %,Target min,Target max,")
+        assert lines[1].startswith("Gender,Male,50.0,14,16,")
+
+    def test_an_unset_population_share_exports_as_blank(self, uow, admin_user, assembly):
+        """Blank, not the band-implied share - the export must not reintroduce the
+        conflation the Population column was split from the Target columns to remove."""
+        uow.target_categories.add(
+            TargetCategory(
+                assembly_id=assembly.id,
+                name="Region",
+                values=[TargetValue(value="North", min=10, max=12)],
+            )
+        )
+        uow.commit()
+        target = CsvExportTarget()
+
+        export_dashboard_report(uow, admin_user.id, assembly.id, target=target)
+
+        lines = [line for line in target.getvalue().splitlines() if line]
+        assert lines[1].startswith("Region,North,,10,12,")
 
     def test_an_assembly_with_no_targets_exports_headers_only(self, uow, admin_user, assembly):
         target = CsvExportTarget()
