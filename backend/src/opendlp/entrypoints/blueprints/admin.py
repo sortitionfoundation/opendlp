@@ -321,7 +321,8 @@ def enable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
             )
         else:
             flash(
-                _("The account is enabled, but we could not email the user. Please contact them directly."), "warning"
+                _("The account is enabled, but the email to the user could not be sent. Please contact them directly."),
+                "warning",
             )
 
         return redirect(url_for("admin.view_user", user_id=user_id))

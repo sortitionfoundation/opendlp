@@ -147,7 +147,7 @@ def start_gsheet_select_task(
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     if assembly.number_to_select < 1:
-        raise InvalidSelection(_("The assembly needs to have a non-zero number to select before we can do selection"))
+        raise InvalidSelection(_("The assembly needs to have a non-zero number to select before a selection can run"))
 
     gsheet = uow.assembly_gsheets.get_by_assembly_id(assembly_id)
     if not gsheet:
@@ -495,7 +495,7 @@ def start_db_select_task(
         raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
 
     if assembly.number_to_select < 1:
-        raise InvalidSelection(_("The assembly needs to have a non-zero number to select before we can do selection"))
+        raise InvalidSelection(_("The assembly needs to have a non-zero number to select before a selection can run"))
 
     sel_settings = _get_selection_settings(assembly)
     try:
