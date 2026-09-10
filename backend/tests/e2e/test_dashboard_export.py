@@ -170,3 +170,23 @@ class TestDashboardGSheetExportSmoke:
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assert uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly.id, GSheetExportKind.DASHBOARD) is None
+
+    def test_write_failure_without_a_service_account_email_flashes_the_generic_message(
+        self, logged_in_admin, assembly_with_gsheet, postgres_session_factory, monkeypatch
+    ):
+        assembly, _gsheet = assembly_with_gsheet
+        _seed_gender_targets(postgres_session_factory, assembly.id)
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.backoffice.get_service_account_email", lambda: "")
+
+        def failing_factory(url):
+            return FakeGSheetExportTarget(error=ExportTargetError("no access"))
+
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = failing_factory
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/dashboard/export/run",
+            data={"file_type": "gsheet"},
+            follow_redirects=True,
+        )
+
+        assert "Check the URL and sharing settings" in response.get_data(as_text=True)

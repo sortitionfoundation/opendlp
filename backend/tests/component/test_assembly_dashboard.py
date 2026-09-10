@@ -298,6 +298,22 @@ class TestTheExportButton:
         assert 'value="xlsx" disabled' in html
         assert 'value="gsheet" disabled' in html
 
+    def test_modal_requires_view_permission(self, logged_in_user, existing_assembly):
+        response = logged_in_user.get(
+            f"{_dashboard_url(existing_assembly)}/export/modal",
+            follow_redirects=True,
+        )
+
+        assert b"You don&#39;t have permission to export the dashboard" in response.data
+
+    def test_modal_of_a_missing_assembly_redirects_to_the_dashboard(self, logged_in_admin):
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{uuid.uuid4()}/dashboard/export/modal",
+            follow_redirects=True,
+        )
+
+        assert b"Assembly not found" in response.data
+
     def test_export_requires_manage_permission(self, logged_in_user, existing_assembly):
         response = logged_in_user.post(
             f"{_dashboard_url(existing_assembly)}/export/run",
