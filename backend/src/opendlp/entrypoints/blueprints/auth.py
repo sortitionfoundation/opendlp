@@ -151,7 +151,7 @@ def login() -> ResponseReturnValue:
             show_resend_confirmation = True
         except Exception as e:
             logger.exception("Login error", error=str(e))
-            flash(_("An error occurred during login. Please try again."), "error")
+            flash(_("An error occurred while signing in. Please try again."), "error")
 
     return render_template("auth/login.html", form=form, show_resend_confirmation=show_resend_confirmation)
 
@@ -164,7 +164,7 @@ def _validate_2fa_session() -> tuple[bool, str | None]:
     # Check if user has pending 2FA verification
     pending_user_id_str = session.get("pending_2fa_user_id")
     if not pending_user_id_str:
-        flash(_("No pending two-factor authentication. Please log in first."), "error")
+        flash(_("No pending two-factor authentication. Please sign in first."), "error")
         return (False, None)
 
     # Check session timeout (5 minutes)
@@ -177,14 +177,14 @@ def _validate_2fa_session() -> tuple[bool, str | None]:
             session.pop("pending_2fa_remember_me", None)
             session.pop("pending_2fa_timestamp", None)
             session.pop("pending_2fa_next", None)
-            flash(_("Two-factor authentication session expired. Please log in again."), "error")
+            flash(_("Two-factor authentication session expired. Please sign in again."), "error")
             return (False, None)
 
     # Validate UUID format
     try:
         uuid.UUID(pending_user_id_str)
     except ValueError:
-        flash(_("Invalid session. Please log in again."), "error")
+        flash(_("Invalid session. Please sign in again."), "error")
         return (False, None)
 
     return (True, pending_user_id_str)
@@ -328,7 +328,7 @@ def verify_2fa() -> ResponseReturnValue:
 def logout() -> ResponseReturnValue:
     """User logout."""
     logout_user()
-    flash(_("You have been logged out."), "info")
+    flash(_("You have been signed out."), "info")
     return redirect(url_for("main.index"))
 
 
@@ -416,7 +416,7 @@ def confirm_email(token: str) -> ResponseReturnValue:
             user = confirm_email_with_token(uow, token)
             if not sign_in(user):
                 return redirect(url_for("auth.login"))
-            flash(_("Email confirmed successfully! You can now log in."), "success")
+            flash(_("Email confirmed successfully! You can now sign in."), "success")
             return redirect(url_for(default_dashboard_endpoint()))
         except InvalidConfirmationToken as e:
             flash(str(e), "error")
@@ -541,7 +541,7 @@ def reset_password(token: str) -> ResponseReturnValue:
             with uow:
                 reset_password_with_token(uow, token, form.password.data)
 
-            flash(_("Your password has been reset successfully. You can now log in."), "success")
+            flash(_("Your password has been reset successfully. You can now sign in."), "success")
             return redirect(url_for("auth.login"))
 
         except InvalidResetToken as e:
