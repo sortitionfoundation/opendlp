@@ -623,14 +623,14 @@ def visit_registration_preview_step(page: Page, title: str, test_database):
 @then("I should see the embedded registration form preview")
 def see_embedded_form_preview(page: Page):
     """The preview step iframes the saved form, rendered through the public pipeline."""
-    frame = page.frame_locator('iframe[title="Registration form preview"]')
+    frame = page.frame_locator('iframe[title="Registration page preview"]')
     expect(frame.locator("form")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then("submitting the embedded preview form does not leave the page")
 def submitting_preview_form_does_nothing(page: Page):
     """The preview form is interactive but its submission is blocked."""
-    frame = page.frame_locator('iframe[title="Registration form preview"]')
+    frame = page.frame_locator('iframe[title="Registration page preview"]')
     # Interactions work: pick a dropdown option before trying to submit.
     frame.locator('select[name="colour"]').select_option("Blue")
     frame.locator('form button[type="submit"]').click()

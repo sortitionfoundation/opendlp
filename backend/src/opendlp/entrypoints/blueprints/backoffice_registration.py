@@ -418,20 +418,20 @@ def _handle_registration_action(
     if action == "publish":
         if page.status == RegistrationPageStatus.TEST:
             publish_registration_page(uow, user_id, page.id)
-            return _("Registration form published successfully")
-        return _("Registration form HTML updated successfully")
+            return _("Registration page published successfully")
+        return _("Registration page HTML updated successfully")
     if action == "unpublish":
         unpublish_registration_page(uow, user_id, page.id)
-        return _("Registration form unpublished")
+        return _("Registration page unpublished")
     if action == "close":
         close_registration_page(uow, user_id, page.id)
-        return _("Registration form closed")
+        return _("Registration page closed")
     if action == "reopen":
         reopen_registration_page(uow, user_id, page.id)
-        return _("Registration form reopened")
+        return _("Registration page reopened")
     if page.status == RegistrationPageStatus.PUBLISHED:
-        return _("Registration form saved and republished")
-    return _("Registration form saved")
+        return _("Registration page saved and republished")
+    return _("Registration page saved")
 
 
 _SAVE_ACTIONS = frozenset({"save", "save_and_next"})
