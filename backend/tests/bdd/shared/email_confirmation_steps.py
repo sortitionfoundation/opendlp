@@ -16,7 +16,6 @@ from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user, find_or_create_oauth_user
 from tests.bdd.config import FRESH_PASSWORD, Urls
-from tests.bdd.helpers import wait_for_page_with_text
 
 NEWUSER_EMAIL = "newuser@example.com"
 
@@ -155,7 +154,8 @@ def _(page: Page):
     # (We can't simulate full OAuth login flow in BDD tests)
     if not page.url.endswith("/auth/register"):
         expect(page).to_have_url(Urls.any_dashboard)
-        wait_for_page_with_text(page, "Your Assemblies")
+        # The header link says "Your Assemblies" too, so wait for the heading
+        expect(page.get_by_role("heading", name="Your Assemblies")).to_be_visible()
 
 
 @given("the user has registered and confirmed their email")

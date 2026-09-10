@@ -5,7 +5,7 @@
         <ol class="govuk-breadcrumbs__list">
             <li class="govuk-breadcrumbs__list-item">
                 <a class="govuk-breadcrumbs__link"
-                   href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
+                   href="{{ url_for('main.dashboard') }}">{{ _("Your Assemblies") }}</a>
             </li>
             {% if current_tab == 'details' and current_page == 'view_assembly' %}
                 <li class="govuk-breadcrumbs__list-item">{{ _("Assembly") }}: {{ assembly.title }}</li>
@@ -72,11 +72,11 @@
         </nav>
         {# Page-specific content #}
         {% block assembly_content %}{% endblock %}
-        {# Footer with Back to Dashboard button #}
+        {# Footer with Back to Your Assemblies button #}
         <hr class="govuk-section-break govuk-section-break--visible govuk-!-margin-top-6">
         <div class="govuk-button-group govuk-!-margin-top-6">
             <a href="{{ url_for('main.dashboard') }}"
-               class="govuk-button govuk-button--secondary">{{ _("Back to Dashboard") }}</a>
+               class="govuk-button govuk-button--secondary">{{ _("Back to Your Assemblies") }}</a>
         </div>
     </div>
 {% endblock %}

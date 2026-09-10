@@ -5,7 +5,6 @@ from pytest_bdd import given, then, when
 from sqlalchemy.orm import sessionmaker
 
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
-from tests.bdd.helpers import wait_for_page_with_text
 
 from ..config import ADMIN_EMAIL, ADMIN_PASSWORD, FRESH_PASSWORD, Urls
 
@@ -133,7 +132,8 @@ def _(page: Page, test_database: sessionmaker):
         page.click('button[type="submit"]')
 
     # Now user should be on dashboard
-    wait_for_page_with_text(page, "Your Assemblies")
+    # The header link says "Your Assemblies" too, so wait for the heading
+    expect(page.get_by_role("heading", name="Your Assemblies")).to_be_visible()
 
 
 @then("the user should see the default view for an authorised user")
