@@ -6,11 +6,11 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
 {% from "backoffice/components/card.html" import card, link_card %}
 {% from "backoffice/components/button.html" import button %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}{{ _("Dashboard") }}{% endblock %}
 
 {% block page_content %}
-    <h1 style="color: var(--color-headings);" class="text-display-lg mb-2">Dashboard</h1>
-    <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">Welcome back, {{ current_user.display_name }}!</p>
+    <h1 style="color: var(--color-headings);" class="text-display-lg mb-2">{{ _("Dashboard") }}</h1>
+    <p style="color: var(--color-secondary-text);" class="text-body-lg mb-8">{{ _("Welcome back, %(name)s!", name=current_user.display_name) }}</p>
 
     <!-- Assemblies Section -->
     <section>
@@ -24,7 +24,7 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
         {% if assemblies %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {% for assembly in assemblies %}
-                    {% call link_card(href=url_for('backoffice.view_assembly', assembly_id=assembly.id), title=assembly.title, subtitle="Created: " ~ (assembly.created_at|dateformat('medium')), id="assembly-" ~ assembly.id, classes="assembly-card") %}
+                    {% call link_card(href=url_for('backoffice.view_assembly', assembly_id=assembly.id), title=assembly.title, subtitle=_("Created: %(date)s", date=assembly.created_at|dateformat('medium')), id="assembly-" ~ assembly.id, classes="assembly-card") %}
                         {% if assembly.question %}
                             <p style="color: var(--color-body-text);" class="text-body-md mb-4">
                                 {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}…{% endif %}
@@ -32,7 +32,7 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
                         {% endif %}
                         {% if assembly.first_assembly_date %}
                             <p style="color: var(--color-secondary-text);" class="text-body-sm">
-                                Starts: {{ assembly.first_assembly_date|dateformat('medium') }}
+                                {{ _("Starts: %(date)s", date=assembly.first_assembly_date|dateformat('medium')) }}
                             </p>
                         {% endif %}
                     {% endcall %}
