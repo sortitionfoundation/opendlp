@@ -125,8 +125,8 @@ roles and must not read as synonyms. *(C14)*
 
 | English | Hungarian | |
 | --- | --- | --- |
-| spreadsheet | (Google) Táblázat | |
-| tab (in a spreadsheet) | munkalap | *(B10)* |
+| spreadsheet | (Google) Táblázat | *(G36)* |
+| tab (in a spreadsheet) | munkalap | *(B10, G36)* |
 | cancel (button) | Mégse | |
 | URL slug | URL-azonosító | |
 | 2FA / two-factor authentication | kétlépcsős azonosítás | |
@@ -142,6 +142,17 @@ megszakítva".
 users will have both screens open side by side. Not *lapfül*, in compounds
 either: *Munkalapkezelés* and *Munkalaplista*, not *Lapfülkezelés* and
 *Lapfüllista*. A term sweep that matches whole words will miss those. *(B10)*
+
+**The two words stay apart.** A tab is a bare *munkalap*; the spreadsheet is
+*Google Táblázat*, the name the localised Google UI itself uses. Don't coin
+"GS", don't rename *Google Táblázat* to *Google Sheets*, and don't prefix
+standalone tab labels with the product — write "Jelentkezők munkalapja", not
+"Jelentkezők Google Sheets munkalapja". Name the sheet only where the English
+names it, as in "A **Google Táblázatban** a regisztráltak adatait tartalmazó
+**munkalap** neve". The reason is that every screen mentioning a tab already
+says *Google Táblázat* in its heading or hint, so a prefix repeats context the
+reader has, 14 characters at a time, in the table headings and buttons with
+least room for it. *(G36)*
 
 **dashboard** is *Vezérlőpult*, but under protest: neither page in this app is a
 dashboard in the original sense. One is the **közösségi gyűlések listája** and
@@ -263,12 +274,11 @@ without checking it against the English.
 1. **Two English strings that are badly worded** — `Not in targets`, and the pair
    `Reset %(count)s respondents to Pool status` / `Reset all respondents to
    Pool`. Fix the English first, then both languages at once. *(F35)*
-2. **Naming the Google Sheet** — the reviewer proposed the short form **`GS
-   munkalap`** to tie *munkalap* back to Google Sheets, and when asked expanded
-   it to "Google Sheets munkalap". What that means for the strings is still
-   open: the catalogue calls the spreadsheet **Google Táblázat** (the localised
-   Sheets name) in 62 entries and uses bare *munkalap* for a tab, and the
-   expansion could mean keeping that, renaming *Google Táblázat* to *Google
-   Sheets* throughout, or prefixing every standalone tab label — which would
-   lose the brevity the "GS" form was after. Asked in full as question G36;
-   nothing changed pending an answer. *munkalap* itself is settled. *(B10, G36)*
+2. **The English cannot decide what to call a Google Sheet** — the source says
+   `Google Spreadsheet` 38 times, `Google Sheets` 11, `Google Sheet` 7, plus two
+   lowercase variants, and once manages two of them in a single string: "A
+   Google Sheet URL is required to export to Google Sheets". The Hungarian is
+   settled (see **Interface** above) and is more consistent than its source,
+   which is the wrong way round. Pick one English form and reword the rest —
+   but note that rewording a msgid discards its translation in every language,
+   so this is worth doing as one deliberate pass, not incidentally. *(G36)*

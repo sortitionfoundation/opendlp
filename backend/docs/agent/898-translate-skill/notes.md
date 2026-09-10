@@ -309,16 +309,17 @@ kérdés" became "fő téma" so the label and its hint agree on what the field
 holds. The label was non-fuzzy and stays non-fuzzy — the change came *from* the
 reviewer, so it is more reviewed than it was.
 
-**B10's "GS munkalap" is still open.** The reviewer expanded it to "Google Sheets
-munkalap", which settles the coinage but not the strings: the catalogue names
-the spreadsheet **Google Táblázat** — the localised Sheets name — in 62 entries,
-and uses bare *munkalap* for a tab (73 entries, only 9 of which name Google at
-all). The expansion could mean leaving that alone, renaming *Google Táblázat* to
-*Google Sheets* throughout, or prefixing every standalone tab label ("Jelentkezők
-Google Sheets munkalapja"), which would undo the brevity the "GS" form was
-reaching for. Asked back as **G36** at the foot of `hu-review-questions.md`,
-with the three readings spelled out and the case endings each would need;
-nothing moved in the catalogue.
+**B10's "GS munkalap" did not settle.** The reviewer expanded it to "Google
+Sheets munkalap", which settles the coinage but not the strings: the catalogue
+names the spreadsheet **Google Táblázat** — the localised Sheets name — in 62
+entries, and uses bare *munkalap* for a tab (73 entries, only 9 of which name
+Google at all). The expansion could mean leaving that alone, renaming *Google
+Táblázat* to *Google Sheets* throughout, or prefixing every standalone tab label
+("Jelentkezők Google Sheets munkalapja"), which would undo the brevity the "GS"
+form was reaching for. Asked back as **G36** at the foot of
+`hu-review-questions.md`, with the three readings spelled out and the case
+endings each would need; nothing moved in the catalogue. Answered the next day —
+see §9.
 
 G36 also puts the English back to us: the source calls the same thing `Google
 Spreadsheet` (38), `Google Sheets` (11), `Google Sheet` (7) and two lowercase
@@ -333,7 +334,38 @@ compounds ("Lapfülkezelés", "Lapfüllista"). Now *Munkalapkezelés* and
 compounds, which is the same lesson as `Respondents Tab`'s "lapful" typo in §7.
 
 **F35 is still unanswered** — it is a source-English question, not a Hungarian
-one, and needs someone who knows where the strings appear.
+one, and needs someone who knows where the strings appear. G36's English half is
+the same shape, and the two are probably one job.
+
+## 9. G36 answered: the Google Sheet naming stays as it is (2026-09-10)
+
+Option 1 of the three: **leave the strings alone.** The "Google Sheets munkalap"
+expansion was telling us what "GS" stood for, not asking for a change. So the
+spreadsheet stays **Google Táblázat** — the name the localised Google UI itself
+uses — a tab stays a bare *munkalap*, and the sheet is named only where the
+English names it ("A **Google Táblázatban** a regisztráltak adatait tartalmazó
+**munkalap** neve").
+
+Nothing moved in the catalogue, and nothing needed to. Verified rather than
+assumed: 59 entries carry *Google Táblázat*, no msgstr says "Google Sheets", no
+"GS", and *lapfül* is gone including the compounds. The decision is recorded in
+`translations/styleguide-hu.md` under **Interface**, where a later run will look
+for it.
+
+Worth keeping the argument against option 3, the prefixed form, since it is the
+one that looks most helpful: every screen that mentions a tab already says
+*Google Táblázat* in its heading or hint text, so prefixing every standalone
+label repeats context the reader already has — 14 characters at a time, in
+exactly the table headings and buttons with the least room for it.
+
+**What is still open is the English.** The source calls the same thing `Google
+Spreadsheet` (38), `Google Sheets` (11), `Google Sheet` (7) and two lowercase
+variants, once managing two in a single string: "A Google Sheet URL is required
+to export to Google Sheets". The Hungarian is now more consistent than the
+English it translates, which is the wrong way round. Settling it means rewording
+msgids, and a reworded msgid discards its translation in every language, so it
+wants one deliberate pass — the same shape of job as F35, and probably the same
+job.
 
 ## Files in this directory
 
@@ -431,9 +463,10 @@ library path from `translate-regen` is a build failure rather than 104 silently
 discarded translations. Verified by stripping the occurrences from a copy of the
 POT and watching it exit 1.
 
-**Not done, deliberately.** F28 (`Assembly Question`: "fő témája" or "kérdése"?)
-and F35 (two badly worded English strings) came back unanswered and need a
-person who knows where the strings appear. `tests/unit/test_error_translation.py`
+**Not done, deliberately.** F35 (two badly worded English strings) and G36's
+English half (the source names a Google Sheet four different ways) came back
+unanswered and need a person who knows where the strings appear. F28
+(`Assembly Question`: "fő témája" or "kérdése"?) has since been answered. `tests/unit/test_error_translation.py`
 still mocks gettext with stale key-based keys, so it passes for the wrong reason
 — flagged in §2 as adjacent, and still adjacent.
 

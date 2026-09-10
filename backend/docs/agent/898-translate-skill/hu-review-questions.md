@@ -19,7 +19,9 @@ in the catalogue hang off it.
   question is really "the English is unclear", say so — that is a bug in the
   source, and worth more than a translation fix.
 - **G36** at the foot was added on 2026-09-09, after the first round of answers
-  came back. It is the only one that still needs a decision, along with F35.
+  came back. Its Hungarian half is answered (2026-09-10: leave the strings
+  alone); what is still open is F35, and the question G36 raises about the
+  *English* source naming the product four different ways.
 
 Counts below are entries **in this run**, from `grep`-style counts over the
 translated strings. They are indicative, not exact.
@@ -794,7 +796,7 @@ and the sheet gets named only where the English names it:
 
 **The three things "Google Sheets munkalap" could mean.** Please pick one.
 
-- [ ] **1. Leave the strings as they are.** You were expanding the "GS" for us,
+- [x] **1. Leave the strings as they are.** You were expanding the "GS" for us,
       not asking for a change: don't coin "GS", keep *Google Táblázat* as the
       product name, keep bare *munkalap* for a tab. Nothing to do.
 
@@ -820,6 +822,16 @@ and the sheet gets named only where the English names it:
 - [ ] **Something else:**
 
 **Answer:**
+Option 1. Nothing to do — verified against the catalogue on 2026-09-10: 59
+entries carry *Google Táblázat*, no msgstr says "Google Sheets", no "GS", and
+*lapfül* is gone. So *Google Táblázat* stays the product name and a tab stays a
+bare *munkalap*, named against the sheet only where the English names it.
+
+Worth recording why, since option 3 is the one that looks most helpful: the
+sheet is only ever mentioned on screens that already say *Google Táblázat* in
+their heading or hint text, so prefixing every tab label would repeat context
+the reader already has, at 14 characters a time, in exactly the table headings
+and buttons that have least room for it.
 
 **And one more thing, which is a bug in the English rather than in the
 Hungarian.** The source itself cannot decide what to call this thing: it says
