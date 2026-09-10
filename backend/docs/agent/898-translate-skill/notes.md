@@ -341,6 +341,10 @@ one, and needs someone who knows where the strings appear.
   each standing in for a whole class of entries. Start here for review. The
   decisions they are asking about are recorded in `translations/styleguide-hu.md`,
   which is where the answers should land.
+- `enum-values-rendered-raw.md` — a ticket. Templates that render an `Enum`
+  member's `.value` put a string on the page that Babel never extracts, so it
+  stays English in every language. `AssemblyStatus` is fixed; `AssemblyRole`,
+  `SelectionRunStatus`, `RespondentSourceType` and `SelectionTaskType` are not.
 - `duplicate-msgids.txt` — the 80 duplicated msgids (§1). Historical record;
   they are all resolved, so nothing regenerates this list.
 - `chunk.py` — prints a slice of a frozen `gettext-auto scan` JSON snapshot as
