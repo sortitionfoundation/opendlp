@@ -394,7 +394,7 @@ class TestBackofficeGSheetDelete:
         assembly, _ = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
         assert response.status_code == 200
-        assert b"Delete" in response.data
+        assert b"Remove" in response.data
         assert b"gsheet/delete" in response.data
 
     def test_delete_button_shown_in_edit_mode(
@@ -404,7 +404,7 @@ class TestBackofficeGSheetDelete:
         assembly, _ = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
         assert response.status_code == 200
-        assert b"Delete" in response.data
+        assert b"Remove" in response.data
         assert b"gsheet/delete" in response.data
 
     def test_delete_button_not_shown_in_new_mode(

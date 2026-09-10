@@ -101,7 +101,7 @@ Feature: Backoffice Assembly Google Sheets Configuration
     And there is an assembly called "GSheet Delete Assembly"
     And the assembly "GSheet Delete Assembly" has a gsheet configuration
     When I visit the assembly data page for "GSheet Delete Assembly" with source "gsheet"
-    And I click the "Delete" button and confirm
+    And I click the "Remove" button and confirm
     Then I should see "removed successfully"
     And the data source selector should be enabled
 
@@ -110,6 +110,6 @@ Feature: Backoffice Assembly Google Sheets Configuration
     And there is an assembly called "GSheet Unlock Assembly"
     And the assembly "GSheet Unlock Assembly" has a gsheet configuration
     When I visit the assembly data page for "GSheet Unlock Assembly" with source "gsheet"
-    And I click the "Delete" button and confirm
+    And I click the "Remove" button and confirm
     Then the data source selector should be enabled
     And I should see "Select Data Source"

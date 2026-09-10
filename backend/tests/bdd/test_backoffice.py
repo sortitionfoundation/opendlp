@@ -1378,14 +1378,14 @@ def uncheck_checkbox(page: Page, label: str):
             checkbox_by_name.uncheck()
 
 
-@when('I click the "Delete" button and confirm')
-def click_delete_and_confirm(page: Page):
-    """Click the Delete button and confirm the dialog."""
+@when('I click the "Remove" button and confirm')
+def click_remove_and_confirm(page: Page):
+    """Click the Remove button and confirm the dialog."""
     # Set up dialog handler before clicking
     page.on("dialog", lambda dialog: dialog.accept())
-    # Find and click the delete button
-    delete_button = page.locator("button", has_text="Delete").first
-    delete_button.click()
+    # Find and click the remove button
+    remove_button = page.locator("button", has_text="Remove").first
+    remove_button.click()
     page.wait_for_load_state("networkidle")
 
 

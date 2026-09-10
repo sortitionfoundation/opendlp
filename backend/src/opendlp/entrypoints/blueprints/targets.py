@@ -241,7 +241,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id=assembly_id,
             )
 
-        flash(_("Targets deleted: %(count)d categories removed", count=count), "success")
+        flash(_("Targets deleted: %(count)d", count=count), "success")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )

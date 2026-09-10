@@ -365,7 +365,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id=assembly_id,
             )
 
-        flash(_("Respondents deleted: %(count)d removed", count=count), "success")
+        flash(_("Respondents deleted: %(count)d", count=count), "success")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )
