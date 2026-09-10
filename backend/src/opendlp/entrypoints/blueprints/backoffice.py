@@ -378,8 +378,8 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the dashboard export modal fragment (HTMX-loaded).
 
-    The Google Sheet option writes a tab into the assembly's source spreadsheet,
-    so it is only offered when the assembly uses a Google Sheet data source.
+    The Google Sheets option writes a tab into the assembly's source spreadsheet,
+    so it is only offered when the assembly uses a Google Sheets data source.
     """
     dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
     try:
@@ -412,7 +412,7 @@ def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
     dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
     file_type = request.form.get("file_type", "csv")
     if file_type not in ("csv", "gsheet"):
-        flash(_("Only CSV and Google Sheet exports are available for now"), "error")
+        flash(_("Only CSV and Google Sheets exports are available for now"), "error")
         return redirect(dashboard_url)
 
     try:
@@ -460,7 +460,7 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
         assembly_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
         if assembly_gsheet is None:
             flash(
-                _("Google Sheet export is only available when the assembly uses a Google Sheet data source"),
+                _("Google Sheets export is only available when the assembly uses a Google Sheets data source"),
                 "error",
             )
             return redirect(dashboard_url)
@@ -495,7 +495,7 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
             )
         except ExportTargetError as e:
             # The sheet could not be written — typically sharing with the service
-            # account was revoked since the sheet was configured as the source.
+            # account was revoked since the spreadsheet was configured as the source.
             logger.warning(
                 "Google Sheets dashboard export failed",
                 assembly_id=str(assembly_id),
@@ -506,14 +506,14 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
             if service_account_email:
                 flash(
                     _(
-                        "Could not write to the Google Sheet. Check that the sheet still exists and "
+                        "Could not write to the spreadsheet. Check that the spreadsheet still exists and "
                         "is shared with %(email)s.",
                         email=service_account_email,
                     ),
                     "error",
                 )
             else:
-                flash(_("Could not write to the Google Sheet. Check the URL and sharing settings."), "error")
+                flash(_("Could not write to the spreadsheet. Check the URL and sharing settings."), "error")
             return redirect(dashboard_url)
 
     flash(_("Dashboard exported to Google Sheets."), "success")

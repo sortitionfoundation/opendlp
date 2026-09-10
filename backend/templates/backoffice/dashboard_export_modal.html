@@ -1,6 +1,6 @@
 {#
 ABOUTME: Export modal fragment (HTMX-loaded) for the assembly results dashboard
-ABOUTME: File type selector — CSV always; Google Sheet when the source is a sheet; Xls arrives later
+ABOUTME: File type selector — CSV always; Google Sheets when the source is a spreadsheet; Xls arrives later
 #}
 {% from "backoffice/components/modal.html" import modal %}
 {% from "backoffice/components/button.html" import button %}
@@ -37,16 +37,16 @@ ABOUTME: File type selector — CSV always; Google Sheet when the source is a sh
                 {% if assembly_gsheet %}
                     <label class="flex items-center gap-2 text-body-md">
                         <input type="radio" name="file_type" value="gsheet" x-model="fileType">
-                        {{ _("Google Sheet") }}
+                        {{ _("Google Sheets") }}
                     </label>
                 {% else %}
                     <label class="flex items-center gap-2 text-body-md" style="color: var(--color-secondary-text);">
                         <input type="radio" name="file_type" value="gsheet" disabled
                                aria-describedby="dashboard-export-gsheet-hint">
-                        {{ _("Google Sheet") }}
+                        {{ _("Google Sheets") }}
                     </label>
                     <p id="dashboard-export-gsheet-hint" class="text-body-sm" style="color: var(--color-secondary-text);">
-                        {{ _("Available when the assembly uses a Google Sheet data source.") }}
+                        {{ _("Available when the assembly uses a Google Sheets data source.") }}
                     </p>
                 {% endif %}
             </fieldset>

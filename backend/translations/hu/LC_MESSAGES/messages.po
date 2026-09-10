@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-10 17:27+0200\n"
+"POT-Creation-Date: 2026-09-10 17:32+0200\n"
 "PO-Revision-Date: 2026-09-10 14:24+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1470,13 +1470,13 @@ msgstr "Nincs jogosultságod az irányítópult exportálásához"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:415
 #, fuzzy
-msgid "Only CSV and Google Sheet exports are available for now"
+msgid "Only CSV and Google Sheets exports are available for now"
 msgstr "Jelenleg csak CSV exportálás érhető el"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:463
 msgid ""
-"Google Sheet export is only available when the assembly uses a Google "
-"Sheet data source"
+"Google Sheets export is only available when the assembly uses a Google "
+"Sheets data source"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:477
@@ -1489,15 +1489,15 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/backoffice.py:509
 #, fuzzy, python-format
 msgid ""
-"Could not write to the Google Sheet. Check that the sheet still exists "
-"and is shared with %(email)s."
+"Could not write to the spreadsheet. Check that the spreadsheet still "
+"exists and is shared with %(email)s."
 msgstr ""
 "Nem sikerült írni a Google Táblázatba. Ellenőrizd, hogy az URL helyes-e, "
 "és hogy a táblázat meg van-e osztva a következővel: %(email)s."
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:516
-#, fuzzy
-msgid "Could not write to the Google Sheet. Check the URL and sharing settings."
+#: src/opendlp/entrypoints/blueprints/respondents.py:579
+msgid "Could not write to the spreadsheet. Check the URL and sharing settings."
 msgstr ""
 "Nem sikerült írni a Google Táblázatba. Ellenőrizd az URL-t és a "
 "megosztási beállításokat."
@@ -2575,12 +2575,6 @@ msgid ""
 msgstr ""
 "Nem sikerült írni a Google Táblázatba. Ellenőrizd, hogy az URL helyes-e, "
 "és hogy a táblázat meg van-e osztva a következővel: %(email)s."
-
-#: src/opendlp/entrypoints/blueprints/respondents.py:579
-msgid "Could not write to the spreadsheet. Check the URL and sharing settings."
-msgstr ""
-"Nem sikerült írni a Google Táblázatba. Ellenőrizd az URL-t és a "
-"megosztási beállításokat."
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:584
 msgid "Respondents exported to Google Sheets"
@@ -3784,7 +3778,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/assembly_view_respondent.html:302
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:87
-#: templates/backoffice/dashboard_export_modal.html:69
+#: templates/backoffice/dashboard_export_modal.html:70
 #: templates/backoffice/registration/_assets.html:243
 #: templates/backoffice/registration/_assets.html:299
 #: templates/backoffice/registration/_step_email.html:92
@@ -4633,7 +4627,7 @@ msgstr "Táblázat"
 #: templates/backoffice/assembly_dashboard.html:72
 #: templates/backoffice/assembly_respondents.html:117
 #: templates/backoffice/dashboard_export_modal.html:14
-#: templates/backoffice/dashboard_export_modal.html:70
+#: templates/backoffice/dashboard_export_modal.html:71
 #: templates/backoffice/respondents/export_modal.html:78
 msgid "Export"
 msgstr "Exportálás"
@@ -4656,6 +4650,8 @@ msgid "Data"
 msgstr "Adatok"
 
 #: templates/backoffice/assembly_data.html:41
+#: templates/backoffice/dashboard_export_modal.html:40
+#: templates/backoffice/dashboard_export_modal.html:46
 #: templates/backoffice/respondents/export_modal.html:32
 #: templates/main/view_assembly_data.html:4
 msgid "Google Sheets"
@@ -5835,17 +5831,11 @@ msgstr "CSV"
 msgid "Xls"
 msgstr "Xls"
 
-#: templates/backoffice/dashboard_export_modal.html:40
-#: templates/backoffice/dashboard_export_modal.html:45
-#, fuzzy
-msgid "Google Sheet"
-msgstr "Google Táblázat"
-
-#: templates/backoffice/dashboard_export_modal.html:48
-msgid "Available when the assembly uses a Google Sheet data source."
+#: templates/backoffice/dashboard_export_modal.html:49
+msgid "Available when the assembly uses a Google Sheets data source."
 msgstr ""
 
-#: templates/backoffice/dashboard_export_modal.html:55
+#: templates/backoffice/dashboard_export_modal.html:56
 #, fuzzy
 msgid ""
 "This writes into the assembly's source spreadsheet. Any existing data in "
@@ -5854,7 +5844,7 @@ msgstr ""
 "Ez felülírja a kiválasztott munkalap minden meglévő adatát. A táblázat "
 "többi munkalapján lévő adatok érintetlenül maradnak."
 
-#: templates/backoffice/dashboard_export_modal.html:58
+#: templates/backoffice/dashboard_export_modal.html:59
 #, fuzzy
 msgid "Worksheet / tab name"
 msgstr "Célszámok munkalap neve"

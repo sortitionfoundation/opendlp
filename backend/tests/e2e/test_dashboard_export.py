@@ -111,7 +111,7 @@ class TestDashboardGSheetExportSmoke:
         assert captured and captured[0][0] == gsheet.url
         (title, table) = captured[0][1].writes[0]
         assert title == "Results"
-        assert "Category" in table.headers
+        assert "Target" in table.headers
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly.id, GSheetExportKind.DASHBOARD)
@@ -130,7 +130,7 @@ class TestDashboardGSheetExportSmoke:
             follow_redirects=True,
         )
 
-        assert "Google Sheet export is only available" in response.get_data(as_text=True)
+        assert "Google Sheets export is only available" in response.get_data(as_text=True)
         assert not captured
 
     def test_export_refuses_to_overwrite_a_source_tab(self, logged_in_admin, assembly_with_gsheet):
@@ -166,7 +166,7 @@ class TestDashboardGSheetExportSmoke:
             follow_redirects=True,
         )
 
-        assert "Could not write to the Google Sheet" in response.get_data(as_text=True)
+        assert "Could not write to the spreadsheet" in response.get_data(as_text=True)
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assert uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly.id, GSheetExportKind.DASHBOARD) is None
