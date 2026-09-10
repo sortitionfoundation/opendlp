@@ -59,7 +59,7 @@ ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the exp
                 </div>
                 <div class="flex flex-col gap-1">
                     <label for="export-tab" class="text-body-md font-medium" style="color: var(--color-headings);">
-                        {{ _("Worksheet / tab name") }}
+                        {{ _("Tab name") }}
                     </label>
                     <input id="export-tab" type="text" name="worksheet_name"
                            value="{{ gsheet_config.worksheet_name if gsheet_config else _('Respondents') }}"
