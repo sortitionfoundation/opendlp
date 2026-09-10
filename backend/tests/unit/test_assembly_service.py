@@ -695,6 +695,22 @@ class TestAssemblyGSheetOperations:
                 user_id=regular_user.id,
             )
 
+    def test_reserved_tab_names_cover_every_selection_tab(self):
+        """The tabs the selection process reads or writes, including customised names."""
+        gsheet = AssemblyGSheet(
+            assembly_id=uuid.uuid4(),
+            url=VALID_GSHEET_URL,
+            select_registrants_tab="My Respondents",
+        )
+
+        assert gsheet.reserved_tab_names() == {
+            "My Respondents",
+            "Categories",
+            "Remaining",
+            "Replacement Categories",
+            "Selected",
+        }
+
 
 class TestSelectionSettingsDomainModel:
     """Test SelectionSettings domain model functionality used in assembly service context."""

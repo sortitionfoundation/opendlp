@@ -1,17 +1,21 @@
 {#
 ABOUTME: Export modal fragment (HTMX-loaded) for the assembly results dashboard
-ABOUTME: File type selector — CSV enabled; Xls and Google Sheets arrive in later iterations
+ABOUTME: File type selector — CSV always; Google Sheets when the source is a spreadsheet; Xls arrives later
 #}
 {% from "backoffice/components/modal.html" import modal %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/alert.html" import alert %}
 
 {# The shared modal() component supplies the isOpen/canClose/close/closeIfAllowed
-   contract the modal() macro expects (see the respondents export modal). #}
+   contract the modal() macro expects (see the respondents export modal). The
+   CSV-vs-gsheet toggle lives in a nested data-only scope, as the CSP Alpine
+   build does not register methods defined inline in an x-data object literal. #}
 <div x-data="modal({ initialOpen: true })">
     {% call modal(id="dashboard-export-modal", title=_("Export")) %}
         <form method="post"
               action="{{ url_for('backoffice.run_dashboard_export', assembly_id=assembly_id) }}"
-              class="flex flex-col gap-4">
+              class="flex flex-col gap-4"
+              x-data="{ fileType: 'csv' }">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <p class="text-body-sm" style="color: var(--color-secondary-text);">
@@ -23,18 +27,44 @@ ABOUTME: File type selector — CSV enabled; Xls and Google Sheets arrive in lat
                     {{ _("File type") }}
                 </legend>
                 <label class="flex items-center gap-2 text-body-md">
-                    <input type="radio" name="file_type" value="csv" checked>
+                    <input type="radio" name="file_type" value="csv" x-model="fileType" checked>
                     {{ _("CSV") }}
                 </label>
                 <label class="flex items-center gap-2 text-body-md" style="color: var(--color-secondary-text);">
                     <input type="radio" name="file_type" value="xlsx" disabled>
                     {{ _("Xls") }}
                 </label>
-                <label class="flex items-center gap-2 text-body-md" style="color: var(--color-secondary-text);">
-                    <input type="radio" name="file_type" value="gsheet" disabled>
-                    {{ _("Google Sheets") }}
-                </label>
+                {% if assembly_gsheet %}
+                    <label class="flex items-center gap-2 text-body-md">
+                        <input type="radio" name="file_type" value="gsheet" x-model="fileType">
+                        {{ _("Google Sheets") }}
+                    </label>
+                {% else %}
+                    <label class="flex items-center gap-2 text-body-md" style="color: var(--color-secondary-text);">
+                        <input type="radio" name="file_type" value="gsheet" disabled
+                               aria-describedby="dashboard-export-gsheet-hint">
+                        {{ _("Google Sheets") }}
+                    </label>
+                    <p id="dashboard-export-gsheet-hint" class="text-body-sm" style="color: var(--color-secondary-text);">
+                        {{ _("Available when the assembly uses a Google Sheets data source.") }}
+                    </p>
+                {% endif %}
             </fieldset>
+
+            {% if assembly_gsheet %}
+                <div x-show="fileType === 'gsheet'" x-cloak class="flex flex-col gap-3">
+                    {{ alert(_("This writes into the assembly's source spreadsheet. Any existing data in the chosen tab is overwritten; other tabs are left untouched."), variant="warning", floating=true) }}
+                    <div class="flex flex-col gap-1">
+                        <label for="dashboard-export-tab" class="text-body-md font-medium" style="color: var(--color-headings);">
+                            {{ _("Worksheet / tab name") }}
+                        </label>
+                        <input id="dashboard-export-tab" type="text" name="worksheet_name"
+                               value="{{ worksheet_name }}"
+                               class="px-3 py-2 rounded-lg text-body-md"
+                               style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
+                    </div>
+                </div>
+            {% endif %}
 
             <div class="flex justify-end gap-2 pt-2">
                 {{ button(_("Cancel"), variant="secondary", attrs='@click="close()"') }}

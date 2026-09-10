@@ -9,13 +9,15 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.adapters.tabular_export import CsvExportTarget
+from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
-from opendlp.domain.value_objects import AssemblyRole
+from opendlp.domain.assembly_export_gsheet import default_worksheet_name
+from opendlp.domain.value_objects import AssemblyRole, GSheetExportKind
 from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     short_url,
 )
+from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_create_assembly
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
@@ -30,6 +32,7 @@ from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
     get_assembly_creator_name,
+    get_assembly_gsheet,
     get_assembly_nav_context,
     get_assembly_with_permissions,
     get_or_create_csv_config,
@@ -40,8 +43,10 @@ from opendlp.service_layer.dashboard_stats import (
     CategoryValueRow,
     DashboardReport,
     export_dashboard_report,
+    export_dashboard_report_to_gsheet,
     get_assembly_dashboard_report,
     get_assembly_dashboard_summary,
+    get_dashboard_gsheet_config,
 )
 from opendlp.service_layer.exceptions import (
     CannotRemoveLastAssemblyManager,
@@ -373,26 +378,50 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the dashboard export modal fragment (HTMX-loaded).
 
-    Needs no server data while CSV is the only enabled file type, but stays a
-    fragment route so later iterations can preload e.g. the saved Google Sheet
-    config, matching the respondents export modal.
+    The Google Sheets option writes a tab into the assembly's source spreadsheet,
+    so it is only offered when the assembly uses a Google Sheets data source.
     """
-    return render_template("backoffice/dashboard_export_modal.html", assembly_id=assembly_id), 200
+    dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            assembly_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+            gsheet_config = get_dashboard_gsheet_config(uow, current_user.id, assembly_id)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to export the dashboard"), "error")
+        return redirect(dashboard_url)
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    worksheet_name = (
+        gsheet_config.worksheet_name if gsheet_config else default_worksheet_name(GSheetExportKind.DASHBOARD)
+    )
+    return render_template(
+        "backoffice/dashboard_export_modal.html",
+        assembly_id=assembly_id,
+        assembly_gsheet=assembly_gsheet,
+        worksheet_name=worksheet_name,
+    ), 200
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/run", methods=["POST"])
 @login_required
 def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Run a dashboard export from the modal. CSV download only in this iteration."""
+    """Run a dashboard export from the modal: CSV download or Google Sheets write."""
     dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
-    if request.form.get("file_type", "csv") != "csv":
-        flash(_("Only CSV export is available for now"), "error")
+    file_type = request.form.get("file_type", "csv")
+    if file_type not in ("csv", "gsheet"):
+        flash(_("Only CSV and Google Sheets exports are available for now"), "error")
         return redirect(dashboard_url)
 
-    # Built inline rather than injected: pure in-memory work, no seam needed
-    # (see the respondents CSV export for the same reasoning).
-    target = CsvExportTarget()
     try:
+        if file_type == "gsheet":
+            return _run_dashboard_gsheet_export(assembly_id, dashboard_url)
+        # The CSV target is built inline rather than injected: pure in-memory work,
+        # no seam needed. The Google Sheets target is injected via an app factory
+        # instead (see _run_dashboard_gsheet_export and the respondents export).
+        target = CsvExportTarget()
         uow = bootstrap.get_flask_uow()
         with uow:
             export_dashboard_report(uow, current_user.id, assembly_id, target=target)
@@ -416,6 +445,79 @@ def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
         mimetype="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> ResponseReturnValue:
+    """Export the dashboard as a tab of the assembly's source spreadsheet.
+
+    The destination is always the source spreadsheet, not a caller-supplied URL:
+    the export exists as the Sheets-flavoured counterpart of the CSV download for
+    assemblies whose data already lives in a sheet. Permission and not-found
+    errors propagate to the caller's handlers.
+    """
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        assembly_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+        if assembly_gsheet is None:
+            flash(
+                _("Google Sheets export is only available when the assembly uses a Google Sheets data source"),
+                "error",
+            )
+            return redirect(dashboard_url)
+
+        worksheet_name = request.form.get("worksheet_name", "").strip() or default_worksheet_name(
+            GSheetExportKind.DASHBOARD
+        )
+        # Writing clears an existing tab of that name, and the selection tabs
+        # hold the assembly's source data. Sheets tab names are case-insensitive,
+        # so compare accordingly.
+        reserved = {name.casefold() for name in assembly_gsheet.reserved_tab_names()}
+        if worksheet_name.casefold() in reserved:
+            flash(
+                _("The tab %(name)s holds the assembly's source data. Choose another tab name.", name=worksheet_name),
+                "error",
+            )
+            return redirect(dashboard_url)
+
+        # The Google Sheets target is injected via an app factory (registered in
+        # flask_app.py, overridable in tests) because writing to it calls the
+        # real Google Sheets API, so tests substitute a fake.
+        factory = current_app.extensions["gsheet_export_target_factory"]
+        target = factory(assembly_gsheet.url)
+        try:
+            export_dashboard_report_to_gsheet(
+                uow,
+                current_user.id,
+                assembly_id,
+                spreadsheet_url=assembly_gsheet.url,
+                worksheet_name=worksheet_name,
+                target=target,
+            )
+        except ExportTargetError as e:
+            # The sheet could not be written — typically sharing with the service
+            # account was revoked since the spreadsheet was configured as the source.
+            logger.warning(
+                "Google Sheets dashboard export failed",
+                assembly_id=str(assembly_id),
+                user_id=str(current_user.id),
+                error=str(e),
+            )
+            service_account_email = get_service_account_email()
+            if service_account_email:
+                flash(
+                    _(
+                        "Could not write to the spreadsheet. Check that the spreadsheet still exists and "
+                        "is shared with %(email)s.",
+                        email=service_account_email,
+                    ),
+                    "error",
+                )
+            else:
+                flash(_("Could not write to the spreadsheet. Check the URL and sharing settings."), "error")
+            return redirect(dashboard_url)
+
+    flash(_("Dashboard exported to Google Sheets."), "success")
+    return redirect(dashboard_url)
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/edit", methods=["GET", "POST"])

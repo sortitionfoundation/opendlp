@@ -249,6 +249,16 @@ class AssemblyGSheet:
     def registrants_tab(self, for_replacements: bool = False) -> str:
         return self.replace_registrants_tab if for_replacements else self.select_registrants_tab
 
+    def reserved_tab_names(self) -> set[str]:
+        """Tabs the selection process reads or writes; an export must not clear them."""
+        return {
+            self.select_registrants_tab,
+            self.select_targets_tab,
+            self.replace_registrants_tab,
+            self.replace_targets_tab,
+            self.already_selected_tab,
+        }
+
     def targets_tab(self, for_replacements: bool = False) -> str:
         return self.replace_targets_tab if for_replacements else self.select_targets_tab
 
