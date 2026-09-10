@@ -140,7 +140,7 @@ def _run_csv_import(
         if len(errors) > _MAX_FLASH_ERROR_LINES:
             lines.append(
                 _(
-                    "... and %(count)d more (see the server logs for the full list)",
+                    "… and %(count)d more (see the server logs for the full list)",
                     count=len(errors) - _MAX_FLASH_ERROR_LINES,
                 )
             )

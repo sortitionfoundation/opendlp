@@ -18,7 +18,7 @@ htmx_poll_url=htmx_poll_url
 {{ status_badge(manage_tabs_run_record.status.value, _("Status:") ) }}
     {# Spinner for pending/running #}
 {% if manage_tabs_run_record.is_pending or manage_tabs_run_record.is_running %}
-    {{ spinner(_("Processing...") ) }}
+    {{ spinner(_("Processing…") ) }}
 {% endif %}
     {# Error message #}
 {% if manage_tabs_run_record.is_failed and manage_tabs_run_record.error_message %}

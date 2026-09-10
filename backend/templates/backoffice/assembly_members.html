@@ -118,7 +118,7 @@ ABOUTME: Displays team members table, with add/remove for anyone who can manage 
                         name="user_id",
                         label=add_user_form.user_id.label.text,
                         fetch_url=url_for('backoffice.search_users', assembly_id=assembly.id),
-                        placeholder=_("Type to search by email or name..."),
+                        placeholder=_("Type to search by email or name…"),
                         hint=add_user_form.user_id.description,
                         error=add_user_form.user_id.errors|join(", ") if add_user_form.user_id.errors else ""
                         ) }}

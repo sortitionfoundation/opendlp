@@ -27,7 +27,7 @@ ABOUTME: Uses base_page.html for standard layout with navigation and footer
                     {% call link_card(href=url_for('backoffice.view_assembly', assembly_id=assembly.id), title=assembly.title, subtitle="Created: " ~ (assembly.created_at|dateformat('medium')), id="assembly-" ~ assembly.id, classes="assembly-card") %}
                         {% if assembly.question %}
                             <p style="color: var(--color-body-text);" class="text-body-md mb-4">
-                                {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}...{% endif %}
+                                {{ assembly.question[:100] }}{% if assembly.question|length > 100 %}…{% endif %}
                             </p>
                         {% endif %}
                         {% if assembly.first_assembly_date %}

@@ -47,7 +47,7 @@ htmx_poll_url=htmx_poll_url
         {# PROGRESS STATE - Task is running #}
     {{ labeled_value(_("Task:") , replacement_run_record.task_type_verbose) }}
     {{ status_badge(replacement_run_record.status.value, _("Status:") ) }}
-    {{ spinner(_("Processing...") ) }}
+    {{ spinner(_("Processing…") ) }}
     {{ message_log(replacement_log_messages) }}
 {% elif show_form_with_minmax %}
         {# FORM STATE - Load task completed successfully, show Run Replacement Selection form #}
