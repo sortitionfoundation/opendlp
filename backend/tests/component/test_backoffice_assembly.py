@@ -107,6 +107,11 @@ class TestBackofficeAssemblyDetails:
         SUPPORTED_LANGUAGES, so the suite runs on config.py's default of
         en,es,fr,de and get_locale() would refuse "hu". The autouse
         _restore_shared_app_state fixture puts the config back.
+
+        If this fails with English on the page, suspect a missing .mo before
+        suspecting the catalogue: the compiled files are gitignored, so a fresh
+        checkout has none and every lookup falls back to its msgid. `just
+        translate-compile` - which every test recipe now depends on.
         """
         app.config["LANGUAGES"] = ["en", "hu"]
         response = logged_in_admin.get(

@@ -155,6 +155,20 @@ under `translations/[locale]/LC_MESSAGES/messages.po` between
 
 **Important:** The `.mo` (compiled) files must be regenerated after any `.po` file changes for translations to take effect. The application reads from `.mo` files, not `.po` files.
 
+The `.mo` files are gitignored build artefacts, so nothing that starts from a
+clean checkout has them until something builds them. Three places do, and they
+have to stay in step:
+
+- the `Dockerfile`, which compiles into the image;
+- every `just` test recipe and `just run`, which depend on `translate-compile`;
+- the CI workflows, which call `pytest` directly rather than through `just` and
+  so carry their own compile step (`.github/workflows/main.yml` and `bdd.yml`).
+
+Miss one and the symptom is not an error. Every `gettext` lookup quietly falls
+back to its msgid, so the app is monolingual English and looks fine until
+someone asserts a translated string — which is exactly how CI came to run
+without translations for as long as no test looked for one.
+
 ### Directory Structure
 
 ```
