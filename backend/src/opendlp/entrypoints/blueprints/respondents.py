@@ -328,7 +328,7 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     if request.form.get("action") == "cancel":
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
-        flash(_("Upload cancelled."), "info")
+        flash(_("Upload cancelled"), "info")
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
     try:
@@ -581,7 +581,7 @@ def _run_gsheet_export(
 
     # The direct link to the exported worksheet is saved on the export config and
     # shown next to the Respondents heading, so we no longer flash the raw URL.
-    flash(_("Respondents exported to Google Sheets."), "success")
+    flash(_("Respondents exported to Google Sheets"), "success")
     return redirect(respondents_url)
 
 
@@ -900,7 +900,7 @@ def _edit_respondent_post(
     except InsufficientPermissions:
         flash(_("You don't have permission to edit respondents"), "error")
         return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
-    flash(_("Respondent updated."), "success")
+    flash(_("Respondent updated"), "success")
     return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
 
 
@@ -1004,7 +1004,7 @@ def transition_status(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respo
                 new_status=new_status,
                 comment=comment,
             )
-        flash(_("Status updated."), "success")
+        flash(_("Status updated"), "success")
     except ValueError as e:
         flash(str(e), "error")
     except InsufficientPermissions:

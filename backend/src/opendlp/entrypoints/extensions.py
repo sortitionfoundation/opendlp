@@ -39,7 +39,7 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
     # objects into the session in Redis causes errors. Instead we set
     # the `localize_callback` - the string will be passed to that within
     # a request callback and just return a normal string.
-    login_manager.login_message = "Please sign in to access this page."
+    login_manager.login_message = "Please sign in to access this page"
     login_manager.login_message_category = "info"
     login_manager.localize_callback = gettext
 

@@ -55,7 +55,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
 
         if not csv_config.settings_confirmed:
-            flash(_("Please review and save the selection settings before checking data."), "warning")
+            flash(_("Please review and save the selection settings before checking data"), "warning")
             return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
         with uow:
@@ -64,7 +64,7 @@ def check_db_data(assembly_id: uuid.UUID) -> ResponseReturnValue:
         if check_result.success:
             flash(
                 _(
-                    "Data validation passed: %(features)s targets, %(people)s respondents ready for selection.",
+                    "Data validation passed: %(features)s targets, %(people)s respondents ready for selection",
                     features=check_result.num_features,
                     people=check_result.num_people,
                 ),
@@ -101,7 +101,7 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
             csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
 
             if not csv_config.settings_confirmed:
-                flash(_("Please review and save the selection settings before running selection."), "warning")
+                flash(_("Please review and save the selection settings before running selection"), "warning")
                 return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
             task_id = start_db_select_task(uow, current_user.id, assembly_id, test_selection=test_mode)
@@ -384,7 +384,7 @@ def save_db_settings(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 settings_confirmed=True,
             )
 
-        flash(_("Selection settings saved successfully."), "success")
+        flash(_("Selection settings saved successfully"), "success")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )

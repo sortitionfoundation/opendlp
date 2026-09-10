@@ -379,7 +379,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
         ), 200
     except RegistrationPageNotFoundError:
         # An edited or removed slug: land the user on the list to pick a page.
-        flash(_("That registration page could not be found."), "warning")
+        flash(_("That registration page could not be found"), "warning")
         return redirect(_list_url(assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
@@ -550,7 +550,7 @@ def save_assembly_registration(assembly_id: uuid.UUID, url_slug: str) -> Respons
         flash(error_message, "error")
         return redirect_preserving_scroll(error_redirect_url)
     except RegistrationPageNotFoundError:
-        flash(_("That registration page could not be found."), "warning")
+        flash(_("That registration page could not be found"), "warning")
         return redirect(_list_url(assembly_id))
     except InsufficientPermissions as e:
         logger.warning(
@@ -699,7 +699,7 @@ def _handle_email_action_save(
     advance: bool = False,
 ) -> str:
     if template_id is None:
-        flash(_("There is no auto-reply email to save yet — set one up first."), "warning")
+        flash(_("There is no auto-reply email to save yet — set one up first"), "warning")
         return _email_section_url(assembly_id, url_slug)
     # Name is intentionally not overwritten here — the UI doesn't expose it yet,
     # so we keep the value that was set at auto-creation time. Once multi-template
@@ -713,7 +713,7 @@ def _handle_email_action_save(
             subject=request.form.get("template_subject", "").strip(),
             body_html=request.form.get("template_body_html", ""),
         )
-    flash(_("Auto-reply email saved."), "success")
+    flash(_("Auto-reply email saved"), "success")
     if advance:
         return _editor_url(assembly_id, url_slug, section="preview")
     return _email_section_url(assembly_id, url_slug)
@@ -732,7 +732,7 @@ def _dispatch_email_action(action: str, assembly_id: uuid.UUID, url_slug: str) -
     if action == "create":
         return _handle_email_action_create(assembly_id, page)
     if action not in ("save", "save_and_next"):
-        flash(_("Unknown action — nothing was changed."), "warning")
+        flash(_("Unknown action — nothing was changed"), "warning")
         return _email_section_url(assembly_id, url_slug)
     # Save always targets the page's assigned template. The form does not choose a
     # template, so a posted template_id is deliberately ignored — trusting it would
@@ -768,10 +768,10 @@ def save_assembly_registration_email(assembly_id: uuid.UUID, url_slug: str) -> R
             flash(problem, "error")
         return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug, edit=True))
     except EmailTemplateNotFoundError:
-        flash(_("The auto-reply email could not be found."), "error")
+        flash(_("The auto-reply email could not be found"), "error")
         return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
     except RegistrationPageNotFoundError:
-        flash(_("That registration page could not be found."), "warning")
+        flash(_("That registration page could not be found"), "warning")
         return redirect(_list_url(assembly_id))
     except InsufficientPermissions:
         flash(_("You don't have permission to modify this assembly"), "error")
@@ -873,7 +873,7 @@ def delete_assembly_registration_page(assembly_id: uuid.UUID, url_slug: str) -> 
             delete_registration_page(uow, current_user.id, page.id)
         flash(_("Registration page '%(name)s' deleted", name=page_name), "success")
     except RegistrationPageNotFoundError:
-        flash(_("That registration page could not be found."), "warning")
+        flash(_("That registration page could not be found"), "warning")
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions for assembly",

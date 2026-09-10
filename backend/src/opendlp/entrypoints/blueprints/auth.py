@@ -132,14 +132,14 @@ def login() -> ResponseReturnValue:
                 return redirect(get_safe_next_page(next_page, default=url_for(default_dashboard_endpoint())))
 
         except RateLimitExceeded:
-            flash(_("Invalid email or password."), "error")
+            flash(_("Invalid email or password"), "error")
         except InvalidCredentials:
             record_failed_login(
                 email=form.email.data or "",
                 ip_address=request.remote_addr or "",
                 window_minutes=current_app.config.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", 15),
             )
-            flash(_("Invalid email or password."), "error")
+            flash(_("Invalid email or password"), "error")
         except EmailNotConfirmed:
             flash(
                 _("Please confirm your email address before logging in. Check your inbox for the confirmation link."),
@@ -283,7 +283,7 @@ def verify_2fa() -> ResponseReturnValue:
 
                 user = uow.users.get(pending_user_id)
                 if not user or not user.totp_enabled:
-                    flash(_("Two-factor authentication is not enabled for this account."), "error")
+                    flash(_("Two-factor authentication is not enabled for this account"), "error")
                     return redirect(url_for("auth.login"))
 
                 success, is_backup_code = _verify_2fa_code_for_user(uow, pending_user_id, verification_code)
@@ -328,7 +328,7 @@ def verify_2fa() -> ResponseReturnValue:
 def logout() -> ResponseReturnValue:
     """User logout."""
     logout_user()
-    flash(_("You have been signed out."), "info")
+    flash(_("You have been signed out"), "info")
     return redirect(url_for("main.index"))
 
 
@@ -446,7 +446,7 @@ def resend_confirmation() -> ResponseReturnValue:
 
             # Always show success (anti-enumeration)
             flash(
-                _("If that email is registered and unconfirmed, a confirmation link has been sent."),
+                _("If that email is registered and unconfirmed, a confirmation link has been sent"),
                 "info",
             )
             return redirect(url_for("auth.login"))
@@ -500,7 +500,7 @@ def forgot_password() -> ResponseReturnValue:
 
             # Always show success message (anti-enumeration)
             flash(
-                _("If an account exists with this email, a password reset link has been sent."),
+                _("If an account exists with this email, a password reset link has been sent"),
                 "info",
             )
             return redirect(url_for("auth.login"))

@@ -309,7 +309,7 @@ def enable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
             flash(
                 _(
                     "An email has been sent telling them their account is back, and that they sign in "
-                    "with %(provider)s as before.",
+                    "with %(provider)s as before",
                     provider=user.oauth_provider.capitalize(),
                 ),
                 "success",
