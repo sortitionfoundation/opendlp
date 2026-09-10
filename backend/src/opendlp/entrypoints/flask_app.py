@@ -22,7 +22,7 @@ from opendlp.entrypoints.context_processors import (
     inject_feature_flags,
     inject_template_globals,
 )
-from opendlp.entrypoints.extensions import init_extensions
+from opendlp.entrypoints.extensions import html_lang, init_extensions
 from opendlp.entrypoints.template_filters import register_template_filters
 from opendlp.feature_flags import has_feature
 
@@ -124,6 +124,9 @@ def register_context_processors(app: Flask) -> None:
     # Same reason: the role tag macro is imported, and needs the labels.
     app.jinja_env.globals["global_role_labels"] = global_role_labels
     app.jinja_env.globals["assembly_status_labels"] = assembly_status_labels
+    # A global, not a context processor: it reads the request, and the email
+    # templates render without one. See the docstring on html_lang.
+    app.jinja_env.globals["html_lang"] = html_lang
 
     @app.context_processor
     def inject_csp_nonce() -> dict[str, str]:
