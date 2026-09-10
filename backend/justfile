@@ -265,7 +265,12 @@ translate-regen:
   @# --ignore-obsolete: an obsolete `#~` entry whose msgid also exists as a live
   @# entry is a fatal duplicate definition to msgfmt, so letting them accumulate
   @# eventually stops the catalogue compiling at all.
-  uv run pybabel update --ignore-obsolete \
+  @# --no-fuzzy-matching: otherwise pybabel pre-fills each new msgid with the
+  @# msgstr of a similar-looking one and flags it fuzzy. Those guesses are
+  @# nearly always wrong, can carry placeholders the msgid lacks (which stops
+  @# `pybabel compile`), and a bulk "accept fuzzy" pass would ship them. An
+  @# empty msgstr is at least honest about needing a translator.
+  uv run pybabel update --ignore-obsolete --no-fuzzy-matching \
     --input-file=translations/messages.pot --output-dir=translations
 
 # compile translations from .po files so flask can use them
@@ -288,6 +293,15 @@ translate-check:
   @command -v msgfmt >/dev/null 2>&1 || { echo "msgfmt not found - install gettext"; exit 1; }
   @for po in translations/*/LC_MESSAGES/messages.po; do \
     msgfmt --check --output-file=/dev/null "$po" || exit 1; \
+  done
+  @# and `pybabel compile` as well, because msgfmt is not enough either: it skips
+  @# fuzzy entries, while pybabel checks their placeholders and refuses to build
+  @# if one names a placeholder its msgid lacks. So a catalogue can pass msgfmt
+  @# and still break `translate-compile`, and with it every test recipe and
+  @# `run`. Written to /dev/null so a check leaves no .mo behind.
+  @for po in translations/*/LC_MESSAGES/messages.po; do \
+    lang=$(basename "$(dirname "$(dirname "$po")")"); \
+    uv run pybabel compile --input-file="$po" --output-file=/dev/null --locale="$lang" || exit 1; \
   done
   @# a msgid shaped like an identifier is the signature of a Babel extraction
   @# artefact: `_(MESSAGES["some_key"])` makes the extractor take the dict key for
