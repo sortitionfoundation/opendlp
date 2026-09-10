@@ -345,6 +345,9 @@ one, and needs someone who knows where the strings appear.
   member's `.value` put a string on the page that Babel never extracts, so it
   stays English in every language. `AssemblyStatus` is fixed; `AssemblyRole`,
   `SelectionRunStatus`, `RespondentSourceType` and `SelectionTaskType` are not.
+- `page-language.md` — a ticket. `<html lang>` is fixed, but a registration
+  page ignores the language it was built in, and emails go out in the language
+  of whoever clicked send.
 - `duplicate-msgids.txt` — the 80 duplicated msgids (§1). Historical record;
   they are all resolved, so nothing regenerates this list.
 - `chunk.py` — prints a slice of a frozen `gettext-auto scan` JSON snapshot as

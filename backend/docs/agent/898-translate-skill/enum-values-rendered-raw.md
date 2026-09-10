@@ -210,8 +210,9 @@ obeyed.
 
 ## A related thing this turned up
 
-Rendering the details page with `Accept-Language: hu` returns Hungarian body
-text inside `<html lang="en">`. If that holds outside the test client it is an
-accessibility bug — a screen reader will read Hungarian with English phonemes.
-Not verified against a running app, and out of scope here, but someone should
-check it.
+Rendering the details page with `Accept-Language: hu` returned Hungarian body
+text inside `<html lang="en">`. It was not a test-client artefact: every base
+template hardcoded the attribute. Fixed — it now follows the negotiated locale.
+The two harder cases it exposed, a registration page that ignores its own
+language and emails that go out in the sender's, are in
+[page-language.md](page-language.md).
