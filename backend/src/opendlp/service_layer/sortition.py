@@ -760,7 +760,7 @@ def cancel_task(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.U
 
     # Check if task has already finished
     if run_record.has_finished:
-        raise InvalidSelection(_("Cannot cancel task - it has already finished"))
+        raise InvalidSelection(_("Cannot cancel task — it has already finished"))
 
     # Get user info for the cancellation message
     user = uow.users.get(user_id)

@@ -15,9 +15,9 @@ class GlobalRole(Enum):
 
 # for forms etc
 global_role_options = {
-    GlobalRole.USER.name: _l("User - Access to the assemblies they are added to"),
-    GlobalRole.ORGANISER.name: _l("Organiser - Can create assemblies, and manage the ones they belong to"),
-    GlobalRole.ADMIN.name: _l("Admin - Full system access including user management"),
+    GlobalRole.USER.name: _l("User — Access to the assemblies they are added to"),
+    GlobalRole.ORGANISER.name: _l("Organiser — Can create assemblies, and manage the ones they belong to"),
+    GlobalRole.ADMIN.name: _l("Admin — Full system access including user management"),
 }
 
 # Short labels, for a tag or a badge. Kept next to the role definitions so a
@@ -57,9 +57,9 @@ class AssemblyRole(Enum):
 
 # for forms etc
 assembly_role_options = {
-    AssemblyRole.ASSEMBLY_MANAGER.name: _l("Assembly Manager - Can manage the assembly and add other users"),
-    AssemblyRole.CONFIRMATION_CALLER.name: _l("Confirmation Caller - Can call confirmations for selected participants"),
-    AssemblyRole.READ_ONLY.name: _l("Read Only - Can view the assembly but cannot make changes"),
+    AssemblyRole.ASSEMBLY_MANAGER.name: _l("Assembly Manager — Can manage the assembly and add other users"),
+    AssemblyRole.CONFIRMATION_CALLER.name: _l("Confirmation Caller — Can call confirmations for selected participants"),
+    AssemblyRole.READ_ONLY.name: _l("Read Only — Can view the assembly but cannot make changes"),
 }
 
 
