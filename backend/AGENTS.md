@@ -192,6 +192,10 @@ See [docs/configuration.md](docs/configuration.md) for complete configuration re
 
 ### Internationalization (i18n)
 
+What a user-facing string *says* is covered by [docs/language.md](docs/language.md)
+— the glossary (Google Sheets, respondent, target, selection…) and the
+conventions for writing UI text. Check it before writing a new string.
+
 All user-facing strings must be wrapped in gettext calls for translation:
 
 - Use `_()` for immediate translation in templates and flash messages
@@ -346,6 +350,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Respondent Field Spec](docs/respondent_field_spec.md) - Hidden JSON endpoint describing an assembly's respondent columns and their valid values
 - [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
 - [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup
+- [Language](docs/language.md) - The words the interface uses for things, and the conventions for writing its English text
 - [Translation Management](docs/translations.md) - i18n workflow for application strings
 - [Sortition Error Translations](docs/sortition_error_translations.md) - Translating sortition-algorithms library errors and reports
 - [Postfix Email Configuration](docs/postfix_configuration.md) - SMTP relay setup for production
