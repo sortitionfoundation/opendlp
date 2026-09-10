@@ -16,7 +16,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to Your Assemblies")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(
@@ -53,7 +53,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                     <dt class="text-label-lg sm:w-48" style="color: var(--color-secondary-text);">{{ _("Status") }}</dt>
                     <dd class="text-body-md" style="color: var(--color-body-text);">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-button-sm" style="background-color: var(--color-success-background, #d4edda); color: var(--color-success-text, #155724);">
-                            {{ assembly.status.value }}
+                            {{ assembly_status_labels[assembly.status] }}
                         </span>
                     </dd>
                 </div>
@@ -120,7 +120,7 @@ ABOUTME: Displays assembly information with question, metadata, and edit action
                                 {% if row.registration_url %}
                                     {{ readonly_url_display(
                                     label=_("Registration URL"),
-                                    hint=_("The URL for this registration form"),
+                                    hint=_("The URL for this registration page"),
                                     url=row.registration_url
                                     ) }}
                                 {% endif %}

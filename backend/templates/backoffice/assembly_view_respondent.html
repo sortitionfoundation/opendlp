@@ -229,7 +229,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
             {% set source_type_labels = {
             "CSV_IMPORT": _("CSV import"),
             "MANUAL_ENTRY": _("manual entry"),
-            "REGISTRATION_FORM": _("registration form"),
+            "REGISTRATION_FORM": _("registration page"),
             "NATIONBUILDER_SYNC": _("NationBuilder sync"),
             } %}
             {% if respondent.comments or not has_create_comment %}
@@ -296,7 +296,7 @@ becomes a disabled input/textarea so the page reads as a read-only form.
                           rows="3"
                           required
                           class="border border-gray-300 rounded p-2"
-                          placeholder="{{ _('e.g. GDPR deletion request from the participant') }}"></textarea>
+                          placeholder="{{ _('e.g. GDPR deletion request from the respondent') }}"></textarea>
                 <div class="flex gap-4">
                     {{ button(_("Confirm delete") , type="submit", variant="danger") }}
                     {{ button(_("Cancel") , variant="outline", attrs='@click="showing = false"') }}

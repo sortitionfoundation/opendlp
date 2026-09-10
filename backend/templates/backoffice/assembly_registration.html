@@ -15,7 +15,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")) }}
+        back_label=_("Back to Your Assemblies")) }}
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
             active_tab="registration",
@@ -43,7 +43,7 @@ ABOUTME: Allows assembly managers to configure RSVP/registration forms with cust
                 <div>
                     <h2 class="text-heading-md mb-2" style="color: var(--color-warning-600);">{{ _("Registration page not created") }}</h2>
                     <p class="text-body-md mb-4" style="color: var(--color-warning-600);">
-                        {{ _("Before you can configure the registration form, you need to create a registration page from the Details tab.") }}
+                        {{ _("Before you can configure the registration page, you need to create it from the Details tab.") }}
                     </p>
                     {{ button(_("Go to Details tab"),
                     href=url_for('backoffice.view_assembly', assembly_id=assembly.id),

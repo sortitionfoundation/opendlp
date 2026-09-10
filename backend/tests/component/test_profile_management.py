@@ -43,7 +43,7 @@ class TestProfileViewing:
         """The page used to render the raw enum value, which explained nothing."""
         response = logged_in_user.get("/profile")
         assert response.status_code == 200
-        assert b"An organiser can add you to one" in response.data
+        assert b"An Assembly Manager can add you to one" in response.data
 
     def test_an_organiser_is_told_what_their_role_means(self, logged_in_organiser: FlaskClient) -> None:
         response = logged_in_organiser.get("/profile")

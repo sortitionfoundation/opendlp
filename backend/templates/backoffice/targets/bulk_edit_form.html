@@ -195,7 +195,7 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                     border: 1px solid var(--color-warning-400)">
             <span style="color: var(--color-warning-600);">
                 {% if category %}
-                    {{ _('"%(name)s" and all its values will be deleted when you save.', name=category.name) }}
+                    {{ _("'%(name)s' and all its values will be deleted when you save.", name=category.name) }}
                 {% endif %}
             </span>
             {{ button(_("Undo"), variant="tertiary", attrs='@click="undoDelete()"') }}

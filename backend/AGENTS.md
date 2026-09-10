@@ -192,6 +192,10 @@ See [docs/configuration.md](docs/configuration.md) for complete configuration re
 
 ### Internationalization (i18n)
 
+What a user-facing string *says* is covered by [docs/language.md](docs/language.md)
+— the glossary (Google Sheets, respondent, target, selection…) and the
+conventions for writing UI text. Check it before writing a new string.
+
 All user-facing strings must be wrapped in gettext calls for translation:
 
 - Use `_()` for immediate translation in templates and flash messages
@@ -200,11 +204,46 @@ All user-facing strings must be wrapped in gettext calls for translation:
 - In templates use: `{{ _('Text to translate') }}`
 - Support parameters: `_('Hello %(name)s', name=user.name)`
 
-After adding new translatable strings, regenerate translations with:
+Two ways to write a msgid that look fine and are not:
+
+- **Never put a bare string literal inside a `_()` call next to a lookup.**
+  Babel's extractor takes *every* literal between the parens, so
+  `_(ERROR_MESSAGES["parse_error"])` puts the dict **key** into the catalogue as
+  a msgid. At runtime `_()` is handed the value, never the key, so the entry is
+  dead weight that a translator will nonetheless spend time on. Hoist the lookup
+  to a constant - see `src/opendlp/service_layer/error_translation.py`.
+- **Never put a lone `%` inside a msgid.** Flask-Babel uses newstyle gettext,
+  which runs printf formatting over the result, so `_("Target %")` fails with
+  "incomplete format". Concatenate it outside the call: `_("Target") ~ " %"` in
+  a template, `_("Target") + " %"` in Python.
+
+A third construct is worse, because it produces no msgid at all:
+
+- **Never render an `Enum` member's `.value` in a template.**
+  `{{ assembly.status.value }}` puts a database token on the page. Babel never
+  extracts it, so no catalogue can carry it and it stays English in every
+  language — while the label beside it translates, which is what makes it hard
+  to spot. Give the enum a labels dict instead (`global_role_labels`,
+  `assembly_status_labels` in `domain/value_objects.py`), one `_l()` per member,
+  exposed to Jinja in `flask_app.py`. See
+  [docs/translations.md](docs/translations.md#enum-values-are-not-translatable-strings).
+
+After adding or changing translatable strings, regenerate and check:
 
 ```bash
-just translate-regen
+just translate-regen   # extract + update every catalogue
+just translate-check   # msgfmt --check; also run by `just check`
 ```
+
+`translate-check` is not optional politeness. `pybabel compile` accepts a
+catalogue with duplicate msgids without a murmur and emits a `.mo` missing
+translations, which is how the Hungarian catalogue spent months unable to build
+correctly with nothing reporting a problem. `msgfmt --check` catches duplicates,
+broken placeholders and bad plural forms.
+
+Note also that rewording an existing msgid silently discards its translation -
+the string simply reverts to English in every language. Nothing catches this, so
+prefer leaving wording alone unless the change is worth the retranslation.
 
 See [docs/translations.md](docs/translations.md) for translation management workflow.
 
@@ -311,6 +350,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Respondent Field Spec](docs/respondent_field_spec.md) - Hidden JSON endpoint describing an assembly's respondent columns and their valid values
 - [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
 - [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup
+- [Language](docs/language.md) - The words the interface uses for things, and the conventions for writing its English text
 - [Translation Management](docs/translations.md) - i18n workflow for application strings
 - [Sortition Error Translations](docs/sortition_error_translations.md) - Translating sortition-algorithms library errors and reports
 - [Postfix Email Configuration](docs/postfix_configuration.md) - SMTP relay setup for production

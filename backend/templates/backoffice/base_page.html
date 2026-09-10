@@ -27,7 +27,7 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
            the overlay's dialog is the only interactive surface. The floating alerts stay
            outside the inert regions: flash messages must remain live above the dialog. #}
         <header class="sticky top-0 z-40" style="background-color: var(--color-bg-secondary);" {% if page_takeover %}inert{% endif %}>
-            {# "My account" and "Switch to site admin" are old-design pages; their
+            {# "My account" and "Switch to Site Admin" are old-design pages; their
                target="new" opens both in one shared tab rather than stacking tabs. #}
             {{ navigation(
             logo_href=url_for('backoffice.dashboard'),
@@ -37,7 +37,7 @@ ABOUTME: Sticky top nav + sticky page-header slot, flash messages, content slot,
             account_label=current_user.display_name,
             account_items=[
             {"label": _("My account"), "href": url_for('profile.view'), "icon": icon_user(), "target": "new"},
-            {"label": _("Switch to site admin"), "href": url_for('admin.index'), "icon": icon_switch(), "target": "new", "isVisible": _is_site_admin},
+            {"label": _("Switch to Site Admin"), "href": url_for('admin.index'), "icon": icon_switch(), "target": "new", "isVisible": _is_site_admin},
             {"divider": true, "isVisible": _is_site_admin},
             {"label": _("User Data Agreement"), "href": help_site_data_agreement, "icon": icon_data_agreement(), "target": "_blank", "rel": "noopener"},
             {"divider": true},

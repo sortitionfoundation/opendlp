@@ -98,6 +98,29 @@ class TestBackofficeAssemblyDetails:
         assert existing_assembly.title.encode() in response.data
         assert existing_assembly.question.encode() in response.data
 
+    def test_status_is_translated(self, app, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        """The status badge must go through gettext. Rendering the raw
+        AssemblyStatus value put an untranslatable lowercase "active" on the
+        page in every language.
+
+        LANGUAGES is set here because tests/conftest.py scrubs
+        SUPPORTED_LANGUAGES, so the suite runs on config.py's default of
+        en,es,fr,de and get_locale() would refuse "hu". The autouse
+        _restore_shared_app_state fixture puts the config back.
+
+        If this fails with English on the page, suspect a missing .mo before
+        suspecting the catalogue: the compiled files are gitignored, so a fresh
+        checkout has none and every lookup falls back to its msgid. `just
+        translate-compile` - which every test recipe now depends on.
+        """
+        app.config["LANGUAGES"] = ["en", "hu"]
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}",
+            headers=[("Accept-Language", "hu")],
+        )
+        assert response.status_code == 200
+        assert "Aktív" in response.get_data(as_text=True)
+
     def test_view_assembly_permission_denied_for_regular_user(
         self, logged_in_user: FlaskClient, existing_assembly: Assembly
     ) -> None:

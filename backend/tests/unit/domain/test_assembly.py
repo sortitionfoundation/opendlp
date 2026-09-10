@@ -9,7 +9,13 @@ import pytest
 
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.value_objects import AssemblyStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import (
+    AssemblyStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
+    assembly_status_labels,
+    selection_task_type_labels,
+)
 
 
 class TestAssembly:
@@ -346,3 +352,41 @@ class TestSelectionRunRecordTargetsUsed:
 
         assert copy.targets_used == snapshot
         assert copy.targets_used is not record.targets_used
+
+
+@pytest.mark.parametrize("status", list(AssemblyStatus))
+class TestEveryStatusIsLabelled:
+    """A status added later must not fall back to its raw enum value, which is
+    untranslatable and renders as lowercase English in every language."""
+
+    def test_has_a_short_label(self, status):
+        assert assembly_status_labels[status]
+
+
+@pytest.mark.parametrize("task_type", list(SelectionTaskType))
+class TestEveryTaskTypeIsLabelled:
+    """A task type added later must have a translatable label, not a sentence
+    assembled from its raw enum value."""
+
+    def test_has_a_label(self, task_type):
+        assert selection_task_type_labels[task_type]
+
+    def test_run_record_shows_the_label(self, task_type):
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.PENDING,
+            task_type=task_type,
+        )
+        assert record.task_type_verbose == str(selection_task_type_labels[task_type])
+
+
+class TestTaskTypeVerbose:
+    def test_names_the_product_as_google_sheets(self):
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.PENDING,
+            task_type=SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
+        )
+        assert record.task_type_verbose == "Select replacements from Google Sheets"

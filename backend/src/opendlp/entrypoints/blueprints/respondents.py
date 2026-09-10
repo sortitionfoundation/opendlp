@@ -140,7 +140,7 @@ def _run_csv_import(
         if len(errors) > _MAX_FLASH_ERROR_LINES:
             lines.append(
                 _(
-                    "... and %(count)d more (see the server logs for the full list)",
+                    "… and %(count)d more (see the server logs for the full list)",
                     count=len(errors) - _MAX_FLASH_ERROR_LINES,
                 )
             )
@@ -328,7 +328,7 @@ def apply_upload_diff(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     if request.form.get("action") == "cancel":
         clear_stashed_upload(user_id=current_user.id, assembly_id=assembly_id)
-        flash(_("Upload cancelled."), "info")
+        flash(_("Upload cancelled"), "info")
         return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
     try:
@@ -365,7 +365,7 @@ def delete_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id=assembly_id,
             )
 
-        flash(_("Respondents deleted: %(count)d removed", count=count), "success")
+        flash(_("Respondents deleted: %(count)d", count=count), "success")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )
@@ -531,7 +531,7 @@ def _run_gsheet_export(
     spreadsheet_url = request.form.get("spreadsheet_url", "").strip()
     worksheet_name = request.form.get("worksheet_name", "").strip()
     if not spreadsheet_url:
-        flash(_("A Google Sheet URL is required to export to Google Sheets"), "error")
+        flash(_("A spreadsheet URL is required to export to Google Sheets"), "error")
         return redirect(respondents_url)
 
     # The Google Sheets target is injected via an app factory (registered in
@@ -569,19 +569,19 @@ def _run_gsheet_export(
         if service_account_email:
             flash(
                 _(
-                    "Could not write to the Google Sheet. Check the URL is correct and that "
-                    "the sheet is shared with %(email)s.",
+                    "Could not write to the spreadsheet. Check the URL is correct and that "
+                    "the spreadsheet is shared with %(email)s.",
                     email=service_account_email,
                 ),
                 "error",
             )
         else:
-            flash(_("Could not write to the Google Sheet. Check the URL and sharing settings."), "error")
+            flash(_("Could not write to the spreadsheet. Check the URL and sharing settings."), "error")
         return redirect(respondents_url)
 
     # The direct link to the exported worksheet is saved on the export config and
     # shown next to the Respondents heading, so we no longer flash the raw URL.
-    flash(_("Respondents exported to Google Sheets."), "success")
+    flash(_("Respondents exported to Google Sheets"), "success")
     return redirect(respondents_url)
 
 
@@ -638,7 +638,7 @@ def view_assembly_respondents(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
             # The saved respondent-export sheet config (if the organiser has exported
-            # to Google Sheets) drives the "Exported to Google Spreadsheet" link.
+            # to Google Sheets) drives the "Exported to Google Sheets" link.
             # No export config is expected until the first Google Sheets export, which
             # the repository reports as None rather than as an error.
             respondent_gsheet = None
@@ -900,7 +900,7 @@ def _edit_respondent_post(
     except InsufficientPermissions:
         flash(_("You don't have permission to edit respondents"), "error")
         return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
-    flash(_("Respondent updated."), "success")
+    flash(_("Respondent updated"), "success")
     return redirect(url_for("respondents.view_respondent", assembly_id=assembly_id, respondent_id=respondent_id))
 
 
@@ -1004,7 +1004,7 @@ def transition_status(assembly_id: uuid.UUID, respondent_id: uuid.UUID) -> Respo
                 new_status=new_status,
                 comment=comment,
             )
-        flash(_("Status updated."), "success")
+        flash(_("Status updated"), "success")
     except ValueError as e:
         flash(str(e), "error")
     except InsufficientPermissions:

@@ -143,20 +143,20 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
     invite_code = StringField(
         _l("Invite Code"),
         validators=[DataRequired(), Length(min=5, max=50)],
-        description=_l("Enter your invitation code to register"),
+        description=_l("Enter your invite code to register"),
     )
 
     first_name = StringField(
         _l("First Name"),
         validators=[Length(max=100)],
-        description=_l("Optional - your first name"),
+        description=_l("Optional — your first name"),
         render_kw={"autocomplete": "given-name"},
     )
 
     last_name = StringField(
         _l("Last Name"),
         validators=[Length(max=100)],
-        description=_l("Optional - your last name"),
+        description=_l("Optional — your last name"),
         render_kw={"autocomplete": "family-name"},
     )
 
@@ -245,14 +245,14 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     question = TextAreaField(
         _l("Assembly Question"),
         validators=[Optional(), Length(max=1000)],
-        description=_l("Optional - the key question this assembly will address"),
+        description=_l("Optional — the key question this assembly will address"),
         render_kw={"rows": 3},
     )
 
     first_assembly_date = DateField(
         _l("First Assembly Date"),
         validators=[Optional()],
-        description=_l("Optional - when the first assembly meeting will take place"),
+        description=_l("Optional — when the first assembly meeting will take place"),
     )
 
     number_to_select = IntegerField(
@@ -275,9 +275,9 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for configuring Google Spreadsheet settings for an assembly."""
 
     url = StringField(
-        _l("Google Spreadsheet URL"),
+        _l("Google Sheets URL"),
         validators=[DataRequired(), GoogleSpreadsheetURLValidator()],
-        description=_l("Full URL of the Google Spreadsheet containing respondent data"),
+        description=_l("Full URL of the Google Sheets spreadsheet containing respondent data"),
         render_kw={"placeholder": "https://docs.google.com/spreadsheets/d/..."},
     )
 
@@ -309,7 +309,9 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Respondents Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing respondents data in the Google Spreadsheet - for initial Selection"),
+        description=_l(
+            "Name of the tab containing respondents data in the Google Sheets spreadsheet — for initial Selection"
+        ),
         default="Respondents",
     )
 
@@ -317,7 +319,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Targets Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing categories, category values and targets - for initial Selection"),
+        description=_l("Name of the tab containing categories, category values and targets — for initial Selection"),
         default="Categories",
     )
 
@@ -325,7 +327,9 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Respondents Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing respondents data in the Google Spreadsheet - for Replacements"),
+        description=_l(
+            "Name of the tab containing respondents data in the Google Sheets spreadsheet — for Replacements"
+        ),
         default="Remaining",
     )
 
@@ -333,7 +337,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Targets Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing categories, category values and targets - for Replacements"),
+        description=_l("Name of the tab containing categories, category values and targets — for Replacements"),
         default="Replacement Categories",
     )
 
@@ -346,13 +350,13 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     check_same_address = BooleanField(
         _l("Check Same Address"),
-        description=_l("Enable checking for participants with the same address"),
+        description=_l("Enable checking for respondents with the same address"),
         default=True,
     )
 
     generate_remaining_tab = BooleanField(
         _l("Generate Remaining Tab"),
-        description=_l("Create a tab with remaining participants after selection"),
+        description=_l("Create a tab with the remaining respondents after selection"),
         default=True,
     )
 
@@ -448,14 +452,14 @@ class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
     email = EmailField(
         _l("Email Address (Optional)"),
         validators=[Optional(), DomainEmailValidator(), EmailDoesNotExistValidator()],
-        description=_l("Optional - if provided, the invite will be emailed to this address"),
+        description=_l("Optional — if provided, the invite will be emailed to this address"),
         render_kw={"autocomplete": "email"},
     )
 
     expires_in_hours = IntegerField(
         _l("Expires In (Hours)"),
         validators=[Optional()],
-        description=_l("Optional - number of hours until the invite expires (default: 168 hours / 7 days)"),
+        description=_l("Optional — number of hours until the invite expires (default: 168 hours / 7 days)"),
         default=168,
     )
 
@@ -539,7 +543,7 @@ class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
     invite_code = StringField(
         _l("Invite Code"),
         validators=[DataRequired(), Length(min=5, max=50)],
-        description=_l("Enter your invitation code to register"),
+        description=_l("Enter your invite code to register"),
     )
 
     accept_data_agreement = BooleanField(
@@ -572,7 +576,7 @@ class UploadTargetsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
             FileRequired(message=_l("Please select a CSV file to upload")),
             FileAllowed(["csv"], message=_l("Only CSV files are allowed")),
         ],
-        description=_l("Select a CSV file containing target categories"),
+        description=_l("Select a CSV file containing targets"),
     )
 
 
@@ -597,13 +601,13 @@ class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
     comment = TextAreaField(
         _l("Notes"),
         validators=[Optional(), Length(max=MAX_COMMENT_LENGTH)],
-        description=_l("Optional - why these targets were chosen"),
+        description=_l("Optional — why these targets were chosen"),
     )
 
     source_url = StringField(
         _l("Data Source"),
         validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH), SourceUrlValidator()],
-        description=_l("Optional - a link to where the percentages came from"),
+        description=_l("Optional — a link to where the percentages came from"),
     )
 
 
@@ -620,7 +624,7 @@ class TargetValueForm(FlaskForm):  # type: ignore[no-any-unimported]
         _l("Percentage"),
         validators=[Optional(), NumberRange(min=0, max=100)],
         places=1,
-        description=_l("Optional - min and max are calculated from this"),
+        description=_l("Optional — min and max are calculated from this"),
     )
 
     min_count = IntegerField(
@@ -636,7 +640,7 @@ class TargetValueForm(FlaskForm):  # type: ignore[no-any-unimported]
     comment = TextAreaField(
         _l("Notes"),
         validators=[Optional(), Length(max=MAX_COMMENT_LENGTH)],
-        description=_l("Optional - why min and max were set by hand"),
+        description=_l("Optional — why min and max were set by hand"),
     )
 
 
@@ -684,7 +688,7 @@ class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
     check_same_address = BooleanField(
         _l("Check Same Address"),
         default=True,
-        description=_l("Prevent selecting multiple participants from the same address"),
+        description=_l("Prevent selecting multiple respondents from the same address"),
     )
 
     check_same_address_cols_string = StringField(

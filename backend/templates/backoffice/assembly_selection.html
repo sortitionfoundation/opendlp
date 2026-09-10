@@ -16,7 +16,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to Your Assemblies")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
@@ -89,7 +89,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                 {{ _("%(count)s respondents have been selected", count=csv_selected_count) }}
                             </p>
                             <p class="text-body-sm" style="color: var(--color-body-text);">
-                                {{ _("A selection has already been run. To run a new initial selection, you must first reset all respondents to Pool status.") }}
+                                {{ _("A selection has already been run. To run a new initial selection, you must first reset all respondents to the pool.") }}
                             </p>
                         </div>
                     {% else %}
@@ -111,7 +111,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                               action="{{ url_for('db_selection_backoffice.reset_db_selection', assembly_id=assembly.id) }}"
                               class="inline"
                               x-data
-                              @submit.prevent="$confirm('{{ _("Are you sure you want to reset all selected respondents to Pool status? This action cannot be undone.") }}', $el)">
+                              @submit.prevent="$confirm('{{ _("Are you sure you want to reset all selected respondents to the pool? This action cannot be undone.") }}', $el)">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {{ button(_("Reset Selected People") , type="submit", variant="danger", disabled=settings_missing) }}
                         </form>
@@ -147,7 +147,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
             {% call card(title=_("Replacement Selection"), composed=true) %}
                 {% call card_body() %}
                     <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                        {{ _("Select replacement participants when original selections decline or cannot participate.") }}
+                        {{ _("Select replacements when original selections decline or cannot participate.") }}
                     </p>
                     <p class="text-body-sm" style="color: var(--color-secondary-text);">
                         {{ _("Replacement selection for CSV data will be available in a future update.") }}
@@ -202,15 +202,15 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                             </td>
                                             {# Started At #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.created_at|datetimeformat("short") if run_record.created_at else '-' }}
+                                                {{ run_record.created_at|datetimeformat("short") if run_record.created_at else '—' }}
                                             </td>
                                             {# Completed At #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.completed_at|datetimeformat("short") if run_record.completed_at else '-' }}
+                                                {{ run_record.completed_at|datetimeformat("short") if run_record.completed_at else '—' }}
                                             </td>
                                             {# Comment #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.comment if run_record.comment else '-' }}
+                                                {{ run_record.comment if run_record.comment else '—' }}
                                             </td>
                                             {# Actions #}
                                             <td class="py-3 px-4">
@@ -258,7 +258,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
         </div>
     {% elif not gsheet %}
         {# No Google Sheet configured - show configuration prompt #}
-        {{ alert(_("Please use the Data tab to tell us about your data, before running a selection.") , variant="warning") }}
+        {{ alert(_("Please use the Data tab to set up your data before running a selection.") , variant="warning") }}
         <section class="flex gap-4">
             {{ button(_("Configure Data Source") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id), variant="primary") }}
         </section>
@@ -320,10 +320,10 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
             {% call card(title=_("Replacement Selection"), composed=true) %}
                 {% call card_body() %}
                     <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                        {{ _("Select replacement participants when original selections decline or cannot participate.") }}
+                        {{ _("Select replacements when original selections decline or cannot participate.") }}
                     </p>
                     <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                        {{ _("First check the spreadsheet to see how many replacement participants are available, then specify how many to select.") }}
+                        {{ _("First check the spreadsheet to see how many replacements can be selected, then choose how many.") }}
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
@@ -375,15 +375,15 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                             </td>
                                             {# Started At #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.created_at|datetimeformat("short") if run_record.created_at else '-' }}
+                                                {{ run_record.created_at|datetimeformat("short") if run_record.created_at else '—' }}
                                             </td>
                                             {# Completed At #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.completed_at|datetimeformat("short") if run_record.completed_at else '-' }}
+                                                {{ run_record.completed_at|datetimeformat("short") if run_record.completed_at else '—' }}
                                             </td>
                                             {# Comment #}
                                             <td class="py-3 px-4 text-body-sm" style="color: var(--color-body-text);">
-                                                {{ run_record.comment if run_record.comment else '-' }}
+                                                {{ run_record.comment if run_record.comment else '—' }}
                                             </td>
                                             {# Actions #}
                                             <td class="py-3 px-4">
@@ -425,7 +425,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
             {% call card(title=_("Manage Generated Tabs"), composed=true) %}
                 {% call card_body() %}
                     <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                        {{ _("View and delete old selection output tabs from your Google Spreadsheet.") }}
+                        {{ _("View and delete old selection output tabs from your Google Sheets spreadsheet.") }}
                     </p>
                     <p class="text-body-sm" style="color: var(--color-secondary-text);">
                         {{ _("Each selection run creates new tabs in your spreadsheet. Use this to clean up old tabs that are no longer needed.") }}

@@ -55,7 +55,7 @@ class TestOnRegistrationPage:
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.get_data(as_text=True)
-        assert "On registration form" in body
+        assert "On registration page" in body
         assert 'name="on_registration_page"' in body
 
     def test_update_sets_on_registration_page(self, logged_in_admin, existing_assembly, admin_user, fake_store):

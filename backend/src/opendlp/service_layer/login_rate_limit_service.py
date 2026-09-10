@@ -70,7 +70,7 @@ def check_login_rate_limit(
         # attempts against one account can be correlated without storing PII.
         logger.warning("Login rate limit exceeded for email", email_hash=hash_email(email))
         raise RateLimitExceeded(
-            operation=_("login"),
+            operation=_("sign-in"),
             retry_after_seconds=retry_after_seconds,
         )
 
@@ -79,7 +79,7 @@ def check_login_rate_limit(
     if ip_count >= max_per_ip:
         logger.warning("Login rate limit exceeded for IP", ip_address=ip_address)
         raise RateLimitExceeded(
-            operation=_("login"),
+            operation=_("sign-in"),
             retry_after_seconds=retry_after_seconds,
         )
 

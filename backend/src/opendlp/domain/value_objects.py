@@ -15,9 +15,9 @@ class GlobalRole(Enum):
 
 # for forms etc
 global_role_options = {
-    GlobalRole.USER.name: _l("User - Access to the assemblies they are added to"),
-    GlobalRole.ORGANISER.name: _l("Organiser - Can create assemblies, and manage the ones they belong to"),
-    GlobalRole.ADMIN.name: _l("Admin - Full system access including user management"),
+    GlobalRole.USER.name: _l("User — Access to the assemblies they are added to"),
+    GlobalRole.ORGANISER.name: _l("Organiser — Can create assemblies, and manage the ones they belong to"),
+    GlobalRole.ADMIN.name: _l("Admin — Full system access including user management"),
 }
 
 # Short labels, for a tag or a badge. Kept next to the role definitions so a
@@ -31,7 +31,7 @@ global_role_labels = {
 # What the role means, written for the person who holds it. Shown on the
 # profile page under the label.
 global_role_descriptions = {
-    GlobalRole.USER: _l("You can see the assemblies you have been added to. An organiser can add you to one."),
+    GlobalRole.USER: _l("You can see the assemblies you have been added to. An Assembly Manager can add you to one."),
     GlobalRole.ORGANISER: _l(
         "You can create assemblies. You can see the assemblies you have been added to, and the ones you create."
     ),
@@ -57,15 +57,23 @@ class AssemblyRole(Enum):
 
 # for forms etc
 assembly_role_options = {
-    AssemblyRole.ASSEMBLY_MANAGER.name: _l("Assembly Manager - Can manage the assembly and add other users"),
-    AssemblyRole.CONFIRMATION_CALLER.name: _l("Confirmation Caller - Can call confirmations for selected participants"),
-    AssemblyRole.READ_ONLY.name: _l("Read Only - Can view the assembly but cannot make changes"),
+    AssemblyRole.ASSEMBLY_MANAGER.name: _l("Assembly Manager — Can manage the assembly and add other users"),
+    AssemblyRole.CONFIRMATION_CALLER.name: _l("Confirmation Caller — Can call confirmations for selected participants"),
+    AssemblyRole.READ_ONLY.name: _l("Read Only — Can view the assembly but cannot make changes"),
 }
 
 
 class AssemblyStatus(Enum):
     ACTIVE = "active"
     ARCHIVED = "archived"
+
+
+# Short labels, for a tag or a badge. Kept next to the status definitions so a
+# renamed status cannot leave a stale label behind somewhere.
+assembly_status_labels = {
+    AssemblyStatus.ACTIVE: _l("Active"),
+    AssemblyStatus.ARCHIVED: _l("Archived"),
+}
 
 
 class SelectionRunStatus(Enum):
@@ -120,6 +128,21 @@ class SelectionTaskType(Enum):
     DELETE_OLD_TABS = "delete_old_tabs"
     SELECT_FROM_DB = "select_from_db"
     TEST_SELECT_FROM_DB = "test_select_from_db"
+
+
+# Labels for the run history table and the "Task:" line of the progress modals.
+# Kept next to the task types so a task type added later cannot go unlabelled.
+selection_task_type_labels = {
+    SelectionTaskType.LOAD_GSHEET: _l("Load from Google Sheets"),
+    SelectionTaskType.SELECT_GSHEET: _l("Select from Google Sheets"),
+    SelectionTaskType.TEST_SELECT_GSHEET: _l("Test select from Google Sheets"),
+    SelectionTaskType.LOAD_REPLACEMENT_GSHEET: _l("Load replacement data from Google Sheets"),
+    SelectionTaskType.SELECT_REPLACEMENT_GSHEET: _l("Select replacements from Google Sheets"),
+    SelectionTaskType.LIST_OLD_TABS: _l("List old tabs"),
+    SelectionTaskType.DELETE_OLD_TABS: _l("Delete old tabs"),
+    SelectionTaskType.SELECT_FROM_DB: _l("Select from database"),
+    SelectionTaskType.TEST_SELECT_FROM_DB: _l("Test select from database"),
+}
 
 
 class GSheetExportKind(Enum):

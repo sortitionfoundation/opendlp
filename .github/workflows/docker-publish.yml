@@ -11,7 +11,7 @@ on:
 
 jobs:
   quality:
-    uses: ./.github/workflows/main.yml
+    uses: $/.github/workflows/main.yml
     permissions:
       contents: read
       pull-requests: write
@@ -19,13 +19,13 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   bdd-tests:
-    uses: ./.github/workflows/bdd.yml
+    uses: $/.github/workflows/bdd.yml
     permissions:
       contents: read
       pull-requests: write
 
   docker-security:
-    uses: ./.github/workflows/docker-security.yml
+    uses: $/.github/workflows/docker-security.yml
     with:
       skip_sarif_upload: true
     permissions:

@@ -66,6 +66,33 @@ deploy-preview-hd-resetdb:
   fi
   ssh -t opendlp-test just --justfile /home/hamish/hdpreview/justfile resetdb
 
+# build docker with the current code, copy the image to the preview server and run on hd2.preview
+deploy-preview-hd2:
+  #!/usr/bin/env bash
+  set -euxo pipefail
+  if [ "${CLAUDECODE:-0}" == "1" ]; then
+    echo "claude code is not allowed to deploy"
+    exit 1
+  fi
+  echo "*** Building docker image ***"
+  git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > backend/generated_version.txt
+  docker build -t opendlp:hdpreview2 backend/
+  # the double-s in pussh is NOT a typo
+  echo "*** Pushing docker image to preview server ***"
+  docker pussh opendlp:hdpreview2 opendlp-test
+  echo "*** Restarting preview docker compose ***"
+  ssh opendlp-test just --justfile /home/hamish/hdpreview2/justfile update
+
+# for hd2.preview - reset the database with the one from the main demo instance
+deploy-preview-hd2-resetdb:
+  #!/usr/bin/env bash
+  set -euxo pipefail
+  if [ "${CLAUDECODE:-0}" == "1" ]; then
+    echo "claude code is not allowed to deploy"
+    exit 1
+  fi
+  ssh -t opendlp-test just --justfile /home/hamish/hdpreview2/justfile resetdb
+
 # build docker with the current code, copy the image to the preview server and run on gg.preview
 deploy-preview-gg:
   #!/usr/bin/env bash

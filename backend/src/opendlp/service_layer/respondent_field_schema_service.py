@@ -823,8 +823,8 @@ def check_id_column_in_headers(
 
     message = str(
         _l(
-            'This CSV has no column called "%(id_column)s". Its columns are: %(columns)s. '
-            'Set the ID Column field to one of these, or clear it to use the first column ("%(first)s").',
+            "This CSV has no column called '%(id_column)s'. Its columns are: %(columns)s. "
+            "Set the ID Column field to one of these, or clear it to use the first column ('%(first)s').",
             id_column=id_column,
             columns=columns,
             first=headers[0],

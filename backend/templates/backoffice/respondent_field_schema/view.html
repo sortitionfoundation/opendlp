@@ -13,7 +13,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to Your Assemblies")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
@@ -39,9 +39,9 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                         {{ icon_info(classes="w-6 h-6", style="color: var(--color-primary-action);") }}
                     </div>
                     <div>
-                        <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Fields are defined by your Google Spreadsheet") }}</h2>
+                        <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Fields are defined by your Google Sheets spreadsheet") }}</h2>
                         <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                            {{ _("The fields for this assembly are the columns in the respondent tabs of your Google Spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
+                            {{ _("The fields for this assembly are the columns in the respondent tabs of your Google Sheets spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
                         </p>
                         <dl class="flex flex-col gap-2">
                             <div class="flex gap-2">
@@ -124,7 +124,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                 <th class="text-label-lg py-2">{{ _("Label") }}</th>
                                 <th class="text-label-lg py-2">{{ _("Section") }}</th>
                                 <th class="text-label-lg py-2">{{ _("Field Type") }}</th>
-                                <th class="text-label-lg py-2">{{ _("On registration form") }}</th>
+                                <th class="text-label-lg py-2">{{ _("On registration page") }}</th>
                                 <th class="text-label-lg py-2">{{ _("Field key") }}</th>
                                 <th class="text-label-lg py-2">{{ _("Order") }}</th>
                                 <th class="text-label-lg py-2">{{ _("Actions") }}</th>
@@ -180,7 +180,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                                             <select form="edit-field-{{ field.id }}"
                                                     name="on_registration_page"
                                                     class="govuk-select"
-                                                    aria-label="{{ _('On registration form for %(key)s', key=field.field_key) }}">
+                                                    aria-label="{{ _('On registration page for %(key)s', key=field.field_key) }}">
                                                 {% for value, label in on_registration_page_choices %}
                                                     <option value="{{ value }}"
                                                             {% if field.on_registration_page.value == value %}selected{% endif %}>
@@ -325,7 +325,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                         <th class="text-label-lg py-2">{{ _("Field key and label") }}</th>
                         <th class="text-label-lg py-2">{{ _("Section") }}</th>
                         <th class="text-label-lg py-2">{{ _("Field Type") }}</th>
-                        <th class="text-label-lg py-2">{{ _("On registration form") }}</th>
+                        <th class="text-label-lg py-2">{{ _("On registration page") }}</th>
                         <th class="py-2"></th>
                         <th class="py-2"></th>
                         <th class="py-2"></th>
@@ -367,7 +367,7 @@ ABOUTME: Grouped field list with per-field label edit, move up/down, and delete 
                             <select form="add-field-form"
                                     name="on_registration_page"
                                     class="govuk-select"
-                                    aria-label="{{ _('On registration form') }}">
+                                    aria-label="{{ _('On registration page') }}">
                                 {% for value, label in on_registration_page_choices %}
                                     <option value="{{ value }}">{{ label }}</option>
                                 {% endfor %}

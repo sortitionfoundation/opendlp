@@ -11,6 +11,17 @@ from sortition_algorithms.errors import (
 
 from opendlp.translations import gettext as _
 
+# The templates that wrap a parse error in its row/column context. They are held
+# as constants so that no string literal ever sits inside a `_()` call here.
+# Babel's extractor takes every literal between the parens of `_(`, so writing
+# `_(ERROR_MESSAGES["parse_error_multi_column"])` puts the dict *key* into the
+# catalogue as a msgid. Such a msgid is dead weight - at runtime `_()` is handed
+# the dict value, never the key - and it invites a translator to waste effort on
+# a string nothing will ever look up. `just translate-check` fails the build if
+# one appears.
+PARSE_ERROR_MULTI_COLUMN = ERROR_MESSAGES["parse_error_multi_column"]
+PARSE_ERROR_SINGLE_COLUMN = ERROR_MESSAGES["parse_error_single_column"]
+
 
 def translate_sortition_error(error: Exception) -> str:
     """
@@ -99,13 +110,13 @@ def _translate_parse_table_multi_error_lines(error: ParseTableMultiError) -> lis
             # Add context (row/column information)
             try:
                 if isinstance(sub_error, ParseTableMultiValueErrorMsg):
-                    context = _(ERROR_MESSAGES["parse_error_multi_column"]) % {
+                    context = _(PARSE_ERROR_MULTI_COLUMN) % {
                         "msg": core_msg,
                         "row": sub_error.row,
                         "keys": ", ".join(sub_error.keys),
                     }
                 else:  # Single-column error
-                    context = _(ERROR_MESSAGES["parse_error_single_column"]) % {
+                    context = _(PARSE_ERROR_SINGLE_COLUMN) % {
                         "msg": core_msg,
                         "row": sub_error.row,
                         "key": sub_error.key,

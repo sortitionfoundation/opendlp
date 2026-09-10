@@ -345,7 +345,7 @@ def build_dashboard_table(report: DashboardReport) -> TabularData:
     category's declared values - the same denominator the pie charts use.
     """
     headers = [
-        _("Category"),
+        _("Target"),
         _("Value"),
         _("Target %"),
         _("Target min"),

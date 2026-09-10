@@ -188,7 +188,7 @@ def reset_respondent_status(assembly_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             count = reset_selection_status(uow, current_user.id, assembly_id)
-        flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
+        flash(_("Reset %(count)s respondents to the pool", count=count), "success")
         return redirect(url_for("respondents_legacy.view_assembly_respondents", assembly_id=assembly_id))
     except NotFoundError:
         flash(_("Assembly not found"), "error")
