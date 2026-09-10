@@ -394,7 +394,7 @@ class TestBackofficeGSheetDelete:
         assembly, _ = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet")
         assert response.status_code == 200
-        assert b"Delete" in response.data
+        assert b"Remove" in response.data
         assert b"gsheet/delete" in response.data
 
     def test_delete_button_shown_in_edit_mode(
@@ -404,7 +404,7 @@ class TestBackofficeGSheetDelete:
         assembly, _ = assembly_with_gsheet
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=gsheet&mode=edit")
         assert response.status_code == 200
-        assert b"Delete" in response.data
+        assert b"Remove" in response.data
         assert b"gsheet/delete" in response.data
 
     def test_delete_button_not_shown_in_new_mode(
@@ -442,7 +442,7 @@ class TestBackofficeSelectionTab:
         """Test that selection page loads and shows configure message when no gsheet config."""
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/selection")
         assert response.status_code == 200
-        assert b"configure" in response.data.lower() or b"Google Spreadsheet" in response.data
+        assert b"configure" in response.data.lower() or b"Google Sheets" in response.data
 
     def test_selection_page_loads_with_gsheet_config(
         self, logged_in_admin: FlaskClient, assembly_with_gsheet: tuple[Assembly, AssemblyGSheet]

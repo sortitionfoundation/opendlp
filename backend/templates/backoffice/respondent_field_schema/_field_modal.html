@@ -180,7 +180,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                 <div class="mb-4">
                     {{ textarea("help_text",
                     label=_("Help text"),
-                    hint=_("Optional hint shown beneath the field on the registration form."),
+                    hint=_("Optional hint shown beneath the field on the registration page."),
                     value=values["help_text"],
                     rows=2,
                     id="field-modal-help-text") }}
@@ -188,7 +188,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                 {% if not is_derived_flow %}
                     <div class="mb-4">
                         {{ radio_group("on_registration_page",
-                        label=_("On the registration form"),
+                        label=_("On the registration page"),
                         options=on_registration_page_choices,
                         value=values["on_registration_page"],
                         id="field-modal-onreg") }}

@@ -15,29 +15,53 @@ Currently only **Hungarian (`hu`)** translation is available. The default config
    BABEL_DEFAULT_LOCALE=en
    ```
 
-2. **Extract messages** to create/update POT file:
+2. **Extract and update catalogues** after adding or changing translatable
+   strings:
 
    ```bash
-   uv run pybabel extract -F babel.cfg -k _l -o translations/messages.pot .
+   just translate-regen
    ```
 
-3. **Initialize new language**:
+3. **Initialize a new language** (one-off, before its first
+   `just translate-regen`):
 
    ```bash
    uv run pybabel init -i translations/messages.pot -d translations -l es
    ```
 
-4. **Update existing translations**:
+4. **Check the catalogues compile**:
 
    ```bash
-   uv run pybabel update -i translations/messages.pot -d translations
+   just translate-check
    ```
 
-5. **Compile translations**:
+5. **Compile translations** to the `.mo` files the application actually reads:
 
    ```bash
-   uv run pybabel compile -d translations
+   just translate-compile
    ```
+
+**Use the `just` recipes, not raw `pybabel`.** The recipes carry flags and
+arguments that are not optional, and a bare `pybabel` invocation quietly does
+the wrong thing:
+
+- `pybabel update` without `--ignore-obsolete` leaves an entry behind for every
+  string you delete. Once one of those `#~` entries collides with a live msgid
+  it is a duplicate definition, and the catalogue stops compiling altogether.
+  This is not hypothetical: it is how the Hungarian catalogue accumulated 873 of
+  them.
+- `pybabel update` without `--no-fuzzy-matching` pre-fills every new msgid with
+  the translation of a similar-looking one, flagged fuzzy. The guesses are
+  nearly always wrong ("Date" became the Hungarian for "Data"), and one that
+  names a placeholder its msgid lacks stops `pybabel compile` outright.
+- `pybabel extract` over `.` alone misses the ~100 msgids the
+  `sortition-algorithms` library contributes, and walks `thirdparty/` and
+  `.venv/`. `translate-regen` passes the installed library's path as a second
+  source argument and excludes both directories.
+
+`pybabel init` in step 3 is the one raw command that is still correct — it
+creates a fresh catalogue from the POT and takes no flags we care about. From
+then on the new language is picked up by `translate-regen` like any other.
 
 ## Translation Workflow
 
@@ -62,14 +86,93 @@ In Jinja2 templates:
 <p>{{ _('Hello %(name)s', name=user.name) }}</p>
 ```
 
+### Enum values are not translatable strings
+
+An `Enum` member's `.value` is a database token. Rendering it puts a string on
+the page that `pybabel extract` never sees, so no catalogue can carry it, no
+translator can find it, and `just translate-check` has nothing to complain
+about:
+
+```jinja
+{# Wrong: renders "active", in every language #}
+<dt>{{ _("Status") }}</dt>
+<dd>{{ assembly.status.value }}</dd>
+```
+
+The symptom is easy to miss, because the label beside it *is* translated. The
+row reads half-finished rather than broken.
+
+Give the enum a labels dict instead, in `src/opendlp/domain/value_objects.py`,
+immediately below the enum:
+
+```python
+class AssemblyStatus(Enum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+assembly_status_labels = {
+    AssemblyStatus.ACTIVE: _l("Active"),
+    AssemblyStatus.ARCHIVED: _l("Archived"),
+}
+```
+
+expose it to Jinja in `register_context_processors` in
+`src/opendlp/entrypoints/flask_app.py`, and index it in the template:
+
+```jinja
+<dd>{{ assembly_status_labels[assembly.status] }}</dd>
+```
+
+Three details are load-bearing:
+
+- **`_l()`, not `_()`.** The dict is built at import time, so `_()` would freeze
+  the first request's language for the life of the process.
+- **The dict lives beside the enum**, not in a template or a blueprint. A member
+  added later is then a `KeyError` in an obvious place rather than a silent
+  fallback to English, and a member renamed later cannot strand a stale label
+  somewhere else in the tree.
+- **Add the parametrised test**, as `tests/unit/domain/test_global_roles.py` and
+  `tests/unit/domain/test_assembly.py` do — iterate the enum, assert a label
+  exists. Three lines, and it is what turns "a member added later is a KeyError"
+  into "a member added later fails CI".
+
+Do not map values to `_()` calls with an `if`/`elif` chain in a template. It
+produces the right English and it is the same defect one step on: the chain has
+no idea when a member is added, so the new one falls through to whatever the
+`else` branch does. That is why `RespondentStatus.TEST_SUBMISSION` renders as
+"Test_submission".
+
+`.value` is fine where it is not output — a `{% if run_record.status.value ==
+'failed' %}` condition, a `data-status` attribute, an `<option value="...">`.
+It is the visible string that has to come from a catalogue.
+
 ### Managing Translations
 
-1. **Extract new strings**: Run `pybabel extract` after adding translatable strings
-2. **Update PO files**: Run `pybabel update` to merge new strings into existing translations
-3. **Translate**: Edit `.po` files in `translations/[locale]/LC_MESSAGES/messages.po`
-4. **Compile**: Run `pybabel compile` to generate `.mo` files for production
+The commands are in [Quick Start](#quick-start) above, which is the canonical
+list. Don't restate them here: a second copy drifts from the first, and the
+copy that drifts is the one somebody follows.
+
+The only step with any human work in it is the middle one: edit the `.po` files
+under `translations/[locale]/LC_MESSAGES/messages.po` between
+`just translate-regen` and `just translate-check`.
 
 **Important:** The `.mo` (compiled) files must be regenerated after any `.po` file changes for translations to take effect. The application reads from `.mo` files, not `.po` files.
+
+The `.mo` files are gitignored build artefacts, so nothing that starts from a
+clean checkout has them until something builds them. Three places do, and they
+have to stay in step:
+
+- the `Dockerfile`, which compiles into the image;
+- every `just` test recipe and `just run`, which depend on `translate-compile`;
+- the `setup-env` composite action (`.github/actions/setup-env/`), which every
+  CI job goes through — the workflows call `pytest` directly rather than through
+  `just`, so without it they would each need their own step to forget.
+
+Miss one and the symptom is not an error. Every `gettext` lookup quietly falls
+back to its msgid, so the app is monolingual English and looks fine until
+someone asserts a translated string — which is exactly how CI came to run
+without translations for as long as no test looked for one.
 
 ### Directory Structure
 

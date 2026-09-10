@@ -16,7 +16,7 @@ panel_classes="max-w-4xl") %}
         {{ _("This skeleton is generated from your assembly's field definitions. Copy all or select specific parts to paste into your form. Then edit to add extra HTML as required.") }}
     </p>
     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-        {{ _("The Plain HTML version is the minimal version, for you to enhance. The GOV.UK styled version uses the %(link_start)sGOV.UK Design System%(link_end)s - which has high web accessibility.",
+        {{ _("The Plain HTML version is the minimal version, for you to enhance. The GOV.UK styled version uses the %(link_start)sGOV.UK Design System%(link_end)s — which has high web accessibility.",
         link_start=('<a href="https://design-system.service.gov.uk/"
                         class="text-body-md underline break-all"
                         style="color: var(--color-link-text)">'|safe),
@@ -176,7 +176,7 @@ file_name_expr="documentFileName",
 text_id="document-upload-label",
 text_label=_("Label"),
 text_model="documentLabel",
-text_hint=_("Shown to registrants as the download link text and used as the file's display name in the asset list. Defaults to the file name."),
+text_hint=_("Shown to visitors as the download link text and used as the file's display name in the asset list. Defaults to the file name."),
 text_required=false,
 error_expr="documentUploadError",
 submit_click="submitDocumentUpload()",
@@ -196,7 +196,7 @@ snippet_copy_label=_("Copy download link snippet"),
 edit_id="document-edit-label",
 edit_label=_("Label"),
 edit_model="editingDocumentLabel",
-edit_hint=_("Shown to registrants as the download link text and used as the file's display name in the asset list."),
+edit_hint=_("Shown to visitors as the download link text and used as the file's display name in the asset list."),
 error_expr="documentEditError",
 delete_label=_("Delete document"),
 delete_click="deleteEditingDocument()",

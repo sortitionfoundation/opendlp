@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="govuk-template">
+<html lang="{{ html_lang() }}" class="govuk-template">
     <head>
         <meta charset="utf-8">
         <title>
@@ -55,7 +55,7 @@
                             </button>
                             <ul class="govuk-header__navigation-list">
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('main.dashboard') }}">{{ _("Dashboard") }}</a>
+                                    <a class="govuk-header__link" href="{{ url_for('main.dashboard') }}">{{ _("Your Assemblies") }}</a>
                                 </li>
                                 {% if perms.administer_site %}
                                     <li class="govuk-header__navigation-item">

@@ -146,12 +146,12 @@ def user_enters_number(admin_logged_in_page: Page):
     number_input.fill(min_val)
 
 
-@when("the user clicks Run Replacements")
+@when("the user clicks Run Replacement Selection")
 def user_clicks_run_replacements(admin_logged_in_page: Page):
-    """Click the Run Replacements button in the modal."""
+    """Click the Run Replacement Selection button in the modal."""
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
-    btn = modal.get_by_role("button", name="Run Replacements")
+    btn = modal.get_by_role("button", name="Run Replacement Selection")
     expect(btn).to_be_visible()
     btn.click()
 
@@ -267,7 +267,7 @@ def modal_shows_replacement_count(admin_logged_in_page: Page):
     """Verify modal shows available replacement count."""
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
-    expect(modal.get_by_text("Available replacements:")).to_be_visible()
+    expect(modal.get_by_text("Replacements you can select:")).to_be_visible()
 
 
 @then("the number input field is visible")
@@ -279,12 +279,12 @@ def number_input_visible(admin_logged_in_page: Page):
     expect(number_input).to_be_visible()
 
 
-@then("the Run Replacements button is visible")
+@then("the Run Replacement Selection button is visible")
 def run_replacements_visible(admin_logged_in_page: Page):
-    """Verify Run Replacements button is visible in modal."""
+    """Verify Run Replacement Selection button is visible in modal."""
     page = admin_logged_in_page
     modal = page.locator("#replacement-modal")
-    btn = modal.get_by_role("button", name="Run Replacements")
+    btn = modal.get_by_role("button", name="Run Replacement Selection")
     expect(btn).to_be_visible()
 
 
@@ -419,7 +419,7 @@ def history_shows_replacement(admin_logged_in_page: Page):
 def task_type_shows_replace(admin_logged_in_page: Page):
     """Verify task type shows as replacement selection."""
     page = admin_logged_in_page
-    # The verbose text is "Select replacement google spreadsheet"
+    # The verbose text is "Select replacements from Google Sheets"
     # Scope to table and use .first to avoid strict mode violation
     # (multiple cells may contain "replacement" - task type and comment)
     history_table = page.locator("table")

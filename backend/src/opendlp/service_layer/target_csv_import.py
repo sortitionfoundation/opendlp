@@ -118,8 +118,8 @@ def _resolve_category_column(
     if len(seen) > 1:
         warnings.append(
             _(
-                'Rows for "%(category)s" gave different values for %(column)s. '
-                'Using "%(used)s" and ignoring %(count)s other value(s).',
+                "Rows for '%(category)s' gave different values for %(column)s. "
+                "Using '%(used)s' and ignoring %(count)s other value(s).",
                 category=feature,
                 column=column,
                 used=_truncate(seen[0]),

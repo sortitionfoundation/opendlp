@@ -46,7 +46,7 @@ class TestDashboardExportSmoke:
         body = response.get_data(as_text=True).lstrip("﻿")
         rows = list(csv.DictReader(StringIO(body)))
         assert {row["Value"] for row in rows} == {"Male", "Female"}
-        assert rows[0]["Category"] == "Gender"
+        assert rows[0]["Target"] == "Gender"
 
     def test_export_rejects_disabled_file_type(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(

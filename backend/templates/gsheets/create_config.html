@@ -1,11 +1,11 @@
 {% extends "main/view_assembly_base.html" %}
-{% block title %}{{ _("Configure Google Spreadsheet") }} - {{ assembly.title }} - OpenDLP{% endblock %}
+{% block title %}{{ _("Configure Google Sheets") }} - {{ assembly.title }} - OpenDLP{% endblock %}
 {% block assembly_breadcrumbs %}
     <li class="govuk-breadcrumbs__list-item">
         <a class="govuk-breadcrumbs__link"
            href="{{ url_for('main.view_assembly_data', assembly_id=assembly.id) }}">{{ _("Data & Selection") }}</a>
     </li>
-    <li class="govuk-breadcrumbs__list-item">{{ _("Configure Google Spreadsheet") }}</li>
+    <li class="govuk-breadcrumbs__list-item">{{ _("Configure Google Sheets") }}</li>
 {% endblock %}
 {% block assembly_content %}
     {% if form.errors %}
@@ -26,9 +26,9 @@
             </div>
         </div>
     {% endif %}
-    <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Configure Google Spreadsheet") }}</h2>
+    <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Configure Google Sheets") }}</h2>
     <p class="govuk-body">
-        {{ _("Set up Google Spreadsheet integration for this assembly to manage respondent data and selection results.") }}
+        {{ _("Set up Google Sheets integration for this assembly to manage respondent data and selection results.") }}
     </p>
     <form method="post"
           novalidate

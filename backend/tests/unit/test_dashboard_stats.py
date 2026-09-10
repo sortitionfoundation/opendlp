@@ -289,4 +289,4 @@ class TestBuildingTheExportTable:
         table = build_dashboard_table(_report())
 
         assert table.rows == []
-        assert table.headers[:2] == ["Category", "Value"]
+        assert table.headers[:2] == ["Target", "Value"]

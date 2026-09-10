@@ -123,7 +123,7 @@ class TestDbSelectionModalWiringsProgressIndicator:
         run_id = uuid.uuid4()
         assembly = _make_assembly()
         run_record = _make_run_record(
-            ProgressInfo(label="Finding diverse committees (45 of 200 rounds)", current=45, total=200),
+            ProgressInfo(label="Finding diverse panels (45 of 200 rounds)", current=45, total=200),
             SelectionTaskType.SELECT_FROM_DB,
         )
         with app.test_request_context("/"):
@@ -138,7 +138,7 @@ class TestDbSelectionModalWiringsProgressIndicator:
                 current_selection=run_id,
             )
         assert 'role="progressbar"' in html
-        assert "Finding diverse committees" in html
+        assert "Finding diverse panels" in html
 
     def test_no_progress_payload_still_renders_generic_spinner(self):
         app = _make_app()

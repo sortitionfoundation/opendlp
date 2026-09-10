@@ -22,7 +22,9 @@ updates:
     # You don't need to specify `/.github/workflows` for `directory`. You can use `directory: "/"`.
     cooldown:
       default-days: 7
-    directory: "/"
+    directories:
+      - "/.github/workflows/"
+      - "/.github/actions/setup-python-env/"
     schedule:
       interval: "weekly"
 

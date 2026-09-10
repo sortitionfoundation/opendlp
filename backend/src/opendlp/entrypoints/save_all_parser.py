@@ -47,7 +47,7 @@ def _parse_number(
     except ValueError:
         errors.append(
             TargetEditError(
-                _('"%(value)s" is not a valid %(field)s', value=text[:40], field=field),
+                _("'%(value)s' is not a valid %(field)s", value=text[:40], field=field),
                 category_form_id,
                 value_form_id,
                 field,

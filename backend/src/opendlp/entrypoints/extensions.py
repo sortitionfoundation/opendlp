@@ -4,7 +4,7 @@ ABOUTME: Sets up Flask-Login, Flask-Session, security headers, and database sess
 from wsgiref.headers import Headers
 
 from authlib.integrations.flask_client import OAuth
-from flask import Flask, request, session
+from flask import Flask, current_app, has_request_context, request, session
 from flask_babel import Babel
 from flask_login import LoginManager
 from flask_session import Session
@@ -39,7 +39,7 @@ def init_extensions(app: Flask, config: FlaskBaseConfig) -> None:
     # objects into the session in Redis causes errors. Instead we set
     # the `localize_callback` - the string will be passed to that within
     # a request callback and just return a normal string.
-    login_manager.login_message = "Please sign in to access this page."
+    login_manager.login_message = "Please sign in to access this page"
     login_manager.login_message_category = "info"
     login_manager.localize_callback = gettext
 
@@ -122,6 +122,25 @@ def get_locale() -> str:
     conventions. Translations fall back automatically from ``en_GB`` to ``en``.
     """
     return _add_browser_region(_pick_base_locale())
+
+
+def html_lang() -> str:
+    """The page language as a BCP 47 tag, for the ``lang`` attribute.
+
+    ``get_locale`` yields a gettext-style locale (``en_GB``) and the HTML
+    attribute wants ``en-GB``, so the separator is swapped. Every page needs
+    this: a wrong ``lang`` has a screen reader read Hungarian with English
+    phonemes, and WCAG 2.1 SC 3.1.1 requires the attribute be right.
+
+    Registered as a Jinja global rather than a context processor on purpose.
+    ``get_locale`` reads ``request.args``, and the email templates render in an
+    app context with no request behind it — a context processor would run there
+    too and raise. As a global it is only evaluated where a template calls it,
+    and the guard below keeps even that safe.
+    """
+    if not has_request_context():
+        return str(current_app.config.get("BABEL_DEFAULT_LOCALE", "en")).replace("_", "-")
+    return get_locale().replace("_", "-")
 
 
 def _pick_base_locale() -> str:

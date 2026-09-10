@@ -16,7 +16,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to Your Assemblies")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(
@@ -44,7 +44,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                     <div>
                         <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Targets are configured in Google Sheets") }}</h2>
                         <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                            {{ _("Selection targets (demographic categories and quotas) are defined in your Google Spreadsheet.") }}
+                            {{ _("Selection targets are defined in your Google Sheets spreadsheet.") }}
                         </p>
 
                         <dl class="flex flex-col gap-2">
@@ -98,7 +98,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                     </p>
                     {% if not target_categories %}
                         <p class="text-body-md" style="color: var(--color-secondary-text);">
-                            {{ _("No target categories defined yet.") }}
+                            {{ _("No targets defined yet.") }}
                         </p>
                     {% endif %}
                 </div>
@@ -129,7 +129,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                 <section class="mb-6">
                     {% if check_result.success %}
                         {{ alert(
-                        _("All checks passed. Found %(num_features)s target categories and %(num_people)s eligible respondents. Targets are ready for selection.",
+                        _("All checks passed. Found %(num_features)s targets and %(num_people)s eligible respondents. Targets are ready for selection.",
                         num_features=check_result.num_features,
                         num_people=check_result.num_people),
                         variant="success"

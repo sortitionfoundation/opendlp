@@ -64,7 +64,7 @@
                                name="search"
                                type="text"
                                value="{{ search_term or '' }}"
-                               placeholder="{{ _('Enter name or email...') }}">
+                               placeholder="{{ _('Enter name or email…') }}">
                     </div>
                 </div>
                 <div class="govuk-grid-column-one-quarter">
@@ -144,7 +144,7 @@
                         </td>
                         <td class="govuk-table__cell">
                             {% if user.oauth_provider %}
-                                <span class="govuk-hint">{{ _("N/A (OAuth)") }}</span>
+                                <span class="govuk-hint">{{ _("— (OAuth)") }}</span>
                             {% elif user.totp_enabled %}
                                 <strong class="govuk-tag govuk-tag--blue">{{ _("Enabled") }}</strong>
                             {% else %}

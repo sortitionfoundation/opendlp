@@ -9,7 +9,7 @@
 {% endblock %}
 {% block assembly_content %}
     <h1 class="govuk-heading-l">{{ _("Replacements for") }} {{ assembly.title }}</h1>
-    <p class="govuk-body">{{ _("Run the replacement selection for this assembly using Google Spreadsheet data.") }}</p>
+    <p class="govuk-body">{{ _("Run the replacement selection for this assembly using Google Sheets data.") }}</p>
     <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
         {% if not run_record or run_record.has_finished %}
             <a href="{{ url_for('gsheets_legacy.manage_assembly_gsheet_tabs', assembly_id=assembly.id) }}"
@@ -28,9 +28,9 @@
         {% else %}
             <button class="govuk-button" disabled>
                 {% if run_record.task_type.value == "load_replacement_gsheet" %}
-                    {{ _("Checking Google Spreadsheet") }}
+                    {{ _("Checking Google Sheets") }}
                 {% elif run_record.task_type.value == "select_replacement_gsheet" %}
-                    {{ _("Selecting %(num)s Replacements with Google Spreadsheet", num=num_to_select) }}
+                    {{ _("Selecting %(num)s Replacements with Google Sheets", num=num_to_select) }}
                 {% else %}
                     {{ _("Task in Progress...") }}
                 {% endif %}
@@ -77,7 +77,7 @@
                                {% if num_to_select %} value="{{ num_to_select }}" {% else %} value="{{ min_select }}" {% endif %}
                                required>
                     </div>
-                    <button type="submit" class="govuk-button" id="run-replacements-btn">{{ _("Run Replacements") }}</button>
+                    <button type="submit" class="govuk-button" id="run-replacements-btn">{{ _("Run Replacement Selection") }}</button>
                 </form>
             {% endif %}
         </div>

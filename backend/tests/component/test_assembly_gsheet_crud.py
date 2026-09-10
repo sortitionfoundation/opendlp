@@ -51,8 +51,8 @@ class TestAssemblyGSheetCreateView:
         """Test create gsheet form is displayed when no gsheet exists."""
         response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}/gsheet")
         assert response.status_code == 200
-        assert b"Configure Google Spreadsheet" in response.data
-        assert b"Google Spreadsheet URL" in response.data
+        assert b"Configure Google Sheets" in response.data
+        assert b"Google Sheets URL" in response.data
         assert b"Team Configuration" in response.data
         assert b"Save Configuration" in response.data
 
@@ -63,7 +63,7 @@ class TestAssemblyGSheetCreateView:
         response = logged_in_admin.get(f"/assemblies/{existing_assembly.id}/gsheet")
         assert response.status_code == 200
 
-        assert b"Google Spreadsheet URL" in response.data
+        assert b"Google Sheets URL" in response.data
         assert b'placeholder="https://docs.google.com/spreadsheets/d/' in response.data
 
         assert b"Team Configuration" in response.data
@@ -171,7 +171,7 @@ class TestAssemblyGSheetEditView:
         assembly, gsheet = assembly_with_gsheet
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet")
         assert response.status_code == 200
-        assert b"Edit Google Spreadsheet Configuration" in response.data
+        assert b"Edit Google Sheets Configuration" in response.data
         assert gsheet.url.encode() in response.data
         assert gsheet.select_registrants_tab.encode() in response.data
         assert gsheet.select_targets_tab.encode() in response.data
@@ -244,7 +244,7 @@ class TestAssemblyGSheetWorkflowIntegration:
 
         initial_response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet")
         assert initial_response.status_code == 200
-        assert b"Configure Google Spreadsheet" in initial_response.data
+        assert b"Configure Google Sheets" in initial_response.data
         assert b"Save Configuration" in initial_response.data
 
         logged_in_admin.post(
@@ -260,7 +260,7 @@ class TestAssemblyGSheetWorkflowIntegration:
 
         edit_response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet")
         assert edit_response.status_code == 200
-        assert b"Edit Google Spreadsheet Configuration" in edit_response.data
+        assert b"Edit Google Sheets Configuration" in edit_response.data
         assert b"Save Changes" in edit_response.data
         assert b"Remove Configuration" in edit_response.data
         assert b"state123456789" in edit_response.data
@@ -269,9 +269,9 @@ class TestAssemblyGSheetWorkflowIntegration:
 
         final_response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet")
         assert final_response.status_code == 200
-        assert b"Configure Google Spreadsheet" in final_response.data
+        assert b"Configure Google Sheets" in final_response.data
         assert b"Save Configuration" in final_response.data
-        assert b"Edit Google Spreadsheet Configuration" not in final_response.data
+        assert b"Edit Google Sheets Configuration" not in final_response.data
 
     def test_navigation_breadcrumbs_work(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
         """Test that navigation breadcrumbs are functional."""
@@ -450,7 +450,7 @@ class TestAssemblyGSheetValidation:
         assert (
             b"Warning" in response.data
             or b"No columns to keep" in response.data
-            or b"participant data columns" in response.data
+            or b"respondent data columns" in response.data
         )
 
     def test_create_gsheet_soft_validation_empty_columns_to_keep_with_team_does_not_show_warning(
@@ -480,7 +480,7 @@ class TestAssemblyGSheetValidation:
         assert (
             b"Warning" not in response.data
             and b"No columns to keep" not in response.data
-            and b"participant data columns" not in response.data
+            and b"respondent data columns" not in response.data
         )
 
     def test_edit_gsheet_hard_validation_check_address_without_columns(
@@ -538,5 +538,5 @@ class TestAssemblyGSheetValidation:
         assert (
             b"Warning" in response.data
             or b"No columns to keep" in response.data
-            or b"participant data columns" in response.data
+            or b"respondent data columns" in response.data
         )

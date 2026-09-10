@@ -241,7 +241,7 @@ def disable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
             flash(
                 _(
                     "Account disabled for '%(email)s'. Every session has been ended. Their %(provider)s "
-                    "account still exists - if that is how they were compromised, it needs attention too.",
+                    "account still exists — if that is how they were compromised, it needs attention too.",
                     email=user.email,
                     provider=user.oauth_provider.capitalize(),
                 ),
@@ -309,19 +309,20 @@ def enable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
             flash(
                 _(
                     "An email has been sent telling them their account is back, and that they sign in "
-                    "with %(provider)s as before.",
+                    "with %(provider)s as before",
                     provider=user.oauth_provider.capitalize(),
                 ),
                 "success",
             )
         elif email_sent:
             flash(
-                _("An email has been sent telling them to request a password reset - their old password is gone"),
+                _("An email has been sent telling them to request a password reset — their old password is gone"),
                 "success",
             )
         else:
             flash(
-                _("The account is enabled, but we could not email the user. Please contact them directly."), "warning"
+                _("The account is enabled, but the email to the user could not be sent. Please contact them directly."),
+                "warning",
             )
 
         return redirect(url_for("admin.view_user", user_id=user_id))

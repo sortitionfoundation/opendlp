@@ -778,9 +778,9 @@ def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             inserted = initialise_empty_schema(uow, current_user.id, assembly_id)
         if inserted:
-            flash(_("Schema initialised with %(count)d fixed fields.", count=inserted), "success")
+            flash(_("Schema initialised with %(count)d fixed fields", count=inserted), "success")
         else:
-            flash(_("Schema already exists."), "info")
+            flash(_("Schema already exists"), "info")
     except InsufficientPermissions:
         flash(_("You don't have permission to initialise the schema"), "error")
     except NotFoundError:
@@ -820,7 +820,7 @@ def edit_field_modal(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRet
     try:
         field = _load_field(assembly_id, field_id)
         if field is None:
-            flash(_("Field not found."), "error")
+            flash(_("Field not found"), "error")
             return redirect(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
         values = (
             _modal_values_from_request(request.args) if "modal" in request.args else _modal_values_from_field(field)
@@ -856,7 +856,7 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
     label = values["label"].strip()
     field_key = normalise_field_key(values["field_key"] or label or request.form.get("field_key", ""))
     if not field_key:
-        return _("A label or field key is required (letters, numbers and underscores).")
+        return _("A label or field key is required (letters, numbers and underscores)")
     group = _parse_group(request.form.get("group")) or RespondentFieldGroup.OTHER
     if is_modal:
         field_type = _field_type_from_taxonomy(values)
@@ -868,7 +868,7 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
 
     options = _submitted_options(values) if field_type in CHOICE_TYPES else None
     if field_type in CHOICE_TYPES and not options:
-        return _("A choice field needs at least one option.")
+        return _("A choice field needs at least one option")
 
     try:
         uow = bootstrap.get_flask_uow()
@@ -928,7 +928,7 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     if _is_htmx():
         return _render_editor_fragment(assembly_id, oob=True)
-    flash(_("Field added."), "success")
+    flash(_("Field added"), "success")
     return _schema_page_redirect(assembly_id)
 
 
@@ -1048,7 +1048,7 @@ def _try_update_derivation(
     except FieldDefinitionConflictError as e:
         return None, str(e)
     except FieldDefinitionNotFoundError:
-        return None, _("Field not found.")
+        return None, _("Field not found")
     except InsufficientPermissions:
         return None, _("You don't have permission to edit the schema")
     except NotFoundError:
@@ -1116,7 +1116,7 @@ def mapping_upload_modal(assembly_id: uuid.UUID, field_id: uuid.UUID) -> Respons
     """Serve the lookup-table upload dialog (HTMX fragment / full-page fallback)."""
     field = _load_large_mapping_field(assembly_id, field_id)
     if field is None:
-        flash(_("Field not found."), "error")
+        flash(_("Field not found"), "error")
         return redirect(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
     try:
         return _render_mapping_modal(assembly_id, field)
@@ -1165,7 +1165,7 @@ def mapping_upload_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> Response
     except FieldDefinitionConflictError as e:
         return _fail(str(e))
     except FieldDefinitionNotFoundError:
-        return _fail(_("Field not found."))
+        return _fail(_("Field not found"))
     except InsufficientPermissions:
         return _fail(_("You don't have permission to edit the schema"))
     except NotFoundError:
@@ -1186,7 +1186,7 @@ def recompute_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetur
         with uow:
             report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
     except (FieldDefinitionConflictError, FieldDefinitionNotFoundError):
-        flash(_("Field not found."), "error")
+        flash(_("Field not found"), "error")
         return _schema_page_redirect(assembly_id)
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
@@ -1245,21 +1245,21 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
         # A modal save clears the modal via the out-of-band swap; the row's
         # section select targets #schema-editor directly, so no OOB there.
         return _render_editor_fragment(assembly_id, oob=is_modal)
-    flash(_("Field updated."), "success")
+    flash(_("Field updated"), "success")
     return _schema_page_redirect(assembly_id)
 
 
 def _field_missing_response(assembly_id: uuid.UUID, oob: bool) -> ResponseReturnValue:
     if _is_htmx():
         return _render_editor_fragment(assembly_id, oob=oob)
-    flash(_("Field not found."), "error")
+    flash(_("Field not found"), "error")
     return _schema_page_redirect(assembly_id)
 
 
 def _nothing_submitted_response(assembly_id: uuid.UUID) -> ResponseReturnValue:
     if _is_htmx():
         return _render_editor_fragment(assembly_id)
-    flash(_("No changes submitted."), "info")
+    flash(_("No changes submitted"), "info")
     return _schema_page_redirect(assembly_id)
 
 
@@ -1282,7 +1282,7 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
         if field_type in CHOICE_TYPES:
             options = _submitted_options(values)
             if not options:
-                return {}, _("A choice field needs at least one option.")
+                return {}, _("A choice field needs at least one option")
             update_kwargs["options"] = options
     return update_kwargs, ""
 
@@ -1313,7 +1313,7 @@ def _try_update_field(assembly_id: uuid.UUID, field_id: uuid.UUID, update_kwargs
         return str(e)
     except FieldDefinitionNotFoundError:
         # The message may carry internal detail — show a generic one.
-        return _("Field not found.")
+        return _("Field not found")
     except ValueError as e:
         # Domain validation (e.g. a choice type without options) — the message
         # is developer-written and safe to show.
@@ -1337,9 +1337,9 @@ def guess_types_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             changed = guess_field_types(uow, current_user.id, assembly_id)
         if changed:
-            flash(_("Guessed types for %(count)d fields.", count=len(changed)), "success")
+            flash(_("Guessed types for %(count)d fields", count=len(changed)), "success")
         else:
-            flash(_("No fields were guessed — no untouched text rows to update."), "info")
+            flash(_("No fields were guessed — no untouched text rows to update"), "info")
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
@@ -1358,17 +1358,17 @@ def add_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetu
     value = request.form.get("value", "").strip()
     help_text = request.form.get("help_text", "")
     if not value:
-        flash(_("Option value is required."), "error")
+        flash(_("Option value is required"), "error")
         return _schema_page_redirect(assembly_id)
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
             add_choice_option(uow, current_user.id, assembly_id, field_id, value, help_text)
-        flash(_("Option added."), "success")
+        flash(_("Option added"), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")
     except FieldDefinitionNotFoundError:
-        flash(_("Field not found."), "error")
+        flash(_("Field not found"), "error")
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
@@ -1388,10 +1388,10 @@ def update_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
     new_value = request.form.get("value", "").strip()
     new_help_text = request.form.get("help_text", "")
     if not old_value:
-        flash(_("Original option value is required."), "error")
+        flash(_("Original option value is required"), "error")
         return _schema_page_redirect(assembly_id)
     if not new_value:
-        flash(_("Option value cannot be blank."), "error")
+        flash(_("Option value cannot be blank"), "error")
         return _schema_page_redirect(assembly_id)
     try:
         uow = bootstrap.get_flask_uow()
@@ -1405,11 +1405,11 @@ def update_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
                 new_value=new_value,
                 new_help_text=new_help_text,
             )
-        flash(_("Option updated."), "success")
+        flash(_("Option updated"), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")
     except FieldDefinitionNotFoundError:
-        flash(_("Option not found."), "error")
+        flash(_("Option not found"), "error")
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
@@ -1427,17 +1427,17 @@ def remove_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
     """Remove a ChoiceOption from a choice field."""
     value = request.form.get("value", "").strip()
     if not value:
-        flash(_("Option value is required."), "error")
+        flash(_("Option value is required"), "error")
         return _schema_page_redirect(assembly_id)
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
             remove_choice_option(uow, current_user.id, assembly_id, field_id, value)
-        flash(_("Option removed."), "success")
+        flash(_("Option removed"), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")
     except FieldDefinitionNotFoundError:
-        flash(_("Option not found."), "error")
+        flash(_("Option not found"), "error")
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
@@ -1459,7 +1459,7 @@ def move_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnVal
     """
     direction = request.form.get("direction", "")
     if direction not in {"up", "down"}:
-        flash(_("Invalid move direction."), "error")
+        flash(_("Invalid move direction"), "error")
         return _schema_page_redirect(assembly_id)
 
     try:
@@ -1468,7 +1468,7 @@ def move_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnVal
             fields = get_schema(uow, current_user.id, assembly_id)
             target = next((f for f in fields if f.id == field_id), None)
             if target is None:
-                flash(_("Field not found."), "error")
+                flash(_("Field not found"), "error")
                 return _schema_page_redirect(assembly_id)
 
             same_group = [f for f in fields if f.group == target.group]
@@ -1506,11 +1506,11 @@ def delete_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
         uow = bootstrap.get_flask_uow()
         with uow:
             delete_field(uow, current_user.id, assembly_id, field_id)
-        flash(_("Field removed."), "success")
+        flash(_("Field removed"), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")
     except FieldDefinitionNotFoundError:
-        flash(_("Field not found."), "error")
+        flash(_("Field not found"), "error")
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:

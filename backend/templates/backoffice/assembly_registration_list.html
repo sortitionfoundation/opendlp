@@ -11,7 +11,7 @@ ABOUTME: One row per page with status, publish date and a per-row actions menu
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")) }}
+        back_label=_("Back to Your Assemblies")) }}
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
             active_tab="registration",

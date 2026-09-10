@@ -4,7 +4,7 @@ ABOUTME: Verifies get_locale() preserves Accept-Language region tags like en-GB"
 import pytest
 from flask import Flask
 
-from opendlp.entrypoints.extensions import get_locale
+from opendlp.entrypoints.extensions import get_locale, html_lang
 from opendlp.entrypoints.flask_app import create_app
 
 
@@ -67,3 +67,24 @@ class TestGetLocaleUserPreferences:
             headers=[("Accept-Language", "en-GB")],
         ):
             assert get_locale() == "es"
+
+
+class TestHtmlLang:
+    """The `lang` attribute needs a BCP 47 tag, which is not what get_locale returns."""
+
+    def test_bare_language_is_unchanged(self, app: Flask) -> None:
+        with app.test_request_context(headers=[("Accept-Language", "hu")]):
+            assert html_lang() == "hu"
+
+    def test_region_separator_becomes_a_hyphen(self, app: Flask) -> None:
+        # get_locale() gives the gettext form "en_GB"; HTML wants "en-GB".
+        with app.test_request_context(headers=[("Accept-Language", "en-GB")]):
+            assert get_locale() == "en_GB"
+            assert html_lang() == "en-GB"
+
+    def test_outside_a_request_it_falls_back_instead_of_raising(self, app: Flask) -> None:
+        """The email templates render in an app context with no request. get_locale()
+        reads request.args, so calling it there raises "Working outside of request
+        context" — which would break every outgoing email."""
+        with app.app_context():
+            assert html_lang() == "en"

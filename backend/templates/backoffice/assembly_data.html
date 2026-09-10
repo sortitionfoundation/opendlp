@@ -15,7 +15,7 @@ ABOUTME: Displays data source selection and data management for assemblies
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to Your Assemblies")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
@@ -38,12 +38,12 @@ ABOUTME: Displays data source selection and data management for assemblies
             name="data_source",
             label=_("Data Source"),
             options=[
-            {"value": "gsheet", "label": _("Google Spreadsheet")},
+            {"value": "gsheet", "label": _("Google Sheets")},
             {"value": "csv", "label": _("CSV file")}
             ],
             value=data_source,
             placeholder=_("Select Data Source"),
-            hint=_("Data source is locked because a configuration already exists. Delete the configuration to change the data source.") if data_source_locked else _("Choose how you want to import participant data for this assembly."),
+            hint=_("Data source is locked because a configuration already exists. Remove the configuration to change the data source.") if data_source_locked else _("Choose how you want to import respondent data for this assembly."),
             disabled=data_source_locked,
             attrs='x-model="selected" @change="navigate($event)" data-focus-id="data-source"' if not data_source_locked else 'data-focus-id="data-source"'
             ) }}
@@ -63,7 +63,7 @@ ABOUTME: Displays data source selection and data management for assemblies
     {% set is_new = gsheet_mode == "new" or not gsheet %}
     <section class="mb-8">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Google Spreadsheet Configuration") }}</h2>
+            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Google Sheets Configuration") }}</h2>
             {% if readonly %}
                 <div class="flex gap-2">
                     {{ button(_("Edit Configuration") , href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet&mode=edit", variant="outline") }}
@@ -73,16 +73,16 @@ ABOUTME: Displays data source selection and data management for assemblies
                           class="inline"
                           x-data
                           data-preserve-scroll
-                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete this Google Spreadsheet configuration? This action cannot be undone.") }}', $el)">
+                          @submit.prevent="$confirm('{{ _("Are you sure you want to remove this Google Sheets configuration? This action cannot be undone.") }}', $el)">
                         {{ gsheet_form.hidden_tag() }}
-                        {{ button(_("Delete") , type="submit", variant="danger") }}
+                        {{ button(_("Remove") , type="submit", variant="danger") }}
                     </form>
                 </div>
             {% endif %}
         </div>
         {% if is_new %}
             <p class="text-body-md mb-6" style="color: var(--color-secondary-text);">
-                {{ _("Configure a Google Spreadsheet to import and manage participant data for this assembly.") }}
+                {{ _("Configure a Google Sheets spreadsheet to import and manage respondent data for this assembly.") }}
             </p>
         {% endif %}
         {# Configuration Form / View #}
@@ -99,7 +99,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                 type="url",
                 value=gsheet_form.url.data or "",
                 placeholder="https://docs.google.com/spreadsheets/d/...",
-                hint=_("Enter the full URL of your Google Spreadsheet.") ~ (" " ~ _("Ensure it is shared with:") ~ " " ~ google_service_account_email if google_service_account_email and google_service_account_email != "UNKNOWN" else ""),
+                hint=_("Enter the full URL of your Google Sheets spreadsheet.") ~ (" " ~ _("Ensure it is shared with:") ~ " " ~ google_service_account_email if google_service_account_email and google_service_account_email != "UNKNOWN" else ""),
                 required=true,
                 readonly=readonly,
                 link_url=gsheet_form.url.data if gsheet and readonly else "",
@@ -170,13 +170,13 @@ ABOUTME: Displays data source selection and data management for assemblies
                     {{ checkbox(name="check_same_address",
                     label=_("Check Same Address") ,
                     checked=gsheet_form.check_same_address.data,
-                    hint=_("Prevent selecting multiple participants from the same address."),
+                    hint=_("Prevent selecting multiple respondents from the same address."),
                     readonly=readonly
                     ) }}
                     {{ checkbox(name="generate_remaining_tab",
                     label=_("Generate Remaining Tab") ,
                     checked=gsheet_form.generate_remaining_tab.data,
-                    hint=_("Automatically generate a tab with remaining (unselected) participants."),
+                    hint=_("Automatically generate a tab with the remaining respondents."),
                     readonly=readonly
                     ) }}
                 </fieldset>
@@ -205,7 +205,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                             label=_("ID Column") ,
                             value=gsheet_form.id_column.data or "",
                             placeholder=_("e.g., ID"),
-                            hint=_("Column name containing unique participant identifiers."),
+                            hint=_("Column name containing unique respondent identifiers."),
                             readonly=readonly,
                             error=e(gsheet_form.id_column.errors)
                             ) }}
@@ -234,7 +234,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         {{ input(name="id_column",
                         label=_("ID Column") ,
                         value=gsheet_form.id_column.data or "",
-                        hint=_("Column name containing unique participant identifiers."),
+                        hint=_("Column name containing unique respondent identifiers."),
                         readonly=readonly
                         ) }}
                         {{ input(name="check_same_address_cols_string",
@@ -271,9 +271,9 @@ ABOUTME: Displays data source selection and data management for assemblies
                           action="{{ url_for('gsheets.delete_gsheet_config', assembly_id=assembly.id) }}"
                           x-data
                           data-preserve-scroll
-                          @submit.prevent="$confirm('{{ _("Are you sure you want to delete this Google Spreadsheet configuration? This action cannot be undone.") }}', $el)">
+                          @submit.prevent="$confirm('{{ _("Are you sure you want to remove this Google Sheets configuration? This action cannot be undone.") }}', $el)">
                         {{ gsheet_form.hidden_tag() }}
-                        {{ button(_("Delete Configuration") , type="submit", variant="danger") }}
+                        {{ button(_("Remove Configuration") , type="submit", variant="danger") }}
                     </form>
                 </div>
             {% endif %}
@@ -303,7 +303,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                  {% if can_create_from_respondents %}x-data="modal({ initialOpen: false })"{% endif %}>
                 <h3 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Targets") }}</h3>
                 <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                    {{ _("Upload target categories for selection criteria.") }}
+                    {{ _("Upload the targets for selection.") }}
                 </p>
                 {# A rejected upload re-renders this page with the form that
                    rejected it, so the reason sits beside the file field rather
@@ -332,7 +332,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                          style="background-color: var(--color-subtle-background-panels)">
                         {{ icon_check(style="color: var(--color-success-600)") }}
                         <span class="text-body-sm" style="color: var(--color-body-text);">
-                            {{ _("%(count)d categories uploaded", count=targets_count) }}
+                            {{ _("%(count)d targets uploaded", count=targets_count) }}
                         </span>
                     </div>
                     {# Delete button #}
@@ -354,7 +354,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         label=_("CSV File") ,
                         accept=".csv",
                         required=true,
-                        hint=_("Select a CSV file with target categories."),
+                        hint=_("Select a CSV file with targets."),
                         error=e(targets_upload_errors.get("csv_file", []))
                         ) }}
                         <div class="mt-4">{{ button(_("Upload") , type="submit", variant="primary") }}</div>
@@ -367,7 +367,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                     <div class="mt-4 pt-4"
                          style="border-top: 1px solid var(--color-borders-dividers)">
                         <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                            {{ _("Or build the categories from the columns in your respondent data.") }}
+                            {{ _("Or build the targets from the columns in your respondent data.") }}
                         </p>
                         {{ button(_("Create from respondent data"),
                         variant="secondary",
@@ -426,7 +426,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                         any upload fails files that have no column of that name. #}
                         {% set has_previous_upload = csv_config and csv_config.last_import_timestamp and csv_config.csv_id_column %}
                         {% if has_previous_upload %}
-                            {% set id_column_hint = _('Using "%(id_column)s" from your last upload. Change it if this file uses a different column, or clear it to use the first column.', id_column=csv_config.csv_id_column) %}
+                            {% set id_column_hint = _("Using '%(id_column)s' from your last upload. Change it if this file uses a different column, or clear it to use the first column.", id_column=csv_config.csv_id_column) %}
                         {% else %}
                             {% set id_column_hint = _("Name of column containing unique identifiers. If blank, the first column in the CSV will be used.") %}
                         {% endif %}
@@ -468,7 +468,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                     {{ checkbox(name="check_same_address",
                     label=_("Check Same Address") ,
                     checked=csv_settings_form.check_same_address.data,
-                    hint=_("Prevent selecting multiple participants from the same address."),
+                    hint=_("Prevent selecting multiple respondents from the same address."),
                     readonly=csv_readonly
                     ) }}
                     {# Available Columns Info - only show in edit mode #}

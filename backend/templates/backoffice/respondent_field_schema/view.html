@@ -13,7 +13,7 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to Your Assemblies")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
@@ -39,9 +39,9 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
                         {{ icon_info(classes="w-6 h-6", style="color: var(--color-primary-action);") }}
                     </div>
                     <div>
-                        <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Fields are defined by your Google Spreadsheet") }}</h2>
+                        <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Fields are defined by your Google Sheets spreadsheet") }}</h2>
                         <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                            {{ _("The fields for this assembly are the columns in the respondent tabs of your Google Spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
+                            {{ _("The fields for this assembly are the columns in the respondent tabs of your Google Sheets spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
                         </p>
                         <dl class="flex flex-col gap-2">
                             <div class="flex gap-2">

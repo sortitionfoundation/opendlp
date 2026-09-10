@@ -1209,7 +1209,7 @@ class TestMappingUploadAndRecompute:
             f"{self._base(existing_assembly)}/fields/{plain.id}/mapping-modal", follow_redirects=True
         )
         assert response.status_code == 200
-        assert b"Field not found." in response.data
+        assert b"Field not found" in response.data
 
     def _upload(self, logged_in_admin, existing_assembly, field, csv_content, allow_new_outputs=False):
         data = {"mapping_file": (io.BytesIO(csv_content.encode("utf-8")), "mapping.csv")}
@@ -1323,7 +1323,7 @@ class TestMappingUploadAndRecompute:
             follow_redirects=True,
         )
         assert response.status_code == 200
-        assert b"Field not found." in response.data
+        assert b"Field not found" in response.data
 
 
 class TestCopyOptionsFromTarget:

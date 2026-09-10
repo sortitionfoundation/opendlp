@@ -623,14 +623,14 @@ def visit_registration_preview_step(page: Page, title: str, test_database):
 @then("I should see the embedded registration form preview")
 def see_embedded_form_preview(page: Page):
     """The preview step iframes the saved form, rendered through the public pipeline."""
-    frame = page.frame_locator('iframe[title="Registration form preview"]')
+    frame = page.frame_locator('iframe[title="Registration page preview"]')
     expect(frame.locator("form")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then("submitting the embedded preview form does not leave the page")
 def submitting_preview_form_does_nothing(page: Page):
     """The preview form is interactive but its submission is blocked."""
-    frame = page.frame_locator('iframe[title="Registration form preview"]')
+    frame = page.frame_locator('iframe[title="Registration page preview"]')
     # Interactions work: pick a dropdown option before trying to submit.
     frame.locator('select[name="colour"]').select_option("Blue")
     frame.locator('form button[type="submit"]').click()
@@ -1378,14 +1378,14 @@ def uncheck_checkbox(page: Page, label: str):
             checkbox_by_name.uncheck()
 
 
-@when('I click the "Delete" button and confirm')
-def click_delete_and_confirm(page: Page):
-    """Click the Delete button and confirm the dialog."""
+@when('I click the "Remove" button and confirm')
+def click_remove_and_confirm(page: Page):
+    """Click the Remove button and confirm the dialog."""
     # Set up dialog handler before clicking
     page.on("dialog", lambda dialog: dialog.accept())
-    # Find and click the delete button
-    delete_button = page.locator("button", has_text="Delete").first
-    delete_button.click()
+    # Find and click the remove button
+    remove_button = page.locator("button", has_text="Remove").first
+    remove_button.click()
     page.wait_for_load_state("networkidle")
 
 
@@ -1738,7 +1738,7 @@ def choose_respondent_column(page: Page, column: str):
 
 @when("I add the selected categories")
 def add_selected_categories(page: Page):
-    page.get_by_role("button", name="Add selected categories").click()
+    page.get_by_role("button", name="Add selected targets").click()
     page.wait_for_load_state("networkidle")
 
 
