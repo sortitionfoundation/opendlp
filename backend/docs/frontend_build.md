@@ -56,8 +56,10 @@ Built output is regenerated wherever the app is assembled:
 
 - **Local dev:** `just run` runs `just build-all` first; `just install` runs `npm run build`.
 - **Docker:** the build stage runs `npm install` then `npm run build`.
-- **CI:** the `setup-python-env` composite action runs `npm install` then `npm run build`, so both
-  the quality/test job and the BDD job have freshly built assets.
+- **CI:** the `setup-env` composite action (`.github/actions/setup-env/`) runs `npm ci` then
+  `npm run build`, so both the quality/test job and the BDD job have freshly built assets. It
+  compiles the translation catalogues too, for the same reason — see
+  [Translation Management](translations.md).
 
 Because nothing built is committed, a missing build step shows up as absent CSS/JS at runtime rather
 than a merge conflict — if a page looks unstyled or a JS enhancement doesn't run, build the assets.

@@ -29,7 +29,7 @@ jobs:
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
+        uses: ./.github/actions/setup-env
         with:
           working-directory: ./backend
 
@@ -131,7 +131,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
+        uses: ./.github/actions/setup-env
         with:
           python-version: ${{ matrix.python-version }}
           working-directory: ./backend
@@ -139,16 +139,6 @@ jobs:
       # without this, the health check tests might fail
       - name: Create generated_version.txt
         run: git show --no-patch --format='%cd %h' --date=format:'%Y-%m-%d' HEAD > generated_version.txt
-
-      # The .mo catalogues are gitignored build artefacts, built here for the
-      # same reason the Dockerfile builds them into the image: without them
-      # every gettext lookup falls back to its msgid and the app under test is
-      # monolingual English, so no test can observe a translation. pybabel is
-      # called directly rather than through `just translate-compile` because
-      # this job does not install just - the same exception, for the same
-      # reason, that the Dockerfile documents.
-      - name: Compile translation catalogues
-        run: uv run pybabel compile --directory=translations
 
       - name: Run tests
         env:

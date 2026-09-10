@@ -161,8 +161,9 @@ have to stay in step:
 
 - the `Dockerfile`, which compiles into the image;
 - every `just` test recipe and `just run`, which depend on `translate-compile`;
-- the CI workflows, which call `pytest` directly rather than through `just` and
-  so carry their own compile step (`.github/workflows/main.yml` and `bdd.yml`).
+- the `setup-env` composite action (`.github/actions/setup-env/`), which every
+  CI job goes through — the workflows call `pytest` directly rather than through
+  `just`, so without it they would each need their own step to forget.
 
 Miss one and the symptom is not an error. Every `gettext` lookup quietly falls
 back to its msgid, so the app is monolingual English and looks fine until

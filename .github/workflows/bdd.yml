@@ -48,7 +48,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
+        uses: ./.github/actions/setup-env
         with:
           # No matrix here - BDD runs once, on the action's default Python.
           working-directory: ./backend
@@ -64,11 +64,6 @@ jobs:
           DB_PASSWORD: abc123 # pragma: allowlist secret
           REDIS_HOST: localhost
           REDIS_PORT: 63792
-
-      # See the same step in main.yml: the .mo catalogues are gitignored, and
-      # without them the browser drives an app that is monolingual English.
-      - name: Compile translation catalogues
-        run: uv run pybabel compile --directory=translations
 
       - name: Run BDD tests
         run: uv run python -m pytest tests/bdd/ -v --tracing=retain-on-failure
