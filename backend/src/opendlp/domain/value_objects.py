@@ -31,7 +31,7 @@ global_role_labels = {
 # What the role means, written for the person who holds it. Shown on the
 # profile page under the label.
 global_role_descriptions = {
-    GlobalRole.USER: _l("You can see the assemblies you have been added to. An organiser can add you to one."),
+    GlobalRole.USER: _l("You can see the assemblies you have been added to. An Assembly Manager can add you to one."),
     GlobalRole.ORGANISER: _l(
         "You can create assemblies. You can see the assemblies you have been added to, and the ones you create."
     ),
