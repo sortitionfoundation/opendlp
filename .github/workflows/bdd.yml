@@ -48,7 +48,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up the environment
-        uses: ./.github/actions/setup-env
+        uses: $/.github/actions/setup-env
         with:
           # No matrix here - BDD runs once, on the action's default Python.
           working-directory: ./backend
