@@ -55,6 +55,7 @@ in, and don't add a third variant.
 | targets               | All of an assembly's targets together: "Edit targets", "Targets saved"        |                                    |
 | selection             | Choosing people from the pool by stratified random lottery                    | draw, lottery, sortition           |
 | selection run         | One run of the selection, recorded in the run history                         |                                    |
+| panel                 | One possible line-up of the whole assembly; a selection picks one             | committee, line-up                 |
 | test selection        | A selection run that is not for real                                          |                                    |
 | replacement selection | A selection run to fill places left by people who withdrew                    | replacements, substitute, reserve  |
 | replacements          | The people a replacement selection selects                                    | replacement participants, members  |
@@ -73,43 +74,35 @@ assembly." Straight apostrophe.
 "category": "Add target", "Target name", "Delete target". It is what the
 redesigned targets editor says. The legacy targets page, the sortition-algorithms
 library and the domain classes (`TargetCategory`) still say category or feature;
-none of those are the interface's word. A few backoffice strings still say
-"target category" or "category" — "No target categories defined yet.", the
-"Create targets from respondent data" modal, the target check summary — and are
-drift to fix in a pass, not a variant to copy. The Google Sheets tab labels
+none of those are the interface's word, and nor is "target category". The
+Google Sheets tab labels
 ("Initial Selection Categories Tab:") name a tab the spreadsheet really has, and
 are a harder case: the tab is named in the organiser's spreadsheet, not by us.
 
 **respondent** is the word for a person in the data, at every stage: in the pool,
 selected, confirmed, withdrawn. It is the dominant word by a long way. The code
 still says `registrant` in places (`select_registrants_tab`, the `view_registrant`
-page). Those are identifiers; the interface says "respondent". "registrant" in
-the UI means something narrower — a visitor to a public registration page — and
-appears in a single string.
+page). Those are identifiers; the interface says "respondent". Someone looking
+at a public registration page is a **visitor**.
 
 **participant** is narrower than respondent: only someone who has been selected.
-"Successfully selected %(num)s participants" is right; "participants with the
-same address", which means everyone in the pool, is not, and nor is "Respondent
-data (participant information)", which defines one word with the other. Those
-are drift to fix in a pass.
+"Successfully selected %(num)s participants" is right. The address check looks
+for "respondents with the same address", because it means everyone in the pool.
 
 **pool** is the respondents who have not been selected, and it works whether or
 not a selection has run yet. Once one has, "remaining respondents" says the same
 thing and is often clearer: it is what the Google Sheets output calls them. A
 replacement selection chooses from the pool and selects **replacements**. Keep
-those two apart — "replacements" is the people, never the process, so "Run
-Replacements" is drift for "Run replacement selection", and "replacement
-participants" and "replacement members" are both just "replacements". Whether the
+those two apart — "replacements" is the people, never the process, so the
+button is "Run Replacement Selection", and the people are just "replacements",
+not "replacement participants" or "replacement members". Whether the
 per-person status should also say "Pool" is [still open](#still-open).
 
 **team member** is a user with a role on an assembly: "Team Members". "Member"
-never means a respondent, whatever state they are in — "select replacement
-members from the remaining pool" is drift.
+never means a respondent, whatever state they are in.
 
 **registration page** is the thing an organiser creates, publishes and closes —
-not "registration form". The two are mixed about evenly today ("Registration form
-published successfully" alongside "A registration page that has been published
-cannot be deleted").
+not "registration form".
 
 **selection** is the backoffice word. "Democratic lottery" belongs to the brand
 and to introductory text ("Open Democratic Lottery Platform", "Run the democratic
@@ -142,11 +135,9 @@ an administrator" messages, where it means a person rather than the role. See
 
 **Your Assemblies** is the page heading the list already has. The team calls it
 the "backoffice homepage", which is fine between ourselves and wrong on the page.
-**Dashboard** is only the per-assembly statistics tab. Today one `Dashboard`
-msgid serves both — the statistics tab and the navigation link to the list — and
-"Back to dashboard" goes to the list, so those links are drift, and the msgid
-needs splitting when they are fixed. The Hungarian guide complains about the same
-msgid _(B11)_.
+**Dashboard** is only the per-assembly statistics tab. Every link to the list —
+the header, the error pages, "Back to Your Assemblies" — says so. The list page's
+own heading still says "Dashboard"; that is [still open](#still-open).
 
 ### Google Sheets
 
@@ -169,7 +160,6 @@ write to the spreadsheet". Not "document": in Google's own vocabulary a document
 is a Google Doc, and a reader who goes looking in Drive for one will be misled.
 
 **tab** is a tab within the spreadsheet, as the Google Sheets interface calls it.
-The one "Worksheet / tab name" label predates this guide.
 
 **Do not abbreviate the product to save space.** Where a label is tight, drop the
 product name rather than shortening it — the heading or hint around it almost
@@ -192,7 +182,7 @@ put the code's word on the page.
 | `TargetValue`                                 | value                                          |
 | `feature` (sortition-algorithms)              | target                                         |
 | `agent` (sortition-algorithms)                | respondent                                     |
-| `committee`, `panel` (sortition-algorithms)   | one possible line-up of the whole assembly     |
+| `committee` (sortition-algorithms)            | panel                                          |
 | an `Enum` member's `.value`                   | its label from the labels dict beside the enum |
 
 The sortition-algorithms library writes its own run reports in optimisation
@@ -221,8 +211,7 @@ wording one: see "Never render an `Enum` member's `.value`" in `AGENTS.md`.
 
 ### Words
 
-- **Sign in / sign out**, not log in / log out. The buttons and headings already
-  say "Sign in"; some older flash messages still say "log in".
+- **Sign in / sign out**, not log in / log out.
 - **Cancel** is the button that backs out of a dialog or form without doing
   anything. **Back to …** is navigation.
 - **Delete** destroys data: a respondent, a target, a tab. **Remove** undoes a
@@ -235,15 +224,14 @@ wording one: see "Never render an `Enum` member's `.value`" in `AGENTS.md`.
 - **Straight quotes** everywhere, `'` and `"`. There are no curly quotes in the
   source.
 - **Single quotes around a placeholder** the reader will match against their own
-  data: "A target called '%(name)s' already exists". This is the dominant form;
-  a few newer strings use double quotes.
+  data: "A target called '%(name)s' already exists".
 - **Flash messages**: no full stop on a single sentence, full stops when there
-  are several. That is what most of them do already.
-- **Ellipsis**: the single character `…`, not three full stops. "Processing…"
-  and "Processing..." are currently two msgids.
-- **Dashes**: an em dash `—` where English wants a dash, not a spaced hyphen.
-  The newer strings already do this; older ones such as the role options
-  ("Admin - Full system access…") do not.
+  are several.
+- **Ellipsis**: the single character `…`, not three full stops.
+- **Dashes**: an em dash `—` where English wants a dash, not a spaced hyphen:
+  "Admin — Full system access…", "Optional — your first name". The " - OpenDLP"
+  at the end of page and email titles is a separator, not a dash, and stays a
+  hyphen.
 - **An empty table cell** shows `—`, not "N/A" or `-`.
 - **No lone `%`** in a msgid; it breaks at render time. See `AGENTS.md`.
 
@@ -301,3 +289,18 @@ before sweeping the source.
    the word the rest of the interface uses for these ("Fields are defined by
    your Google Sheets spreadsheet"), so "Address Fields" and "Fields to Keep" are
    the likely answer, but this is waiting on a team discussion.
+4. **The Your Assemblies page's own heading.** Every link to the list now says
+   "Your Assemblies", but the backoffice page itself has a hard-coded, untranslated
+   `<h1>Dashboard</h1>` with "Your Assemblies" as the `<h2>` beneath it (and
+   "Welcome back" and "Created:" are untranslated too). Renaming the `<h1>`
+   alone would stack two identical headings. _Recommend_ an `<h1>` of "Your
+   Assemblies", dropping the `<h2>` but keeping the "Create New Assembly" button
+   beside it, and wrapping the remaining strings for translation. The legacy list
+   page has the same pair of headings, and can stay as it is until it is retired.
+5. **Capitalising "Citizens' Assembly".** The glossary writes "citizens'
+   assembly" in lowercase, but the home page, the footer and the invite email
+   capitalise it in running prose — "a platform for supporting Citizens'
+   Assemblies", "Democratic Lottery and Citizens' Assembly management" — where it
+   reads as a term of art. _Recommend_ lowercase in running text, capitals in
+   headings and the brand, but this touches how the Sortition Foundation writes
+   about itself, so it wants a decision rather than a sweep.
