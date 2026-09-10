@@ -328,7 +328,7 @@ class SelectionRunRecord:
         "read_gsheet": _l("Reading spreadsheet…"),
         "write_gsheet": _l("Writing results back to spreadsheet…"),
         "legacy_attempt": _l("Running selection attempt %(current)s of %(total)s"),
-        "multiplicative_weights": _l("Finding diverse committees (%(current)s of %(total)s rounds)"),
+        "multiplicative_weights": _l("Finding diverse panels (%(current)s of %(total)s rounds)"),
         "maximin_optimization": _l("Optimising for maximin fairness (iteration %(current)s)"),
         "nash_optimization": _l("Optimising for Nash fairness (iteration %(current)s)"),
         "leximin_outer": _l("Optimising for leximin fairness (%(current)s of %(total)s fixed)"),
