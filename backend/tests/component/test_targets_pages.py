@@ -86,7 +86,7 @@ class TestViewTargetsPage:
     def test_get_targets_page_shows_empty_state(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
         assert response.status_code == 200
-        assert b"No target categories defined yet" in response.data
+        assert b"No targets defined yet" in response.data
 
     def test_get_targets_page_requires_login(self, client, existing_assembly):
         response = client.get(_targets_url(existing_assembly.id))
@@ -176,7 +176,7 @@ class TestAddCategoriesFromColumns:
 
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
-            assert any("Created 1 categories" in msg for msg in flash_messages)
+            assert any("Created 1 targets" in msg for msg in flash_messages)
 
     def test_no_columns_selected_shows_warning(self, logged_in_admin, existing_assembly):
         """Posting with no columns selected shows a warning."""

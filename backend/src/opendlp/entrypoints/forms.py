@@ -576,7 +576,7 @@ class UploadTargetsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
             FileRequired(message=_l("Please select a CSV file to upload")),
             FileAllowed(["csv"], message=_l("Only CSV files are allowed")),
         ],
-        description=_l("Select a CSV file containing target categories"),
+        description=_l("Select a CSV file containing targets"),
     )
 
 

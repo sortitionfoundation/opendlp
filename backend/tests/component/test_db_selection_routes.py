@@ -113,7 +113,7 @@ class TestDbSelectionRoutes:
 
         assert response.status_code == 200
         assert b"Data Check Passed" in response.data
-        assert b"3 target categories" in response.data
+        assert b"3 targets" in response.data
         assert b"100 eligible respondents" in response.data
 
     @patch("opendlp.entrypoints.blueprints.db_selection_legacy.check_db_selection_data")

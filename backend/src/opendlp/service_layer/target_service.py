@@ -837,7 +837,7 @@ def _duplicate_value_errors(category_edit: TargetCategoryEdit) -> list[TargetEdi
             continue
         errors.extend(
             TargetEditError(
-                _("Two values in this category are both called '%(name)s'", name=name),
+                _("Two values in this target are both called '%(name)s'", name=name),
                 category_edit.form_id,
                 value_edit.form_id,
                 "value",

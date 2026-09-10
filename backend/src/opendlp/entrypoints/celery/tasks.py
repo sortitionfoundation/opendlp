@@ -258,7 +258,7 @@ def _internal_load_gsheet(
             task_id,
             [
                 _(
-                    "Found %(num_features)s categories for targets with a total of %(num_values)s values.",
+                    "Found %(num_features)s targets with a total of %(num_values)s values.",
                     num_features=num_features,
                     num_values=num_values,
                 ),
@@ -413,7 +413,7 @@ def _internal_run_select(
             task_id,
             [
                 _(
-                    "Running stratified selection with %(people_count)s people and %(features_count)s features%(suffix)s",
+                    "Running stratified selection with %(people_count)s people and %(features_count)s targets%(suffix)s",
                     people_count=people.count,
                     features_count=len(features),
                     suffix=log_suffix,
@@ -598,7 +598,7 @@ def _internal_load_db(
                 task_id,
                 [
                     _(
-                        "Found %(num_features)s categories with %(num_values)s values.",
+                        "Found %(num_features)s targets with %(num_values)s values.",
                         num_features=num_features,
                         num_values=num_values,
                     ),

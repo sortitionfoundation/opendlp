@@ -1738,7 +1738,7 @@ def choose_respondent_column(page: Page, column: str):
 
 @when("I add the selected categories")
 def add_selected_categories(page: Page):
-    page.get_by_role("button", name="Add selected categories").click()
+    page.get_by_role("button", name="Add selected targets").click()
     page.wait_for_load_state("networkidle")
 
 

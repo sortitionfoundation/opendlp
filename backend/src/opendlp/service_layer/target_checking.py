@@ -117,8 +117,8 @@ def _annotations_from_cross_feature_issues(
                 TargetAnnotation(
                     level="error",
                     message=_(
-                        "Sum of max values (%(value)s) is the smallest across all categories — "
-                        "conflicts with category '%(other)s'",
+                        "Sum of max values (%(value)s) is the smallest across all targets — "
+                        "conflicts with target '%(other)s'",
                         value=issue.smallest_maximum_value,
                         other=issue.largest_minimum_feature,
                     ),
@@ -130,8 +130,8 @@ def _annotations_from_cross_feature_issues(
                 TargetAnnotation(
                     level="error",
                     message=_(
-                        "Sum of min values (%(value)s) is the largest across all categories — "
-                        "conflicts with category '%(other)s'",
+                        "Sum of min values (%(value)s) is the largest across all targets — "
+                        "conflicts with target '%(other)s'",
                         value=issue.largest_minimum_value,
                         other=issue.smallest_maximum_feature,
                     ),
@@ -272,7 +272,7 @@ def _annotations_from_percentage_totals(
             TargetAnnotation(
                 level="warning",
                 message=_(
-                    "Percentages for this category add up to %(total)s%%, not 100%%",
+                    "Percentages for this target add up to %(total)s%%, not 100%%",
                     total=category.percentage_total(),
                 ),
             ),

@@ -158,7 +158,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         total_values = sum(len(c.values) for c in categories)
         flash(
             _(
-                "Successfully imported %(cats)s categories with %(vals)s values from %(file)s",
+                "Successfully imported %(cats)s targets with %(vals)s values from %(file)s",
                 cats=len(categories),
                 vals=total_values,
                 file=filename,
@@ -681,7 +681,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
             if values_added_count > 0:
                 flash(
                     _(
-                        "Created %(count)s categories with %(values)s values: %(names)s",
+                        "Created %(count)s targets with %(values)s values: %(names)s",
                         count=len(created),
                         values=values_added_count,
                         names=", ".join(created),
@@ -690,11 +690,11 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 )
             else:
                 flash(
-                    _("Created %(count)s categories: %(names)s", count=len(created), names=", ".join(created)),
+                    _("Created %(count)s targets: %(names)s", count=len(created), names=", ".join(created)),
                     "success",
                 )
         else:
-            flash(_("No new categories were created"), "warning")
+            flash(_("No new targets were created"), "warning")
 
         return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 

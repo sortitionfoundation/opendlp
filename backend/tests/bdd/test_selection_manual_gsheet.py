@@ -140,7 +140,7 @@ def _(page: Page):
     """I am told the number of categories and category values."""
     expect(page.get_by_text("Full Run Report", exact=True).first).to_be_visible(timeout=30_000)
     page.get_by_text("Full Run Report", exact=True).first.click()
-    expect(page.get_by_text("Found 4 categories for targets with a total of 20 values")).to_be_visible(timeout=30_000)
+    expect(page.get_by_text("Found 4 targets with a total of 20 values")).to_be_visible(timeout=30_000)
 
 
 @then("I am told selection has completed")

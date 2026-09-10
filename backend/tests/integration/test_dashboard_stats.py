@@ -295,7 +295,7 @@ class TestExportingToCsv:
 
         lines = [line for line in target.getvalue().splitlines() if line]
         assert len(lines) == 3
-        assert lines[0].lstrip("\ufeff").startswith("Category,Value,")
+        assert lines[0].lstrip("\ufeff").startswith("Target,Value,")
         assert lines[1].startswith("Gender,Male,")
 
     def test_an_assembly_with_no_targets_exports_headers_only(self, uow, admin_user, assembly):
