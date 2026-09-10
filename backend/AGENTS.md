@@ -213,6 +213,17 @@ Two ways to write a msgid that look fine and are not:
   "incomplete format". Concatenate it outside the call: `_("Target") ~ " %"` in
   a template, `_("Target") + " %"` in Python.
 
+A third construct is worse, because it produces no msgid at all:
+
+- **Never render an `Enum` member's `.value` in a template.**
+  `{{ assembly.status.value }}` puts a database token on the page. Babel never
+  extracts it, so no catalogue can carry it and it stays English in every
+  language — while the label beside it translates, which is what makes it hard
+  to spot. Give the enum a labels dict instead (`global_role_labels`,
+  `assembly_status_labels` in `domain/value_objects.py`), one `_l()` per member,
+  exposed to Jinja in `flask_app.py`. See
+  [docs/translations.md](docs/translations.md#enum-values-are-not-translatable-strings).
+
 After adding or changing translatable strings, regenerate and check:
 
 ```bash

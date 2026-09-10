@@ -82,6 +82,67 @@ In Jinja2 templates:
 <p>{{ _('Hello %(name)s', name=user.name) }}</p>
 ```
 
+### Enum values are not translatable strings
+
+An `Enum` member's `.value` is a database token. Rendering it puts a string on
+the page that `pybabel extract` never sees, so no catalogue can carry it, no
+translator can find it, and `just translate-check` has nothing to complain
+about:
+
+```jinja
+{# Wrong: renders "active", in every language #}
+<dt>{{ _("Status") }}</dt>
+<dd>{{ assembly.status.value }}</dd>
+```
+
+The symptom is easy to miss, because the label beside it *is* translated. The
+row reads half-finished rather than broken.
+
+Give the enum a labels dict instead, in `src/opendlp/domain/value_objects.py`,
+immediately below the enum:
+
+```python
+class AssemblyStatus(Enum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+assembly_status_labels = {
+    AssemblyStatus.ACTIVE: _l("Active"),
+    AssemblyStatus.ARCHIVED: _l("Archived"),
+}
+```
+
+expose it to Jinja in `register_context_processors` in
+`src/opendlp/entrypoints/flask_app.py`, and index it in the template:
+
+```jinja
+<dd>{{ assembly_status_labels[assembly.status] }}</dd>
+```
+
+Three details are load-bearing:
+
+- **`_l()`, not `_()`.** The dict is built at import time, so `_()` would freeze
+  the first request's language for the life of the process.
+- **The dict lives beside the enum**, not in a template or a blueprint. A member
+  added later is then a `KeyError` in an obvious place rather than a silent
+  fallback to English, and a member renamed later cannot strand a stale label
+  somewhere else in the tree.
+- **Add the parametrised test**, as `tests/unit/domain/test_global_roles.py` and
+  `tests/unit/domain/test_assembly.py` do — iterate the enum, assert a label
+  exists. Three lines, and it is what turns "a member added later is a KeyError"
+  into "a member added later fails CI".
+
+Do not map values to `_()` calls with an `if`/`elif` chain in a template. It
+produces the right English and it is the same defect one step on: the chain has
+no idea when a member is added, so the new one falls through to whatever the
+`else` branch does. That is why `RespondentStatus.TEST_SUBMISSION` renders as
+"Test_submission".
+
+`.value` is fine where it is not output — a `{% if run_record.status.value ==
+'failed' %}` condition, a `data-status` attribute, an `<option value="...">`.
+It is the visible string that has to come from a catalogue.
+
 ### Managing Translations
 
 The commands are in [Quick Start](#quick-start) above, which is the canonical
