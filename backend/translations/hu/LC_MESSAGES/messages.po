@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-10 16:06+0100\n"
+"POT-Creation-Date: 2026-09-10 16:31+0100\n"
 "PO-Revision-Date: 2026-09-10 14:24+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -162,9 +162,8 @@ msgid "Email"
 msgstr "E-mail"
 
 #: src/opendlp/domain/respondent_field_schema.py:134
-#, fuzzy
 msgid "Date"
-msgstr "Adatok"
+msgstr ""
 
 #: src/opendlp/domain/respondents.py:343
 msgid "Name deleted"
@@ -3057,14 +3056,14 @@ msgid "Shortfall"
 msgstr "Hiány"
 
 #: src/opendlp/service_layer/derivation_service.py:132
-#, fuzzy, python-format
+#, python-format
 msgid "Field '%(key)s' is not a derived field"
-msgstr "\"%(value)s\" nem érvényes %(field)s"
+msgstr ""
 
 #: src/opendlp/service_layer/derivation_service.py:139
-#, fuzzy, python-format
+#, python-format
 msgid "Source field '%(key)s' does not exist in this assembly"
-msgstr "'%(key)s' mező már létezik ebben a közösségi gyűlésben"
+msgstr ""
 
 #: src/opendlp/service_layer/derivation_service.py:143
 #, python-format
@@ -3099,9 +3098,8 @@ msgid "Field '%(key)s' does not use a large mapping"
 msgstr ""
 
 #: src/opendlp/service_layer/derivation_service.py:510
-#, fuzzy
 msgid "The mapping file is empty"
-msgstr "A képfájl túl nagy"
+msgstr ""
 
 #: src/opendlp/service_layer/derivation_service.py:515
 #, python-format
@@ -3365,20 +3363,19 @@ msgid "Invalid respondent status filter: %(value)s"
 msgstr "Érvénytelen jelentkezői állapotszűrő: %(value)s"
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:321
-#, fuzzy, python-format
+#, python-format
 msgid "You can't change the type of '%(key)s' — it is used to derive: %(deps)s"
-msgstr "Rögzített mező típusát vagy választható értékeit nem módosíthatod"
+msgstr ""
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:337
 msgid "You can't change the type or options of a fixed field"
 msgstr "Rögzített mező típusát vagy választható értékeit nem módosíthatod"
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:340
-#, fuzzy
 msgid ""
 "You can't change the type or options of a derived field — they are owned "
 "by its derivation"
-msgstr "Rögzített mező típusát vagy választható értékeit nem módosíthatod"
+msgstr ""
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:453
 msgid "Options can only be set on choice fields"
