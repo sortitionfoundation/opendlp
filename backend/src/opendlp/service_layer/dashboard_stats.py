@@ -355,7 +355,9 @@ def build_dashboard_table(report: DashboardReport) -> TabularData:
     headers = [
         _("Target"),
         _("Value"),
-        _("Population %"),
+        # " %" concatenated outside gettext: a lone "%" in a msgid trips newstyle
+        # gettext's printf formatting (see the i18n rules in CLAUDE.md).
+        _("Population") + " %",
         _("Target min"),
         _("Target max"),
         _("Respondents"),

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-10 18:13+0200\n"
+"POT-Creation-Date: 2026-09-11 09:11+0200\n"
 "PO-Revision-Date: 2026-09-10 14:24+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -66,7 +66,7 @@ msgstr "Feldolgozás…"
 
 #: src/opendlp/domain/assembly_export_gsheet.py:17
 #: src/opendlp/entrypoints/blueprints/backoffice.py:264
-#: src/opendlp/service_layer/dashboard_stats.py:361
+#: src/opendlp/service_layer/dashboard_stats.py:363
 #: templates/backoffice/assembly_dashboard.html:111
 #: templates/backoffice/assembly_dashboard.html:112
 #: templates/backoffice/assembly_respondents.html:15
@@ -1412,8 +1412,9 @@ msgid "An error occurred while loading the assembly"
 msgstr "Hiba történt a közösségi gyűlés betöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:258
+#: src/opendlp/service_layer/dashboard_stats.py:360
 #: templates/backoffice/assembly_dashboard.html:109
-#, fuzzy, python-format
+#, fuzzy
 msgid "Population"
 msgstr "Népesség (%%)"
 
@@ -1436,7 +1437,7 @@ msgstr "A regisztráció megkezdése után megjeleníti a jelentkezők adatait."
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:269
 #: src/opendlp/entrypoints/blueprints/respondents.py:459
-#: src/opendlp/service_layer/dashboard_stats.py:364
+#: src/opendlp/service_layer/dashboard_stats.py:366
 #: src/opendlp/service_layer/selection_report.py:212
 #: templates/backoffice/assembly_dashboard.html:113
 #: templates/backoffice/assembly_dashboard.html:114
@@ -1455,7 +1456,7 @@ msgstr "A kiválasztás megtörténte után megjeleníti a kiválasztottak adata
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:274
 #: src/opendlp/entrypoints/blueprints/respondents.py:460
-#: src/opendlp/service_layer/dashboard_stats.py:366
+#: src/opendlp/service_layer/dashboard_stats.py:368
 #: templates/backoffice/assembly_dashboard.html:115
 #: templates/backoffice/assembly_dashboard.html:116
 #: templates/backoffice/assembly_respondents.html:105
@@ -3051,36 +3052,31 @@ msgstr "A régi munkalapok %(action)s sikertelen: %(error)s"
 msgid "Not in targets"
 msgstr "Nem szerepel a célszámok között"
 
-#: src/opendlp/service_layer/dashboard_stats.py:358
-#, fuzzy, python-format
-msgid "Population %"
-msgstr "Népesség (%%)"
-
-#: src/opendlp/service_layer/dashboard_stats.py:359
+#: src/opendlp/service_layer/dashboard_stats.py:361
 msgid "Target min"
 msgstr "Cél min."
 
-#: src/opendlp/service_layer/dashboard_stats.py:360
+#: src/opendlp/service_layer/dashboard_stats.py:362
 msgid "Target max"
 msgstr "Cél max."
 
-#: src/opendlp/service_layer/dashboard_stats.py:362
+#: src/opendlp/service_layer/dashboard_stats.py:364
 msgid "Respondents %"
 msgstr "Jelentkezők %"
 
-#: src/opendlp/service_layer/dashboard_stats.py:363
+#: src/opendlp/service_layer/dashboard_stats.py:365
 msgid "Available to select"
 msgstr "Kiválasztható"
 
-#: src/opendlp/service_layer/dashboard_stats.py:365
+#: src/opendlp/service_layer/dashboard_stats.py:367
 msgid "Selected %"
 msgstr "Kiválasztottak %"
 
-#: src/opendlp/service_layer/dashboard_stats.py:367
+#: src/opendlp/service_layer/dashboard_stats.py:369
 msgid "Confirmed %"
 msgstr "Megerősítettek %"
 
-#: src/opendlp/service_layer/dashboard_stats.py:368
+#: src/opendlp/service_layer/dashboard_stats.py:370
 msgid "Shortfall"
 msgstr "Hiány"
 
