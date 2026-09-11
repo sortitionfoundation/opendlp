@@ -98,13 +98,16 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
         {% for tbl in dashboard_tables %}
             <section class="mb-10">
                 <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ tbl.name }}</h3>
-                {% call table() %}
+                {# table-fixed with a fixed-width first column: every category table
+                   shares the same column offsets, instead of each table auto-sizing
+                   its value column to its longest name. #}
+                {% call table(classes="table-fixed") %}
                     {# Percent headers concatenate " %" outside gettext: a lone "%" in a
                        msgid trips newstyle gettext's printf formatting ("incomplete format"). #}
                     {{ table_head([
-                    {"label": ""},
-                    {"label": _("Target") ~ " %"},
-                    {"label": _("Target")},
+                    {"label": "", "classes": "w-1/4"},
+                    {"label": _("Population") ~ " %"},
+                    {"label": _("Target (min/max)")},
                     {"label": _("Respondents") ~ " %"},
                     {"label": _("Respondents")},
                     {"label": _("Selected") ~ " %"},
@@ -116,7 +119,7 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
                         {% for r in tbl.rows %}
                             {% call table_row() %}
                                 {{ table_cell(r.value, bold=true) }}
-                                {{ table_cell(r.target_pct) }}
+                                {{ table_cell(r.population_pct) }}
                                 {{ table_cell(r.target_count) }}
                                 {{ table_cell(r.respondents_pct) }}
                                 {{ table_cell(r.respondents_count) }}

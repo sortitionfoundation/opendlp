@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-10 17:32+0200\n"
+"POT-Creation-Date: 2026-09-11 09:11+0200\n"
 "PO-Revision-Date: 2026-09-10 14:24+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -65,10 +65,10 @@ msgid "Processing…"
 msgstr "Feldolgozás…"
 
 #: src/opendlp/domain/assembly_export_gsheet.py:17
-#: src/opendlp/entrypoints/blueprints/backoffice.py:248
-#: src/opendlp/service_layer/dashboard_stats.py:353
-#: templates/backoffice/assembly_dashboard.html:108
-#: templates/backoffice/assembly_dashboard.html:109
+#: src/opendlp/entrypoints/blueprints/backoffice.py:264
+#: src/opendlp/service_layer/dashboard_stats.py:363
+#: templates/backoffice/assembly_dashboard.html:111
+#: templates/backoffice/assembly_dashboard.html:112
 #: templates/backoffice/assembly_respondents.html:15
 #: templates/backoffice/assembly_respondents.html:80
 #: templates/backoffice/components/assembly_tabs.html:64
@@ -793,7 +793,7 @@ msgid "Optional — a link to where the percentages came from"
 msgstr "Nem kötelező – link arra, hogy honnan származnak a százalékos arányok"
 
 #: src/opendlp/entrypoints/forms.py:618
-#: src/opendlp/service_layer/dashboard_stats.py:349
+#: src/opendlp/service_layer/dashboard_stats.py:357
 #: templates/backoffice/targets/bulk_edit_form.html:251
 #: templates/backoffice/targets/category_block.html:119
 #: templates/targets/components/category_block.html:69
@@ -1287,9 +1287,9 @@ msgid "An error occurred while creating the assembly"
 msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:191
-#: src/opendlp/entrypoints/blueprints/backoffice.py:366
-#: src/opendlp/entrypoints/blueprints/backoffice.py:777
-#: src/opendlp/entrypoints/blueprints/backoffice.py:838
+#: src/opendlp/entrypoints/blueprints/backoffice.py:384
+#: src/opendlp/entrypoints/blueprints/backoffice.py:795
+#: src/opendlp/entrypoints/blueprints/backoffice.py:856
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:276
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:391
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:83
@@ -1327,13 +1327,13 @@ msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:197
-#: src/opendlp/entrypoints/blueprints/backoffice.py:357
-#: src/opendlp/entrypoints/blueprints/backoffice.py:394
-#: src/opendlp/entrypoints/blueprints/backoffice.py:439
-#: src/opendlp/entrypoints/blueprints/backoffice.py:585
-#: src/opendlp/entrypoints/blueprints/backoffice.py:632
-#: src/opendlp/entrypoints/blueprints/backoffice.py:768
-#: src/opendlp/entrypoints/blueprints/backoffice.py:829
+#: src/opendlp/entrypoints/blueprints/backoffice.py:375
+#: src/opendlp/entrypoints/blueprints/backoffice.py:412
+#: src/opendlp/entrypoints/blueprints/backoffice.py:457
+#: src/opendlp/entrypoints/blueprints/backoffice.py:603
+#: src/opendlp/entrypoints/blueprints/backoffice.py:650
+#: src/opendlp/entrypoints/blueprints/backoffice.py:786
+#: src/opendlp/entrypoints/blueprints/backoffice.py:847
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:282
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:397
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:568
@@ -1411,24 +1411,36 @@ msgstr "A közösségi gyűlés nem található"
 msgid "An error occurred while loading the assembly"
 msgstr "Hiba történt a közösségi gyűlés betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:246
-#: src/opendlp/service_layer/dashboard_stats.py:348
+#: src/opendlp/entrypoints/blueprints/backoffice.py:258
+#: src/opendlp/service_layer/dashboard_stats.py:360
+#: templates/backoffice/assembly_dashboard.html:109
+#, fuzzy
+msgid "Population"
+msgstr "Népesség (%%)"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:260
+#, python-format
+msgid ""
+"Shows the population split once every value has a population % set in the"
+" targets."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:262
+#: src/opendlp/service_layer/dashboard_stats.py:356
 #: src/opendlp/service_layer/selection_report.py:206
-#: templates/backoffice/assembly_dashboard.html:106
-#: templates/backoffice/assembly_dashboard.html:107
 msgid "Target"
 msgstr "Kezdés dátuma"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:250
+#: src/opendlp/entrypoints/blueprints/backoffice.py:266
 msgid "Shows respondent data once registration starts."
 msgstr "A regisztráció megkezdése után megjeleníti a jelentkezők adatait."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:253
+#: src/opendlp/entrypoints/blueprints/backoffice.py:269
 #: src/opendlp/entrypoints/blueprints/respondents.py:459
-#: src/opendlp/service_layer/dashboard_stats.py:356
+#: src/opendlp/service_layer/dashboard_stats.py:366
 #: src/opendlp/service_layer/selection_report.py:212
-#: templates/backoffice/assembly_dashboard.html:110
-#: templates/backoffice/assembly_dashboard.html:111
+#: templates/backoffice/assembly_dashboard.html:113
+#: templates/backoffice/assembly_dashboard.html:114
 #: templates/backoffice/assembly_respondents.html:104
 #: templates/backoffice/assembly_view_respondent.html:226
 #: templates/backoffice/components/table.html:206
@@ -1438,55 +1450,55 @@ msgstr "A regisztráció megkezdése után megjeleníti a jelentkezők adatait."
 msgid "Selected"
 msgstr "Kiválasztva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:255
+#: src/opendlp/entrypoints/blueprints/backoffice.py:271
 msgid "Shows selected data once selection has happened."
 msgstr "A kiválasztás megtörténte után megjeleníti a kiválasztottak adatait."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:258
+#: src/opendlp/entrypoints/blueprints/backoffice.py:274
 #: src/opendlp/entrypoints/blueprints/respondents.py:460
-#: src/opendlp/service_layer/dashboard_stats.py:358
-#: templates/backoffice/assembly_dashboard.html:112
-#: templates/backoffice/assembly_dashboard.html:113
+#: src/opendlp/service_layer/dashboard_stats.py:368
+#: templates/backoffice/assembly_dashboard.html:115
+#: templates/backoffice/assembly_dashboard.html:116
 #: templates/backoffice/assembly_respondents.html:105
 #: templates/backoffice/components/table.html:203
 #: templates/respondents/view_respondents.html:133
 msgid "Confirmed"
 msgstr "Megerősítve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:260
+#: src/opendlp/entrypoints/blueprints/backoffice.py:276
 msgid "Shows confirmed data once at least one selected respondent is confirmed."
 msgstr ""
 "Legalább egy kiválasztott jelentkező megerősítése után megjeleníti a "
 "megerősítettek adatait."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:372
+#: src/opendlp/entrypoints/blueprints/backoffice.py:390
 msgid "An error occurred while loading the dashboard"
 msgstr "Hiba történt az irányítópult betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:391
-#: src/opendlp/entrypoints/blueprints/backoffice.py:435
+#: src/opendlp/entrypoints/blueprints/backoffice.py:409
+#: src/opendlp/entrypoints/blueprints/backoffice.py:453
 msgid "You don't have permission to export the dashboard"
 msgstr "Nincs jogosultságod az irányítópult exportálásához"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:415
+#: src/opendlp/entrypoints/blueprints/backoffice.py:433
 #, fuzzy
 msgid "Only CSV and Google Sheets exports are available for now"
 msgstr "Jelenleg csak CSV exportálás érhető el"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:463
+#: src/opendlp/entrypoints/blueprints/backoffice.py:481
 msgid ""
 "Google Sheets export is only available when the assembly uses a Google "
 "Sheets data source"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:477
+#: src/opendlp/entrypoints/blueprints/backoffice.py:495
 #, python-format
 msgid ""
 "The tab %(name)s holds the assembly's source data. Choose another tab "
 "name."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:509
+#: src/opendlp/entrypoints/blueprints/backoffice.py:527
 #, fuzzy, python-format
 msgid ""
 "Could not write to the spreadsheet. Check that the spreadsheet still "
@@ -1495,100 +1507,100 @@ msgstr ""
 "Nem sikerült írni a Google Táblázatba. Ellenőrizd, hogy az URL helyes-e, "
 "és hogy a táblázat meg van-e osztva a következővel: %(email)s."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:516
+#: src/opendlp/entrypoints/blueprints/backoffice.py:534
 #: src/opendlp/entrypoints/blueprints/respondents.py:579
 msgid "Could not write to the spreadsheet. Check the URL and sharing settings."
 msgstr ""
 "Nem sikerült írni a Google Táblázatba. Ellenőrizd az URL-t és a "
 "megosztási beállításokat."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:519
+#: src/opendlp/entrypoints/blueprints/backoffice.py:537
 #, fuzzy
 msgid "Dashboard exported to Google Sheets."
 msgstr "Exportálva a Google Táblázatba"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:549
+#: src/opendlp/entrypoints/blueprints/backoffice.py:567
 #: src/opendlp/entrypoints/blueprints/main.py:270
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:558
-#: src/opendlp/entrypoints/blueprints/backoffice.py:594
-#: src/opendlp/entrypoints/blueprints/backoffice.py:626
+#: src/opendlp/entrypoints/blueprints/backoffice.py:576
+#: src/opendlp/entrypoints/blueprints/backoffice.py:612
+#: src/opendlp/entrypoints/blueprints/backoffice.py:644
 #: src/opendlp/entrypoints/blueprints/main.py:279
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:567
-#: src/opendlp/entrypoints/blueprints/backoffice.py:573
+#: src/opendlp/entrypoints/blueprints/backoffice.py:585
+#: src/opendlp/entrypoints/blueprints/backoffice.py:591
 #: src/opendlp/entrypoints/blueprints/main.py:288
 #: src/opendlp/entrypoints/blueprints/main.py:296
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a közösségi gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:605
+#: src/opendlp/entrypoints/blueprints/backoffice.py:623
 msgid "Please enter a valid positive number"
 msgstr "Adj meg egy érvényes pozitív számot"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:617
+#: src/opendlp/entrypoints/blueprints/backoffice.py:635
 #, python-format
 msgid "Number to select updated to %(number)s"
 msgstr "A kiválasztandók száma %(number)s értékre módosult"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:783
+#: src/opendlp/entrypoints/blueprints/backoffice.py:801
 msgid "An error occurred while loading assembly data"
 msgstr "Hiba történt a közösségi gyűlés adatainak betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:844
+#: src/opendlp/entrypoints/blueprints/backoffice.py:862
 msgid "An error occurred while loading team members"
 msgstr "Hiba történt a csapattagok betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:883
+#: src/opendlp/entrypoints/blueprints/backoffice.py:901
 #: src/opendlp/entrypoints/blueprints/main.py:361
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr "%(user)s hozzáadva a közösségi gyűléshez %(role)s szerepkörrel"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:890
+#: src/opendlp/entrypoints/blueprints/backoffice.py:908
 msgid "Please select a user and role"
 msgstr "Válassz ki egy felhasználót és egy szerepkört"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:896
+#: src/opendlp/entrypoints/blueprints/backoffice.py:914
 #, python-format
 msgid "Could not add user to assembly: %(error)s"
 msgstr "Nem sikerült hozzáadni a felhasználót a közösségi gyűléshez: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:905
+#: src/opendlp/entrypoints/blueprints/backoffice.py:923
 #: src/opendlp/entrypoints/blueprints/main.py:383
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultságod felhasználókat hozzáadni ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:914
+#: src/opendlp/entrypoints/blueprints/backoffice.py:932
 #: src/opendlp/entrypoints/blueprints/main.py:392
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűléshez adása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:934
+#: src/opendlp/entrypoints/blueprints/backoffice.py:952
 #: src/opendlp/entrypoints/blueprints/main.py:412
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr "%(user)s eltávolítva a közösségi gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:950
+#: src/opendlp/entrypoints/blueprints/backoffice.py:968
 #: src/opendlp/entrypoints/blueprints/main.py:428
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr "Nem sikerült eltávolítani a felhasználót a közösségi gyűlésből: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:959
+#: src/opendlp/entrypoints/blueprints/backoffice.py:977
 #: src/opendlp/entrypoints/blueprints/main.py:437
 msgid "You don't have permission to remove users from this assembly"
 msgstr ""
 "Nincs jogosultságod felhasználókat eltávolítani ebből a közösségi "
 "gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:968
+#: src/opendlp/entrypoints/blueprints/backoffice.py:986
 #: src/opendlp/entrypoints/blueprints/main.py:446
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűlésből való eltávolítása közben"
@@ -3036,39 +3048,35 @@ msgstr "%(count)s régi kimeneti munkalap sikeresen törölve"
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A régi munkalapok %(action)s sikertelen: %(error)s"
 
-#: src/opendlp/service_layer/dashboard_stats.py:334
+#: src/opendlp/service_layer/dashboard_stats.py:342
 msgid "Not in targets"
 msgstr "Nem szerepel a célszámok között"
 
-#: src/opendlp/service_layer/dashboard_stats.py:350
-msgid "Target %"
-msgstr "Cél %"
-
-#: src/opendlp/service_layer/dashboard_stats.py:351
+#: src/opendlp/service_layer/dashboard_stats.py:361
 msgid "Target min"
 msgstr "Cél min."
 
-#: src/opendlp/service_layer/dashboard_stats.py:352
+#: src/opendlp/service_layer/dashboard_stats.py:362
 msgid "Target max"
 msgstr "Cél max."
 
-#: src/opendlp/service_layer/dashboard_stats.py:354
+#: src/opendlp/service_layer/dashboard_stats.py:364
 msgid "Respondents %"
 msgstr "Jelentkezők %"
 
-#: src/opendlp/service_layer/dashboard_stats.py:355
+#: src/opendlp/service_layer/dashboard_stats.py:365
 msgid "Available to select"
 msgstr "Kiválasztható"
 
-#: src/opendlp/service_layer/dashboard_stats.py:357
+#: src/opendlp/service_layer/dashboard_stats.py:367
 msgid "Selected %"
 msgstr "Kiválasztottak %"
 
-#: src/opendlp/service_layer/dashboard_stats.py:359
+#: src/opendlp/service_layer/dashboard_stats.py:369
 msgid "Confirmed %"
 msgstr "Megerősítettek %"
 
-#: src/opendlp/service_layer/dashboard_stats.py:360
+#: src/opendlp/service_layer/dashboard_stats.py:370
 msgid "Shortfall"
 msgstr "Hiány"
 
@@ -4643,6 +4651,11 @@ msgid ""
 msgstr ""
 "Az induláshoz állítsd be a célszámokat. Ha beállítottad őket, itt jelenik"
 " meg az irányítópultod."
+
+#: templates/backoffice/assembly_dashboard.html:110
+#, fuzzy
+msgid "Target (min/max)"
+msgstr "Cél min."
 
 #: templates/backoffice/assembly_data.html:12
 #: templates/backoffice/components/assembly_tabs.html:39
