@@ -6,6 +6,9 @@ import uuid
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from opendlp.domain.respondent_field_schema import FieldType
+from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.service_layer.respondent_field_schema_service import add_field
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -68,6 +71,34 @@ def admin_signed_in(admin_logged_in_page: Page) -> None:
     return
 
 
+@given(parsers.parse('the assembly "{title}" has a "{field_key}" number field'))
+def assembly_has_number_field(title: str, field_key: str, admin_user, test_database) -> None:
+    """Add an INTEGER field so it can serve as an age-bracket derivation source."""
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        add_field(
+            uow,
+            admin_user.id,
+            uuid.UUID(_schema_assembly_ids[title]),
+            field_key=field_key,
+            field_type=FieldType.INTEGER,
+        )
+
+
+@given(parsers.parse('the assembly "{title}" has an "{name}" target with values "{values}"'))
+def assembly_has_target(title: str, name: str, values: str, test_database) -> None:
+    """Seed a target category whose values the derived field will take as its options."""
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        uow.target_categories.add(
+            TargetCategory(
+                assembly_id=uuid.UUID(_schema_assembly_ids[title]),
+                name=name,
+                values=[TargetValue(value=v.strip(), min=1, max=5) for v in values.split(",")],
+            )
+        )
+
+
 # ---------------------------------------------------------------------------
 # When steps
 # ---------------------------------------------------------------------------
@@ -104,9 +135,87 @@ def move_field_up(admin_logged_in_page: Page, field_key: str) -> None:
     admin_logged_in_page.wait_for_load_state("networkidle")
 
 
+@when("I open the add-field modal")
+def open_add_field_modal(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Add a field").click()
+    expect(admin_logged_in_page.get_by_role("dialog")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I save a new choice field labelled "{label}" with options "{first}" and "{second}"'))
+def save_choice_field_via_modal(admin_logged_in_page: Page, label: str, first: str, second: str) -> None:
+    """Fill the modal: label, choice type (HTMX re-render), two option rows, save."""
+    page = admin_logged_in_page
+    page.fill('input[name="label"]', label)
+    page.check('input[name="type_choice"][value="choice"]')
+    # The type change re-renders the form fragment; the options editor appears.
+    first_option = page.locator('input[name="option_value"]').first
+    expect(first_option).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # The re-render preserved the label; fill the first option, add a second row.
+    first_option.fill(first)
+    page.get_by_role("button", name="Add another option").click()
+    second_option = page.locator('input[name="option_value"]').nth(1)
+    expect(second_option).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.locator('input[name="option_value"]').first).to_have_value(first, timeout=PLAYWRIGHT_TIMEOUT)
+    second_option.fill(second)
+    page.get_by_role("button", name="Save").click()
+    # A successful save closes the modal via the out-of-band editor swap.
+    expect(page.get_by_role("dialog")).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I create an age-bracket derived field feeding "{target}" from "{source_key}"'))
+def create_age_bracket_derived_field(admin_logged_in_page: Page, target: str, source_key: str) -> None:
+    """Walk the derived panel: type → target → source → age config → save."""
+    page = admin_logged_in_page
+    page.get_by_role("button", name="Add a field").click()
+    expect(page.get_by_role("dialog")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    page.check('input[name="type_choice"][value="derived"]')
+    target_select = page.locator("#derived-target")
+    expect(target_select).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # Each select change round-trips through the server and swaps the form
+    # fragment back in. Waiting on the response itself (not just its rendered
+    # side-effects) stops the next action racing the swap.
+    with page.expect_response(lambda r: "new-modal" in r.url):
+        target_select.select_option(target)
+    # Choosing the target pre-fills the brackets from its "16-24"-style values.
+    expect(page.locator('input[name="boundaries"]')).to_have_value("25", timeout=PLAYWRIGHT_TIMEOUT)
+    with page.expect_response(lambda r: "new-modal" in r.url):
+        page.locator("#derived-source").select_option(source_key)
+    # The 1-January note only exists in the refreshed panel because
+    # year_of_birth is an INTEGER source.
+    expect(page.get_by_text("1 January")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # The as-of date stays blank (the assembly has no first date), so fill it.
+    page.fill('input[name="as_of_day"]', "1")
+    page.fill('input[name="as_of_month"]', "6")
+    page.fill('input[name="as_of_year"]', "2026")
+    page.get_by_role("button", name="Save").click()
+
+
 # ---------------------------------------------------------------------------
 # Then steps
 # ---------------------------------------------------------------------------
+
+
+@then("I should see the recompute report")
+def see_recompute_report(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.get_by_text("Respondents recomputed")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I close the recompute report")
+def close_recompute_report(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Done").click()
+    admin_logged_in_page.wait_for_load_state("networkidle")
+
+
+@then(parsers.parse('the "{field_key}" row should summarise its options as "{summary}"'))
+def row_summarises_options(admin_logged_in_page: Page, field_key: str, summary: str) -> None:
+    row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
+    expect(row).to_contain_text(summary, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{field_key}" row should carry the "{tag}" tag'))
+def row_carries_tag(admin_logged_in_page: Page, field_key: str, tag: str) -> None:
+    row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
+    expect(row.locator(".govuk-tag", has_text=tag)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('I should see the "{heading}" group heading'))

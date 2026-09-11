@@ -162,6 +162,21 @@ def _options_for(rule: DerivationRule, output_values: list[str] | None) -> "list
         ) from exc
 
 
+def compatible_source_fields(
+    field_defs: list[RespondentFieldDefinition], derivation_type: DerivationType
+) -> list[RespondentFieldDefinition]:
+    """The fields a derivation of this type may use as its source.
+
+    Mirrors ``_validate_source``: a source must not itself be derived, and its
+    *effective* type must be one the rule class can derive from. Exists so the
+    UI can filter its source pickers without reaching into the private
+    compatibility table.
+    """
+    rule_class = next(cls for cls, dtype in _DERIVATION_TYPE_FOR_RULE.items() if dtype == derivation_type)
+    compatible = _COMPATIBLE_SOURCE_TYPES[rule_class]
+    return [f for f in field_defs if not f.is_derived and f.effective_field_type in compatible]
+
+
 def derivations_depending_on(
     uow: AbstractUnitOfWork, assembly_id: uuid.UUID, field_key: str
 ) -> list[RespondentFieldDefinition]:

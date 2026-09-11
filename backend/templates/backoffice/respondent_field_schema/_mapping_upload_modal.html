@@ -1,0 +1,61 @@
+{#
+ABOUTME: Lookup-table upload dialog for a large-mapping derived field
+ABOUTME: Two-column CSV replaces the whole table; upload then recompute, combined report shown after
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import checkbox, file_input %}
+{% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
+{% set upload_url = url_for('respondent_field_schema.mapping_upload_view', assembly_id=assembly.id, field_id=modal_ctx["field"].id) %}
+<a href="{{ close_url }}"
+   class="dialog-backdrop dialog-backdrop--clickable block"
+   aria-label="{{ _('Close') }}"></a>
+<div class="dialog-positioner"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="mapping-upload-title">
+    <div class="dialog-panel dialog-panel--default">
+        <div class="dialog-header">
+            <h2 class="dialog-title" id="mapping-upload-title">{{ _("Upload lookup table for %(label)s", label=modal_ctx["field"].label) }}</h2>
+            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">✕</a>
+        </div>
+        <form method="post"
+              action="{{ upload_url }}"
+              enctype="multipart/form-data"
+              hx-post="{{ upload_url }}"
+              hx-target="#field-modal-container"
+              hx-swap="innerHTML"
+              hx-encoding="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="dialog-body">
+                {% if modal_ctx["error"] %}
+                    <div class="rounded-md p-3 mb-4"
+                         style="background-color: var(--color-error-background);
+                                border: 1px solid var(--color-error-text);">
+                        <p class="text-body-sm" style="color: var(--color-error-text);">{{ modal_ctx["error"] }}</p>
+                    </div>
+                {% endif %}
+                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                    {{ _("A CSV with two columns: the %(source)s value, then the %(derived)s value. Uploading replaces the whole table. The file itself is not stored — only the rows.", source=(modal_ctx["field"].derived_from or [""])[0], derived=modal_ctx["field"].field_key) }}
+                </p>
+                <div class="mb-4">
+                    {{ file_input("mapping_file",
+                    label=_("Mapping CSV"),
+                    accept=".csv,text/csv",
+                    required=true,
+                    id="mapping-upload-file") }}
+                </div>
+                <div class="mb-4">
+                    {{ checkbox("allow_new_outputs",
+                    label=_("Allow new output values (they are added to the field's options)"),
+                    checked=modal_ctx["allow_new_outputs"],
+                    value="1",
+                    id="mapping-allow-new-outputs") }}
+                </div>
+            </div>
+            <div class="dialog-footer">
+                {{ button(_("Cancel") , variant="secondary", href=close_url) }}
+                {{ button(_("Upload") , type="submit", variant="primary") }}
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,79 @@
+{#
+ABOUTME: Recompute report modal — what saving or recomputing a derivation did to the pool
+ABOUTME: Shown in place of the field modal after a derivation save; Done closes via a plain link
+#}
+{% from "backoffice/components/button.html" import button %}
+{% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
+{% set report = report_ctx["report"] %}
+<a href="{{ close_url }}"
+   class="dialog-backdrop dialog-backdrop--clickable block"
+   aria-label="{{ _('Close') }}"></a>
+<div class="dialog-positioner"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="derivation-report-title">
+    <div class="dialog-panel dialog-panel--default">
+        <div class="dialog-header">
+            <h2 class="dialog-title" id="derivation-report-title">{{ report_ctx["title"] }}</h2>
+            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">✕</a>
+        </div>
+        <div class="dialog-body">
+            {% if report.completed_selection_runs > 0 %}
+                <div class="rounded-md p-3 mb-4"
+                     style="background-color: var(--color-warning-background);
+                            border: 1px solid var(--color-warning-text);">
+                    <p class="text-body-sm" style="color: var(--color-warning-text);">
+                        {{ _("This assembly has %(count)d completed selection run(s). Recomputing changes the pool underneath them — the numbers those selections were made from no longer match what is stored.", count=report.completed_selection_runs) }}
+                    </p>
+                </div>
+            {% endif %}
+            {% if report_ctx.get("upload_report") %}
+                {% set upload_report = report_ctx["upload_report"] %}
+                <dl class="mb-4">
+                    <div class="flex gap-2">
+                        <dt class="text-label-lg">{{ _("Rows stored:") }}</dt>
+                        <dd class="text-body-md">{{ upload_report.row_count }}</dd>
+                    </div>
+                    {% if upload_report.duplicate_keys %}
+                        <div class="flex gap-2">
+                            <dt class="text-label-lg">{{ _("Duplicate keys (last row wins):") }}</dt>
+                            <dd class="text-body-md">{{ upload_report.duplicate_keys | join(", ") }}</dd>
+                        </div>
+                    {% endif %}
+                    {% if upload_report.unknown_outputs %}
+                        <div class="flex gap-2">
+                            <dt class="text-label-lg">{{ _("New output values added:") }}</dt>
+                            <dd class="text-body-md">{{ upload_report.unknown_outputs.keys() | join(", ") }}</dd>
+                        </div>
+                    {% endif %}
+                    {% if upload_report.used_positional_headers %}
+                        <div class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("The header row didn't name the fields, so the first column was read as the input and the second as the output.") }}
+                        </div>
+                    {% endif %}
+                </dl>
+            {% endif %}
+            <dl class="mb-4">
+                <div class="flex gap-2">
+                    <dt class="text-label-lg">{{ _("Respondents recomputed:") }}</dt>
+                    <dd class="text-body-md">{{ report.total }}</dd>
+                </div>
+                <div class="flex gap-2">
+                    <dt class="text-label-lg">{{ _("Values changed:") }}</dt>
+                    <dd class="text-body-md">{{ report.changed }}</dd>
+                </div>
+                <div class="flex gap-2">
+                    <dt class="text-label-lg">{{ _("Fell back to UNKNOWN:") }}</dt>
+                    <dd class="text-body-md">{{ report.fell_back }}</dd>
+                </div>
+            </dl>
+            {% if report.unmatched_sample %}
+                <p class="text-body-sm mb-1">{{ _("Source values that didn't match anything (up to %(limit)d shown):", limit=20) }}</p>
+                <ul class="mb-4 pl-4" style="list-style: disc;">
+                    {% for value in report.unmatched_sample %}<li class="text-body-sm">{{ value }}</li>{% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        <div class="dialog-footer">{{ button(_("Done") , variant="primary", href=close_url) }}</div>
+    </div>
+</div>

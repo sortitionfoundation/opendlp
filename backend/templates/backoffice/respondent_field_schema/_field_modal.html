@@ -1,0 +1,204 @@
+{#
+ABOUTME: Add/edit field modal fragment — served over HTMX or rendered open on a full page load
+ABOUTME: Real form + hx-post enhancement; type changes and option rows round-trip through the server
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, textarea, select, radio_group %}
+{% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
+{% set values = modal_ctx["values"] %}
+{% set is_derived_flow = modal_ctx["is_derived"] or values["type_choice"] == "derived" %}
+{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-target="#field-modal-container" hx-swap="innerHTML"' %}
+{# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
+<a href="{{ close_url }}"
+   class="dialog-backdrop dialog-backdrop--clickable block"
+   aria-label="{{ _('Close') }}"></a>
+<div class="dialog-positioner"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="field-modal-title">
+    <div class="dialog-panel dialog-panel--default">
+        <div class="dialog-header">
+            <h2 class="dialog-title" id="field-modal-title">
+                {% if modal_ctx["mode"] == "new" %}
+                    {{ _("Add a field") }}
+                {% else %}
+                    {{ _("Edit %(label)s", label=modal_ctx["field"].label) }}
+                {% endif %}
+            </h2>
+            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">✕</a>
+        </div>
+        <form method="post"
+              action="{{ modal_ctx['action_url'] }}"
+              hx-post="{{ modal_ctx['action_url'] }}"
+              hx-target="#field-modal-container"
+              hx-swap="innerHTML">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {# Marks a modal submission — fixed/derived edits render no type radios,
+               so the routes can't rely on type_choice to recognise the modal form. #}
+            <input type="hidden" name="modal" value="1">
+            {# Hidden default submitter: pressing Enter saves, rather than triggering
+               whichever options-editor button happens to come first in the form. #}
+            <button type="submit"
+                    name="form_action"
+                    value="save"
+                    style="display: none"
+                    aria-hidden="true"
+                    tabindex="-1"></button>
+            <div class="dialog-body">
+                {% if modal_ctx["error"] %}
+                    <div class="rounded-md p-3 mb-4"
+                         style="background-color: var(--color-error-background);
+                                border: 1px solid var(--color-error-text);">
+                        <p class="text-body-sm" style="color: var(--color-error-text);">{{ modal_ctx["error"] }}</p>
+                    </div>
+                {% endif %}
+                {% if is_derived_flow and modal_ctx["mode"] == "new" %}
+                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                        {{ _("A derived field takes its name and field key from the target it feeds.") }}
+                    </p>
+                {% else %}
+                    <div class="mb-4">
+                        {{ input("label", label=_("Label"), value=values["label"], required=true, id="field-modal-label") }}
+                    </div>
+                {% endif %}
+                {% if modal_ctx["mode"] == "new" and not is_derived_flow %}
+                    <details class="mb-4">
+                        <summary class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Change the field key") }}</summary>
+                        <div class="mt-2">
+                            {{ input("field_key",
+                            label=_("Field key"),
+                            hint=_("Left blank, it is generated from the label — lowercase letters, numbers and underscores."),
+                            value=values["field_key"],
+                            id="field-modal-key") }}
+                        </div>
+                    </details>
+                {% elif modal_ctx["mode"] == "edit" %}
+                    <div class="mb-4">
+                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Field key") }}</span>
+                        <code>{{ modal_ctx["field"].field_key }}</code>
+                    </div>
+                {% endif %}
+                {% if modal_ctx["is_derived"] %}
+                    {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
+                {% elif modal_ctx["type_locked"] %}
+                    <div class="mb-4">
+                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Type") }}</span>
+                        <span class="text-body-sm">{{ field_type_labels_by_value[modal_ctx["field"].effective_field_type.value] }}</span>
+                        <strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>
+                        <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Fixed fields keep their built-in type.") }}</div>
+                    </div>
+                {% else %}
+                    <div class="mb-4">
+                        {{ radio_group("type_choice",
+                        label=_("Type"),
+                        options=modal_ctx["type_choices"],
+                        value=values["type_choice"],
+                        id="field-modal-type",
+                        attrs=refresh_attrs) }}
+                        {% if modal_ctx["mode"] == "new" and not modal_ctx["has_targets"] %}
+                            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
+                                {{ _("Create targets first to add a derived field — it feeds one.") }}
+                            </p>
+                        {% endif %}
+                    </div>
+                    <noscript>
+                        {# Without JS the radios can't re-render the form, so offer an explicit refresh. #}
+                        {{ button(_("Update the form for this type") , type="submit", variant="secondary", attrs='name="form_action" value="refresh"') }}
+                    </noscript>
+                    {% if values["type_choice"] == "free_text" %}
+                        <div class="mb-4 pl-4">
+                            {{ select("free_text_subtype",
+                            label=_("Kind of text"),
+                            options=[
+                            {"value": "text", "label": _("Text")},
+                            {"value": "email", "label": _("Email")},
+                            {"value": "integer", "label": _("Number")},
+                            ],
+                            value=values["free_text_subtype"],
+                            id="field-modal-subtype") }}
+                        </div>
+                    {% endif %}
+                    {% if values["type_choice"] == "choice" %}
+                        <div class="mb-4 pl-4">
+                            {{ select("choice_style",
+                            label=_("Shown on the form as"),
+                            options=[
+                            {"value": "choice_radio", "label": _("Radio buttons")},
+                            {"value": "choice_dropdown", "label": _("Dropdown")},
+                            ],
+                            value=values["choice_style"],
+                            id="field-modal-choice-style") }}
+                        </div>
+                        <fieldset class="mb-4">
+                            <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
+                            {% for option in values["options"] %}
+                                <div class="flex gap-2 items-end mb-2">
+                                    <div class="flex-1">
+                                        {{ input("option_value",
+                                        value=option["value"],
+                                        placeholder=_("value"),
+                                        aria_label=_('Option %(n)d value', n=loop.index),
+                                        id="field-modal-option-value-" ~ loop.index0) }}
+                                    </div>
+                                    <div class="flex-1">
+                                        {{ input("option_help",
+                                        value=option["help_text"],
+                                        placeholder=_("help text (optional)"),
+                                        aria_label=_('Option %(n)d help text', n=loop.index),
+                                        id="field-modal-option-help-" ~ loop.index0) }}
+                                    </div>
+                                    {{ button(_("Remove") , type="submit", variant="tertiary",
+                                    attrs='name="form_action" value="remove_option_' ~ loop.index0 ~ '"',
+                                    aria_label=_('Remove option %(n)d', n=loop.index)) }}
+                                </div>
+                            {% endfor %}
+                            {{ button(_("Add another option") , type="submit", variant="secondary", attrs='name="form_action" value="add_option"') }}
+                            <div class="mt-3">
+                                {% if modal_ctx["choice_target"] %}
+                                    {{ button(_("Copy options from the \"%(name)s\" target", name=modal_ctx["choice_target"]["name"]),
+                                    type="submit", variant="secondary", attrs='name="form_action" value="copy_target_options"') }}
+                                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                                        {{ _("Replaces the options with the target's values so they line up exactly — a one-off copy you can edit afterwards. Help text on matching options is kept.") }}
+                                    </p>
+                                {% else %}
+                                    {{ button(_("Copy options from a target") , variant="secondary", disabled=true) }}
+                                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                                        {% if modal_ctx["choice_candidate_key"] %}
+                                            {{ _("No target is named \"%(key)s\". To copy a target's values (and have selection count this field against that target), change the label or field key to match the target's name.", key=modal_ctx["choice_candidate_key"]) }}
+                                        {% else %}
+                                            {{ _("Enter a label first — options can be copied from a target whose name matches the field key.") }}
+                                        {% endif %}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </fieldset>
+                    {% endif %}
+                    {% if values["type_choice"] == "derived" and modal_ctx["derived"] %}
+                        {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
+                    {% endif %}
+                {% endif %}
+                <div class="mb-4">
+                    {{ textarea("help_text",
+                    label=_("Help text"),
+                    hint=_("Optional hint shown beneath the field on the registration page."),
+                    value=values["help_text"],
+                    rows=2,
+                    id="field-modal-help-text") }}
+                </div>
+                {% if not is_derived_flow %}
+                    <div class="mb-4">
+                        {{ radio_group("on_registration_page",
+                        label=_("On the registration page"),
+                        options=on_registration_page_choices,
+                        value=values["on_registration_page"],
+                        id="field-modal-onreg") }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="dialog-footer">
+                {{ button(_("Cancel") , variant="secondary", href=close_url) }}
+                {{ button(_("Save") , type="submit", variant="primary", attrs='name="form_action" value="save"') }}
+            </div>
+        </form>
+    </div>
+</div>

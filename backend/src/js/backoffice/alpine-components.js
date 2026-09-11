@@ -1,6 +1,7 @@
 // ABOUTME: Entry point registering the Alpine components, magics and directives for the backoffice
 // ABOUTME: Registration and wiring only - the behaviour lives under components/ and init/
 
+import { ageBracketPreview } from "../components/age-bracket-preview.js";
 import { autocomplete } from "../components/autocomplete.js";
 import { autoDismissAlert } from "../components/auto-dismiss-alert.js";
 import { bulkTargetsCategory } from "../components/bulk-targets-category.js";
@@ -25,6 +26,7 @@ document.addEventListener("alpine:init", function () {
   registerFocusMagic();
   registerFormConfirm();
 
+  Alpine.data("ageBracketPreview", ageBracketPreview);
   Alpine.data("autocomplete", autocomplete);
   Alpine.data("autoDismissAlert", autoDismissAlert);
   Alpine.data("bulkTargetsCategory", bulkTargetsCategory);

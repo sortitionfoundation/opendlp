@@ -1,6 +1,8 @@
 """ABOUTME: End-to-end PostgreSQL happy-path smokes for the respondent field schema UI
 ABOUTME: Behavioural coverage (validation, render, transitions) lives in tests/component/"""
 
+import io
+
 import pytest
 
 from opendlp.domain.respondent_field_schema import (
@@ -164,6 +166,198 @@ class TestAddField:
             assert added.group == RespondentFieldGroup.ABOUT_YOU
             assert added.field_type == FieldType.TEXT
             assert added.on_registration_page == FieldOnRegistrationPage.YES_OPTIONAL
+
+
+class TestFieldModal:
+    def test_add_choice_field_via_modal_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Open the modal, save a choice field with options and help text, see it stored."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        modal = logged_in_admin.get(f"{base}/fields/new-modal", headers={"HX-Request": "true"})
+        assert modal.status_code == 200
+        assert b'role="dialog"' in modal.data
+
+        response = logged_in_admin.post(
+            f"{base}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Preferred contact",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Phone", "Email"],
+                "option_help": ["Call me", ""],
+                "help_text": "How should we reach you?",
+                "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            added = next(f for f in schema if f.field_key == "preferred_contact")
+            assert added.field_type == FieldType.CHOICE_RADIO
+            assert [o.value for o in added.options] == ["Phone", "Email"]
+            assert added.help_text == "How should we reach you?"
+
+    def test_edit_modal_prefills_and_saves(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """The edit modal shows the stored values and a save round-trips through Postgres."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            custom_field = next(f for f in schema if f.field_key == "custom_notes")
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        modal = logged_in_admin.get(f"{base}/fields/{custom_field.id}/edit-modal", headers={"HX-Request": "true"})
+        assert modal.status_code == 200
+        assert b"custom_notes" in modal.data
+
+        response = logged_in_admin.post(
+            f"{base}/fields/{custom_field.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Notes",
+                "type_choice": "free_text",
+                "free_text_subtype": "text",
+                "help_text": "anything else we should know",
+                "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in schema if f.field_key == "custom_notes")
+            assert field.label == "Notes"
+            assert field.help_text == "anything else we should know"
+
+
+class TestDerivedFieldModal:
+    def test_create_age_bracket_derived_field_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Seed a source and target in Postgres, create the derived field via the modal, read it back."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            respondent_field_schema_service.add_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                field_key="year_of_birth",
+                field_type=FieldType.INTEGER,
+            )
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="age bracket",
+                    values=[
+                        TargetValue(value="16-24", min=5, max=10),
+                        TargetValue(value="25-39", min=5, max=10),
+                        TargetValue(value="40+", min=5, max=10),
+                    ],
+                )
+            )
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        response = logged_in_admin.post(
+            f"{base}/fields/add-derived",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "type_choice": "derived",
+                "target_name": "age bracket",
+                "derivation_method": "age_bracket",
+                "source_key": "year_of_birth",
+                "as_of_day": "1",
+                "as_of_month": "6",
+                "as_of_year": "2026",
+                "min_age": "16",
+                "max_age": "40",
+                "boundaries": "25",
+                "help_text": "",
+                "label": "",
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert b"Respondents recomputed" in response.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in schema if f.field_key == "age bracket")
+            assert field.is_derived
+            assert field.derived_from == ["year_of_birth"]
+            assert field.derivation_config["as_of_date"] == "2026-06-01"
+            assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40+", "UNKNOWN"]
+
+
+class TestMappingUpload:
+    def test_upload_lookup_table_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Create a large-mapping derived field, upload a table, and read the rows back from Postgres."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="region",
+                    values=[
+                        TargetValue(value="North", min=5, max=10),
+                        TargetValue(value="South", min=5, max=10),
+                    ],
+                )
+            )
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        create = logged_in_admin.post(
+            f"{base}/fields/add-derived",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "type_choice": "derived",
+                "target_name": "region",
+                "derivation_method": "large_mapping",
+                "source_key": "postcode",
+                "help_text": "",
+                "label": "",
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert create.status_code == 200
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            schema = respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
+            field = next(f for f in schema if f.field_key == "region")
+
+        csv_content = "postcode,region\nSW1A 1AA,South\nM1 1AE,North\n"
+        upload = logged_in_admin.post(
+            f"{base}/fields/{field.id}/mapping-upload",
+            data={
+                "mapping_file": (io.BytesIO(csv_content.encode("utf-8")), "mapping.csv"),
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            content_type="multipart/form-data",
+            headers={"HX-Request": "true"},
+        )
+        assert upload.status_code == 200
+        assert b"Rows stored:" in upload.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
 
 
 class TestDeleteField:

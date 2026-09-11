@@ -499,6 +499,32 @@ def _render_checkbox(field: RespondentFieldDefinition, required_attr: str) -> li
     return parts
 
 
+def _render_date(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
+    """Day/month/year inputs in one flex row — the shape _date_form_value assembles.
+
+    The inline flex style is the one bit of styling the unstyled generator
+    carries, so the three parts share a line before the organiser adds CSS.
+    """
+    key = html_lib.escape(field.field_key, quote=True)
+    legend = html_lib.escape(field.label)
+    hint_html, aria_attr = _hint_parts(field)
+    parts = [f"<fieldset{aria_attr}>", f"<legend>{legend}</legend>"]
+    if hint_html:
+        parts.append(hint_html)
+    parts.append('<div style="display: flex; gap: 0.5em;">')
+    for suffix, size, label in (("day", "2", "Day"), ("month", "2", "Month"), ("year", "4", "Year")):
+        value_expr = _jinja_call("value", f"{field.field_key}-{suffix}")
+        parts.append(
+            f"<label>{label} "
+            f'<input type="text" inputmode="numeric" name="{key}-{suffix}" size="{size}" '
+            f'value="{value_expr}"{required_attr}></label>'
+        )
+    parts.append("</div>")
+    parts.append(_jinja_call("field_errors", field.field_key))
+    parts.append("</fieldset>")
+    return parts
+
+
 def _render_choice_radios(field: RespondentFieldDefinition) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     legend = html_lib.escape(field.label)
@@ -506,11 +532,21 @@ def _render_choice_radios(field: RespondentFieldDefinition) -> list[str]:
     parts = [f"<fieldset{aria_attr}>", f"<legend>{legend}</legend>"]
     if hint_html:
         parts.append(hint_html)
-    for opt in field.options or []:
+    for i, opt in enumerate(field.options or [], start=1):
         value_attr = html_lib.escape(opt.value, quote=True)
         text = html_lib.escape(opt.value)
         checked_expr = _jinja_call("checked", field.field_key, opt.value)
-        parts.append(f'<label><input type="radio" name="{key}" value="{value_attr}" {checked_expr}> {text}</label>')
+        opt_aria = ""
+        opt_hint = ""
+        if opt.help_text:
+            hint_id = f"{key}-{i}-item-hint"
+            opt_aria = f' aria-describedby="{hint_id}"'
+            opt_hint = f'<p class="hint" id="{hint_id}">{html_lib.escape(opt.help_text)}</p>'
+        parts.append(
+            f'<label><input type="radio" name="{key}" value="{value_attr}" {checked_expr}{opt_aria}> {text}</label>'
+        )
+        if opt_hint:
+            parts.append(opt_hint)
     parts.append(_jinja_call("field_errors", field.field_key))
     parts.append("</fieldset>")
     return parts
@@ -556,7 +592,46 @@ def _render_field(field: RespondentFieldDefinition) -> list[str]:
         return _render_choice_radios(field)
     if field_type == FieldType.CHOICE_DROPDOWN:
         return _render_choice_dropdown(field, is_required)
+    if field_type == FieldType.DATE:
+        return _render_date(field, required_attr)
     return _render_input(field, "text", required_attr)
+
+
+def _render_date_govuk(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
+    """The GOV.UK date input pattern: three labelled parts inside a fieldset.
+
+    Uses the ``{key}-day``/``-month``/``-year`` names the submission service's
+    _date_form_value already assembles into a single value.
+    """
+    key = html_lib.escape(field.field_key, quote=True)
+    legend = html_lib.escape(field.label)
+    hint_html, aria_attr = _hint_parts(field, hint_class="govuk-hint", tag="div")
+    parts = [
+        '<div class="govuk-form-group">',
+        f'<fieldset class="govuk-fieldset" role="group"{aria_attr}>',
+        f'<legend class="govuk-fieldset__legend govuk-fieldset__legend--s">{legend}</legend>',
+    ]
+    if hint_html:
+        parts.append(hint_html)
+    parts.append(f'<div class="govuk-date-input" id="{key}">')
+    for suffix, width, label in (("day", "2", "Day"), ("month", "2", "Month"), ("year", "4", "Year")):
+        item_id = f"{key}-{suffix}"
+        value_expr = _jinja_call("value", f"{field.field_key}-{suffix}")
+        parts.append('<div class="govuk-date-input__item">')
+        parts.append('<div class="govuk-form-group">')
+        parts.append(f'<label class="govuk-label govuk-date-input__label" for="{item_id}">{label}</label>')
+        parts.append(
+            f'<input class="govuk-input govuk-date-input__input govuk-input--width-{width}" '
+            f'type="text" inputmode="numeric" id="{item_id}" name="{item_id}" '
+            f'value="{value_expr}"{required_attr}>'
+        )
+        parts.append("</div>")
+        parts.append("</div>")
+    parts.append("</div>")
+    parts.append(_jinja_call("field_errors", field.field_key))
+    parts.append("</fieldset>")
+    parts.append("</div>")
+    return parts
 
 
 def _render_input_govuk(field: RespondentFieldDefinition, input_type: str, required_attr: str) -> list[str]:
@@ -641,12 +716,23 @@ def _render_choice_radios_govuk(field: RespondentFieldDefinition) -> list[str]:
         value_attr = html_lib.escape(opt.value, quote=True)
         text = html_lib.escape(opt.value)
         checked_expr = _jinja_call("checked", field.field_key, opt.value)
+        opt_aria = ""
+        opt_hint = ""
+        if opt.help_text:
+            # "-item-hint" keeps the id clear of the field-level "{key}-hint".
+            hint_id = f"{item_id}-item-hint"
+            opt_aria = f' aria-describedby="{hint_id}"'
+            opt_hint = (
+                f'<div class="govuk-hint govuk-radios__hint" id="{hint_id}">{html_lib.escape(opt.help_text)}</div>'
+            )
         parts.append('<div class="govuk-radios__item">')
         parts.append(
             f'<input class="govuk-radios__input" type="radio" id="{item_id}" name="{key}" '
-            f'value="{value_attr}" {checked_expr}>'
+            f'value="{value_attr}" {checked_expr}{opt_aria}>'
         )
         parts.append(f'<label class="govuk-label govuk-radios__label" for="{item_id}">{text}</label>')
+        if opt_hint:
+            parts.append(opt_hint)
         parts.append("</div>")
     parts.append(_jinja_call("field_errors", field.field_key))
     parts.append("</div>")
@@ -699,6 +785,8 @@ def _render_field_govuk(field: RespondentFieldDefinition) -> list[str]:
         return _render_choice_radios_govuk(field)
     if field_type == FieldType.CHOICE_DROPDOWN:
         return _render_choice_dropdown_govuk(field, is_required)
+    if field_type == FieldType.DATE:
+        return _render_date_govuk(field, required_attr)
     return _render_input_govuk(field, "text", required_attr)
 
 
