@@ -12,6 +12,7 @@ from opendlp.domain.validators import (
     UrlSlugValidator,
     validate_bool,
     validate_choice,
+    validate_date_field,
     validate_email,
     validate_email_field,
     validate_integer,
@@ -286,3 +287,45 @@ class TestValidateInteger:
         cleaned, error = validate_integer("abc")
         assert cleaned is None
         assert "valid number" in error.lower()
+
+
+class TestValidateDateField:
+    def test_accepts_iso_date(self):
+        cleaned, error = validate_date_field("1985-03-07")
+        assert cleaned == "1985-03-07"
+        assert error is None
+
+    def test_accepts_uk_format_and_canonicalises_to_iso(self):
+        cleaned, error = validate_date_field("07/03/1985")
+        assert cleaned == "1985-03-07"
+        assert error is None
+
+    def test_accepts_unpadded_uk_format(self):
+        cleaned, error = validate_date_field("7/3/1985")
+        assert cleaned == "1985-03-07"
+        assert error is None
+
+    def test_empty_returns_error(self):
+        cleaned, error = validate_date_field("")
+        assert cleaned is None
+        assert error is not None
+
+    def test_impossible_date_returns_error(self):
+        cleaned, error = validate_date_field("1985-02-31")
+        assert cleaned is None
+        assert "valid date" in error.lower()
+
+    def test_garbage_returns_error(self):
+        cleaned, error = validate_date_field("not a date")
+        assert cleaned is None
+        assert "valid date" in error.lower()
+
+    def test_future_date_returns_error(self):
+        cleaned, error = validate_date_field("2999-01-01")
+        assert cleaned is None
+        assert "future" in error.lower()
+
+    def test_implausibly_old_date_returns_error(self):
+        cleaned, error = validate_date_field("1850-01-01")
+        assert cleaned is None
+        assert "year" in error.lower()

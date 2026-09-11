@@ -27,11 +27,13 @@
   },
   "fields": [
     {
-      "derivation_kind": "",
+      "derivation_config": null,
+      "derivation_type": null,
       "derived_from": null,
       "field_key": "eligible",
       "field_type": "bool_or_none",
       "group": "eligibility",
+      "help_text": "",
       "id": "00000000-0000-4000-8000-000000000000",
       "is_derived": false,
       "is_fixed": true,
@@ -42,11 +44,13 @@
       "target_values": null
     },
     {
-      "derivation_kind": "",
+      "derivation_config": null,
+      "derivation_type": null,
       "derived_from": null,
       "field_key": "can_attend",
       "field_type": "bool_or_none",
       "group": "eligibility",
+      "help_text": "",
       "id": "00000000-0000-4000-8000-000000000000",
       "is_derived": false,
       "is_fixed": true,
@@ -57,11 +61,13 @@
       "target_values": null
     },
     {
-      "derivation_kind": "",
+      "derivation_config": null,
+      "derivation_type": null,
       "derived_from": null,
       "field_key": "email",
       "field_type": "email",
       "group": "name_and_contact",
+      "help_text": "",
       "id": "00000000-0000-4000-8000-000000000000",
       "is_derived": false,
       "is_fixed": true,
@@ -72,11 +78,13 @@
       "target_values": null
     },
     {
-      "derivation_kind": "",
+      "derivation_config": null,
+      "derivation_type": null,
       "derived_from": null,
       "field_key": "first_name",
       "field_type": "text",
       "group": "name_and_contact",
+      "help_text": "",
       "id": "00000000-0000-4000-8000-000000000000",
       "is_derived": false,
       "is_fixed": false,
@@ -87,11 +95,13 @@
       "target_values": null
     },
     {
-      "derivation_kind": "",
+      "derivation_config": null,
+      "derivation_type": null,
       "derived_from": null,
       "field_key": "postcode",
       "field_type": "text",
       "group": "address",
+      "help_text": "",
       "id": "00000000-0000-4000-8000-000000000000",
       "is_derived": false,
       "is_fixed": false,
@@ -102,11 +112,13 @@
       "target_values": null
     },
     {
-      "derivation_kind": "",
+      "derivation_config": null,
+      "derivation_type": null,
       "derived_from": null,
       "field_key": "gender",
       "field_type": "choice_radio",
       "group": "about_you",
+      "help_text": "",
       "id": "00000000-0000-4000-8000-000000000000",
       "is_derived": false,
       "is_fixed": false,
@@ -147,11 +159,13 @@
       ]
     },
     {
-      "derivation_kind": "",
+      "derivation_config": null,
+      "derivation_type": null,
       "derived_from": null,
       "field_key": "consent",
       "field_type": "bool_or_none",
       "group": "consent",
+      "help_text": "",
       "id": "00000000-0000-4000-8000-000000000000",
       "is_derived": false,
       "is_fixed": true,
@@ -162,11 +176,13 @@
       "target_values": null
     },
     {
-      "derivation_kind": "",
+      "derivation_config": null,
+      "derivation_type": null,
       "derived_from": null,
       "field_key": "stay_on_db",
       "field_type": "bool_or_none",
       "group": "consent",
+      "help_text": "",
       "id": "00000000-0000-4000-8000-000000000000",
       "is_derived": false,
       "is_fixed": true,
@@ -177,7 +193,7 @@
       "target_values": null
     }
   ],
-  "spec_version": 2,
+  "spec_version": 4,
   "unmatched_target_categories": [
     {
       "comment": "No respondent column carries this yet",

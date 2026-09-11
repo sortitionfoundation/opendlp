@@ -335,3 +335,11 @@ class CannotRemoveLastAssemblyManager(CuratedMessage, ServiceLayerError):
         super().__init__(
             _("An assembly must keep at least one Assembly Manager. Add another one before removing this one.")
         )
+
+
+class FieldDefinitionNotFoundError(Exception):
+    """Raised when a RespondentFieldDefinition cannot be found."""
+
+
+class FieldDefinitionConflictError(Exception):
+    """Raised when adding a field that already exists, or attempting a disallowed edit."""

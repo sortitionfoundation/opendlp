@@ -13,8 +13,9 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
 )
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.validators import validate_choice, validate_email_field, validate_integer
+from opendlp.domain.validators import validate_choice, validate_date_field, validate_email_field, validate_integer
 from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
+from opendlp.service_layer.derivation_service import apply_derivations, load_mapping_lookups
 from opendlp.service_layer.registration_page_service import (
     find_registration_page_by_url_slug,
     resolve_visibility,
@@ -104,7 +105,27 @@ def _validate_field_value(
     if fd.effective_field_type == FieldType.INTEGER:
         return validate_integer(str_value)
 
+    if fd.effective_field_type == FieldType.DATE:
+        return validate_date_field(str_value)
+
     return str_value, None
+
+
+def _date_form_value(form_data: Mapping[str, Any], key: str) -> Any:
+    """Resolve a DATE field's raw form value.
+
+    Registration HTML is authored by the organiser, so both shapes must work:
+    the GOV.UK three-part inputs (``key-day``/``key-month``/``key-year``) when
+    any of them is present, otherwise a single value under the bare key. The
+    three parts assemble to ``dd/mm/yyyy`` for the date validator; a partly
+    filled trio assembles to something it rejects.
+    """
+    parts = [str(form_data.get(f"{key}-{suffix}", "")).strip() for suffix in ("day", "month", "year")]
+    if any(parts):
+        return "/".join(parts)
+    if all(f"{key}-{suffix}" in form_data for suffix in ("day", "month", "year")):
+        return ""  # three-part inputs present but all blank: treat as no value
+    return form_data.get(key, "")
 
 
 def _validate_form_data(
@@ -127,7 +148,10 @@ def _validate_form_data(
             continue
         key = fd.field_key
         required = fd.on_registration_page == FieldOnRegistrationPage.YES_REQUIRED
-        value = form_data.get(key, "")
+        if fd.effective_field_type == FieldType.DATE:
+            value = _date_form_value(form_data, key)
+        else:
+            value = form_data.get(key, "")
 
         cleaned_value, error = _validate_field_value(fd, value, required=required)
         if error:
@@ -143,9 +167,13 @@ def _create_and_save_respondent(
     assembly_id: uuid.UUID,
     cleaned_data: dict[str, Any],
     is_test: bool,
+    field_definitions: list[RespondentFieldDefinition],
     registration_page_id: uuid.UUID | None = None,
 ) -> Respondent:
-    """Build a Respondent from cleaned form data, persist it, and return a detached copy.
+    """Build a Respondent from cleaned form data, derive, persist, and return a detached copy.
+
+    ``field_definitions`` is the already-loaded schema — both callers have it
+    in hand for validation, so it is passed down rather than re-queried.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -182,6 +210,8 @@ def _create_and_save_respondent(
         author_id=system_author_id,
         action=RespondentAction.CREATE,
     )
+
+    apply_derivations(respondent, field_definitions, load_mapping_lookups(uow, field_definitions))
 
     uow.respondents.add(respondent)
     uow.commit()
@@ -244,7 +274,7 @@ def submit_registration(
             is_test=is_test,
         )
 
-    respondent = _create_and_save_respondent(uow, page.assembly_id, cleaned_data, is_test, page.id)
+    respondent = _create_and_save_respondent(uow, page.assembly_id, cleaned_data, is_test, field_definitions, page.id)
 
     return RegistrationSubmissionResult(
         respondent=respondent,
@@ -306,7 +336,7 @@ def submit_registration_by_assembly_id(
             is_test=is_test,
         )
 
-    respondent = _create_and_save_respondent(uow, assembly_id, cleaned_data, is_test)
+    respondent = _create_and_save_respondent(uow, assembly_id, cleaned_data, is_test, field_definitions)
 
     return RegistrationSubmissionResult(
         respondent=respondent,

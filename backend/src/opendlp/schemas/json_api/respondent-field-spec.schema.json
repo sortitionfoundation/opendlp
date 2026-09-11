@@ -120,7 +120,8 @@
             "address",
             "about_you",
             "consent",
-            "other"
+            "other",
+            "derived"
           ]
         },
         "sort_order": {
@@ -145,9 +146,25 @@
           },
           "description": "Field keys this one is computed from. Null unless is_derived."
         },
-        "derivation_kind": {
-          "type": "string",
-          "description": "How the derivation is done. Empty unless is_derived."
+        "derivation_type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "age_bracket",
+            "small_mapping",
+            "large_mapping",
+            null
+          ],
+          "description": "How the derivation is done. Null unless is_derived."
+        },
+        "derivation_config": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The derivation's parameters (as-of date, boundaries, mapping, fallback...). Shape depends on derivation_type. Null unless is_derived."
         },
         "field_type": {
           "type": "string",
@@ -159,7 +176,8 @@
             "choice_radio",
             "choice_dropdown",
             "integer",
-            "email"
+            "email",
+            "date"
           ],
           "description": "The effective type: for a fixed field the hardcoded FIXED_FIELD_TYPES entry wins over the stored one."
         },
@@ -182,6 +200,10 @@
           ],
           "description": "Whether the public registration form collects this field, and how strictly. Governs the form, not CSV import - import accepts any column."
         },
+        "help_text": {
+          "type": "string",
+          "description": "Organiser-written hint shown beneath the field on the registration form. Empty when none was written. Not translated - it is typed by the organiser."
+        },
         "target_values": {
           "type": [
             "array",
@@ -202,10 +224,12 @@
         "is_fixed",
         "is_derived",
         "derived_from",
-        "derivation_kind",
+        "derivation_type",
+        "derivation_config",
         "field_type",
         "options",
         "on_registration_page",
+        "help_text",
         "target_values"
       ],
       "additionalProperties": false

@@ -41,6 +41,23 @@ class FixedFieldError(ValueError):
     """
 
 
+class DerivedFieldError(ValueError):
+    """Raised when an edit is rejected because the field is a derived field.
+
+    A derived field's type and options are owned by its derivation rule, so
+    they cannot be edited directly. Subclasses ``ValueError`` for the same
+    reason as ``FixedFieldError``.
+    """
+
+
+class DerivationType(Enum):
+    """How a derived field's value is computed from its source field."""
+
+    AGE_BRACKET = "age_bracket"
+    SMALL_MAPPING = "small_mapping"
+    LARGE_MAPPING = "large_mapping"
+
+
 class RespondentFieldGroup(Enum):
     """Fixed catalogue of groups that a respondent field can belong to.
 
@@ -55,6 +72,7 @@ class RespondentFieldGroup(Enum):
     ABOUT_YOU = "about_you"
     CONSENT = "consent"
     OTHER = "other"
+    DERIVED = "derived"
 
 
 GROUP_DISPLAY_ORDER: list[RespondentFieldGroup] = [
@@ -64,6 +82,7 @@ GROUP_DISPLAY_ORDER: list[RespondentFieldGroup] = [
     RespondentFieldGroup.ABOUT_YOU,
     RespondentFieldGroup.CONSENT,
     RespondentFieldGroup.OTHER,
+    RespondentFieldGroup.DERIVED,
 ]
 
 
@@ -74,6 +93,7 @@ GROUP_LABELS: dict[RespondentFieldGroup, str] = {
     RespondentFieldGroup.ABOUT_YOU: _l("About you"),
     RespondentFieldGroup.CONSENT: _l("Consent"),
     RespondentFieldGroup.OTHER: _l("Other"),
+    RespondentFieldGroup.DERIVED: _l("Derived"),
 }
 
 
@@ -86,6 +106,7 @@ class FieldType(Enum):
     CHOICE_DROPDOWN = "choice_dropdown"
     INTEGER = "integer"
     EMAIL = "email"
+    DATE = "date"
 
 
 class FieldOnRegistrationPage(Enum):
@@ -110,6 +131,7 @@ FIELD_TYPE_LABELS: dict[FieldType, str] = {
     FieldType.CHOICE_DROPDOWN: _l("Choice (dropdown)"),
     FieldType.INTEGER: _l("Whole number"),
     FieldType.EMAIL: _l("Email"),
+    FieldType.DATE: _l("Date"),
 }
 
 
@@ -182,10 +204,12 @@ class RespondentFieldDefinition:
         is_fixed: bool = False,
         is_derived: bool = False,
         derived_from: list[str] | None = None,
-        derivation_kind: str = "",
+        derivation_type: DerivationType | None = None,
+        derivation_config: dict[str, Any] | None = None,
         field_type: FieldType = FieldType.TEXT,
         options: list[ChoiceOption] | None = None,
         on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
+        help_text: str = "",
         field_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
@@ -196,8 +220,15 @@ class RespondentFieldDefinition:
             raise ValueError("label is required")
         if sort_order < 0:
             raise ValueError("sort_order cannot be negative")
-        if is_derived and not derived_from:
-            raise ValueError("derived_from must be provided when is_derived is True")
+        if is_derived:
+            if not derived_from:
+                raise ValueError("derived_from must be provided when is_derived is True")
+            if derivation_type is None:
+                raise ValueError("derivation_type must be provided when is_derived is True")
+            if derivation_config is None:
+                raise ValueError("derivation_config must be provided when is_derived is True")
+        elif derivation_type is not None or derivation_config is not None:
+            raise ValueError("derivation_type and derivation_config are only allowed when is_derived is True")
         _validate_type_and_options(field_type, options)
 
         self.id = field_id or uuid.uuid4()
@@ -209,11 +240,13 @@ class RespondentFieldDefinition:
         self.is_fixed = is_fixed
         self.is_derived = is_derived
         self.derived_from = list(derived_from) if derived_from else None
-        self.derivation_kind = derivation_kind.strip()
+        self.derivation_type = derivation_type
+        self.derivation_config = dict(derivation_config) if derivation_config is not None else None
         self.field_type = field_type
         self.options = list(options) if options else None
         # A derived field is computed, never collected on the registration form.
         self.on_registration_page = FieldOnRegistrationPage.NO if is_derived else on_registration_page
+        self.help_text = help_text.strip()
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
 
@@ -229,6 +262,7 @@ class RespondentFieldDefinition:
         field_type: FieldType | None = None,
         options: list[ChoiceOption] | None = _UNSET,
         on_registration_page: FieldOnRegistrationPage | None = None,
+        help_text: str | None = None,
     ) -> None:
         """Update mutable fields. Touches ``updated_at`` on any change.
 
@@ -250,22 +284,51 @@ class RespondentFieldDefinition:
             self.sort_order = sort_order
             changed = True
         if field_type is not None or options is not _UNSET:
-            if self.is_fixed:
-                raise FixedFieldError("Cannot change field_type or options on a fixed field")
-            new_type = field_type if field_type is not None else self.field_type
-            # When the caller didn't pass options explicitly, preserve the
-            # current list across choice<->choice transitions, but drop it
-            # when switching to a non-choice type so the invariant holds.
-            new_options = (None if new_type not in CHOICE_TYPES else self.options) if options is _UNSET else options
-            _validate_type_and_options(new_type, new_options)
-            self.field_type = new_type
-            self.options = list(new_options) if new_options else None
+            self._update_type_and_options(field_type, options)
             changed = True
         if on_registration_page is not None:
-            self.on_registration_page = on_registration_page
+            # A derived field is computed, never collected — same invariant as __init__.
+            self.on_registration_page = FieldOnRegistrationPage.NO if self.is_derived else on_registration_page
+            changed = True
+        if help_text is not None:
+            self.help_text = help_text.strip()
             changed = True
         if changed:
             self.updated_at = datetime.now(UTC)
+
+    def set_derivation(
+        self,
+        derivation_type: DerivationType,
+        derivation_config: dict[str, Any],
+        options: "list[ChoiceOption]",
+    ) -> None:
+        """Replace the derivation and its generated options in one step.
+
+        This is the derivation service's write path: a derived field's type,
+        options and config are owned by the derivation, so ``update()`` refuses
+        them and this method is the only way to change them together.
+        """
+        if not self.is_derived:
+            raise DerivedFieldError("set_derivation is only valid on a derived field")
+        _validate_type_and_options(self.field_type, options)
+        self.derivation_type = derivation_type
+        self.derivation_config = dict(derivation_config)
+        self.options = list(options)
+        self.updated_at = datetime.now(UTC)
+
+    def _update_type_and_options(self, field_type: FieldType | None, options: "list[ChoiceOption] | None") -> None:
+        if self.is_fixed:
+            raise FixedFieldError("Cannot change field_type or options on a fixed field")
+        if self.is_derived:
+            raise DerivedFieldError("Cannot change field_type or options on a derived field")
+        new_type = field_type if field_type is not None else self.field_type
+        # When the caller didn't pass options explicitly, preserve the
+        # current list across choice<->choice transitions, but drop it
+        # when switching to a non-choice type so the invariant holds.
+        new_options = (None if new_type not in CHOICE_TYPES else self.options) if options is _UNSET else options
+        _validate_type_and_options(new_type, new_options)
+        self.field_type = new_type
+        self.options = list(new_options) if new_options else None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, RespondentFieldDefinition):
@@ -286,14 +349,49 @@ class RespondentFieldDefinition:
             is_fixed=self.is_fixed,
             is_derived=self.is_derived,
             derived_from=list(self.derived_from) if self.derived_from else None,
-            derivation_kind=self.derivation_kind,
+            derivation_type=self.derivation_type,
+            derivation_config=dict(self.derivation_config) if self.derivation_config is not None else None,
             field_type=self.field_type,
             options=list(self.options) if self.options else None,
             on_registration_page=self.on_registration_page,
+            help_text=self.help_text,
             field_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,
         )
+
+
+class RespondentFieldMappingEntry:
+    """One lookup row of a large-mapping derivation (e.g. postcode -> region).
+
+    Belongs to a derived ``RespondentFieldDefinition`` via ``field_id``.
+    ``lookup_key`` is stored normalised (see ``respondent_derivation``), so a
+    lookup is a single exact match.
+    """
+
+    def __init__(
+        self,
+        field_id: uuid.UUID,
+        lookup_key: str,
+        output_value: str,
+        entry_id: uuid.UUID | None = None,
+    ):
+        if not lookup_key or not lookup_key.strip():
+            raise ValueError("lookup_key is required")
+        if not output_value or not output_value.strip():
+            raise ValueError("output_value is required")
+        self.id = entry_id or uuid.uuid4()
+        self.field_id = field_id
+        self.lookup_key = lookup_key.strip()
+        self.output_value = output_value.strip()
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RespondentFieldMappingEntry):
+            return False
+        return self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
 
 
 # Reserved respondent top-level fields that live in the schema (editable group/order).

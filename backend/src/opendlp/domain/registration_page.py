@@ -444,42 +444,68 @@ def _jinja_call(fn: str, *args: str) -> str:
     return f"{{{{ {fn}({quoted}) }}}}"
 
 
+def _hint_parts(field: RespondentFieldDefinition, hint_class: str = "hint", tag: str = "p") -> tuple[str, str]:
+    """The hint element and the aria-describedby attribute for a field's help_text.
+
+    Both are empty strings when the field has no help text, so callers can
+    interpolate them unconditionally.
+    """
+    if not field.help_text:
+        return "", ""
+    key = html_lib.escape(field.field_key, quote=True)
+    text = html_lib.escape(field.help_text)
+    return f'<{tag} class="{hint_class}" id="{key}-hint">{text}</{tag}>', f' aria-describedby="{key}-hint"'
+
+
 def _render_input(field: RespondentFieldDefinition, input_type: str, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
     value_expr = _jinja_call("value", field.field_key)
-    return [
-        f'<label for="{key}">{label}</label>',
-        f'<input type="{input_type}" id="{key}" name="{key}" value="{value_expr}"{required_attr}>',
-        _jinja_call("field_errors", field.field_key),
-    ]
+    hint_html, aria_attr = _hint_parts(field)
+    parts = [f'<label for="{key}">{label}</label>']
+    if hint_html:
+        parts.append(hint_html)
+    parts.append(f'<input type="{input_type}" id="{key}" name="{key}" value="{value_expr}"{aria_attr}{required_attr}>')
+    parts.append(_jinja_call("field_errors", field.field_key))
+    return parts
 
 
 def _render_textarea(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
     value_expr = _jinja_call("value", field.field_key)
-    return [
-        f'<label for="{key}">{label}</label>',
-        f'<textarea id="{key}" name="{key}"{required_attr}>{value_expr}</textarea>',
-        _jinja_call("field_errors", field.field_key),
-    ]
+    hint_html, aria_attr = _hint_parts(field)
+    parts = [f'<label for="{key}">{label}</label>']
+    if hint_html:
+        parts.append(hint_html)
+    parts.append(f'<textarea id="{key}" name="{key}"{aria_attr}{required_attr}>{value_expr}</textarea>')
+    parts.append(_jinja_call("field_errors", field.field_key))
+    return parts
 
 
 def _render_checkbox(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
     checked_expr = _jinja_call("checked", field.field_key, "yes")
-    return [
-        f'<label><input type="checkbox" id="{key}" name="{key}" value="yes" {checked_expr}{required_attr}> {label}</label>',
-        _jinja_call("field_errors", field.field_key),
-    ]
+    hint_html, aria_attr = _hint_parts(field)
+    checkbox_html = (
+        f'<label><input type="checkbox" id="{key}" name="{key}" value="yes" '
+        f"{checked_expr}{aria_attr}{required_attr}> {label}</label>"
+    )
+    parts = [checkbox_html]
+    if hint_html:
+        parts.append(hint_html)
+    parts.append(_jinja_call("field_errors", field.field_key))
+    return parts
 
 
 def _render_choice_radios(field: RespondentFieldDefinition) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     legend = html_lib.escape(field.label)
-    parts = ["<fieldset>", f"<legend>{legend}</legend>"]
+    hint_html, aria_attr = _hint_parts(field)
+    parts = [f"<fieldset{aria_attr}>", f"<legend>{legend}</legend>"]
+    if hint_html:
+        parts.append(hint_html)
     for opt in field.options or []:
         value_attr = html_lib.escape(opt.value, quote=True)
         text = html_lib.escape(opt.value)
@@ -494,10 +520,11 @@ def _render_choice_dropdown(field: RespondentFieldDefinition, is_required: bool)
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
     required_attr = " required" if is_required else ""
-    parts = [
-        f'<label for="{key}">{label}</label>',
-        f'<select id="{key}" name="{key}"{required_attr}>',
-    ]
+    hint_html, aria_attr = _hint_parts(field)
+    parts = [f'<label for="{key}">{label}</label>']
+    if hint_html:
+        parts.append(hint_html)
+    parts.append(f'<select id="{key}" name="{key}"{aria_attr}{required_attr}>')
     if not is_required:
         parts.append('<option value="">— Please choose —</option>')
     for opt in field.options or []:
@@ -536,57 +563,79 @@ def _render_input_govuk(field: RespondentFieldDefinition, input_type: str, requi
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
     value_expr = _jinja_call("value", field.field_key)
-    return [
+    hint_html, aria_attr = _hint_parts(field, hint_class="govuk-hint", tag="div")
+    parts = [
         '<div class="govuk-form-group">',
         f'<label class="govuk-label" for="{key}">{label}</label>',
-        f'<input class="govuk-input" type="{input_type}" id="{key}" name="{key}" value="{value_expr}"{required_attr}>',
-        _jinja_call("field_errors", field.field_key),
-        "</div>",
     ]
+    if hint_html:
+        parts.append(hint_html)
+    parts.append(
+        f'<input class="govuk-input" type="{input_type}" id="{key}" name="{key}" '
+        f'value="{value_expr}"{aria_attr}{required_attr}>'
+    )
+    parts.append(_jinja_call("field_errors", field.field_key))
+    parts.append("</div>")
+    return parts
 
 
 def _render_textarea_govuk(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
     value_expr = _jinja_call("value", field.field_key)
-    return [
+    hint_html, aria_attr = _hint_parts(field, hint_class="govuk-hint", tag="div")
+    parts = [
         '<div class="govuk-form-group">',
         f'<label class="govuk-label" for="{key}">{label}</label>',
-        f'<textarea class="govuk-textarea" id="{key}" name="{key}"{required_attr}>{value_expr}</textarea>',
-        _jinja_call("field_errors", field.field_key),
-        "</div>",
     ]
+    if hint_html:
+        parts.append(hint_html)
+    parts.append(
+        f'<textarea class="govuk-textarea" id="{key}" name="{key}"{aria_attr}{required_attr}>{value_expr}</textarea>'
+    )
+    parts.append(_jinja_call("field_errors", field.field_key))
+    parts.append("</div>")
+    return parts
 
 
 def _render_checkbox_govuk(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
     checked_expr = _jinja_call("checked", field.field_key, "yes")
-    return [
+    hint_html, aria_attr = _hint_parts(field, hint_class="govuk-hint govuk-checkboxes__hint", tag="div")
+    parts = [
         '<div class="govuk-form-group">',
         '<div class="govuk-checkboxes" data-module="govuk-checkboxes">',
         '<div class="govuk-checkboxes__item">',
         (
             f'<input class="govuk-checkboxes__input" type="checkbox" id="{key}" name="{key}" value="yes" '
-            f"{checked_expr}{required_attr}>"
+            f"{checked_expr}{aria_attr}{required_attr}>"
         ),
         f'<label class="govuk-label govuk-checkboxes__label" for="{key}">{label}</label>',
+    ]
+    if hint_html:
+        parts.append(hint_html)
+    parts.extend([
         "</div>",
         _jinja_call("field_errors", field.field_key),
         "</div>",
         "</div>",
-    ]
+    ])
+    return parts
 
 
 def _render_choice_radios_govuk(field: RespondentFieldDefinition) -> list[str]:
     key = html_lib.escape(field.field_key, quote=True)
     legend = html_lib.escape(field.label)
+    hint_html, aria_attr = _hint_parts(field, hint_class="govuk-hint", tag="div")
     parts = [
         '<div class="govuk-form-group">',
-        '<fieldset class="govuk-fieldset" role="group">',
+        f'<fieldset class="govuk-fieldset" role="group"{aria_attr}>',
         f'<legend class="govuk-fieldset__legend govuk-fieldset__legend--s">{legend}</legend>',
-        '<div class="govuk-radios" data-module="govuk-radios">',
     ]
+    if hint_html:
+        parts.append(hint_html)
+    parts.append('<div class="govuk-radios" data-module="govuk-radios">')
     for i, opt in enumerate(field.options or [], start=1):
         item_id = key if i == 1 else f"{key}-{i}"
         value_attr = html_lib.escape(opt.value, quote=True)
@@ -610,11 +659,14 @@ def _render_choice_dropdown_govuk(field: RespondentFieldDefinition, is_required:
     key = html_lib.escape(field.field_key, quote=True)
     label = html_lib.escape(field.label)
     required_attr = " required" if is_required else ""
+    hint_html, aria_attr = _hint_parts(field, hint_class="govuk-hint", tag="div")
     parts = [
         '<div class="govuk-form-group">',
         f'<label class="govuk-label" for="{key}">{label}</label>',
-        f'<select class="govuk-select" id="{key}" name="{key}"{required_attr}>',
     ]
+    if hint_html:
+        parts.append(hint_html)
+    parts.append(f'<select class="govuk-select" id="{key}" name="{key}"{aria_attr}{required_attr}>')
     if not is_required:
         parts.append('<option value="" disabled hidden selected>Please select...</option>')
     for opt in field.options or []:

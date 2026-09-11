@@ -14,11 +14,14 @@ from opendlp.domain.respondent_field_schema import (
     GROUP_LABELS,
     IN_SCHEMA_FIXED_FIELDS,
     ChoiceOption,
+    DerivationType,
+    DerivedFieldError,
     FieldOnRegistrationPage,
     FieldType,
     FixedFieldError,
     RespondentFieldDefinition,
     RespondentFieldGroup,
+    RespondentFieldMappingEntry,
     humanise_field_key,
     normalise_field_key,
 )
@@ -43,7 +46,8 @@ class TestRespondentFieldDefinition:
         assert field.is_fixed is False
         assert field.is_derived is False
         assert field.derived_from is None
-        assert field.derivation_kind == ""
+        assert field.derivation_type is None
+        assert field.derivation_config is None
         assert field.id is not None
 
     def test_field_key_is_stripped(self) -> None:
@@ -92,25 +96,112 @@ class TestRespondentFieldDefinition:
                 assembly_id=uuid.uuid4(),
                 field_key="age_bracket",
                 label="Age bracket",
-                group=RespondentFieldGroup.ABOUT_YOU,
+                group=RespondentFieldGroup.DERIVED,
                 sort_order=10,
                 is_derived=True,
+                derivation_type=DerivationType.AGE_BRACKET,
+                derivation_config={"as_of_date": "2026-05-13"},
             )
 
-    def test_derived_field_accepts_derived_from(self) -> None:
+    def test_derived_requires_derivation_type(self) -> None:
+        with pytest.raises(ValueError, match="derivation_type must be provided"):
+            RespondentFieldDefinition(
+                assembly_id=uuid.uuid4(),
+                field_key="age_bracket",
+                label="Age bracket",
+                group=RespondentFieldGroup.DERIVED,
+                sort_order=10,
+                is_derived=True,
+                derived_from=["date_of_birth"],
+                derivation_config={"as_of_date": "2026-05-13"},
+            )
+
+    def test_derived_requires_derivation_config(self) -> None:
+        with pytest.raises(ValueError, match="derivation_config must be provided"):
+            RespondentFieldDefinition(
+                assembly_id=uuid.uuid4(),
+                field_key="age_bracket",
+                label="Age bracket",
+                group=RespondentFieldGroup.DERIVED,
+                sort_order=10,
+                is_derived=True,
+                derived_from=["date_of_birth"],
+                derivation_type=DerivationType.AGE_BRACKET,
+            )
+
+    def test_non_derived_rejects_derivation_type(self) -> None:
+        with pytest.raises(ValueError, match="only allowed when is_derived"):
+            RespondentFieldDefinition(
+                assembly_id=uuid.uuid4(),
+                field_key="postcode",
+                label="Postcode",
+                group=RespondentFieldGroup.ADDRESS,
+                sort_order=10,
+                derivation_type=DerivationType.LARGE_MAPPING,
+            )
+
+    def test_non_derived_rejects_derivation_config(self) -> None:
+        with pytest.raises(ValueError, match="only allowed when is_derived"):
+            RespondentFieldDefinition(
+                assembly_id=uuid.uuid4(),
+                field_key="postcode",
+                label="Postcode",
+                group=RespondentFieldGroup.ADDRESS,
+                sort_order=10,
+                derivation_config={"fallback": "UNKNOWN"},
+            )
+
+    def test_derived_field_accepts_full_derivation(self) -> None:
         field = RespondentFieldDefinition(
             assembly_id=uuid.uuid4(),
             field_key="age_bracket",
             label="Age bracket",
-            group=RespondentFieldGroup.ABOUT_YOU,
+            group=RespondentFieldGroup.DERIVED,
             sort_order=10,
             is_derived=True,
-            derived_from=["dob_day", "dob_month", "dob_year"],
-            derivation_kind="age_bracket_from_dob",
+            derived_from=["date_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2026-05-13", "min_age": 16},
         )
         assert field.is_derived is True
-        assert field.derived_from == ["dob_day", "dob_month", "dob_year"]
-        assert field.derivation_kind == "age_bracket_from_dob"
+        assert field.derived_from == ["date_of_birth"]
+        assert field.derivation_type == DerivationType.AGE_BRACKET
+        assert field.derivation_config == {"as_of_date": "2026-05-13", "min_age": 16}
+
+    def test_update_rejects_type_and_options_on_derived_field(self) -> None:
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="age_bracket",
+            label="Age bracket",
+            group=RespondentFieldGroup.DERIVED,
+            sort_order=10,
+            is_derived=True,
+            derived_from=["date_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2026-05-13"},
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="16-21"), ChoiceOption(value="UNKNOWN")],
+        )
+        with pytest.raises(DerivedFieldError):
+            field.update(field_type=FieldType.TEXT)
+        with pytest.raises(DerivedFieldError):
+            field.update(options=[ChoiceOption(value="other")])
+
+    def test_update_keeps_derived_field_off_the_registration_page(self) -> None:
+        """update() must re-apply the is_derived => NO invariant the constructor sets."""
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="age_bracket",
+            label="Age bracket",
+            group=RespondentFieldGroup.DERIVED,
+            sort_order=10,
+            is_derived=True,
+            derived_from=["date_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2026-05-13"},
+        )
+        field.update(on_registration_page=FieldOnRegistrationPage.YES_REQUIRED)
+        assert field.on_registration_page == FieldOnRegistrationPage.NO
 
     def test_update_changes_label_and_touches_updated_at(self) -> None:
         field = RespondentFieldDefinition(
@@ -182,7 +273,8 @@ class TestRespondentFieldDefinition:
             is_fixed=True,
             is_derived=True,
             derived_from=["a", "b"],
-            derivation_kind="some_kind",
+            derivation_type=DerivationType.SMALL_MAPPING,
+            derivation_config={"mapping": {"a": "b"}, "fallback": "UNKNOWN"},
         )
         copy = original.create_detached_copy()
 
@@ -195,7 +287,58 @@ class TestRespondentFieldDefinition:
         assert copy.is_derived is True
         assert copy.derived_from == ["a", "b"]
         assert copy.derived_from is not original.derived_from  # actual copy
-        assert copy.derivation_kind == "some_kind"
+        assert copy.derivation_type == DerivationType.SMALL_MAPPING
+        assert copy.derivation_config == {"mapping": {"a": "b"}, "fallback": "UNKNOWN"}
+        assert copy.derivation_config is not original.derivation_config  # actual copy
+
+
+class TestDerivationType:
+    def test_enum_values(self) -> None:
+        assert DerivationType.AGE_BRACKET.value == "age_bracket"
+        assert DerivationType.SMALL_MAPPING.value == "small_mapping"
+        assert DerivationType.LARGE_MAPPING.value == "large_mapping"
+        assert len(list(DerivationType)) == 3
+
+
+class TestDerivedGroup:
+    def test_derived_group_exists_and_sorts_last(self) -> None:
+        assert RespondentFieldGroup.DERIVED.value == "derived"
+        assert GROUP_DISPLAY_ORDER[-1] == RespondentFieldGroup.DERIVED
+        assert GROUP_DISPLAY_ORDER.index(RespondentFieldGroup.DERIVED) > GROUP_DISPLAY_ORDER.index(
+            RespondentFieldGroup.OTHER
+        )
+
+    def test_derived_group_has_label(self) -> None:
+        assert str(GROUP_LABELS[RespondentFieldGroup.DERIVED]) == "Derived"
+
+    def test_every_group_is_in_display_order_and_labels(self) -> None:
+        assert set(GROUP_DISPLAY_ORDER) == set(RespondentFieldGroup)
+        assert set(GROUP_LABELS) == set(RespondentFieldGroup)
+
+
+class TestRespondentFieldMappingEntry:
+    def test_create_with_valid_data(self) -> None:
+        field_id = uuid.uuid4()
+        entry = RespondentFieldMappingEntry(field_id=field_id, lookup_key="SW1A1AA", output_value="London")
+        assert entry.field_id == field_id
+        assert entry.lookup_key == "SW1A1AA"
+        assert entry.output_value == "London"
+        assert entry.id is not None
+
+    def test_rejects_blank_lookup_key(self) -> None:
+        with pytest.raises(ValueError, match="lookup_key is required"):
+            RespondentFieldMappingEntry(field_id=uuid.uuid4(), lookup_key="  ", output_value="London")
+
+    def test_rejects_blank_output_value(self) -> None:
+        with pytest.raises(ValueError, match="output_value is required"):
+            RespondentFieldMappingEntry(field_id=uuid.uuid4(), lookup_key="SW1A1AA", output_value="")
+
+    def test_equality_by_id(self) -> None:
+        entry_id = uuid.uuid4()
+        a = RespondentFieldMappingEntry(field_id=uuid.uuid4(), lookup_key="A", output_value="X", entry_id=entry_id)
+        b = RespondentFieldMappingEntry(field_id=uuid.uuid4(), lookup_key="B", output_value="Y", entry_id=entry_id)
+        assert a == b
+        assert hash(a) == hash(b)
 
 
 class TestFieldOnRegistrationPage:
@@ -235,6 +378,8 @@ class TestFieldOnRegistrationPage:
             sort_order=10,
             is_derived=True,
             derived_from=["dob"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2026-05-13"},
             on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
         )
         assert field.on_registration_page == FieldOnRegistrationPage.NO
@@ -296,6 +441,68 @@ class TestFieldOnRegistrationPage:
         assert FIXED_FIELD_ON_REGISTRATION_PAGE["stay_on_db"] == FieldOnRegistrationPage.YES_OPTIONAL
 
 
+class TestHelpText:
+    def _field(self, **kwargs: object) -> RespondentFieldDefinition:
+        defaults: dict = {
+            "assembly_id": uuid.uuid4(),
+            "field_key": "x",
+            "label": "X",
+            "group": RespondentFieldGroup.OTHER,
+            "sort_order": 10,
+        }
+        defaults.update(kwargs)
+        return RespondentFieldDefinition(**defaults)
+
+    def test_help_text_defaults_to_empty_string(self) -> None:
+        """A field created without help_text has the empty string, not None."""
+        field = self._field()
+        assert field.help_text == ""
+
+    def test_constructor_accepts_help_text(self) -> None:
+        """help_text passed at construction is stored, stripped of surrounding whitespace."""
+        field = self._field(help_text="  As shown on your passport  ")
+        assert field.help_text == "As shown on your passport"
+
+    def test_update_changes_help_text_and_touches_updated_at(self) -> None:
+        """update(help_text=...) stores the new text and bumps updated_at."""
+        field = self._field(help_text="old hint")
+        before = field.updated_at
+        field.update(help_text="new hint")
+        assert field.help_text == "new hint"
+        assert field.updated_at >= before
+
+    def test_update_can_clear_help_text(self) -> None:
+        """Passing the empty string clears an existing hint."""
+        field = self._field(help_text="old hint")
+        field.update(help_text="")
+        assert field.help_text == ""
+
+    def test_update_leaves_help_text_unchanged_when_omitted(self) -> None:
+        """Omitting help_text from update() leaves the stored value alone."""
+        field = self._field(help_text="keep me")
+        field.update(label="New label")
+        assert field.help_text == "keep me"
+
+    def test_help_text_editable_on_derived_field(self) -> None:
+        """help_text is plain mutable text, not derivation-owned, so derived fields accept it."""
+        field = self._field(
+            is_derived=True,
+            derived_from=["year_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2026-01-01"},
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption("16-24")],
+        )
+        field.update(help_text="Computed from your year of birth")
+        assert field.help_text == "Computed from your year of birth"
+
+    def test_create_detached_copy_preserves_help_text(self) -> None:
+        """create_detached_copy carries help_text across."""
+        original = self._field(help_text="a hint")
+        copy = original.create_detached_copy()
+        assert copy.help_text == "a hint"
+
+
 class TestGroupMetadata:
     def test_display_order_contains_every_group_exactly_once(self) -> None:
         assert set(GROUP_DISPLAY_ORDER) == set(RespondentFieldGroup)
@@ -319,7 +526,8 @@ class TestFieldType:
         assert FieldType.CHOICE_DROPDOWN.value == "choice_dropdown"
         assert FieldType.INTEGER.value == "integer"
         assert FieldType.EMAIL.value == "email"
-        assert len(list(FieldType)) == 8
+        assert FieldType.DATE.value == "date"
+        assert len(list(FieldType)) == 9
 
     def test_field_type_labels_cover_every_value(self) -> None:
         assert set(FIELD_TYPE_LABELS) == set(FieldType)
@@ -495,3 +703,54 @@ class TestNormaliseFieldKey:
     )
     def test_normalise(self, raw: str, expected: str) -> None:
         assert normalise_field_key(raw) == expected
+
+
+class TestSetDerivation:
+    def _derived_field(self) -> RespondentFieldDefinition:
+        return RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="age_bracket",
+            label="Age bracket",
+            group=RespondentFieldGroup.DERIVED,
+            sort_order=10,
+            is_derived=True,
+            derived_from=["date_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2026-05-13"},
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="16-99"), ChoiceOption(value="UNKNOWN")],
+        )
+
+    def test_replaces_type_config_and_options(self) -> None:
+        field = self._derived_field()
+        field.set_derivation(
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={"as_of_date": "2027-01-01", "min_age": 18},
+            options=[ChoiceOption(value="under-18"), ChoiceOption(value="18-99"), ChoiceOption(value="UNKNOWN")],
+        )
+        assert field.derivation_config == {"as_of_date": "2027-01-01", "min_age": 18}
+        assert [o.value for o in field.options] == ["under-18", "18-99", "UNKNOWN"]
+
+    def test_rejects_non_derived_field(self) -> None:
+        field = RespondentFieldDefinition(
+            assembly_id=uuid.uuid4(),
+            field_key="plain",
+            label="Plain",
+            group=RespondentFieldGroup.OTHER,
+            sort_order=10,
+        )
+        with pytest.raises(DerivedFieldError):
+            field.set_derivation(
+                derivation_type=DerivationType.AGE_BRACKET,
+                derivation_config={"as_of_date": "2026-05-13"},
+                options=[ChoiceOption(value="x")],
+            )
+
+    def test_rejects_empty_options(self) -> None:
+        field = self._derived_field()
+        with pytest.raises(ValueError):
+            field.set_derivation(
+                derivation_type=DerivationType.AGE_BRACKET,
+                derivation_config={"as_of_date": "2026-05-13"},
+                options=[],
+            )
