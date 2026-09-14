@@ -56,7 +56,7 @@ organiser-managed section sets.
 
 ---
 
-## 1. Chunk A — domain: the link and its locking rules
+## 1. Chunk A — domain: the link and its locking rules ✅ done
 
 Files: `domain/respondent_field_schema.py`, `domain/errors.py` (wherever
 `FixedFieldError`/`DerivedFieldError` live), `adapters/orm.py`.
