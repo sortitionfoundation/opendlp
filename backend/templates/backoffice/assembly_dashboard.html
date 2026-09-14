@@ -138,13 +138,18 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
         {% for section in dashboard_sections %}
             <section class="mb-10">
                 <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ section.name }}</h3>
+                {# minmax floor sized so five cards fit a row on a 13" MacBook
+                   viewport (~1380px of content width inside the page padding). #}
                 <div class="grid gap-4"
-                     style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+                     style="grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));">
                     {% for card in section.cards %}
                         {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4") }}
                     {% endfor %}
                 </div>
             </section>
         {% endfor %}
+        {# Draws every canvas the pie_chart_card macro rendered above. #}
+        <script nonce="{{ csp_nonce }}"
+                src="{{ url_for('static', filename='backoffice/js/pie-chart.js', v=static_hashes('backoffice/js/pie-chart.js')) }}"></script>
     {% endif %}
 {% endblock %}

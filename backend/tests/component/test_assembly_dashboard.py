@@ -107,6 +107,7 @@ class TestTheDashboardPage:
 
         assert "Number to select:" in html
         # no charts or tables, and the empty-state copy instead
+        assert "data-pie-chart" not in html
         assert "conic-gradient(" not in html
         assert "No dashboard to display yet." in html
         assert "Set up your targets to get started." in html
@@ -134,7 +135,8 @@ class TestTheDashboardPage:
     def test_target_pie_is_populated_and_later_datasets_are_skeletons(self, logged_in_admin, assembly_with_targets):
         html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
 
-        # Target renders a real pie
+        # Target renders a real pie (a Chart.js canvas), the rest stay CSS skeletons
+        assert "data-pie-chart" in html
         assert "conic-gradient(" in html
         # The fixture's targets have no population share, so Population is a skeleton
         assert "Shows the population split once every value has a population % set in the targets." in html
@@ -174,7 +176,7 @@ class TestTheViewToggle:
     def test_chart_is_the_default_view(self, logged_in_admin, assembly_with_targets):
         html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
         # pies present, table header labels absent
-        assert "conic-gradient(" in html
+        assert "data-pie-chart" in html
         assert "Population %" not in html
 
     def test_both_view_links_are_present(self, logged_in_admin, existing_assembly):
@@ -193,12 +195,13 @@ class TestTheViewToggle:
         assert "Male" in html
         # the fixture's targets carry no population share, so the column shows a dash
         assert "—" in html
-        # no pie charts in the table view
+        # no pie charts (canvases or skeletons) in the table view
+        assert "data-pie-chart" not in html
         assert "conic-gradient(" not in html
 
     def test_unknown_view_falls_back_to_chart(self, logged_in_admin, assembly_with_targets):
         html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}?view=bogus").get_data(as_text=True)
-        assert "conic-gradient(" in html
+        assert "data-pie-chart" in html
         assert "Population %" not in html
 
 
@@ -219,7 +222,7 @@ class TestThePieChartAtom:
         with app.test_request_context():
             return render_template_string(self._IMPORT + body, **ctx)
 
-    def test_populated_state_draws_a_pie_with_legends(self, app):
+    def test_populated_state_renders_a_chart_canvas(self, app):
         html = self._render(
             app,
             "{{ pie_chart_card('Gender', segments=segments, title_tag='h4') }}",
@@ -230,8 +233,11 @@ class TestThePieChartAtom:
             ],
         )
         assert 'role="img"' in html
-        assert "conic-gradient(" in html
-        # percentages are computed from the counts (10/20 = 50%)
+        assert "<canvas" in html
+        assert "data-pie-chart" in html
+        # percentages are computed from the counts (10/20 = 50%); the same
+        # precomputed "Label pct% (count)" strings feed the aria-label and the
+        # Chart.js tooltips
         assert "Male 50% (10)" in html
         # title_tag is honoured
         assert "<h4" in html
