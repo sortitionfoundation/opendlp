@@ -218,7 +218,16 @@ place.
    field's `updated_at` postdates the `form_html` last save (research
    §4.6, MVP level 1).
 
-## 6. Chunk F — tests, i18n, docs, housekeeping
+## 6. Chunk F — tests, i18n, docs, housekeeping ✅ done
+
+> Implementation note: BDD covers exact copy e2e, age ranges with the
+> recompute report, and the forced-unlink confirmation
+> (`features/target-data-sources.feature`); the retired age-bracket modal
+> scenario left `respondent-field-schema.feature` with it. The remaining
+> scenarios from the wish list (postcode reused across two targets, adopt,
+> stale→re-sync, gsheet message) are covered at component-test level in
+> `tests/component/test_backoffice_target_sources.py` and
+> `tests/unit/test_target_source_service.py`.
 
 1. **BDD** (`tests/bdd/`): scenarios for — each of the four set-up methods
    end-to-end (target → source configured → field appears in step 2 →

@@ -35,15 +35,3 @@ Feature: Respondent field schema
     And I save a new choice field labelled "Preferred contact" with options "Phone" and "Email"
     Then the schema editor should list the "preferred_contact" field
     And the "preferred_contact" row should summarise its options as "Phone, Email"
-
-  Scenario: Organiser creates an age-bracket derived field and sees the recompute report
-    Given there is an assembly with respondents imported from CSV called "Derived Field Demo"
-    And the assembly "Derived Field Demo" has a "year_of_birth" number field
-    And the assembly "Derived Field Demo" has an "age bracket" target with values "16-24, 25-39, 40+"
-    And I am signed in as an admin user
-    When I open the respondent field schema editor for "Derived Field Demo"
-    And I create an age-bracket derived field feeding "age bracket" from "year_of_birth"
-    Then I should see the recompute report
-    When I close the recompute report
-    Then the schema editor should list the "age bracket" field
-    And the "age bracket" row should carry the "Derived" tag
