@@ -50,7 +50,16 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                                 {% set form_field_name = attr_prefix ~ field.field_key %}
                             {% endif %}
                             {% set wt = form[form_field_name] if form_field_name in form else none %}
-                            {% if wt %}
+                            {% if field.is_derived %}
+                                {# Computed from its source field — showing the stored value here
+                                   would go stale the moment the source is edited above. #}
+                                <div class="flex flex-col gap-1.5">
+                                    <span class="text-label-lg" style="color: var(--color-headings);">{{ field.label }}</span>
+                                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                        {{ _("Will be recalculated when saved.") }}
+                                    </p>
+                                </div>
+                            {% elif wt %}
                                 {% set effective = field.effective_field_type.value %}
                                 {% if effective == "bool" %}
                                     {{ radio_group(

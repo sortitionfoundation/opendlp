@@ -31,60 +31,58 @@ becomes a disabled input/textarea so the page reads as a read-only form.
 {% macro render_view_field(field, respondent, attr_prefix) %}
     {% set field_name = field.field_key if field.is_fixed else attr_prefix ~ field.field_key %}
     {% set effective = field.effective_field_type.value %}
-    {% if field.is_derived %}
-        {{ input(name=field_name, label=field.label, value=_("(derivation not yet implemented)") , disabled=true, dim=false) }}
+    {# Derived values are computed into respondent.attributes by apply_derivations,
+       so a derived field reads like any other custom (non-fixed) field. #}
+    {% if field.is_fixed %}
+        {% set raw = respondent|attr(field.field_key) %}
     {% else %}
+        {% set raw = respondent.attributes.get(field.field_key, "") %}
+    {% endif %}
+    {% if effective == "bool" or effective == "bool_or_none" %}
         {% if field.is_fixed %}
-            {% set raw = respondent|attr(field.field_key) %}
+            {% if raw is none %}
+                {% set value_str = "" %}
+            {% elif raw %}
+                {% set value_str = "true" %}
+            {% else %}
+                {% set value_str = "false" %}
+            {% endif %}
         {% else %}
-            {% set raw = respondent.attributes.get(field.field_key, "") %}
+            {% set value_str = raw or "" %}
         {% endif %}
-        {% if effective == "bool" or effective == "bool_or_none" %}
-            {% if field.is_fixed %}
-                {% if raw is none %}
-                    {% set value_str = "" %}
-                {% elif raw %}
-                    {% set value_str = "true" %}
-                {% else %}
-                    {% set value_str = "false" %}
-                {% endif %}
-            {% else %}
-                {% set value_str = raw or "" %}
-            {% endif %}
-            {% if effective == "bool" %}
-                {{ radio_group(
-                name=field_name,
-                label=field.label,
-                options=[{"value": "true", "label": _("Yes")}, {"value": "false", "label": _("No")}],
-                value=value_str,
-                inline=true,
-                disabled=true, dim=false
-                ) }}
-            {% else %}
-                {{ radio_group(
-                name=field_name,
-                label=field.label,
-                options=[{"value": "true", "label": _("Yes")}, {"value": "false", "label": _("No")}, {"value": "", "label": _("Not set")}],
-                value=value_str,
-                inline=true,
-                disabled=true, dim=false
-                ) }}
-            {% endif %}
-        {% elif effective == "longtext" %}
-            {{ textarea(name=field_name, label=field.label, value=raw or "", disabled=true, dim=false) }}
-        {% elif effective == "integer" %}
-            {% if field.is_fixed %}
-                {% set value_str = raw|string if raw is not none else "" %}
-            {% else %}
-                {% set value_str = raw or "" %}
-            {% endif %}
-            {{ input(name=field_name, label=field.label, type="number", value=value_str, disabled=true, dim=false) }}
-        {% elif effective == "email" %}
-            {{ input(name=field_name, label=field.label, type="email", value=raw or "", disabled=true, dim=false) }}
+        {% if effective == "bool" %}
+            {{ radio_group(
+            name=field_name,
+            label=field.label,
+            options=[{"value": "true", "label": _("Yes")}, {"value": "false", "label": _("No")}],
+            value=value_str,
+            inline=true,
+            disabled=true, dim=false
+            ) }}
         {% else %}
-            {# choice_radio, choice_dropdown, plain text — read-only text input. #}
-            {{ input(name=field_name, label=field.label, value=raw or "", disabled=true, dim=false) }}
+            {{ radio_group(
+            name=field_name,
+            label=field.label,
+            options=[{"value": "true", "label": _("Yes")}, {"value": "false", "label": _("No")}, {"value": "", "label": _("Not set")}],
+            value=value_str,
+            inline=true,
+            disabled=true, dim=false
+            ) }}
         {% endif %}
+    {% elif effective == "longtext" %}
+        {{ textarea(name=field_name, label=field.label, value=raw or "", disabled=true, dim=false) }}
+    {% elif effective == "integer" %}
+        {% if field.is_fixed %}
+            {% set value_str = raw|string if raw is not none else "" %}
+        {% else %}
+            {% set value_str = raw or "" %}
+        {% endif %}
+        {{ input(name=field_name, label=field.label, type="number", value=value_str, disabled=true, dim=false) }}
+    {% elif effective == "email" %}
+        {{ input(name=field_name, label=field.label, type="email", value=raw or "", disabled=true, dim=false) }}
+    {% else %}
+        {# choice_radio, choice_dropdown, plain text — read-only text input. #}
+        {{ input(name=field_name, label=field.label, value=raw or "", disabled=true, dim=false) }}
     {% endif %}
 {% endmacro %}
 {% block page_content %}

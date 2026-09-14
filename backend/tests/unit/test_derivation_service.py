@@ -750,3 +750,61 @@ class TestSourceFieldProtection:
 
         stored = uow.respondent_field_definitions.get(derived.id)
         assert stored.derivation_config["mapping"] == {"White British": "White"}
+
+
+class TestCompatibleSourceFields:
+    def _fields(self, uow):
+        _user, assembly = _seed(uow)
+        dob = _add_source(uow, assembly, "date_of_birth", FieldType.DATE)
+        yob = _add_source(uow, assembly, "year_of_birth", FieldType.INTEGER)
+        postcode = _add_source(uow, assembly, "postcode", FieldType.TEXT)
+        gender = _add_source(uow, assembly, "gender", FieldType.CHOICE_RADIO, options=[ChoiceOption(value="Female")])
+        return [dob, yob, postcode, gender]
+
+    def test_age_bracket_accepts_date_and_integer_sources(self, uow):
+        """Age brackets derive from a date of birth or a year of birth."""
+        fields = self._fields(uow)
+        keys = [f.field_key for f in derivation_service.compatible_source_fields(fields, DerivationType.AGE_BRACKET)]
+        assert keys == ["date_of_birth", "year_of_birth"]
+
+    def test_small_mapping_accepts_choice_sources(self, uow):
+        fields = self._fields(uow)
+        keys = [f.field_key for f in derivation_service.compatible_source_fields(fields, DerivationType.SMALL_MAPPING)]
+        assert keys == ["gender"]
+
+    def test_large_mapping_accepts_text_sources(self, uow):
+        fields = self._fields(uow)
+        keys = [f.field_key for f in derivation_service.compatible_source_fields(fields, DerivationType.LARGE_MAPPING)]
+        assert keys == ["postcode"]
+
+    def test_derived_fields_are_never_offered_as_sources(self, uow):
+        """Derivations cannot chain, so a derived field is excluded even with a compatible type."""
+        user, assembly = _seed(uow)
+        _add_source(uow, assembly, "date_of_birth", FieldType.DATE)
+        derived, _report = create_derived_field(
+            uow,
+            user.id,
+            assembly.id,
+            field_key="age_bracket",
+            label="Age bracket",
+            source_field_key="date_of_birth",
+            rule=AGE_RULE,
+        )
+        fields = uow.respondent_field_definitions.list_by_assembly(assembly.id)
+        compatible = derivation_service.compatible_source_fields(fields, DerivationType.SMALL_MAPPING)
+        assert derived.id not in [f.id for f in compatible]
+
+    def test_fixed_fields_use_their_effective_type(self, uow):
+        """The email fixed field is TEXT in storage but EMAIL effectively, so no rule accepts it."""
+        _user, assembly = _seed(uow)
+        email = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key="email",
+            label="Email",
+            group=RespondentFieldGroup.NAME_AND_CONTACT,
+            sort_order=0,
+            is_fixed=True,
+            field_type=FieldType.TEXT,
+        )
+        uow.respondent_field_definitions.add(email)
+        assert derivation_service.compatible_source_fields([email], DerivationType.LARGE_MAPPING) == []

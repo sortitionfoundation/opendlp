@@ -1367,6 +1367,73 @@ class TestGenerateStarterFormHtml:
         assert '<p class="hint" id="eligible-hint">You must live in the area</p>' in html
         assert 'aria-describedby="eligible-hint"' in html
 
+    def test_choice_radio_option_help_text_renders_hints(self):
+        """A ChoiceOption's help_text becomes a hint paragraph its radio points at."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[
+                    ChoiceOption(value="Female", help_text="Includes trans women"),
+                    ChoiceOption(value="Male"),
+                ],
+            ),
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert '<p class="hint" id="gender-1-item-hint">Includes trans women</p>' in html
+        assert 'aria-describedby="gender-1-item-hint"' in html
+        assert "gender-2-item-hint" not in html
+
+    def test_date_field_renders_three_part_inputs_on_one_line(self):
+        """A DATE field becomes day/month/year inputs the submission service already accepts."""
+        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+        html = generate_starter_form_html(fields)
+
+        assert "<legend>Date of birth</legend>" in html
+        for part, size in (("day", "2"), ("month", "2"), ("year", "4")):
+            assert (
+                f'<input type="text" inputmode="numeric" name="date_of_birth-{part}" size="{size}" '
+                f"value=\"{{{{ value('date_of_birth-{part}') }}}}\">"
+            ) in html
+        # The parts sit in a flex row so they share a line even unstyled.
+        assert "display: flex" in html
+        assert "{{ field_errors('date_of_birth') }}" in html
+        # No single bare input remains for the field itself.
+        assert 'name="date_of_birth"' not in html
+
+    def test_required_date_field_marks_each_part_required(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html(fields)
+
+        for part in ("day", "month", "year"):
+            assert f"value=\"{{{{ value('date_of_birth-{part}') }}}}\" required>" in html
+
+    def test_date_field_hint_describes_the_fieldset(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                help_text="For example, 27 3 1985",
+            )
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert '<fieldset aria-describedby="date_of_birth-hint">' in html
+        assert '<p class="hint" id="date_of_birth-hint">For example, 27 3 1985</p>' in html
+
 
 class TestGenerateStarterFormHtmlGovuk:
     def test_empty_schema_minimal_form(self):
@@ -1725,3 +1792,108 @@ class TestGenerateStarterFormHtmlGovuk:
         select_pos = html.find('<select class="govuk-select"')
         assert -1 < hint_pos < select_pos
         assert 'aria-describedby="region-hint"' in html
+
+    def test_choice_radio_option_help_text_renders_as_item_hints(self):
+        """A ChoiceOption's help_text becomes a govuk-radios__hint its radio points at."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[
+                    ChoiceOption(value="Female", help_text="Includes trans women"),
+                    ChoiceOption(value="Male"),
+                ],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert ('<div class="govuk-hint govuk-radios__hint" id="gender-item-hint">Includes trans women</div>') in html
+        assert 'aria-describedby="gender-item-hint"' in html
+        # The option without help text gets no hint element and no aria-describedby.
+        assert "gender-2-item-hint" not in html
+
+    def test_choice_radio_option_help_text_is_escaped(self):
+        """Organiser-typed option help text is HTML-escaped."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Other", help_text="e.g. <b>self-described</b> & more")],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert "e.g. &lt;b&gt;self-described&lt;/b&gt; &amp; more" in html
+        assert "<b>self-described</b>" not in html
+
+    def test_option_and_field_hints_coexist_with_distinct_ids(self):
+        """A field-level hint and an option hint don't collide on ids."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Female", help_text="option hint")],
+                help_text="field hint",
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<div class="govuk-hint" id="gender-hint">field hint</div>' in html
+        assert '<div class="govuk-hint govuk-radios__hint" id="gender-item-hint">option hint</div>' in html
+
+    def test_date_field_renders_the_govuk_date_input_pattern(self):
+        """A DATE field renders the design-system date input: three labelled parts in a fieldset."""
+        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<fieldset class="govuk-fieldset" role="group">' in html
+        assert ('<legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Date of birth</legend>') in html
+        assert '<div class="govuk-date-input" id="date_of_birth">' in html
+        for part, width, label in (("day", "2", "Day"), ("month", "2", "Month"), ("year", "4", "Year")):
+            assert (
+                f'<label class="govuk-label govuk-date-input__label" for="date_of_birth-{part}">{label}</label>'
+            ) in html
+            assert (
+                f'<input class="govuk-input govuk-date-input__input govuk-input--width-{width}" '
+                f'type="text" inputmode="numeric" id="date_of_birth-{part}" name="date_of_birth-{part}" '
+                f"value=\"{{{{ value('date_of_birth-{part}') }}}}\">"
+            ) in html
+        assert "{{ field_errors('date_of_birth') }}" in html
+        assert html.count("govuk-date-input__item") == 3
+        assert 'name="date_of_birth"' not in html
+
+    def test_required_date_field_marks_each_part_required(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        for part in ("day", "month", "year"):
+            assert f"value=\"{{{{ value('date_of_birth-{part}') }}}}\" required>" in html
+
+    def test_date_field_hint_describes_the_fieldset(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                help_text="For example, 27 3 1985",
+            )
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<fieldset class="govuk-fieldset" role="group" aria-describedby="date_of_birth-hint">' in html
+        assert '<div class="govuk-hint" id="date_of_birth-hint">For example, 27 3 1985</div>' in html

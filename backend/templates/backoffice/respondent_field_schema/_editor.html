@@ -1,0 +1,202 @@
+{#
+ABOUTME: Read-only schema editor fragment — summary rows with section/order/actions controls
+ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; included by view.html
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import select %}
+{# oob=true marks the fragment for an out-of-band swap: HTMX replaces #schema-editor
+   in place while the (otherwise empty) response body clears #field-modal-container,
+   closing whichever modal triggered the mutation. #}
+<div id="schema-editor" {% if oob | default(false) %}hx-swap-oob="true"{% endif %}>
+    {% if show_guess_button %}
+        <section class="mb-6">
+            <form method="post"
+                  action="{{ url_for('respondent_field_schema.guess_types_view', assembly_id=assembly.id) }}"
+                  class="flex items-center gap-3"
+                  x-data
+                  x-preserve-scroll-on-submit>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {{ button(_("Guess field types from data") , type="submit", variant="secondary") }}
+                <span class="text-body-sm" style="color: var(--color-secondary-text);">
+                    {{ _("Only fields still set to Text will be updated; explicitly-typed fields are left alone.") }}
+                </span>
+            </form>
+        </section>
+    {% endif %}
+    {% for section in sections %}
+        {% if section.fields %}
+            <section class="mb-8">
+                <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ section.label }}</h2>
+                <table class="w-full text-left"
+                       style="border-collapse: collapse;
+                              table-layout: fixed">
+                    <colgroup>
+                        <col />
+                        <col />
+                        <col style="width: 10rem;" />
+                        <col style="width: 13rem;" />
+                        <col style="width: 6rem;" />
+                        <col style="width: 11rem;" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="text-label-lg py-2">{{ _("Field") }}</th>
+                            <th class="text-label-lg py-2">{{ _("Summary") }}</th>
+                            <th class="text-label-lg py-2">{{ _("Tags") }}</th>
+                            <th class="text-label-lg py-2">{{ _("Section") }}</th>
+                            <th class="text-label-lg py-2">{{ _("Order") }}</th>
+                            <th class="text-label-lg py-2">{{ _("Actions") }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field in section.fields %}
+                            <tr style="border-top: 1px solid var(--color-borders-dividers);">
+                                <td class="py-3 pr-4 align-top">
+                                    <div class="text-body-md font-bold" style="color: var(--color-headings);">{{ field.label }}</div>
+                                    <div>
+                                        <code class="text-body-sm">{{ field.field_key }}</code>
+                                    </div>
+                                    {% if field.help_text %}
+                                        <div class="text-body-sm mt-1" style="color: var(--color-secondary-text);">{{ field.help_text }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 pr-4 align-top">
+                                    {% if field.is_derived %}
+                                        <div class="text-body-sm">
+                                            {{ _("Derived from %(source)s", source=(field.derived_from or []) | join(", ")) }}
+                                            {% if field.derivation_type %}· {{ derivation_type_labels[field.derivation_type.value] }}{% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-body-sm">{{ field_type_labels_by_value[field.effective_field_type.value] }}</div>
+                                    {% endif %}
+                                    {% if field.options %}
+                                        <div class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                                            {{ field.options[:6] | map(attribute="value") | join(", ") }}
+                                            {%- if field.options | length > 6 %}
+                                                {{ _("… and %(count)d more", count=field.options | length - 6) }}
+                                            {%- endif %}
+                                        </div>
+                                    {% endif %}
+                                    {% if field.is_derived and field.derivation_type and field.derivation_type.value == "large_mapping" %}
+                                        {% set mapping_rows = mapping_row_counts.get(field.id, 0) %}
+                                        <div class="text-body-sm mt-1"
+                                             {% if mapping_rows == 0 %}style="color: var(--color-error-text);"{% endif %}>
+                                            {% if mapping_rows == 0 %}
+                                                {{ _("0 rows — upload a lookup table") }}
+                                            {% else %}
+                                                {{ _("%(count)d lookup rows", count=mapping_rows) }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 pr-4 align-top">
+                                    <div class="flex flex-wrap gap-1">
+                                        {% if field.is_fixed %}<strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>{% endif %}
+                                        {% if field.is_derived %}
+                                            <strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>
+                                            <strong class="govuk-tag govuk-tag--grey">{{ _("Not on form") }}</strong>
+                                        {% elif field.on_registration_page.value == "yes_required" %}
+                                            <strong class="govuk-tag govuk-tag--blue">{{ _("Required") }}</strong>
+                                        {% elif field.on_registration_page.value == "yes_optional" %}
+                                            <strong class="govuk-tag govuk-tag--turquoise">{{ _("Optional") }}</strong>
+                                        {% else %}
+                                            <strong class="govuk-tag govuk-tag--grey">{{ _("Not on form") }}</strong>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="py-3 pr-4 align-top">
+                                    {# Auto-submits over HTMX on change; the Move button is the no-JS path. #}
+                                    <form method="post"
+                                          action="{{ url_for('respondent_field_schema.update_field_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                          hx-post="{{ url_for('respondent_field_schema.update_field_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                          hx-target="#schema-editor"
+                                          hx-swap="outerHTML"
+                                          hx-trigger="change"
+                                          class="flex gap-1 items-center"
+                                          x-data
+                                          x-preserve-scroll-on-submit>
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="flex-1">
+                                            {{ select("group",
+                                            options=group_choices,
+                                            value=field.group.value,
+                                            id="row-group-" ~ field.id,
+                                            attrs='aria-label="' ~ (_('Section for %(key)s', key=field.field_key) | e) ~ '"') }}
+                                        </div>
+                                        {{ button(_("Move") , type="submit", variant="tertiary") }}
+                                    </form>
+                                </td>
+                                <td class="py-3 pr-4 align-top">
+                                    <div class="flex gap-1">
+                                        <form method="post"
+                                              action="{{ url_for('respondent_field_schema.move_field', assembly_id=assembly.id, field_id=field.id) }}"
+                                              class="inline"
+                                              x-data
+                                              x-preserve-scroll-on-submit>
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="direction" value="up">
+                                            {{ button("↑", type="submit", variant="tertiary", attrs='aria-label="' + _('Move up') + '"') }}
+                                        </form>
+                                        <form method="post"
+                                              action="{{ url_for('respondent_field_schema.move_field', assembly_id=assembly.id, field_id=field.id) }}"
+                                              class="inline"
+                                              x-data
+                                              x-preserve-scroll-on-submit>
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="direction" value="down">
+                                            {{ button("↓", type="submit", variant="tertiary", attrs='aria-label="' + _('Move down') + '"') }}
+                                        </form>
+                                    </div>
+                                </td>
+                                <td class="py-3 align-top">
+                                    <div class="flex gap-2 items-center">
+                                        {{ button(_("Edit") ,
+                                        variant="secondary",
+                                        href=url_for('respondent_field_schema.edit_field_modal', assembly_id=assembly.id, field_id=field.id),
+                                        attrs='hx-get="' ~ url_for('respondent_field_schema.edit_field_modal', assembly_id=assembly.id, field_id=field.id) ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
+                                        {% if not field.is_fixed %}
+                                            <form method="post"
+                                                  action="{{ url_for('respondent_field_schema.delete_field_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                  class="inline"
+                                                  x-data
+                                                  data-preserve-scroll
+                                                  @submit.prevent="$confirm('{{ _("Remove this field from the schema? Respondent data keeps its values; they just stop being rendered.") }}', $el)">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                {{ button(_("Remove") , type="submit", variant="danger") }}
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                    {% if field.is_derived %}
+                                        <div class="flex gap-2 items-center mt-1">
+                                            <form method="post"
+                                                  action="{{ url_for('respondent_field_schema.recompute_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                  hx-post="{{ url_for('respondent_field_schema.recompute_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                  hx-target="#field-modal-container"
+                                                  hx-swap="innerHTML"
+                                                  class="inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                {{ button(_("Recompute") , type="submit", variant="tertiary") }}
+                                            </form>
+                                            {% if field.derivation_type and field.derivation_type.value == "large_mapping" %}
+                                                {{ button(_("Upload lookup table") ,
+                                                variant="tertiary",
+                                                href=url_for('respondent_field_schema.mapping_upload_modal', assembly_id=assembly.id, field_id=field.id),
+                                                attrs='hx-get="' ~ url_for('respondent_field_schema.mapping_upload_modal', assembly_id=assembly.id, field_id=field.id) ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        {% endif %}
+    {% endfor %}
+    <section class="mb-8">
+        {{ button(_("Add a field") ,
+        variant="primary",
+        href=url_for('respondent_field_schema.new_field_modal', assembly_id=assembly.id),
+        attrs='hx-get="' ~ url_for('respondent_field_schema.new_field_modal', assembly_id=assembly.id) ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
+    </section>
+</div>
