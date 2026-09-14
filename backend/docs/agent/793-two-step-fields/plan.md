@@ -88,7 +88,7 @@ Files: `domain/respondent_field_schema.py`, `domain/errors.py` (wherever
 Tests: domain unit tests for every lock/allow combination on a linked
 field; migration up/down; field-spec contract test.
 
-## 2. Chunk B — service layer: configure, status, guards
+## 2. Chunk B — service layer: configure, status, guards ✅ done
 
 New module `service_layer/target_source_service.py` (thin orchestration
 over `derivation_service` + `respondent_field_schema_service`; keeps

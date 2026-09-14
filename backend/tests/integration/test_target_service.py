@@ -7,6 +7,13 @@ import pytest
 from sortition_algorithms.features import MAX_FLEX_UNSET
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import assembly_service, respondent_service, target_csv_import, target_service
@@ -1460,3 +1467,73 @@ Gender,Male,10,15,not a number"""
 
         with pytest.raises(InvalidSelection, match="percentage"):
             target_csv_import.import_targets_from_csv(uow, admin_user.id, test_assembly.id, csv_content)
+
+
+class TestTargetLinkedGuardWrites:
+    """The force-unlink write paths that touch flag_modified, against the real ORM."""
+
+    def _linked_category(self, uow, admin_user, assembly, name="Gender"):
+        category = TargetCategory(
+            assembly_id=assembly.id,
+            name=name,
+            values=[TargetValue(value="Male", min=1, max=5), TargetValue(value="Female", min=1, max=5)],
+        )
+        uow.target_categories.add(category)
+        # No relationship() ties the two tables, so flush the category first or
+        # the unit of work may insert the field ahead of its FK target.
+        uow.session.flush()
+        field = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key=name,
+            label=name,
+            group=RespondentFieldGroup.ABOUT_YOU,
+            sort_order=10,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            target_category_id=category.id,
+        )
+        uow.respondent_field_definitions.add(field)
+        uow.session.flush()
+        return category, field
+
+    def test_value_edits_need_no_force(self, uow, admin_user, test_assembly):
+        """Value changes only make the linked field stale - staleness is computed, not guarded."""
+        category, field = self._linked_category(uow, admin_user, test_assembly)
+
+        target_service.add_target_value(uow, admin_user.id, test_assembly.id, category.id, value="Other")
+
+        assert category.get_value("Other") is not None
+        assert field.target_category_id == category.id
+
+    def test_bulk_save_with_force_unlink_proceeds(self, uow, admin_user, test_assembly):
+        category, field = self._linked_category(uow, admin_user, test_assembly)
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [target_service.TargetCategoryEdit(category_id=category.id, name="Sex")],
+            force_unlink=True,
+        )
+
+        assert category.name == "Sex"
+        assert field.target_category_id is None
+
+    def test_bulk_save_value_only_edits_need_no_force(self, uow, admin_user, test_assembly):
+        category, field = self._linked_category(uow, admin_user, test_assembly)
+
+        target_service.save_all_targets(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            [
+                target_service.TargetCategoryEdit(
+                    category_id=category.id,
+                    name="Gender",
+                    values=[target_service.TargetValueEdit(value="Other")],
+                )
+            ],
+        )
+
+        assert category.get_value("Other") is not None
+        assert field.target_category_id == category.id

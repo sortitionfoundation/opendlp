@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-14 12:57+0000\n"
+"POT-Creation-Date: 2026-09-14 13:14+0000\n"
 "PO-Revision-Date: 2026-09-10 14:24+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -3195,6 +3195,7 @@ msgstr ""
 
 #: src/opendlp/service_layer/derivation_service.py:368
 #: src/opendlp/service_layer/respondent_field_schema_service.py:263
+#: src/opendlp/service_layer/target_source_service.py:261
 msgid "Field key cannot be empty"
 msgstr "A mezőkulcs nem lehet üres"
 
@@ -3674,51 +3675,115 @@ msgstr ""
 "oszlopban. \"%(used)s\" érték lesz érvényes, a további %(count)s érték "
 "figyelmen kívül marad."
 
-#: src/opendlp/service_layer/target_service.py:708
+#: src/opendlp/service_layer/target_service.py:826
 #, python-format
 msgid "A target called '%(name)s' already exists"
 msgstr "Már létezik '%(name)s' nevű célszám"
 
-#: src/opendlp/service_layer/target_service.py:724
+#: src/opendlp/service_layer/target_service.py:842
 msgid "Enter a name for this target"
 msgstr "Adj nevet ennek a célszámnak"
 
-#: src/opendlp/service_layer/target_service.py:790
+#: src/opendlp/service_layer/target_service.py:908
 #, python-format
 msgid "Comment must be %(limit)s characters or fewer"
 msgstr "A megjegyzés legfeljebb %(limit)s karakter lehet"
 
-#: src/opendlp/service_layer/target_service.py:801
+#: src/opendlp/service_layer/target_service.py:919
 #, python-format
 msgid "Enter a full http:// or https:// address, %(limit)s characters or fewer"
 msgstr ""
 "Adj meg egy teljes http:// vagy https:// című webcímet, legfeljebb "
 "%(limit)s karakterrel"
 
-#: src/opendlp/service_layer/target_service.py:840
+#: src/opendlp/service_layer/target_service.py:958
 #, python-format
 msgid "Two values in this target are both called '%(name)s'"
 msgstr "Ebben a kiválasztási szempontban két érték neve is '%(name)s'"
 
-#: src/opendlp/service_layer/target_service.py:860
+#: src/opendlp/service_layer/target_service.py:978
 msgid "Min cannot be negative"
 msgstr "A minimum nem lehet negatív"
 
-#: src/opendlp/service_layer/target_service.py:862
+#: src/opendlp/service_layer/target_service.py:980
 msgid "Max cannot be negative"
 msgstr "A maximum nem lehet negatív"
 
-#: src/opendlp/service_layer/target_service.py:864
+#: src/opendlp/service_layer/target_service.py:982
 msgid "Max must be at least the min"
 msgstr "A maximumnak legalább akkorának kell lennie, mint a minimum"
 
-#: src/opendlp/service_layer/target_service.py:866
+#: src/opendlp/service_layer/target_service.py:984
 msgid "Population share must be between 0 and 100"
 msgstr "A népességi aránynak 0 és 100 között kell lennie"
 
-#: src/opendlp/service_layer/target_service.py:890
+#: src/opendlp/service_layer/target_service.py:1008
 msgid "Check the numbers in this row"
 msgstr "Ellenőrizd a sorban szereplő számokat"
+
+#: src/opendlp/service_layer/target_source_service.py:189
+#, python-format
+msgid ""
+"Target '%(name)s' has no values yet — add its values before wiring a data"
+" source"
+msgstr ""
+
+#: src/opendlp/service_layer/target_source_service.py:221
+#, python-format
+msgid "Field '%(key)s' is missing options for these target values: %(values)s"
+msgstr ""
+
+#: src/opendlp/service_layer/target_source_service.py:255
+#, python-format
+msgid "Field '%(key)s' cannot feed this kind of derivation"
+msgstr ""
+
+#: src/opendlp/service_layer/target_source_service.py:265
+#: src/opendlp/service_layer/target_source_service.py:320
+#, python-format
+msgid ""
+"Field '%(key)s' already exists in this assembly — choose it instead of "
+"creating a new one"
+msgstr ""
+
+#: src/opendlp/service_layer/target_source_service.py:284
+#, python-format
+msgid "A '%(type)s' field cannot feed this kind of derivation"
+msgstr ""
+
+#: src/opendlp/service_layer/target_source_service.py:304
+#, python-format
+msgid ""
+"Field '%(key)s' is derived — an exact copy must be a directly collected "
+"field"
+msgstr ""
+
+#: src/opendlp/service_layer/target_source_service.py:309
+#, python-format
+msgid ""
+"Field '%(key)s' is not a choice field, so it cannot be an exact copy of a"
+" target"
+msgstr ""
+
+#: src/opendlp/service_layer/target_source_service.py:360
+#, python-format
+msgid ""
+"Field '%(key)s' already exists and is not derived — use the exact copy "
+"method, or rename it first"
+msgstr ""
+
+#: src/opendlp/service_layer/target_source_service.py:524
+#, python-format
+msgid ""
+"Field '%(key)s' does not share the target's name '%(name)s', so selection"
+" would not pair them"
+msgstr ""
+
+#: src/opendlp/service_layer/target_source_service.py:565
+msgid ""
+"Age brackets come from the field's configuration — edit the age ranges or"
+" the target values instead"
+msgstr ""
 
 #: src/opendlp/service_layer/two_factor_service.py:51
 #: src/opendlp/service_layer/two_factor_service.py:98

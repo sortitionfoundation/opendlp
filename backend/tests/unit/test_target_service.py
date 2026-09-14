@@ -6,12 +6,20 @@ import uuid
 import pytest
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import target_csv_import, target_service
 from opendlp.service_layer.exceptions import InsufficientPermissions
 from opendlp.service_layer.target_service import (
     TargetCategoryEdit,
+    TargetLinkedError,
     TargetValueEdit,
     _duplicate_value_errors,
     _value_problem,
@@ -153,3 +161,95 @@ class TestPermissionRefusals:
             target_csv_import.import_targets_from_csv(
                 uow, viewer.id, assembly.id, "feature,value,min,max\nGender,Male,1,2"
             )
+
+
+class TestTargetLinkedGuards:
+    """Renaming or deleting a category that fields feed needs an explicit force-unlink."""
+
+    @pytest.fixture
+    def admin(self, uow):
+        user = User(email="admin@test.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(user)
+        return user
+
+    @pytest.fixture
+    def assembly(self, uow):
+        assembly = Assembly(title="Guarded Assembly", number_to_select=40)
+        uow.assemblies.add(assembly)
+        return assembly
+
+    def _linked_category(self, uow, assembly, name="Gender"):
+        category = TargetCategory(
+            assembly_id=assembly.id,
+            name=name,
+            values=[TargetValue(value="Male", min=1, max=5), TargetValue(value="Female", min=1, max=5)],
+        )
+        uow.target_categories.add(category)
+        field = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key=name,
+            label=name,
+            group=RespondentFieldGroup.ABOUT_YOU,
+            sort_order=10,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            target_category_id=category.id,
+        )
+        uow.respondent_field_definitions.add(field)
+        return category, field
+
+    def test_rename_is_blocked_naming_the_linked_fields(self, uow, admin, assembly):
+        category, _field = self._linked_category(uow, assembly)
+
+        with pytest.raises(TargetLinkedError) as excinfo:
+            target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="Sex")
+
+        (block,) = excinfo.value.blocks
+        assert block.action == "rename"
+        assert block.category_name == "Gender"
+        assert block.field_labels == ["Gender"]
+        assert category.name == "Gender"
+
+    def test_rename_with_force_unlink_proceeds_and_unlinks(self, uow, admin, assembly):
+        category, field = self._linked_category(uow, assembly)
+
+        target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="Sex", force_unlink=True)
+
+        assert category.name == "Sex"
+        assert field.target_category_id is None
+
+    def test_editing_without_renaming_needs_no_force(self, uow, admin, assembly):
+        category, field = self._linked_category(uow, assembly)
+
+        target_service.update_target_category(
+            uow, admin.id, assembly.id, category.id, name="Gender", comment="census 2021"
+        )
+
+        assert category.comment == "census 2021"
+        assert field.target_category_id == category.id
+
+    def test_delete_is_blocked_then_forced(self, uow, admin, assembly):
+        category, field = self._linked_category(uow, assembly)
+
+        with pytest.raises(TargetLinkedError) as excinfo:
+            target_service.delete_target_category(uow, admin.id, assembly.id, category.id)
+        assert excinfo.value.blocks[0].action == "delete"
+
+        target_service.delete_target_category(uow, admin.id, assembly.id, category.id, force_unlink=True)
+
+        assert uow.target_categories.get(category.id) is None
+        assert field.target_category_id is None
+
+    def test_bulk_save_collects_every_blocked_category_at_once(self, uow, admin, assembly):
+        gender, _f1 = self._linked_category(uow, assembly, "Gender")
+        region, _f2 = self._linked_category(uow, assembly, "Region")
+
+        edits = [
+            TargetCategoryEdit(category_id=gender.id, name="Sex"),
+            TargetCategoryEdit(category_id=region.id, name="Region", deleted=True),
+        ]
+        with pytest.raises(TargetLinkedError) as excinfo:
+            target_service.save_all_targets(uow, admin.id, assembly.id, edits)
+
+        actions = {block.category_name: block.action for block in excinfo.value.blocks}
+        assert actions == {"Gender": "rename", "Region": "delete"}
