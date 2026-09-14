@@ -1,6 +1,7 @@
 # Two-step fields setup — implementation plan
 
-**Status:** Plan — implements the decisions recorded in [research.md](research.md) §8
+**Status:** Implemented — all six chunks landed on `793-two-step-fields`
+(2026-09-14, commits `5380ac65..d171b4f2`); per-chunk notes below
 **Date:** 2026-09-14
 **Branch:** `793-two-step-fields` (already contains the `793-derived-fields`
 backend and the `793-derived-fields-ui` spike commits; per decision Q11 the
