@@ -1,0 +1,114 @@
+{#
+ABOUTME: The per-target checklist fragment — one row per target category with its data-source status
+ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors the database
+#}
+{% from "backoffice/components/button.html" import button %}
+{# oob=true marks the fragment for an out-of-band swap: HTMX replaces #target-sources-list
+   in place while the (otherwise empty) response body clears #ts-modal-container,
+   closing whichever modal triggered the mutation. #}
+<div id="target-sources-list" {% if oob | default(false) %}hx-swap-oob="true"{% endif %}>
+    {% if not statuses %}
+        <section class="mb-8">
+            <p class="text-body-md mb-4">
+                {{ _("No targets have been set up for this assembly yet. Add your targets first — each one then gets a row here to say where its data comes from.") }}
+            </p>
+            {{ button(_("Go to Targets") , href=url_for('targets.view_assembly_targets', assembly_id=assembly.id), variant="primary") }}
+        </section>
+    {% else %}
+        <ul class="flex flex-col gap-3 mb-8" style="list-style: none; padding: 0;">
+            {% for status in statuses %}
+                {% set category = status.category %}
+                {% set setup_url = url_for('target_sources.setup_modal', assembly_id=assembly.id, category_id=category.id) %}
+                <li class="rounded-lg p-4"
+                    style="background-color: var(--color-tables-cards);
+                           border: 1px solid var(--color-borders-dividers);">
+                    <div class="flex items-start justify-between gap-4 flex-wrap">
+                        <div>
+                            <h3 class="text-heading-md mb-1" style="color: var(--color-headings);">{{ category.name }}</h3>
+                            <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
+                                {% if status.state == TargetSourceState.LINKED_EXACT %}
+                                    ✓ {{ _("Asked on the registration form as \"%(label)s\"", label=status.field.label) }}
+                                {% elif status.state == TargetSourceState.LINKED_DERIVED %}
+                                    ✓ {{ _("Computed from \"%(source)s\"", source=(status.source_field.label if status.source_field else (status.field.derived_from or [""])[0])) }}
+                                    — {{ method_labels.get(status.field.derivation_type.value, status.field.derivation_type.value) }}
+                                    {% if status.mapping_row_count is not none %}
+                                        · {{ _("%(count)s lookup rows", count="{:,}".format(status.mapping_row_count)) }}
+                                    {% endif %}
+                                {% elif status.state == TargetSourceState.MATCHED_NOT_LINKED %}
+                                    {{ _("The existing field \"%(label)s\" shares this target's name but isn't linked to it yet.", label=status.field.label) }}
+                                {% elif status.state == TargetSourceState.IMPORT_COVERED %}
+                                    ✓ {{ _("Data comes from your imported respondents.") }}
+                                {% else %}
+                                    ✗ {{ _("No data source yet.") }}
+                                {% endif %}
+                            </p>
+                            {% if status.stale %}
+                                <p class="text-body-sm" style="color: var(--color-warning-text);">
+                                    {{ _("The target's values have changed since this field was set up — its answers no longer match.") }}
+                                </p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            {% if status.state in (TargetSourceState.LINKED_EXACT, TargetSourceState.LINKED_DERIVED) %}
+                                {{ button(_("Edit") , variant="secondary", href=setup_url,
+                                attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
+                                {% if status.field.derivation_type is not none and status.field.derivation_type.value == "large_mapping" %}
+                                    {% set upload_url = url_for('target_sources.upload_modal', assembly_id=assembly.id, category_id=category.id) %}
+                                    {{ button(_("Upload table") , variant="secondary", href=upload_url,
+                                    attrs='hx-get="' ~ upload_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
+                                {% endif %}
+                                {% if status.state == TargetSourceState.LINKED_DERIVED %}
+                                    <form method="post"
+                                          action="{{ url_for('target_sources.recompute_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                          hx-post="{{ url_for('target_sources.recompute_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                          hx-target="#ts-modal-container"
+                                          hx-swap="innerHTML">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        {{ button(_("Recompute") , type="submit", variant="secondary") }}
+                                    </form>
+                                {% endif %}
+                                {% if status.stale and (status.field.derivation_type is none or status.field.derivation_type.value != "age_bracket") %}
+                                    <form method="post"
+                                          action="{{ url_for('target_sources.resync_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                          hx-post="{{ url_for('target_sources.resync_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                          hx-target="#ts-modal-container"
+                                          hx-swap="innerHTML">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        {{ button(_("Re-sync from target") , type="submit", variant="secondary") }}
+                                    </form>
+                                {% endif %}
+                                <form method="post"
+                                      action="{{ url_for('target_sources.unlink_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                      hx-post="{{ url_for('target_sources.unlink_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                      hx-target="#ts-modal-container"
+                                      hx-swap="innerHTML">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    {{ button(_("Unlink") , type="submit", variant="secondary",
+                                    attrs='data-confirm="' ~ (_("Unlink this field from its target? The field stays on the registration form, but edits to it will no longer be checked against the target.") | e) ~ '"') }}
+                                </form>
+                            {% elif status.state == TargetSourceState.MATCHED_NOT_LINKED %}
+                                <form method="post"
+                                      action="{{ url_for('target_sources.adopt_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                      hx-post="{{ url_for('target_sources.adopt_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                      hx-target="#ts-modal-container"
+                                      hx-swap="innerHTML">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="field_id" value="{{ status.field.id }}">
+                                    {{ button(_("Link it") , type="submit", variant="primary") }}
+                                </form>
+                                {{ button(_("Set up differently") , variant="secondary", href=setup_url,
+                                attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
+                            {% elif status.state == TargetSourceState.IMPORT_COVERED %}
+                                {{ button(_("Set up") , variant="secondary", href=setup_url,
+                                attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
+                            {% else %}
+                                {{ button(_("Set up") , variant="primary", href=setup_url,
+                                attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>

@@ -141,7 +141,11 @@ Tests: service tests for all four spec shapes × create/reuse, adopt,
 resync, unlink, both force-unlink paths, `save_all_targets` interaction,
 and status classification for each of the five states.
 
-## 3. Chunk C — step 1 UI: the target data sources checklist
+## 3. Chunk C — step 1 UI: the target data sources checklist ✅ done
+
+> Implementation note: the small-mapping method reuses an existing choice
+> field only — creating the wider choice field (with its full option list)
+> happens on the registration fields step first. The modal says so.
 
 Files: extend `entrypoints/blueprints/respondent_field_schema.py` (or a new
 `target_sources.py` blueprint — prefer new, the existing file is already

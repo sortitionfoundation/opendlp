@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-14 13:14+0000\n"
+"POT-Creation-Date: 2026-09-14 13:29+0000\n"
 "PO-Revision-Date: 2026-09-10 14:24+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1335,8 +1335,11 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/respondents.py:816
 #: src/opendlp/entrypoints/blueprints/respondents.py:974
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
-#: src/opendlp/entrypoints/blueprints/targets.py:152
-#: src/opendlp/entrypoints/blueprints/targets.py:393
+#: src/opendlp/entrypoints/blueprints/target_sources.py:469
+#: src/opendlp/entrypoints/blueprints/target_sources.py:491
+#: src/opendlp/entrypoints/blueprints/target_sources.py:593
+#: src/opendlp/entrypoints/blueprints/targets.py:153
+#: src/opendlp/entrypoints/blueprints/targets.py:394
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:109
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:757
 msgid "You don't have permission to view this assembly"
@@ -1419,10 +1422,16 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
-#: src/opendlp/entrypoints/blueprints/targets.py:143
-#: src/opendlp/entrypoints/blueprints/targets.py:217
-#: src/opendlp/entrypoints/blueprints/targets.py:262
-#: src/opendlp/entrypoints/blueprints/targets.py:390
+#: src/opendlp/entrypoints/blueprints/target_sources.py:467
+#: src/opendlp/entrypoints/blueprints/target_sources.py:489
+#: src/opendlp/entrypoints/blueprints/target_sources.py:509
+#: src/opendlp/entrypoints/blueprints/target_sources.py:534
+#: src/opendlp/entrypoints/blueprints/target_sources.py:552
+#: src/opendlp/entrypoints/blueprints/target_sources.py:595
+#: src/opendlp/entrypoints/blueprints/targets.py:144
+#: src/opendlp/entrypoints/blueprints/targets.py:218
+#: src/opendlp/entrypoints/blueprints/targets.py:263
+#: src/opendlp/entrypoints/blueprints/targets.py:391
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:106
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:176
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:754
@@ -1503,6 +1512,12 @@ msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:492
 #: src/opendlp/entrypoints/blueprints/backoffice.py:524
 #: src/opendlp/entrypoints/blueprints/main.py:279
+#: src/opendlp/entrypoints/blueprints/target_sources.py:507
+#: src/opendlp/entrypoints/blueprints/target_sources.py:532
+#: src/opendlp/entrypoints/blueprints/target_sources.py:550
+#: src/opendlp/entrypoints/blueprints/target_sources.py:574
+#: src/opendlp/entrypoints/blueprints/target_sources.py:646
+#: src/opendlp/entrypoints/blueprints/target_sources.py:659
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
@@ -2427,6 +2442,7 @@ msgstr "Nincs jogosultságod a séma szerkesztéséhez"
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1371
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1471
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1513
+#: src/opendlp/entrypoints/blueprints/target_sources.py:529
 msgid "Field not found"
 msgstr "A mező nem található"
 
@@ -2469,6 +2485,7 @@ msgid "Could not read the file — it must be UTF-8 encoded CSV."
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1174
+#: src/opendlp/entrypoints/blueprints/target_sources.py:647
 msgid "Lookup table uploaded"
 msgstr ""
 
@@ -2747,7 +2764,7 @@ msgid "%(count)s rows were skipped: %(errors)s"
 msgstr "%(count)s sor kihagyva: %(errors)s"
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:167
-#: src/opendlp/entrypoints/blueprints/targets.py:214
+#: src/opendlp/entrypoints/blueprints/targets.py:215
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:173
 #, python-format
 msgid "CSV import failed: %(error)s"
@@ -2758,22 +2775,124 @@ msgid "You don't have permission to import respondents"
 msgstr "Nincs jogosultságod jelentkezők importálásához"
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:176
-#: src/opendlp/entrypoints/blueprints/targets.py:223
+#: src/opendlp/entrypoints/blueprints/targets.py:224
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:182
 msgid "Could not read CSV file. Please ensure it is UTF-8 encoded."
 msgstr "Nem sikerült beolvasni a CSV fájlt. Győződj meg róla, hogy UTF-8 kódolású."
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:180
-#: src/opendlp/entrypoints/blueprints/targets.py:227
+#: src/opendlp/entrypoints/blueprints/targets.py:228
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:186
 msgid "An unexpected error occurred during import"
 msgstr "Váratlan hiba történt az importálás közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:158
+#: src/opendlp/entrypoints/blueprints/target_sources.py:80
+msgid "Exact copy"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:81
+msgid "Age ranges"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:82
+msgid "Map from more options"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:83
+msgid "Map postcode to value"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:89
+msgid "Ask the question with exactly the target's values as the answers"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:90
+msgid "Ask for a date or year of birth and compute the age range"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:91
+msgid "Ask with more detailed answers and map each one to a target value"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:92
+msgid "Ask for a value like a postcode and look each answer up in a table"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:402
+msgid "Choose the field to use"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:408
+msgid "Enter a name for the new registration field"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:430
+msgid ""
+"Choose the choice field to map from — add it on the registration fields "
+"step first"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:434
+msgid "Choose how the data should be collected"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:485
+#: src/opendlp/entrypoints/blueprints/target_sources.py:661
+msgid "Target not found"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:513
+#, python-format
+msgid "Data source saved — %(key)s recomputed"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:515
+msgid "Data source saved"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:535
+msgid "Field linked to its target"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:554
+#, python-format
+msgid "Re-synced — %(key)s recomputed"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:555
+msgid "Options re-synced from the target"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:564
+#: src/opendlp/entrypoints/blueprints/target_sources.py:620
+msgid "No field is linked to this target"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:575
+msgid "Recompute finished"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:598
+msgid "No lookup-table field is linked to this target"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:624
+msgid "Choose a CSV file to upload"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:629
+msgid "The file could not be read as UTF-8 text"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:663
+msgid "Field unlinked from its target"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/targets.py:159
 msgid "An error occurred while loading assembly targets"
 msgstr "Hiba történt a közösségi gyűlés célszámainak betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:200
+#: src/opendlp/entrypoints/blueprints/targets.py:201
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:161
 #, python-format
 msgid "Successfully imported %(cats)s targets with %(vals)s values from %(file)s"
@@ -2781,64 +2900,64 @@ msgstr ""
 "Sikeresen importálva %(cats)s kiválasztási szempont %(vals)s értékkel a "
 "következő fájlból: %(file)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:220
+#: src/opendlp/entrypoints/blueprints/targets.py:221
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:179
 msgid "You don't have permission to import targets"
 msgstr "Nincs jogosultságod célszámok importálásához"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:244
+#: src/opendlp/entrypoints/blueprints/targets.py:245
 #, python-format
 msgid "Targets deleted: %(count)d"
 msgstr "Kiválasztási szempontok törölve: %(count)d"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:256
+#: src/opendlp/entrypoints/blueprints/targets.py:257
 msgid "You don't have permission to delete targets"
 msgstr "Nincs jogosultságod célszámok törléséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:268
+#: src/opendlp/entrypoints/blueprints/targets.py:269
 msgid "An error occurred while deleting targets"
 msgstr "Hiba történt a célszámok törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:284
+#: src/opendlp/entrypoints/blueprints/targets.py:285
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:629
 msgid "No columns selected"
 msgstr "Nincs kiválasztott oszlop"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:326
+#: src/opendlp/entrypoints/blueprints/targets.py:327
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:697
 msgid "No new targets were created"
 msgstr "Nem jött létre új kiválasztási szempont"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:332
+#: src/opendlp/entrypoints/blueprints/targets.py:333
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:684
 #, python-format
 msgid "Created %(count)s targets with %(values)s values: %(names)s"
 msgstr "%(count)s kiválasztási szempont létrehozva %(values)s értékkel: %(names)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:341
+#: src/opendlp/entrypoints/blueprints/targets.py:342
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:693
 #, python-format
 msgid "Created %(count)s targets: %(names)s"
 msgstr "%(count)s kiválasztási szempont létrehozva: %(names)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:397
+#: src/opendlp/entrypoints/blueprints/targets.py:398
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:761
 msgid "An unexpected error occurred while checking targets"
 msgstr "Váratlan hiba történt a célszámok ellenőrzése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:421
+#: src/opendlp/entrypoints/blueprints/targets.py:422
 msgid "Your targets were not saved. Please correct the errors below."
 msgstr "A célszámaid nem lettek elmentve. Javítsd az alábbi hibákat."
 
-#: src/opendlp/entrypoints/blueprints/targets.py:445
+#: src/opendlp/entrypoints/blueprints/targets.py:471
 msgid "Please try again"
 msgstr "Kérjük, próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:457
+#: src/opendlp/entrypoints/blueprints/targets.py:489
 msgid "Targets saved"
 msgstr "A célszámok mentve"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:465
+#: src/opendlp/entrypoints/blueprints/targets.py:499
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:247
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:311
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:423
@@ -2847,11 +2966,11 @@ msgstr "A célszámok mentve"
 msgid "Error: %(error)s"
 msgstr "Hiba: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:468
+#: src/opendlp/entrypoints/blueprints/targets.py:502
 msgid "You don't have permission to edit these targets"
 msgstr "Nincs jogosultságod ezeknek a célszámoknak a szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:476
+#: src/opendlp/entrypoints/blueprints/targets.py:510
 msgid "An error occurred while saving the targets"
 msgstr "Hiba történt a célszámok mentése közben"
 
@@ -3982,6 +4101,7 @@ msgstr "Meghívók kezelése"
 #: templates/backoffice/assembly_selection.html:19
 #: templates/backoffice/assembly_targets.html:19
 #: templates/backoffice/respondent_field_schema/view.html:16
+#: templates/backoffice/target_sources/view.html:15
 #: templates/main/view_assembly_base.html:79 templates/profile/view.html:206
 msgid "Back to Your Assemblies"
 msgstr "Vissza a közösségi gyűléseidhez"
@@ -4016,8 +4136,11 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/respondent_field_schema/_mapping_upload_modal.html:56
 #: templates/backoffice/respondents/confirm_upload_diff.html:98
 #: templates/backoffice/respondents/export_modal.html:77
+#: templates/backoffice/target_sources/_setup_modal.html:234
+#: templates/backoffice/target_sources/_upload_modal.html:56
 #: templates/backoffice/targets/add_target_modal.html:29
 #: templates/backoffice/targets/create_from_columns_modal.html:87
+#: templates/backoffice/targets_force_unlink_confirm.html:43
 #: templates/db_selection/select.html:113
 #: templates/db_selection/settings.html:76
 #: templates/gsheets/create_config.html:236
@@ -4333,6 +4456,7 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:71
 #: templates/backoffice/respondent_field_schema/_editor.html:153
+#: templates/backoffice/target_sources/_checklist.html:53
 #: templates/main/edit_assembly.html:3
 #: templates/targets/components/category_block.html:102
 msgid "Edit"
@@ -5151,6 +5275,7 @@ msgstr "Válassz ki egy kiválasztási szempontokat tartalmazó CSV fájlt."
 #: templates/backoffice/registration/_assets.html:140
 #: templates/backoffice/registration/_assets.html:244
 #: templates/backoffice/respondent_field_schema/_mapping_upload_modal.html:57
+#: templates/backoffice/target_sources/_upload_modal.html:57
 msgid "Upload"
 msgstr "Feltöltés"
 
@@ -5855,6 +5980,7 @@ msgstr "Módosítások elvetése"
 #: templates/backoffice/registration/_step_email.html:93
 #: templates/backoffice/registration/_step_form.html:23
 #: templates/backoffice/respondent_field_schema/_field_modal.html:200
+#: templates/backoffice/target_sources/_setup_modal.html:235
 #: templates/targets/components/category_block.html:42
 #: templates/targets/components/category_block.html:168
 #: templates/targets/components/category_name_edit.html:22
@@ -6068,6 +6194,40 @@ msgstr "Xls"
 msgid "Update the details for this citizens' assembly."
 msgstr "Frissítsd a közösségi gyűlés adatait."
 
+#: templates/backoffice/targets_force_unlink_confirm.html:8
+msgid "Confirm target changes"
+msgstr ""
+
+#: templates/backoffice/targets_force_unlink_confirm.html:14
+msgid "Back to Targets"
+msgstr ""
+
+#: templates/backoffice/targets_force_unlink_confirm.html:20
+msgid "These targets have registration fields linked to them"
+msgstr ""
+
+#: templates/backoffice/targets_force_unlink_confirm.html:22
+msgid ""
+"A linked field takes its name and its answers from its target, and "
+"selection pairs the two by name. Saving these changes will unlink the "
+"fields below — they stay on the registration form and become freely "
+"editable, but they will no longer follow their target."
+msgstr ""
+
+#: templates/backoffice/targets_force_unlink_confirm.html:28
+#, python-format
+msgid "Deleting the target \"%(name)s\" unlinks: %(fields)s"
+msgstr ""
+
+#: templates/backoffice/targets_force_unlink_confirm.html:30
+#, python-format
+msgid "Renaming the target \"%(name)s\" unlinks: %(fields)s"
+msgstr ""
+
+#: templates/backoffice/targets_force_unlink_confirm.html:41
+msgid "Unlink the fields and save"
+msgstr ""
+
 #: templates/backoffice/components/account_menu.html:44
 msgid "Account menu"
 msgstr "Fiók menü"
@@ -6204,6 +6364,10 @@ msgstr "Feladat háttérbe helyezése"
 #: templates/backoffice/respondent_field_schema/_field_modal.html:28
 #: templates/backoffice/respondent_field_schema/_mapping_upload_modal.html:11
 #: templates/backoffice/respondent_field_schema/_mapping_upload_modal.html:19
+#: templates/backoffice/target_sources/_setup_modal.html:14
+#: templates/backoffice/target_sources/_setup_modal.html:22
+#: templates/backoffice/target_sources/_upload_modal.html:11
+#: templates/backoffice/target_sources/_upload_modal.html:19
 msgid "Close"
 msgstr "Bezárás"
 
@@ -7126,6 +7290,8 @@ msgid "How is it derived?"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:51
+#: templates/backoffice/target_sources/_setup_modal.html:56
+#: templates/backoffice/target_sources/_setup_modal.html:97
 msgid "Choose a field…"
 msgstr ""
 
@@ -7141,6 +7307,7 @@ msgid ""
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:77
+#: templates/backoffice/target_sources/_setup_modal.html:155
 msgid ""
 "Year-of-birth sources assume a 1 January birthday, so some people land "
 "one bracket up from their true age. Year of birth is still the "
@@ -7148,52 +7315,64 @@ msgid ""
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:81
+#: templates/backoffice/target_sources/_setup_modal.html:159
 msgid "Ages as of"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:83
+#: templates/backoffice/target_sources/_setup_modal.html:161
 msgid ""
 "Usually the first assembly date. Never left to \"today\" — brackets must "
 "not shift with the calendar."
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:87
+#: templates/backoffice/target_sources/_setup_modal.html:165
 msgid "Day"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:90
+#: templates/backoffice/target_sources/_setup_modal.html:168
 msgid "Month"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:93
+#: templates/backoffice/target_sources/_setup_modal.html:171
 msgid "Year"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:99
+#: templates/backoffice/target_sources/_setup_modal.html:177
 msgid "Minimum age"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:102
+#: templates/backoffice/target_sources/_setup_modal.html:180
 msgid "Maximum age"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:107
+#: templates/backoffice/target_sources/_setup_modal.html:185
 msgid "Bracket boundaries"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:108
+#: templates/backoffice/target_sources/_setup_modal.html:186
 msgid "Ages where a new bracket starts, separated by commas — e.g. 25, 40, 60."
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:113
+#: templates/backoffice/target_sources/_setup_modal.html:191
 msgid "Generated brackets:"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:118
+#: templates/backoffice/target_sources/_setup_modal.html:195
 msgid "The target expects:"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:125
+#: templates/backoffice/target_sources/_setup_modal.html:201
 msgid ""
 "These brackets don't match the target's values, so those people won't "
 "count towards its quotas:"
@@ -7208,15 +7387,18 @@ msgid "Choose the choice field to map from."
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:138
+#: templates/backoffice/target_sources/_setup_modal.html:207
 msgid "Map each answer to a target value"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:144
+#: templates/backoffice/target_sources/_setup_modal.html:213
 #, python-format
 msgid "(fall back to %(fallback)s)"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:153
+#: templates/backoffice/target_sources/_setup_modal.html:222
 #, python-format
 msgid "Target value for %(value)s"
 msgstr ""
@@ -7318,6 +7500,7 @@ msgstr ""
 "értékeiket, csak nem jelennek meg többé."
 
 #: templates/backoffice/respondent_field_schema/_editor.html:178
+#: templates/backoffice/target_sources/_checklist.html:67
 msgid "Recompute"
 msgstr ""
 
@@ -7461,11 +7644,13 @@ msgid "On the registration page"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_mapping_upload_modal.html:18
+#: templates/backoffice/target_sources/_upload_modal.html:18
 #, python-format
 msgid "Upload lookup table for %(label)s"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_mapping_upload_modal.html:38
+#: templates/backoffice/target_sources/_upload_modal.html:38
 #, python-format
 msgid ""
 "A CSV with two columns: the %(source)s value, then the %(derived)s value."
@@ -7474,10 +7659,12 @@ msgid ""
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_mapping_upload_modal.html:42
+#: templates/backoffice/target_sources/_upload_modal.html:42
 msgid "Mapping CSV"
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_mapping_upload_modal.html:49
+#: templates/backoffice/target_sources/_upload_modal.html:49
 msgid "Allow new output values (they are added to the field's options)"
 msgstr ""
 
@@ -7630,6 +7817,188 @@ msgstr "Munkalap neve"
 #, python-format
 msgid "Share the spreadsheet with %(email)s so it can be written to."
 msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
+
+#: templates/backoffice/target_sources/_checklist.html:13
+msgid ""
+"No targets have been set up for this assembly yet. Add your targets first"
+" — each one then gets a row here to say where its data comes from."
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:15
+msgid "Go to Targets"
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:30
+#, python-format
+msgid "Asked on the registration form as \"%(label)s\""
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:32
+#, python-format
+msgid "Computed from \"%(source)s\""
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:35
+#, python-format
+msgid "%(count)s lookup rows"
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:38
+#, python-format
+msgid ""
+"The existing field \"%(label)s\" shares this target's name but isn't "
+"linked to it yet."
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:40
+msgid "Data comes from your imported respondents."
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:42
+msgid "No data source yet."
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:47
+msgid ""
+"The target's values have changed since this field was set up — its "
+"answers no longer match."
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:57
+msgid "Upload table"
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:77
+msgid "Re-sync from target"
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:86
+#: templates/profile/view.html:95 templates/profile/view.html:146
+msgid "Unlink"
+msgstr "Leválasztás"
+
+#: templates/backoffice/target_sources/_checklist.html:87
+msgid ""
+"Unlink this field from its target? The field stays on the registration "
+"form, but edits to it will no longer be checked against the target."
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:97
+msgid "Link it"
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:99
+msgid "Set up differently"
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:102
+#: templates/backoffice/target_sources/_checklist.html:105
+msgid "Set up"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:21
+#, python-format
+msgid "Data source for %(name)s"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:40
+msgid "Target values:"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:44
+msgid "How is the data collected?"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:62
+#: templates/backoffice/target_sources/_setup_modal.html:68
+msgid "Choice field to map from"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:70
+msgid ""
+"No choice field exists yet — add the more detailed question on the "
+"registration fields step first, then come back."
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:78
+msgid "Which field asks the question?"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:80
+msgid "Which field collects the source value?"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:85
+msgid "Use an existing field"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:85
+#: templates/backoffice/target_sources/_setup_modal.html:87
+msgid "Create a new field"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:102
+msgid "Existing field"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:110
+#, python-format
+msgid ""
+"This will add \"%(name)s\" to your registration form, with the target's "
+"values as the answers."
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:116
+msgid "New field name"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:122
+msgid "Label on the form (optional)"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:130
+msgid "What is asked for?"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:132
+msgid "Date of birth"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:133
+msgid "Year of birth"
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:142
+#, python-format
+msgid "This will add \"%(name)s\" to your registration form."
+msgstr ""
+
+#: templates/backoffice/target_sources/_setup_modal.html:229
+#, python-format
+msgid ""
+"The lookup table starts empty — upload its CSV from this target's row "
+"afterwards. Values with no table entry fall back to %(fallback)s."
+msgstr ""
+
+#: templates/backoffice/target_sources/view.html:9
+msgid "Target data sources"
+msgstr ""
+
+#: templates/backoffice/target_sources/view.html:40
+msgid "Fields are defined by your Google Sheets spreadsheet — manage them there."
+msgstr ""
+
+#: templates/backoffice/target_sources/view.html:47
+msgid "Where does each target's data come from?"
+msgstr ""
+
+#: templates/backoffice/target_sources/view.html:49
+msgid ""
+"Selection needs a column of data for every target. For each target below,"
+" choose how that data is collected: asked directly on the registration "
+"form, or computed from something simpler to ask — a date of birth, a "
+"postcode, or a more detailed question."
+msgstr ""
 
 #: templates/backoffice/targets/add_target_modal.html:20
 msgid ""
@@ -9078,10 +9447,6 @@ msgid ""
 msgstr ""
 "Biztosan leválasztod a Google-fiókodat? Ezután csak a jelszavaddal tudsz "
 "majd bejelentkezni."
-
-#: templates/profile/view.html:95 templates/profile/view.html:146
-msgid "Unlink"
-msgstr "Leválasztás"
 
 #: templates/profile/view.html:98 templates/profile/view.html:149
 msgid "Only authentication method"
