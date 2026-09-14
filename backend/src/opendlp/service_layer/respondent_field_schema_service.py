@@ -17,6 +17,8 @@ from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
     IN_SCHEMA_FIXED_FIELDS,
     ChoiceOption,
+    DerivationType,
+    DerivedFieldError,
     FieldOnRegistrationPage,
     FieldType,
     FixedFieldError,
@@ -25,8 +27,11 @@ from opendlp.domain.respondent_field_schema import (
     humanise_field_key,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD, SORT_ORDER_STEP
+from opendlp.service_layer.derivation_service import derivations_depending_on
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
+    FieldDefinitionConflictError,
+    FieldDefinitionNotFoundError,
     InsufficientPermissions,
     InvalidSelection,
     UserNotFoundError,
@@ -46,14 +51,6 @@ _MAX_RADIO_OPTIONS = 6
 # not among them. Enough to recognise the file by, few enough to stay readable
 # in a flash message - respondent exports can run to dozens of columns.
 MAX_LISTED_HEADERS = 10
-
-
-class FieldDefinitionNotFoundError(Exception):
-    """Raised when a RespondentFieldDefinition cannot be found."""
-
-
-class FieldDefinitionConflictError(Exception):
-    """Raised when adding a field that already exists, or attempting a disallowed edit."""
 
 
 def _ensure_view_permission(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> None:
@@ -231,6 +228,7 @@ def add_field(
     field_type: FieldType = FieldType.TEXT,
     options: list[ChoiceOption] | None = None,
     on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
+    help_text: str = "",
 ) -> RespondentFieldDefinition:
     """Add a single field to an assembly's schema.
 
@@ -247,6 +245,7 @@ def add_field(
         group: Which section the field belongs to; defaults to GENERAL.
         field_type: The data type; defaults to TEXT.
         options: For choice fields, the list of options.
+        help_text: Optional hint shown beneath the field on forms.
 
     Returns:
         The newly created RespondentFieldDefinition.
@@ -284,6 +283,7 @@ def add_field(
         field_type=field_type,
         options=options,
         on_registration_page=on_registration_page,
+        help_text=help_text,
     )
     uow.respondent_field_definitions.add(field)
     return field.create_detached_copy()
@@ -300,9 +300,10 @@ def update_field(
     field_type: FieldType | None = None,
     options: list[ChoiceOption] | None = _UNSET_OPTIONS,
     on_registration_page: FieldOnRegistrationPage | None = None,
+    help_text: str | None = None,
 ) -> RespondentFieldDefinition:
-    """Update a field's label, group, sort_order, field_type, options, or
-    on_registration_page.
+    """Update a field's label, group, sort_order, field_type, options,
+    on_registration_page, or help_text.
 
     ``options`` uses a sentinel to distinguish "leave alone" from "set to None".
 
@@ -312,6 +313,16 @@ def update_field(
     field = uow.respondent_field_definitions.get(field_id)
     if field is None or field.assembly_id != assembly_id:
         raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+    if field_type is not None:
+        dependents = derivations_depending_on(uow, assembly_id, field.field_key)
+        if dependents:
+            raise FieldDefinitionConflictError(
+                _l(
+                    "You can't change the type of '%(key)s' — it is used to derive: %(deps)s",
+                    key=field.field_key,
+                    deps=", ".join(f.field_key for f in dependents),
+                )
+            )
     try:
         field.update(
             label=label,
@@ -320,9 +331,14 @@ def update_field(
             field_type=field_type,
             options=options,
             on_registration_page=on_registration_page,
+            help_text=help_text,
         )
     except FixedFieldError as exc:
         raise FieldDefinitionConflictError(_l("You can't change the type or options of a fixed field")) from exc
+    except DerivedFieldError as exc:
+        raise FieldDefinitionConflictError(
+            _l("You can't change the type or options of a derived field — they are owned by its derivation")
+        ) from exc
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -478,8 +494,53 @@ def update_choice_option(
         ChoiceOption(value=new_value, help_text=new_help_text) if o.value == old_value else o for o in existing
     ]
     field.update(options=updated_options)
+    if new_value != old_value:
+        # A small mapping keyed on the old option value would go silently stale,
+        # producing wrong derived data with no visible symptom — rename in step.
+        _rename_small_mapping_keys(uow, assembly_id, field.field_key, old_value, new_value)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
+
+
+def _rename_small_mapping_keys(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    source_field_key: str,
+    old_value: str,
+    new_value: str,
+) -> None:
+    for dependent in derivations_depending_on(uow, assembly_id, source_field_key):
+        if dependent.derivation_type != DerivationType.SMALL_MAPPING or dependent.derivation_config is None:
+            continue
+        mapping = dict(dependent.derivation_config.get("mapping", {}))
+        if old_value not in mapping:
+            continue
+        mapping[new_value] = mapping.pop(old_value)
+        dependent.set_derivation(
+            derivation_type=dependent.derivation_type,
+            derivation_config={**dependent.derivation_config, "mapping": mapping},
+            options=list(dependent.options or []),
+        )
+
+
+def _drop_small_mapping_keys(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    source_field_key: str,
+    value: str,
+) -> None:
+    for dependent in derivations_depending_on(uow, assembly_id, source_field_key):
+        if dependent.derivation_type != DerivationType.SMALL_MAPPING or dependent.derivation_config is None:
+            continue
+        mapping = dict(dependent.derivation_config.get("mapping", {}))
+        if value not in mapping:
+            continue
+        del mapping[value]
+        dependent.set_derivation(
+            derivation_type=dependent.derivation_type,
+            derivation_config={**dependent.derivation_config, "mapping": mapping},
+            options=list(dependent.options or []),
+        )
 
 
 def remove_choice_option(
@@ -504,6 +565,9 @@ def remove_choice_option(
     if not remaining:
         raise FieldDefinitionConflictError(_l("A choice field must keep at least one option"))
     field.update(options=remaining)
+    # A mapping entry keyed on the removed option can never match again; drop
+    # it so the config mirrors the source's real option set.
+    _drop_small_mapping_keys(uow, assembly_id, field.field_key, value)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -556,6 +620,15 @@ def delete_field(
         raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
     if field.is_fixed:
         raise FieldDefinitionConflictError(_l("Fixed field '%(key)s' cannot be deleted", key=field.field_key))
+    dependents = derivations_depending_on(uow, assembly_id, field.field_key)
+    if dependents:
+        raise FieldDefinitionConflictError(
+            _l(
+                "'%(key)s' cannot be deleted — it is used to derive: %(deps)s",
+                key=field.field_key,
+                deps=", ".join(f.field_key for f in dependents),
+            )
+        )
     uow.respondent_field_definitions.delete(field)
 
 

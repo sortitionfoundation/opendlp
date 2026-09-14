@@ -2,6 +2,7 @@
 ABOUTME: Contains field validators, URL validators, and email validation"""
 
 import re
+from datetime import UTC, date, datetime
 from typing import Any
 from urllib.parse import urlparse
 
@@ -204,3 +205,41 @@ def validate_email_field(str_value: str) -> tuple[str | None, str | None]:
         return str_value, None
     except ValueError:
         return None, "Please enter a valid email address"
+
+
+# Someone claiming to be older than this typo'd their year of birth.
+_MAX_DATE_FIELD_AGE_YEARS = 120
+
+_UK_DATE_RE = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})")
+
+
+def parse_date_text(text: str) -> date | None:
+    """Parse ISO ``yyyy-mm-dd`` or UK ``dd/mm/yyyy``. Returns None when unparsable."""
+    uk_match = _UK_DATE_RE.fullmatch(text)
+    try:
+        if uk_match:
+            day, month, year = (int(group) for group in uk_match.groups())
+            return date(year, month, day)
+        return date.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def validate_date_field(str_value: str) -> tuple[str | None, str | None]:
+    """Validate a date field (ISO ``yyyy-mm-dd`` or UK ``dd/mm/yyyy``). Returns (value, error).
+
+    The cleaned value is the ISO string — attributes store strings, and ISO
+    sorts and compares correctly. Dates in the future or more than 120 years
+    ago are rejected: the DATE type exists for dates of birth, so both are typos.
+    """
+    if not str_value:
+        return None, "This field is required"
+    parsed = parse_date_text(str_value.strip())
+    if parsed is None:
+        return None, "Please enter a valid date"
+    today = datetime.now(UTC).date()
+    if parsed > today:
+        return None, "Date cannot be in the future"
+    if parsed.year < today.year - _MAX_DATE_FIELD_AGE_YEARS:
+        return None, "Please check the year"
+    return parsed.isoformat(), None

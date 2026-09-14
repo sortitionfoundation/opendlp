@@ -10,6 +10,7 @@ import pytest
 
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    DerivationType,
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
@@ -248,6 +249,43 @@ class TestFieldTypeAndOptions:
             ChoiceOption(value="level_0", help_text="None"),
             ChoiceOption(value="level_3", help_text="Post-secondary non-tertiary"),
         ]
+
+
+class TestDerivationColumns:
+    def test_defaults_to_no_derivation(self, respondent_field_definition_backend: ContractBackend) -> None:
+        assembly = respondent_field_definition_backend.make_assembly()
+        field = _make_field(respondent_field_definition_backend, assembly.id, field_key="freeform")
+
+        retrieved = respondent_field_definition_backend.fresh_get_field_definition(field.id)
+        assert retrieved is not None
+        assert retrieved.is_derived is False
+        assert retrieved.derived_from is None
+        assert retrieved.derivation_type is None
+        assert retrieved.derivation_config is None
+
+    def test_round_trips_derivation_type_and_config(self, respondent_field_definition_backend: ContractBackend) -> None:
+        assembly = respondent_field_definition_backend.make_assembly()
+        config = {"as_of_date": "2026-05-13", "min_age": 16, "boundaries": [22, 30, 55], "fallback": "UNKNOWN"}
+        field = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key="age_bracket",
+            label="Age bracket",
+            group=RespondentFieldGroup.DERIVED,
+            sort_order=10,
+            is_derived=True,
+            derived_from=["date_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config=config,
+        )
+        respondent_field_definition_backend.repo.add(field)
+        respondent_field_definition_backend.commit()
+
+        retrieved = respondent_field_definition_backend.fresh_get_field_definition(field.id)
+        assert retrieved is not None
+        assert retrieved.is_derived is True
+        assert retrieved.derived_from == ["date_of_birth"]
+        assert retrieved.derivation_type == DerivationType.AGE_BRACKET
+        assert retrieved.derivation_config == config
 
 
 class TestOnRegistrationPage:

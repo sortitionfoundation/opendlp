@@ -21,6 +21,7 @@ from opendlp.domain.registration_page import RegistrationPage, RegistrationPageH
 from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
     RespondentFieldDefinition,
+    RespondentFieldMappingEntry,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
@@ -53,6 +54,7 @@ from opendlp.service_layer.repositories import (
     RegistrationPageRepository,
     RespondentEmailSendRecordRepository,
     RespondentFieldDefinitionRepository,
+    RespondentFieldMappingEntryRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
     TargetCategoryRepository,
@@ -1533,6 +1535,70 @@ class SqlAlchemyRespondentFieldDefinitionRepository(SqlAlchemyRepository, Respon
         result = self.session.execute(
             delete(orm.respondent_field_definitions).where(
                 orm.respondent_field_definitions.c.assembly_id == assembly_id
+            )
+        )
+        return result.rowcount  # type: ignore[attr-defined, no-any-return]
+
+
+class SqlAlchemyRespondentFieldMappingEntryRepository(SqlAlchemyRepository, RespondentFieldMappingEntryRepository):
+    """SQLAlchemy implementation of RespondentFieldMappingEntryRepository."""
+
+    def add(self, item: RespondentFieldMappingEntry) -> None:
+        self.session.add(item)
+
+    def bulk_add(self, items: list[RespondentFieldMappingEntry]) -> None:
+        self.session.add_all(items)
+
+    def get(self, item_id: uuid.UUID) -> RespondentFieldMappingEntry | None:
+        return (
+            self.session
+            .query(RespondentFieldMappingEntry)
+            .filter(orm.respondent_field_mapping_entries.c.id == item_id)
+            .first()
+        )
+
+    def all(self) -> Iterable[RespondentFieldMappingEntry]:
+        return self.session.query(RespondentFieldMappingEntry).all()
+
+    def get_many(self, field_id: uuid.UUID, lookup_keys: list[str]) -> list[RespondentFieldMappingEntry]:
+        if not lookup_keys:
+            return []
+        return (
+            self.session
+            .query(RespondentFieldMappingEntry)
+            .filter(
+                and_(
+                    orm.respondent_field_mapping_entries.c.field_id == field_id,
+                    orm.respondent_field_mapping_entries.c.lookup_key.in_(lookup_keys),
+                )
+            )
+            .all()
+        )
+
+    def list_for_field(self, field_id: uuid.UUID, limit: int | None = None) -> list[RespondentFieldMappingEntry]:
+        query = (
+            self.session
+            .query(RespondentFieldMappingEntry)
+            .filter(orm.respondent_field_mapping_entries.c.field_id == field_id)
+            .order_by(orm.respondent_field_mapping_entries.c.lookup_key)
+        )
+        if limit is not None:
+            query = query.limit(limit)
+        return query.all()
+
+    def count_for_field(self, field_id: uuid.UUID) -> int:
+        return (
+            self.session
+            .query(RespondentFieldMappingEntry)
+            .filter(orm.respondent_field_mapping_entries.c.field_id == field_id)
+            .count()
+        )
+
+    def delete_all_for_field(self, field_id: uuid.UUID) -> int:
+        self.session.expire_all()
+        result = self.session.execute(
+            delete(orm.respondent_field_mapping_entries).where(
+                orm.respondent_field_mapping_entries.c.field_id == field_id
             )
         )
         return result.rowcount  # type: ignore[attr-defined, no-any-return]

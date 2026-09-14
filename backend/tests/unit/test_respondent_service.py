@@ -6,6 +6,14 @@ import uuid
 import pytest
 
 from opendlp.domain.assembly import Assembly
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    DerivationType,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+    RespondentFieldMappingEntry,
+)
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, RespondentAction, RespondentStatus
@@ -536,3 +544,163 @@ class TestRespondentFromRow:
         assert len(create_comments) == 1
         assert "people.csv" in create_comments[0].text
         assert create_comments[0].author_id == user_id
+
+
+class TestDerivationOnWritePaths:
+    """The create, import and update paths all run apply_derivations."""
+
+    def _add_dob_and_bracket(self, uow, assembly):
+        uow.respondent_field_definitions.add(
+            RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="date_of_birth",
+                label="Date of birth",
+                group=RespondentFieldGroup.ABOUT_YOU,
+                sort_order=10,
+                field_type=FieldType.DATE,
+            )
+        )
+        uow.respondent_field_definitions.add(
+            RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="age_bracket",
+                label="Age bracket",
+                group=RespondentFieldGroup.DERIVED,
+                sort_order=10,
+                is_derived=True,
+                derived_from=["date_of_birth"],
+                derivation_type=DerivationType.AGE_BRACKET,
+                derivation_config={
+                    "as_of_date": "2026-05-13",
+                    "min_age": 16,
+                    "max_age": 100,
+                    "boundaries": [22, 30, 55],
+                    "fallback": "UNKNOWN",
+                },
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="30-54"), ChoiceOption(value="UNKNOWN")],
+            )
+        )
+
+    def _add_postcode_and_region(self, uow, assembly):
+        uow.respondent_field_definitions.add(
+            RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="postcode",
+                label="Postcode",
+                group=RespondentFieldGroup.ADDRESS,
+                sort_order=10,
+                field_type=FieldType.TEXT,
+            )
+        )
+        region = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key="region",
+            label="Region",
+            group=RespondentFieldGroup.DERIVED,
+            sort_order=10,
+            is_derived=True,
+            derived_from=["postcode"],
+            derivation_type=DerivationType.LARGE_MAPPING,
+            derivation_config={"fallback": "UNKNOWN"},
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="London"), ChoiceOption(value="UNKNOWN")],
+        )
+        uow.respondent_field_definitions.add(region)
+        uow.respondent_field_mapping_entries.add(
+            RespondentFieldMappingEntry(field_id=region.id, lookup_key="SW1A1AA", output_value="London")
+        )
+
+    def test_create_respondent_derives(self, uow):
+        user, assembly, _ = _seed(uow)
+        self._add_dob_and_bracket(uow, assembly)
+
+        created = respondent_service.create_respondent(
+            uow, user.id, assembly.id, "R100", {"date_of_birth": "1990-06-15"}
+        )
+
+        assert created.attributes["age_bracket"] == "30-54"
+
+    def test_import_derives_via_large_mapping(self, uow):
+        user, assembly, _ = _seed(uow)
+        self._add_postcode_and_region(uow, assembly)
+
+        respondents, _, _ = respondent_service.import_respondents_from_rows(
+            uow,
+            user.id,
+            assembly.id,
+            headers=["ref", "postcode"],
+            rows=[
+                {"ref": "A1", "postcode": "sw1a 1aa"},
+                {"ref": "A2", "postcode": "ZZ99 9ZZ"},
+            ],
+        )
+
+        by_id = {r.external_id: r for r in respondents}
+        assert by_id["A1"].attributes["region"] == "London"
+        assert by_id["A2"].attributes["region"] == "UNKNOWN"
+
+    def test_import_notes_when_a_supplied_derived_column_is_overwritten(self, uow):
+        user, assembly, _ = _seed(uow)
+        self._add_postcode_and_region(uow, assembly)
+
+        respondents, errors, _ = respondent_service.import_respondents_from_rows(
+            uow,
+            user.id,
+            assembly.id,
+            headers=["ref", "postcode", "region"],
+            rows=[{"ref": "A1", "postcode": "SW1A 1AA", "region": "hand-typed"}],
+        )
+
+        assert respondents[0].attributes["region"] == "London"
+        assert any(e.startswith("Row 2") and "region" in e for e in errors)
+
+    def test_import_keeps_supplied_derived_value_when_source_is_blank(self, uow):
+        user, assembly, _ = _seed(uow)
+        self._add_postcode_and_region(uow, assembly)
+
+        respondents, _, _ = respondent_service.import_respondents_from_rows(
+            uow,
+            user.id,
+            assembly.id,
+            headers=["ref", "postcode", "region"],
+            rows=[{"ref": "A1", "postcode": "", "region": "North"}],
+        )
+
+        assert respondents[0].attributes["region"] == "North"
+
+    def test_update_respondent_rederives_after_source_edit(self, uow):
+        user, assembly, respondent = _seed(uow)
+        self._add_dob_and_bracket(uow, assembly)
+        respondent.attributes = {"date_of_birth": "1990-06-15", "age_bracket": "30-54"}
+
+        respondent_service.update_respondent(
+            uow,
+            user.id,
+            assembly.id,
+            respondent.id,
+            comment="fix a typo in the date of birth",
+            attributes={"date_of_birth": "2004-06-15"},
+        )
+
+        assert respondent.attributes["age_bracket"] == "16-21"
+
+    def test_import_batch_lookup_is_one_query_not_one_per_row(self, uow, monkeypatch):
+        user, assembly, _ = _seed(uow)
+        self._add_postcode_and_region(uow, assembly)
+        calls = []
+        original_get_many = uow.respondent_field_mapping_entries.get_many
+
+        def counting_get_many(field_id, lookup_keys):
+            calls.append(list(lookup_keys))
+            return original_get_many(field_id, lookup_keys)
+
+        monkeypatch.setattr(uow.respondent_field_mapping_entries, "get_many", counting_get_many)
+
+        rows = [{"ref": f"A{i}", "postcode": f"SW{i} {i}AA"} for i in range(50)]
+        respondent_service.import_respondents_from_rows(
+            uow, user.id, assembly.id, headers=["ref", "postcode"], rows=rows
+        )
+
+        assert len(calls) == 1
+        assert len(calls[0]) == 50
