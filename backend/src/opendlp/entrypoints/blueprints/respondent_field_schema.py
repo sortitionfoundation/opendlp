@@ -73,7 +73,6 @@ from opendlp.service_layer.respondent_field_schema_service import (
 )
 from opendlp.service_layer.respondent_field_spec_service import build_field_spec
 from opendlp.translations import gettext as _
-from opendlp.translations import lazy_gettext as _l
 
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
@@ -298,12 +297,10 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
         action_url = url_for("respondent_field_schema.add_derived_field_view", assembly_id=assembly_id)
     else:
         action_url = url_for("respondent_field_schema.add_field_view", assembly_id=assembly_id)
-    # Without targets the Derived option is left off the type picker entirely —
-    # a derived field feeds one, so there is nothing it could be pointed at.
+    # No Derived option here: a derived field feeds a target, so it is created
+    # (and edited) on the target data sources step, never from this modal.
     has_targets = _assembly_has_targets(assembly_id)
     type_choices = list(_STANDARD_TYPE_CHOICES)
-    if has_targets:
-        type_choices.append({"value": "derived", "label": _l("Derived (computed from another field)")})
     choice_candidate_key = _choice_candidate_key(values) if values["type_choice"] == "choice" else ""
     return {
         "mode": "new",
@@ -312,6 +309,8 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
         "refresh_url": url_for("respondent_field_schema.new_field_modal", assembly_id=assembly_id),
         "type_choices": type_choices,
         "type_locked": False,
+        "target_locked": False,
+        "linked_target_name": "",
         "is_derived": False,
         "has_targets": has_targets,
         "derived": derived,
@@ -335,7 +334,10 @@ def _edit_modal_ctx(
         )
     else:
         action_url = url_for("respondent_field_schema.update_field_view", assembly_id=assembly_id, field_id=field.id)
-    offers_choice = values["type_choice"] == "choice" and not field.is_fixed and not field.is_derived
+    target_locked = field.target_category_id is not None and not field.is_fixed and not field.is_derived
+    offers_choice = (
+        values["type_choice"] == "choice" and not field.is_fixed and not field.is_derived and not target_locked
+    )
     choice_candidate_key = _choice_candidate_key(values, field) if offers_choice else ""
     return {
         "mode": "edit",
@@ -344,6 +346,8 @@ def _edit_modal_ctx(
         "refresh_url": url_for("respondent_field_schema.edit_field_modal", assembly_id=assembly_id, field_id=field.id),
         "type_choices": type_choices,
         "type_locked": field.is_fixed,
+        "target_locked": target_locked,
+        "linked_target_name": _linked_target_name(field),
         "is_derived": field.is_derived,
         "has_targets": True,
         "derived": derived,
@@ -352,6 +356,16 @@ def _edit_modal_ctx(
         "error": error,
         "values": _normalise_modal_values(values),
     }
+
+
+def _linked_target_name(field: RespondentFieldDefinition) -> str:
+    """The name of the target category this field feeds, or "" when unlinked."""
+    if field.target_category_id is None:
+        return ""
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        category = uow.target_categories.get(field.target_category_id)
+        return category.name if category is not None else ""
 
 
 def _apply_option_action(values: dict[str, Any], form_action: str) -> dict[str, Any]:
@@ -620,6 +634,7 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
     with uow:
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
         grouped = get_schema_grouped(uow, current_user.id, assembly_id)
+        category_names_by_id = {c.id: c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)}
 
         # Reuse the assembly-tabs computed state so the tab bar renders correctly.
         # Both lookups are optional — a fresh assembly has neither.
@@ -628,6 +643,8 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
         with contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
+    # The DERIVED group is deliberately absent: derived fields are managed on
+    # the target data sources step, not arranged on the registration page.
     sections = [
         {
             "group": group,
@@ -635,6 +652,7 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
             "fields": grouped.get(group, []),
         }
         for group in GROUP_DISPLAY_ORDER
+        if group != RespondentFieldGroup.DERIVED
     ]
     schema_has_rows = any(section["fields"] for section in sections)
 
@@ -642,6 +660,11 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
 
     all_fields = [f for group_fields in grouped.values() for f in group_fields]
+    linked_target_names = {
+        f.id: category_names_by_id[f.target_category_id]
+        for f in all_fields
+        if f.target_category_id is not None and f.target_category_id in category_names_by_id
+    }
     has_guessable_text_rows = any(
         not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
     )
@@ -657,7 +680,12 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
         "mapping_row_counts": mapping_row_counts,
         "assembly": assembly,
         "sections": sections,
-        "group_choices": [{"value": group.value, "label": GROUP_LABELS[group]} for group in GROUP_DISPLAY_ORDER],
+        "linked_target_names": linked_target_names,
+        "group_choices": [
+            {"value": group.value, "label": GROUP_LABELS[group]}
+            for group in GROUP_DISPLAY_ORDER
+            if group != RespondentFieldGroup.DERIVED
+        ],
         "field_type_labels_by_value": {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType},
         "derivation_type_labels": _derivation_type_labels(),
         "on_registration_page_choices": [

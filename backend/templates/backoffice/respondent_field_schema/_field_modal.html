@@ -87,6 +87,42 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         <strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>
                         <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Fixed fields keep their built-in type.") }}</div>
                     </div>
+                {% elif modal_ctx["target_locked"] %}
+                    <div class="mb-4">
+                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Type") }}</span>
+                        <span class="text-body-sm">{{ field_type_labels_by_value[modal_ctx["field"].effective_field_type.value] }}</span>
+                        <strong class="govuk-tag govuk-tag--green">{{ _("Feeds target: %(name)s", name=modal_ctx["linked_target_name"]) }}</strong>
+                        <div class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("Its answer values mirror the target's values — change those on the target data sources step, or unlink the field there.") }}
+                        </div>
+                    </div>
+                    <input type="hidden" name="type_choice" value="choice">
+                    <div class="mb-4 pl-4">
+                        {{ select("choice_style",
+                        label=_("Shown on the form as"),
+                        options=[
+                        {"value": "choice_radio", "label": _("Radio buttons")},
+                        {"value": "choice_dropdown", "label": _("Dropdown")},
+                        ],
+                        value=values["choice_style"],
+                        id="field-modal-choice-style") }}
+                    </div>
+                    <fieldset class="mb-4">
+                        <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
+                        {% for option in values["options"] %}
+                            <div class="flex gap-2 items-center mb-2">
+                                <input type="hidden" name="option_value" value="{{ option['value'] }}">
+                                <span class="text-body-sm" style="min-width: 12rem;">{{ option["value"] }}</span>
+                                <div class="flex-1">
+                                    {{ input("option_help",
+                                    value=option["help_text"],
+                                    placeholder=_("help text (optional)"),
+                                    aria_label=_('Help text for %(value)s', value=option["value"]),
+                                    id="field-modal-option-help-" ~ loop.index0) }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </fieldset>
                 {% else %}
                     <div class="mb-4">
                         {{ radio_group("type_choice",
@@ -95,11 +131,6 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         value=values["type_choice"],
                         id="field-modal-type",
                         attrs=refresh_attrs) }}
-                        {% if modal_ctx["mode"] == "new" and not modal_ctx["has_targets"] %}
-                            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
-                                {{ _("Create targets first to add a derived field — it feeds one.") }}
-                            </p>
-                        {% endif %}
                     </div>
                     <noscript>
                         {# Without JS the radios can't re-render the form, so offer an explicit refresh. #}

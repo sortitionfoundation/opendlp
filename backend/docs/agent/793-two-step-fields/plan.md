@@ -179,7 +179,7 @@ Files: extend `entrypoints/blueprints/respondent_field_schema.py` (or a new
 
 Tests: route tests for each fragment/action; BDD scenarios in Chunk F.
 
-## 4. Chunk D — step 2 UI: arrange the registration fields
+## 4. Chunk D — step 2 UI: arrange the registration fields ✅ done
 
 Files: `respondent_field_schema.py` blueprint + its templates, reworked in
 place.

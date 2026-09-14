@@ -24,6 +24,7 @@ from opendlp.domain.respondent_field_schema import (
     FixedFieldError,
     RespondentFieldDefinition,
     RespondentFieldGroup,
+    TargetLinkedFieldError,
     humanise_field_key,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD, SORT_ORDER_STEP
@@ -338,6 +339,13 @@ def update_field(
     except DerivedFieldError as exc:
         raise FieldDefinitionConflictError(
             _l("You can't change the type or options of a derived field — they are owned by its derivation")
+        ) from exc
+    except TargetLinkedFieldError as exc:
+        raise FieldDefinitionConflictError(
+            _l(
+                "You can't change the type or answer values of a field that feeds a target — "
+                "unlink it on the target data sources step first"
+            )
         ) from exc
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
