@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<!--
+ABOUTME: Single-file interactive explainer of the respondent field-schema setup wizard.
+ABOUTME: Branching flow (intro → choose approach → questions → edit fields → preview); no build step, no framework.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Respondent field schema setup — workflow explainer</title>
+    <style>
+  /* Tokens lifted from backoffice design system (primitive + semantic) */
+      :root {
+        --brand-50:#FBE7EF; --brand-100:#F4B6CB; --brand-200:#E682A4; --brand-300:#C70039;
+        --brand-400:#90003F; --brand-600:#720046; --brand-700:#5E003A;
+        --n0:#FFFFFF; --n50:#F7F7F8; --n100:#EFEFF1; --n200:#E1E2E5; --n300:#C8CAD0;
+        --n400:#9EA2AC; --n500:#6F7482; --n600:#4E5361; --n700:#2F3442; --n800:#1F2330;
+        --success-100:#E6F4EA; --success-400:#2E8B57; --success-600:#1F6A42;
+        --warning-100:#FFF4E5; --warning-400:#D9822B; --warning-600:#A6631E;
+        --info-100:#E8F1FA; --info-400:#3A7BD5; --info-600:#2B5FA6;
+        --error-100:#FDEBEC; --error-400:#C70039; --error-600:#90003F;
+        --radius:8px;
+      }
+      * { box-sizing:border-box; }
+      html,body { margin:0; }
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background:var(--n50); color:var(--n600); line-height:1.5;
+      }
+      h1,h2,h3,h4 { color:var(--n700); line-height:1.25; margin:0 0 .5rem; }
+      p { margin:0 0 .75rem; }
+      a { color:var(--brand-400); }
+      code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.85em; }
+
+  /* ---- top bar ---- */
+      .appbar { background:var(--n800); color:var(--n0); padding:.75rem 1.5rem; display:flex; align-items:center; gap:.75rem; }
+      .appbar .logo { width:26px;height:26px;border-radius:6px;background:var(--brand-400); display:grid;place-items:center;font-weight:700;font-size:.8rem; }
+      .appbar .title { font-weight:600; }
+      .appbar .sub { color:var(--n400); font-size:.85rem; margin-left:.25rem; }
+      .demo-flag { margin-left:auto; background:var(--warning-100); color:var(--warning-600); border:1px solid var(--warning-400); padding:.15rem .55rem; border-radius:999px; font-size:.72rem; font-weight:600; letter-spacing:.02em; }
+
+  /* ---- progress steps ---- */
+      .steps { background:var(--n0); border-bottom:1px solid var(--n200); padding:0 1.5rem; display:flex; gap:.25rem; overflow-x:auto; }
+      .step { appearance:none; background:none; border:none; cursor:pointer; padding:.9rem .7rem; display:flex; align-items:center; gap:.45rem;
+        color:var(--n500); font-size:.88rem; font-family:inherit; border-bottom:3px solid transparent; white-space:nowrap; }
+      .step:hover:not(:disabled) { color:var(--n700); }
+      .step:disabled { cursor:default; opacity:.6; }
+      .step .num { width:1.4rem;height:1.4rem;border-radius:50%; background:var(--n200); color:var(--n600); display:grid;place-items:center; font-size:.78rem; font-weight:700; }
+      .step.active { color:var(--brand-400); border-bottom-color:var(--brand-400); font-weight:600; }
+      .step.active .num { background:var(--brand-400); color:#fff; }
+      .step.done .num { background:var(--success-400); color:#fff; }
+
+  /* ---- nav bars (top + bottom) ---- */
+      .navbar { max-width:1280px; margin:0 auto; padding:1rem 1.5rem; display:flex; justify-content:space-between; gap:1rem; }
+      .navbar.top { padding-bottom:0; }
+      .navbar.bottom { padding-bottom:2.5rem; }
+
+  /* ---- layout ---- */
+      .layout { max-width:1280px; margin:0 auto; padding:.5rem 1.5rem 1.5rem; display:grid; grid-template-columns: minmax(0,1fr) 320px; gap:1.5rem; align-items:start; }
+      @media (max-width: 920px){ .layout { grid-template-columns:1fr; } }
+      .main { min-width:0; }
+
+      .stage-head h2 { font-size:1.6rem; }
+      .stage-head .lede { color:var(--n500); font-size:1.05rem; max-width:62ch; }
+      .stage-head .stage-tag { display:inline-block; font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-400); margin-bottom:.35rem; }
+
+  /* ---- cards ---- */
+      .card { background:var(--n0); border:1px solid var(--n200); border-radius:var(--radius); padding:1.1rem 1.2rem; margin:1rem 0; }
+      .card.highlight { border-color:var(--brand-200); }
+      .card h3 { font-size:1.05rem; }
+      .muted { color:var(--n500); }
+      .small { font-size:.85rem; }
+
+  /* ---- buttons ---- */
+      .btn { font-family:inherit; cursor:pointer; border-radius:6px; padding:.5rem .9rem; font-size:.9rem; font-weight:600; border:1px solid transparent; display:inline-flex; align-items:center; gap:.4rem; }
+      .btn-primary { background:var(--brand-400); color:#fff; }
+      .btn-primary:hover { background:var(--brand-600); }
+      .btn-secondary { background:#fff; color:var(--n700); border-color:var(--n700); }
+      .btn-secondary:hover { background:var(--n200); }
+      .btn-ghost { background:transparent; color:var(--n700); border-color:transparent; }
+      .btn-ghost:hover { background:var(--n200); }
+      .btn-sm { padding:.3rem .65rem; font-size:.82rem; }
+      .btn-lg { padding:.7rem 1.3rem; font-size:1rem; }
+      .btn:disabled { opacity:.45; cursor:not-allowed; }
+      .iconbtn { background:transparent; border:1px solid var(--n200); border-radius:6px; cursor:pointer; width:1.85rem; height:1.85rem; display:grid; place-items:center; color:var(--n500); font-size:.95rem; }
+      .iconbtn:hover:not(:disabled) { background:var(--n100); color:var(--n700); }
+      .iconbtn:disabled { opacity:.4; cursor:not-allowed; }
+      .iconbtn.danger:hover { background:var(--error-100); color:var(--error-600); border-color:var(--error-400); }
+
+      .navrow { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin:1.4rem 0 2rem; }
+
+  /* ---- pills / chips ---- */
+      .chips { display:flex; flex-wrap:wrap; gap:.35rem; }
+      .chip { background:var(--n100); border:1px solid var(--n200); color:var(--n600); border-radius:999px; padding:.15rem .55rem; font-size:.8rem; }
+      .chip.brand { background:var(--brand-50); border-color:var(--brand-100); color:var(--brand-600); }
+
+  /* row used for both target lists and field lists so they look identical */
+      .field-row { display:flex; align-items:center; gap:.55rem; padding:.5rem .6rem; border:1px solid var(--n200); border-radius:6px; background:var(--n0); margin:.4rem 0; }
+      .field-row .grip { color:var(--n400); cursor:grab; font-size:1rem; }
+      .field-row .fr-body { flex:1; min-width:0; }
+      .field-row .fr-label { font-weight:600; color:var(--n700); font-size:.92rem; }
+      .field-row .fr-meta { font-size:.78rem; color:var(--n500); }
+      .field-row .fr-actions { display:flex; gap:.3rem; align-items:center; }
+      .badge { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:.05rem .4rem; border-radius:4px; margin-left:.35rem; }
+      .badge.req { background:var(--error-100); color:var(--error-600); }
+      .badge.type { background:var(--n100); color:var(--n500); }
+      .badge.target { background:var(--brand-50); color:var(--brand-600); }
+
+      .section-block { border:1px solid var(--n200); border-radius:var(--radius); margin:.9rem 0; overflow:hidden; }
+      .section-head { background:var(--n50); border-bottom:1px solid var(--n200); padding:.6rem .8rem; display:flex; align-items:center; gap:.55rem; }
+      .section-head h3 { margin:0; font-size:1rem; }
+      .section-head .sh-actions { margin-left:auto; display:flex; gap:.3rem; }
+      .section-body { padding:.6rem .8rem; }
+
+  /* inline editor */
+      .inline-edit { display:grid; gap:.4rem; padding:.6rem; border:1px dashed var(--brand-200); border-radius:6px; background:var(--brand-50); margin:.4rem 0; }
+      label.lbl { font-size:.8rem; font-weight:600; color:var(--n700); }
+      input.txt, textarea.txt, select.txt {
+        font-family:inherit; font-size:.9rem; padding:.45rem .55rem; border:1px solid var(--n300); border-radius:6px; width:100%; color:var(--n700); background:#fff;
+      }
+      textarea.txt { resize:vertical; }
+
+  /* ---- choose-approach cards (page 2) ---- */
+      .choice-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1.2rem 0; }
+      @media (max-width:640px){ .choice-grid { grid-template-columns:1fr; } }
+      .choice-card { position:relative; text-align:left; background:var(--n0); border:1px solid var(--n200); border-radius:var(--radius);
+        padding:1.2rem; cursor:pointer; font-family:inherit; display:flex; flex-direction:column; gap:.35rem; }
+      .choice-card:hover { border-color:var(--brand-300); box-shadow:0 2px 10px rgba(0,0,0,.06); }
+      .choice-card.recommended { border-color:var(--brand-200); }
+      .choice-card h3 { color:var(--n700); font-size:1.1rem; }
+      .choice-cta { margin-top:.6rem; color:var(--brand-400); font-weight:600; font-size:.9rem; }
+      .rec-flag { position:absolute; top:.8rem; right:.8rem; background:var(--brand-50); color:var(--brand-600); border:1px solid var(--brand-100);
+        border-radius:999px; padding:.1rem .5rem; font-size:.7rem; font-weight:700; letter-spacing:.02em; }
+
+  /* ---- questions (page 4) ---- */
+      .q-radios { display:flex; gap:.8rem; margin:.7rem 0; flex-wrap:wrap; }
+      .q-radio { display:flex; align-items:center; gap:.45rem; border:1px solid var(--n300); border-radius:6px; padding:.5rem .8rem; cursor:pointer; font-size:.92rem; color:var(--n700); }
+      .q-radio:hover { border-color:var(--brand-300); }
+      .check-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:.4rem; margin:.6rem 0 .2rem; }
+      .check-row { display:flex; align-items:center; gap:.5rem; border:1px solid var(--n200); border-radius:6px; padding:.45rem .6rem; font-size:.9rem; color:var(--n700); cursor:pointer; }
+      .check-row:not(.disabled):hover { border-color:var(--brand-300); }
+      .check-row.disabled { color:var(--n400); background:var(--n50); cursor:not-allowed; }
+      .check-row.disabled .muted { color:var(--n400); }
+
+      .empty-state { text-align:center; padding:1.8rem 0; display:flex; flex-direction:column; gap:.9rem; align-items:center; }
+
+  /* ---- sidebar notes ---- */
+      .aside { position:sticky; top:1rem; }
+      .notebox { background:var(--n0); border:1px solid var(--n200); border-radius:var(--radius); overflow:hidden; }
+      .notebox > .nb-head { background:var(--n800); color:#fff; padding:.6rem .85rem; font-weight:600; font-size:.9rem; display:flex; align-items:center; gap:.45rem; }
+      .nb-body { padding:.5rem .85rem .9rem; }
+      .note { border-left:3px solid var(--n300); padding:.5rem .6rem; margin:.6rem 0; font-size:.85rem; border-radius:0 6px 6px 0; }
+      .note h5 { margin:0 0 .2rem; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+      .note.live   { background:var(--success-100); border-left-color:var(--success-400); }
+      .note.live h5 { color:var(--success-600); }
+      .note.future { background:var(--info-100); border-left-color:var(--info-400); }
+      .note.future h5 { color:var(--info-600); }
+      .note.warn   { background:var(--warning-100); border-left-color:var(--warning-400); }
+      .note.warn h5 { color:var(--warning-600); }
+      .note p { margin:.15rem 0; }
+      .note ul { margin:.2rem 0 0; padding-left:1.1rem; }
+      .note li { margin:.15rem 0; }
+
+  /* ---- public form preview ---- */
+      .gov-preview { background:#fff; border:1px solid var(--n300); border-radius:var(--radius); padding:0; overflow:hidden; margin:1rem 0; }
+      .gov-preview .gp-bar { background:var(--n800); color:#fff; padding:.6rem 1.2rem; font-size:.85rem; }
+      .gov-inner { padding:1.4rem 1.6rem 2rem; max-width:680px; }
+      .gov-inner h1 { font-size:1.8rem; border-bottom:0; }
+      .gov-fieldset { border:0; padding:0; margin:0 0 1.6rem; }
+      .gov-legend { font-size:1.15rem; font-weight:700; color:var(--n700); border-bottom:2px solid var(--brand-400); padding-bottom:.3rem; margin-bottom:.8rem; }
+      .gov-field { margin:0 0 1rem; }
+      .gov-field > label, .gov-field > .gov-q { display:block; font-weight:600; color:var(--n700); margin-bottom:.25rem; }
+      .gov-hint { color:var(--n500); font-size:.85rem; margin-bottom:.35rem; }
+      .gov-field input[type=text], .gov-field input[type=email], .gov-field input[type=tel], .gov-field select {
+        width:100%; padding:.5rem .55rem; border:2px solid var(--n700); border-radius:4px; font-family:inherit; font-size:.95rem;
+      }
+      .gov-opt { display:flex; align-items:center; gap:.5rem; margin:.3rem 0; }
+      .gov-submit { background:var(--success-400); color:#fff; border:0; border-radius:4px; padding:.65rem 1.2rem; font-size:1rem; font-weight:700; cursor:pointer; }
+      .dob-row { display:flex; gap:.7rem; }
+      .dob-lab { display:flex; flex-direction:column; font-size:.8rem; font-weight:600; color:var(--n700); gap:.2rem; }
+      .dob-in { width:3.5rem; padding:.5rem; border:2px solid var(--n700); border-radius:4px; font-family:inherit; font-size:.95rem; }
+      .dob-in.yr { width:5rem; }
+
+      .hidden { display:none !important; }
+      .hintline { font-size:.82rem; color:var(--n500); margin:0; }
+      details.helper { margin:.5rem 0; }
+      details.helper summary { cursor:pointer; color:var(--brand-400); font-size:.85rem; }
+    </style>
+  </head>
+  <body>
+    <div class="appbar">
+      <div class="logo">DL</div>
+      <span class="title">OpenDLP</span>
+      <span class="sub">Assembly setup — respondent field schema walkthrough</span>
+      <span class="demo-flag">INTERACTIVE EXPLAINER · not the real app</span>
+    </div>
+
+    <nav class="steps" id="steps"></nav>
+
+    <div class="navbar top">
+      <button class="btn btn-secondary navback">← Back</button>
+      <button class="btn btn-ghost navrestart">↺ Start over</button>
+    </div>
+
+    <div class="layout">
+      <div class="main" id="stage"></div>
+      <aside class="aside">
+        <div class="notebox">
+          <div class="nb-head">📋 What's going on here</div>
+          <div class="nb-body" id="sidebar"></div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="navbar bottom">
+      <button class="btn btn-secondary navback">← Back</button>
+      <button class="btn btn-ghost navrestart">↺ Start over</button>
+    </div>
+
+    <script>
+      "use strict";
+
+/* ================================================================== *
+ * Data — the targets are "already set up" before this wizard starts.  *
+ * Some are derived from other answers, so they don't need their own   *
+ * form question (they show greyed-out with a "comes from …" note).    *
+ * ================================================================== */
+      const TARGETS = [
+        { id:"gender", name:"Gender", options:["Male","Female","Non-binary / Other","Prefer not to say"] },
+        { id:"age", name:"Age group", options:["16–24","25–34","35–49","50–64","65+"], derivedFrom:"date of birth" },
+        { id:"edu", name:"Highest education level", options:["No qualifications","Level 1–2 (GCSE)","Level 3 (A-level)","Level 4+ (degree or higher)"] },
+        { id:"climate", name:"Attitude to climate change", options:["Very concerned","Fairly concerned","Neutral","Not concerned","Don't know"] },
+        { id:"ward", name:"Local ward", options:["Riverside","Hillfields","Old Town","Meadowpark","…"], derivedFrom:"postcode" },
+        { id:"ethnicity", name:"Ethnic group", options:["Asian","Black","Mixed","White","Other"] },
+      ];
+
+/* A short, illustrative list of European countries (not comprehensive). */
+      const COUNTRIES = [
+        { code:"GB", name:"United Kingdom", dial:"+44" },
+        { code:"IE", name:"Ireland", dial:"+353" },
+        { code:"FR", name:"France", dial:"+33" },
+        { code:"DE", name:"Germany", dial:"+49" },
+        { code:"ES", name:"Spain", dial:"+34" },
+        { code:"IT", name:"Italy", dial:"+39" },
+        { code:"NL", name:"Netherlands", dial:"+31" },
+        { code:"BE", name:"Belgium", dial:"+32" },
+        { code:"PT", name:"Portugal", dial:"+351" },
+        { code:"PL", name:"Poland", dial:"+48" },
+        { code:"SE", name:"Sweden", dial:"+46" },
+        { code:"DK", name:"Denmark", dial:"+45" },
+        { code:"NO", name:"Norway", dial:"+47" },
+        { code:"AT", name:"Austria", dial:"+43" },
+        { code:"GR", name:"Greece", dial:"+30" },
+      ];
+
+/* ================================================================== *
+ * State — flows through the pages so later pages reflect earlier      *
+ * choices. Navigation branches, so we keep a history stack for Back.  *
+ * ================================================================== */
+      let uid = 1;
+      const nid = () => "id" + (uid++);
+      let editing = null;
+
+      const state = {
+        page: 1,
+        history: [],
+        q1: null,                 // "yes" | "no" — need a country field?
+        countries: new Set(),     // chosen country codes (only when q1 === "yes")
+        formTargets: new Set(),   // target ids that get their own question
+        sections: [],             // generated field sections (pages 5 & 6)
+      };
+
+/* Step bar reflects the happy path; page 3 (blank) is a dead-end branch of step 2. */
+      const STEPS = [
+        { n:1, label:"Intro" },
+        { n:2, label:"Choose approach" },
+        { n:3, label:"Questions" },
+        { n:4, label:"Edit fields" },
+        { n:5, label:"Preview" },
+      ];
+      const PAGE_STEP = { 1:1, 2:2, 3:2, 4:3, 5:4, 6:5 };
+      const STEP_PAGE = { 1:1, 2:2, 3:4, 4:5, 5:6 };
+
+/* ------------------------------------------------------------------ */
+      const $ = (sel, root=document) => root.querySelector(sel);
+      const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+      const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+      const typeLabel = { text:"text", email:"email", tel:"phone", checkbox:"checkbox", radio:"choice", select:"dropdown", dob:"date" };
+
+/* ============================ RENDER ============================== */
+      function render() {
+        renderSteps();
+        const m = $("#stage");
+        ({1:pageIntro, 2:pageStart, 3:pageBlank, 4:pageQuestions, 5:pageEdit, 6:pagePreview}[state.page])(m);
+        renderSidebar();
+        $$(".navback").forEach(b => b.disabled = state.history.length === 0);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function renderSteps() {
+        const cur = PAGE_STEP[state.page];
+        $("#steps").innerHTML = STEPS.map(s => {
+          const cls = s.n === cur ? "active" : (s.n < cur ? "done" : "");
+          const mark = s.n < cur ? "✓" : s.n;
+          const clickable = s.n <= cur;               // only jump backwards
+          return `<button class="step ${cls}" data-step="${s.n}" ${clickable ? "" : "disabled"}><span class="num">${mark}</span>${esc(s.label)}</button>`;
+        }).join("");
+      }
+
+/* ---------------------------- Page 1: intro ----------------------- */
+      function pageIntro(m) {
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Field schema setup</span>
+      <h2>Set up the fields for your registration page</h2>
+      <p class="lede">We've already set up your <strong>selection targets</strong> (shown below). Next we'll set up
+      the fields people fill in on the registration page. Click <strong>Start</strong> to begin.</p>
+    </div>
+
+    <div class="card highlight">
+      <h3>Targets already set up <span class="chip brand">${TARGETS.length}</span></h3>
+      ${TARGETS.map(t => `
+        <div class="field-row">
+        <span class="fr-body">
+        <span class="fr-label">${esc(t.name)}</span>
+        ${t.derivedFrom ? `<span class="badge type">derived</span>` : `<span class="badge target">asked directly</span>`}
+        <div class="fr-meta">${t.derivedFrom ? `Comes from ${esc(t.derivedFrom)}` : t.options.map(esc).join(" · ")}</div>
+        </span>
+        </div>`).join("")}
+    </div>
+
+    <div class="navrow">
+      <button class="btn btn-primary btn-lg" id="startBtn">Start →</button>
+    </div>`;
+        $("#startBtn").onclick = () => goto(2);
+      }
+
+/* ---------------------------- Page 2: choose approach ------------- */
+      function pageStart(m) {
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Choose an approach</span>
+      <h2>What fields do you want for your respondents?</h2>
+      <p class="lede">You can build the form from scratch, or let us populate a standard set of fields that you can
+      then adjust.</p>
+    </div>
+
+    <div class="choice-grid">
+      <button class="choice-card" id="chooseBlank">
+        <h3>I'll choose everything</h3>
+        <p class="muted small" style="margin:0">Start from an empty form and add every field yourself. Full control,
+        more work.</p>
+        <span class="choice-cta">Start empty →</span>
+      </button>
+      <button class="choice-card recommended" id="chooseStd">
+        <span class="rec-flag">Recommended</span>
+        <h3>Populate with standard fields</h3>
+        <p class="muted small" style="margin:0">Answer a couple of questions and we'll build a ready-made set of
+        fields for a citizens' assembly. Tweak them afterwards.</p>
+        <span class="choice-cta">Answer questions →</span>
+      </button>
+    </div>`;
+        $("#chooseBlank").onclick = () => goto(3);
+        $("#chooseStd").onclick = () => goto(4);
+      }
+
+/* ---------------------------- Page 3: blank fields form ----------- */
+      function pageBlank(m) {
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Build it yourself</span>
+      <h2>Fields</h2>
+      <p class="lede">Your form is empty. Add fields one at a time to build it up.</p>
+    </div>
+
+    <div class="card">
+      <div class="empty-state">
+        <p class="muted" style="margin:0">No fields yet.</p>
+        <button class="btn btn-primary" id="addFieldBtn">+ Add field</button>
+      </div>
+    </div>`;
+        $("#addFieldBtn").onclick = () => alert(
+          "In the real app this opens the field editor to add a new field.\n\n" +
+          "This build-it-yourself branch is a dead-end in the walkthrough — use ← Back and try the " +
+          "\"Populate with standard fields\" path.");
+      }
+
+/* ---------------------------- Page 4: standard-field questions ---- */
+      function pageQuestions(m) {
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">A couple of questions</span>
+      <h2>Standard fields</h2>
+      <p class="lede">Answer these and we'll generate a matching set of fields.</p>
+    </div>
+
+    <div class="card">
+      <h3>1. Do you need to ask for “country” in contact details?</h3>
+      <p class="muted small">If everyone filling in this form is from one country, answer <strong>No</strong> — this
+      keeps the form simpler. If you answer <strong>Yes</strong>, you'll choose which countries, and the form gains
+      <strong>Country</strong> and <strong>phone country code</strong> fields.</p>
+      <div class="q-radios">
+        <label class="q-radio"><input type="radio" name="q1" value="no"  ${state.q1==="no"?"checked":""}> No — single country</label>
+        <label class="q-radio"><input type="radio" name="q1" value="yes" ${state.q1==="yes"?"checked":""}> Yes — multiple countries</label>
+      </div>
+      <div id="countryList" class="${state.q1==="yes"?"":"hidden"}">
+        <p class="lbl" style="margin:.6rem 0 .2rem">Which countries?</p>
+        <div class="check-grid">
+          ${COUNTRIES.map(c => `
+        <label class="check-row"><input type="checkbox" class="ctry" value="${c.code}" ${state.countries.has(c.code)?"checked":""}>
+        ${esc(c.name)} <span class="muted small">${esc(c.dial)}</span></label>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>2. Which targets should be questions on the form?</h3>
+      <p class="muted small">Some target data is worked out from other answers, so only tick the targets that need
+      their own question on the registration form.</p>
+      <div class="check-grid">
+        ${TARGETS.map(t => t.derivedFrom
+          ? `<label class="check-row disabled"><input type="checkbox" disabled> ${esc(t.name)}
+        <span class="muted small">comes from ${esc(t.derivedFrom)}</span></label>`
+          : `<label class="check-row"><input type="checkbox" class="tgt" value="${t.id}" ${state.formTargets.has(t.id)?"checked":""}>
+        ${esc(t.name)}</label>`).join("")}
+      </div>
+    </div>
+
+    <div class="navrow">
+      <button class="btn btn-primary btn-lg" id="genBtn" disabled>Generate fields →</button>
+      <span class="hintline" id="genHint"></span>
+    </div>`;
+
+        $$('input[name="q1"]', m).forEach(r => r.onchange = () => {
+          state.q1 = r.value;
+          $("#countryList").classList.toggle("hidden", r.value !== "yes");
+          updateGate();
+        });
+        $$(".ctry", m).forEach(c => c.onchange = () => { c.checked ? state.countries.add(c.value) : state.countries.delete(c.value); updateGate(); });
+        $$(".tgt", m).forEach(c => c.onchange = () => { c.checked ? state.formTargets.add(c.value) : state.formTargets.delete(c.value); updateGate(); });
+        $("#genBtn").onclick = () => { buildSections(); goto(5); };
+        updateGate();
+
+        function updateGate() {
+          const ok = state.q1 !== null && (state.q1 === "no" || state.countries.size > 0);
+          $("#genBtn").disabled = !ok;
+          $("#genHint").textContent = ok ? "" :
+          (state.q1 === "yes" ? "Choose at least one country to continue." : "Answer question 1 to continue.");
+        }
+      }
+
+/* ---------------------------- field/section builders ------------- */
+      const mkField = (label, type, required, extra={}) =>
+      ({ id: nid(), label, type, required, help: extra.help || "", options: extra.options, fromTarget: !!extra.fromTarget });
+      const mkSection = (title, std, fields) => ({ id: nid(), title, std, fields });
+
+      function chosenCountries() {
+        const picked = COUNTRIES.filter(c => state.countries.has(c.code));
+        return picked.length ? picked : COUNTRIES;
+      }
+
+      function buildSections() {
+        const country = state.q1 === "yes";
+        const secs = [];
+
+        secs.push(mkSection("Confirm eligibility and ability to attend", "eligibility", [
+          mkField("I am able to attend all of the session dates", "checkbox", true),
+          mkField("I am eligible to attend this assembly", "checkbox", true),
+        ]));
+
+        const contact = [
+          mkField("First name", "text", true),
+          mkField("Last name", "text", true),
+          mkField("Email address", "email", true),
+        ];
+        if (country) contact.push(mkField("Phone country code", "select", true, { options: chosenCountries().map(c => `${c.name} (${c.dial})`) }));
+        contact.push(mkField("Phone number", "tel", true));
+        contact.push(mkField("Address line 1", "text", true));
+        contact.push(mkField("Address line 2", "text", false));
+        contact.push(mkField("City", "text", true));
+        contact.push(mkField("Postcode", "text", true));
+        if (country) contact.push(mkField("Country", "select", true, { options: chosenCountries().map(c => c.name) }));
+        secs.push(mkSection("Name and contact details", "contact", contact));
+
+        const about = [ mkField("Date of birth", "dob", true, { help: "For example, 27 3 1985" }) ];
+        TARGETS.filter(t => state.formTargets.has(t.id)).forEach(t =>
+          about.push(mkField(t.name, t.options.length > 6 ? "select" : "radio", true, { options: t.options.slice(), fromTarget: true })));
+        secs.push(mkSection("About you", "about", about));
+
+        secs.push(mkSection("Consent to use your data", "consent", [
+          mkField("I consent to the use of my data for this selection process", "checkbox", true),
+          mkField("Please tell me about similar events in the future", "checkbox", false),
+        ]));
+
+        state.sections = secs;
+      }
+
+/* ---------------------------- Page 5: edit fields ---------------- */
+      function pageEdit(m) {
+        if (!state.sections.length) buildSections();
+        const country = state.q1 === "yes";
+
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Edit fields</span>
+      <h2>Edit your fields</h2>
+      <p class="lede">Here are the fields we generated${country ? " (including country &amp; phone country code)" : ""}.
+      Reorder, edit or delete them, or add more. In the real app reordering is drag-and-drop — here use the arrow buttons.</p>
+    </div>
+    ${state.sections.map((s, si) => `
+        <div class="section-block">
+        <div class="section-head">
+        <span class="grip" title="Drag to reorder (illustrative)">⠿</span>
+        <h3>${esc(s.title)}</h3>
+        ${s.std === "about" ? `<span class="badge target">from targets</span>` : ""}
+        <span class="sh-actions">
+        <button class="iconbtn" data-secup="${s.id}" ${si===0?"disabled":""} aria-label="Move section up">↑</button>
+        <button class="iconbtn" data-secdown="${s.id}" ${si===state.sections.length-1?"disabled":""} aria-label="Move section down">↓</button>
+        <button class="iconbtn danger" data-delsec="${s.id}" aria-label="Delete section">✕</button>
+        </span>
+        </div>
+        <div class="section-body">
+        ${s.fields.length === 0 ? `<p class="muted small">No fields in this section.</p>` :
+          s.fields.map((f, fi) => editing === f.id ? fieldEditor(f) : fieldRow(s, f, fi)).join("")}
+        <button class="btn btn-ghost btn-sm" data-addfield="${s.id}" style="margin-top:.3rem">+ Add field</button>
+        </div>
+        </div>`).join("")}
+    <div class="navrow">
+      <button class="btn btn-primary btn-lg" id="previewBtn">Preview →</button>
+    </div>`;
+
+        $$("[data-secup]", m).forEach(b => b.onclick = () => moveSection(b.dataset.secup, -1));
+        $$("[data-secdown]", m).forEach(b => b.onclick = () => moveSection(b.dataset.secdown, 1));
+        $$("[data-delsec]", m).forEach(b => b.onclick = () => { state.sections = state.sections.filter(s => s.id !== b.dataset.delsec); render(); });
+        $$("[data-fup]", m).forEach(b => b.onclick = () => moveField(b.dataset.sec, b.dataset.fup, -1));
+        $$("[data-fdown]", m).forEach(b => b.onclick = () => moveField(b.dataset.sec, b.dataset.fdown, 1));
+        $$("[data-fdel]", m).forEach(b => b.onclick = () => {
+          const s = state.sections.find(x => x.id === b.dataset.sec); s.fields = s.fields.filter(f => f.id !== b.dataset.fdel); render();
+        });
+        $$("[data-fedit]", m).forEach(b => b.onclick = () => { editing = b.dataset.fedit; render(); });
+        $$("[data-addfield]", m).forEach(b => b.onclick = () => alert(
+          "In the real app this opens the field editor to add a new field to this section. Illustrative only here."));
+        $("#previewBtn").onclick = () => goto(6);
+
+        const ed = m.querySelector(".inline-edit[data-editor]");
+        if (ed) {
+          ed.querySelector("[data-save]").onclick = () => {
+            const f = findField(editing);
+            f.label = ed.querySelector("[data-elabel]").value.trim() || f.label;
+            f.help = ed.querySelector("[data-ehelp]").value.trim();
+            f.required = ed.querySelector("[data-ereq]").checked;
+            const optEl = ed.querySelector("[data-eopts]");
+            if (optEl) f.options = optEl.value.split(",").map(s => s.trim()).filter(Boolean);
+            editing = null; render();
+          };
+          ed.querySelector("[data-cancel]").onclick = () => { editing = null; render(); };
+        }
+      }
+
+      function fieldRow(s, f, fi) {
+        const canEdit = f.type !== "dob";   // the composite date field isn't inline-editable in this demo
+        return `
+    <div class="field-row">
+      <span class="grip" title="Drag (illustrative)">⠿</span>
+      <span class="fr-body">
+        <span class="fr-label">${esc(f.label)}</span>
+        ${f.required ? `<span class="badge req">required</span>` : ""}
+        <span class="badge type">${typeLabel[f.type] || f.type}</span>
+        ${f.type === "dob" ? `<div class="fr-meta">Day · Month · Year</div>` : ""}
+        ${f.help ? `<div class="fr-meta">💬 ${esc(f.help)}</div>` : ""}
+        ${f.options ? `<div class="fr-meta">${f.options.map(esc).join(" · ")}</div>` : ""}
+      </span>
+      <span class="fr-actions">
+        <button class="iconbtn" data-fup="${f.id}" data-sec="${s.id}" ${fi===0?"disabled":""} aria-label="Move up">↑</button>
+        <button class="iconbtn" data-fdown="${f.id}" data-sec="${s.id}" ${fi===s.fields.length-1?"disabled":""} aria-label="Move down">↓</button>
+        ${canEdit ? `<button class="iconbtn" data-fedit="${f.id}" aria-label="Edit">✎</button>` : ""}
+        <button class="iconbtn danger" data-fdel="${f.id}" data-sec="${s.id}" aria-label="Delete">✕</button>
+      </span>
+    </div>`;
+      }
+
+      function fieldEditor(f) {
+        return `<div class="inline-edit" data-editor>
+    <div><label class="lbl">Label</label><input class="txt" data-elabel value="${esc(f.label)}"></div>
+    <div><label class="lbl">Help text</label><input class="txt" data-ehelp value="${esc(f.help||"")}" placeholder="optional guidance shown under the field"></div>
+    ${f.options ? `<div><label class="lbl">Options (comma separated)</label><input class="txt" data-eopts value="${esc(f.options.join(", "))}"></div>` : ""}
+    <div><label class="lbl"><input type="checkbox" data-ereq ${f.required?"checked":""}> Required</label></div>
+    <div style="display:flex;gap:.4rem">
+      <button class="btn btn-primary btn-sm" data-save>Save</button>
+      <button class="btn btn-ghost btn-sm" data-cancel>Cancel</button>
+    </div>
+  </div>`;
+      }
+
+      function findField(id) { for (const s of state.sections) { const f = s.fields.find(x => x.id === id); if (f) return f; } return null; }
+      function moveSection(id, d) { const i = state.sections.findIndex(s => s.id === id); const j = i + d; if (j < 0 || j >= state.sections.length) return; [state.sections[i], state.sections[j]] = [state.sections[j], state.sections[i]]; render(); }
+      function moveField(secId, fid, d) { const s = state.sections.find(x => x.id === secId); const i = s.fields.findIndex(f => f.id === fid); const j = i + d; if (j < 0 || j >= s.fields.length) return; [s.fields[i], s.fields[j]] = [s.fields[j], s.fields[i]]; render(); }
+
+/* ---------------------------- Page 6: preview -------------------- */
+      function pagePreview(m) {
+        const country = state.q1 === "yes";
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Preview</span>
+      <h2>Preview your registration form</h2>
+      <p class="lede">This is how the fields will look to people registering${country ? ", including the country and phone-country-code fields" : ""}.
+      Inputs here are illustrative and don't submit.</p>
+    </div>
+
+    <div class="gov-preview">
+      <div class="gp-bar">🔒 register.example.org/climate-assembly &nbsp;·&nbsp; public view</div>
+      <div class="gov-inner">
+        <h1>Register your interest</h1>
+        <form onsubmit="return false">
+          ${state.sections.map(renderPublicSection).join("")}
+          <button type="submit" class="gov-submit">Submit registration</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="navrow">
+      <button class="btn btn-secondary" id="backToEdit">← Back to editing</button>
+    </div>`;
+        $("#backToEdit").onclick = () => goto(5);
+      }
+
+      function renderPublicSection(s) {
+        return `<fieldset class="gov-fieldset">
+    <legend class="gov-legend">${esc(s.title)}</legend>
+    ${s.fields.map(renderPublicField).join("")}
+  </fieldset>`;
+      }
+      function renderPublicField(f) {
+        const req = f.required ? ` <span style="color:var(--error-600)">*</span>` : "";
+        const hint = f.help ? `<div class="gov-hint">${esc(f.help)}</div>` : "";
+        if (f.type === "checkbox")
+          return `<div class="gov-field"><label class="gov-opt"><input type="checkbox"> <span>${esc(f.label)}${req}</span></label>${hint}</div>`;
+        if (f.type === "radio")
+          return `<div class="gov-field"><span class="gov-q">${esc(f.label)}${req}</span>${hint}
+      ${(f.options||[]).map(o => `<label class="gov-opt"><input type="radio" name="${f.id}"> <span>${esc(o)}</span></label>`).join("")}</div>`;
+        if (f.type === "select")
+          return `<div class="gov-field"><label class="gov-q">${esc(f.label)}${req}</label>${hint}
+      <select><option>Please select…</option>${(f.options||[]).map(o => `<option>${esc(o)}</option>`).join("")}</select></div>`;
+  if (f.type === "dob")
+    return `<div class="gov-field"><span class="gov-q">${esc(f.label)}${req}</span>${hint}
+        <div class="dob-row">
+        <label class="dob-lab">Day<input class="dob-in" inputmode="numeric" maxlength="2"></label>
+        <label class="dob-lab">Month<input class="dob-in" inputmode="numeric" maxlength="2"></label>
+        <label class="dob-lab">Year<input class="dob-in yr" inputmode="numeric" maxlength="4"></label>
+        </div></div>`;
+  return `<div class="gov-field"><label class="gov-q">${esc(f.label)}${req}</label>${hint}
+        <input type="${f.type==="email"?"email":f.type==="tel"?"tel":"text"}"></div>`;
+}
+
+/* ============================ SIDEBAR ============================= */
+const NOTES = {
+  1: [
+    { cls:"live", h:"Clickable here", html:`<p>Read the targets we've already set up, then click <strong>Start</strong>.</p>` },
+    { cls:"future", h:"When built", html:`<p>Targets come from the <strong>Targets</strong> tab. Derived ones (age, ward) are worked out from other answers, so they don't need their own form question.</p>` },
+  ],
+  2: [
+    { cls:"live", h:"Clickable here", html:`<p>Pick one of the two routes. <strong>Populate with standard fields</strong> is the guided path.</p>` },
+    { cls:"future", h:"When built", html:`<p>The real app remembers your choice, and you can still switch to hand-editing later.</p>` },
+    { cls:"warn", h:"Illustrative", html:`<p><strong>I'll choose everything</strong> leads to a dead-end in this walkthrough.</p>` },
+  ],
+  3: [
+    { cls:"live", h:"Clickable here", html:`<p>This branch just shows the empty starting point.</p>` },
+    { cls:"warn", h:"Dead-end", html:`<p>Building field-by-field isn't wired up here — use <strong>← Back</strong> and try the standard-fields path.</p>` },
+  ],
+  4: [
+    { cls:"live", h:"Clickable here", html:`<ul>
+        <li>Answer Q1 (and pick countries if <em>Yes</em>)</li>
+          <li>Tick any targets that need their own question</li>
+          <li><strong>Generate fields</strong> enables once Q1 is answered</li></ul>` },
+    { cls:"future", h:"When built", html:`<p>Answering <em>Yes</em> to country adds a <strong>Country</strong> field and a <strong>phone country code</strong> field, built from the countries you tick.</p>` },
+    { cls:"warn", h:"Note", html:`<p>Greyed-out targets are filled from other fields automatically, so they can't be ticked.</p>` },
+  ],
+  5: [
+    { cls:"live", h:"Clickable here", html:`<ul>
+        <li>Reorder sections &amp; fields (↑ ↓)</li>
+        <li>Edit a field's label, help, options &amp; required flag (✎)</li>
+          <li>Delete fields or sections (✕)</li></ul>` },
+    { cls:"future", h:"When built", html:`<p>Reordering is <strong>drag-and-drop</strong> (the ⠿ grips). The editor covers field type, validation, conditional visibility and translations. <strong>Add field</strong> opens it.</p>` },
+    { cls:"warn", h:"Illustrative", html:`<p>The ⠿ grips and <strong>Add field</strong> don't do anything here — use the arrow buttons.</p>` },
+  ],
+  6: [
+    { cls:"live", h:"Clickable here", html:`<p>The public form below is built live from the fields you edited.</p>` },
+    { cls:"future", h:"When built", html:`<p>Publishing makes the page live, and it starts accepting registrations that feed into the respondent pool.</p>` },
+    { cls:"warn", h:"Illustrative", html:`<p>The inputs render but don't submit.</p>` },
+  ],
+};
+function renderSidebar() {
+  $("#sidebar").innerHTML = (NOTES[state.page] || []).map(n =>
+    `<div class="note ${n.cls}"><h5>${esc(n.h)}</h5>${n.html}</div>`).join("") +
+    `<details class="helper"><summary>About this explainer</summary>
+       <p class="small muted">A single static HTML file (no server, no framework) illustrating the planned
+       wizard for setting up an assembly's respondent field schema. Green = works in this demo;
+          blue = how the built version behaves; amber = illustrative only.</p></details>`;
+        }
+
+/* ============================ NAV ================================= */
+        function goto(p) {
+          if (p === state.page) return;
+          state.history.push(state.page);
+          state.page = p; editing = null; render();
+        }
+        function back() {
+          if (!state.history.length) return;
+          state.page = state.history.pop(); editing = null; render();
+        }
+        function startOver() {
+          state.page = 1; state.history = [];
+          state.q1 = null; state.countries = new Set(); state.formTargets = new Set(); state.sections = [];
+          editing = null; render();
+        }
+
+        $$(".navback").forEach(b => b.onclick = back);
+        $$(".navrestart").forEach(b => b.onclick = startOver);
+        $("#steps").addEventListener("click", e => {
+          const b = e.target.closest(".step"); if (!b || b.disabled) return;
+          goto(STEP_PAGE[+b.dataset.step]);
+        });
+
+        render();
+    </script>
+  </body>
+</html>
