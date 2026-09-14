@@ -109,6 +109,60 @@ class TargetEditError:
     field: str = ""
 
 
+@dataclass(frozen=True)
+class LinkedFieldBlock:
+    """One category whose rename or delete is held up by the fields feeding it."""
+
+    category_id: uuid.UUID
+    category_name: str
+    action: str  # "rename" or "delete"
+    field_labels: list[str]
+
+
+class TargetLinkedError(ServiceLayerError):
+    """Renaming or deleting a target category that fields feed needs an explicit force-unlink.
+
+    A linked field's name and options mirror the category, so a silent rename
+    would break the pairing selection relies on. The route renders ``blocks``
+    as a confirmation naming the affected fields; retrying with
+    ``force_unlink=True`` unlinks them (leaving them behind as free editable
+    fields) and then proceeds.
+    """
+
+    def __init__(self, blocks: list[LinkedFieldBlock]) -> None:
+        super().__init__("target category has linked fields")
+        self.blocks = blocks
+
+
+def fields_linked_to_category(uow: AbstractUnitOfWork, category: TargetCategory) -> list[Any]:
+    """The respondent fields whose ``target_category_id`` names this category.
+
+    The reverse lookup behind the rename/delete guards — the mirror of
+    ``derivations_depending_on`` on the field side.
+    """
+    return [
+        field_def
+        for field_def in uow.respondent_field_definitions.list_by_assembly(category.assembly_id)
+        if field_def.target_category_id == category.id
+    ]
+
+
+def _unlink_fields(uow: AbstractUnitOfWork, category: TargetCategory) -> None:
+    now = datetime.now(UTC)
+    for field_def in fields_linked_to_category(uow, category):
+        field_def.target_category_id = None
+        field_def.updated_at = now
+
+
+def _linked_block(category: TargetCategory, action: str, linked: list[Any]) -> LinkedFieldBlock:
+    return LinkedFieldBlock(
+        category_id=category.id,
+        category_name=category.name,
+        action=action,
+        field_labels=[field_def.label for field_def in linked],
+    )
+
+
 class TargetsNotSaved(ServiceLayerError):
     """Nothing was saved, because one or more edits are invalid.
 
@@ -257,11 +311,16 @@ def update_target_category(
     name: str,
     comment: str = "",
     source_url: str = "",
+    force_unlink: bool = False,
 ) -> TargetCategory:
     """Update a target category's name, comment and source URL.
 
     An invalid `source_url` raises ValueError from the domain; the route turns
     that into a field error rather than a 500.
+
+    Renaming a category that fields feed raises :class:`TargetLinkedError`
+    unless ``force_unlink`` is passed, in which case the fields are unlinked
+    first and the rename proceeds.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -283,6 +342,13 @@ def update_target_category(
     if not category or category.assembly_id != assembly_id:
         raise NotFoundError(f"Target category {category_id} not found")
 
+    if name.strip() != category.name:
+        linked = fields_linked_to_category(uow, category)
+        if linked and not force_unlink:
+            raise TargetLinkedError([_linked_block(category, "rename", linked)])
+        if linked:
+            _unlink_fields(uow, category)
+
     category.name = name.strip()
     category.comment = validate_comment(comment)
     category.source_url = validate_source_url(source_url)
@@ -296,8 +362,13 @@ def delete_target_category(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     category_id: uuid.UUID,
+    force_unlink: bool = False,
 ) -> None:
     """Delete a target category.
+
+    Deleting a category that fields feed raises :class:`TargetLinkedError`
+    unless ``force_unlink`` is passed, in which case the fields are unlinked
+    first (they stay behind as free editable fields) and the delete proceeds.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -318,6 +389,12 @@ def delete_target_category(
     category = cast("TargetCategory | None", uow.target_categories.get(category_id))
     if not category or category.assembly_id != assembly_id:
         raise NotFoundError(f"Target category {category_id} not found")
+
+    linked = fields_linked_to_category(uow, category)
+    if linked and not force_unlink:
+        raise TargetLinkedError([_linked_block(category, "delete", linked)])
+    if linked:
+        _unlink_fields(uow, category)
 
     uow.target_categories.delete(category)
 
@@ -644,6 +721,7 @@ def save_all_targets(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     edits: list[TargetCategoryEdit],
+    force_unlink: bool = False,
 ) -> list[TargetCategory]:
     """Apply edits to many categories and values in one operation.
 
@@ -661,11 +739,17 @@ def save_all_targets(
     respondent column: the user is looking at the form where they would add them,
     and rows appearing under a name they had just typed would be a surprise.
 
+    Renaming or deleting a category that fields feed raises
+    :class:`TargetLinkedError` (listing every affected category at once)
+    unless ``force_unlink`` is passed, in which case those fields are
+    unlinked first and the save proceeds.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     assembly = _load_user_and_assembly(uow, user_id, assembly_id, "save targets")
     number_to_select = assembly.number_to_select
     naming = _CategoryNaming(uow, assembly_id, edits)
+    _guard_linked_categories(uow, assembly_id, edits, force_unlink)
 
     saved = []
     errors: list[TargetEditError] = []
@@ -683,6 +767,40 @@ def save_all_targets(
     if errors:
         raise TargetsNotSaved(errors)
     return saved
+
+
+def _guard_linked_categories(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    edits: list[TargetCategoryEdit],
+    force_unlink: bool,
+) -> None:
+    """Hold up (or force through) renames and deletes of categories with linked fields.
+
+    Collects every affected category before raising, so one confirmation can
+    cover the whole submission instead of one round trip per category.
+    """
+    blocks: list[LinkedFieldBlock] = []
+    to_unlink: list[TargetCategory] = []
+    for category_edit in edits:
+        if category_edit.category_id is None:
+            continue
+        category = _get_category(uow, assembly_id, category_edit.category_id)
+        if category_edit.deleted:
+            action = "delete"
+        elif category_edit.name.strip() != category.name:
+            action = "rename"
+        else:
+            continue
+        linked = fields_linked_to_category(uow, category)
+        if not linked:
+            continue
+        blocks.append(_linked_block(category, action, linked))
+        to_unlink.append(category)
+    if blocks and not force_unlink:
+        raise TargetLinkedError(blocks)
+    for category in to_unlink:
+        _unlink_fields(uow, category)
 
 
 def _save_one_category(

@@ -194,17 +194,17 @@ class TestDeleteField:
 
 
 class TestFieldsTab:
-    def test_fields_tab_appears_in_assembly_tab_bar(self, logged_in_admin, existing_assembly):
+    def test_the_tab_bar_carries_no_fields_entry(self, logged_in_admin, existing_assembly):
+        """The fields editor is reached through the Registration workflow, not its own tab."""
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv")
         assert response.status_code == 200
-        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
+        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() not in response.data
 
-    def test_fields_tab_is_never_disabled(self, logged_in_admin, existing_assembly):
-        # Visit the Data tab before any data source is chosen — the Fields tab
-        # must still be a live link, not a disabled placeholder.
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data")
+    def test_the_old_route_still_serves_the_fields_editor(self, logged_in_admin, existing_assembly):
+        # Bookmarks and in-flight links keep working; the page is step 2 now.
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
-        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
+        assert b"Registration fields" in response.data
 
 
 class TestFieldTypeAndOptions:
@@ -935,30 +935,15 @@ class TestDerivedFieldModal:
         data.update(overrides)
         return data
 
-    def test_derived_type_is_not_offered_without_targets(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """A derived field feeds a target, so the option is left off the picker with a hint."""
-        _seed_schema(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
-        )
-        body = response.get_data(as_text=True)
-        assert 'value="derived"' not in body
-        assert "Create targets first" in body
-
-    def test_derived_type_is_offered_once_targets_exist(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
+    def test_derived_type_is_never_offered(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """Derived fields are created on the target data sources step, not from this modal."""
         self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.get(
             f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
         )
         body = response.get_data(as_text=True)
-        assert 'value="derived"' in body
-        assert "Create targets first" not in body
+        assert 'value="derived"' not in body
 
     def test_derived_panel_lists_targets_and_filters_sources_by_method(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1129,14 +1114,16 @@ class TestDerivedFieldModal:
         assert stored.derivation_config["boundaries"] == [30]
         assert stored.help_text == "derived from year of birth"
 
-    def test_derived_row_summarises_source_and_method(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+    def test_derived_fields_do_not_appear_on_the_fields_page(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Derived fields live on the target data sources step, not the registration fields editor."""
         self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
 
         response = logged_in_admin.get(self._base(existing_assembly))
         body = response.get_data(as_text=True)
-        assert "Derived from year_of_birth" in body
-        assert "Age brackets" in body
-        assert "Not on form" in body
+        assert "Derived from year_of_birth" not in body
+        assert "age bracket" not in body
 
 
 class TestMappingUploadAndRecompute:
@@ -1176,16 +1163,16 @@ class TestMappingUploadAndRecompute:
         assert response.status_code == 200
         return next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "region")
 
-    def test_row_shows_the_zero_rows_nudge_and_the_upload_action(
+    def test_derived_rows_and_their_actions_are_off_the_fields_page(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
+        """Upload/recompute now live on the target data sources checklist, not this editor."""
         field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
 
         response = logged_in_admin.get(self._base(existing_assembly))
         body = response.get_data(as_text=True)
-        assert "0 rows — upload a lookup table" in body
-        assert f"/fields/{field.id}/mapping-modal" in body
-        assert f"/fields/{field.id}/recompute" in body
+        assert f"/fields/{field.id}/mapping-modal" not in body
+        assert f"/fields/{field.id}/recompute" not in body
 
     def test_mapping_modal_renders_as_a_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
@@ -1465,3 +1452,106 @@ class TestCopyOptionsFromTarget:
 
         stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
         assert [o.value for o in stored.options] == ["F", "M"]  # nothing saved yet
+
+
+class TestTargetLinkedFieldUI:
+    """A field that feeds a target renders a chip, and its edit modal locks type and answer values."""
+
+    def _base(self, existing_assembly):
+        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+
+    def _seed_linked_field(self, fake_store, admin_user, assembly):
+        _seed_schema(fake_store, admin_user, assembly)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            category = TargetCategory(
+                assembly_id=assembly.id,
+                name="Gender",
+                values=[TargetValue(value="Male", min=1, max=5), TargetValue(value="Female", min=1, max=5)],
+            )
+            uow.target_categories.add(category)
+            field = uow.respondent_field_definitions.get_by_assembly_and_key(assembly.id, "gender")
+            field.update(
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            )
+            field.target_category_id = category.id
+            return field.create_detached_copy()
+
+    def test_editor_row_carries_the_feeds_target_chip(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        self._seed_linked_field(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(self._base(existing_assembly))
+        body = response.get_data(as_text=True)
+        assert "Feeds target: Gender" in body
+        assert "/target-sources" in body
+
+    def test_edit_modal_locks_type_but_keeps_presentation_and_help_editable(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._seed_linked_field(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{field.id}/edit-modal", headers={"HX-Request": "true"}
+        )
+        body = response.get_data(as_text=True)
+        assert "Feeds target: Gender" in body
+        # No free type radios; the presentation select and option help inputs remain.
+        assert 'name="type_choice" value="choice"' in body
+        assert 'name="choice_style"' in body
+        assert 'name="option_help"' in body
+        # Option values render as fixed text with hidden inputs, not editable boxes.
+        assert 'name="option_value" value="Male"' in body
+
+    def test_saving_help_text_and_presentation_succeeds(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._seed_linked_field(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{field.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Your gender",
+                "type_choice": "choice",
+                "choice_style": "choice_dropdown",
+                "option_value": ["Male", "Female"],
+                "option_help": ["", "Includes trans women"],
+                "help_text": "",
+                "on_registration_page": "yes_optional",
+            },
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 200
+        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
+        assert stored.field_type == FieldType.CHOICE_DROPDOWN
+        assert stored.label == "Your gender"
+        assert stored.options[1].help_text == "Includes trans women"
+        assert [o.value for o in stored.options] == ["Male", "Female"]
+
+    def test_changing_answer_values_is_refused_with_an_explanation(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._seed_linked_field(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{field.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Gender",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Male", "Non-binary"],
+                "option_help": ["", ""],
+                "help_text": "",
+                "on_registration_page": "yes_required",
+            },
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 422
+        assert b"feeds a target" in response.data
+        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
+        assert [o.value for o in stored.options] == ["Male", "Female"]

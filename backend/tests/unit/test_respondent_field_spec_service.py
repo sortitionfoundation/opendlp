@@ -72,9 +72,9 @@ class TestSpecEnvelope:
             "number_to_select": 40,
         }
 
-    def test_spec_version_is_4(self):
-        """help_text on the field payload bumped the spec to version 4."""
-        assert SPEC_VERSION == 4
+    def test_spec_version_is_5(self):
+        """feeds_target on the field payload bumped the spec to version 5."""
+        assert SPEC_VERSION == 5
 
     def test_field_payload_carries_help_text(self):
         """A field's help_text is serialised; empty string when unset."""
@@ -381,6 +381,32 @@ class TestTargetJoin:
         category = spec["unmatched_target_categories"][0]
         assert category["comment"] == ""
         assert category["source_url"] == ""
+
+    def test_a_linked_field_reports_the_category_it_feeds(self):
+        """feeds_target carries the linked category's name; unlinked fields report null."""
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            category = _add_category(uow, assembly, "gender", ["Male", "Female"])
+            _add_field(uow, assembly, "gender", target_category_id=category.id)
+            _add_field(uow, assembly, "postcode", group=RespondentFieldGroup.ADDRESS)
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        assert _field_by_key(spec, "gender")["feeds_target"] == "gender"
+        assert _field_by_key(spec, "postcode")["feeds_target"] is None
+
+    def test_a_name_matched_but_unlinked_field_has_null_feeds_target(self):
+        """The legacy name-match still drives target_values, but feeds_target needs the explicit link."""
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            _add_category(uow, assembly, "gender", ["Male", "Female"])
+            _add_field(uow, assembly, "gender")
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        gender = _field_by_key(spec, "gender")
+        assert gender["target_values"] is not None
+        assert gender["feeds_target"] is None
 
     def test_the_join_is_exact_because_selection_matches_exactly(self):
         """``Age Bracket`` and ``age_bracket`` normalise alike but select nothing.

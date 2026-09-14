@@ -4,7 +4,9 @@
 import { initNavigation } from "./init/navigation.js";
 import { initDocumentActions } from "./init/document-actions.js";
 import { initProgressModals } from "./init/progress-modals.js";
+import { initDialogEscape } from "./init/dialog-escape.js";
 
 initNavigation();
 initDocumentActions();
 initProgressModals();
+initDialogEscape();

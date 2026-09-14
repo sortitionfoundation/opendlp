@@ -12,6 +12,13 @@ from opendlp.domain.registration_page import (
     RegistrationPageNotReady,
     RegistrationPageStatus,
 )
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
+from opendlp.domain.targets import TargetCategory, TargetValue
 from tests.fakes import FakeUnitOfWork
 
 
@@ -702,3 +709,87 @@ class TestEditorNameAndSlugEditing:
         assert 'name="short_url_slug"' in edit_body
         # The heading shows the page name in read-only mode
         assert "English" in read_body
+
+
+class TestSetupTaskList:
+    """The registration landing prepends the set-up task list (sources, fields, pages)."""
+
+    def test_task_list_summarises_sources_and_fields(
+        self, logged_in_admin, fake_store, assembly_id, admin_user, existing_assembly
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            category = TargetCategory(
+                assembly_id=assembly_id,
+                name="Gender",
+                values=[TargetValue(value="Male", min=1, max=5)],
+            )
+            uow.target_categories.add(category)
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=assembly_id,
+                    name="Region",
+                    values=[TargetValue(value="North", min=1, max=5)],
+                )
+            )
+            uow.respondent_field_definitions.add(
+                RespondentFieldDefinition(
+                    assembly_id=assembly_id,
+                    field_key="Gender",
+                    label="Gender",
+                    group=RespondentFieldGroup.ABOUT_YOU,
+                    sort_order=10,
+                    field_type=FieldType.CHOICE_RADIO,
+                    options=[ChoiceOption(value="Male")],
+                    target_category_id=category.id,
+                )
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "1. Target data sources" in body
+        assert "1 of 2 targets have a data source" in body
+        assert "2. Registration fields" in body
+        assert "1 questions on the registration form" in body
+        assert "3. Registration pages" in body
+        assert f"/assembly/{assembly_id}/target-sources" in body
+        assert f"/assembly/{assembly_id}/respondent-schema" in body
+
+    def test_no_targets_yet_points_at_the_targets_tab(self, logged_in_admin, assembly_id):
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        body = response.get_data(as_text=True)
+
+        assert "No targets yet" in body
+
+
+class TestFieldsChangedWarning:
+    """The form editor warns when the field schema changed after the HTML was last saved."""
+
+    def _seed_field(self, fake_store, assembly_id):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.respondent_field_definitions.add(
+                RespondentFieldDefinition(
+                    assembly_id=assembly_id,
+                    field_key="gender",
+                    label="Gender",
+                    group=RespondentFieldGroup.ABOUT_YOU,
+                    sort_order=10,
+                )
+            )
+
+    def test_warns_when_a_field_postdates_the_saved_html(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        self._seed_field(fake_store, assembly_id)  # created after the page HTML
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
+
+        assert b"registration fields have changed" in response.data
+
+    def test_quiet_when_the_html_is_newer_than_every_field(self, logged_in_admin, fake_store, assembly_id):
+        self._seed_field(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)  # HTML saved after the field
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
+
+        assert b"registration fields have changed" not in response.data

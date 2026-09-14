@@ -42,7 +42,7 @@ an unmatched one, all in one response.
 
 ```jsonc
 {
-  "spec_version": 4,
+  "spec_version": 5,
   "assembly": {
     "id": "...", "title": "Existing Assembly", "number_to_select": 40
   },
@@ -72,6 +72,10 @@ and `derivation_config` (an object of derivation parameters, `null` unless
 
 Version 4 added `help_text` to each field: the organiser-written hint shown
 beneath the field on the registration form (empty string when none was written).
+
+Version 5 added `feeds_target` to each field: the name of the target category
+the field explicitly feeds (directly for an exact copy of the target's values,
+or via its derivation), `null` when the field is not linked to a target.
 
 ### `csv`
 
@@ -107,6 +111,7 @@ Every field in the schema, in the order the schema page and the CSV export use:
 | `options`              | Permitted values for a choice field; `null` for every other type                          |
 | `on_registration_page` | `no`, `yes_optional` or `yes_required` — governs the public form, **not** CSV import      |
 | `help_text`            | Organiser-written hint shown beneath the field on the form; empty string when none        |
+| `feeds_target`         | Name of the target category the field explicitly feeds; `null` when not linked            |
 | `target_values`        | Quotas from the matching target category; `null` when none matches                        |
 
 `field_type` is the *effective* type. For a fixed field the hardcoded

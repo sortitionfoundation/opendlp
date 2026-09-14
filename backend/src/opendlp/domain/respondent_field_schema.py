@@ -50,6 +50,17 @@ class DerivedFieldError(ValueError):
     """
 
 
+class TargetLinkedFieldError(ValueError):
+    """Raised when an edit is rejected because the field feeds a target category.
+
+    A target-linked field's type and option values mirror the target's values,
+    so they cannot be edited directly — unlink the field from its target first.
+    Presentation (radio vs dropdown), label, help texts, group, order and
+    required-vs-optional remain editable. Subclasses ``ValueError`` for the
+    same reason as ``FixedFieldError``.
+    """
+
+
 class DerivationType(Enum):
     """How a derived field's value is computed from its source field."""
 
@@ -210,6 +221,7 @@ class RespondentFieldDefinition:
         options: list[ChoiceOption] | None = None,
         on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
         help_text: str = "",
+        target_category_id: uuid.UUID | None = None,
         field_id: uuid.UUID | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
@@ -247,12 +259,18 @@ class RespondentFieldDefinition:
         # A derived field is computed, never collected on the registration form.
         self.on_registration_page = FieldOnRegistrationPage.NO if is_derived else on_registration_page
         self.help_text = help_text.strip()
+        self.target_category_id = target_category_id
         self.created_at = created_at or datetime.now(UTC)
         self.updated_at = updated_at or datetime.now(UTC)
 
     @property
     def effective_field_type(self) -> FieldType:
         return FIXED_FIELD_TYPES.get(self.field_key, self.field_type)
+
+    @property
+    def is_target_linked(self) -> bool:
+        """True when this field feeds a target category (directly or via derivation)."""
+        return self.target_category_id is not None
 
     def update(
         self,
@@ -316,6 +334,23 @@ class RespondentFieldDefinition:
         self.options = list(options)
         self.updated_at = datetime.now(UTC)
 
+    def resync_options(self, options: "list[ChoiceOption]") -> None:
+        """Replace a target-linked choice field's options from its target's values.
+
+        The resync write path: ``update()`` locks option values while linked,
+        and this is the one deliberate way through — used when the target's
+        values have changed and the organiser asked to re-sync. Not valid on a
+        derived field, whose options are owned by its derivation
+        (``set_derivation`` is that write path).
+        """
+        if not self.is_target_linked:
+            raise TargetLinkedFieldError("resync_options is only valid on a target-linked field")
+        if self.is_derived:
+            raise DerivedFieldError("Cannot resync options on a derived field — its derivation owns them")
+        _validate_type_and_options(self.field_type, options)
+        self.options = list(options)
+        self.updated_at = datetime.now(UTC)
+
     def _update_type_and_options(self, field_type: FieldType | None, options: "list[ChoiceOption] | None") -> None:
         if self.is_fixed:
             raise FixedFieldError("Cannot change field_type or options on a fixed field")
@@ -326,9 +361,26 @@ class RespondentFieldDefinition:
         # current list across choice<->choice transitions, but drop it
         # when switching to a non-choice type so the invariant holds.
         new_options = (None if new_type not in CHOICE_TYPES else self.options) if options is _UNSET else options
+        if self.is_target_linked:
+            self._reject_target_linked_change(new_type, new_options)
         _validate_type_and_options(new_type, new_options)
         self.field_type = new_type
         self.options = list(new_options) if new_options else None
+
+    def _reject_target_linked_change(self, new_type: FieldType, new_options: "list[ChoiceOption] | None") -> None:
+        """Refuse type/option-value changes on a target-linked field.
+
+        The radio<->dropdown presentation swap is allowed, as is an options
+        list that differs only in help texts — option *values* mirror the
+        target's values and are locked while linked.
+        """
+        presentation_swap = self.field_type in CHOICE_TYPES and new_type in CHOICE_TYPES
+        if new_type != self.field_type and not presentation_swap:
+            raise TargetLinkedFieldError("Cannot change the type of a field linked to a target")
+        old_values = [option.value for option in self.options] if self.options else []
+        new_values = [option.value for option in new_options] if new_options else []
+        if new_values != old_values:
+            raise TargetLinkedFieldError("Cannot change the option values of a field linked to a target")
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, RespondentFieldDefinition):
@@ -355,6 +407,7 @@ class RespondentFieldDefinition:
             options=list(self.options) if self.options else None,
             on_registration_page=self.on_registration_page,
             help_text=self.help_text,
+            target_category_id=self.target_category_id,
             field_id=self.id,
             created_at=self.created_at,
             updated_at=self.updated_at,

@@ -1,5 +1,11 @@
 # Fields tab redesign — spike plan for an "OK UI"
 
+> **Superseded:** the UI described here was replaced by the two-step flow in
+> [`docs/agent/793-two-step-fields/`](../793-two-step-fields/plan.md) — derived
+> fields are now created on the target data sources step, the Fields tab entry
+> is gone, and the editor is registration step 2. The modal/HTMX conventions
+> and parse helpers built here were retargeted, not discarded.
+
 **Branch:** `793-derived-fields-ui` (spike). **Scope:** rework the Fields tab so rows are
 read-only summaries and all field editing happens in an add/edit modal, including the
 first UI for derived fields. Backend (domain/data/service) already landed on

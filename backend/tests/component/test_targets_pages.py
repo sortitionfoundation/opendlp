@@ -8,6 +8,12 @@ import pytest
 
 from opendlp.adapters import database
 from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import UserAssemblyRole
@@ -1221,3 +1227,85 @@ class TestCategoryOrderControls:
         assert header.index("ml-auto") > last_field, "the controls are not pushed to the right edge"
         for marker in ('aria-label="Move down"', 'aria-label="Move up"', "Delete target"):
             assert header.index(marker) > last_field, marker
+
+
+class TestForceUnlinkConfirmation:
+    """Renaming or deleting a target that fields feed asks first, then force-unlinks on confirm."""
+
+    def _seed_linked(self, fake_store, admin_user, assembly):
+        category = _create_category(fake_store, admin_user, assembly.id, "Gender")
+        category = _add_value(fake_store, admin_user, assembly.id, category.id, "Male", 3, 7)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            field = RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="Gender",
+                label="Gender",
+                group=RespondentFieldGroup.ABOUT_YOU,
+                sort_order=10,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Male")],
+                target_category_id=category.id,
+            )
+            uow.respondent_field_definitions.add(field)
+        return category, field
+
+    def _rename_data(self, category, new_name):
+        prefix = f"cat[{category.id}]"
+        value = category.values[0]
+        return {
+            f"{prefix}[name]": new_name,
+            f"{prefix}[values][{value.value_id}][value]": value.value,
+            f"{prefix}[values][{value.value_id}][min]": str(value.min),
+            f"{prefix}[values][{value.value_id}][max]": str(value.max),
+        }
+
+    def test_rename_shows_the_confirmation_naming_the_field(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, _field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=self._rename_data(category, "Sex"),
+        )
+
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "registration fields linked" in html
+        assert "Renaming the target" in html
+        assert 'name="force_unlink" value="1"' in html
+        # Nothing saved yet.
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Gender"
+
+    def test_confirming_resubmits_with_force_and_unlinks(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        data = self._rename_data(category, "Sex")
+        data["force_unlink"] = "1"
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=data,
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Sex"
+            refreshed = uow.respondent_field_definitions.get(field.id)
+            assert refreshed.target_category_id is None
+
+    def test_value_only_edits_save_without_asking(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category, field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=self._rename_data(category, "Gender"),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondent_field_definitions.get(field.id).target_category_id == category.id

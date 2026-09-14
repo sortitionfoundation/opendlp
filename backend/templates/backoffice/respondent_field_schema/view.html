@@ -7,7 +7,7 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% block title %}{{ _("Fields") }} - {{ assembly.title }}{% endblock %}
+{% block title %}{{ _("Registration fields") }} - {{ assembly.title }}{% endblock %}
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(
@@ -17,7 +17,7 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(assembly=assembly,
-            active_tab="fields",
+            active_tab="registration",
             data_source=data_source|default("") ,
             gsheet=gsheet|default(none),
             targets_enabled=targets_enabled|default(false),
