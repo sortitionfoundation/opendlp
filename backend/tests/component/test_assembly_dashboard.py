@@ -326,11 +326,12 @@ class TestTheExportButton:
         html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
         assert f"{_dashboard_url(existing_assembly)}/export/modal" not in html
 
-    def test_modal_offers_csv_but_not_gsheet_without_a_gsheet_source(self, logged_in_admin, assembly_with_targets):
+    def test_modal_asks_for_a_destination_url_without_a_gsheet_source(self, logged_in_admin, assembly_with_targets):
         html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}/export/modal").get_data(as_text=True)
         assert 'value="csv" x-model="fileType" checked' in html
         assert 'value="xlsx" disabled' in html
-        assert 'value="gsheet" disabled' in html
+        assert 'value="gsheet" x-model="fileType"' in html
+        assert 'name="spreadsheet_url"' in html
 
     def test_modal_requires_view_permission(self, logged_in_user, existing_assembly):
         response = logged_in_user.get(

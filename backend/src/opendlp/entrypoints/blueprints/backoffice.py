@@ -396,8 +396,9 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the dashboard export modal fragment (HTMX-loaded).
 
-    The Google Sheets option writes a tab into the assembly's source spreadsheet,
-    so it is only offered when the assembly uses a Google Sheets data source.
+    When the assembly uses a Google Sheets data source, the Google Sheets option
+    writes a tab into that source spreadsheet. Otherwise the organiser supplies a
+    destination spreadsheet URL, as in the respondents export.
     """
     dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
     try:
@@ -420,6 +421,8 @@ def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
         assembly_id=assembly_id,
         assembly_gsheet=assembly_gsheet,
         worksheet_name=worksheet_name,
+        gsheet_url=gsheet_config.url if gsheet_config else "",
+        service_account_email=get_service_account_email(),
     ), 200
 
 
@@ -466,54 +469,64 @@ def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 
 def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> ResponseReturnValue:
-    """Export the dashboard as a tab of the assembly's source spreadsheet.
+    """Export the dashboard as a tab of a Google Spreadsheet.
 
-    The destination is always the source spreadsheet, not a caller-supplied URL:
-    the export exists as the Sheets-flavoured counterpart of the CSV download for
-    assemblies whose data already lives in a sheet. Permission and not-found
-    errors propagate to the caller's handlers.
+    When the assembly's data comes from a Google Sheet, the destination is that
+    source spreadsheet — the export is the Sheets-flavoured counterpart of the
+    CSV download, kept next to the data. Otherwise the destination is a
+    caller-supplied spreadsheet URL, as in the respondents export. Permission
+    and not-found errors propagate to the caller's handlers.
     """
     uow = bootstrap.get_flask_uow()
     with uow:
         assembly_gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-        if assembly_gsheet is None:
-            flash(
-                _("Google Sheets export is only available when the assembly uses a Google Sheets data source"),
-                "error",
-            )
-            return redirect(dashboard_url)
-
         worksheet_name = request.form.get("worksheet_name", "").strip() or default_worksheet_name(
             GSheetExportKind.DASHBOARD
         )
-        # Writing clears an existing tab of that name, and the selection tabs
-        # hold the assembly's source data. Sheets tab names are case-insensitive,
-        # so compare accordingly.
-        reserved = {name.casefold() for name in assembly_gsheet.reserved_tab_names()}
-        if worksheet_name.casefold() in reserved:
-            flash(
-                _("The tab %(name)s holds the assembly's source data. Choose another tab name.", name=worksheet_name),
-                "error",
-            )
-            return redirect(dashboard_url)
+        if assembly_gsheet is not None:
+            spreadsheet_url = assembly_gsheet.url
+            # Writing clears an existing tab of that name, and the selection tabs
+            # hold the assembly's source data. Sheets tab names are case-insensitive,
+            # so compare accordingly.
+            reserved = {name.casefold() for name in assembly_gsheet.reserved_tab_names()}
+            if worksheet_name.casefold() in reserved:
+                flash(
+                    _(
+                        "The tab %(name)s holds the assembly's source data. Choose another tab name.",
+                        name=worksheet_name,
+                    ),
+                    "error",
+                )
+                return redirect(dashboard_url)
+        else:
+            spreadsheet_url = request.form.get("spreadsheet_url", "").strip()
+            if not spreadsheet_url:
+                flash(_("A spreadsheet URL is required to export to Google Sheets"), "error")
+                return redirect(dashboard_url)
 
         # The Google Sheets target is injected via an app factory (registered in
         # flask_app.py, overridable in tests) because writing to it calls the
         # real Google Sheets API, so tests substitute a fake.
         factory = current_app.extensions["gsheet_export_target_factory"]
-        target = factory(assembly_gsheet.url)
+        target = factory(spreadsheet_url)
         try:
             export_dashboard_report_to_gsheet(
                 uow,
                 current_user.id,
                 assembly_id,
-                spreadsheet_url=assembly_gsheet.url,
+                spreadsheet_url=spreadsheet_url,
                 worksheet_name=worksheet_name,
                 target=target,
             )
+        except ValueError as e:
+            # A malformed spreadsheet URL is rejected by the domain validator.
+            flash(_("Could not export to Google Sheets: %(error)s", error=str(e)), "error")
+            return redirect(dashboard_url)
         except ExportTargetError as e:
-            # The sheet could not be written — typically sharing with the service
-            # account was revoked since the spreadsheet was configured as the source.
+            # The sheet could not be written — typically it is not shared with the
+            # service account (or sharing was revoked since the spreadsheet was
+            # configured as the source), or the URL points at a sheet that does
+            # not exist.
             logger.warning(
                 "Google Sheets dashboard export failed",
                 assembly_id=str(assembly_id),
@@ -521,7 +534,9 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
                 error=str(e),
             )
             service_account_email = get_service_account_email()
-            if service_account_email:
+            if not service_account_email:
+                flash(_("Could not write to the spreadsheet. Check the URL and sharing settings."), "error")
+            elif assembly_gsheet is not None:
                 flash(
                     _(
                         "Could not write to the spreadsheet. Check that the spreadsheet still exists and "
@@ -531,7 +546,14 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
                     "error",
                 )
             else:
-                flash(_("Could not write to the spreadsheet. Check the URL and sharing settings."), "error")
+                flash(
+                    _(
+                        "Could not write to the spreadsheet. Check the URL is correct and that "
+                        "the spreadsheet is shared with %(email)s.",
+                        email=service_account_email,
+                    ),
+                    "error",
+                )
             return redirect(dashboard_url)
 
     flash(_("Dashboard exported to Google Sheets."), "success")

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-11 09:11+0200\n"
+"POT-Creation-Date: 2026-09-14 09:08+0200\n"
 "PO-Revision-Date: 2026-09-10 14:24+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1288,8 +1288,8 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:191
 #: src/opendlp/entrypoints/blueprints/backoffice.py:384
-#: src/opendlp/entrypoints/blueprints/backoffice.py:795
-#: src/opendlp/entrypoints/blueprints/backoffice.py:856
+#: src/opendlp/entrypoints/blueprints/backoffice.py:817
+#: src/opendlp/entrypoints/blueprints/backoffice.py:878
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:276
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:391
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:83
@@ -1328,12 +1328,12 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:197
 #: src/opendlp/entrypoints/blueprints/backoffice.py:375
-#: src/opendlp/entrypoints/blueprints/backoffice.py:412
-#: src/opendlp/entrypoints/blueprints/backoffice.py:457
-#: src/opendlp/entrypoints/blueprints/backoffice.py:603
-#: src/opendlp/entrypoints/blueprints/backoffice.py:650
-#: src/opendlp/entrypoints/blueprints/backoffice.py:786
-#: src/opendlp/entrypoints/blueprints/backoffice.py:847
+#: src/opendlp/entrypoints/blueprints/backoffice.py:413
+#: src/opendlp/entrypoints/blueprints/backoffice.py:460
+#: src/opendlp/entrypoints/blueprints/backoffice.py:625
+#: src/opendlp/entrypoints/blueprints/backoffice.py:672
+#: src/opendlp/entrypoints/blueprints/backoffice.py:808
+#: src/opendlp/entrypoints/blueprints/backoffice.py:869
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:282
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:397
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:568
@@ -1475,21 +1475,15 @@ msgstr ""
 msgid "An error occurred while loading the dashboard"
 msgstr "Hiba történt az irányítópult betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:409
-#: src/opendlp/entrypoints/blueprints/backoffice.py:453
+#: src/opendlp/entrypoints/blueprints/backoffice.py:410
+#: src/opendlp/entrypoints/blueprints/backoffice.py:456
 msgid "You don't have permission to export the dashboard"
 msgstr "Nincs jogosultságod az irányítópult exportálásához"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:433
+#: src/opendlp/entrypoints/blueprints/backoffice.py:436
 #, fuzzy
 msgid "Only CSV and Google Sheets exports are available for now"
 msgstr "Jelenleg csak CSV exportálás érhető el"
-
-#: src/opendlp/entrypoints/blueprints/backoffice.py:481
-msgid ""
-"Google Sheets export is only available when the assembly uses a Google "
-"Sheets data source"
-msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:495
 #, python-format
@@ -1498,7 +1492,25 @@ msgid ""
 "name."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:527
+#: src/opendlp/entrypoints/blueprints/backoffice.py:504
+#: src/opendlp/entrypoints/blueprints/respondents.py:534
+msgid "A spreadsheet URL is required to export to Google Sheets"
+msgstr "A Google Táblázatba exportáláshoz meg kell adni egy Google Táblázat URL-t"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:523
+#: src/opendlp/entrypoints/blueprints/respondents.py:557
+#, python-format
+msgid "Could not export to Google Sheets: %(error)s"
+msgstr "Nem sikerült exportálni a Google Táblázatba: %(error)s"
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:538
+#: src/opendlp/entrypoints/blueprints/respondents.py:579
+msgid "Could not write to the spreadsheet. Check the URL and sharing settings."
+msgstr ""
+"Nem sikerült írni a Google Táblázatba. Ellenőrizd az URL-t és a "
+"megosztási beállításokat."
+
+#: src/opendlp/entrypoints/blueprints/backoffice.py:542
 #, fuzzy, python-format
 msgid ""
 "Could not write to the spreadsheet. Check that the spreadsheet still "
@@ -1507,100 +1519,103 @@ msgstr ""
 "Nem sikerült írni a Google Táblázatba. Ellenőrizd, hogy az URL helyes-e, "
 "és hogy a táblázat meg van-e osztva a következővel: %(email)s."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:534
-#: src/opendlp/entrypoints/blueprints/respondents.py:579
-msgid "Could not write to the spreadsheet. Check the URL and sharing settings."
+#: src/opendlp/entrypoints/blueprints/backoffice.py:551
+#: src/opendlp/entrypoints/blueprints/respondents.py:572
+#, python-format
+msgid ""
+"Could not write to the spreadsheet. Check the URL is correct and that the"
+" spreadsheet is shared with %(email)s."
 msgstr ""
-"Nem sikerült írni a Google Táblázatba. Ellenőrizd az URL-t és a "
-"megosztási beállításokat."
+"Nem sikerült írni a Google Táblázatba. Ellenőrizd, hogy az URL helyes-e, "
+"és hogy a táblázat meg van-e osztva a következővel: %(email)s."
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:537
+#: src/opendlp/entrypoints/blueprints/backoffice.py:559
 #, fuzzy
 msgid "Dashboard exported to Google Sheets."
 msgstr "Exportálva a Google Táblázatba"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:567
+#: src/opendlp/entrypoints/blueprints/backoffice.py:589
 #: src/opendlp/entrypoints/blueprints/main.py:270
 #, python-format
 msgid "Assembly '%(title)s' updated successfully"
 msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:576
-#: src/opendlp/entrypoints/blueprints/backoffice.py:612
-#: src/opendlp/entrypoints/blueprints/backoffice.py:644
+#: src/opendlp/entrypoints/blueprints/backoffice.py:598
+#: src/opendlp/entrypoints/blueprints/backoffice.py:634
+#: src/opendlp/entrypoints/blueprints/backoffice.py:666
 #: src/opendlp/entrypoints/blueprints/main.py:279
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:585
-#: src/opendlp/entrypoints/blueprints/backoffice.py:591
+#: src/opendlp/entrypoints/blueprints/backoffice.py:607
+#: src/opendlp/entrypoints/blueprints/backoffice.py:613
 #: src/opendlp/entrypoints/blueprints/main.py:288
 #: src/opendlp/entrypoints/blueprints/main.py:296
 msgid "An error occurred while updating the assembly"
 msgstr "Hiba történt a közösségi gyűlés frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:623
+#: src/opendlp/entrypoints/blueprints/backoffice.py:645
 msgid "Please enter a valid positive number"
 msgstr "Adj meg egy érvényes pozitív számot"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:635
+#: src/opendlp/entrypoints/blueprints/backoffice.py:657
 #, python-format
 msgid "Number to select updated to %(number)s"
 msgstr "A kiválasztandók száma %(number)s értékre módosult"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:801
+#: src/opendlp/entrypoints/blueprints/backoffice.py:823
 msgid "An error occurred while loading assembly data"
 msgstr "Hiba történt a közösségi gyűlés adatainak betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:862
+#: src/opendlp/entrypoints/blueprints/backoffice.py:884
 msgid "An error occurred while loading team members"
 msgstr "Hiba történt a csapattagok betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:901
+#: src/opendlp/entrypoints/blueprints/backoffice.py:923
 #: src/opendlp/entrypoints/blueprints/main.py:361
 #, python-format
 msgid "%(user)s added to assembly with role %(role)s"
 msgstr "%(user)s hozzáadva a közösségi gyűléshez %(role)s szerepkörrel"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:908
+#: src/opendlp/entrypoints/blueprints/backoffice.py:930
 msgid "Please select a user and role"
 msgstr "Válassz ki egy felhasználót és egy szerepkört"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:914
+#: src/opendlp/entrypoints/blueprints/backoffice.py:936
 #, python-format
 msgid "Could not add user to assembly: %(error)s"
 msgstr "Nem sikerült hozzáadni a felhasználót a közösségi gyűléshez: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:923
+#: src/opendlp/entrypoints/blueprints/backoffice.py:945
 #: src/opendlp/entrypoints/blueprints/main.py:383
 msgid "You don't have permission to add users to this assembly"
 msgstr "Nincs jogosultságod felhasználókat hozzáadni ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:932
+#: src/opendlp/entrypoints/blueprints/backoffice.py:954
 #: src/opendlp/entrypoints/blueprints/main.py:392
 msgid "An error occurred while adding the user to the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűléshez adása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:952
+#: src/opendlp/entrypoints/blueprints/backoffice.py:974
 #: src/opendlp/entrypoints/blueprints/main.py:412
 #, python-format
 msgid "%(user)s removed from assembly"
 msgstr "%(user)s eltávolítva a közösségi gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:968
+#: src/opendlp/entrypoints/blueprints/backoffice.py:990
 #: src/opendlp/entrypoints/blueprints/main.py:428
 #, python-format
 msgid "Could not remove user from assembly: %(error)s"
 msgstr "Nem sikerült eltávolítani a felhasználót a közösségi gyűlésből: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:977
+#: src/opendlp/entrypoints/blueprints/backoffice.py:999
 #: src/opendlp/entrypoints/blueprints/main.py:437
 msgid "You don't have permission to remove users from this assembly"
 msgstr ""
 "Nincs jogosultságod felhasználókat eltávolítani ebből a közösségi "
 "gyűlésből"
 
-#: src/opendlp/entrypoints/blueprints/backoffice.py:986
+#: src/opendlp/entrypoints/blueprints/backoffice.py:1008
 #: src/opendlp/entrypoints/blueprints/main.py:446
 msgid "An error occurred while removing the user from the assembly"
 msgstr "Hiba történt a felhasználó közösségi gyűlésből való eltávolítása közben"
@@ -2569,24 +2584,6 @@ msgstr "Visszalépett"
 #: src/opendlp/entrypoints/blueprints/respondents.py:462
 msgid "Test submission"
 msgstr "Tesztbeküldés"
-
-#: src/opendlp/entrypoints/blueprints/respondents.py:534
-msgid "A spreadsheet URL is required to export to Google Sheets"
-msgstr "A Google Táblázatba exportáláshoz meg kell adni egy Google Táblázat URL-t"
-
-#: src/opendlp/entrypoints/blueprints/respondents.py:557
-#, python-format
-msgid "Could not export to Google Sheets: %(error)s"
-msgstr "Nem sikerült exportálni a Google Táblázatba: %(error)s"
-
-#: src/opendlp/entrypoints/blueprints/respondents.py:572
-#, python-format
-msgid ""
-"Could not write to the spreadsheet. Check the URL is correct and that the"
-" spreadsheet is shared with %(email)s."
-msgstr ""
-"Nem sikerült írni a Google Táblázatba. Ellenőrizd, hogy az URL helyes-e, "
-"és hogy a táblázat meg van-e osztva a következővel: %(email)s."
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:584
 msgid "Respondents exported to Google Sheets"
@@ -3786,7 +3783,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/assembly_view_respondent.html:302
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:87
-#: templates/backoffice/dashboard_export_modal.html:70
+#: templates/backoffice/dashboard_export_modal.html:75
 #: templates/backoffice/registration/_assets.html:243
 #: templates/backoffice/registration/_assets.html:299
 #: templates/backoffice/registration/_step_email.html:92
@@ -4635,7 +4632,7 @@ msgstr "Táblázat"
 #: templates/backoffice/assembly_dashboard.html:72
 #: templates/backoffice/assembly_respondents.html:117
 #: templates/backoffice/dashboard_export_modal.html:14
-#: templates/backoffice/dashboard_export_modal.html:71
+#: templates/backoffice/dashboard_export_modal.html:76
 #: templates/backoffice/respondents/export_modal.html:78
 msgid "Export"
 msgstr "Exportálás"
@@ -4663,8 +4660,7 @@ msgid "Data"
 msgstr "Adatok"
 
 #: templates/backoffice/assembly_data.html:41
-#: templates/backoffice/dashboard_export_modal.html:40
-#: templates/backoffice/dashboard_export_modal.html:46
+#: templates/backoffice/dashboard_export_modal.html:39
 #: templates/backoffice/respondents/export_modal.html:32
 #: templates/main/view_assembly_data.html:4
 msgid "Google Sheets"
@@ -4728,6 +4724,7 @@ msgstr ""
 "importálásához és kezeléséhez."
 
 #: templates/backoffice/assembly_data.html:98
+#: templates/backoffice/dashboard_export_modal.html:50
 #: templates/backoffice/respondents/export_modal.html:53
 #: templates/gsheets/components/view_config.html:3
 msgid "Spreadsheet URL"
@@ -5844,11 +5841,7 @@ msgstr "CSV"
 msgid "Xls"
 msgstr "Xls"
 
-#: templates/backoffice/dashboard_export_modal.html:49
-msgid "Available when the assembly uses a Google Sheets data source."
-msgstr ""
-
-#: templates/backoffice/dashboard_export_modal.html:56
+#: templates/backoffice/dashboard_export_modal.html:45
 #, fuzzy
 msgid ""
 "This writes into the assembly's source spreadsheet. Any existing data in "
@@ -5857,10 +5850,25 @@ msgstr ""
 "Ez felülírja a kiválasztott munkalap minden meglévő adatát. A táblázat "
 "többi munkalapján lévő adatok érintetlenül maradnak."
 
-#: templates/backoffice/dashboard_export_modal.html:59
+#: templates/backoffice/dashboard_export_modal.html:47
+#: templates/backoffice/respondents/export_modal.html:50
+msgid ""
+"This will overwrite any existing data in the chosen tab. Data in other "
+"tabs of the spreadsheet is left untouched."
+msgstr ""
+"Ez felülírja a kiválasztott munkalap minden meglévő adatát. A táblázat "
+"többi munkalapján lévő adatok érintetlenül maradnak."
+
+#: templates/backoffice/dashboard_export_modal.html:60
 #, fuzzy
 msgid "Worksheet / tab name"
 msgstr "Célszámok munkalap neve"
+
+#: templates/backoffice/dashboard_export_modal.html:69
+#: templates/backoffice/respondents/export_modal.html:71
+#, python-format
+msgid "Share the spreadsheet with %(email)s so it can be written to."
+msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
 
 #: templates/backoffice/edit_assembly.html:14
 #: templates/main/edit_assembly.html:24
@@ -7111,22 +7119,9 @@ msgstr "Célhely"
 msgid "CSV download"
 msgstr "CSV letöltés"
 
-#: templates/backoffice/respondents/export_modal.html:50
-msgid ""
-"This will overwrite any existing data in the chosen tab. Data in other "
-"tabs of the spreadsheet is left untouched."
-msgstr ""
-"Ez felülírja a kiválasztott munkalap minden meglévő adatát. A táblázat "
-"többi munkalapján lévő adatok érintetlenül maradnak."
-
 #: templates/backoffice/respondents/export_modal.html:62
 msgid "Tab name"
 msgstr "Munkalap neve"
-
-#: templates/backoffice/respondents/export_modal.html:71
-#, python-format
-msgid "Share the spreadsheet with %(email)s so it can be written to."
-msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
 
 #: templates/backoffice/targets/add_target_modal.html:20
 msgid ""
