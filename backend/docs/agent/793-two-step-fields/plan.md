@@ -197,7 +197,10 @@ place.
    skeleton modal, plus the nudge chain (step 1 save → "now arrange your
    registration page"; step 2 → skeleton/HTML with the staleness warning).
 
-## 5. Chunk E — navigation and the task-list hub
+## 5. Chunk E — navigation and the task-list hub ✅ done
+
+> Implementation note: the old `/respondent-schema` route needs no redirect —
+> it *is* the step-2 page, reworked in place; only the tab entry went away.
 
 1. Registration tab landing (`assembly_registration.html` +
    `backoffice_registration.py`): prepend the task-list — three entries

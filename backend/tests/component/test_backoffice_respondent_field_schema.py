@@ -194,17 +194,17 @@ class TestDeleteField:
 
 
 class TestFieldsTab:
-    def test_fields_tab_appears_in_assembly_tab_bar(self, logged_in_admin, existing_assembly):
+    def test_the_tab_bar_carries_no_fields_entry(self, logged_in_admin, existing_assembly):
+        """The fields editor is reached through the Registration workflow, not its own tab."""
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv")
         assert response.status_code == 200
-        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
+        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() not in response.data
 
-    def test_fields_tab_is_never_disabled(self, logged_in_admin, existing_assembly):
-        # Visit the Data tab before any data source is chosen — the Fields tab
-        # must still be a live link, not a disabled placeholder.
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data")
+    def test_the_old_route_still_serves_the_fields_editor(self, logged_in_admin, existing_assembly):
+        # Bookmarks and in-flight links keep working; the page is step 2 now.
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
-        assert f"/assembly/{existing_assembly.id}/respondent-schema".encode() in response.data
+        assert b"Registration fields" in response.data
 
 
 class TestFieldTypeAndOptions:

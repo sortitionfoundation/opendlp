@@ -24,5 +24,57 @@ ABOUTME: One row per page with status, publish date and a per-row actions menu
     </div>
 {% endblock %}
 {% block page_content %}
+    {% if setup_summary is none %}
+        <section class="mb-6">
+            <p class="text-body-md" style="color: var(--color-secondary-text);">
+                {{ _("Fields are defined by your Google Sheets spreadsheet — manage them there.") }}
+            </p>
+        </section>
+    {% else %}
+        <section class="mb-8">
+            <h2 class="text-display-sm mb-3" style="color: var(--color-headings);">{{ _("Set up registration") }}</h2>
+            <ol class="flex flex-col gap-2" style="list-style: none; padding: 0;">
+                <li class="rounded-lg p-4 flex items-center justify-between gap-4 flex-wrap"
+                    style="background-color: var(--color-tables-cards);
+                           border: 1px solid var(--color-borders-dividers);">
+                    <div>
+                        <a class="text-heading-md"
+                           style="color: var(--color-primary-action);"
+                           href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}">{{ _("1. Target data sources") }}</a>
+                        <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                            {% if setup_summary["targets_total"] == 0 %}
+                                {{ _("No targets yet — add them on the Targets tab first.") }}
+                            {% else %}
+                                {{ _("%(covered)s of %(total)s targets have a data source", covered=setup_summary["targets_covered"], total=setup_summary["targets_total"]) }}
+                                {% if setup_summary["targets_stale"] %}
+                                    · <span style="color: var(--color-warning-text);">{{ _("%(count)s out of step with the target values", count=setup_summary["targets_stale"]) }}</span>
+                                {% endif %}
+                            {% endif %}
+                        </p>
+                    </div>
+                </li>
+                <li class="rounded-lg p-4 flex items-center justify-between gap-4 flex-wrap"
+                    style="background-color: var(--color-tables-cards);
+                           border: 1px solid var(--color-borders-dividers);">
+                    <div>
+                        <a class="text-heading-md"
+                           style="color: var(--color-primary-action);"
+                           href="{{ url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) }}">{{ _("2. Registration fields") }}</a>
+                        <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                            {{ _("%(count)s questions on the registration form", count=setup_summary["fields_on_form"]) }}
+                        </p>
+                    </div>
+                </li>
+                <li class="rounded-lg p-4"
+                    style="background-color: var(--color-tables-cards);
+                           border: 1px solid var(--color-borders-dividers);">
+                    <span class="text-heading-md" style="color: var(--color-headings);">{{ _("3. Registration pages") }}</span>
+                    <p class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                        {{ _("Author the page HTML below — generate its skeleton from your fields in the page editor.") }}
+                    </p>
+                </li>
+            </ol>
+        </section>
+    {% endif %}
     {{ registration_page_list(assembly, page_rows) }}
 {% endblock %}

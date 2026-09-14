@@ -31,6 +31,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageNotReady,
     RegistrationPageStatus,
 )
+from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage
 from opendlp.domain.uploads import human_size
 from opendlp.entrypoints.blueprints.registration import (
     registration_url,
@@ -89,6 +90,7 @@ from opendlp.service_layer.registration_page_service import (
     update_registration_page,
     update_registration_page_html,
 )
+from opendlp.service_layer.target_source_service import TargetSourceState, target_source_status
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 
@@ -237,6 +239,25 @@ def _page_rows(
     return [_page_row(page, assembly_id, deletable_ids) for page in pages]
 
 
+def _setup_summary(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, nav: Any) -> dict[str, Any] | None:
+    """Status lines for the registration set-up task list, or None for gsheet assemblies.
+
+    A gsheet assembly's fields are its spreadsheet columns, so the two field
+    set-up steps don't apply and the template shows a one-liner instead.
+    """
+    if nav.data_source == "gsheet" and nav.gsheet:
+        return None
+    statuses = target_source_status(uow, current_user.id, assembly_id)
+    fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
+    on_form = sum(1 for f in fields if not f.is_derived and f.on_registration_page != FieldOnRegistrationPage.NO)
+    return {
+        "targets_total": len(statuses),
+        "targets_covered": sum(1 for s in statuses if s.state != TargetSourceState.NONE),
+        "targets_stale": sum(1 for s in statuses if s.stale),
+        "fields_on_form": on_form,
+    }
+
+
 @backoffice_registration_bp.route("/assembly/<uuid:assembly_id>/registration")
 @login_required
 def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -254,6 +275,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
             pages = list_registration_pages(uow, current_user.id, assembly_id)
             deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
+            setup_summary = _setup_summary(uow, assembly_id, nav)
         page_rows = _page_rows(pages, assembly_id, deletable_ids)
 
         return render_template(
@@ -265,6 +287,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
             page_rows=page_rows,
+            setup_summary=setup_summary,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(
@@ -336,6 +359,12 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             # needed here too — they form the (inert) backdrop behind the dialog.
             all_pages = list_registration_pages(uow, current_user.id, assembly_id)
             deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
+
+            # The authored HTML doesn't follow the field schema automatically, so
+            # warn when any field changed after this HTML was last saved.
+            fields_changed_after_save = any(
+                f.updated_at > html.updated_at for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)
+            )
         page_rows = _page_rows(all_pages, assembly_id, deletable_ids)
 
         # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
@@ -376,6 +405,7 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             short_url_prefix=short_url_prefix(),
             page_rows=page_rows,
             page_takeover=True,
+            fields_changed_after_save=fields_changed_after_save,
         ), 200
     except RegistrationPageNotFoundError:
         # An edited or removed slug: land the user on the list to pick a page.
