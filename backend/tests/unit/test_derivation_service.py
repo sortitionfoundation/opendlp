@@ -783,6 +783,33 @@ class TestSourceFieldProtection:
         stored = uow.respondent_field_definitions.get(derived.id)
         assert stored.derivation_config["mapping"] == {"White British": "White"}
 
+    def test_replacing_source_options_wholesale_drops_stale_mapping_keys(self, uow):
+        user, assembly, source, derived = self._small_mapping_setup(uow)
+
+        update_field(
+            uow,
+            user.id,
+            assembly.id,
+            source.id,
+            options=[ChoiceOption(value="White British"), ChoiceOption(value="Asian")],
+        )
+
+        stored = uow.respondent_field_definitions.get(derived.id)
+        assert stored.derivation_config["mapping"] == {"White British": "White"}
+
+    def test_replacing_source_options_that_empties_a_mapping_is_refused(self, uow):
+        user, assembly, source, derived = self._small_mapping_setup(uow)
+
+        with pytest.raises(FieldDefinitionConflictError, match="ethnicity_group"):
+            update_field(uow, user.id, assembly.id, source.id, options=[ChoiceOption(value="Asian")])
+
+        stored = uow.respondent_field_definitions.get(derived.id)
+        assert stored.derivation_config["mapping"] == {"White British": "White", "White Irish": "White"}
+        assert [o.value for o in uow.respondent_field_definitions.get(source.id).options] == [
+            "White British",
+            "White Irish",
+        ]
+
     def test_removing_the_last_mapped_source_option_is_refused(self, uow):
         user, assembly, source, derived = self._small_mapping_setup(uow)
         remove_choice_option(uow, user.id, assembly.id, source.id, "White Irish")
