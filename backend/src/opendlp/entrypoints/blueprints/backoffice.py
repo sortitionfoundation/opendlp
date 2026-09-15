@@ -9,7 +9,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
+from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExportTarget
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.assembly_export_gsheet import default_worksheet_name
 from opendlp.domain.value_objects import AssemblyRole, GSheetExportKind
@@ -28,6 +28,7 @@ from opendlp.entrypoints.forms import (
     EditAssemblyGSheetForm,
     UploadTargetsCsvForm,
 )
+from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
 from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
@@ -472,32 +473,14 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
     The destination is always a caller-supplied spreadsheet URL, as in the
     respondents export — an assembly whose data source is a Google Sheet has
     no OpenDLP data to build a dashboard from, so there is no
-    source-spreadsheet special case. Permission and not-found errors propagate
-    to the caller's handlers.
+    source-spreadsheet special case. The shared flow handles the credentials
+    guard, the URL requirement and the error flashes; permission and
+    not-found errors propagate to the caller's handlers.
     """
-    service_account_email = get_service_account_email()
-    if not service_account_email:
-        # The modal disables the option in this state; reaching here means a
-        # hand-crafted POST or credentials removed since the modal rendered.
-        flash(_("Google Sheets export is unavailable: no Google service account is configured."), "error")
-        return redirect(dashboard_url)
 
-    spreadsheet_url = request.form.get("spreadsheet_url", "").strip()
-    worksheet_name = request.form.get("worksheet_name", "").strip() or default_worksheet_name(
-        GSheetExportKind.DASHBOARD
-    )
-    if not spreadsheet_url:
-        flash(_("A spreadsheet URL is required to export to Google Sheets"), "error")
-        return redirect(dashboard_url)
-
-    # The Google Sheets target is injected via an app factory (registered in
-    # flask_app.py, overridable in tests) because writing to it calls the
-    # real Google Sheets API, so tests substitute a fake.
-    factory = current_app.extensions["gsheet_export_target_factory"]
-    target = factory(spreadsheet_url)
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        try:
+    def export(spreadsheet_url: str, worksheet_name: str, target: AbstractGSheetExportTarget) -> None:
+        uow = bootstrap.get_flask_uow()
+        with uow:
             export_dashboard_report_to_gsheet(
                 uow,
                 current_user.id,
@@ -506,33 +489,14 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
                 worksheet_name=worksheet_name,
                 target=target,
             )
-        except ValueError as e:
-            # A malformed spreadsheet URL is rejected by the domain validator.
-            flash(_("Could not export to Google Sheets: %(error)s", error=str(e)), "error")
-            return redirect(dashboard_url)
-        except ExportTargetError as e:
-            # The sheet could not be written — typically it is not shared with the
-            # service account, or the URL points at a sheet that does not exist.
-            logger.warning(
-                "Google Sheets dashboard export failed",
-                assembly_id=str(assembly_id),
-                user_id=str(current_user.id),
-                error=str(e),
-            )
-            # The entry guard ensures a service account is configured, so the
-            # flash can always name the address the sheet must be shared with.
-            flash(
-                _(
-                    "Could not write to the spreadsheet. Check the URL is correct and that "
-                    "the spreadsheet is shared with %(email)s.",
-                    email=service_account_email,
-                ),
-                "error",
-            )
-            return redirect(dashboard_url)
 
-    flash(_("Dashboard exported to Google Sheets."), "success")
-    return redirect(dashboard_url)
+    return run_gsheet_export_flow(
+        redirect_url=dashboard_url,
+        export=export,
+        success_message=_("Dashboard exported to Google Sheets."),
+        log_event="Google Sheets dashboard export failed",
+        log_context={"assembly_id": str(assembly_id), "user_id": str(current_user.id)},
+    )
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/edit", methods=["GET", "POST"])

@@ -4,7 +4,7 @@ ABOUTME: File type selector — CSV and Google Sheets always; Xls arrives later
 #}
 {% from "backoffice/components/modal.html" import modal %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/gsheet_export_fields.html" import gsheet_export_fields %}
 
 {# The shared modal() component supplies the isOpen/canClose/close/closeIfAllowed
    contract the modal() macro expects (see the respondents export modal). The
@@ -51,34 +51,11 @@ ABOUTME: File type selector — CSV and Google Sheets always; Xls arrives later
             </fieldset>
 
             <div x-show="fileType === 'gsheet'" x-cloak class="flex flex-col gap-3">
-                {{ alert(_("This will overwrite any existing data in the chosen tab. Data in other tabs of the spreadsheet is left untouched."), variant="warning", floating=true) }}
-                <div class="flex flex-col gap-1">
-                    <label for="dashboard-export-url" class="text-body-md font-medium" style="color: var(--color-headings);">
-                        {{ _("Spreadsheet URL") }}
-                    </label>
-                    {# :disabled while hidden — an invalid value in a display:none url input
-                       would otherwise fail native form validation invisibly and silently
-                       block the CSV submit. #}
-                    <input id="dashboard-export-url" type="url" name="spreadsheet_url"
-                           :disabled="fileType !== 'gsheet'"
-                           value="{{ gsheet_url }}"
-                           class="px-3 py-2 rounded-lg text-body-md"
-                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label for="dashboard-export-tab" class="text-body-md font-medium" style="color: var(--color-headings);">
-                        {{ _("Worksheet / tab name") }}
-                    </label>
-                    <input id="dashboard-export-tab" type="text" name="worksheet_name"
-                           value="{{ worksheet_name }}"
-                           class="px-3 py-2 rounded-lg text-body-md"
-                           style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
-                </div>
-                {% if service_account_email %}
-                    <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                        {{ _("Share the spreadsheet with %(email)s so it can be written to.", email=service_account_email) }}
-                    </p>
-                {% endif %}
+                {{ gsheet_export_fields("dashboard-export",
+                "fileType !== 'gsheet'",
+                url_value=gsheet_url,
+                worksheet_value=worksheet_name,
+                service_account_email=service_account_email) }}
             </div>
 
             <div class="flex justify-end gap-2 pt-2">

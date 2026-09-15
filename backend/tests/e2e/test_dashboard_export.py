@@ -82,10 +82,11 @@ class TestDashboardGSheetExportSmoke:
     @pytest.fixture(autouse=True)
     def _service_account_configured(self, monkeypatch):
         """The gsheet option is gated on a configured service account."""
-        monkeypatch.setattr(
+        for target in (
             "opendlp.entrypoints.blueprints.backoffice.get_service_account_email",
-            lambda: "sheets-writer@example.iam.gserviceaccount.com",
-        )
+            "opendlp.entrypoints.gsheet_export_flow.get_service_account_email",
+        ):
+            monkeypatch.setattr(target, lambda: "sheets-writer@example.iam.gserviceaccount.com")
 
     def test_modal_always_asks_for_a_spreadsheet_url(self, logged_in_admin, existing_assembly, assembly_with_gsheet):
         # The destination is always caller-supplied — a gsheet-sourced assembly
@@ -191,7 +192,7 @@ class TestDashboardGSheetExportSmoke:
         self, logged_in_admin, existing_assembly, postgres_session_factory, monkeypatch
     ):
         _seed_gender_targets(postgres_session_factory, existing_assembly.id)
-        monkeypatch.setattr("opendlp.entrypoints.blueprints.backoffice.get_service_account_email", lambda: "")
+        monkeypatch.setattr("opendlp.entrypoints.gsheet_export_flow.get_service_account_email", lambda: "")
         captured = []
         logged_in_admin.application.extensions["gsheet_export_target_factory"] = _fake_target_factory(captured)
 

@@ -7,12 +7,12 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
+from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExportTarget
 from opendlp.config import get_max_csv_upload_bytes, get_max_csv_upload_mb
 from opendlp.domain.respondent_field_schema import CHOICE_TYPES, GROUP_DISPLAY_ORDER, GROUP_LABELS, FieldType
 from opendlp.domain.respondents import _UNSET as _RESPONDENT_UNSET
@@ -25,6 +25,7 @@ from opendlp.entrypoints.edit_respondent_form import (
     radio_or_none_to_bool,
     radio_to_bool,
 )
+from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     CSVUploadStatus,
@@ -527,27 +528,13 @@ def _run_gsheet_export(
     status_filter: list[RespondentStatus] | None,
     respondents_url: str,
 ) -> ResponseReturnValue:
-    """Export to Google Sheets, then flash the resulting sheet URL."""
-    service_account_email = get_service_account_email()
-    if not service_account_email:
-        # The modal disables the option in this state; reaching here means a
-        # hand-crafted POST or credentials removed since the modal rendered.
-        flash(_("Google Sheets export is unavailable: no Google service account is configured."), "error")
-        return redirect(respondents_url)
+    """Export to Google Sheets via the shared flow, then flash the outcome.
 
-    spreadsheet_url = request.form.get("spreadsheet_url", "").strip()
-    worksheet_name = request.form.get("worksheet_name", "").strip()
-    if not spreadsheet_url:
-        flash(_("A spreadsheet URL is required to export to Google Sheets"), "error")
-        return redirect(respondents_url)
+    The direct link to the exported worksheet is saved on the export config and
+    shown next to the Respondents heading, so the raw URL is not flashed.
+    """
 
-    # The Google Sheets target is injected via an app factory (registered in
-    # flask_app.py, overridable in tests) because writing to it calls the real
-    # Google Sheets API, so tests substitute a fake. The CSV target needs no such
-    # seam — see the comment in export_respondents_csv.
-    factory = current_app.extensions["gsheet_export_target_factory"]
-    target = factory(spreadsheet_url)
-    try:
+    def export(spreadsheet_url: str, worksheet_name: str, target: AbstractGSheetExportTarget) -> None:
         uow = bootstrap.get_flask_uow()
         with uow:
             export_respondents_to_gsheet(
@@ -559,35 +546,14 @@ def _run_gsheet_export(
                 worksheet_name=worksheet_name,
                 target=target,
             )
-    except ValueError as e:
-        # A malformed spreadsheet URL is rejected by the domain validator.
-        flash(_("Could not export to Google Sheets: %(error)s", error=str(e)), "error")
-        return redirect(respondents_url)
-    except ExportTargetError as e:
-        # The sheet could not be written — typically it is not shared with the
-        # service account, or the URL points at a sheet that does not exist.
-        logger.warning(
-            "Google Sheets export failed",
-            assembly_id=str(assembly_id),
-            user_id=str(current_user.id),
-            error=str(e),
-        )
-        # The entry guard ensures a service account is configured, so the
-        # flash can always name the address the sheet must be shared with.
-        flash(
-            _(
-                "Could not write to the spreadsheet. Check the URL is correct and that "
-                "the spreadsheet is shared with %(email)s.",
-                email=service_account_email,
-            ),
-            "error",
-        )
-        return redirect(respondents_url)
 
-    # The direct link to the exported worksheet is saved on the export config and
-    # shown next to the Respondents heading, so we no longer flash the raw URL.
-    flash(_("Respondents exported to Google Sheets"), "success")
-    return redirect(respondents_url)
+    return run_gsheet_export_flow(
+        redirect_url=respondents_url,
+        export=export,
+        success_message=_("Respondents exported to Google Sheets"),
+        log_event="Google Sheets export failed",
+        log_context={"assembly_id": str(assembly_id), "user_id": str(current_user.id)},
+    )
 
 
 @respondents_bp.route("/assembly/<uuid:assembly_id>/respondents")
