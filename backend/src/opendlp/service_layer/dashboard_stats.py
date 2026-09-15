@@ -14,6 +14,7 @@ from opendlp.adapters.tabular_export import (
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet, default_worksheet_name
 from opendlp.domain.respondents import normalise_field_name
 from opendlp.domain.targets import percentage_of
+from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import (
     COUNTED_RESPONDENT_STATUSES,
     HEADLINE_RESPONDENT_STATUSES,
@@ -429,6 +430,11 @@ def export_dashboard_report_to_gsheet(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
+    # Validate the destination URL BEFORE writing: gspread's URL parsing is laxer
+    # than the domain validator, so validating only at config-save time (inside
+    # save_export_gsheet_config) would let the write clear a tab of a sheet whose
+    # URL is then rejected — a destructive write reported as a failure.
+    GoogleSpreadsheetURLValidator().validate_str(spreadsheet_url.strip())
     worksheet_name = worksheet_name.strip() or default_worksheet_name(EXPORT_KIND)
 
     # Write first so the target's result_title/result_url are populated; only

@@ -143,6 +143,9 @@ class TestDashboardGSheetExportSmoke:
         )
 
         assert "Could not export to Google Sheets" in response.get_data(as_text=True)
+        # The URL is validated before the write: a rejected URL must not have
+        # touched the destination spreadsheet.
+        assert not captured or not captured[0][1].writes
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assert (
