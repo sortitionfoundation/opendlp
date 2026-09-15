@@ -529,8 +529,17 @@ def update_respondent(
         attributes=attributes,
     )
 
+    # A derived value already on the respondent was written by the system, not
+    # supplied by anyone, so an edit recomputes from the source outright: a
+    # source edited to something that cannot derive falls back rather than
+    # keeping the stale bracket or region.
     field_definitions = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-    apply_derivations(respondent, field_definitions, load_mapping_lookups(uow, field_definitions))
+    apply_derivations(
+        respondent,
+        field_definitions,
+        load_mapping_lookups(uow, field_definitions),
+        keep_supplied_on_fallback=False,
+    )
 
 
 def add_respondent_comment(
