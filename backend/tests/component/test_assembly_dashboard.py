@@ -336,6 +336,9 @@ class TestTheExportButton:
         assert 'value="xlsx" disabled' in html
         assert 'value="gsheet" x-model="fileType"' in html
         assert 'name="spreadsheet_url"' in html
+        # the url input is disabled while hidden, so a stale invalid value cannot
+        # silently block the CSV submit via native form validation
+        assert ":disabled=\"fileType !== 'gsheet'\"" in html
 
     def test_modal_requires_view_permission(self, logged_in_user, existing_assembly):
         response = logged_in_user.get(

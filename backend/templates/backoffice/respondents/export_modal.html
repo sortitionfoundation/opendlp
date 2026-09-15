@@ -62,7 +62,11 @@ ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the exp
                     <label for="export-url" class="text-body-md font-medium" style="color: var(--color-headings);">
                         {{ _("Spreadsheet URL") }}
                     </label>
+                    {# :disabled while hidden — an invalid value in a display:none url input
+                       would otherwise fail native form validation invisibly and silently
+                       block the CSV submit. #}
                     <input id="export-url" type="url" name="spreadsheet_url"
+                           :disabled="destination !== 'gsheet'"
                            value="{{ gsheet_config.url if gsheet_config else '' }}"
                            class="px-3 py-2 rounded-lg text-body-md"
                            style="background-color: var(--color-page-background); border: 1px solid var(--color-borders-dividers); color: var(--color-body-text);">
