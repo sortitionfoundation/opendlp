@@ -356,9 +356,13 @@ def build_dashboard_table(report: DashboardReport) -> TabularData:
     headers = [
         _("Target"),
         _("Value"),
-        # " %" concatenated outside gettext: a lone "%" in a msgid trips newstyle
-        # gettext's printf formatting (see the i18n rules in CLAUDE.md).
-        _("Population") + " %",
+        # A trailing "%" inside the msgid is safe here, matching the sibling
+        # headers below ("Respondents %", …): babel does not flag it as a
+        # python-format string, and the Python-side gettext leaves the string
+        # unformatted when no parameters are passed. (A "%%" msgid would render
+        # literally from Python — that spelling only works in templates, where
+        # Jinja's newstyle gettext always runs printf formatting.)
+        _("Population %"),
         _("Target min"),
         _("Target max"),
         _("Respondents"),
