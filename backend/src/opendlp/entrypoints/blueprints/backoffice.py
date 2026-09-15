@@ -475,6 +475,13 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
     source-spreadsheet special case. Permission and not-found errors propagate
     to the caller's handlers.
     """
+    service_account_email = get_service_account_email()
+    if not service_account_email:
+        # The modal disables the option in this state; reaching here means a
+        # hand-crafted POST or credentials removed since the modal rendered.
+        flash(_("Google Sheets export is unavailable: no Google service account is configured."), "error")
+        return redirect(dashboard_url)
+
     spreadsheet_url = request.form.get("spreadsheet_url", "").strip()
     worksheet_name = request.form.get("worksheet_name", "").strip() or default_worksheet_name(
         GSheetExportKind.DASHBOARD
@@ -512,18 +519,16 @@ def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> 
                 user_id=str(current_user.id),
                 error=str(e),
             )
-            service_account_email = get_service_account_email()
-            if service_account_email:
-                flash(
-                    _(
-                        "Could not write to the spreadsheet. Check the URL is correct and that "
-                        "the spreadsheet is shared with %(email)s.",
-                        email=service_account_email,
-                    ),
-                    "error",
-                )
-            else:
-                flash(_("Could not write to the spreadsheet. Check the URL and sharing settings."), "error")
+            # The entry guard ensures a service account is configured, so the
+            # flash can always name the address the sheet must be shared with.
+            flash(
+                _(
+                    "Could not write to the spreadsheet. Check the URL is correct and that "
+                    "the spreadsheet is shared with %(email)s.",
+                    email=service_account_email,
+                ),
+                "error",
+            )
             return redirect(dashboard_url)
 
     flash(_("Dashboard exported to Google Sheets."), "success")
@@ -658,7 +663,7 @@ def render_assembly_data_page(
 
     Raises the same exceptions as the service functions it calls.
     """
-    google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
+    google_service_account_email = get_service_account_email()
 
     nav_uow = bootstrap.get_flask_uow()
     with nav_uow:

@@ -34,10 +34,20 @@ ABOUTME: File type selector — CSV and Google Sheets always; Xls arrives later
                     <input type="radio" name="file_type" value="xlsx" disabled>
                     {{ _("Xls") }}
                 </label>
-                <label class="flex items-center gap-2 text-body-md">
-                    <input type="radio" name="file_type" value="gsheet" x-model="fileType">
-                    {{ _("Google Sheets") }}
-                </label>
+                {% if service_account_email %}
+                    <label class="flex items-center gap-2 text-body-md">
+                        <input type="radio" name="file_type" value="gsheet" x-model="fileType">
+                        {{ _("Google Sheets") }}
+                    </label>
+                {% else %}
+                    {# No service account configured on this install — nothing could
+                       write the sheet, so the option is off rather than failing later. #}
+                    <label class="flex items-center gap-2 text-body-md" style="color: var(--color-secondary-text);">
+                        <input type="radio" name="file_type" value="gsheet" disabled>
+                        {{ _("Google Sheets") }}
+                        <span class="text-body-sm">{{ _("Available when a Google service account is configured.") }}</span>
+                    </label>
+                {% endif %}
             </fieldset>
 
             <div x-show="fileType === 'gsheet'" x-cloak class="flex flex-col gap-3">

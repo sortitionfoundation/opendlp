@@ -27,10 +27,20 @@ ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the exp
                     <input type="radio" name="destination" value="csv" x-model="destination" checked>
                     {{ _("CSV download") }}
                 </label>
-                <label class="flex items-center gap-2 text-body-md">
-                    <input type="radio" name="destination" value="gsheet" x-model="destination">
-                    {{ _("Google Sheets") }}
-                </label>
+                {% if service_account_email %}
+                    <label class="flex items-center gap-2 text-body-md">
+                        <input type="radio" name="destination" value="gsheet" x-model="destination">
+                        {{ _("Google Sheets") }}
+                    </label>
+                {% else %}
+                    {# No service account configured on this install — nothing could
+                       write the sheet, so the option is off rather than failing later. #}
+                    <label class="flex items-center gap-2 text-body-md" style="color: var(--color-secondary-text);">
+                        <input type="radio" name="destination" value="gsheet" disabled>
+                        {{ _("Google Sheets") }}
+                        <span class="text-body-sm">{{ _("Available when a Google service account is configured.") }}</span>
+                    </label>
+                {% endif %}
             </fieldset>
 
             <div class="flex flex-col gap-1">

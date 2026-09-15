@@ -4,6 +4,8 @@ ABOUTME: Real Flask + PostgreSQL round trip for the modal fragment, CSV download
 import csv
 from io import StringIO
 
+import pytest
+
 from opendlp.adapters.tabular_export import ExportTargetError
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import GSheetExportKind
@@ -77,6 +79,14 @@ def _fake_target_factory(captured):
 
 
 class TestDashboardGSheetExportSmoke:
+    @pytest.fixture(autouse=True)
+    def _service_account_configured(self, monkeypatch):
+        """The gsheet option is gated on a configured service account."""
+        monkeypatch.setattr(
+            "opendlp.entrypoints.blueprints.backoffice.get_service_account_email",
+            lambda: "sheets-writer@example.iam.gserviceaccount.com",
+        )
+
     def test_modal_always_asks_for_a_spreadsheet_url(self, logged_in_admin, existing_assembly, assembly_with_gsheet):
         # The destination is always caller-supplied — a gsheet-sourced assembly
         # gets the same form as any other.
@@ -177,16 +187,13 @@ class TestDashboardGSheetExportSmoke:
                 is None
             )
 
-    def test_write_failure_without_a_service_account_email_flashes_the_generic_message(
+    def test_run_is_rejected_without_a_service_account(
         self, logged_in_admin, existing_assembly, postgres_session_factory, monkeypatch
     ):
         _seed_gender_targets(postgres_session_factory, existing_assembly.id)
         monkeypatch.setattr("opendlp.entrypoints.blueprints.backoffice.get_service_account_email", lambda: "")
-
-        def failing_factory(url):
-            return FakeGSheetExportTarget(error=ExportTargetError("no access"))
-
-        logged_in_admin.application.extensions["gsheet_export_target_factory"] = failing_factory
+        captured = []
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = _fake_target_factory(captured)
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/run",
@@ -194,4 +201,14 @@ class TestDashboardGSheetExportSmoke:
             follow_redirects=True,
         )
 
-        assert "Check the URL and sharing settings" in response.get_data(as_text=True)
+        assert "Google Sheets export is unavailable" in response.get_data(as_text=True)
+        assert not captured
+
+    def test_modal_disables_gsheet_without_a_service_account(self, logged_in_admin, existing_assembly, monkeypatch):
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.backoffice.get_service_account_email", lambda: "")
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/dashboard/export/modal")
+
+        body = response.get_data(as_text=True)
+        assert '<input type="radio" name="file_type" value="gsheet" disabled>' in body
+        assert "Available when a Google service account is configured." in body
