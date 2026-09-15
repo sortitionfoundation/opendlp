@@ -545,6 +545,25 @@ class TestUpdateDerivation:
         assert r1.attributes["age_bracket"] == "18-39"
         assert report.changed == 1
 
+    def test_large_mapping_fallback_change_keeps_outputs_and_swaps_fallback(self, uow):
+        user, assembly = _seed(uow)
+        _add_source(uow, assembly, field_key="postcode", field_type=FieldType.TEXT)
+        field, _ = create_derived_field(
+            uow,
+            user.id,
+            assembly.id,
+            field_key="region",
+            label="Region",
+            source_field_key="postcode",
+            rule=LargeMappingRule(),
+            output_values=["London", "North"],
+        )
+
+        updated, _ = update_derivation(uow, user.id, assembly.id, field.id, rule=LargeMappingRule(fallback="Unknown"))
+
+        assert [o.value for o in updated.options] == ["London", "North", "Unknown"]
+        assert updated.derivation_config == {"fallback": "Unknown"}
+
 
 class TestDerivationsDependingOn:
     def test_finds_dependents_by_source_key(self, uow):

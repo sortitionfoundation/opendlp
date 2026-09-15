@@ -400,10 +400,12 @@ def update_derivation(
 
     if isinstance(rule, LargeMappingRule) and output_values is None:
         # A rule edit (say, a new fallback) should not force re-declaring the
-        # output list — the existing options carry it.
-        options = list(field.options or [])
-    else:
-        options = _options_for(rule, output_values)
+        # output list — the existing options carry it, minus the old fallback
+        # so the new one takes its place.
+        assert field.derivation_type is not None  # _get_derived_field guarantees a derived field
+        old_rule = rule_from_field(field.derivation_type, field.derivation_config or {})
+        output_values = [o.value for o in field.options or [] if o.value != old_rule.fallback]
+    options = _options_for(rule, output_values)
     field.set_derivation(
         derivation_type=_DERIVATION_TYPE_FOR_RULE[type(rule)],
         derivation_config=rule.to_config(),
