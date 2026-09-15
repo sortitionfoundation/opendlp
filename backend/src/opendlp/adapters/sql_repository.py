@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import and_, delete, distinct, func, or_, select, update
+from sqlalchemy import and_, delete, distinct, func, insert, or_, select, update
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
@@ -1540,6 +1540,11 @@ class SqlAlchemyRespondentFieldDefinitionRepository(SqlAlchemyRepository, Respon
         return result.rowcount  # type: ignore[attr-defined, no-any-return]
 
 
+# Rows per INSERT statement when loading a mapping table; keeps each statement's
+# parameter list a sane size without making a 220k-row upload thousands of round trips.
+_MAPPING_INSERT_CHUNK = 5_000
+
+
 class SqlAlchemyRespondentFieldMappingEntryRepository(SqlAlchemyRepository, RespondentFieldMappingEntryRepository):
     """SQLAlchemy implementation of RespondentFieldMappingEntryRepository."""
 
@@ -1547,7 +1552,20 @@ class SqlAlchemyRespondentFieldMappingEntryRepository(SqlAlchemyRepository, Resp
         self.session.add(item)
 
     def bulk_add(self, items: list[RespondentFieldMappingEntry]) -> None:
-        self.session.add_all(items)
+        # A lookup table can run to hundreds of thousands of rows, so this is a
+        # Core INSERT of plain dicts rather than add_all: nothing is tracked in
+        # the identity map and Postgres receives one multi-row statement per
+        # chunk. The entries are never read back through the session here.
+        if not items:
+            return
+        rows = [
+            {"id": item.id, "field_id": item.field_id, "lookup_key": item.lookup_key, "output_value": item.output_value}
+            for item in items
+        ]
+        for start in range(0, len(rows), _MAPPING_INSERT_CHUNK):
+            self.session.execute(
+                insert(orm.respondent_field_mapping_entries), rows[start : start + _MAPPING_INSERT_CHUNK]
+            )
 
     def get(self, item_id: uuid.UUID) -> RespondentFieldMappingEntry | None:
         return (
