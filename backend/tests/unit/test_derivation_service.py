@@ -198,7 +198,7 @@ class TestCreateDerivedField:
         user, assembly = _seed(uow)
         _add_source(uow, assembly, field_key="postcode", field_type=FieldType.TEXT)
 
-        with pytest.raises(FieldDefinitionConflictError, match="cannot be derived from"):
+        with pytest.raises(FieldDefinitionConflictError, match="cannot derive from a Text field"):
             create_derived_field(
                 uow,
                 user.id,

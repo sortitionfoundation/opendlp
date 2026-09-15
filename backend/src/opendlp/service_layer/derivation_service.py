@@ -28,6 +28,7 @@ from opendlp.domain.respondent_derivation import (
 )
 from opendlp.domain.respondent_field_schema import (
     CHOICE_TYPES,
+    FIELD_TYPE_LABELS,
     DerivationType,
     FieldType,
     RespondentFieldDefinition,
@@ -146,9 +147,9 @@ def _validate_source(source: RespondentFieldDefinition | None, source_field_key:
     if source.effective_field_type not in compatible:
         raise FieldDefinitionConflictError(
             _l(
-                "A '%(source_type)s' field cannot be derived from with this rule — it needs one of: %(allowed)s",
-                source_type=source.effective_field_type.value,
-                allowed=", ".join(sorted(t.value for t in compatible)),
+                "This rule cannot derive from a %(source_type)s field. It needs one of: %(allowed)s",
+                source_type=FIELD_TYPE_LABELS[source.effective_field_type],
+                allowed=", ".join(sorted(str(FIELD_TYPE_LABELS[t]) for t in compatible)),
             )
         )
 

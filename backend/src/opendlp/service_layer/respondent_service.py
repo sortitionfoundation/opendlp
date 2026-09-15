@@ -38,6 +38,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     update_schema_from_headers,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.translations import gettext as _
 
 # Internal, export-only columns recognised and skipped on import. They mirror
 # the extra columns build_respondent_table appends, so an exported file
@@ -228,7 +229,7 @@ def import_respondents_from_rows(  # noqa: C901
         if derived_defs:
             outcome = apply_derivations(respondent, field_definitions, lookups)
             errors.extend(
-                f"Row {row_number}: supplied '{key}' was replaced by its derived value"
+                _("Row %(row)s: supplied '%(key)s' was replaced by its derived value", row=row_number, key=key)
                 for key in outcome.overwrote_supplied
             )
         respondents.append(respondent)
