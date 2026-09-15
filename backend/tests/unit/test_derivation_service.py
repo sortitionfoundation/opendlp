@@ -22,6 +22,7 @@ from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import derivation_service
 from opendlp.service_layer.derivation_service import (
+    UNMATCHED_SAMPLE_SIZE,
     apply_derivations,
     create_derived_field,
     derivations_depending_on,
@@ -32,8 +33,11 @@ from opendlp.service_layer.derivation_service import (
     upload_large_mapping,
 )
 from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
     FieldDefinitionConflictError,
+    FieldDefinitionNotFoundError,
     InsufficientPermissions,
+    UserNotFoundError,
 )
 from opendlp.service_layer.respondent_field_schema_service import (
     add_choice_option,
@@ -152,6 +156,51 @@ class TestCreateDerivedField:
                 outsider.id,
                 assembly.id,
                 field_key="age_bracket",
+                label="Age bracket",
+                source_field_key="date_of_birth",
+                rule=AGE_RULE,
+            )
+
+    def test_unknown_user_is_rejected(self, uow):
+        _user, assembly = _seed(uow)
+        _add_source(uow, assembly)
+
+        with pytest.raises(UserNotFoundError):
+            create_derived_field(
+                uow,
+                uuid.uuid4(),
+                assembly.id,
+                field_key="age_bracket",
+                label="Age bracket",
+                source_field_key="date_of_birth",
+                rule=AGE_RULE,
+            )
+
+    def test_unknown_assembly_is_rejected(self, uow):
+        user, _assembly = _seed(uow)
+
+        with pytest.raises(AssemblyNotFoundError):
+            create_derived_field(
+                uow,
+                user.id,
+                uuid.uuid4(),
+                field_key="age_bracket",
+                label="Age bracket",
+                source_field_key="date_of_birth",
+                rule=AGE_RULE,
+            )
+
+    @pytest.mark.parametrize("blank", ["", "   "])
+    def test_rejects_a_blank_field_key(self, uow, blank):
+        user, assembly = _seed(uow)
+        _add_source(uow, assembly)
+
+        with pytest.raises(FieldDefinitionConflictError, match="cannot be empty"):
+            create_derived_field(
+                uow,
+                user.id,
+                assembly.id,
+                field_key=blank,
                 label="Age bracket",
                 source_field_key="date_of_birth",
                 rule=AGE_RULE,
@@ -331,6 +380,23 @@ class TestDerivedValueFor:
         assert derived_value_for(field, AGE_RULE, source, "1990") == "30-54"
         assert derived_value_for(field, AGE_RULE, source, "ninety") == "UNKNOWN"
 
+    def test_small_mapping_source(self):
+        assembly_id = uuid.uuid4()
+        rule = SmallMappingRule(mapping={"White Irish": "White"})
+        source = RespondentFieldDefinition(
+            assembly_id=assembly_id,
+            field_key="ethnicity",
+            label="Ethnicity",
+            group=RespondentFieldGroup.ABOUT_YOU,
+            sort_order=10,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="White Irish")],
+        )
+        field = self._derived(assembly_id, "ethnicity", rule, DerivationType.SMALL_MAPPING)
+        assert derived_value_for(field, rule, source, "  White Irish  ") == "White"
+        assert derived_value_for(field, rule, source, "Asian") == "UNKNOWN"
+        assert derived_value_for(field, rule, source, None) == "UNKNOWN"
+
     def test_large_mapping_requires_a_lookup(self):
         assembly_id = uuid.uuid4()
         rule = LargeMappingRule()
@@ -408,6 +474,37 @@ class TestApplyDerivations:
         apply_derivations(respondent, schema, {})
 
         assert respondent.attributes["age_bracket"] == "UNKNOWN"
+
+    def test_source_absent_from_the_schema_falls_back(self):
+        """A derived_from naming a field this schema does not carry cannot derive.
+
+        It must not raise: the write paths hand in whatever schema they loaded.
+        """
+        assembly_id = uuid.uuid4()
+        _source, derived = self._schema_and_field(assembly_id)
+        respondent = Respondent(
+            assembly_id=assembly_id,
+            external_id="R1",
+            attributes={"date_of_birth": "1990-06-15"},
+        )
+
+        outcome = apply_derivations(respondent, [derived], {})
+
+        assert respondent.attributes["age_bracket"] == "UNKNOWN"
+        assert outcome.derived["age_bracket"] == "UNKNOWN"
+        # There is no source value to report as unmatched - the source is missing,
+        # not unreadable.
+        assert outcome.fallback_sources == {}
+
+    def test_source_absent_from_the_schema_keeps_a_supplied_value(self):
+        assembly_id = uuid.uuid4()
+        _source, derived = self._schema_and_field(assembly_id)
+        respondent = Respondent(assembly_id=assembly_id, external_id="R1", attributes={"age_bracket": "22-29"})
+
+        outcome = apply_derivations(respondent, [derived], {})
+
+        assert respondent.attributes["age_bracket"] == "22-29"
+        assert outcome.kept_supplied == ["age_bracket"]
 
     def test_config_the_rule_rejects_is_skipped_not_raised(self):
         assembly_id = uuid.uuid4()
@@ -513,6 +610,35 @@ class TestRecomputeDerivedField:
 
         assert report.completed_selection_runs == 1
 
+    def test_unknown_field_id_is_not_found(self, uow):
+        user, assembly = _seed(uow)
+
+        with pytest.raises(FieldDefinitionNotFoundError):
+            recompute_derived_field(uow, user.id, assembly.id, uuid.uuid4())
+
+    def test_a_field_belonging_to_another_assembly_is_not_found(self, uow):
+        user, assembly = _seed(uow)
+        field = self._create(uow, user, assembly)
+        other = Assembly(title="Other Assembly", number_to_select=20)
+        uow.assemblies.add(other)
+
+        with pytest.raises(FieldDefinitionNotFoundError):
+            recompute_derived_field(uow, user.id, other.id, field.id)
+
+    def test_unmatched_sample_is_deduplicated_and_capped(self, uow):
+        user, assembly = _seed(uow)
+        # More distinct unreadable values than the sample holds, each seen twice.
+        for i in range(UNMATCHED_SAMPLE_SIZE + 5):
+            _add_respondent(uow, assembly, f"A{i}", {"date_of_birth": f"rubbish-{i}"})
+            _add_respondent(uow, assembly, f"B{i}", {"date_of_birth": f"rubbish-{i}"})
+        field = self._create(uow, user, assembly)
+
+        report = recompute_derived_field(uow, user.id, assembly.id, field.id)
+
+        assert report.fell_back == 2 * (UNMATCHED_SAMPLE_SIZE + 5)
+        assert len(report.unmatched_sample) == UNMATCHED_SAMPLE_SIZE
+        assert len(set(report.unmatched_sample)) == UNMATCHED_SAMPLE_SIZE
+
     def test_rejects_non_derived_field(self, uow):
         user, assembly = _seed(uow)
         source = _add_source(uow, assembly)
@@ -544,6 +670,28 @@ class TestUpdateDerivation:
         r1 = uow.respondents.get_by_external_id(assembly.id, "R1")
         assert r1.attributes["age_bracket"] == "18-39"
         assert report.changed == 1
+
+    def test_a_source_that_no_longer_fits_the_rule_is_refused(self, uow):
+        """The source is re-validated on every rule edit, not just at creation.
+
+        ``update_field`` refuses to retype a source field, so the state is built
+        here by writing the source directly - what a hand-edited row would leave.
+        """
+        user, assembly = _seed(uow)
+        source = _add_source(uow, assembly)
+        field, _ = create_derived_field(
+            uow,
+            user.id,
+            assembly.id,
+            field_key="age_bracket",
+            label="Age bracket",
+            source_field_key="date_of_birth",
+            rule=AGE_RULE,
+        )
+        source.field_type = FieldType.TEXT
+
+        with pytest.raises(FieldDefinitionConflictError, match="cannot derive from a Text field"):
+            update_derivation(uow, user.id, assembly.id, field.id, rule=AGE_RULE)
 
     def test_large_mapping_fallback_change_keeps_outputs_and_swaps_fallback(self, uow):
         user, assembly = _seed(uow)
@@ -694,6 +842,87 @@ class TestUploadLargeMapping:
 
         entries = uow.respondent_field_mapping_entries.list_for_field(field.id)
         assert [e.lookup_key for e in entries] == ["SW1A1AA"]
+
+    def test_rejects_a_field_that_is_not_a_large_mapping(self, uow):
+        user, assembly = _seed(uow)
+        _add_source(uow, assembly)
+        field, _ = create_derived_field(
+            uow,
+            user.id,
+            assembly.id,
+            field_key="age_bracket",
+            label="Age bracket",
+            source_field_key="date_of_birth",
+            rule=AGE_RULE,
+        )
+
+        with pytest.raises(FieldDefinitionConflictError, match="does not use a large mapping"):
+            upload_large_mapping(uow, user.id, assembly.id, field.id, csv_content="postcode,region\nSW1A 1AA,London\n")
+
+    @pytest.mark.parametrize("content", ["", "\n\n", "  \n , \n"])
+    def test_rejects_an_empty_file(self, uow, content):
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+
+        with pytest.raises(FieldDefinitionConflictError, match="empty"):
+            upload_large_mapping(uow, user.id, assembly.id, field.id, csv_content=content)
+
+    def test_rejects_a_single_column_file(self, uow):
+        """One header matches, but positional fallback needs two columns to fall back to."""
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+
+        with pytest.raises(FieldDefinitionConflictError, match="two columns"):
+            upload_large_mapping(uow, user.id, assembly.id, field.id, csv_content="postcode\nSW1A 1AA\n")
+
+    def test_skips_rows_too_short_to_carry_both_columns(self, uow):
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+
+        report = upload_large_mapping(
+            uow,
+            user.id,
+            assembly.id,
+            field.id,
+            csv_content="postcode,region\nSW1A 1AA,London\nM1 1AE\n",
+        )
+
+        assert report.row_count == 1
+        entries = uow.respondent_field_mapping_entries.list_for_field(field.id)
+        assert [e.lookup_key for e in entries] == ["SW1A1AA"]
+
+    def test_skips_rows_with_a_blank_key_or_value(self, uow):
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+
+        report = upload_large_mapping(
+            uow,
+            user.id,
+            assembly.id,
+            field.id,
+            csv_content="postcode,region\n  ,London\nM1 1AE,   \nSW1A 1AA,London\n",
+        )
+
+        assert report.row_count == 1
+        entries = uow.respondent_field_mapping_entries.list_for_field(field.id)
+        assert [e.lookup_key for e in entries] == ["SW1A1AA"]
+
+    def test_duplicate_keys_are_capped_at_the_sample_size(self, uow):
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+        repeated = "".join(f"K{i},London\nK{i},North\n" for i in range(UNMATCHED_SAMPLE_SIZE + 5))
+
+        report = upload_large_mapping(
+            uow,
+            user.id,
+            assembly.id,
+            field.id,
+            csv_content=f"postcode,region\n{repeated}",
+        )
+
+        assert report.row_count == UNMATCHED_SAMPLE_SIZE + 5
+        assert len(report.duplicate_keys) == UNMATCHED_SAMPLE_SIZE
+        assert report.duplicate_keys == sorted(report.duplicate_keys)
 
     def test_enforces_the_row_cap(self, uow, monkeypatch):
         user, assembly = _seed(uow)
