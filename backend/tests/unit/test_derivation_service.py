@@ -36,6 +36,7 @@ from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
 )
 from opendlp.service_layer.respondent_field_schema_service import (
+    add_choice_option,
     delete_field,
     remove_choice_option,
     update_choice_option,
@@ -408,6 +409,37 @@ class TestApplyDerivations:
 
         assert respondent.attributes["age_bracket"] == "UNKNOWN"
 
+    def test_config_the_rule_rejects_is_skipped_not_raised(self):
+        assembly_id = uuid.uuid4()
+        source = RespondentFieldDefinition(
+            assembly_id=assembly_id,
+            field_key="ethnicity",
+            label="Ethnicity",
+            group=RespondentFieldGroup.ABOUT_YOU,
+            sort_order=10,
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="White British")],
+        )
+        derived = RespondentFieldDefinition(
+            assembly_id=assembly_id,
+            field_key="ethnicity_group",
+            label="Ethnicity group",
+            group=RespondentFieldGroup.DERIVED,
+            sort_order=10,
+            is_derived=True,
+            derived_from=["ethnicity"],
+            derivation_type=DerivationType.SMALL_MAPPING,
+            derivation_config={"mapping": {}, "fallback": "UNKNOWN"},
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="UNKNOWN")],
+        )
+        respondent = Respondent(assembly_id=assembly_id, external_id="R1", attributes={"ethnicity": "White British"})
+
+        outcome = apply_derivations(respondent, [source, derived], {})
+
+        assert outcome.derived == {}
+        assert "ethnicity_group" not in respondent.attributes
+
     def test_recompute_mode_overwrites_even_on_fallback(self):
         assembly_id = uuid.uuid4()
         schema = self._schema_and_field(assembly_id)
@@ -750,3 +782,15 @@ class TestSourceFieldProtection:
 
         stored = uow.respondent_field_definitions.get(derived.id)
         assert stored.derivation_config["mapping"] == {"White British": "White"}
+
+    def test_removing_the_last_mapped_source_option_is_refused(self, uow):
+        user, assembly, source, derived = self._small_mapping_setup(uow)
+        remove_choice_option(uow, user.id, assembly.id, source.id, "White Irish")
+        add_choice_option(uow, user.id, assembly.id, source.id, "Asian")
+
+        with pytest.raises(FieldDefinitionConflictError, match="ethnicity_group"):
+            remove_choice_option(uow, user.id, assembly.id, source.id, "White British")
+
+        stored = uow.respondent_field_definitions.get(derived.id)
+        assert stored.derivation_config["mapping"] == {"White British": "White"}
+        assert [o.value for o in uow.respondent_field_definitions.get(source.id).options] == ["White British", "Asian"]

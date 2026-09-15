@@ -523,6 +523,31 @@ def _rename_small_mapping_keys(
         )
 
 
+def _refuse_removing_last_mapped_key(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    source_field_key: str,
+    value: str,
+) -> None:
+    """A small mapping cannot be left empty, so its last source option stays put.
+
+    Mirrors the "keep at least one option" rule on the source itself: the
+    organiser changes the derivation first, then tidies the source.
+    """
+    for dependent in derivations_depending_on(uow, assembly_id, source_field_key):
+        if dependent.derivation_type != DerivationType.SMALL_MAPPING or dependent.derivation_config is None:
+            continue
+        mapping = dependent.derivation_config.get("mapping", {})
+        if value in mapping and len(mapping) == 1:
+            raise FieldDefinitionConflictError(
+                _l(
+                    "'%(value)s' is the last option mapped by '%(key)s'. Change that derivation first.",
+                    value=value,
+                    key=dependent.field_key,
+                )
+            )
+
+
 def _drop_small_mapping_keys(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
@@ -564,6 +589,7 @@ def remove_choice_option(
         raise FieldDefinitionNotFoundError(f"Option '{value}' not found on field {field_id}")
     if not remaining:
         raise FieldDefinitionConflictError(_l("A choice field must keep at least one option"))
+    _refuse_removing_last_mapped_key(uow, assembly_id, field.field_key, value)
     field.update(options=remaining)
     # A mapping entry keyed on the removed option can never match again; drop
     # it so the config mirrors the source's real option set.

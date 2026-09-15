@@ -286,7 +286,11 @@ def apply_derivations(
             continue
         if field.derivation_type is None or field.derivation_config is None or not field.derived_from:
             continue  # a malformed row must not break a registration submission
-        derived, fallback, raw_text = _resolve_derived_value(respondent, field, defs_by_key, lookups)
+        try:
+            rule = rule_from_field(field.derivation_type, field.derivation_config)
+        except ValueError:
+            continue  # a stored config the rule now rejects is malformed too; same rule applies
+        derived, fallback, raw_text = _resolve_derived_value(respondent, field, rule, defs_by_key, lookups)
 
         existing = str(respondent.attributes.get(field.field_key, "") or "")
         if derived == fallback and keep_supplied_on_fallback and existing and existing != fallback:
@@ -310,13 +314,11 @@ def apply_derivations(
 def _resolve_derived_value(
     respondent: Respondent,
     field: RespondentFieldDefinition,
+    rule: DerivationRule,
     defs_by_key: Mapping[str, RespondentFieldDefinition],
     lookups: Mapping[uuid.UUID, Callable[[str], str | None]],
 ) -> tuple[str, str, str]:
     """Returns (derived value, the rule's fallback, the raw source text)."""
-    assert field.derivation_type is not None
-    assert field.derivation_config is not None
-    rule = rule_from_field(field.derivation_type, field.derivation_config)
     source_def = defs_by_key.get((field.derived_from or [""])[0])
     if source_def is None:
         return rule.fallback, rule.fallback, ""
