@@ -14,7 +14,7 @@ ABOUTME: Renders a Chart.js pie (built-in legend + hover tooltips) from segment 
 "var(--color-success-400)",
 "var(--color-warning-400)"
 ] %}
-{% macro pie_chart_card(title, segments=none, message="", size=150, title_tag="p", gaps=false) %}
+{% macro pie_chart_card(title, segments=none, message="", size=150, title_tag="p", gaps=false, legend=true) %}
     {#
     Pie chart card (stateless markup; the chart itself is drawn client-side).
 
@@ -35,13 +35,19 @@ ABOUTME: Renders a Chart.js pie (built-in legend + hover tooltips) from segment 
       message: text shown beneath the skeleton chart when there is no data. It is an
                incoming parameter so the surrounding context decides what to say
                (e.g. "Shows respondent data once registration starts.").
-      size: approximate pie diameter in px (default 150). The chart area is size + 40
-            so the legend fits beneath the circle; the skeleton centres its circle in
-            the same box so card heights match across states.
+      size: pie diameter in px (default 150). With legend=true the chart area is
+            size + 40 so Chart.js can fit a one-row legend beneath the circle
+            (more rows shrink the pie); with legend=false it is exactly size, so
+            circles match across cards. The skeleton uses the same box height.
       title_tag: "p" (default) or "h4" — pass "h4" when the card sits under section
                  headings so the document outline stays clean.
       gaps: draw a thin card-coloured divider between slices (and on the skeleton's
             halves), as in the original Figma atom. Default false: slices sit flush.
+      legend: draw Chart.js's built-in per-card legend (default true). Pass
+              legend=false when a row of cards shares one pie_chart_legend()
+              rendered by the surrounding layout — every card in a dashboard
+              section has the same value labels, so one legend serves the row
+              and the pies stay full-size.
 
     Data present:
       {{ pie_chart_card("Gender", segments=[
@@ -75,14 +81,16 @@ ABOUTME: Renders a Chart.js pie (built-in legend + hover tooltips) from segment 
                 {% set _ = ns.colors.append(seg.get("color") or _pie_palette[loop.index0 % (_pie_palette | length)]) %}
                 {% set _ = ns.tooltips.append("%s %d%% (%s)" | format(seg.label, (seg.count / total * 100) | round | int, seg.get("display") or seg.count)) %}
             {% endfor %}
-            {# The canvas fills this box; Chart.js lays the pie and legend out inside it. #}
-            <div class="relative w-full" style="height: {{ size + 40 }}px;">
+            {# The canvas fills this box; Chart.js lays the pie (and, when enabled,
+               the legend) out inside it. #}
+            <div class="relative w-full" style="height: {{ size + (40 if legend else 0) }}px;">
                 <canvas data-pie-chart='{{ {
                                         "labels": segments | map(attribute="label") | list,
                                         "values": segments | map(attribute="count") | list,
                                         "colors": ns.colors,
                                         "tooltips": ns.tooltips,
                                         "gaps": gaps,
+                                        "legend": legend,
                                         } | tojson }}'
                         role="img"
                         aria-label="{{ title }}: {{ ns.tooltips | join(', ') }}"></canvas>
@@ -92,7 +100,7 @@ ABOUTME: Renders a Chart.js pie (built-in legend + hover tooltips) from segment 
             <div class="w-full">
                 {# Same box height as the data state's chart area, so a row of cards
                    keeps a level bottom edge whether or not each one has data. #}
-                <div class="flex items-center justify-center w-full" style="height: {{ size + 40 }}px;">
+                <div class="flex items-center justify-center w-full" style="height: {{ size + (40 if legend else 0) }}px;">
                     {# Two grey halves, mirroring the data pie's boundary treatment for the
                        chosen `gaps` setting: divided by a card-coloured line, or flush.
                        Either way the 50% (bottom) and 0/100 (top, on the seam) boundaries
@@ -126,5 +134,26 @@ ABOUTME: Renders a Chart.js pie (built-in legend + hover tooltips) from segment 
                 <p class="text-body-sm w-full" style="color: var(--color-headings); word-break: break-word;">{{ message }}</p>
             {% endif %}
         {% endif %}
+    </div>
+{% endmacro %}
+{% macro pie_chart_legend(segments) %}
+    {#
+    One legend for a whole row of pie cards.
+
+    Every card in a dashboard section shares the same value labels in the same
+    order, so the cards render with legend=false and the layout shows this once
+    beneath the row — the pies stay full-size instead of each ceding canvas
+    height to its own (possibly wrapping) legend. Colours follow the same
+    palette cycling as the cards, so chip N matches slice N everywhere.
+    #}
+    <div class="flex flex-wrap gap-x-4 gap-y-2 items-center justify-center mt-3">
+        {% for seg in segments %}
+            {% set color = seg.get("color") or _pie_palette[loop.index0 % (_pie_palette | length)] %}
+            <span class="flex gap-1.5 items-center text-caption" style="color: var(--color-headings);">
+                <span aria-hidden="true"
+                      style="width: 10px; height: 10px; border-radius: 2px; background-color: {{ color }};"></span>
+                {{ seg.label }}
+            </span>
+        {% endfor %}
     </div>
 {% endmacro %}

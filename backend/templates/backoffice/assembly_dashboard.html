@@ -5,7 +5,7 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% from "backoffice/components/pie_chart_card.html" import pie_chart_card %}
+{% from "backoffice/components/pie_chart_card.html" import pie_chart_card, pie_chart_legend %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell %}
 {% from "backoffice/components/icons.html" import icon_pie_chart %}
 {% from "backoffice/components/button.html" import button %}
@@ -143,9 +143,15 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
                 <div class="grid gap-4"
                      style="grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));">
                     {% for card in section.cards %}
-                        {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4") }}
+                        {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4", legend=false) }}
                     {% endfor %}
                 </div>
+                {# One legend under the whole row: every card in the section shares the
+                   same value labels, so the cards render legend-free and full-size. #}
+                {% set legend_card = section.cards | selectattr("segments") | first %}
+                {% if legend_card %}
+                    {{ pie_chart_legend(legend_card.segments) }}
+                {% endif %}
             </section>
         {% endfor %}
         {# Draws every canvas the pie_chart_card macro rendered above. #}

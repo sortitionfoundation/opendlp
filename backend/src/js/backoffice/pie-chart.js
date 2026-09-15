@@ -44,6 +44,9 @@ function buildChart(canvas) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
+          // legend: false → the layout renders one shared legend for the row
+          // (see pie_chart_legend in the pie_chart_card component).
+          display: config.legend !== false,
           position: "bottom",
           labels: { color: textColor, boxWidth: 10, boxHeight: 10 },
         },
@@ -63,7 +66,15 @@ function buildChart(canvas) {
 
 function init() {
   Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
-  document.querySelectorAll("canvas[data-pie-chart]").forEach(buildChart);
+  document.querySelectorAll("canvas[data-pie-chart]").forEach((canvas) => {
+    // Guarded per canvas: one bad payload or Chart.js throw must not blank
+    // every later card on the page.
+    try {
+      buildChart(canvas);
+    } catch (error) {
+      console.error("pie-chart: failed to render a card", error);
+    }
+  });
 }
 
 if (document.readyState === "loading") {
