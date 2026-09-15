@@ -38,6 +38,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.respondents import Respondent, normalise_field_name
 from opendlp.domain.validators import parse_date_text
 from opendlp.domain.value_objects import SelectionRunStatus
+from opendlp.service_layer.constants import SORT_ORDER_STEP
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     FieldDefinitionConflictError,
@@ -362,7 +363,7 @@ def create_derived_field(
     assert source is not None  # _validate_source raised otherwise
 
     schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-    next_sort_order = max((f.sort_order for f in schema if f.group == group), default=0) + 10
+    next_sort_order = max((f.sort_order for f in schema if f.group == group), default=0) + SORT_ORDER_STEP
     field = RespondentFieldDefinition(
         assembly_id=assembly_id,
         field_key=field_key,
