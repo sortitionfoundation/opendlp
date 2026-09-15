@@ -21,6 +21,7 @@ def _row(
     pool_count: int,
     shortfall: int,
     *,
+    population_pct: float | None = None,
     target_pct: float = 50.0,
     selected_count: int = 0,
     confirmed_count: int = 0,
@@ -29,6 +30,7 @@ def _row(
         value=value,
         target_min=10,
         target_max=12,
+        population_pct=population_pct,
         target_pct=target_pct,
         pool_count=pool_count,
         available_count=pool_count,
@@ -43,20 +45,47 @@ def _gender_rows() -> list[CategoryValueRow]:
     return [_row("Male", pool_count=8, shortfall=2), _row("Female", pool_count=14, shortfall=0)]
 
 
-def test_one_section_per_category_with_four_dataset_cards():
+def test_one_section_per_category_with_five_dataset_cards():
     sections = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=_gender_rows())))
 
     assert len(sections) == 1
     assert sections[0]["name"] == "Gender"
     cards = sections[0]["cards"]
-    assert len(cards) == 4
+    assert len(cards) == 5
+    assert [card["title"] for card in cards] == ["Population", "Target", "Respondents", "Selected", "Confirmed"]
+
+
+def test_population_card_is_weighted_by_the_share_and_displays_it():
+    rows = [
+        _row("Male", pool_count=8, shortfall=0, population_pct=70.0),
+        _row("Female", pool_count=14, shortfall=0, population_pct=30.0),
+    ]
+    cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=rows)))[0]["cards"]
+
+    assert cards[0]["segments"] == [
+        {"label": "Male", "count": 70.0, "display": "70.0%"},
+        {"label": "Female", "count": 30.0, "display": "30.0%"},
+    ]
+
+
+def test_population_card_is_a_skeleton_unless_every_value_has_a_share():
+    # A pie of only the values that happen to have a share would misrepresent the
+    # split, so one missing share means no pie at all.
+    rows = [
+        _row("Male", pool_count=8, shortfall=0, population_pct=70.0),
+        _row("Female", pool_count=14, shortfall=0),
+    ]
+    cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=rows)))[0]["cards"]
+
+    assert cards[0]["segments"] is None
+    assert cards[0]["message"]  # non-empty skeleton message
 
 
 def test_target_card_segments_are_weighted_by_pct_and_display_the_band():
     cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=_gender_rows())))[0]["cards"]
 
-    # the slice weight is the service's target_pct; the legend shows the band as entered
-    assert cards[0]["segments"] == [
+    # the slice weight is the band-implied target_pct; the legend shows the band as entered
+    assert cards[1]["segments"] == [
         {"label": "Male", "count": 50.0, "display": "10–12"},
         {"label": "Female", "count": 50.0, "display": "10–12"},
     ]
@@ -65,7 +94,7 @@ def test_target_card_segments_are_weighted_by_pct_and_display_the_band():
 def test_respondents_card_segments_use_pool_counts():
     cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=_gender_rows())))[0]["cards"]
 
-    assert cards[1]["segments"] == [
+    assert cards[2]["segments"] == [
         {"label": "Male", "count": 8},
         {"label": "Female", "count": 14},
     ]
@@ -75,7 +104,7 @@ def test_selected_and_confirmed_cards_are_skeletons_when_there_is_none_yet():
     # _gender_rows has zero selected/confirmed, so those datasets stay skeletons.
     cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=_gender_rows())))[0]["cards"]
 
-    for card in (cards[2], cards[3]):
+    for card in (cards[3], cards[4]):
         assert card["segments"] is None
         assert card["message"]  # non-empty skeleton message
 
@@ -87,8 +116,8 @@ def test_selected_and_confirmed_cards_populate_from_real_counts():
     ]
     cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=rows)))[0]["cards"]
 
-    assert cards[2]["segments"] == [{"label": "Male", "count": 3}, {"label": "Female", "count": 1}]
-    assert cards[3]["segments"] == [{"label": "Male", "count": 1}, {"label": "Female", "count": 1}]
+    assert cards[3]["segments"] == [{"label": "Male", "count": 3}, {"label": "Female", "count": 1}]
+    assert cards[4]["segments"] == [{"label": "Male", "count": 1}, {"label": "Female", "count": 1}]
 
 
 def test_respondents_card_is_a_skeleton_when_the_pool_is_empty():
@@ -96,9 +125,9 @@ def test_respondents_card_is_a_skeleton_when_the_pool_is_empty():
     cards = _build_dashboard_sections(_report(DashboardCategory(name="Gender", rows=rows)))[0]["cards"]
 
     # Target still populates from the entered targets; Respondents has no data yet.
-    assert cards[0]["segments"] == [{"label": "Male", "count": 50.0, "display": "10–12"}]
-    assert cards[1]["segments"] is None
-    assert cards[1]["message"]
+    assert cards[1]["segments"] == [{"label": "Male", "count": 50.0, "display": "10–12"}]
+    assert cards[2]["segments"] is None
+    assert cards[2]["message"]
 
 
 class TestBuildDashboardTables:
@@ -109,12 +138,16 @@ class TestBuildDashboardTables:
         assert tables[0]["name"] == "Gender"
         assert [r["value"] for r in tables[0]["rows"]] == ["Male", "Female"]
 
-    def test_target_uses_the_service_pct_and_the_band_as_entered(self):
-        rows = _build_dashboard_tables(_report(DashboardCategory(name="Gender", rows=_gender_rows())))[0]["rows"]
-        male = rows[0]
+    def test_population_shows_the_share_or_a_dash_and_target_the_band_as_entered(self):
+        rows_in = [
+            _row("Male", pool_count=8, shortfall=0, population_pct=70.0),
+            _row("Female", pool_count=14, shortfall=0),
+        ]
+        male, female = _build_dashboard_tables(_report(DashboardCategory(name="Gender", rows=rows_in)))[0]["rows"]
 
-        # target_pct comes straight from the row; the count column shows the min-max band
-        assert male["target_pct"] == "50.0"
+        assert male["population_pct"] == "70.0"
+        # A dash rather than the band-implied share: no silent fallback.
+        assert female["population_pct"] == "—"
         assert male["target_count"] == "10–12"
 
     def test_respondent_percentages_are_each_value_share_of_the_pool(self):

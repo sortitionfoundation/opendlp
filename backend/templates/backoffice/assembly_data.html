@@ -99,7 +99,7 @@ ABOUTME: Displays data source selection and data management for assemblies
                 type="url",
                 value=gsheet_form.url.data or "",
                 placeholder="https://docs.google.com/spreadsheets/d/...",
-                hint=_("Enter the full URL of your Google Sheets spreadsheet.") ~ (" " ~ _("Ensure it is shared with:") ~ " " ~ google_service_account_email if google_service_account_email and google_service_account_email != "UNKNOWN" else ""),
+                hint=_("Enter the full URL of your Google Sheets spreadsheet.") ~ (" " ~ _("Ensure it is shared with:") ~ " " ~ google_service_account_email if google_service_account_email else ""),
                 required=true,
                 readonly=readonly,
                 link_url=gsheet_form.url.data if gsheet and readonly else "",

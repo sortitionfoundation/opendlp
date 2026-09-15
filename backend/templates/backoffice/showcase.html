@@ -182,4 +182,6 @@
                  style="scroll-margin-top: 6rem">{{ interactivity_section() }}</div>
         </div>
     </div>
+    {# Draws the pie chart card section's canvases. #}
+    <script nonce="{{ csp_nonce }}" src="{{ url_for('static', filename='backoffice/js/pie-chart.js', v=static_hashes('backoffice/js/pie-chart.js')) }}"></script>
 {% endblock %}

@@ -75,17 +75,20 @@ def get_opendlp_version() -> str:
 def get_service_account_email() -> str:
     """
     Find the email address for the service account used for google spreadsheet access
+
+    Returns the empty string when no service account is configured (missing or
+    unreadable credentials file), so callers can truth-test the result.
     """
     auth_json_file = config.get_google_auth_json_path()
     if not auth_json_file.is_file():
-        return "UNKNOWN"
+        return ""
     # we need this to not fail, so we just swallow all exceptions
     with contextlib.suppress(Exception), Path.open(auth_json_file) as file:
         credentials = json.load(file)
         client_email = credentials["client_email"]
         assert isinstance(client_email, str)
         return client_email
-    return "UNKNOWN"
+    return ""
 
 
 def service_account_email_problem() -> str:
