@@ -191,7 +191,7 @@ def health_check() -> ResponseReturnValue:
     if fail_on_warning:
         if ms_expiry_status in ["EXPIRED", "WARNING", "UNKNOWN"]:
             ms_expiry_ok = False
-        if service_account == "UNKNOWN":
+        if not service_account:
             service_account_ok = False
 
     # Determine overall health status
@@ -202,14 +202,16 @@ def health_check() -> ResponseReturnValue:
         "database_ok": db_ok,
         "user_count": user_count,
         "celery_worker_running": celery_ok,
-        "service_account_email": service_account,
+        # get_service_account_email() returns "" when unconfigured; the health
+        # API keeps its documented "UNKNOWN" sentinel for monitoring consumers.
+        "service_account_email": service_account or "UNKNOWN",
         "version": version,
         "oauth_microsoft_days_to_expiry": ms_days_to_expiry,
         "oauth_microsoft_expiry_status": ms_expiry_status,
     }
 
     # do some debugging, but only if there is an issue
-    if service_account == "UNKNOWN":
+    if not service_account:
         response_data["service_account_email_problem"] = service_account_email_problem()
 
     # Return appropriate status code
