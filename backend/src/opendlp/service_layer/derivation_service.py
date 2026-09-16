@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from io import StringIO
+from itertools import islice
 from typing import Any
 
 from opendlp.domain.respondent_derivation import (
@@ -526,7 +527,11 @@ def upload_large_mapping(
     if field.derivation_type != DerivationType.LARGE_MAPPING:
         raise FieldDefinitionConflictError(_l("Field '%(key)s' does not use a large mapping", key=field.field_key))
 
-    rows = [row for row in csv.reader(StringIO(csv_content)) if any(cell.strip() for cell in row)]
+    non_blank_rows = (row for row in csv.reader(StringIO(csv_content)) if any(cell.strip() for cell in row))
+    # Stop parsing once the file is known to be over the cap: a header, the cap
+    # itself and one row beyond it are all the check below needs. An oversized
+    # file therefore reports the cap plus one rather than its true row count.
+    rows = list(islice(non_blank_rows, MAX_MAPPING_ROWS + 2))
     if not rows:
         raise FieldDefinitionConflictError(_l("The mapping file is empty"))
     headers, data_rows = rows[0], rows[1:]
