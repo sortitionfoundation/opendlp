@@ -624,6 +624,65 @@ class TestFieldModal:
         assert "already exists" in body
         assert 'value="Custom notes"' in body
 
+    def test_add_via_modal_duplicate_option_values_return_422(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Two rows with the same value would derive and count as one, so the save is refused."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Preferred contact",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Phone", "Email", "Phone"],
+                "option_help": ["", "", ""],
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        body = response.get_data(as_text=True)
+        assert "must be different" in body
+        assert "appears more than once" in body
+
+        assert not any(
+            f.field_key == "preferred_contact" for f in _get_schema(fake_store, admin_user, existing_assembly)
+        )
+
+    def test_edit_via_modal_duplicate_option_values_return_422(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Notes",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Yes", "Yes"],
+                "option_help": ["", ""],
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        assert "appears more than once" in response.get_data(as_text=True)
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
+        assert field.field_type == FieldType.TEXT  # nothing was saved
+
     def test_add_option_action_re_renders_the_form_with_an_extra_row(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):

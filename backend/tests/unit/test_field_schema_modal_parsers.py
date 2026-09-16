@@ -1,11 +1,13 @@
 """ABOUTME: Unit tests for the field-modal derivation config parsers in the schema blueprint
-ABOUTME: Covers boundaries/date/mapping parsing and the age-bracket pre-fill from target values"""
+ABOUTME: Covers boundaries/date/mapping parsing, duplicate options, and the age-bracket pre-fill"""
 
 import pytest
 
 from opendlp.domain.respondent_derivation import AgeBracketRule, LargeMappingRule, SmallMappingRule
+from opendlp.domain.respondent_field_schema import ChoiceOption
 from opendlp.entrypoints.blueprints.respondent_field_schema import (
     age_prefill_from_target,
+    duplicate_option_value,
     parse_age_rule,
     parse_boundaries,
     parse_derivation_rule,
@@ -113,3 +115,17 @@ class TestAgePrefillFromTarget:
 
     def test_a_set_without_an_upper_bracket_yields_no_prefill(self):
         assert age_prefill_from_target(["16-24", "25-39"]) is None
+
+
+class TestDuplicateOptionValue:
+    def test_distinct_values_report_no_duplicate(self):
+        options = [ChoiceOption(value="Yes"), ChoiceOption(value="No")]
+        assert duplicate_option_value(options) == ""
+
+    def test_a_repeated_value_is_named(self):
+        options = [ChoiceOption(value="Yes"), ChoiceOption(value="No"), ChoiceOption(value="Yes")]
+        assert duplicate_option_value(options) == "Yes"
+
+    def test_comparison_is_exact_so_case_differences_are_distinct_values(self):
+        """Option values are matched exactly everywhere else, so "yes" and "Yes" are two values."""
+        assert duplicate_option_value([ChoiceOption(value="Yes"), ChoiceOption(value="yes")]) == ""

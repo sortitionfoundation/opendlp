@@ -424,6 +424,30 @@ def _submitted_options(values: dict[str, Any]) -> list[ChoiceOption]:
     ]
 
 
+def duplicate_option_value(options: list[ChoiceOption]) -> str:
+    """The first option value that appears twice, or "" when they are all distinct.
+
+    Exact-match comparison, because every other place an option value is
+    matched is exact: add_choice_option rejects a repeat with ``==``, and
+    SmallMappingRule.derive looks the source value up in a plain dict. Two
+    values differing only in case are therefore two real values, not a typo.
+    """
+    seen: set[str] = set()
+    for option in options:
+        if option.value in seen:
+            return option.value
+        seen.add(option.value)
+    return ""
+
+
+def _duplicate_option_error(options: list[ChoiceOption]) -> str:
+    """A user-facing message naming a repeated option value, or "" when there is none."""
+    duplicate = duplicate_option_value(options)
+    if not duplicate:
+        return ""
+    return _("Option values must be different: '%(value)s' appears more than once", value=duplicate)
+
+
 # ---------------------------------------------------------------------------
 # The derived-field panel: source filtering, config parsing, and pre-fills.
 # ---------------------------------------------------------------------------
@@ -897,6 +921,8 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
     options = _submitted_options(values) if field_type in CHOICE_TYPES else None
     if field_type in CHOICE_TYPES and not options:
         return _("A choice field needs at least one option")
+    if options and (duplicate_error := _duplicate_option_error(options)):
+        return duplicate_error
 
     try:
         uow = bootstrap.get_flask_uow()
@@ -1311,6 +1337,8 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
             options = _submitted_options(values)
             if not options:
                 return {}, _("A choice field needs at least one option")
+            if duplicate_error := _duplicate_option_error(options):
+                return {}, duplicate_error
             update_kwargs["options"] = options
     return update_kwargs, ""
 
