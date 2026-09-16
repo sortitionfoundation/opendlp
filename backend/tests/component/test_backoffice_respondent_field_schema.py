@@ -1129,6 +1129,34 @@ class TestDerivedFieldModal:
         assert stored.derivation_config["boundaries"] == [30]
         assert stored.help_text == "derived from year of birth"
 
+    def test_relabel_a_source_field_via_the_modal(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
+        source = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "year_of_birth"
+        )
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{source.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Birth year",
+                "type_choice": "free_text",
+                "free_text_subtype": "integer",
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert "You can&#39;t change the type" not in response.get_data(as_text=True)
+
+        stored = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "year_of_birth"
+        )
+        assert stored.label == "Birth year"
+        assert stored.field_type == FieldType.INTEGER
+
     def test_derived_row_summarises_source_and_method(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
 

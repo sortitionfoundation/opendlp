@@ -990,6 +990,13 @@ class TestSourceFieldProtection:
         updated = update_field(uow, user.id, assembly.id, source.id, label="Birth date")
         assert updated.label == "Birth date"
 
+    def test_relabeling_a_source_field_while_passing_its_unchanged_type_is_allowed(self, uow):
+        # The edit modal always posts the field's type, even when only the label changed.
+        user, assembly, source, _ = self._age_setup(uow)
+        updated = update_field(uow, user.id, assembly.id, source.id, label="Birth date", field_type=FieldType.DATE)
+        assert updated.label == "Birth date"
+        assert updated.field_type == FieldType.DATE
+
     def test_changing_a_derived_fields_own_type_is_blocked(self, uow):
         user, assembly, _, derived = self._age_setup(uow)
         with pytest.raises(FieldDefinitionConflictError, match="derived"):
