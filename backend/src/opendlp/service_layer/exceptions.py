@@ -17,6 +17,8 @@ __all__ = [
     "EmailNotConfirmed",
     "EmailTemplateInvalid",
     "EmailTemplateNotFoundError",
+    "FieldDefinitionConflictError",
+    "FieldDefinitionNotFoundError",
     "GoogleSheetConfigNotFoundError",
     "HasCuratedMessage",
     "ImageQuotaExceeded",
@@ -335,3 +337,15 @@ class CannotRemoveLastAssemblyManager(CuratedMessage, ServiceLayerError):
         super().__init__(
             _("An assembly must keep at least one Assembly Manager. Add another one before removing this one.")
         )
+
+
+class FieldDefinitionNotFoundError(NotFoundError):
+    """Raised when a RespondentFieldDefinition cannot be found."""
+
+
+class FieldDefinitionConflictError(CuratedMessage, ServiceLayerError):
+    """Raised when adding a field that already exists, or attempting a disallowed edit.
+
+    Every message is written for the organiser editing the schema, so the
+    blueprint shows it as-is.
+    """

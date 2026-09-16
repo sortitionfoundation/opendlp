@@ -1,6 +1,8 @@
 """ABOUTME: Unit tests for OpenDLP domain validators
 ABOUTME: Tests field validators, URL validators, and email validation"""
 
+from datetime import date
+
 import pytest
 from wtforms import ValidationError
 
@@ -10,8 +12,10 @@ from opendlp.domain.validators import (
     InvalidSlug,
     MockField,
     UrlSlugValidator,
+    parse_date_text,
     validate_bool,
     validate_choice,
+    validate_date_field,
     validate_email,
     validate_email_field,
     validate_integer,
@@ -286,3 +290,77 @@ class TestValidateInteger:
         cleaned, error = validate_integer("abc")
         assert cleaned is None
         assert "valid number" in error.lower()
+
+
+class TestParseDateText:
+    def test_accepts_iso_date(self):
+        assert parse_date_text("1985-03-07") == date(1985, 3, 7)
+
+    def test_accepts_uk_format(self):
+        assert parse_date_text("07/03/1985") == date(1985, 3, 7)
+
+    def test_slashed_dates_are_read_day_first(self):
+        """``03/07/1985`` is 3 July, not 3 March - the UK reading, not the US one.
+
+        Both readings are real dates, so nothing downstream can catch a wrong
+        guess. Pinned here because the answer is a policy, not an accident.
+        """
+        assert parse_date_text("03/07/1985") == date(1985, 7, 3)
+
+    def test_accepts_compact_iso(self):
+        """``19850307`` parses: ``date.fromisoformat`` accepts ISO 8601 basic format."""
+        assert parse_date_text("19850307") == date(1985, 3, 7)
+
+    def test_rejects_two_digit_year(self):
+        """The UK pattern insists on four digits - ``85`` could be 1985 or 2085."""
+        assert parse_date_text("7/3/85") is None
+
+    def test_rejects_garbage(self):
+        assert parse_date_text("not a date") is None
+        assert parse_date_text("") is None
+
+    def test_rejects_an_impossible_day(self):
+        assert parse_date_text("1985-02-31") is None
+        assert parse_date_text("31/02/1985") is None
+
+
+class TestValidateDateField:
+    def test_accepts_iso_date(self):
+        cleaned, error = validate_date_field("1985-03-07")
+        assert cleaned == "1985-03-07"
+        assert error is None
+
+    def test_accepts_uk_format_and_canonicalises_to_iso(self):
+        cleaned, error = validate_date_field("07/03/1985")
+        assert cleaned == "1985-03-07"
+        assert error is None
+
+    def test_accepts_unpadded_uk_format(self):
+        cleaned, error = validate_date_field("7/3/1985")
+        assert cleaned == "1985-03-07"
+        assert error is None
+
+    def test_empty_returns_error(self):
+        cleaned, error = validate_date_field("")
+        assert cleaned is None
+        assert error is not None
+
+    def test_impossible_date_returns_error(self):
+        cleaned, error = validate_date_field("1985-02-31")
+        assert cleaned is None
+        assert "valid date" in error.lower()
+
+    def test_garbage_returns_error(self):
+        cleaned, error = validate_date_field("not a date")
+        assert cleaned is None
+        assert "valid date" in error.lower()
+
+    def test_future_date_returns_error(self):
+        cleaned, error = validate_date_field("2999-01-01")
+        assert cleaned is None
+        assert "future" in error.lower()
+
+    def test_implausibly_old_date_returns_error(self):
+        cleaned, error = validate_date_field("1850-01-01")
+        assert cleaned is None
+        assert "year" in error.lower()

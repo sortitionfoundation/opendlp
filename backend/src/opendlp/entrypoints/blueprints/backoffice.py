@@ -257,7 +257,7 @@ def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]
             {
                 "title": _("Population"),
                 "segments": population_segments(category.rows),
-                "message": _("Shows the population split once every value has a population % set in the targets."),
+                "message": _("Shows the population split once every value has a population share set in the targets."),
             },
             {"title": _("Target"), "segments": target_segments, "message": ""},
             {

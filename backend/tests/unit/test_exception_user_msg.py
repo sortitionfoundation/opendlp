@@ -14,6 +14,8 @@ from opendlp.service_layer.exceptions import (
     EmailNotConfirmed,
     EmailTemplateInvalid,
     EmailTemplateNotFoundError,
+    FieldDefinitionConflictError,
+    FieldDefinitionNotFoundError,
     GoogleSheetConfigNotFoundError,
     ImageQuotaExceeded,
     InsufficientPermissions,
@@ -57,6 +59,7 @@ CURATED = [
     CannotRemoveLastAuthMethod(),
     CannotDisableSelf(),
     CannotRemoveLastAssemblyManager(),
+    FieldDefinitionConflictError("A choice field must keep at least one option"),
 ]
 
 UNCURATED = [
@@ -74,6 +77,7 @@ UNCURATED = [
     EmailTemplateNotFoundError("Template 0f8f-... not found in table email_templates"),
     SelectionRunRecordNotFoundError("Selection run 0f8f-... not found"),
     RespondentNotFoundError("no row for respondent_id=0f8f-... in table respondents"),
+    FieldDefinitionNotFoundError("Field 0f8f-... not found in assembly 0f8f-..."),
     # Its own message is a marker, not a sentence. What the user reads is the
     # per-field messages on `.errors`, which the bulk edit form renders itself.
     TargetsNotSaved([]),

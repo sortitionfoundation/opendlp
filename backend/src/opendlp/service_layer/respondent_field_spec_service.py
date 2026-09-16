@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 # Bumped when the shape changes in a way a consumer has to notice. Consumers are
 # outside this repo, so they cannot be updated in the same commit as the change.
-SPEC_VERSION = 2
+SPEC_VERSION = 4
 
 
 def _target_value_payload(value: TargetValue) -> dict[str, Any]:
@@ -64,10 +64,12 @@ def _field_payload(field: RespondentFieldDefinition, category: TargetCategory | 
         "is_fixed": field.is_fixed,
         "is_derived": field.is_derived,
         "derived_from": list(field.derived_from) if field.derived_from else None,
-        "derivation_kind": field.derivation_kind,
+        "derivation_type": field.derivation_type.value if field.derivation_type else None,
+        "derivation_config": dict(field.derivation_config) if field.derivation_config else None,
         "field_type": field.effective_field_type.value,
         "options": [option.to_dict() for option in field.options] if field.options else None,
         "on_registration_page": field.on_registration_page.value,
+        "help_text": field.help_text,
         "target_values": [_target_value_payload(v) for v in category.values] if category is not None else None,
     }
 

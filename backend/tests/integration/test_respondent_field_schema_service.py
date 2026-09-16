@@ -631,6 +631,56 @@ class TestAddField:
 
         assert field.on_registration_page is FieldOnRegistrationPage.YES_REQUIRED
 
+    def test_add_field_stores_help_text(self, uow, admin_user, test_assembly):
+        """add_field persists help_text and it survives a fresh read of the schema."""
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+
+        field = respondent_field_schema_service.add_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_key="favourite_colour",
+            help_text="Pick the colour you like best",
+        )
+        assert field.help_text == "Pick the colour you like best"
+
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        stored = next(f for f in schema if f.field_key == "favourite_colour")
+        assert stored.help_text == "Pick the colour you like best"
+
+    def test_add_field_help_text_defaults_to_empty(self, uow, admin_user, test_assembly):
+        """A field added without help_text has the empty string."""
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+
+        field = respondent_field_schema_service.add_field(
+            uow, admin_user.id, test_assembly.id, field_key="favourite_colour"
+        )
+        assert field.help_text == ""
+
+
+class TestUpdateFieldHelpText:
+    def test_update_field_sets_and_clears_help_text(self, uow, admin_user, test_assembly):
+        """update_field can set help_text, leaves it alone when omitted, and clears it with ''."""
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+        field = respondent_field_schema_service.add_field(
+            uow, admin_user.id, test_assembly.id, field_key="favourite_colour"
+        )
+
+        updated = respondent_field_schema_service.update_field(
+            uow, admin_user.id, test_assembly.id, field.id, help_text="A hint"
+        )
+        assert updated.help_text == "A hint"
+
+        untouched = respondent_field_schema_service.update_field(
+            uow, admin_user.id, test_assembly.id, field.id, label="New label"
+        )
+        assert untouched.help_text == "A hint"
+
+        cleared = respondent_field_schema_service.update_field(
+            uow, admin_user.id, test_assembly.id, field.id, help_text=""
+        )
+        assert cleared.help_text == ""
+
 
 class TestOnRegistrationPageSeedAndUpdate:
     def test_initialise_seeds_fixed_field_registration_defaults(self, uow, admin_user, test_assembly):

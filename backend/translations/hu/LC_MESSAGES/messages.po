@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-15 12:34+0200\n"
-"PO-Revision-Date: 2026-09-10 14:24+0000\n"
+"POT-Creation-Date: 2026-09-16 14:14+0000\n"
+"PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
@@ -86,61 +86,71 @@ msgstr "Jelentkezők"
 msgid "Results"
 msgstr "Eredmények"
 
-#: src/opendlp/domain/respondent_field_schema.py:71
+#: src/opendlp/domain/respondent_derivation.py:83
+#, fuzzy, python-format
+msgid "I will be at least %(min_age)s years old on %(as_of_date)s."
+msgstr "%(as_of_date)s napján legalább %(min_age)s éves leszek."
+
+#: src/opendlp/domain/respondent_field_schema.py:90
 msgid "Eligibility"
 msgstr "Jogosultság"
 
-#: src/opendlp/domain/respondent_field_schema.py:72
+#: src/opendlp/domain/respondent_field_schema.py:91
 msgid "Name and contact"
 msgstr "Név és elérhetőség"
 
-#: src/opendlp/domain/respondent_field_schema.py:73
+#: src/opendlp/domain/respondent_field_schema.py:92
 msgid "Address"
 msgstr "Cím"
 
-#: src/opendlp/domain/respondent_field_schema.py:74
+#: src/opendlp/domain/respondent_field_schema.py:93
 msgid "About you"
 msgstr "Rólad"
 
-#: src/opendlp/domain/respondent_field_schema.py:75
+#: src/opendlp/domain/respondent_field_schema.py:94
 #: templates/backoffice/assembly_view_respondent.html:169
 #: templates/respondents/view_respondents.html:165
 msgid "Consent"
 msgstr "Hozzájárulás"
 
-#: src/opendlp/domain/respondent_field_schema.py:76
+#: src/opendlp/domain/respondent_field_schema.py:95
 msgid "Other"
 msgstr "Egyéb"
 
-#: src/opendlp/domain/respondent_field_schema.py:105
+#: src/opendlp/domain/respondent_field_schema.py:96
+#: templates/backoffice/respondent_field_schema/view.html:174
+msgid "Derived"
+msgstr "Származtatott"
+
+#: src/opendlp/domain/respondent_field_schema.py:126
 msgid "Text"
 msgstr "Szöveg"
 
-#: src/opendlp/domain/respondent_field_schema.py:106
+#: src/opendlp/domain/respondent_field_schema.py:127
 msgid "Long text"
 msgstr "Hosszú szöveg"
 
-#: src/opendlp/domain/respondent_field_schema.py:107
+#: src/opendlp/domain/respondent_field_schema.py:128
 msgid "Yes / No"
 msgstr "Igen / Nem"
 
-#: src/opendlp/domain/respondent_field_schema.py:108
+#: src/opendlp/domain/respondent_field_schema.py:129
 msgid "Yes / No / Not set"
 msgstr "Igen / Nem / Nincs beállítva"
 
-#: src/opendlp/domain/respondent_field_schema.py:109
+#: src/opendlp/domain/respondent_field_schema.py:130
 msgid "Choice (radios)"
 msgstr "Választás (rádiógombok)"
 
-#: src/opendlp/domain/respondent_field_schema.py:110
+#: src/opendlp/domain/respondent_field_schema.py:131
 msgid "Choice (dropdown)"
 msgstr "Választás (legördülő lista)"
 
-#: src/opendlp/domain/respondent_field_schema.py:111
+#: src/opendlp/domain/respondent_field_schema.py:132
 msgid "Whole number"
 msgstr "Egész szám"
 
-#: src/opendlp/domain/respondent_field_schema.py:112
+#: src/opendlp/domain/respondent_field_schema.py:133
 #: templates/admin/invite_view.html:48 templates/admin/invites.html:67
 #: templates/admin/user_view.html:23 templates/admin/users.html:116
 #: templates/backoffice/assembly_members.html:48
@@ -151,20 +161,25 @@ msgstr "Egész szám"
 msgid "Email"
 msgstr "E-mail"
 
+#: src/opendlp/domain/respondent_field_schema.py:134
+#, fuzzy
+msgid "Date"
+msgstr "Dátum"
+
 #: src/opendlp/domain/respondents.py:343
 msgid "Name deleted"
 msgstr "Név törölve"
 
-#: src/opendlp/domain/validators.py:54
+#: src/opendlp/domain/validators.py:55
 msgid "URL slug cannot be empty"
 msgstr "Az URL-azonosító nem lehet üres"
 
-#: src/opendlp/domain/validators.py:56
+#: src/opendlp/domain/validators.py:57
 #, python-format
 msgid "URL slug cannot be longer than %(max)s characters"
 msgstr "Az URL-azonosító nem lehet hosszabb %(max)s karakternél"
 
-#: src/opendlp/domain/validators.py:60
+#: src/opendlp/domain/validators.py:61
 msgid ""
 "URL slug must be lowercase letters, numbers and hyphens, with no leading "
 "or trailing hyphen"
@@ -172,10 +187,30 @@ msgstr ""
 "Az URL-azonosító csak kisbetűket, számokat és kötőjeleket tartalmazhat, "
 "az elején és a végén nem állhat kötőjel"
 
-#: src/opendlp/domain/validators.py:63
+#: src/opendlp/domain/validators.py:64
 #, python-format
 msgid "URL slug '%(value)s' is reserved and cannot be used"
 msgstr "'%(value)s' URL-azonosító foglalt, nem használható"
+
+#: src/opendlp/domain/validators.py:236
+#, fuzzy
+msgid "This field is required"
+msgstr "Ez a mező kötelező"
+
+#: src/opendlp/domain/validators.py:239
+#, fuzzy
+msgid "Please enter a valid date"
+msgstr "Kérjük, adjon meg egy érvényes dátumot"
+
+#: src/opendlp/domain/validators.py:242
+#, fuzzy
+msgid "Date cannot be in the future"
+msgstr "A dátum nem lehet jövőbeli"
+
+#: src/opendlp/domain/validators.py:244
+#, fuzzy
+msgid "Please check the year"
+msgstr "Kérjük, ellenőrizze az évszámot"
 
 #: src/opendlp/domain/value_objects.py:18
 msgid "User — Access to the assemblies they are added to"
@@ -905,10 +940,13 @@ msgid "Unrecognised attribute names: %(names)s"
 msgstr "Ismeretlen attribútumnevek: %(names)s"
 
 #: src/opendlp/entrypoints/gsheet_export_flow.py:42
+#, fuzzy
 msgid ""
 "Google Sheets export is unavailable: no Google service account is "
 "configured."
 msgstr ""
+"A Google Táblázatba exportálás nem érhető el: nincs beállítva Google "
+"szolgáltatásfiók."
 
 #: src/opendlp/entrypoints/gsheet_export_flow.py:48
 msgid "A spreadsheet URL is required to export to Google Sheets"
@@ -1151,7 +1189,7 @@ msgstr "Sikeres bejelentkezés"
 
 #: src/opendlp/entrypoints/blueprints/auth.py:135
 #: src/opendlp/entrypoints/blueprints/auth.py:142
-#: src/opendlp/service_layer/exceptions.py:125
+#: src/opendlp/service_layer/exceptions.py:127
 msgid "Invalid email or password"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
@@ -1439,14 +1477,16 @@ msgstr "Hiba történt a közösségi gyűlés betöltése közben"
 #: templates/backoffice/assembly_dashboard.html:109
 #, fuzzy
 msgid "Population"
-msgstr "Népesség (%%)"
+msgstr "Népesség"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:260
-#, python-format
+#, fuzzy
 msgid ""
-"Shows the population split once every value has a population % set in the"
-" targets."
+"Shows the population split once every value has a population share set in"
+" the targets."
 msgstr ""
+"A népesség megoszlása akkor jelenik meg, ha a célszámoknál minden "
+"értékhez meg van adva a népességi arány."
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:262
 #: src/opendlp/service_layer/dashboard_stats.py:357
@@ -1506,12 +1546,12 @@ msgstr "Nincs jogosultságod az irányítópult exportálásához"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:435
 #, fuzzy
 msgid "Only CSV and Google Sheets exports are available for now"
-msgstr "Jelenleg csak CSV exportálás érhető el"
+msgstr "Jelenleg csak CSV-be és Google Táblázatba lehet exportálni"
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:496
 #, fuzzy
 msgid "Dashboard exported to Google Sheets."
-msgstr "Exportálva a Google Táblázatba"
+msgstr "A statisztikák exportálva a Google Táblázatba."
 
 #: src/opendlp/entrypoints/blueprints/backoffice.py:528
 #: src/opendlp/entrypoints/blueprints/main.py:270
@@ -2426,8 +2466,8 @@ msgid "Original option value is required"
 msgstr "Az eredeti választható érték megadása kötelező"
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:404
-#: src/opendlp/service_layer/respondent_field_schema_service.py:440
-#: src/opendlp/service_layer/respondent_field_schema_service.py:471
+#: src/opendlp/service_layer/respondent_field_schema_service.py:465
+#: src/opendlp/service_layer/respondent_field_schema_service.py:496
 msgid "Option value cannot be blank"
 msgstr "A választható érték nem lehet üres"
 
@@ -3031,7 +3071,7 @@ msgstr "Nem szerepel a célszámok között"
 #: src/opendlp/service_layer/dashboard_stats.py:365
 #, fuzzy
 msgid "Population %"
-msgstr "Népesség (%%)"
+msgstr "Népesség %"
 
 #: src/opendlp/service_layer/dashboard_stats.py:366
 msgid "Target min"
@@ -3061,6 +3101,83 @@ msgstr "Megerősítettek %"
 msgid "Shortfall"
 msgstr "Hiány"
 
+#: src/opendlp/service_layer/derivation_service.py:134
+#, fuzzy, python-format
+msgid "Field '%(key)s' is not a derived field"
+msgstr "\"%(key)s\" mező nem származtatott mező"
+
+#: src/opendlp/service_layer/derivation_service.py:141
+#, fuzzy, python-format
+msgid "Source field '%(key)s' does not exist in this assembly"
+msgstr "\"%(key)s\" forrásmező nem létezik ebben a közösségi gyűlésben"
+
+#: src/opendlp/service_layer/derivation_service.py:145
+#, fuzzy, python-format
+msgid "Source field '%(key)s' is itself derived — derivations cannot chain"
+msgstr ""
+"\"%(key)s\" forrásmező maga is származtatott – a származtatások nem "
+"láncolhatók"
+
+#: src/opendlp/service_layer/derivation_service.py:151
+#, fuzzy, python-format
+msgid ""
+"This rule cannot derive from a %(source_type)s field. It needs one of: "
+"%(allowed)s"
+msgstr ""
+"Ez a szabály nem származtathat %(source_type)s típusú mezőből. A "
+"következők egyike szükséges: %(allowed)s"
+
+#: src/opendlp/service_layer/derivation_service.py:163
+#, fuzzy
+msgid "A large mapping needs its output values declared when the field is created"
+msgstr ""
+"Nagy megfeleltetésnél a kimeneti értékeket a mező létrehozásakor meg kell"
+" adni"
+
+#: src/opendlp/service_layer/derivation_service.py:357
+#: src/opendlp/service_layer/respondent_field_schema_service.py:263
+msgid "Field key cannot be empty"
+msgstr "A mezőkulcs nem lehet üres"
+
+#: src/opendlp/service_layer/derivation_service.py:359
+#: src/opendlp/service_layer/respondent_field_schema_service.py:268
+#, python-format
+msgid "Field '%(key)s' already exists in this assembly"
+msgstr "'%(key)s' mező már létezik ebben a közösségi gyűlésben"
+
+#: src/opendlp/service_layer/derivation_service.py:512
+#, fuzzy, python-format
+msgid "Field '%(key)s' does not use a large mapping"
+msgstr "\"%(key)s\" mező nem használ nagy megfeleltetést"
+
+#: src/opendlp/service_layer/derivation_service.py:516
+#, fuzzy
+msgid "The mapping file is empty"
+msgstr "A megfeleltetési fájl üres"
+
+#: src/opendlp/service_layer/derivation_service.py:521
+#, fuzzy, python-format
+msgid "The mapping file has too many rows (%(count)s) — the limit is %(limit)s"
+msgstr ""
+"A megfeleltetési fájl túl sok sort tartalmaz (%(count)s) – a korlát "
+"%(limit)s"
+
+#: src/opendlp/service_layer/derivation_service.py:549
+#, fuzzy, python-format
+msgid ""
+"The mapping file contains output values not in the field's options: "
+"%(values)s"
+msgstr ""
+"A megfeleltetési fájl olyan kimeneti értékeket tartalmaz, amelyek nem "
+"szerepelnek a mező választható értékei között: %(values)s"
+
+#: src/opendlp/service_layer/derivation_service.py:577
+#, fuzzy
+msgid "The mapping file needs two columns: input value and output value"
+msgstr ""
+"A megfeleltetési fájlban két oszlop szükséges: bemeneti érték és kimeneti"
+" érték"
+
 #: src/opendlp/service_layer/document_processing.py:12
 msgid "The PDF file is too large"
 msgstr "A PDF fájl túl nagy"
@@ -3085,39 +3202,39 @@ msgstr ""
 "Az e-mail cím megadása nem kötelező a regisztrációs oldalon, így azok a "
 "jelentkezők, akik üresen hagyják, nem kapják meg az automatikus választ."
 
-#: src/opendlp/service_layer/exceptions.py:85
+#: src/opendlp/service_layer/exceptions.py:87
 msgid "Something went wrong. Please try again."
 msgstr "Valami hiba történt. Kérjük, próbáld újra."
 
-#: src/opendlp/service_layer/exceptions.py:115
+#: src/opendlp/service_layer/exceptions.py:117
 #, python-format
 msgid "User with email '%(email)s' already exists"
 msgstr "„%(email)s” e-mail címmel rendelkező felhasználó már létezik"
 
-#: src/opendlp/service_layer/exceptions.py:115
+#: src/opendlp/service_layer/exceptions.py:117
 msgid "User already exists"
 msgstr "A felhasználó már létezik"
 
-#: src/opendlp/service_layer/exceptions.py:134
+#: src/opendlp/service_layer/exceptions.py:136
 #, python-format
 msgid "Invalid invite code '%(code)s': %(reason)s"
 msgstr "Érvénytelen meghívókód: '%(code)s': %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:136
+#: src/opendlp/service_layer/exceptions.py:138
 #, python-format
 msgid "Invalid invite code '%(code)s'"
 msgstr "Érvénytelen meghívókód: '%(code)s'"
 
-#: src/opendlp/service_layer/exceptions.py:138
+#: src/opendlp/service_layer/exceptions.py:140
 #, python-format
 msgid "Invalid invite code: %(reason)s"
 msgstr "Érvénytelen meghívókód: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:140
+#: src/opendlp/service_layer/exceptions.py:142
 msgid "Invalid invite code"
 msgstr "Érvénytelen meghívókód"
 
-#: src/opendlp/service_layer/exceptions.py:152
+#: src/opendlp/service_layer/exceptions.py:154
 #, python-format
 msgid ""
 "Insufficient permissions for action: %(action)s (requires role: "
@@ -3126,43 +3243,43 @@ msgstr ""
 "Nincs elegendő jogosultság a következő művelethez: %(action)s (szükséges "
 "szerepkör: %(required_role)s)"
 
-#: src/opendlp/service_layer/exceptions.py:157
+#: src/opendlp/service_layer/exceptions.py:159
 #, python-format
 msgid "Insufficient permissions for action: %(action)s"
 msgstr "Nincs elegendő jogosultság a következő művelethez: %(action)s"
 
-#: src/opendlp/service_layer/exceptions.py:159
+#: src/opendlp/service_layer/exceptions.py:161
 #, python-format
 msgid "Insufficient permissions (requires role: %(required_role)s)"
 msgstr "Nincsenek megfelelő jogosultságok (szükséges szerepkör: %(required_role)s)"
 
-#: src/opendlp/service_layer/exceptions.py:161
+#: src/opendlp/service_layer/exceptions.py:163
 msgid "Insufficient permissions"
 msgstr "Nincsenek megfelelő jogosultságok"
 
-#: src/opendlp/service_layer/exceptions.py:172
+#: src/opendlp/service_layer/exceptions.py:174
 #, python-format
 msgid "Invalid password reset token: %(reason)s"
 msgstr "Érvénytelen jelszó-visszaállító token: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:174
+#: src/opendlp/service_layer/exceptions.py:176
 msgid "Invalid password reset token"
 msgstr "Érvénytelen jelszó-visszaállító token"
 
-#: src/opendlp/service_layer/exceptions.py:183
+#: src/opendlp/service_layer/exceptions.py:185
 msgid "Please confirm your email address before logging in."
 msgstr "Bejelentkezés előtt erősítsd meg az e-mail címedet."
 
-#: src/opendlp/service_layer/exceptions.py:191
+#: src/opendlp/service_layer/exceptions.py:193
 #, python-format
 msgid "Invalid or expired confirmation link: %(reason)s"
 msgstr "Érvénytelen vagy lejárt megerősítő link: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:193
+#: src/opendlp/service_layer/exceptions.py:195
 msgid "Invalid or expired confirmation link"
 msgstr "Érvénytelen vagy lejárt megerősítő link"
 
-#: src/opendlp/service_layer/exceptions.py:204
+#: src/opendlp/service_layer/exceptions.py:206
 #, python-format
 msgid ""
 "Rate limit exceeded for %(operation)s. Please try again in %(seconds)s "
@@ -3171,59 +3288,59 @@ msgstr ""
 "Túllépted %(operation)s művelet gyakorisági korlátját. Próbáld újra "
 "%(seconds)s másodperc múlva"
 
-#: src/opendlp/service_layer/exceptions.py:209
+#: src/opendlp/service_layer/exceptions.py:211
 #, python-format
 msgid "Rate limit exceeded for %(operation)s"
 msgstr "Túllépted %(operation)s művelet gyakorisági korlátját"
 
-#: src/opendlp/service_layer/exceptions.py:211
+#: src/opendlp/service_layer/exceptions.py:213
 msgid "Rate limit exceeded. Please try again later"
 msgstr "Túllépted a gyakorisági korlátot. Próbáld újra később"
 
-#: src/opendlp/service_layer/exceptions.py:269
+#: src/opendlp/service_layer/exceptions.py:271
 #, python-format
 msgid "This registration page already has the maximum of %(limit)s images"
 msgstr "Ezen a regisztrációs oldalon már megvan a maximális %(limit)s kép"
 
-#: src/opendlp/service_layer/exceptions.py:276
+#: src/opendlp/service_layer/exceptions.py:278
 #, python-format
 msgid "This registration page already has the maximum of %(limit)s documents"
 msgstr "Ezen a regisztrációs oldalon már megvan a maximális %(limit)s dokumentum"
 
-#: src/opendlp/service_layer/exceptions.py:292
+#: src/opendlp/service_layer/exceptions.py:294
 #, python-format
 msgid "OAuth authentication failed for %(provider)s: %(reason)s"
 msgstr "Az OAuth-hitelesítés sikertelen a következőnél: %(provider)s: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:294
+#: src/opendlp/service_layer/exceptions.py:296
 #, python-format
 msgid "OAuth authentication failed for %(provider)s"
 msgstr "Az OAuth-hitelesítés sikertelen a következőnél: %(provider)s"
 
-#: src/opendlp/service_layer/exceptions.py:296
+#: src/opendlp/service_layer/exceptions.py:298
 #, python-format
 msgid "OAuth authentication failed: %(reason)s"
 msgstr "Az OAuth-hitelesítés sikertelen: %(reason)s"
 
-#: src/opendlp/service_layer/exceptions.py:298
+#: src/opendlp/service_layer/exceptions.py:300
 msgid "OAuth authentication failed"
 msgstr "Az OAuth-hitelesítés sikertelen"
 
-#: src/opendlp/service_layer/exceptions.py:308
+#: src/opendlp/service_layer/exceptions.py:310
 msgid "Invalid OAuth state parameter"
 msgstr "Érvénytelen OAuth state paraméter"
 
-#: src/opendlp/service_layer/exceptions.py:315
+#: src/opendlp/service_layer/exceptions.py:317
 msgid "Cannot remove last authentication method. Add another method first."
 msgstr ""
 "Az utolsó bejelentkezési mód nem távolítható el. Előbb adj hozzá egy "
 "másikat."
 
-#: src/opendlp/service_layer/exceptions.py:322
+#: src/opendlp/service_layer/exceptions.py:324
 msgid "You cannot disable your own account"
 msgstr "A saját fiókodat nem tilthatod le"
 
-#: src/opendlp/service_layer/exceptions.py:336
+#: src/opendlp/service_layer/exceptions.py:338
 msgid ""
 "An assembly must keep at least one Assembly Manager. Add another one "
 "before removing this one."
@@ -3306,44 +3423,63 @@ msgstr "űrlap HTML"
 msgid "Invalid respondent status filter: %(value)s"
 msgstr "Érvénytelen jelentkezői állapotszűrő: %(value)s"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:264
-msgid "Field key cannot be empty"
-msgstr "A mezőkulcs nem lehet üres"
+#: src/opendlp/service_layer/respondent_field_schema_service.py:321
+#, fuzzy, python-format
+msgid "You can't change the type of '%(key)s' — it is used to derive: %(deps)s"
+msgstr "\"%(key)s\" típusát nem módosíthatod – ebből származtatott mezők: %(deps)s"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:269
-#, python-format
-msgid "Field '%(key)s' already exists in this assembly"
-msgstr "'%(key)s' mező már létezik ebben a közösségi gyűlésben"
-
-#: src/opendlp/service_layer/respondent_field_schema_service.py:325
+#: src/opendlp/service_layer/respondent_field_schema_service.py:342
 msgid "You can't change the type or options of a fixed field"
 msgstr "Rögzített mező típusát vagy választható értékeit nem módosíthatod"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:437
+#: src/opendlp/service_layer/respondent_field_schema_service.py:345
+#, fuzzy
+msgid ""
+"You can't change the type or options of a derived field — they are owned "
+"by its derivation"
+msgstr ""
+"Származtatott mező típusát vagy választható értékeit nem módosíthatod – "
+"ezeket a származtatás határozza meg"
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:462
 msgid "Options can only be set on choice fields"
 msgstr "Választható értékeket csak választómezőkön lehet beállítani"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:443
-#: src/opendlp/service_layer/respondent_field_schema_service.py:476
+#: src/opendlp/service_layer/respondent_field_schema_service.py:468
+#: src/opendlp/service_layer/respondent_field_schema_service.py:501
 #, python-format
 msgid "Option '%(value)s' already exists"
 msgstr "'%(value)s' választható érték már létezik"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:505
+#: src/opendlp/service_layer/respondent_field_schema_service.py:553
+#, fuzzy, python-format
+msgid ""
+"'%(value)s' is the last option mapped by '%(key)s'. Change that "
+"derivation first."
+msgstr ""
+"\"%(value)s\" az utolsó választható érték, amelyre \"%(key)s\" "
+"megfeleltetése hivatkozik. Előbb azt a származtatást módosítsd."
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:601
 msgid "A choice field must keep at least one option"
 msgstr "Egy választómezőnek legalább egy választható értéket meg kell tartania"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:558
+#: src/opendlp/service_layer/respondent_field_schema_service.py:658
 #, python-format
 msgid "Fixed field '%(key)s' cannot be deleted"
 msgstr "'%(key)s' rögzített mező nem törölhető"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:743
+#: src/opendlp/service_layer/respondent_field_schema_service.py:663
+#, fuzzy, python-format
+msgid "'%(key)s' cannot be deleted — it is used to derive: %(deps)s"
+msgstr "\"%(key)s\" nem törölhető – ebből származtatott mezők: %(deps)s"
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:852
 #, python-format
 msgid "%(columns)s and %(count)d more"
 msgstr "%(columns)s és még %(count)d"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:753
+#: src/opendlp/service_layer/respondent_field_schema_service.py:862
 #, python-format
 msgid ""
 "This CSV has no column called '%(id_column)s'. Its columns are: "
@@ -3354,9 +3490,16 @@ msgstr ""
 "%(columns)s. Állítsd az ID oszlop mezőt ezek egyikére, vagy töröld ki, "
 "hogy az első oszlop (\"%(first)s\") legyen az azonosító."
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:761
+#: src/opendlp/service_layer/respondent_field_schema_service.py:870
 msgid "The ID Column field was pre-filled from your last upload."
 msgstr "Az ID oszlop mező az előző feltöltésed alapján előre ki van töltve."
+
+#: src/opendlp/service_layer/respondent_service.py:232
+#, fuzzy, python-format
+msgid "Row %(row)s: supplied '%(key)s' was replaced by its derived value"
+msgstr ""
+"%(row)s. sor: a megadott \"%(key)s\" érték helyére a származtatott érték "
+"került"
 
 #: src/opendlp/service_layer/selection_report.py:194
 #: templates/main/view_assembly_base.html:11
@@ -4636,7 +4779,7 @@ msgstr ""
 #: templates/backoffice/assembly_dashboard.html:110
 #, fuzzy
 msgid "Target (min/max)"
-msgstr "Cél min."
+msgstr "Célszám (min./max.)"
 
 #: templates/backoffice/assembly_data.html:12
 #: templates/backoffice/components/assembly_tabs.html:39
@@ -5828,8 +5971,9 @@ msgstr "Xls"
 
 #: templates/backoffice/dashboard_export_modal.html:48
 #: templates/backoffice/respondents/export_modal.html:41
+#, fuzzy
 msgid "Available when a Google service account is configured."
-msgstr ""
+msgstr "Akkor érhető el, ha be van állítva Google szolgáltatásfiók."
 
 #: templates/backoffice/edit_assembly.html:14
 #: templates/main/edit_assembly.html:24
@@ -6908,10 +7052,6 @@ msgstr "%(key)s címkéje"
 #: templates/backoffice/respondent_field_schema/view.html:160
 msgid "Fixed"
 msgstr "Rögzített"
-
-#: templates/backoffice/respondent_field_schema/view.html:174
-msgid "Derived"
-msgstr "Származtatott"
 
 #: templates/backoffice/respondent_field_schema/view.html:183
 #, python-format
