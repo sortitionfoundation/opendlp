@@ -272,6 +272,8 @@ translate-regen:
   @# empty msgstr is at least honest about needing a translator.
   uv run pybabel update --ignore-obsolete --no-fuzzy-matching \
     --input-file=translations/messages.pot --output-dir=translations
+  @# and trim the extra blank line we always get
+  prek run end-of-file-fixer
 
 # compile translations from .po files so flask can use them
 #
