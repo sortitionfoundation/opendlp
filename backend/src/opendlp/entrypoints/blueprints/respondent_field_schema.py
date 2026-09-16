@@ -73,7 +73,6 @@ from opendlp.service_layer.respondent_field_schema_service import (
 )
 from opendlp.service_layer.respondent_field_spec_service import build_field_spec
 from opendlp.translations import gettext as _
-from opendlp.translations import lazy_gettext as _l
 
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
@@ -307,7 +306,7 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
     has_targets = _assembly_has_targets(assembly_id)
     type_choices = list(_STANDARD_TYPE_CHOICES)
     if has_targets:
-        type_choices.append({"value": "derived", "label": _l("Derived (computed from another field)")})
+        type_choices.append({"value": "derived", "label": _("Derived (computed from another field)")})
     choice_candidate_key = _choice_candidate_key(values) if values["type_choice"] == "choice" else ""
     return {
         "mode": "new",
@@ -1105,7 +1104,7 @@ def _try_update_derivation(
                 assembly_id,
                 field.id,
                 label=values["label"].strip() or None,
-                help_text=values["help_text"],
+                help_text=values["help_text"].strip(),
             )
     except FieldDefinitionConflictError as e:
         return None, str(e)
@@ -1334,7 +1333,7 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
     """
     update_kwargs: dict[str, Any] = {
         "label": values["label"].strip() or None,
-        "help_text": values["help_text"],
+        "help_text": values["help_text"].strip(),
     }
     if not field.is_derived:
         update_kwargs["on_registration_page"] = _parse_on_registration_page(values["on_registration_page"])

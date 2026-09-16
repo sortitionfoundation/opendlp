@@ -767,6 +767,33 @@ class TestFieldModal:
         assert field.help_text == "a hint"
         assert field.on_registration_page == FieldOnRegistrationPage.NO
 
+    def test_edit_via_modal_strips_surrounding_space_from_the_help_text(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Create strips the help text, so an edit must too — otherwise a stray space sticks."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Notes",
+                "type_choice": "free_text",
+                "free_text_subtype": "text",
+                "help_text": "  anything else?  ",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
+        assert field.help_text == "anything else?"
+
     def test_edit_via_modal_on_a_fixed_field_updates_label_and_help_only(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
@@ -1256,6 +1283,21 @@ class TestDerivedFieldModal:
         stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
         assert stored.derivation_config["boundaries"] == [30]
         assert stored.help_text == "derived from year of birth"
+
+    def test_update_derivation_strips_surrounding_space_from_the_help_text(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{field.id}/derivation",
+            data=self._derived_form(help_text="  from year of birth  "),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+
+        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
+        assert stored.help_text == "from year of birth"
 
     def test_relabel_a_source_field_via_the_modal(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
