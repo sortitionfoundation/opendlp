@@ -2,6 +2,7 @@
 ABOUTME: Behavioural coverage (validation, render, transitions) lives in tests/component/"""
 
 import io
+from datetime import UTC, datetime
 
 import pytest
 
@@ -248,6 +249,8 @@ class TestDerivedFieldModal:
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
     ):
         """Seed a source and target in Postgres, create the derived field via the modal, read it back."""
+        # The as-of year must be within a year of today, so never hard-code it.
+        this_year = datetime.now(UTC).year
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             _seed_schema(uow, admin_user, existing_assembly)
             respondent_field_schema_service.add_field(
@@ -281,7 +284,7 @@ class TestDerivedFieldModal:
                 "source_key": "year_of_birth",
                 "as_of_day": "1",
                 "as_of_month": "6",
-                "as_of_year": "2026",
+                "as_of_year": str(this_year),
                 "min_age": "16",
                 "max_age": "40",
                 "boundaries": "25",
@@ -299,7 +302,7 @@ class TestDerivedFieldModal:
             field = next(f for f in schema if f.field_key == "age bracket")
             assert field.is_derived
             assert field.derived_from == ["year_of_birth"]
-            assert field.derivation_config["as_of_date"] == "2026-06-01"
+            assert field.derivation_config["as_of_date"] == f"{this_year}-06-01"
             assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40+", "UNKNOWN"]
 
 

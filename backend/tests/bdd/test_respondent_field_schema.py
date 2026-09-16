@@ -2,6 +2,7 @@
 ABOUTME: Exercises the full UI stack via Playwright for the happy paths covered by unit + e2e tests"""
 
 import uuid
+from datetime import UTC, datetime
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -186,7 +187,8 @@ def create_age_bracket_derived_field(admin_logged_in_page: Page, target: str, so
     # The as-of date stays blank (the assembly has no first date), so fill it.
     page.fill('input[name="as_of_day"]', "1")
     page.fill('input[name="as_of_month"]', "6")
-    page.fill('input[name="as_of_year"]', "2026")
+    # The as-of year must be within a year of today, so never hard-code it.
+    page.fill('input[name="as_of_year"]', str(datetime.now(UTC).year))
     page.get_by_role("button", name="Save").click()
 
 
