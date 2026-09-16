@@ -1285,6 +1285,28 @@ class TestMappingUploadAndRecompute:
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
 
+    def test_upload_without_matching_headings_warns_that_the_first_row_was_not_stored(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = self._upload(logged_in_admin, existing_assembly, field, "SW1A 1AA,South\nM1 1AE,North\n")
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "The first row was used as column headings and not stored" in body
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 1
+
+    def test_upload_with_matching_headings_has_no_first_row_warning(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = self._upload(logged_in_admin, existing_assembly, field, "postcode,region\nSW1A 1AA,South\n")
+        assert response.status_code == 200
+        assert "used as column headings" not in response.get_data(as_text=True)
+
     def test_missing_file_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
 

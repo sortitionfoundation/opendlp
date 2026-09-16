@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-16 14:57+0000\n"
+"POT-Creation-Date: 2026-09-16 14:58+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -355,8 +355,8 @@ msgstr "Az oldal eléréséhez kérjük, jelentkezz be"
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:83
 #: src/opendlp/entrypoints/edit_respondent_form.py:87
-#: templates/backoffice/assembly_edit_respondent.html:68
-#: templates/backoffice/assembly_edit_respondent.html:76
+#: templates/backoffice/assembly_edit_respondent.html:69
+#: templates/backoffice/assembly_edit_respondent.html:77
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:162
@@ -367,8 +367,8 @@ msgstr "Igen"
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:83
 #: src/opendlp/entrypoints/edit_respondent_form.py:87
-#: templates/backoffice/assembly_edit_respondent.html:68
-#: templates/backoffice/assembly_edit_respondent.html:76
+#: templates/backoffice/assembly_edit_respondent.html:69
+#: templates/backoffice/assembly_edit_respondent.html:77
 #: templates/backoffice/assembly_view_respondent.html:57
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:163
@@ -378,7 +378,7 @@ msgid "No"
 msgstr "Nem"
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:87
-#: templates/backoffice/assembly_edit_respondent.html:76
+#: templates/backoffice/assembly_edit_respondent.html:77
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:164
 #: templates/gsheets/components/view_config.html:41
@@ -395,8 +395,8 @@ msgstr ""
 "%(value)s."
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:127
-#: templates/backoffice/assembly_edit_respondent.html:81
-#: templates/backoffice/assembly_edit_respondent.html:97
+#: templates/backoffice/assembly_edit_respondent.html:82
+#: templates/backoffice/assembly_edit_respondent.html:98
 msgid "— none —"
 msgstr "— nincs —"
 
@@ -408,7 +408,7 @@ msgid ""
 msgstr ""
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:239
-#: templates/backoffice/assembly_edit_respondent.html:150
+#: templates/backoffice/assembly_edit_respondent.html:151
 msgid "Change note"
 msgstr "Módosítás megjegyzése"
 
@@ -4040,7 +4040,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/admin/invite_create.html:96 templates/admin/user_edit.html:115
 #: templates/backoffice/assembly_data.html:260
 #: templates/backoffice/assembly_data.html:538
-#: templates/backoffice/assembly_edit_respondent.html:159
+#: templates/backoffice/assembly_edit_respondent.html:160
 #: templates/backoffice/assembly_form.html:96
 #: templates/backoffice/assembly_view_respondent.html:302
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
@@ -5385,33 +5385,39 @@ msgid "Back"
 msgstr "Vissza"
 
 #: templates/backoffice/assembly_edit_respondent.html:59
+#: templates/backoffice/respondent_field_schema/_editor.html:66
+#, python-format
+msgid "Derived from %(source)s"
+msgstr ""
+
+#: templates/backoffice/assembly_edit_respondent.html:60
 msgid "Will be recalculated when saved."
 msgstr ""
 
-#: templates/backoffice/assembly_edit_respondent.html:124
+#: templates/backoffice/assembly_edit_respondent.html:125
 msgid "For example, 27 3 1985"
 msgstr ""
 
-#: templates/backoffice/assembly_edit_respondent.html:127
+#: templates/backoffice/assembly_edit_respondent.html:128
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:87
 msgid "Day"
 msgstr ""
 
-#: templates/backoffice/assembly_edit_respondent.html:130
+#: templates/backoffice/assembly_edit_respondent.html:131
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:90
 msgid "Month"
 msgstr ""
 
-#: templates/backoffice/assembly_edit_respondent.html:133
+#: templates/backoffice/assembly_edit_respondent.html:134
 #: templates/backoffice/respondent_field_schema/_derived_panel.html:93
 msgid "Year"
 msgstr ""
 
-#: templates/backoffice/assembly_edit_respondent.html:151
+#: templates/backoffice/assembly_edit_respondent.html:152
 msgid "Why are you making this change?"
 msgstr "Miért végzed el ezt a módosítást?"
 
-#: templates/backoffice/assembly_edit_respondent.html:158
+#: templates/backoffice/assembly_edit_respondent.html:159
 #: templates/profile/edit.html:40
 msgid "Save changes"
 msgstr "Módosítások mentése"
@@ -7158,8 +7164,10 @@ msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:51
 msgid ""
-"The header row didn't name the fields, so the first column was read as "
-"the input and the second as the output."
+"The first row was used as column headings and not stored. Its headings "
+"didn't match the field names, so the first column was read as the input "
+"and the second as the output. If your file has no heading row, add one "
+"and upload it again."
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:58
@@ -7335,11 +7343,6 @@ msgstr "Szakasz"
 #: templates/backoffice/respondent_field_schema/_editor.html:47
 msgid "Order"
 msgstr "Sorrend"
-
-#: templates/backoffice/respondent_field_schema/_editor.html:66
-#, python-format
-msgid "Derived from %(source)s"
-msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_editor.html:76
 #, python-format
