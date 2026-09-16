@@ -105,6 +105,28 @@ assembly is convened to decide, and Hungarian says that as a topic; *kérdése*
 reads as a query someone asked. No *fő*: the field is not one of several topics.
 The help text goes with it — "a fő téma, amellyel…", not "a fő kérdés". *(F28)*
 
+### Respondent fields
+
+These came in with derived fields, after the review, and no native speaker has
+checked them yet. Use them consistently until someone does.
+
+| English | Hungarian | |
+| --- | --- | --- |
+| derived field | származtatott mező | *(unreviewed)* |
+| derivation | származtatás | *(unreviewed)* |
+| source field | forrásmező | *(unreviewed)* |
+| mapping | megfeleltetés | *(unreviewed)* |
+| mapping file | megfeleltetési fájl | *(unreviewed)* |
+| input / output value | bemeneti / kimeneti érték | *(unreviewed)* |
+| options (of a choice field) | választható értékek | |
+
+**derived field** is *származtatott*, matching the existing `Derived` label. A
+**mapping** is the table from one field's values to another's, so
+*megfeleltetés* — not *leképezés*, which is mathematics. **options** was already
+settled in the catalogue as *választható értékek* ("Rögzített mező típusát vagy
+választható értékeit nem módosíthatod"); it is listed here so the derived-field
+strings do not drift to *opciók* or *lehetőségek*.
+
 ### Roles
 
 The global **Organiser** and the per-assembly **Assembly Manager** are different
@@ -132,6 +154,7 @@ roles and must not read as synonyms. *(C14)*
 | URL slug | URL-azonosító | |
 | 2FA / two-factor authentication | kétlépcsős azonosítás | |
 | backup code | tartalék kód | |
+| service account (Google) | szolgáltatásfiók | *(unreviewed)* |
 
 **cancel** as a button — backing out of a dialog or form without doing anything —
 is **Mégse**, the word every Hungarian UI uses for that button. Not

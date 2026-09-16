@@ -38,6 +38,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     update_schema_from_headers,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+from opendlp.translations import gettext as _
 
 # Internal, export-only columns recognised and skipped on import. They mirror
 # the extra columns build_respondent_table appends, so an exported file
@@ -228,7 +229,7 @@ def import_respondents_from_rows(  # noqa: C901
         if derived_defs:
             outcome = apply_derivations(respondent, field_definitions, lookups)
             errors.extend(
-                f"Row {row_number}: supplied '{key}' was replaced by its derived value"
+                _("Row %(row)s: supplied '%(key)s' was replaced by its derived value", row=row_number, key=key)
                 for key in outcome.overwrote_supplied
             )
         respondents.append(respondent)
@@ -529,8 +530,17 @@ def update_respondent(
         attributes=attributes,
     )
 
+    # A derived value already on the respondent was written by the system, not
+    # supplied by anyone, so an edit recomputes from the source outright: a
+    # source edited to something that cannot derive falls back rather than
+    # keeping the stale bracket or region.
     field_definitions = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-    apply_derivations(respondent, field_definitions, load_mapping_lookups(uow, field_definitions))
+    apply_derivations(
+        respondent,
+        field_definitions,
+        load_mapping_lookups(uow, field_definitions),
+        keep_supplied_on_fallback=False,
+    )
 
 
 def add_respondent_comment(

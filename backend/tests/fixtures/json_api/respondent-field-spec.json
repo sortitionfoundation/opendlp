@@ -13,6 +13,7 @@
       "first_name",
       "postcode",
       "gender",
+      "date_of_birth",
       "consent",
       "stay_on_db"
     ],
@@ -101,7 +102,7 @@
       "field_key": "postcode",
       "field_type": "text",
       "group": "address",
-      "help_text": "",
+      "help_text": "Your home postcode, including the space",
       "id": "00000000-0000-4000-8000-000000000000",
       "is_derived": false,
       "is_fixed": false,
@@ -162,6 +163,23 @@
       "derivation_config": null,
       "derivation_type": null,
       "derived_from": null,
+      "field_key": "date_of_birth",
+      "field_type": "date",
+      "group": "about_you",
+      "help_text": "",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": false,
+      "is_fixed": false,
+      "label": "Date of birth",
+      "on_registration_page": "yes_required",
+      "options": null,
+      "sort_order": 20,
+      "target_values": null
+    },
+    {
+      "derivation_config": null,
+      "derivation_type": null,
+      "derived_from": null,
       "field_key": "consent",
       "field_type": "bool_or_none",
       "group": "consent",
@@ -190,6 +208,54 @@
       "on_registration_page": "yes_optional",
       "options": null,
       "sort_order": 20,
+      "target_values": null
+    },
+    {
+      "derivation_config": {
+        "as_of_date": "2026-05-13",
+        "boundaries": [
+          30
+        ],
+        "fallback": "UNKNOWN",
+        "max_age": 100,
+        "min_age": 16
+      },
+      "derivation_type": "age_bracket",
+      "derived_from": [
+        "date_of_birth"
+      ],
+      "field_key": "age_bracket",
+      "field_type": "choice_radio",
+      "group": "derived",
+      "help_text": "",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "is_derived": true,
+      "is_fixed": false,
+      "label": "Age bracket",
+      "on_registration_page": "no",
+      "options": [
+        {
+          "help_text": "",
+          "value": "under-16"
+        },
+        {
+          "help_text": "",
+          "value": "16-29"
+        },
+        {
+          "help_text": "",
+          "value": "30-99"
+        },
+        {
+          "help_text": "",
+          "value": "100+"
+        },
+        {
+          "help_text": "",
+          "value": "UNKNOWN"
+        }
+      ],
+      "sort_order": 10,
       "target_values": null
     }
   ],

@@ -1,0 +1,35 @@
+{#
+ABOUTME: Shared Google Sheets destination fields for the export modals (dashboard, respondents)
+ABOUTME: Overwrite warning + spreadsheet URL + tab name inputs + share hint, built on the design-system input()
+#}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/input.html" import input %}
+{% macro gsheet_export_fields(id_prefix, disabled_expr, url_value="", worksheet_value="", service_account_email="") %}
+    {#
+    Args:
+      id_prefix: unique per modal (e.g. "dashboard-export") so label/for ids stay distinct.
+      disabled_expr: Alpine expression that is true while the gsheet fields are hidden
+                     (e.g. "fileType !== 'gsheet'"). The url input is disabled with it so
+                     a stale invalid value in the hidden control cannot silently block the
+                     other submit path via native form validation.
+      url_value / worksheet_value: prefills, typically from the saved export config.
+      service_account_email: shown in the share hint; empty (no service account
+                             configured) hides the hint.
+    #}
+    {{ alert(_("This will overwrite any existing data in the chosen tab. Data in other tabs of the spreadsheet is left untouched."), variant="warning", floating=true) }}
+    {{ input("spreadsheet_url",
+    label=_("Spreadsheet URL"),
+    type="url",
+    value=url_value,
+    id=id_prefix ~ "-url",
+    attrs=':disabled="' ~ disabled_expr ~ '"') }}
+    {{ input("worksheet_name",
+    label=_("Tab name"),
+    value=worksheet_value,
+    id=id_prefix ~ "-tab") }}
+    {% if service_account_email %}
+        <p class="text-body-sm" style="color: var(--color-secondary-text);">
+            {{ _("Share the spreadsheet with %(email)s so it can be written to.", email=service_account_email) }}
+        </p>
+    {% endif %}
+{% endmacro %}

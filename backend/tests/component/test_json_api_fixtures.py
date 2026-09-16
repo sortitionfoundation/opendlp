@@ -1,14 +1,17 @@
 # ABOUTME: Records the API fixtures the Vitest suite imports, and pins each JSON response shape
 # ABOUTME: Drives the real routes over a FakeUnitOfWork, validates against the schema, diffs the fixture
 
+from datetime import date
 from io import BytesIO
 
 import pytest
 from PIL import Image
 
+from opendlp.domain.respondent_derivation import AgeBracketRule
 from opendlp.domain.respondent_field_schema import ChoiceOption, FieldType
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.service_layer import respondent_field_schema_service
+from opendlp.service_layer.derivation_service import create_derived_field
 from opendlp.service_layer.registration_page_service import create_registration_page_with_slugs
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from tests.api_fixtures import assert_matches_schema, check_api_fixture, normalise
@@ -178,29 +181,54 @@ class TestRespondentFieldSpecFixtures:
         """The shape a CSV generator outside this repo reads to learn the columns.
 
         Seeded to exercise every branch at once: fixed rows, a plain text column,
-        a choice column with options, a target category joined onto a field, and
-        one that matches no field.
+        a date column, a column carrying help text, a choice column with options,
+        a derived column with its rule config, a target category joined onto a
+        field, and one that matches no field.
         """
         with FakeUnitOfWork(store=fake_store) as uow:
             import_respondents_from_csv(
                 uow,
                 admin_user.id,
                 existing_assembly.id,
-                "external_id,first_name,gender,postcode\nR001,Alice,Female,SW1A 1AA\n",
+                "external_id,first_name,gender,postcode,date_of_birth\nR001,Alice,Female,SW1A 1AA,1990-06-15\n",
                 replace_existing=True,
             )
-            gender = next(
-                f
+            schema = {
+                f.field_key: f
                 for f in respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
-                if f.field_key == "gender"
+            }
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                schema["gender"].id,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Male"), ChoiceOption(value="Female", help_text="Includes trans women")],
             )
             respondent_field_schema_service.update_field(
                 uow,
                 admin_user.id,
                 existing_assembly.id,
-                gender.id,
-                field_type=FieldType.CHOICE_RADIO,
-                options=[ChoiceOption(value="Male"), ChoiceOption(value="Female", help_text="Includes trans women")],
+                schema["postcode"].id,
+                help_text="Your home postcode, including the space",
+            )
+            respondent_field_schema_service.update_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                schema["date_of_birth"].id,
+                field_type=FieldType.DATE,
+            )
+            # A derived column: computed, so absent from csv.columns, and the only
+            # field carrying derivation_type and derivation_config.
+            create_derived_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                field_key="age_bracket",
+                label="Age bracket",
+                source_field_key="date_of_birth",
+                rule=AgeBracketRule(as_of_date=date(2026, 5, 13), min_age=16, max_age=100, boundaries=(30,)),
             )
             uow.target_categories.add(
                 TargetCategory(

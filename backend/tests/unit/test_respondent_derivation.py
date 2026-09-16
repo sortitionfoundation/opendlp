@@ -6,6 +6,7 @@ from datetime import date
 import pytest
 
 from opendlp.domain.respondent_derivation import (
+    MAX_SANE_AGE,
     AgeBracketRule,
     LargeMappingRule,
     SmallMappingRule,
@@ -97,6 +98,17 @@ class TestDeriveFromDate:
 
     def test_implausibly_old_takes_the_fallback(self) -> None:
         assert _age_rule().derive_from_date(date(1899, 1, 1)) == "UNKNOWN"
+
+    def test_exactly_max_sane_age_is_still_a_person(self) -> None:
+        """MAX_SANE_AGE is inclusive: 120 brackets, 121 is read as a typo."""
+        rule = _age_rule()
+        oldest = date(AS_OF.year - MAX_SANE_AGE, AS_OF.month, AS_OF.day)
+        assert rule.derive_from_date(oldest) == "100+"
+        assert rule.derive_from_date(oldest.replace(year=oldest.year - 1)) == "UNKNOWN"
+
+    def test_born_on_the_as_of_date_is_age_zero(self) -> None:
+        """Age 0 is a real age, not a data error - it lands in the under-N bracket."""
+        assert _age_rule().derive_from_date(AS_OF) == "under-16"
 
 
 class TestDeriveFromYear:

@@ -5,13 +5,14 @@ import contextlib
 import uuid
 
 import structlog
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
 from opendlp.domain.value_objects import SelectionTaskType
+from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import (
     CreateAssemblyGSheetForm,
@@ -991,7 +992,7 @@ def save_gsheet_config(assembly_id: uuid.UUID) -> ResponseReturnValue:
             selection_settings=sel_settings,
             gsheet_mode="edit" if is_update else "new",
             gsheet_form=form,
-            google_service_account_email=current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN"),
+            google_service_account_email=get_service_account_email(),
         ), 200
 
     except NotFoundError as e:

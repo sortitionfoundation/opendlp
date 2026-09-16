@@ -251,6 +251,33 @@ class TestFieldTypeAndOptions:
         ]
 
 
+class TestHelpText:
+    def test_defaults_to_an_empty_string(self, respondent_field_definition_backend: ContractBackend) -> None:
+        assembly = respondent_field_definition_backend.make_assembly()
+        field = _make_field(respondent_field_definition_backend, assembly.id, field_key="freeform")
+
+        retrieved = respondent_field_definition_backend.fresh_get_field_definition(field.id)
+        assert retrieved is not None
+        assert retrieved.help_text == ""
+
+    def test_round_trips_the_field_help_text(self, respondent_field_definition_backend: ContractBackend) -> None:
+        assembly = respondent_field_definition_backend.make_assembly()
+        field = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key="gender",
+            label="Gender",
+            group=RespondentFieldGroup.ABOUT_YOU,
+            sort_order=10,
+            help_text="As you describe yourself",
+        )
+        respondent_field_definition_backend.repo.add(field)
+        respondent_field_definition_backend.commit()
+
+        retrieved = respondent_field_definition_backend.fresh_get_field_definition(field.id)
+        assert retrieved is not None
+        assert retrieved.help_text == "As you describe yourself"
+
+
 class TestDerivationColumns:
     def test_defaults_to_no_derivation(self, respondent_field_definition_backend: ContractBackend) -> None:
         assembly = respondent_field_definition_backend.make_assembly()

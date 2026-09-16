@@ -128,7 +128,9 @@ class TestBuildingACategory:
     def _uow(self, **kwargs):
         return _StubUnitOfWork(_StubRespondentRepository(**kwargs))
 
-    def test_uses_the_stored_percentage_when_there_is_one(self):
+    def test_the_stored_percentage_is_the_population_share_not_the_target(self):
+        """The population share never bleeds into target_pct - the two are kept
+        apart because they deliberately differ when a group is over-sampled."""
         category = _category(
             TargetValue(value="Male", min=1, max=1, percentage_target=40.0),
             TargetValue(value="Female", min=1, max=1, percentage_target=60.0),
@@ -136,9 +138,10 @@ class TestBuildingACategory:
 
         result = _build_category(self._uow(), uuid.uuid4(), category, ["gender"])
 
-        assert [row.target_pct for row in result.rows] == [40.0, 60.0]
+        assert [row.population_pct for row in result.rows] == [40.0, 60.0]
+        assert [row.target_pct for row in result.rows] == [50.0, 50.0]
 
-    def test_falls_back_to_the_share_the_band_implies(self):
+    def test_the_target_share_is_what_the_band_implies(self):
         category = _category(
             TargetValue(value="Male", min=1, max=3),
             TargetValue(value="Female", min=3, max=5),
@@ -149,8 +152,9 @@ class TestBuildingACategory:
         # (1 + 3) and (3 + 5) out of 12
         assert [row.target_pct for row in result.rows] == [pytest.approx(33.3), pytest.approx(66.7)]
 
-    def test_falls_back_per_value_not_per_category(self):
-        """A value with no percentage takes the band share even when its sibling has one."""
+    def test_a_value_without_a_stored_percentage_has_no_population_share(self):
+        """None, not the band share - a silent fallback was the confusion the
+        population/target split removed."""
         category = _category(
             TargetValue(value="Male", min=1, max=1, percentage_target=90.0),
             TargetValue(value="Female", min=1, max=1),
@@ -158,7 +162,8 @@ class TestBuildingACategory:
 
         result = _build_category(self._uow(), uuid.uuid4(), category, ["gender"])
 
-        assert [row.target_pct for row in result.rows] == [90.0, 50.0]
+        assert [row.population_pct for row in result.rows] == [90.0, None]
+        assert [row.target_pct for row in result.rows] == [50.0, 50.0]
 
     def test_counts_respondents_holding_a_value_the_targets_do_not_declare(self):
         category = _category(TargetValue(value="Male", min=0, max=10))
@@ -212,6 +217,7 @@ def _table_row(value: str, pool_count: int, **kwargs) -> CategoryValueRow:
     defaults = {
         "target_min": 5,
         "target_max": 7,
+        "population_pct": None,
         "target_pct": 50.0,
         "available_count": pool_count,
         "selected_count": 0,
