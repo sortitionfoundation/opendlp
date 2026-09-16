@@ -881,6 +881,12 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
         return _("A label or field key is required (letters, numbers and underscores)")
     group = _parse_group(request.form.get("group")) or RespondentFieldGroup.OTHER
     if is_modal:
+        if values["type_choice"] == "derived":
+            # The derived panel posts to add-derived. Landing here means the
+            # type picker said Derived but the panel never rendered — with JS
+            # off, Save pressed before the refresh button. Falling through
+            # would quietly create a text field.
+            return _("Choose the target and method for a derived field")
         field_type = _field_type_from_taxonomy(values)
     else:
         field_type = _parse_field_type(request.form.get("field_type")) or FieldType.TEXT

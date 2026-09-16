@@ -969,6 +969,27 @@ class TestDerivedFieldModal:
         assert 'value="derived"' in body
         assert "Create targets first" not in body
 
+    def test_derived_submitted_to_the_plain_add_route_is_refused(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """With JS off, Save can reach the plain add route while Derived is picked — that must not make a text field."""
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Age band",
+                "type_choice": "derived",
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        assert "Choose the target and method" in response.get_data(as_text=True)
+
+        assert not any(f.field_key == "age_band" for f in _get_schema(fake_store, admin_user, existing_assembly))
+
     def test_derived_panel_lists_targets_and_filters_sources_by_method(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
