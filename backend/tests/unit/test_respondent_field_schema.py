@@ -238,7 +238,7 @@ class TestRespondentFieldDefinition:
             group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
-        with pytest.raises(ValueError, match="label cannot be empty"):
+        with pytest.raises(ValueError, match="The label cannot be empty"):
             field.update(label="   ")
 
     def test_equality_by_id(self) -> None:
@@ -546,7 +546,7 @@ class TestFieldType:
 
 class TestChoiceOption:
     def test_requires_non_blank_value(self) -> None:
-        with pytest.raises(ValueError, match="value cannot be blank"):
+        with pytest.raises(ValueError, match="An option value cannot be blank"):
             ChoiceOption(value="   ")
 
     def test_defaults_help_text_to_empty(self) -> None:
@@ -581,11 +581,11 @@ class TestRespondentFieldDefinitionTyping:
         assert field.options is None
 
     def test_rejects_choice_without_options(self) -> None:
-        with pytest.raises(ValueError, match="options"):
+        with pytest.raises(ValueError, match="A choice field needs at least one option"):
             self._field(field_type=FieldType.CHOICE_RADIO)
 
     def test_rejects_options_on_non_choice_type(self) -> None:
-        with pytest.raises(ValueError, match="options"):
+        with pytest.raises(ValueError, match="Only a choice field can have options"):
             self._field(field_type=FieldType.TEXT, options=[ChoiceOption(value="a")])
 
     def test_accepts_choice_radio_with_options(self) -> None:
