@@ -4,6 +4,7 @@
 import csv
 from io import StringIO
 
+import pytest
 from flask.testing import FlaskClient
 
 from opendlp.adapters.tabular_export import ExportTargetError
@@ -12,6 +13,16 @@ from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import GSheetExportKind, RespondentStatus
 from tests.fakes import FakeGSheetExportTarget, FakeStore, FakeUnitOfWork
+
+
+@pytest.fixture(autouse=True)
+def _service_account_configured(monkeypatch):
+    """The gsheet option is gated on a configured service account."""
+    for target in (
+        "opendlp.entrypoints.blueprints.respondents.get_service_account_email",
+        "opendlp.entrypoints.gsheet_export_flow.get_service_account_email",
+    ):
+        monkeypatch.setattr(target, lambda: "sheets-writer@example.iam.gserviceaccount.com")
 
 
 def _add_respondent(fake_store: FakeStore, assembly_id, external_id: str, status: RespondentStatus) -> None:

@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<!--
+ABOUTME: Single-file interactive explainer of the assembly registration-page setup workflow.
+ABOUTME: Linear 6-stage wizard with a sidebar of "works here vs illustrative" notes; no build step, no framework.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Registration page setup — workflow explainer</title>
+    <style>
+  /* Tokens lifted from backoffice design system (primitive + semantic) */
+      :root {
+        --brand-50:#FBE7EF; --brand-100:#F4B6CB; --brand-200:#E682A4; --brand-300:#C70039;
+        --brand-400:#90003F; --brand-600:#720046; --brand-700:#5E003A;
+        --n0:#FFFFFF; --n50:#F7F7F8; --n100:#EFEFF1; --n200:#E1E2E5; --n300:#C8CAD0;
+        --n400:#9EA2AC; --n500:#6F7482; --n600:#4E5361; --n700:#2F3442; --n800:#1F2330;
+        --success-100:#E6F4EA; --success-400:#2E8B57; --success-600:#1F6A42;
+        --warning-100:#FFF4E5; --warning-400:#D9822B; --warning-600:#A6631E;
+        --info-100:#E8F1FA; --info-400:#3A7BD5; --info-600:#2B5FA6;
+        --error-100:#FDEBEC; --error-400:#C70039; --error-600:#90003F;
+        --radius:8px;
+      }
+      * { box-sizing:border-box; }
+      html,body { margin:0; }
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background:var(--n50); color:var(--n600); line-height:1.5;
+      }
+      h1,h2,h3,h4 { color:var(--n700); line-height:1.25; margin:0 0 .5rem; }
+      p { margin:0 0 .75rem; }
+      a { color:var(--brand-400); }
+      code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.85em; }
+
+  /* ---- top bar ---- */
+      .appbar { background:var(--n800); color:var(--n0); padding:.75rem 1.5rem; display:flex; align-items:center; gap:.75rem; }
+      .appbar .logo { width:26px;height:26px;border-radius:6px;background:var(--brand-400); display:grid;place-items:center;font-weight:700;font-size:.8rem; }
+      .appbar .title { font-weight:600; }
+      .appbar .sub { color:var(--n400); font-size:.85rem; margin-left:.25rem; }
+      .demo-flag { margin-left:auto; background:var(--warning-100); color:var(--warning-600); border:1px solid var(--warning-400); padding:.15rem .55rem; border-radius:999px; font-size:.72rem; font-weight:600; letter-spacing:.02em; }
+
+  /* ---- progress steps ---- */
+      .steps { background:var(--n0); border-bottom:1px solid var(--n200); padding:0 1.5rem; display:flex; gap:.25rem; overflow-x:auto; }
+      .step { appearance:none; background:none; border:none; cursor:pointer; padding:.9rem .7rem; display:flex; align-items:center; gap:.45rem;
+        color:var(--n500); font-size:.88rem; font-family:inherit; border-bottom:3px solid transparent; white-space:nowrap; }
+      .step:hover { color:var(--n700); }
+      .step .num { width:1.4rem;height:1.4rem;border-radius:50%; background:var(--n200); color:var(--n600); display:grid;place-items:center; font-size:.78rem; font-weight:700; }
+      .step.active { color:var(--brand-400); border-bottom-color:var(--brand-400); font-weight:600; }
+      .step.active .num { background:var(--brand-400); color:#fff; }
+      .step.done .num { background:var(--success-400); color:#fff; }
+
+  /* ---- nav bars (top + bottom) ---- */
+      .navbar { max-width:1280px; margin:0 auto; padding:1rem 1.5rem; display:flex; justify-content:space-between; gap:1rem; }
+      .navbar.top { padding-bottom:0; }
+      .navbar.bottom { padding-bottom:2.5rem; }
+
+  /* ---- layout ---- */
+      .layout { max-width:1280px; margin:0 auto; padding:.5rem 1.5rem 1.5rem; display:grid; grid-template-columns: minmax(0,1fr) 320px; gap:1.5rem; align-items:start; }
+      @media (max-width: 920px){ .layout { grid-template-columns:1fr; } }
+      .main { min-width:0; }
+
+      .stage-head h2 { font-size:1.6rem; }
+      .stage-head .lede { color:var(--n500); font-size:1.05rem; max-width:62ch; }
+      .stage-head .stage-tag { display:inline-block; font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--brand-400); margin-bottom:.35rem; }
+
+  /* ---- cards ---- */
+      .card { background:var(--n0); border:1px solid var(--n200); border-radius:var(--radius); padding:1.1rem 1.2rem; margin:1rem 0; }
+      .card.highlight { border-color:var(--brand-200); }
+      .card h3 { font-size:1.05rem; }
+      .muted { color:var(--n500); }
+      .small { font-size:.85rem; }
+
+  /* ---- buttons ---- */
+      .btn { font-family:inherit; cursor:pointer; border-radius:6px; padding:.5rem .9rem; font-size:.9rem; font-weight:600; border:1px solid transparent; display:inline-flex; align-items:center; gap:.4rem; }
+      .btn-primary { background:var(--brand-400); color:#fff; }
+      .btn-primary:hover { background:var(--brand-600); }
+      .btn-secondary { background:#fff; color:var(--n700); border-color:var(--n700); }
+      .btn-secondary:hover { background:var(--n200); }
+      .btn-ghost { background:transparent; color:var(--n700); border-color:transparent; }
+      .btn-ghost:hover { background:var(--n200); }
+      .btn-sm { padding:.3rem .65rem; font-size:.82rem; }
+      .btn:disabled { opacity:.45; cursor:not-allowed; }
+      .iconbtn { background:transparent; border:1px solid var(--n200); border-radius:6px; cursor:pointer; width:1.85rem; height:1.85rem; display:grid; place-items:center; color:var(--n500); font-size:.95rem; }
+      .iconbtn:hover { background:var(--n100); color:var(--n700); }
+      .iconbtn.danger:hover { background:var(--error-100); color:var(--error-600); border-color:var(--error-400); }
+
+  /* ---- pills / chips ---- */
+      .chips { display:flex; flex-wrap:wrap; gap:.35rem; }
+      .chip { background:var(--n100); border:1px solid var(--n200); color:var(--n600); border-radius:999px; padding:.15rem .55rem; font-size:.8rem; }
+      .chip.brand { background:var(--brand-50); border-color:var(--brand-100); color:var(--brand-600); }
+
+      .palette { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:.6rem; }
+      .palette-item { border:1px solid var(--n200); border-radius:var(--radius); padding:.7rem .8rem; background:var(--n0); display:flex; flex-direction:column; gap:.35rem; }
+      .palette-item .pi-top { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+      .palette-item h4 { font-size:.95rem; margin:0; }
+      .palette-item.added { border-color:var(--success-400); background:var(--success-100); }
+
+  /* row used for both "available" and "selected" lists so they look identical */
+      .field-row { display:flex; align-items:center; gap:.55rem; padding:.5rem .6rem; border:1px solid var(--n200); border-radius:6px; background:var(--n0); margin:.4rem 0; }
+      .field-row .grip { color:var(--n400); cursor:grab; font-size:1rem; }
+      .field-row .fr-body { flex:1; min-width:0; }
+      .field-row .fr-label { font-weight:600; color:var(--n700); font-size:.92rem; }
+      .field-row .fr-meta { font-size:.78rem; color:var(--n500); }
+      .field-row .fr-actions { display:flex; gap:.3rem; align-items:center; }
+      .badge { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:.05rem .4rem; border-radius:4px; }
+      .badge.req { background:var(--error-100); color:var(--error-600); }
+      .badge.type { background:var(--n100); color:var(--n500); }
+      .badge.target { background:var(--brand-50); color:var(--brand-600); }
+
+      .section-block { border:1px solid var(--n200); border-radius:var(--radius); margin:.9rem 0; overflow:hidden; }
+      .section-head { background:var(--n50); border-bottom:1px solid var(--n200); padding:.6rem .8rem; display:flex; align-items:center; gap:.55rem; }
+      .section-head h3 { margin:0; font-size:1rem; }
+      .section-head .sh-actions { margin-left:auto; display:flex; gap:.3rem; }
+      .section-body { padding:.6rem .8rem; }
+
+  /* inline editor */
+      .inline-edit { display:grid; gap:.4rem; padding:.6rem; border:1px dashed var(--brand-200); border-radius:6px; background:var(--brand-50); margin:.4rem 0; }
+      label.lbl { font-size:.8rem; font-weight:600; color:var(--n700); }
+      input.txt, textarea.txt, select.txt {
+        font-family:inherit; font-size:.9rem; padding:.45rem .55rem; border:1px solid var(--n300); border-radius:6px; width:100%; color:var(--n700); background:#fff;
+      }
+      textarea.txt { resize:vertical; }
+      .row2 { display:grid; grid-template-columns:1fr auto; gap:.4rem; align-items:end; }
+
+  /* create-form explainer */
+      .flow-step { display:flex; gap:.85rem; align-items:flex-start; padding:.85rem 0; border-bottom:1px solid var(--n100); }
+      .flow-step:last-child { border-bottom:0; padding-bottom:0; }
+      .flow-step .fs-num { flex:0 0 auto; width:2rem; height:2rem; border-radius:50%; background:var(--brand-400); color:#fff; display:grid; place-items:center; font-weight:700; }
+      .flow-step h4 { margin:.15rem 0 .25rem; }
+
+  /* ---- sidebar notes ---- */
+      .aside { position:sticky; top:1rem; }
+      .notebox { background:var(--n0); border:1px solid var(--n200); border-radius:var(--radius); overflow:hidden; }
+      .notebox > .nb-head { background:var(--n800); color:#fff; padding:.6rem .85rem; font-weight:600; font-size:.9rem; display:flex; align-items:center; gap:.45rem; }
+      .nb-body { padding:.5rem .85rem .9rem; }
+      .note { border-left:3px solid var(--n300); padding:.5rem .6rem; margin:.6rem 0; font-size:.85rem; border-radius:0 6px 6px 0; }
+      .note h5 { margin:0 0 .2rem; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+      .note.live   { background:var(--success-100); border-left-color:var(--success-400); }
+      .note.live h5 { color:var(--success-600); }
+      .note.future { background:var(--info-100); border-left-color:var(--info-400); }
+      .note.future h5 { color:var(--info-600); }
+      .note.warn   { background:var(--warning-100); border-left-color:var(--warning-400); }
+      .note.warn h5 { color:var(--warning-600); }
+      .note p { margin:.15rem 0; }
+      .note ul { margin:.2rem 0 0; padding-left:1.1rem; }
+      .note li { margin:.15rem 0; }
+
+  /* ---- public form preview ---- */
+      .gov-preview { background:#fff; border:1px solid var(--n300); border-radius:var(--radius); padding:0; overflow:hidden; }
+      .gov-preview .gp-bar { background:var(--n800); color:#fff; padding:.6rem 1.2rem; font-size:.85rem; }
+      .gov-inner { padding:1.4rem 1.6rem 2rem; max-width:680px; }
+      .gov-inner h1 { font-size:1.8rem; border-bottom:0; }
+      .gov-fieldset { border:0; padding:0; margin:0 0 1.6rem; }
+      .gov-legend { font-size:1.15rem; font-weight:700; color:var(--n700); border-bottom:2px solid var(--brand-400); padding-bottom:.3rem; margin-bottom:.8rem; }
+      .gov-field { margin:0 0 1rem; }
+      .gov-field > label, .gov-field > .gov-q { display:block; font-weight:600; color:var(--n700); margin-bottom:.25rem; }
+      .gov-hint { color:var(--n500); font-size:.85rem; margin-bottom:.35rem; }
+      .gov-field input[type=text], .gov-field input[type=email], .gov-field input[type=tel], .gov-field select {
+        width:100%; padding:.5rem .55rem; border:2px solid var(--n700); border-radius:4px; font-family:inherit; font-size:.95rem;
+      }
+      .gov-opt { display:flex; align-items:center; gap:.5rem; margin:.3rem 0; }
+      .gov-submit { background:var(--success-400); color:#fff; border:0; border-radius:4px; padding:.65rem 1.2rem; font-size:1rem; font-weight:700; cursor:pointer; }
+
+      .summary-row { display:flex; justify-content:space-between; gap:1rem; padding:.45rem .2rem; border-bottom:1px solid var(--n100); font-size:.9rem; }
+      .summary-row .k { color:var(--n500); }
+      .summary-row .v { color:var(--n700); font-weight:600; text-align:right; word-break:break-all; }
+
+      .share-grid { display:grid; grid-template-columns:1fr auto; gap:1.4rem; align-items:start; }
+      @media (max-width:560px){ .share-grid { grid-template-columns:1fr; } }
+      .qr-box { text-align:center; }
+      canvas.qr { width:150px; height:150px; image-rendering:pixelated; border:1px solid var(--n200); border-radius:6px; background:#fff; }
+
+      .hidden { display:none !important; }
+      .hintline { font-size:.82rem; color:var(--n500); margin:.4rem 0 0; }
+      details.helper { margin:.5rem 0; }
+      details.helper summary { cursor:pointer; color:var(--brand-400); font-size:.85rem; }
+    </style>
+  </head>
+  <body>
+    <div class="appbar">
+      <div class="logo">DL</div>
+      <span class="title">OpenDLP</span>
+      <span class="sub">Assembly setup — registration page walkthrough</span>
+      <span class="demo-flag">INTERACTIVE EXPLAINER · not the real app</span>
+    </div>
+
+    <nav class="steps" id="steps"></nav>
+
+    <div class="navbar top">
+      <button class="btn btn-secondary navback">← Back</button>
+      <button class="btn btn-primary navnext">Next →</button>
+    </div>
+
+    <div class="layout">
+      <div class="main" id="stage"></div>
+      <aside class="aside">
+        <div class="notebox">
+          <div class="nb-head">📋 What's going on here</div>
+          <div class="nb-body" id="sidebar"></div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="navbar bottom">
+      <button class="btn btn-secondary navback">← Back</button>
+      <button class="btn btn-primary navnext">Next →</button>
+    </div>
+
+    <script>
+      "use strict";
+
+/* ================================================================== *
+ * Self-contained QR encoder (byte mode, single Reed-Solomon block,    *
+ * EC level L, auto-sized versions 1-5). Enough for a short URL, no    *
+ * external library or network needed.                                 *
+ * ================================================================== */
+      const QR = (function () {
+        const EXP = new Array(256), LOG = new Array(256);
+        (function () { let x = 1; for (let i = 0; i < 256; i++) { EXP[i] = x; x <<= 1; if (x & 0x100) x ^= 0x11d; } for (let i = 0; i < 255; i++) LOG[EXP[i]] = i; })();
+        const gmul = (a, b) => (a === 0 || b === 0) ? 0 : EXP[(LOG[a] + LOG[b]) % 255];
+        function genPoly(n) { let p = [1]; for (let i = 0; i < n; i++) { const np = new Array(p.length + 1).fill(0); for (let j = 0; j < p.length; j++) { np[j] ^= p[j]; np[j + 1] ^= gmul(p[j], EXP[i]); } p = np; } return p; }
+        function rsEnc(data, ecLen) { const g = genPoly(ecLen); const buf = data.concat(new Array(ecLen).fill(0)); for (let i = 0; i < data.length; i++) { const c = buf[i]; if (c) for (let j = 0; j < g.length; j++) buf[i + j] ^= gmul(g[j], c); } return buf.slice(data.length); }
+        const VER = { 1:{tot:19,ec:7}, 2:{tot:34,ec:10}, 3:{tot:55,ec:15}, 4:{tot:80,ec:20}, 5:{tot:108,ec:26} };
+        const ALIGN = { 1:[], 2:[6,18], 3:[6,22], 4:[6,26], 5:[6,30] };
+        function utf8(str) { const o = []; for (const ch of str) { let c = ch.codePointAt(0);
+          if (c < 0x80) o.push(c);
+          else if (c < 0x800) o.push(0xc0|(c>>6), 0x80|(c&0x3f));
+          else if (c < 0x10000) o.push(0xe0|(c>>12), 0x80|((c>>6)&0x3f), 0x80|(c&0x3f));
+          else o.push(0xf0|(c>>18), 0x80|((c>>12)&0x3f), 0x80|((c>>6)&0x3f), 0x80|(c&0x3f)); } return o; }
+        function chooseVer(len) { const need = Math.ceil((4 + 8 + 8 * len) / 8); for (let v = 1; v <= 5; v++) if (VER[v].tot >= need) return v; throw new Error("Data too long for demo QR"); }
+        function pushBits(arr, val, len) { for (let i = len - 1; i >= 0; i--) arr.push((val >> i) & 1); }
+        function bits2bytes(bits) { const o = []; for (let i = 0; i < bits.length; i += 8) { let v = 0; for (let j = 0; j < 8; j++) v = (v << 1) | (bits[i + j] || 0); o.push(v); } return o; }
+        function getMask(m, i, j) { switch (m) {
+          case 0: return (i + j) % 2 === 0;
+          case 1: return i % 2 === 0;
+          case 2: return j % 3 === 0;
+          case 3: return (i + j) % 3 === 0;
+          case 4: return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
+          case 5: return ((i * j) % 2 + (i * j) % 3) === 0;
+          case 6: return (((i * j) % 2 + (i * j) % 3)) % 2 === 0;
+          case 7: return (((i + j) % 2 + (i * j) % 3)) % 2 === 0; } }
+        function bchDigit(d) { let n = 0; while (d !== 0) { n++; d >>>= 1; } return n; }
+        function bchType(data) { let d = data << 10; while (bchDigit(d) - bchDigit(0x537) >= 0) d ^= (0x537 << (bchDigit(d) - bchDigit(0x537))); return ((data << 10) | d) ^ 0x5412; }
+
+        function place(size, ver, all, mask) {
+          const m = Array.from({ length: size }, () => new Array(size).fill(null));
+          function finder(r, c) { for (let dr = -1; dr <= 7; dr++) for (let dc = -1; dc <= 7; dc++) { const rr = r + dr, cc = c + dc; if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
+            const on = (dr >= 0 && dr <= 6 && (dc === 0 || dc === 6)) || (dc >= 0 && dc <= 6 && (dr === 0 || dr === 6)) || (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4); m[rr][cc] = on; } }
+          finder(0, 0); finder(size - 7, 0); finder(0, size - 7);
+          const pos = ALIGN[ver];
+          for (const r of pos) for (const c of pos) { if (m[r][c] !== null) continue; for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) m[r + dr][c + dc] = (dr === -2 || dr === 2 || dc === -2 || dc === 2 || (dr === 0 && dc === 0)); }
+          for (let i = 8; i < size - 8; i++) { if (m[i][6] === null) m[i][6] = (i % 2 === 0); if (m[6][i] === null) m[6][i] = (i % 2 === 0); }
+          const fmt = bchType((1 << 3) | mask); // EC level L = 1
+          for (let i = 0; i < 15; i++) { const bit = ((fmt >> i) & 1) === 1;
+            if (i < 6) m[i][8] = bit; else if (i < 8) m[i + 1][8] = bit; else m[size - 15 + i][8] = bit;
+            if (i < 8) m[8][size - i - 1] = bit; else if (i < 9) m[8][15 - i - 1 + 1] = bit; else m[8][15 - i - 1] = bit; }
+          m[size - 8][8] = true; // dark module
+          let bitIdx = 7, byteIdx = 0, dir = -1, row = size - 1;
+          for (let col = size - 1; col > 0; col -= 2) { if (col === 6) col--;
+            while (true) { for (let cc = 0; cc < 2; cc++) { const c = col - cc; if (m[row][c] === null) {
+              let dark = false; if (byteIdx < all.length) dark = ((all[byteIdx] >>> bitIdx) & 1) === 1;
+              if (getMask(mask, row, c)) dark = !dark; m[row][c] = dark;
+              bitIdx--; if (bitIdx < 0) { byteIdx++; bitIdx = 7; } } }
+              row += dir; if (row < 0 || row >= size) { row -= dir; dir = -dir; break; } } }
+          return m;
+        }
+        function matchSeq(m, i, j, horiz, pat) { for (let k = 0; k < 11; k++) { const v = horiz ? m[i][j + k] : m[j + k][i]; if ((v ? true : false) !== pat[k]) return false; } return true; }
+        function penalty(m, size) { let p = 0;
+          for (let i = 0; i < size; i++) { let rc = 1, cc = 1; for (let j = 1; j < size; j++) {
+            if (m[i][j] === m[i][j - 1]) rc++; else { if (rc >= 5) p += 3 + (rc - 5); rc = 1; }
+            if (m[j][i] === m[j - 1][i]) cc++; else { if (cc >= 5) p += 3 + (cc - 5); cc = 1; } }
+            if (rc >= 5) p += 3 + (rc - 5); if (cc >= 5) p += 3 + (cc - 5); }
+          for (let i = 0; i < size - 1; i++) for (let j = 0; j < size - 1; j++) { const v = m[i][j]; if (v === m[i][j + 1] && v === m[i + 1][j] && v === m[i + 1][j + 1]) p += 3; }
+          const p1 = [true,false,true,true,true,false,true,false,false,false,false];
+          const p2 = [false,false,false,false,true,false,true,true,true,false,true];
+          for (let i = 0; i < size; i++) for (let j = 0; j <= size - 11; j++) {
+            if (matchSeq(m, i, j, true, p1) || matchSeq(m, i, j, true, p2)) p += 40;
+            if (matchSeq(m, i, j, false, p1) || matchSeq(m, i, j, false, p2)) p += 40; }
+          let dark = 0; for (let i = 0; i < size; i++) for (let j = 0; j < size; j++) if (m[i][j]) dark++;
+          p += Math.floor(Math.abs(Math.floor(100 * dark / (size * size)) - 50) / 5) * 10;
+          return p;
+        }
+        function build(text) {
+          const bytes = utf8(text), ver = chooseVer(bytes.length), info = VER[ver], size = 17 + ver * 4;
+          const bits = []; pushBits(bits, 0b0100, 4); pushBits(bits, bytes.length, 8); for (const b of bytes) pushBits(bits, b, 8);
+          const cap = info.tot * 8; pushBits(bits, 0, Math.min(4, cap - bits.length));
+          while (bits.length % 8) bits.push(0);
+          const pads = [0xEC, 0x11]; let pi = 0; while (bits.length < cap) pushBits(bits, pads[pi++ % 2], 8);
+          const dataCw = bits2bytes(bits), ecCw = rsEnc(dataCw, info.ec), all = dataCw.concat(ecCw);
+          let best = null, bestPen = Infinity;
+          for (let mask = 0; mask < 8; mask++) { const mtx = place(size, ver, all, mask); const pen = penalty(mtx, size); if (pen < bestPen) { bestPen = pen; best = mtx; } }
+          return { matrix: best, size };
+        }
+        function draw(canvas, text, scale, quiet) {
+          const { matrix, size } = build(text); scale = scale || 6; quiet = (quiet == null) ? 4 : quiet;
+          const dim = (size + quiet * 2) * scale; canvas.width = dim; canvas.height = dim;
+          const ctx = canvas.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, dim, dim); ctx.fillStyle = "#0b0c0c";
+          for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (matrix[r][c]) ctx.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
+        }
+        return { build, draw };
+      })();
+
+/* dummy public URLs for the generated page */
+      const REG_URL = "https://register.example.org/climate-assembly-2024";
+      const SHORT_URL = "https://opndlp.org/r/CLMT24";
+
+/* ================================================================== *
+ * State — flows through every stage so later stages reflect earlier   *
+ * choices.                                                            *
+ * ================================================================== */
+      let uid = 1;
+      const nid = () => "id" + (uid++);
+
+      const STD_TARGETS = {
+        gender: { name: "Gender", options: ["Male", "Female", "Non-binary / Other"] },
+        edu_eng: { name: "Education level (England)", options: [
+          "No qualifications", "Level 1 (GCSE grades 3–1 / D–G)", "Level 2 (GCSE grades 9–4 / A*–C)",
+          "Level 3 (A-level or equivalent)", "Level 4+ (degree or higher)"] },
+        edu_scot: { name: "Education level (Scotland)", options: [
+          "No qualifications", "National 4 / 5", "Higher", "Advanced Higher", "Degree or higher"] },
+        climate: { name: "Attitude to Climate Change", options: [
+          "Very concerned", "Fairly concerned", "Neutral", "Not very concerned", "Not at all concerned", "Don't know"] },
+      };
+
+      function targetToField(t) {
+        return { id: nid(), label: t.name, type: t.options.length > 6 ? "select" : "radio",
+          help: "", required: true, options: t.options.slice(), fromTarget: true };
+      }
+
+      const STD_SECTIONS = {
+        eligibility: () => ({ id: nid(), title: "Confirm eligibility and ability to attend", std: "eligibility", fields: [
+          { id: nid(), label: "I confirm I meet the eligibility criteria for this assembly", type: "checkbox", required: true, help: "" },
+          { id: nid(), label: "I am able to attend all of the session dates", type: "checkbox", required: true, help: "" },
+        ]}),
+        contact: () => ({ id: nid(), title: "Name and contact details", std: "contact", fields: [
+          { id: nid(), label: "First name", type: "text", required: true, help: "" },
+          { id: nid(), label: "Last name", type: "text", required: true, help: "" },
+          { id: nid(), label: "Email", type: "email", required: true, help: "" },
+          { id: nid(), label: "Phone", type: "tel", required: true, help: "" },
+          { id: nid(), label: "Address line 1", type: "text", required: true, help: "" },
+          { id: nid(), label: "Address line 2", type: "text", required: false, help: "" },
+          { id: nid(), label: "Town or city", type: "text", required: true, help: "" },
+          { id: nid(), label: "Postcode", type: "text", required: true, help: "" },
+        ]}),
+        contact_intl: () => ({ id: nid(), title: "Name and contact details (international)", std: "contact_intl", fields: [
+          { id: nid(), label: "First name", type: "text", required: true, help: "" },
+          { id: nid(), label: "Last name", type: "text", required: true, help: "" },
+          { id: nid(), label: "Email", type: "email", required: true, help: "" },
+          { id: nid(), label: "Phone country code", type: "text", required: true, help: "e.g. +44" },
+          { id: nid(), label: "Phone", type: "tel", required: true, help: "" },
+          { id: nid(), label: "Address line 1", type: "text", required: true, help: "" },
+          { id: nid(), label: "Address line 2", type: "text", required: false, help: "" },
+          { id: nid(), label: "Town or city", type: "text", required: true, help: "" },
+          { id: nid(), label: "Postcode / ZIP", type: "text", required: true, help: "" },
+          { id: nid(), label: "Country", type: "text", required: true, help: "" },
+        ]}),
+        about: () => ({ id: nid(), title: "About you", std: "about",
+          fields: state.targets.map(targetToField),
+          note: "Pre-filled from your selection targets" }),
+        consent: () => ({ id: nid(), title: "Consent", std: "consent", fields: [
+          { id: nid(), label: "I consent to my details being stored for this selection process", type: "checkbox", required: true, help: "" },
+          { id: nid(), label: "I'm happy for you to keep my details and contact me about future assemblies", type: "checkbox", required: false, help: "" },
+        ]}),
+      };
+
+      const SECTION_CATALOG = [
+        { key: "eligibility", title: "Confirm eligibility and ability to attend", desc: "Two required checkboxes" },
+        { key: "contact",     title: "Name and contact details", desc: "Name, email, phone, UK address" },
+        { key: "contact_intl",title: "Name and contact details (international)", desc: "Adds phone country code + country" },
+        { key: "about",       title: "About you", desc: "Defaults to your chosen targets" },
+        { key: "consent",     title: "Consent", desc: "Data-storage + future-contact consent" },
+      ];
+
+      const state = {
+        step: 1,
+        targets: [],
+        sections: [],
+        intro: {
+          title: "Register your interest in the Climate Assembly",
+          body: "We're using a civic lottery to choose a representative group of residents. Anyone who registers has a chance of being selected. It takes about 5 minutes to register.\n\nThe assembly meets over four weekends in the autumn. Travel and care costs are covered, and you'll receive a thank-you payment for taking part.",
+        },
+      };
+
+      const STEPS = [
+        { n: 1, label: "Pick targets" },
+        { n: 2, label: "Create form" },
+        { n: 3, label: "Write intro" },
+        { n: 4, label: "Choose fields" },
+        { n: 5, label: "Arrange & edit" },
+        { n: 6, label: "Generated page" },
+      ];
+      const LAST = 6;
+
+/* ------------------------------------------------------------------ */
+      const $ = (sel, root=document) => root.querySelector(sel);
+      const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+      const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+      const typeLabel = { text:"text", email:"email", tel:"phone", checkbox:"checkbox", radio:"choice", select:"dropdown" };
+
+/* ============================ RENDER ============================== */
+      function render() {
+        renderSteps();
+        const m = $("#stage");
+        ({1:stageTargets, 2:stageCreateForm, 3:stageIntro, 4:stageFields, 5:stageArrange, 6:stageGenerated}[state.step])(m);
+        renderSidebar();
+        $$(".navback").forEach(b => b.disabled = state.step === 1);
+        $$(".navnext").forEach(b => b.textContent = state.step === LAST ? "↺ Start over" : "Next →");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function renderSteps() {
+        $("#steps").innerHTML = STEPS.map(s => {
+          const cls = s.n === state.step ? "active" : (s.n < state.step ? "done" : "");
+          const mark = s.n < state.step ? "✓" : s.n;
+          return `<button class="step ${cls}" data-step="${s.n}"><span class="num">${mark}</span>${esc(s.label)}</button>`;
+        }).join("");
+      }
+
+/* ---------------------------- Stage 1: targets -------------------- */
+      function stageTargets(m) {
+        const chosen = new Set(state.targets.filter(t=>t.std).map(t=>t.std));
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Stage 1 of 6 · Targets tab</span>
+      <h2>Pick your selection targets</h2>
+      <p class="lede">Choose the 3–7 demographic characteristics you'll balance the assembly against.
+      Each target has a set of options — usually 2–5, occasionally up to ~20 (e.g. a local ward).</p>
+    </div>
+
+    <div class="card highlight">
+      <h3>Selected targets <span class="chip brand">${state.targets.length}</span></h3>
+      ${state.targets.length === 0 ? `<p class="muted small">Nothing yet — add at least 3 from the lists below.</p>` :
+        state.targets.map(t => `
+        <div class="field-row">
+        <span class="fr-body">
+        <span class="fr-label">${esc(t.name)}</span>
+        ${t.std ? `<span class="badge type">common</span>` : `<span class="badge target">custom</span>`}
+        <div class="fr-meta">${t.options.map(esc).join(" · ")}</div>
+        </span>
+        <span class="fr-actions"><button class="iconbtn danger" data-deltarget="${t.id}" aria-label="Remove">✕</button></span>
+        </div>`).join("")}
+    </div>
+
+    <div class="card">
+      <h3>Common targets</h3>
+      <p class="muted small">Click <strong>Add</strong> to use one. These come with sensible default options you can edit later.</p>
+      ${Object.entries(STD_TARGETS).map(([k,v]) => `
+        <div class="field-row">
+        <span class="fr-body">
+        <span class="fr-label">${esc(v.name)}</span>
+        <div class="fr-meta">${v.options.map(esc).join(" · ")}</div>
+        </span>
+        <span class="fr-actions">
+        ${chosen.has(k)
+            ? `<button class="btn btn-secondary btn-sm" disabled>✓ Added</button>`
+            : `<button class="btn btn-primary btn-sm" data-addstd="${k}">+ Add</button>`}
+        </span>
+        </div>`).join("")}
+    </div>
+
+    <div class="card">
+      <h3>Make up your own target</h3>
+      <p class="muted small">Give it a name and list the options (comma separated).</p>
+      <div class="inline-edit" style="border-style:solid;background:#fff;border-color:var(--n200)">
+        <div><label class="lbl">Field name</label><input class="txt" id="ctName" placeholder="e.g. Age group"></div>
+        <div><label class="lbl">Options</label><input class="txt" id="ctOpts" placeholder="e.g. 16–24, 25–34, 35–49, 50–64, 65+"></div>
+        <div><button class="btn btn-primary btn-sm" id="ctAdd">+ Add custom target</button></div>
+      </div>
+    </div>`;
+
+        $$("[data-addstd]", m).forEach(b => b.onclick = () => {
+          const k = b.dataset.addstd;
+          state.targets.push({ id: nid(), std: k, name: STD_TARGETS[k].name, options: STD_TARGETS[k].options.slice() });
+          render();
+        });
+        $$("[data-deltarget]", m).forEach(b => b.onclick = () => {
+          state.targets = state.targets.filter(t => t.id !== b.dataset.deltarget); render();
+        });
+        $("#ctAdd").onclick = () => {
+          const name = $("#ctName").value.trim();
+          const opts = $("#ctOpts").value.split(",").map(s=>s.trim()).filter(Boolean);
+          if (!name || opts.length < 2) { alert("Give the target a name and at least two options."); return; }
+          state.targets.push({ id: nid(), name, options: opts });
+          render();
+        };
+      }
+
+/* ---------------------------- Stage 2: create form (explainer) ---- */
+      function stageCreateForm(m) {
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Stage 2 of 6 · Registration tab</span>
+      <h2>Create your registration form</h2>
+      <p class="lede">With your targets set, you'll now build the page people use to register. It comes
+      together in two parts:</p>
+    </div>
+
+    <div class="card">
+      <div class="flow-step">
+        <div class="fs-num">1</div>
+        <div>
+          <h4>Write an introduction</h4>
+          <p class="muted small" style="margin:0">A short welcome that explains what the assembly is, who can take
+          part, what's involved, and why it's worth registering. It appears at the top of the page.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="fs-num">2</div>
+        <div>
+          <h4>Build the form</h4>
+          <p class="muted small" style="margin:0">Add the sections and fields you'll collect. The targets you just
+          picked are carried straight in as an <strong>"About you"</strong> section, so registrants tell you the
+          things you're balancing the assembly for.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Carried over from your targets</h3>
+      ${state.targets.length === 0
+        ? `<p class="small" style="color:var(--warning-600);margin:0">⚠ No targets picked yet. Go back to stage 1 — these will become your "About you" questions.</p>`
+        : `<p class="muted small">These ${state.targets.length} target${state.targets.length===1?"":"s"} will appear as questions in the "About you" section of your form:</p>
+        <div class="chips">${state.targets.map(t=>`<span class="chip brand">${esc(t.name)}</span>`).join("")}</div>`}
+    </div>`;
+      }
+
+/* ---------------------------- Stage 3: intro ---------------------- */
+      function stageIntro(m) {
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Stage 3 of 6 · Registration tab</span>
+      <h2>Write the registration page intro</h2>
+      <p class="lede">This sits above the form and explains the assembly to potential registrants. Edit on the
+      left, preview updates live on the right.</p>
+    </div>
+    <div class="card">
+      <div><label class="lbl">Page heading</label><input class="txt" id="introTitle" value="${esc(state.intro.title)}"></div>
+      <div style="margin-top:.7rem"><label class="lbl">Intro text</label>
+        <textarea class="txt" id="introBody" rows="8">${esc(state.intro.body)}</textarea>
+        <p class="hintline">Blank lines start new paragraphs. The real editor offers basic rich text (bold, links, lists).</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Live preview</h3>
+      <div class="gov-inner" style="padding:.5rem 0">
+        <h1 id="pvTitle"></h1>
+        <div id="pvBody"></div>
+      </div>
+    </div>`;
+        const sync = () => {
+          state.intro.title = $("#introTitle").value;
+          state.intro.body = $("#introBody").value;
+          $("#pvTitle").textContent = state.intro.title;
+          $("#pvBody").innerHTML = state.intro.body.split(/\n{2,}/).map(p=>`<p>${esc(p).replace(/\n/g,"<br>")}</p>`).join("");
+        };
+        $("#introTitle").oninput = sync; $("#introBody").oninput = sync; sync();
+      }
+
+/* ---------------------------- Stage 4: choose fields -------------- */
+      function stageFields(m) {
+        const added = new Set(state.sections.filter(s=>s.std).map(s=>s.std));
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Stage 4 of 6 · Registration tab</span>
+      <h2>Choose the fields you'll collect</h2>
+      <p class="lede">Add ready-made sections, then tailor them in the next stage. "About you" is pre-filled
+      from the targets you picked.</p>
+    </div>
+
+    <div class="card highlight">
+      <h3>Your form so far <span class="chip brand">${state.sections.length} section${state.sections.length===1?"":"s"}</span></h3>
+      ${state.sections.length===0 ? `<p class="muted small">No sections yet — add some from below.</p>` :
+        state.sections.map(s => `
+        <div class="field-row">
+        <span class="fr-body">
+        <span class="fr-label">${esc(s.title)}</span>
+        <div class="fr-meta">${s.fields.length} field${s.fields.length===1?"":"s"}${s.fields.length?": " + s.fields.map(f=>esc(f.label)).join(", "):""}</div>
+        </span>
+        <span class="fr-actions"><button class="iconbtn danger" data-delsec="${s.id}" aria-label="Remove">✕</button></span>
+        </div>`).join("")}
+    </div>
+
+    <div class="card">
+      <h3>Common sections</h3>
+      <p class="muted small">Click <strong>Add</strong> to drop a ready-made section into your form.</p>
+      ${SECTION_CATALOG.map(c => `
+        <div class="field-row">
+        <span class="fr-body">
+        <span class="fr-label">${esc(c.title)}</span>
+        <div class="fr-meta">${esc(c.desc)}${c.key==="about" && state.targets.length===0 ? ` · <span style="color:var(--warning-600)">no targets picked yet</span>`:""}</div>
+        </span>
+        <span class="fr-actions">
+        ${added.has(c.key)
+            ? `<button class="btn btn-secondary btn-sm" disabled>✓ Added</button>`
+            : `<button class="btn btn-primary btn-sm" data-addsec="${c.key}">+ Add</button>`}
+        </span>
+        </div>`).join("")}
+    </div>
+
+    <div class="card">
+      <h3>Add a custom section</h3>
+      <div class="row2">
+        <div><label class="lbl">Section title</label><input class="txt" id="csName" placeholder="e.g. Accessibility needs"></div>
+        <div><button class="btn btn-primary" id="csAdd">+ Add section</button></div>
+      </div>
+    </div>`;
+
+        $$("[data-addsec]", m).forEach(b => b.onclick = () => { state.sections.push(STD_SECTIONS[b.dataset.addsec]()); render(); });
+        $$("[data-delsec]", m).forEach(b => b.onclick = () => { state.sections = state.sections.filter(s => s.id !== b.dataset.delsec); render(); });
+        $("#csAdd").onclick = () => {
+          const t = $("#csName").value.trim();
+          if (!t) { alert("Give the section a title."); return; }
+          state.sections.push({ id: nid(), title: t, fields: [] }); render();
+        };
+      }
+
+/* ---------------------------- Stage 5: arrange -------------------- */
+      let editing = null;
+
+      function stageArrange(m) {
+        const secOptions = (cur) => state.sections.map(s =>
+          `<option value="${s.id}" ${s.id===cur?"selected":""}>${esc(s.title)}</option>`).join("");
+
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Stage 5 of 6 · Registration tab</span>
+      <h2>Arrange &amp; edit</h2>
+      <p class="lede">Reorder fields, move them between sections, and edit labels and help text.
+      In the real app this is drag-and-drop — here use the arrow buttons.</p>
+    </div>
+    ${state.sections.length===0 ? `<div class="card"><p class="muted">No sections to arrange. Go back to stage 4.</p></div>` :
+      state.sections.map((s, si) => `
+        <div class="section-block">
+        <div class="section-head">
+        <span class="grip" title="Drag to reorder (illustrative)">⠿</span>
+        <h3>${esc(s.title)}</h3>
+        ${s.std==="about" ? `<span class="badge target">from targets</span>`:""}
+        <span class="sh-actions">
+        <button class="iconbtn" data-secup="${s.id}" ${si===0?"disabled":""} aria-label="Move section up">↑</button>
+        <button class="iconbtn" data-secdown="${s.id}" ${si===state.sections.length-1?"disabled":""} aria-label="Move section down">↓</button>
+        <button class="iconbtn danger" data-delsec="${s.id}" aria-label="Delete section">✕</button>
+        </span>
+        </div>
+        <div class="section-body">
+        ${s.fields.length===0 ? `<p class="muted small">No fields in this section.</p>` :
+          s.fields.map((f, fi) => editing===f.id ? fieldEditor(f) : `
+              <div class="field-row">
+                <span class="grip" title="Drag (illustrative)">⠿</span>
+                <span class="fr-body">
+                  <span class="fr-label">${esc(f.label)}</span>
+                  ${f.required ? `<span class="badge req">required</span>`:""}
+                  <span class="badge type">${typeLabel[f.type]||f.type}</span>
+                  ${f.help ? `<div class="fr-meta">💬 ${esc(f.help)}</div>`:""}
+                  ${f.options ? `<div class="fr-meta">${f.options.map(esc).join(" · ")}</div>`:""}
+                </span>
+                <span class="fr-actions">
+                  <button class="iconbtn" data-fup="${f.id}" data-sec="${s.id}" ${fi===0?"disabled":""} aria-label="Move up">↑</button>
+                  <button class="iconbtn" data-fdown="${f.id}" data-sec="${s.id}" ${fi===s.fields.length-1?"disabled":""} aria-label="Move down">↓</button>
+                  <button class="iconbtn" data-fedit="${f.id}" aria-label="Edit">✎</button>
+                  <button class="iconbtn danger" data-fdel="${f.id}" data-sec="${s.id}" aria-label="Delete">✕</button>
+                </span>
+              </div>
+              <div style="margin:-.1rem 0 .5rem 1.7rem">
+                <label class="small muted">Move to section:
+                  <select class="txt" style="width:auto;display:inline-block;padding:.2rem .4rem" data-fmove="${f.id}" data-from="${s.id}">${secOptions(s.id)}</select>
+                </label>
+              </div>`).join("")}
+        </div>
+        </div>`).join("")}`;
+
+        $$("[data-secup]", m).forEach(b => b.onclick = () => moveSection(b.dataset.secup, -1));
+        $$("[data-secdown]", m).forEach(b => b.onclick = () => moveSection(b.dataset.secdown, 1));
+        $$("[data-delsec]", m).forEach(b => b.onclick = () => { state.sections = state.sections.filter(s=>s.id!==b.dataset.delsec); render(); });
+        $$("[data-fup]", m).forEach(b => b.onclick = () => moveField(b.dataset.sec, b.dataset.fup, -1));
+        $$("[data-fdown]", m).forEach(b => b.onclick = () => moveField(b.dataset.sec, b.dataset.fdown, 1));
+        $$("[data-fdel]", m).forEach(b => b.onclick = () => {
+          const s = state.sections.find(x=>x.id===b.dataset.sec); s.fields = s.fields.filter(f=>f.id!==b.dataset.fdel); render();
+        });
+        $$("[data-fedit]", m).forEach(b => b.onclick = () => { editing = b.dataset.fedit; render(); });
+        $$("[data-fmove]", m).forEach(sel => sel.onchange = () => moveFieldToSection(sel.dataset.from, sel.dataset.fmove, sel.value));
+
+        const ed = m.querySelector(".inline-edit[data-editor]");
+        if (ed) {
+          ed.querySelector("[data-save]").onclick = () => {
+            const f = findField(editing);
+            f.label = ed.querySelector("[data-elabel]").value.trim() || f.label;
+            f.help = ed.querySelector("[data-ehelp]").value.trim();
+            f.required = ed.querySelector("[data-ereq]").checked;
+            const optEl = ed.querySelector("[data-eopts]");
+            if (optEl) f.options = optEl.value.split(",").map(s=>s.trim()).filter(Boolean);
+            editing = null; render();
+          };
+          ed.querySelector("[data-cancel]").onclick = () => { editing = null; render(); };
+        }
+      }
+
+      function fieldEditor(f) {
+        return `<div class="inline-edit" data-editor>
+    <div><label class="lbl">Label</label><input class="txt" data-elabel value="${esc(f.label)}"></div>
+    <div><label class="lbl">Help text</label><input class="txt" data-ehelp value="${esc(f.help||"")}" placeholder="optional guidance shown under the field"></div>
+    ${f.options ? `<div><label class="lbl">Options (comma separated)</label><input class="txt" data-eopts value="${esc(f.options.join(", "))}"></div>`:""}
+    <div><label class="lbl"><input type="checkbox" data-ereq ${f.required?"checked":""}> Required</label></div>
+    <div style="display:flex;gap:.4rem">
+      <button class="btn btn-primary btn-sm" data-save>Save</button>
+      <button class="btn btn-ghost btn-sm" data-cancel>Cancel</button>
+    </div>
+  </div>`;
+      }
+
+      function findField(id){ for(const s of state.sections){ const f=s.fields.find(x=>x.id===id); if(f) return f; } return null; }
+      function moveSection(id,d){ const i=state.sections.findIndex(s=>s.id===id); const j=i+d; if(j<0||j>=state.sections.length)return; [state.sections[i],state.sections[j]]=[state.sections[j],state.sections[i]]; render(); }
+      function moveField(secId,fid,d){ const s=state.sections.find(x=>x.id===secId); const i=s.fields.findIndex(f=>f.id===fid); const j=i+d; if(j<0||j>=s.fields.length)return; [s.fields[i],s.fields[j]]=[s.fields[j],s.fields[i]]; render(); }
+      function moveFieldToSection(fromId,fid,toId){ if(fromId===toId)return; const from=state.sections.find(s=>s.id===fromId); const to=state.sections.find(s=>s.id===toId); const idx=from.fields.findIndex(f=>f.id===fid); const [f]=from.fields.splice(idx,1); to.fields.push(f); render(); }
+
+/* ---------------------------- Stage 6: generated ------------------ */
+      function stageGenerated(m) {
+        m.innerHTML = `
+    <div class="stage-head">
+      <span class="stage-tag">Stage 6 of 6 · Generated page</span>
+      <h2>Your registration page is generated</h2>
+      <p class="lede">From your intro and fields, OpenDLP builds the public registration page. Here's the
+      summary and share links, then the page exactly as registrants would see it.</p>
+    </div>
+
+    <div class="card">
+      <h3>Configuration summary</h3>
+      <div class="share-grid">
+        <div>
+          <div class="summary-row"><span class="k">Selection targets</span><span class="v">${state.targets.length} (${state.targets.map(t=>esc(t.name)).join(", ")||"none"})</span></div>
+          <div class="summary-row"><span class="k">Page heading</span><span class="v">${esc(state.intro.title)}</span></div>
+          <div class="summary-row"><span class="k">Registration URL</span><span class="v">${esc(REG_URL)}</span></div>
+          <div class="summary-row"><span class="k">Short URL</span><span class="v">${esc(SHORT_URL)}</span></div>
+          <div class="summary-row"><span class="k">Status</span><span class="v" style="color:var(--warning-600)">TEST — not yet published</span></div>
+          <div style="margin-top:1rem"><button class="btn btn-secondary btn-sm" id="publishBtn">Publish (illustrative)</button></div>
+        </div>
+        <div class="qr-box">
+          <canvas class="qr" id="qrCanvas" aria-label="QR code for the short registration URL"></canvas>
+          <div style="margin:.5rem 0 .2rem"><button class="btn btn-secondary btn-sm" id="qrDownload">⬇ Download QR</button></div>
+          <p class="small muted" style="margin:0;max-width:170px">Scan to open on a phone. Add the image to printed invitations.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0;background:transparent;border:0">
+      <div class="gov-preview">
+        <div class="gp-bar">🔒 ${esc(REG_URL.replace(/^https:\/\//,""))} &nbsp;·&nbsp; public view</div>
+        <div class="gov-inner">
+          <h1>${esc(state.intro.title)}</h1>
+          ${state.intro.body.split(/\n{2,}/).map(p=>`<p>${esc(p).replace(/\n/g,"<br>")}</p>`).join("")}
+          <form onsubmit="return false">
+            ${state.sections.length===0 ? `<p class="muted">No sections added — go back to stage 4.</p>` : state.sections.map(renderPublicSection).join("")}
+            ${state.sections.length ? `<button type="submit" class="gov-submit">Submit registration</button>` : ""}
+          </form>
+        </div>
+      </div>
+    </div>`;
+
+        QR.draw($("#qrCanvas"), SHORT_URL, 4, 4);
+        $("#qrDownload").onclick = () => {
+          const tmp = document.createElement("canvas");
+          QR.draw(tmp, SHORT_URL, 12, 4);
+          const a = document.createElement("a");
+          a.href = tmp.toDataURL("image/png"); a.download = "registration-qr.png"; a.click();
+        };
+        $("#publishBtn").onclick = () => alert("In the real app this flips the page from TEST to LIVE and the public URL starts accepting registrations. (Illustrative only here.)");
+      }
+
+      function renderPublicSection(s) {
+        return `<fieldset class="gov-fieldset">
+    <legend class="gov-legend">${esc(s.title)}</legend>
+    ${s.fields.map(renderPublicField).join("")}
+  </fieldset>`;
+      }
+      function renderPublicField(f) {
+        const req = f.required ? ` <span style="color:var(--error-600)">*</span>` : "";
+        const hint = f.help ? `<div class="gov-hint">${esc(f.help)}</div>` : "";
+        if (f.type === "checkbox")
+          return `<div class="gov-field"><label class="gov-opt"><input type="checkbox"> <span>${esc(f.label)}${req}</span></label>${hint}</div>`;
+        if (f.type === "radio")
+          return `<div class="gov-field"><span class="gov-q">${esc(f.label)}${req}</span>${hint}
+      ${(f.options||[]).map(o=>`<label class="gov-opt"><input type="radio" name="${f.id}"> <span>${esc(o)}</span></label>`).join("")}</div>`;
+        if (f.type === "select")
+          return `<div class="gov-field"><label class="gov-q">${esc(f.label)}${req}</label>${hint}
+      <select><option>Please select…</option>${(f.options||[]).map(o=>`<option>${esc(o)}</option>`).join("")}</select></div>`;
+  return `<div class="gov-field"><label class="gov-q">${esc(f.label)}${req}</label>${hint}<input type="${f.type==="email"?"email":f.type==="tel"?"tel":"text"}"></div>`;
+}
+
+/* ============================ SIDEBAR ============================= */
+const NOTES = {
+  1: [
+    { cls:"live", h:"Clickable here", html:`<ul>
+        <li>Add common targets, or remove with the ✕</li>
+        <li>Create a custom target with your own options</li></ul>` },
+    { cls:"future", h:"When built", html:`<p>The real <strong>Targets</strong> tab also captures the <em>quota</em> for each option (how many of each you want), imported from a spreadsheet or typed in.</p>
+        <p>Common targets carry vetted option lists and translations.</p>` },
+    { cls:"warn", h:"Watch for", html:`<p>3–7 targets is the sweet spot. Each extra target makes a balanced selection harder to find.</p>` },
+  ],
+  2: [
+    { cls:"live", h:"Clickable here", html:`<p>This is a heads-up screen — just read it and click <strong>Next</strong>. It shows which targets will flow into your form.</p>` },
+    { cls:"future", h:"When built", html:`<p>The two parts (intro, then form) are the next two stages. Your targets become the "About you" section automatically.</p>` },
+  ],
+  3: [
+    { cls:"live", h:"Clickable here", html:`<ul><li>Edit the heading &amp; intro text</li><li>Watch the live preview update</li></ul>` },
+    { cls:"future", h:"When built", html:`<p>A small rich-text editor (bold, links, bullet lists) and per-language versions of the intro. Images and an assembly logo could sit here too.</p>` },
+  ],
+  4: [
+    { cls:"live", h:"Clickable here", html:`<ul>
+        <li>Add common sections, or remove with the ✕</li>
+        <li>"About you" auto-builds from your targets</li>
+        <li>Add an empty custom section</li></ul>` },
+    { cls:"future", h:"When built", html:`<p>Adding a section drops in its fields, ready to tailor. You'd also be able to start a section from scratch and add fields one at a time.</p>` },
+    { cls:"warn", h:"Note", html:`<p>The two "Name and contact details" variants overlap — pick one. The real app would warn about duplicate fields.</p>` },
+  ],
+  5: [
+    { cls:"live", h:"Clickable here", html:`<ul>
+        <li>Reorder sections &amp; fields (↑ ↓)</li>
+        <li>Move a field to another section</li>
+        <li>Edit a field's label, help text, options &amp; required flag (✎)</li>
+        <li>Delete fields or sections</li></ul>` },
+    { cls:"future", h:"When built", html:`<p>Reordering is <strong>drag-and-drop</strong> (the ⠿ grips). The field editor is a richer modal: field type, validation rules, conditional visibility, and per-language translations.</p>` },
+    { cls:"warn", h:"Illustrative", html:`<p>The ⠿ grips don't drag in this demo — use the arrow buttons instead.</p>` },
+  ],
+  6: [
+    { cls:"live", h:"Clickable here", html:`<ul>
+        <li>The public form below is built live from your choices</li>
+        <li>The QR code encodes the short URL — scan it</li>
+        <li>Download the QR as a PNG for printed invitations</li></ul>` },
+    { cls:"future", h:"When built", html:`<p>"Publish" flips the page from <strong>TEST</strong> to <strong>LIVE</strong> and the public URL starts accepting registrations, which feed straight into the respondent pool for selection. The full and short URLs are generated automatically.</p>` },
+    { cls:"warn", h:"Illustrative", html:`<p>The form inputs render but don't submit, "Publish" only shows a note, and the URLs are placeholders (so the QR scans but leads nowhere real).</p>` },
+  ],
+};
+function renderSidebar() {
+  $("#sidebar").innerHTML = (NOTES[state.step]||[]).map(n =>
+    `<div class="note ${n.cls}"><h5>${esc(n.h)}</h5>${n.html}</div>`).join("") +
+    `<details class="helper"><summary>About this explainer</summary>
+        <p class="small muted">A single static HTML file (no server, no framework) illustrating the planned
+        workflow for setting up an assembly's registration page. Green = works in this demo;
+        blue = how the built version behaves.</p></details>`;
+      }
+
+/* ============================ NAV ================================= */
+      function goNext() {
+        if (state.step === LAST) { state.step = 1; state.targets = []; state.sections = []; editing = null; render(); return; }
+        state.step = Math.min(LAST, state.step + 1); render();
+      }
+      function goBack() { state.step = Math.max(1, state.step - 1); render(); }
+
+      $$(".navnext").forEach(b => b.onclick = goNext);
+      $$(".navback").forEach(b => b.onclick = goBack);
+      $("#steps").addEventListener("click", e => {
+        const b = e.target.closest(".step"); if (!b) return;
+        state.step = +b.dataset.step; editing = null; render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>

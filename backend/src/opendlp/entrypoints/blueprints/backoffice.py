@@ -9,13 +9,15 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.adapters.tabular_export import CsvExportTarget
+from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, CsvExportTarget
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
-from opendlp.domain.value_objects import AssemblyRole
+from opendlp.domain.assembly_export_gsheet import default_worksheet_name
+from opendlp.domain.value_objects import AssemblyRole, GSheetExportKind
 from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     short_url,
 )
+from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_create_assembly
 from opendlp.entrypoints.forms import (
     AddUserToAssemblyForm,
@@ -26,6 +28,7 @@ from opendlp.entrypoints.forms import (
     EditAssemblyGSheetForm,
     UploadTargetsCsvForm,
 )
+from opendlp.entrypoints.gsheet_export_flow import run_gsheet_export_flow
 from opendlp.feature_flags import showcase_enabled
 from opendlp.service_layer.assembly_service import (
     create_assembly,
@@ -40,8 +43,10 @@ from opendlp.service_layer.dashboard_stats import (
     CategoryValueRow,
     DashboardReport,
     export_dashboard_report,
+    export_dashboard_report_to_gsheet,
     get_assembly_dashboard_report,
     get_assembly_dashboard_summary,
+    get_dashboard_gsheet_config,
 )
 from opendlp.service_layer.exceptions import (
     CannotRemoveLastAssemblyManager,
@@ -211,17 +216,20 @@ def _target_band(row: CategoryValueRow) -> str:
 def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]]:
     """Turn the dashboard report into per-category sections of pie cards.
 
-    Each category shows four dataset cards, matching the Figma layout: Target,
-    Respondents (pool), Selected and Confirmed. The Target pie is weighted by the
-    service's ``target_pct`` — the user-set percentage where given, else the exact
-    share the band implies — with the min-max band in the legend; deriving counts
-    from band midpoints rounded away what the user actually entered. The other
-    datasets' pies are populated from the report's real counts; a dataset whose
-    category total is zero has ``segments = None``, which the pie card renders as
-    a grey skeleton with the given ``message``. There is no separate "has
-    selection started" flag: a selection assigns every selected person a value in
-    every category at once, so a zero ``selected_count`` total for a category is
-    exactly "no selection yet".
+    Each category shows five dataset cards: Population, Target, Respondents
+    (pool), Selected and Confirmed. Population is weighted by the population
+    shares entered in the targets editor and Target by the share each min/max
+    band implies — kept as two pies because the two deliberately differ when a
+    group is over-sampled, and one pie showing sometimes-one, sometimes-the-other
+    proved confusing. The Population pie only renders once every value in the
+    category has a population share: charting the values that happen to have one
+    would misrepresent the split. The other datasets' pies are populated from
+    the report's real counts; a dataset whose category total is zero has
+    ``segments = None``, which the pie card renders as a grey skeleton with the
+    given ``message``. There is no separate "has selection started" flag: a
+    selection assigns every selected person a value in every category at once,
+    so a zero ``selected_count`` total for a category is exactly "no selection
+    yet".
 
     Each card is a dict {title, segments, message}; a falsy ``segments`` triggers
     the pie card's skeleton state, and ``message`` is the text shown in it.
@@ -232,12 +240,25 @@ def _build_dashboard_sections(report: DashboardReport) -> list[dict[str, object]
             return None
         return [{"label": row.value, "count": getattr(row, count_attr)} for row in rows]
 
+    def population_segments(rows: list[CategoryValueRow]) -> list[dict[str, object]] | None:
+        segments: list[dict[str, object]] = []
+        for row in rows:
+            if row.population_pct is None:
+                return None
+            segments.append({"label": row.value, "count": row.population_pct, "display": f"{row.population_pct:.1f}%"})
+        return segments
+
     sections: list[dict[str, object]] = []
     for category in report.categories:
         target_segments = [
             {"label": row.value, "count": row.target_pct, "display": _target_band(row)} for row in category.rows
         ]
         cards = [
+            {
+                "title": _("Population"),
+                "segments": population_segments(category.rows),
+                "message": _("Shows the population split once every value has a population % set in the targets."),
+            },
             {"title": _("Target"), "segments": target_segments, "message": ""},
             {
                 "title": _("Respondents"),
@@ -263,11 +284,13 @@ def _build_dashboard_tables(report: DashboardReport) -> list[dict[str, object]]:
     """Turn the dashboard report into per-category tables (the on-screen Table view).
 
     One table per category; one row per category value with a percentage and a
-    count column for each dataset (Target / Respondents / Selected / Confirmed),
-    matching the Figma table. All figures come straight from the report's rows:
-    ``target_pct`` is the service's own value; the Target count is the min-max
-    band as entered; Respondents / Selected / Confirmed percentages are each
-    value's share of that dataset's category total.
+    count column for each dataset (Population / Target / Respondents / Selected
+    / Confirmed). All figures come straight from the report's rows:
+    ``population_pct`` is the population share as entered in the targets editor
+    (an em dash when unset — no band-derived fallback, that conflation is what
+    these columns were split to remove); the Target column is the min-max band
+    as entered; Respondents / Selected / Confirmed percentages are each value's
+    share of that dataset's category total.
 
     This is the on-screen shape only. The exportable table (flat, all categories,
     with min/max/available/shortfall columns) is the service's
@@ -288,7 +311,7 @@ def _build_dashboard_tables(report: DashboardReport) -> list[dict[str, object]]:
         rows = [
             {
                 "value": row.value,
-                "target_pct": f"{row.target_pct:.1f}",
+                "population_pct": f"{row.population_pct:.1f}" if row.population_pct is not None else "—",
                 "target_count": _target_band(row),
                 "respondents_pct": pct(row.pool_count, pool_total),
                 "respondents_count": row.pool_count,
@@ -373,26 +396,52 @@ def view_assembly_dashboard(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def dashboard_export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Render the dashboard export modal fragment (HTMX-loaded).
 
-    Needs no server data while CSV is the only enabled file type, but stays a
-    fragment route so later iterations can preload e.g. the saved Google Sheet
-    config, matching the respondents export modal.
+    The Google Sheets option always writes a caller-supplied destination
+    spreadsheet, as in the respondents export. There is no source-spreadsheet
+    special case: an assembly whose data source is a Google Sheet has no
+    OpenDLP data to build a dashboard from.
     """
-    return render_template("backoffice/dashboard_export_modal.html", assembly_id=assembly_id), 200
+    dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            gsheet_config = get_dashboard_gsheet_config(uow, current_user.id, assembly_id)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to export the dashboard"), "error")
+        return redirect(dashboard_url)
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    worksheet_name = (
+        gsheet_config.worksheet_name if gsheet_config else default_worksheet_name(GSheetExportKind.DASHBOARD)
+    )
+    return render_template(
+        "backoffice/dashboard_export_modal.html",
+        assembly_id=assembly_id,
+        worksheet_name=worksheet_name,
+        gsheet_url=gsheet_config.url if gsheet_config else "",
+        service_account_email=get_service_account_email(),
+    ), 200
 
 
 @backoffice_bp.route("/assembly/<uuid:assembly_id>/dashboard/export/run", methods=["POST"])
 @login_required
 def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Run a dashboard export from the modal. CSV download only in this iteration."""
+    """Run a dashboard export from the modal: CSV download or Google Sheets write."""
     dashboard_url = url_for("backoffice.view_assembly_dashboard", assembly_id=assembly_id, view="table")
-    if request.form.get("file_type", "csv") != "csv":
-        flash(_("Only CSV export is available for now"), "error")
+    file_type = request.form.get("file_type", "csv")
+    if file_type not in ("csv", "gsheet"):
+        flash(_("Only CSV and Google Sheets exports are available for now"), "error")
         return redirect(dashboard_url)
 
-    # Built inline rather than injected: pure in-memory work, no seam needed
-    # (see the respondents CSV export for the same reasoning).
-    target = CsvExportTarget()
     try:
+        if file_type == "gsheet":
+            return _run_dashboard_gsheet_export(assembly_id, dashboard_url)
+        # The CSV target is built inline rather than injected: pure in-memory work,
+        # no seam needed. The Google Sheets target is injected via an app factory
+        # instead (see _run_dashboard_gsheet_export and the respondents export).
+        target = CsvExportTarget()
         uow = bootstrap.get_flask_uow()
         with uow:
             export_dashboard_report(uow, current_user.id, assembly_id, target=target)
@@ -415,6 +464,38 @@ def run_dashboard_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
         target.getvalue(),
         mimetype="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _run_dashboard_gsheet_export(assembly_id: uuid.UUID, dashboard_url: str) -> ResponseReturnValue:
+    """Export the dashboard as a tab of a caller-supplied Google Spreadsheet.
+
+    The destination is always a caller-supplied spreadsheet URL, as in the
+    respondents export — an assembly whose data source is a Google Sheet has
+    no OpenDLP data to build a dashboard from, so there is no
+    source-spreadsheet special case. The shared flow handles the credentials
+    guard, the URL requirement and the error flashes; permission and
+    not-found errors propagate to the caller's handlers.
+    """
+
+    def export(spreadsheet_url: str, worksheet_name: str, target: AbstractGSheetExportTarget) -> None:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            export_dashboard_report_to_gsheet(
+                uow,
+                current_user.id,
+                assembly_id,
+                spreadsheet_url=spreadsheet_url,
+                worksheet_name=worksheet_name,
+                target=target,
+            )
+
+    return run_gsheet_export_flow(
+        redirect_url=dashboard_url,
+        export=export,
+        success_message=_("Dashboard exported to Google Sheets."),
+        log_event="Google Sheets dashboard export failed",
+        log_context={"assembly_id": str(assembly_id), "user_id": str(current_user.id)},
     )
 
 
@@ -546,7 +627,7 @@ def render_assembly_data_page(
 
     Raises the same exceptions as the service functions it calls.
     """
-    google_service_account_email = current_app.config.get("GOOGLE_SERVICE_ACCOUNT_EMAIL", "UNKNOWN")
+    google_service_account_email = get_service_account_email()
 
     nav_uow = bootstrap.get_flask_uow()
     with nav_uow:

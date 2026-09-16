@@ -6,7 +6,7 @@
                class="govuk-link"
                target="_blank"
                rel="noopener noreferrer">{{ _("View Spreadsheet") }}</a>
-            {% if google_service_account_email != "UNKNOWN" %}
+            {% if google_service_account_email %}
                 <br />
                 {{ _("Ensure it is shared with:") }} {{ google_service_account_email
                 }}
