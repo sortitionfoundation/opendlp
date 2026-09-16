@@ -293,7 +293,11 @@ def _normalise_modal_values(values: dict[str, Any]) -> dict[str, Any]:
 
 def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = "") -> dict[str, Any]:
     is_derived_choice = values["type_choice"] == "derived"
-    derived = _build_derived_ctx(assembly_id, values, target_locked=False) if is_derived_choice else None
+    derived = (
+        _build_derived_ctx(assembly_id, values, target_locked=False, prefill_from_target=True)
+        if is_derived_choice
+        else None
+    )
     if is_derived_choice:
         action_url = url_for("respondent_field_schema.add_derived_field_view", assembly_id=assembly_id)
     else:
@@ -328,7 +332,13 @@ def _edit_modal_ctx(
     type_choices = list(_STANDARD_TYPE_CHOICES)
     if field.field_type in _LEGACY_TYPE_CHOICES:
         type_choices.append(_LEGACY_TYPE_CHOICES[field.field_type])
-    derived = _build_derived_ctx(assembly_id, values, target_locked=True) if field.is_derived else None
+    # An existing derived field already has a stored bracket config, so the
+    # target's value names must not be parsed over the top of it.
+    derived = (
+        _build_derived_ctx(assembly_id, values, target_locked=True, prefill_from_target=False)
+        if field.is_derived
+        else None
+    )
     if field.is_derived:
         action_url = url_for(
             "respondent_field_schema.update_derivation_view", assembly_id=assembly_id, field_id=field.id
@@ -516,7 +526,12 @@ def _assembly_has_targets(assembly_id: uuid.UUID) -> bool:
         return bool(list(uow.target_categories.get_by_assembly_id(assembly_id)))
 
 
-def _apply_age_prefills(values: dict[str, Any], selected_target: dict[str, Any] | None, first_date: Any) -> None:
+def _apply_age_prefills(
+    values: dict[str, Any],
+    selected_target: dict[str, Any] | None,
+    first_date: Any,
+    prefill_from_target: bool,
+) -> None:
     """Pre-fill blank age-config inputs: the as-of date from the assembly, brackets from the target."""
     if not (values["as_of_day"] or values["as_of_month"] or values["as_of_year"]) and first_date is not None:
         values["as_of_day"] = str(first_date.day)
@@ -524,7 +539,7 @@ def _apply_age_prefills(values: dict[str, Any], selected_target: dict[str, Any] 
         values["as_of_year"] = str(first_date.year)
     # While no boundaries have been entered, the target's values own the whole
     # bracket config — so a successful parse overwrites min/max defaults too.
-    if selected_target and not values["boundaries"]:
+    if prefill_from_target and selected_target and not values["boundaries"]:
         prefill = age_prefill_from_target(selected_target["values"])
         if prefill:
             values.update(prefill)
@@ -532,8 +547,15 @@ def _apply_age_prefills(values: dict[str, Any], selected_target: dict[str, Any] 
     values["max_age"] = values["max_age"] or "100"
 
 
-def _build_derived_ctx(assembly_id: uuid.UUID, values: dict[str, Any], target_locked: bool) -> dict[str, Any]:
-    """Everything the derived panel needs: targets, compatible sources, pre-fills and warnings."""
+def _build_derived_ctx(
+    assembly_id: uuid.UUID, values: dict[str, Any], target_locked: bool, prefill_from_target: bool
+) -> dict[str, Any]:
+    """Everything the derived panel needs: targets, compatible sources, pre-fills and warnings.
+
+    ``prefill_from_target`` is for a field being created: only then may the
+    target's value names fill in the bracket config, because only then is
+    there no stored config of the organiser's own to overwrite.
+    """
     uow = bootstrap.get_flask_uow()
     with uow:
         assembly = uow.assemblies.get(assembly_id)
@@ -556,7 +578,7 @@ def _build_derived_ctx(assembly_id: uuid.UUID, values: dict[str, Any], target_lo
     preview_labels: list[str] = []
     mismatch_labels: list[str] = []
     if derivation_type == DerivationType.AGE_BRACKET:
-        _apply_age_prefills(values, selected_target, first_date)
+        _apply_age_prefills(values, selected_target, first_date, prefill_from_target)
         try:
             rule = parse_age_rule(values)
         except ValueError:

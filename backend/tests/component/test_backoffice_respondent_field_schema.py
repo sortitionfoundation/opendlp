@@ -2,6 +2,7 @@
 # ABOUTME: Drives the real backoffice schema routes + services against a seeded fake store (no PostgreSQL)
 
 import io
+import re
 import uuid
 
 from opendlp.domain.respondent_field_schema import (
@@ -27,6 +28,14 @@ def _seed_schema(fake_store, admin_user, assembly):
             "external_id,first_name,last_name,gender,postcode,custom_notes\nR001,Alice,Jones,Female,SW1A 1AA,note\n",
             replace_existing=True,
         )
+
+
+def _input_value(body, input_id):
+    """The value attribute of the rendered input carrying ``input_id``."""
+    tag = re.search(rf'<input[^>]*id="{input_id}"[^>]*>', body)
+    assert tag is not None, f"no input with id {input_id}"
+    value = re.search(r'value="([^"]*)"', tag.group(0))
+    return value.group(1) if value else ""
 
 
 def _get_schema(fake_store, admin_user, assembly):
@@ -1126,6 +1135,29 @@ class TestDerivedFieldModal:
         assert 'value="25, 40"' in body
         assert "delete this field and create it again" in body
         assert 'name="on_registration_page"' not in body  # derived fields are never collected
+
+    def test_edit_modal_keeps_a_stored_config_the_target_would_have_prefilled(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A saved rule with no boundaries stays that way — the target's value names only seed a new field."""
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+        logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(min_age="16", max_age="100", boundaries=""),
+            headers={"HX-Request": "true"},
+        )
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
+        assert field.derivation_config["boundaries"] == []
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{field.id}/edit-modal", headers={"HX-Request": "true"}
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        # The target reads as 16-24, 25-39, 40-59, 60+ — max 60 with boundaries
+        # 25, 40 — which is exactly what must not be written over the stored config.
+        assert _input_value(body, "derived-max-age") == "100"
+        assert _input_value(body, "derived-boundaries") == ""
 
     def test_update_derivation_config_recomputes_and_reports(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
