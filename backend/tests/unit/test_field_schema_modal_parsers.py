@@ -60,7 +60,7 @@ class TestParseAgeRule:
             parse_age_rule(_age_values(as_of_year=""))
 
     def test_rule_validation_errors_propagate(self):
-        with pytest.raises(ValueError, match="boundaries"):
+        with pytest.raises(ValueError, match="bracket boundary must be between"):
             parse_age_rule(_age_values(boundaries="10"))
 
 

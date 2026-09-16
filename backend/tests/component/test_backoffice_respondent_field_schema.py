@@ -1078,6 +1078,21 @@ class TestDerivedFieldModal:
         assert response.status_code == 422
         assert "as-of date" in response.get_data(as_text=True)
 
+    def test_rule_validation_error_returns_422_with_the_organiser_message(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(min_age="50", max_age="40", boundaries=""),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        body = response.get_data(as_text=True)
+        assert "The maximum age must be greater than the minimum age" in body
+        assert "max_age must be greater than min_age" not in body
+
     def test_missing_target_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
 

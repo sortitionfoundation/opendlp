@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-16 14:35+0000\n"
+"POT-Creation-Date: 2026-09-16 14:54+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -85,6 +85,22 @@ msgstr "Jelentkezők"
 #: src/opendlp/domain/assembly_export_gsheet.py:18
 msgid "Results"
 msgstr "Eredmények"
+
+#: src/opendlp/domain/respondent_derivation.py:58
+msgid "The minimum age must be greater than zero"
+msgstr ""
+
+#: src/opendlp/domain/respondent_derivation.py:60
+msgid "The maximum age must be greater than the minimum age"
+msgstr ""
+
+#: src/opendlp/domain/respondent_derivation.py:62
+msgid "Bracket boundaries must be in ascending order with no repeats"
+msgstr ""
+
+#: src/opendlp/domain/respondent_derivation.py:64
+msgid "Each bracket boundary must be between the minimum and maximum age"
+msgstr ""
 
 #: src/opendlp/domain/respondent_derivation.py:83
 #, fuzzy, python-format

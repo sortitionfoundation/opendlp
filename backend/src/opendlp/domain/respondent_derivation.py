@@ -55,13 +55,13 @@ class AgeBracketRule:
     def __post_init__(self) -> None:
         object.__setattr__(self, "boundaries", tuple(self.boundaries))
         if self.min_age <= 0:
-            raise ValueError("min_age must be greater than zero")
+            raise ValueError(_("The minimum age must be greater than zero"))
         if self.max_age <= self.min_age:
-            raise ValueError("max_age must be greater than min_age")
+            raise ValueError(_("The maximum age must be greater than the minimum age"))
         if list(self.boundaries) != sorted(set(self.boundaries)):
-            raise ValueError("boundaries must be sorted and unique")
+            raise ValueError(_("Bracket boundaries must be in ascending order with no repeats"))
         if any(not (self.min_age < b < self.max_age) for b in self.boundaries):
-            raise ValueError("boundaries must be strictly between min_age and max_age")
+            raise ValueError(_("Each bracket boundary must be between the minimum and maximum age"))
         if not self.fallback.strip():
             raise ValueError("fallback cannot be blank")
 

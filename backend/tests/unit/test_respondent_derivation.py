@@ -27,27 +27,27 @@ def _age_rule(**kwargs) -> AgeBracketRule:
 
 class TestAgeBracketRuleValidation:
     def test_min_age_must_be_positive(self) -> None:
-        with pytest.raises(ValueError, match="min_age must be greater than zero"):
+        with pytest.raises(ValueError, match="minimum age must be greater than zero"):
             _age_rule(min_age=0)
-        with pytest.raises(ValueError, match="min_age must be greater than zero"):
+        with pytest.raises(ValueError, match="minimum age must be greater than zero"):
             _age_rule(min_age=-5)
 
     def test_max_age_must_exceed_min_age(self) -> None:
-        with pytest.raises(ValueError, match="max_age must be greater than min_age"):
+        with pytest.raises(ValueError, match="maximum age must be greater than the minimum age"):
             _age_rule(min_age=50, max_age=50)
 
     def test_boundaries_must_be_sorted(self) -> None:
-        with pytest.raises(ValueError, match="boundaries must be sorted"):
+        with pytest.raises(ValueError, match="boundaries must be in ascending order"):
             _age_rule(boundaries=(30, 22))
 
     def test_boundaries_must_be_unique(self) -> None:
-        with pytest.raises(ValueError, match="boundaries must be sorted"):
+        with pytest.raises(ValueError, match="boundaries must be in ascending order"):
             _age_rule(boundaries=(22, 22, 30))
 
     def test_boundaries_must_be_strictly_between_min_and_max(self) -> None:
-        with pytest.raises(ValueError, match="strictly between"):
+        with pytest.raises(ValueError, match="must be between the minimum and maximum age"):
             _age_rule(boundaries=(16, 30))
-        with pytest.raises(ValueError, match="strictly between"):
+        with pytest.raises(ValueError, match="must be between the minimum and maximum age"):
             _age_rule(boundaries=(30, 100))
 
     def test_fallback_cannot_be_blank(self) -> None:
