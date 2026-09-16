@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, RadioField, SelectField, StringField, TextAreaField
-from wtforms.validators import DataRequired, InputRequired, Optional
+from wtforms.utils import unset_value
+from wtforms.validators import DataRequired, InputRequired, Optional, ValidationError
 
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
@@ -16,6 +17,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldDefinition,
 )
+from opendlp.domain.validators import parse_date_text, validate_date_field
 from opendlp.entrypoints.forms import DomainEmailValidator
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
@@ -37,6 +39,44 @@ class _HelpTextSelectField(SelectField):
     def __init__(self, *args: Any, option_help_text: dict[str, str] | None = None, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.option_help_text: dict[str, str] = option_help_text or {}
+
+
+class _DatePartsField(StringField):
+    """A DATE attribute entered as three day/month/year inputs.
+
+    The parts post as ``{name}-day``, ``{name}-month`` and ``{name}-year``, the
+    same shape as the registration form. ``data`` is the ISO date the parts
+    describe, or "" when all three are blank; ``day``/``month``/``year`` hold
+    the text to show in each input.
+    """
+
+    PARTS = ("day", "month", "year")
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.day = ""
+        self.month = ""
+        self.year = ""
+
+    def process(self, formdata: Any, data: Any = unset_value, extra_filters: Any = None) -> None:
+        super().process(formdata, data, extra_filters)
+        parsed = parse_date_text(str(self.data or "").strip())
+        if parsed is not None:
+            self.day, self.month, self.year = str(parsed.day), str(parsed.month), str(parsed.year)
+        if formdata is not None and any(f"{self.name}-{part}" in formdata for part in self.PARTS):
+            self.day, self.month, self.year = (
+                str(formdata.get(f"{self.name}-{part}", "")).strip() for part in self.PARTS
+            )
+            self.data = ""
+
+    def pre_validate(self, form: Any) -> None:
+        if not (self.day or self.month or self.year):
+            self.data = ""
+            return
+        value, error = validate_date_field(f"{self.day}/{self.month}/{self.year}")
+        if error:
+            raise ValidationError(error)
+        self.data = value
 
 
 def _bool_choices() -> list[tuple[str, str]]:
@@ -106,8 +146,36 @@ def _build_choice_field(
     return field, current_value
 
 
+def _build_date_field(
+    field_def: RespondentFieldDefinition,
+    current_value: str,
+    warnings: list[str],
+) -> _DatePartsField:
+    if current_value and parse_date_text(current_value.strip()) is None:
+        warnings.append(
+            _(
+                "The current value for '%(label)s' is not a date: %(value)s. "
+                "Enter a date, or it will be cleared when you save.",
+                label=field_def.label,
+                value=current_value,
+            )
+        )
+    return _DatePartsField(field_def.label)
+
+
 def _attr_field_name(field_key: str) -> str:
     return f"{ATTR_FIELD_PREFIX}{field_key}"
+
+
+def _build_fixed_field(field_def: RespondentFieldDefinition, respondent: Respondent) -> tuple[str, Any, Any]:
+    form_name = field_def.field_key
+    label = field_def.label
+    if field_def.field_key == "email":
+        email_field: Any = StringField(label, validators=[Optional(), DomainEmailValidator()])
+        return form_name, email_field, respondent.email
+    # fixed booleans (eligible/can_attend/consent/stay_on_db) are always BOOL_OR_NONE
+    bool_field: Any = _HelpTextRadioField(label, choices=_bool_or_none_choices(), validators=[Optional()])
+    return form_name, bool_field, _bool_value_to_radio(getattr(respondent, field_def.field_key))
 
 
 def _build_field_for_definition(
@@ -123,19 +191,15 @@ def _build_field_for_definition(
     label = field_def.label
 
     if field_def.field_key in FIXED_FIELD_NAMES:
-        form_name = field_def.field_key
-        if field_def.field_key == "email":
-            email_field: Any = StringField(label, validators=[Optional(), DomainEmailValidator()])
-            return form_name, email_field, respondent.email
-        # fixed booleans (eligible/can_attend/consent/stay_on_db) are always BOOL_OR_NONE
-        bool_field: Any = _HelpTextRadioField(label, choices=_bool_or_none_choices(), validators=[Optional()])
-        return form_name, bool_field, _bool_value_to_radio(getattr(respondent, field_def.field_key))
+        return _build_fixed_field(field_def, respondent)
 
     form_name = _attr_field_name(field_def.field_key)
     current_value = str(respondent.attributes.get(field_def.field_key, "") or "")
 
     if effective == FieldType.LONGTEXT:
         return form_name, TextAreaField(label, validators=[Optional()]), current_value
+    if effective == FieldType.DATE:
+        return form_name, _build_date_field(field_def, current_value, warnings), current_value
     if effective == FieldType.INTEGER:
         return form_name, IntegerField(label, validators=[Optional()]), current_value or None
     if effective == FieldType.EMAIL:

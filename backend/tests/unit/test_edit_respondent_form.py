@@ -173,3 +173,78 @@ class TestBuildFormDrift:
         schema = [_field("pick", FieldType.CHOICE_RADIO, options=options)]
         _form, warnings = build_edit_respondent_form(schema, _respondent(attributes={"pick": "a"}))
         assert warnings == []
+
+
+def _post_form(schema, respondent, data):
+    """Build the form inside a POST request carrying `data`, as the edit route does."""
+    app = Flask(__name__)
+    app.config["SECRET_KEY"] = "testkey"  # pragma: allowlist secret
+    app.config["WTF_CSRF_ENABLED"] = False
+    with app.test_request_context(method="POST", data={"comment": "a note", **data}):
+        form, _warnings = build_edit_respondent_form(schema, respondent)
+        valid = form.validate()
+    return form, valid
+
+
+class TestBuildFormDateField:
+    def test_iso_value_prefills_day_month_and_year(self, app_ctx):
+        schema = [_field("date_of_birth", FieldType.DATE)]
+        form, warnings = build_edit_respondent_form(schema, _respondent(attributes={"date_of_birth": "1985-07-03"}))
+        field = form["attr_date_of_birth"]
+        assert (field.day, field.month, field.year) == ("3", "7", "1985")
+        assert warnings == []
+
+    def test_uk_formatted_value_prefills_day_month_and_year(self, app_ctx):
+        schema = [_field("date_of_birth", FieldType.DATE)]
+        form, _warnings = build_edit_respondent_form(schema, _respondent(attributes={"date_of_birth": "03/07/1985"}))
+        field = form["attr_date_of_birth"]
+        assert (field.day, field.month, field.year) == ("3", "7", "1985")
+
+    def test_unreadable_stored_value_warns_and_leaves_the_parts_blank(self, app_ctx):
+        schema = [_field("date_of_birth", FieldType.DATE)]
+        form, warnings = build_edit_respondent_form(schema, _respondent(attributes={"date_of_birth": "last spring"}))
+        field = form["attr_date_of_birth"]
+        assert (field.day, field.month, field.year) == ("", "", "")
+        assert any("last spring" in w for w in warnings)
+
+    def test_submitted_parts_become_an_iso_date(self):
+        schema = [_field("date_of_birth", FieldType.DATE)]
+        form, valid = _post_form(
+            schema,
+            _respondent(attributes={"date_of_birth": "1985-07-03"}),
+            {"attr_date_of_birth-day": "15", "attr_date_of_birth-month": "6", "attr_date_of_birth-year": "1990"},
+        )
+        assert valid
+        assert form["attr_date_of_birth"].data == "1990-06-15"
+
+    def test_all_parts_blank_clears_the_value(self):
+        schema = [_field("date_of_birth", FieldType.DATE)]
+        form, valid = _post_form(
+            schema,
+            _respondent(attributes={"date_of_birth": "1985-07-03"}),
+            {"attr_date_of_birth-day": "", "attr_date_of_birth-month": "", "attr_date_of_birth-year": ""},
+        )
+        assert valid
+        assert form["attr_date_of_birth"].data == ""
+
+    def test_an_impossible_date_is_rejected_and_keeps_what_was_typed(self):
+        schema = [_field("date_of_birth", FieldType.DATE)]
+        form, valid = _post_form(
+            schema,
+            _respondent(attributes={"date_of_birth": "1985-07-03"}),
+            {"attr_date_of_birth-day": "31", "attr_date_of_birth-month": "2", "attr_date_of_birth-year": "1990"},
+        )
+        field = form["attr_date_of_birth"]
+        assert not valid
+        assert field.errors == ["Please enter a valid date"]
+        assert (field.day, field.month, field.year) == ("31", "2", "1990")
+
+    def test_a_future_date_is_rejected(self):
+        schema = [_field("date_of_birth", FieldType.DATE)]
+        form, valid = _post_form(
+            schema,
+            _respondent(),
+            {"attr_date_of_birth-day": "1", "attr_date_of_birth-month": "1", "attr_date_of_birth-year": "2999"},
+        )
+        assert not valid
+        assert form["attr_date_of_birth"].errors == ["Date cannot be in the future"]

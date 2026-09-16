@@ -80,6 +80,8 @@ becomes a disabled input/textarea so the page reads as a read-only form.
         {{ input(name=field_name, label=field.label, type="number", value=value_str, disabled=true, dim=false) }}
     {% elif effective == "email" %}
         {{ input(name=field_name, label=field.label, type="email", value=raw or "", disabled=true, dim=false) }}
+    {% elif effective == "date" %}
+        {{ input(name=field_name, label=field.label, value=(raw or "")|date_text, disabled=true, dim=false) }}
     {% else %}
         {# choice_radio, choice_dropdown, plain text — read-only text input. #}
         {{ input(name=field_name, label=field.label, value=raw or "", disabled=true, dim=false) }}

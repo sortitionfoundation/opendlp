@@ -118,6 +118,22 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                                     {{ input(name=form_field_name, label=field.label, type="number", value=(wt.data|string if wt.data is not none else "")) }}
                                 {% elif effective == "email" %}
                                     {{ input(name=form_field_name, label=field.label, type="email", value=wt.data or "") }}
+                                {% elif effective == "date" %}
+                                    <fieldset class="flex flex-col gap-1.5">
+                                        <legend class="text-label-lg" style="color: var(--color-headings);">{{ field.label }}</legend>
+                                        <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("For example, 27 3 1985") }}</p>
+                                        <div class="flex gap-2">
+                                            <div style="width: 5rem;">
+                                                {{ input(form_field_name ~ "-day", label=_("Day"), value=wt.day, attrs='inputmode="numeric"') }}
+                                            </div>
+                                            <div style="width: 5rem;">
+                                                {{ input(form_field_name ~ "-month", label=_("Month"), value=wt.month, attrs='inputmode="numeric"') }}
+                                            </div>
+                                            <div style="width: 7rem;">
+                                                {{ input(form_field_name ~ "-year", label=_("Year"), value=wt.year, attrs='inputmode="numeric"') }}
+                                            </div>
+                                        </div>
+                                    </fieldset>
                                 {% else %}
                                     {{ input(name=form_field_name, label=field.label, value=wt.data or "") }}
                                 {% endif %}
