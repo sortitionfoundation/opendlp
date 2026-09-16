@@ -4,7 +4,7 @@ ABOUTME: Read-only schema rows plus an HTMX add/edit field modal; move, delete, 
 import contextlib
 import re
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from itertools import zip_longest
 from typing import Any
 
@@ -472,6 +472,14 @@ def parse_age_rule(values: dict[str, Any]) -> AgeBracketRule:
         as_of = date(int(values["as_of_year"]), int(values["as_of_month"]), int(values["as_of_day"]))
     except (TypeError, ValueError):
         raise ValueError(_("Enter a valid as-of date (day, month and year)")) from None
+    # The as-of date is usually the first assembly date, so it is always near
+    # today. A year outside this window is a typo, and a silent one: the
+    # brackets it produces look plausible and put everyone in the fallback.
+    this_year = datetime.now(UTC).date().year
+    if not (this_year - 1 <= as_of.year <= this_year + 1):
+        raise ValueError(
+            _("The as-of year must be between %(low)d and %(high)d", low=this_year - 1, high=this_year + 1)
+        )
     try:
         min_age = int(values["min_age"] or 16)
         max_age = int(values["max_age"] or 100)

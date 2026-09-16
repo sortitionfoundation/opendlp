@@ -1,6 +1,8 @@
 """ABOUTME: Unit tests for the field-modal derivation config parsers in the schema blueprint
 ABOUTME: Covers boundaries/date/mapping parsing, duplicate options, and the age-bracket pre-fill"""
 
+from datetime import UTC, datetime
+
 import pytest
 
 from opendlp.domain.respondent_derivation import AgeBracketRule, LargeMappingRule, SmallMappingRule
@@ -14,12 +16,15 @@ from opendlp.entrypoints.blueprints.respondent_field_schema import (
     parse_small_mapping_rule,
 )
 
+# The as-of year is validated against the current year, so the fixtures track it.
+THIS_YEAR = datetime.now(UTC).date().year
+
 
 def _age_values(**overrides):
     values = {
         "as_of_day": "13",
         "as_of_month": "5",
-        "as_of_year": "2026",
+        "as_of_year": str(THIS_YEAR),
         "min_age": "16",
         "max_age": "100",
         "boundaries": "25, 40, 60",
@@ -44,7 +49,7 @@ class TestParseAgeRule:
     def test_builds_the_rule_from_form_values(self):
         rule = parse_age_rule(_age_values())
         assert isinstance(rule, AgeBracketRule)
-        assert rule.as_of_date.isoformat() == "2026-05-13"
+        assert rule.as_of_date.isoformat() == f"{THIS_YEAR}-05-13"
         assert rule.boundaries == (25, 40, 60)
         assert rule.bracket_labels() == ["under-16", "16-24", "25-39", "40-59", "60-99", "100+"]
 
@@ -64,6 +69,23 @@ class TestParseAgeRule:
     def test_rule_validation_errors_propagate(self):
         with pytest.raises(ValueError, match="bracket boundary must be between"):
             parse_age_rule(_age_values(boundaries="10"))
+
+    def test_a_two_digit_year_is_rejected(self):
+        with pytest.raises(ValueError, match="as-of year"):
+            parse_age_rule(_age_values(as_of_year="99"))
+
+    def test_a_year_well_in_the_past_is_rejected(self):
+        with pytest.raises(ValueError, match="as-of year"):
+            parse_age_rule(_age_values(as_of_year=str(THIS_YEAR - 2)))
+
+    def test_a_year_well_in_the_future_is_rejected(self):
+        with pytest.raises(ValueError, match="as-of year"):
+            parse_age_rule(_age_values(as_of_year=str(THIS_YEAR + 2)))
+
+    def test_last_year_and_next_year_are_accepted(self):
+        """An assembly's first date can sit either side of the new year, so allow one year of slack."""
+        assert parse_age_rule(_age_values(as_of_year=str(THIS_YEAR - 1))).as_of_date.year == THIS_YEAR - 1
+        assert parse_age_rule(_age_values(as_of_year=str(THIS_YEAR + 1))).as_of_date.year == THIS_YEAR + 1
 
 
 class TestParseSmallMappingRule:

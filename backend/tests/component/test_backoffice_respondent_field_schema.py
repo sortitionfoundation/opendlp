@@ -4,6 +4,7 @@
 import io
 import re
 import uuid
+from datetime import UTC, datetime
 
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
@@ -993,7 +994,7 @@ class TestDerivedFieldModal:
             "source_key": "year_of_birth",
             "as_of_day": "1",
             "as_of_month": "6",
-            "as_of_year": "2026",
+            "as_of_year": str(datetime.now(UTC).date().year),
             "min_age": "16",
             "max_age": "60",
             "boundaries": "25, 40",
