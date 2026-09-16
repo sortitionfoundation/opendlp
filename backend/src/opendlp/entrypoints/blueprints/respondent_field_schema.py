@@ -23,9 +23,11 @@ from opendlp.domain.respondent_derivation import (
 )
 from opendlp.domain.respondent_field_schema import (
     CHOICE_TYPES,
+    DERIVATION_TYPE_LABELS,
     FIELD_TYPE_LABELS,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
+    ON_REGISTRATION_PAGE_LABELS,
     ChoiceOption,
     DerivationType,
     FieldOnRegistrationPage,
@@ -640,9 +642,7 @@ def _build_derived_ctx(
         "map_rows": map_rows,
         "fallback": DEFAULT_FALLBACK,
         "method_options": [
-            {"value": DerivationType.AGE_BRACKET.value, "label": _("Age brackets")},
-            {"value": DerivationType.SMALL_MAPPING.value, "label": _("Map choices")},
-            {"value": DerivationType.LARGE_MAPPING.value, "label": _("Lookup table")},
+            {"value": method.value, "label": DERIVATION_TYPE_LABELS[method]} for method in DerivationType
         ],
         "method_help": {
             DerivationType.AGE_BRACKET.value: _("From a date of birth or a year of birth"),
@@ -655,14 +655,6 @@ def _build_derived_ctx(
 # ---------------------------------------------------------------------------
 # Page and fragment rendering.
 # ---------------------------------------------------------------------------
-
-
-def _derivation_type_labels() -> dict[str, str]:
-    return {
-        DerivationType.AGE_BRACKET.value: _("Age brackets"),
-        DerivationType.SMALL_MAPPING.value: _("Map choices"),
-        DerivationType.LARGE_MAPPING.value: _("Lookup table"),
-    }
 
 
 def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
@@ -712,11 +704,13 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
         "sections": sections,
         "group_choices": [{"value": group.value, "label": GROUP_LABELS[group]} for group in GROUP_DISPLAY_ORDER],
         "field_type_labels_by_value": {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType},
-        "derivation_type_labels": _derivation_type_labels(),
         "on_registration_page_choices": [
-            {"value": FieldOnRegistrationPage.NO.value, "label": _("Not shown")},
-            {"value": FieldOnRegistrationPage.YES_OPTIONAL.value, "label": _("Optional")},
-            {"value": FieldOnRegistrationPage.YES_REQUIRED.value, "label": _("Required")},
+            {"value": member.value, "label": ON_REGISTRATION_PAGE_LABELS[member]}
+            for member in (
+                FieldOnRegistrationPage.NO,
+                FieldOnRegistrationPage.YES_OPTIONAL,
+                FieldOnRegistrationPage.YES_REQUIRED,
+            )
         ],
         "schema_has_rows": schema_has_rows,
         "show_guess_button": show_guess_button,

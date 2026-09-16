@@ -59,6 +59,13 @@ class DerivationType(Enum):
     LARGE_MAPPING = "large_mapping"
 
 
+DERIVATION_TYPE_LABELS: dict[DerivationType, str] = {
+    DerivationType.AGE_BRACKET: _l("Age brackets"),
+    DerivationType.SMALL_MAPPING: _l("Map choices"),
+    DerivationType.LARGE_MAPPING: _l("Lookup table"),
+}
+
+
 class RespondentFieldGroup(Enum):
     """Fixed catalogue of groups that a respondent field can belong to.
 
@@ -121,6 +128,13 @@ class FieldOnRegistrationPage(Enum):
     NO = "no"
     YES_OPTIONAL = "yes_optional"
     YES_REQUIRED = "yes_required"
+
+
+ON_REGISTRATION_PAGE_LABELS: dict[FieldOnRegistrationPage, str] = {
+    FieldOnRegistrationPage.NO: _l("Not on form"),
+    FieldOnRegistrationPage.YES_OPTIONAL: _l("Optional"),
+    FieldOnRegistrationPage.YES_REQUIRED: _l("Required"),
+}
 
 
 FIELD_TYPE_LABELS: dict[FieldType, str] = {

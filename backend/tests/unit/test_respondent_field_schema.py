@@ -7,12 +7,14 @@ import pytest
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     CHOICE_TYPES,
+    DERIVATION_TYPE_LABELS,
     FIELD_TYPE_LABELS,
     FIXED_FIELD_ON_REGISTRATION_PAGE,
     FIXED_FIELD_TYPES,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
     IN_SCHEMA_FIXED_FIELDS,
+    ON_REGISTRATION_PAGE_LABELS,
     ChoiceOption,
     DerivationType,
     DerivedFieldError,
@@ -531,6 +533,20 @@ class TestFieldType:
 
     def test_field_type_labels_cover_every_value(self) -> None:
         assert set(FIELD_TYPE_LABELS) == set(FieldType)
+
+    @pytest.mark.parametrize("member", list(FieldOnRegistrationPage))
+    def test_every_on_registration_page_member_has_a_label(self, member: FieldOnRegistrationPage) -> None:
+        assert str(ON_REGISTRATION_PAGE_LABELS[member])
+
+    def test_on_registration_page_labels_cover_every_member(self) -> None:
+        assert set(ON_REGISTRATION_PAGE_LABELS) == set(FieldOnRegistrationPage)
+
+    @pytest.mark.parametrize("member", list(DerivationType))
+    def test_every_derivation_type_has_a_label(self, member: DerivationType) -> None:
+        assert str(DERIVATION_TYPE_LABELS[member])
+
+    def test_derivation_type_labels_cover_every_member(self) -> None:
+        assert set(DERIVATION_TYPE_LABELS) == set(DerivationType)
 
     def test_bool_types_and_choice_types_groupings(self) -> None:
         assert frozenset({FieldType.BOOL, FieldType.BOOL_OR_NONE}) == BOOL_TYPES

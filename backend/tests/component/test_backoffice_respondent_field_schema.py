@@ -267,7 +267,7 @@ class TestFieldTypeAndOptions:
             follow_redirects=True,
         )
         assert response.status_code == 200
-        assert b"options list" in response.data
+        assert b"A choice field needs at least one option" in response.data
 
         field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
         assert field.field_type == FieldType.TEXT
