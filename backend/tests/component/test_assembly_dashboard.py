@@ -139,7 +139,7 @@ class TestTheDashboardPage:
         assert "data-pie-chart" in html
         assert "conic-gradient(" in html
         # The fixture's targets have no population share, so Population is a skeleton
-        assert "Shows the population split once every value has a population % set in the targets." in html
+        assert "Shows the population split once every value has a population share set in the targets." in html
         # Selected / Confirmed render their skeleton messages
         assert "Shows selected data once selection has happened." in html
         assert "Shows confirmed data once at least one selected respondent is confirmed." in html
@@ -165,7 +165,7 @@ class TestTheDashboardPage:
         assert ">Population<" in html
         # The population legend shows the share itself, not a band or a count
         assert "70.0%" in html
-        assert "Shows the population split once every value has a population % set in the targets." not in html
+        assert "Shows the population split once every value has a population share set in the targets." not in html
 
     def test_route_is_reachable_even_when_the_flag_is_off(self, logged_in_admin, existing_assembly):
         # The flag only hides the tab; the route stays reachable by URL.
