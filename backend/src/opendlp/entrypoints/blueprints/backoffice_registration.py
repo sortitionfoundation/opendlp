@@ -239,13 +239,15 @@ def _page_rows(
     return [_page_row(page, assembly_id, deletable_ids) for page in pages]
 
 
-def _setup_summary(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, nav: Any) -> dict[str, Any] | None:
+def _setup_summary(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, data_source: str, gsheet: Any
+) -> dict[str, Any] | None:
     """Status lines for the registration set-up task list, or None for gsheet assemblies.
 
     A gsheet assembly's fields are its spreadsheet columns, so the two field
     set-up steps don't apply and the template shows a one-liner instead.
     """
-    if nav.data_source == "gsheet" and nav.gsheet:
+    if data_source == "gsheet" and gsheet:
         return None
     statuses = target_source_status(uow, current_user.id, assembly_id)
     fields = uow.respondent_field_definitions.list_by_assembly(assembly_id)
@@ -255,6 +257,21 @@ def _setup_summary(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, nav: Any) ->
         "targets_covered": sum(1 for s in statuses if s.state != TargetSourceState.NONE),
         "targets_stale": sum(1 for s in statuses if s.stale),
         "fields_on_form": on_form,
+    }
+
+
+def registration_hub_context(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, data_source: str, gsheet: Any
+) -> dict[str, Any]:
+    """What the registration hub template needs: the set-up steps and the pages list.
+
+    Shared with the set-up step views, which paint the hub behind their takeover dialog.
+    """
+    pages = list_registration_pages(uow, current_user.id, assembly_id)
+    deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
+    return {
+        "page_rows": _page_rows(pages, assembly_id, deletable_ids),
+        "setup_summary": _setup_summary(uow, assembly_id, data_source, gsheet),
     }
 
 
@@ -273,10 +290,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 assembly_id,
                 request.args.get("source", ""),
             )
-            pages = list_registration_pages(uow, current_user.id, assembly_id)
-            deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
-            setup_summary = _setup_summary(uow, assembly_id, nav)
-        page_rows = _page_rows(pages, assembly_id, deletable_ids)
+            hub_context = registration_hub_context(uow, assembly_id, nav.data_source, nav.gsheet)
 
         return render_template(
             "backoffice/assembly_registration_list.html",
@@ -286,8 +300,7 @@ def view_assembly_registration(assembly_id: uuid.UUID) -> ResponseReturnValue:
             targets_enabled=nav.targets_enabled,
             respondents_enabled=nav.respondents_enabled,
             selection_enabled=nav.selection_enabled,
-            page_rows=page_rows,
-            setup_summary=setup_summary,
+            **hub_context,
         ), 200
     except InsufficientPermissions as e:
         logger.warning(

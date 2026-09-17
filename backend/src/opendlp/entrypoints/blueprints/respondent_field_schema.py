@@ -36,6 +36,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
     normalise_field_key,
 )
+from opendlp.entrypoints.blueprints.backoffice_registration import registration_hub_context
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     determine_data_source,
@@ -672,8 +673,12 @@ def _build_derived_ctx(
 # ---------------------------------------------------------------------------
 
 
-def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
-    """Everything view.html and _editor.html need to render the schema page."""
+def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict[str, Any]:
+    """Everything view.html and _editor.html need to render the schema page.
+
+    ``with_hub`` adds the registration hub that view.html paints, inert, behind
+    the step's takeover dialog; fragments leave it out.
+    """
     uow = bootstrap.get_flask_uow()
     gsheet = None
     csv_status = None
@@ -715,14 +720,18 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
         not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
     )
     large_mapping_fields = [f for f in all_fields if f.is_derived and f.derivation_type == DerivationType.LARGE_MAPPING]
+    hub_context: dict[str, Any] = {}
     with uow:
         has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
         mapping_row_counts = {
             f.id: uow.respondent_field_mapping_entries.count_for_field(f.id) for f in large_mapping_fields
         }
+        if with_hub:
+            hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
     show_guess_button = has_guessable_text_rows and has_respondents
 
     return {
+        **hub_context,
         "mapping_row_counts": mapping_row_counts,
         "assembly": assembly,
         "sections": sections,
@@ -758,7 +767,7 @@ def _render_schema_page(
     return render_template(
         "backoffice/respondent_field_schema/view.html",
         modal_ctx=modal_ctx,
-        **_schema_page_context(assembly_id),
+        **_schema_page_context(assembly_id, with_hub=True),
     ), status
 
 
@@ -1023,7 +1032,7 @@ def _report_response(
     upload_report: MappingUploadReport | None = None,
 ) -> ResponseReturnValue:
     """Show the recompute report in the modal (Q11) and refresh the editor behind it."""
-    page_ctx = _schema_page_context(assembly_id)
+    page_ctx = _schema_page_context(assembly_id, with_hub=not _is_htmx())
     report_ctx = {"report": report, "title": title, "upload_report": upload_report}
     if _is_htmx():
         report_html = render_template(

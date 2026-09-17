@@ -216,6 +216,21 @@ class TestFieldsTab:
         assert response.status_code == 200
         assert b"Registration fields" in response.data
 
+    def test_opens_as_a_takeover_dialog_over_the_registration_hub(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "dialog-panel--takeover" in body
+        assert 'class="setup-step"' in body
+        assert re.search(r"<main [^>]*\binert\b", body)
+        assert f'href="/backoffice/assembly/{existing_assembly.id}/registration"' in body
+        assert body.index("dialog-panel--takeover") < body.index('id="field-modal-container"')
+
 
 class TestFieldTypeAndOptions:
     def test_schema_page_renders_type_summary(self, logged_in_admin, existing_assembly, admin_user, fake_store):

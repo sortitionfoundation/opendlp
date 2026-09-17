@@ -3,7 +3,7 @@ ABOUTME: Exercises the full UI stack via Playwright for the happy paths covered 
 
 import uuid
 
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
@@ -104,10 +104,15 @@ def move_field_up(admin_logged_in_page: Page, field_key: str) -> None:
     admin_logged_in_page.wait_for_load_state("networkidle")
 
 
+def _field_dialog(page: Page) -> Locator:
+    """The field modal - scoped to its container, as the step itself is a dialog too."""
+    return page.locator("#field-modal-container").get_by_role("dialog")
+
+
 @when("I open the add-field modal")
 def open_add_field_modal(admin_logged_in_page: Page) -> None:
     admin_logged_in_page.get_by_role("button", name="Add a field").click()
-    expect(admin_logged_in_page.get_by_role("dialog")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_field_dialog(admin_logged_in_page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when(parsers.parse('I save a new choice field labelled "{label}" with options "{first}" and "{second}"'))
@@ -128,7 +133,7 @@ def save_choice_field_via_modal(admin_logged_in_page: Page, label: str, first: s
     second_option.fill(second)
     page.get_by_role("button", name="Save").click()
     # A successful save closes the modal via the out-of-band editor swap.
-    expect(page.get_by_role("dialog")).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_field_dialog(page)).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 # ---------------------------------------------------------------------------

@@ -4,7 +4,7 @@ ABOUTME: Exercises exact-copy and age-ranges set-up, and the force-unlink confir
 import uuid
 from datetime import UTC, datetime
 
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.respondent_field_schema import FieldType
@@ -87,6 +87,11 @@ def assembly_has_target(title: str, name: str, values: str, test_database) -> No
 # ---------------------------------------------------------------------------
 
 
+def _setup_dialog(page: Page) -> Locator:
+    """The set-up modal - scoped to its container, as the step itself is a dialog too."""
+    return page.locator("#ts-modal-container").get_by_role("dialog")
+
+
 @when(parsers.parse('I open the target data sources for "{title}"'))
 def open_target_sources(admin_logged_in_page: Page, title: str) -> None:
     admin_logged_in_page.goto(_sources_url(_assembly_ids[title]))
@@ -98,11 +103,11 @@ def set_up_exact_copy(admin_logged_in_page: Page, target_name: str) -> None:
     """Open the row's set-up modal; Exact copy is the default method, so just save."""
     page = admin_logged_in_page
     _row_for(page, target_name).get_by_role("button", name="Set up", exact=True).click()
-    expect(page.get_by_role("dialog")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_setup_dialog(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     expect(page.locator('input[name="method"][value="exact"]')).to_be_checked(timeout=PLAYWRIGHT_TIMEOUT)
     page.get_by_role("button", name="Save").click()
     # A successful exact-copy save closes the modal via the out-of-band checklist swap.
-    expect(page.get_by_role("dialog")).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_setup_dialog(page)).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when(parsers.parse('I set up the "{target_name}" target with age ranges from "{source_key}"'))
@@ -110,7 +115,7 @@ def set_up_age_ranges(admin_logged_in_page: Page, target_name: str, source_key: 
     """Walk the modal: Age ranges method → reuse the number field → as-of date → save."""
     page = admin_logged_in_page
     _row_for(page, target_name).get_by_role("button", name="Set up", exact=True).click()
-    expect(page.get_by_role("dialog")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_setup_dialog(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     # Each change round-trips through the server and swaps the modal back in;
     # waiting on the response stops the next action racing the swap.
     with page.expect_response(lambda r: "setup-modal" in r.url):

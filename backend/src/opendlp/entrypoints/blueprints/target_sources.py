@@ -19,6 +19,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
     humanise_field_key,
 )
+from opendlp.entrypoints.blueprints.backoffice_registration import registration_hub_context
 from opendlp.entrypoints.blueprints.respondent_field_schema import (
     age_prefill_from_target,
     parse_age_rule,
@@ -177,11 +178,16 @@ def _seed_from_derivation(values: dict[str, Any], field: RespondentFieldDefiniti
 # ---------------------------------------------------------------------------
 
 
-def _page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
-    """Everything view.html and _checklist.html need."""
+def _page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict[str, Any]:
+    """Everything view.html and _checklist.html need.
+
+    ``with_hub`` adds the registration hub that view.html paints, inert, behind
+    the step's takeover dialog; fragments leave it out.
+    """
     uow = bootstrap.get_flask_uow()
     gsheet = None
     csv_status = None
+    hub_context: dict[str, Any] = {}
     with uow:
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
         statuses = target_source_status(uow, current_user.id, assembly_id)
@@ -189,10 +195,13 @@ def _page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
             gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
         with contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
+        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+        if with_hub:
+            hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
 
-    data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
     return {
+        **hub_context,
         "assembly": assembly,
         "statuses": statuses,
         "TargetSourceState": TargetSourceState,
@@ -336,7 +345,7 @@ def _render_page(
     assembly_id: uuid.UUID, modal_ctx: dict[str, Any] | None = None, status: int = 200
 ) -> ResponseReturnValue:
     return render_template(
-        "backoffice/target_sources/view.html", modal_ctx=modal_ctx, **_page_context(assembly_id)
+        "backoffice/target_sources/view.html", modal_ctx=modal_ctx, **_page_context(assembly_id, with_hub=True)
     ), status
 
 
@@ -359,7 +368,7 @@ def _report_response(
     upload_report: MappingUploadReport | None = None,
 ) -> ResponseReturnValue:
     """Show the recompute report in the modal and refresh the checklist behind it."""
-    page_ctx = _page_context(assembly_id)
+    page_ctx = _page_context(assembly_id, with_hub=not _is_htmx())
     report_ctx = {
         "report": report,
         "title": title,

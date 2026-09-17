@@ -3,9 +3,7 @@ ABOUTME: Backoffice list of an assembly's registration pages
 ABOUTME: One row per page with status, publish date and a per-row actions menu
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/icons.html" import icon_arrow_forward %}
 {% from "backoffice/components/page_header.html" import page_header %}
-{% from "backoffice/components/registration_page_list.html" import registration_page_list %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% block title %}{{ assembly.title }} - Registration{% endblock %}
 {% block page_header %}
@@ -25,54 +23,5 @@ ABOUTME: One row per page with status, publish date and a per-row actions menu
     </div>
 {% endblock %}
 {% block page_content %}
-    {% if setup_summary is none %}
-        <section class="mb-6">
-            <p class="text-body-md" style="color: var(--color-secondary-text);">
-                {{ _("Fields are defined by your Google Sheets spreadsheet — manage them there.") }}
-            </p>
-        </section>
-    {% else %}
-        <section class="mb-8">
-            <h2 class="text-heading-lg mb-6" style="color: var(--color-headings);">{{ _("General settings") }}</h2>
-            {# Each step is one link covering the whole card, so a click anywhere on it opens the step. #}
-            <ol class="setup-steps">
-                <li>
-                    <a class="setup-step"
-                       href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}">
-                        <span class="stepper-number" aria-hidden="true">1</span>
-                        <span class="flex-1 min-w-0">
-                            <span class="block text-heading-sm">{{ _("Target data sources") }}</span>
-                            <span class="block text-body-sm" style="color: var(--color-secondary-text);">{{ _("Define where each target's data comes from.") }}</span>
-                            <span class="block text-body-sm" style="color: var(--color-secondary-text);">
-                                {% if setup_summary["targets_total"] == 0 %}
-                                    {{ _("No targets yet — add them on the Targets tab first.") }}
-                                {% else %}
-                                    {{ _("%(covered)s of %(total)s targets have a data source", covered=setup_summary["targets_covered"], total=setup_summary["targets_total"]) }}
-                                    {% if setup_summary["targets_stale"] %}
-                                        · <span style="color: var(--color-warning-text);">{{ _("%(count)s out of step with the target values", count=setup_summary["targets_stale"]) }}</span>
-                                    {% endif %}
-                                {% endif %}
-                            </span>
-                        </span>
-                        {{ icon_arrow_forward(classes="w-6 h-6 flex-shrink-0") }}
-                    </a>
-                </li>
-                <li>
-                    <a class="setup-step"
-                       href="{{ url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) }}">
-                        <span class="stepper-number" aria-hidden="true">2</span>
-                        <span class="flex-1 min-w-0">
-                            <span class="block text-heading-sm">{{ _("Registration questions") }}</span>
-                            <span class="block text-body-sm" style="color: var(--color-secondary-text);">{{ _("Configure the questions for the registration page.") }}</span>
-                            <span class="block text-body-sm" style="color: var(--color-secondary-text);">
-                                {{ _("%(count)s questions on the registration form", count=setup_summary["fields_on_form"]) }}
-                            </span>
-                        </span>
-                        {{ icon_arrow_forward(classes="w-6 h-6 flex-shrink-0") }}
-                    </a>
-                </li>
-            </ol>
-        </section>
-    {% endif %}
-    {{ registration_page_list(assembly, page_rows) }}
+    {% include "backoffice/registration/_hub.html" %}
 {% endblock %}

@@ -2,6 +2,7 @@
 ABOUTME: Drives the real target-sources routes + services against a seeded fake store (no PostgreSQL)"""
 
 import io
+import re
 import uuid
 
 from opendlp.domain.respondent_field_schema import (
@@ -90,6 +91,30 @@ class TestChecklistPage:
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
 
         assert b"The target's values have changed" in response.data
+
+    def test_opens_as_a_takeover_dialog_over_the_registration_hub(self, logged_in_admin, existing_assembly):
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "dialog-panel--takeover" in body
+        # The hub is painted behind the dialog, and made inert
+        assert 'class="setup-step"' in body
+        assert "No registration page created yet" in body
+        assert re.search(r"<main [^>]*\binert\b", body)
+        # Closing the dialog goes back to the hub
+        assert f'href="/backoffice/assembly/{existing_assembly.id}/registration"' in body
+        # Fragment dialogs open after the takeover, so Escape closes them first
+        assert body.index("dialog-panel--takeover") < body.index('id="ts-modal-container"')
+
+    def test_fragments_do_not_carry_the_hub(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+        )
+
+        assert 'class="setup-step"' not in response.get_data(as_text=True)
 
 
 class TestSetupModal:

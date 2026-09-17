@@ -1,11 +1,12 @@
 {#
 ABOUTME: Backoffice page for the target data sources checklist (registration step 1)
-ABOUTME: One row per target category; set-up and upload happen in HTMX modals
+ABOUTME: Opens as a takeover dialog over the registration hub; set-up and upload happen in HTMX modals
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/icons.html" import icon_info %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
+{% from "backoffice/registration/_step_dialog.html" import step_dialog %}
 {% block title %}{{ _("Target data sources") }} - {{ assembly.title }}{% endblock %}
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
@@ -27,29 +28,36 @@ ABOUTME: One row per target category; set-up and upload happen in HTMX modals
     </div>
 {% endblock %}
 {% block page_content %}
-    {% if data_source == "gsheet" and gsheet %}
-        <section class="mb-8">
-            <div class="rounded-lg p-6"
-                 style="background-color: var(--color-tables-cards);
-                        border: 1px solid var(--color-borders-dividers);">
-                <div class="flex items-start gap-4">
-                    <div class="flex-shrink-0">
-                        {{ icon_info(classes="w-6 h-6", style="color: var(--color-primary-action);") }}
+    {% include "backoffice/registration/_hub.html" %}
+{% endblock %}
+{% block page_overlay %}
+    {% call step_dialog("target-sources-title", _("Target data sources"), url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id)) %}
+        {% if data_source == "gsheet" and gsheet %}
+            <section class="mb-8">
+                <div class="rounded-lg p-6"
+                     style="background-color: var(--color-tables-cards);
+                            border: 1px solid var(--color-borders-dividers);">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            {{ icon_info(classes="w-6 h-6", style="color: var(--color-primary-action);") }}
+                        </div>
+                        <p class="text-body-md" style="color: var(--color-body-text);">
+                            {{ _("Fields are defined by your Google Sheets spreadsheet — manage them there.") }}
+                        </p>
                     </div>
-                    <p class="text-body-md" style="color: var(--color-body-text);">
-                        {{ _("Fields are defined by your Google Sheets spreadsheet — manage them there.") }}
-                    </p>
                 </div>
-            </div>
-        </section>
-    {% else %}
-        <section class="mb-6">
-            <h2 class="text-display-sm mb-2" style="color: var(--color-headings);">{{ _("Where does each target's data come from?") }}</h2>
-            <p class="text-body-md mb-2" style="color: var(--color-secondary-text); max-width: 48rem;">
-                {{ _("Selection needs a column of data for every target. For each target below, choose how that data is collected: asked directly on the registration form, or computed from something simpler to ask — a date of birth, a postcode, or a more detailed question.") }}
-            </p>
-        </section>
-        {% include "backoffice/target_sources/_checklist.html" %}
+            </section>
+        {% else %}
+            <section class="mb-6">
+                <h3 class="text-display-sm mb-2" style="color: var(--color-headings);">{{ _("Where does each target's data come from?") }}</h3>
+                <p class="text-body-md mb-2" style="color: var(--color-secondary-text); max-width: 48rem;">
+                    {{ _("Selection needs a column of data for every target. For each target below, choose how that data is collected: asked directly on the registration form, or computed from something simpler to ask — a date of birth, a postcode, or a more detailed question.") }}
+                </p>
+            </section>
+            {% include "backoffice/target_sources/_checklist.html" %}
+        {% endif %}
+    {% endcall %}
+    {% if not (data_source == "gsheet" and gsheet) %}
         <div id="ts-modal-container">
             {% if modal_ctx and modal_ctx["mode"] == "report" %}
                 {% set report_ctx = modal_ctx["report_ctx"] %}
