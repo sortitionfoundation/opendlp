@@ -91,13 +91,14 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                                 </td>
                                 <td class="py-3 pr-4 align-top">
                                     <div class="flex flex-wrap gap-1">
-                                        {% if linked_target_names.get(field.id) %}
-                                            {# Always name the owner, never just lock: the chip says who owns the values and links there. #}
+                                        {# Always name the owner, never just lock: the chip says who owns the values and links there.
+                                           One chip per target - a question can feed several, directly or via derived fields. #}
+                                        {% for target_name in fed_target_names.get(field.id, []) %}
                                             <a href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}"
                                                style="text-decoration: none;">
-                                                <strong class="govuk-tag govuk-tag--green">{{ _("Feeds target: %(name)s", name=linked_target_names[field.id]) }}</strong>
+                                                <strong class="govuk-tag govuk-tag--green">{{ _("Feeds target: %(name)s", name=target_name) }}</strong>
                                             </a>
-                                        {% endif %}
+                                        {% endfor %}
                                         {% if field.is_derived %}<strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>{% endif %}
                                         {# A derived field is always off the registration page, so it shows the "no" chip. #}
                                         {% if field.on_registration_page.value == "yes_required" %}

@@ -673,6 +673,31 @@ def _build_derived_ctx(
 # ---------------------------------------------------------------------------
 
 
+def _fed_target_names(
+    fields: list[RespondentFieldDefinition], category_names_by_id: dict[uuid.UUID, str]
+) -> dict[uuid.UUID, list[str]]:
+    """The names of the targets each field feeds, in target-link order.
+
+    A field feeds a target when it is linked to it directly, or when a derived
+    field linked to that target is computed from it - a date of birth feeds the
+    age bracket target even though only the derived field carries the link.
+    """
+    fields_by_key = {f.field_key: f for f in fields}
+    names: dict[uuid.UUID, list[str]] = {}
+    for field in fields:
+        target_name = category_names_by_id.get(field.target_category_id) if field.target_category_id else None
+        if target_name is None:
+            continue
+        feeders = [field]
+        if field.is_derived:
+            feeders += [fields_by_key[key] for key in field.derived_from or [] if key in fields_by_key]
+        for feeder in feeders:
+            feeder_names = names.setdefault(feeder.id, [])
+            if target_name not in feeder_names:
+                feeder_names.append(target_name)
+    return names
+
+
 def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict[str, Any]:
     """Everything view.html and _editor.html need to render the schema page.
 
@@ -711,11 +736,7 @@ def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
 
     all_fields = [f for group_fields in grouped.values() for f in group_fields]
-    linked_target_names = {
-        f.id: category_names_by_id[f.target_category_id]
-        for f in all_fields
-        if f.target_category_id is not None and f.target_category_id in category_names_by_id
-    }
+    fed_target_names = _fed_target_names(all_fields, category_names_by_id)
     has_guessable_text_rows = any(
         not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
     )
@@ -735,7 +756,7 @@ def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict
         "mapping_row_counts": mapping_row_counts,
         "assembly": assembly,
         "sections": sections,
-        "linked_target_names": linked_target_names,
+        "fed_target_names": fed_target_names,
         "group_choices": [
             {"value": group.value, "label": GROUP_LABELS[group]}
             for group in GROUP_DISPLAY_ORDER

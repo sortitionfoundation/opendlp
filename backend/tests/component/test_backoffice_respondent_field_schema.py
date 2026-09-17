@@ -8,8 +8,10 @@ from datetime import UTC, datetime
 
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    DerivationType,
     FieldOnRegistrationPage,
     FieldType,
+    RespondentFieldDefinition,
     RespondentFieldGroup,
 )
 from opendlp.domain.targets import TargetCategory, TargetValue
@@ -1752,6 +1754,47 @@ class TestTargetLinkedFieldUI:
         body = response.get_data(as_text=True)
         assert "Feeds target: Gender" in body
         assert "/target-sources" in body
+
+    def test_a_question_a_derived_target_is_computed_from_feeds_that_target(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            region = TargetCategory(
+                assembly_id=existing_assembly.id, name="Region", values=[TargetValue(value="North", min=1, max=5)]
+            )
+            ward = TargetCategory(
+                assembly_id=existing_assembly.id, name="Ward", values=[TargetValue(value="Central", min=1, max=5)]
+            )
+            uow.target_categories.add(region)
+            uow.target_categories.add(ward)
+            for category in (region, ward):
+                uow.respondent_field_definitions.add(
+                    RespondentFieldDefinition(
+                        assembly_id=existing_assembly.id,
+                        field_key=category.name,
+                        label=category.name,
+                        group=RespondentFieldGroup.DERIVED,
+                        sort_order=100,
+                        is_derived=True,
+                        derived_from=["postcode"],
+                        derivation_type=DerivationType.LARGE_MAPPING,
+                        derivation_config={"fallback": "UNKNOWN"},
+                        field_type=FieldType.CHOICE_DROPDOWN,
+                        options=[ChoiceOption(value=category.values[0].value), ChoiceOption(value="UNKNOWN")],
+                        target_category_id=category.id,
+                    )
+                )
+
+        body = logged_in_admin.get(self._base(existing_assembly)).get_data(as_text=True)
+
+        # The postcode question itself carries no link, but both targets are computed from it
+        postcode_row = re.search(
+            r"<tr[^>]*>(?:(?!</tr>).)*<code[^>]*>postcode</code>(?:(?!</tr>).)*</tr>", body, re.DOTALL
+        )
+        assert postcode_row is not None
+        assert "Feeds target: Region" in postcode_row.group(0)
+        assert "Feeds target: Ward" in postcode_row.group(0)
 
     def test_edit_modal_locks_type_but_keeps_presentation_and_help_editable(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
