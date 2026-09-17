@@ -92,6 +92,32 @@ class TestChecklistPage:
 
         assert b"The target's values have changed" in response.data
 
+    def test_each_row_opens_its_set_up_dialog_from_anywhere_on_the_card(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        linked = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Gender",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            target_category_id=linked.id,
+        )
+        unset = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        body = response.get_data(as_text=True)
+
+        rows = re.findall(r'<li class="target-source-row[^"]*">(.*?)</li>', body, re.DOTALL)
+        assert len(rows) == 2
+        for row, category in zip(rows, (linked, unset), strict=True):
+            # Exactly one link stretches over the card, and it opens that row's set-up dialog
+            open_links = re.findall(r'<a href="([^"]*)"\s+role="button"\s+class="[^"]*target-source-row__open', row)
+            assert open_links == [
+                f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal"
+            ]
+
     def test_opens_as_a_takeover_dialog_over_the_registration_hub(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
         body = response.get_data(as_text=True)

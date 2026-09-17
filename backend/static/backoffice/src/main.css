@@ -932,6 +932,30 @@
         background-color: var(--color-primary-action);
     }
 
+    /* Target data sources checklist row: its set-up link's ::after covers the
+       whole card, so a click anywhere opens the set-up dialog. The row's other
+       buttons are lifted above that overlay so they keep their own clicks. */
+    .target-source-row {
+        position: relative;
+        background-color: var(--color-tables-cards);
+        border: 1px solid var(--color-borders-dividers);
+    }
+
+    .target-source-row:has(.target-source-row__open:hover) {
+        border-color: var(--color-primary-action);
+    }
+
+    .target-source-row__open::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+    }
+
+    .target-source-row .btn:not(.target-source-row__open) {
+        position: relative;
+        z-index: 1;
+    }
+
     /* ========================================
        BREADCRUMB COMPONENT STYLES
        Navigation trail with CSS-based separators

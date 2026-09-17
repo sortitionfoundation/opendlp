@@ -19,9 +19,9 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
             {% for status in statuses %}
                 {% set category = status.category %}
                 {% set setup_url = url_for('target_sources.setup_modal', assembly_id=assembly.id, category_id=category.id) %}
-                <li class="rounded-lg p-4"
-                    style="background-color: var(--color-tables-cards);
-                           border: 1px solid var(--color-borders-dividers);">
+                {# The row's set-up link stretches over the whole card, so a click
+                   anywhere on it opens the set-up dialog; the other buttons sit above it. #}
+                <li class="target-source-row rounded-lg p-4">
                     <div class="flex items-start justify-between gap-4 flex-wrap">
                         <div>
                             <h3 class="text-heading-md mb-1" style="color: var(--color-headings);">{{ category.name }}</h3>
@@ -50,7 +50,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
                             {% if status.state in (TargetSourceState.LINKED_EXACT, TargetSourceState.LINKED_DERIVED) %}
-                                {{ button(_("Edit") , variant="secondary", href=setup_url,
+                                {{ button(_("Edit") , variant="secondary", href=setup_url, classes="target-source-row__open",
                                 attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                                 {% if status.field.derivation_type is not none and status.field.derivation_type.value == "large_mapping" %}
                                     {% set upload_url = url_for('target_sources.upload_modal', assembly_id=assembly.id, category_id=category.id) %}
@@ -96,13 +96,13 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                     <input type="hidden" name="field_id" value="{{ status.field.id }}">
                                     {{ button(_("Link it") , type="submit", variant="primary") }}
                                 </form>
-                                {{ button(_("Set up differently") , variant="secondary", href=setup_url,
+                                {{ button(_("Set up differently") , variant="secondary", href=setup_url, classes="target-source-row__open",
                                 attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                             {% elif status.state == TargetSourceState.IMPORT_COVERED %}
-                                {{ button(_("Set up") , variant="secondary", href=setup_url,
+                                {{ button(_("Set up") , variant="secondary", href=setup_url, classes="target-source-row__open",
                                 attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                             {% else %}
-                                {{ button(_("Set up") , variant="primary", href=setup_url,
+                                {{ button(_("Set up") , variant="primary", href=setup_url, classes="target-source-row__open",
                                 attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                             {% endif %}
                         </div>
