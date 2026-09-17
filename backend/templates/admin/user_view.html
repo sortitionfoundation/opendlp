@@ -112,6 +112,34 @@
                         </dd>
                     </div>
                 </dl>
+                <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Signup Survey") }}</h2>
+                {% if survey %}
+                    <dl class="govuk-summary-list">
+                        {% for question in survey_questions %}
+                            <div class="govuk-summary-list__row">
+                                <dt class="govuk-summary-list__key">{{ question.label }}</dt>
+                                <dd class="govuk-summary-list__value">
+                                    {% set answer = question.display_value(survey.answers) %}
+                                    {% if answer %}
+                                        {{ answer }}
+                                    {% else %}
+                                        <span class="govuk-hint">{{ _("Not answered") }}</span>
+                                    {% endif %}
+                                </dd>
+                            </div>
+                        {% endfor %}
+                        {% for key in leftover_answer_keys %}
+                            <div class="govuk-summary-list__row">
+                                <dt class="govuk-summary-list__key">{{ key }}</dt>
+                                <dd class="govuk-summary-list__value">{{ survey.answers[key] }}</dd>
+                            </div>
+                        {% endfor %}
+                    </dl>
+                {% else %}
+                    <p class="govuk-body">
+                        <span class="govuk-hint">{{ _("No signup survey answers for this user.") }}</span>
+                    </p>
+                {% endif %}
                 <div class="govuk-button-group govuk-button-group-mixed govuk-!-margin-top-6">
                     <a href="{{ url_for('admin.edit_user', user_id=user.id) }}"
                        class="govuk-button">{{ _("Edit User") }}</a>

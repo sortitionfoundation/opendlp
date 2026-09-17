@@ -14,7 +14,8 @@ import uuid
 
 import structlog
 
-from opendlp.domain.user_signup_surveys import UserSignupSurvey
+from opendlp.adapters.tabular_export import AbstractTabularExportTarget, TabularData
+from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, UserSignupSurvey, leftover_answer_keys
 
 from .exceptions import InsufficientPermissions, UserNotFoundError
 from .permissions import has_global_admin
@@ -65,3 +66,52 @@ def get_signup_survey(uow: AbstractUnitOfWork, user_id: uuid.UUID, admin_user_id
     _require_admin(uow, admin_user_id, "view user details")
     survey = _STORE.get(user_id)
     return survey.create_detached_copy() if survey else None
+
+
+def export_users(uow: AbstractUnitOfWork, admin_user_id: uuid.UUID, *, target: AbstractTabularExportTarget) -> None:
+    """
+    Export every user with their signup survey answers to the given target (admin only).
+
+    Survey columns come from SIGNUP_SURVEY_QUESTIONS, keyed by question key so
+    the export is stable across UI languages. Answers stored under keys no
+    longer in the spec get their own columns after the current ones, so old
+    data is never silently dropped.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _require_admin(uow, admin_user_id, "export users")
+
+    surveys = dict(_STORE)
+    leftover: set[str] = set()
+    for survey in surveys.values():
+        leftover.update(leftover_answer_keys(survey.answers))
+    leftover_keys = sorted(leftover)
+
+    question_keys = [question.key for question in SIGNUP_SURVEY_QUESTIONS]
+    headers = [
+        "email",
+        "first_name",
+        "last_name",
+        "global_role",
+        "active",
+        "created_at",
+        "email_confirmed_at",
+        *question_keys,
+        *leftover_keys,
+    ]
+    rows: list[list[str]] = []
+    for user in sorted(uow.users.all(), key=lambda user: user.created_at):
+        user_survey = surveys.get(user.id)
+        answers = user_survey.answers if user_survey else {}
+        rows.append([
+            user.email,
+            user.first_name,
+            user.last_name,
+            user.global_role.value,
+            "yes" if user.is_active else "no",
+            user.created_at.isoformat(),
+            user.email_confirmed_at.isoformat() if user.email_confirmed_at else "",
+            *(answers.get(key, "") for key in question_keys),
+            *(answers.get(key, "") for key in leftover_keys),
+        ])
+    target.write_sheet("users", TabularData(headers=headers, rows=rows))
