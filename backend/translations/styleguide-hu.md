@@ -112,20 +112,32 @@ checked them yet. Use them consistently until someone does.
 
 | English | Hungarian | |
 | --- | --- | --- |
-| derived field | származtatott mező | *(unreviewed)* |
-| derivation | származtatás | *(unreviewed)* |
-| source field | forrásmező | *(unreviewed)* |
-| mapping | megfeleltetés | *(unreviewed)* |
-| mapping file | megfeleltetési fájl | *(unreviewed)* |
-| input / output value | bemeneti / kimeneti érték | *(unreviewed)* |
+| derived field | számított mező |  |
+| derivation | számítás módja | |
+| source field | bemeneti mező | |
+| mapping (configuring one) | érték hozzárendelése | |
+| mapping (applying one) | érték cseréje | |
+| mapping file | hozzárendelési fájl | |
+| input / output value | bemeneti / kimeneti érték | |
 | options (of a choice field) | választható értékek | |
 
-**derived field** is *származtatott*, matching the existing `Derived` label. A
-**mapping** is the table from one field's values to another's, so
-*megfeleltetés* — not *leképezés*, which is mathematics. **options** was already
-settled in the catalogue as *választható értékek* ("Rögzített mező típusát vagy
-választható értékeit nem módosíthatod"); it is listed here so the derived-field
-strings do not drift to *opciók* or *lehetőségek*.
+**derived field** is *számított*, not *származtatott* — the existing `Derived`
+label has been updated to match, so both now read *Számított*.
+
+**mapping** splits in two, depending on which side of the feature a string is
+talking about. Setting one up — declaring or editing the rule that turns a
+source value into an output value, as in `A large mapping needs its output
+values declared…` or `The mapping file is empty` — is *érték hozzárendelése*
+(*hozzárendelés*), matching **mapping file** (*hozzárendelési fájl*), which is
+also about configuration. Running one — the moment a respondent's value is
+actually replaced by what the rule produces — is *érték cseréje*. Every string
+in the catalogue so far is about configuring a mapping, so *hozzárendelés* is
+what you will mostly reach for; reserve *érték cseréje* for a string that
+describes a value changing on a respondent's row, not the rule that will do
+it. **options** was already settled in the catalogue as *választható értékek*
+("Rögzített mező típusát vagy választható értékeit nem módosíthatod"); it is
+listed here so the derived-field strings do not drift to *opciók* or
+*lehetőségek*.
 
 ### Roles
 
