@@ -52,7 +52,8 @@ class TestRegistration:
             },
         )
         assert response.status_code == 200
-        assert b"Invalid invite code" in response.data
+        # The form-level validator reports this before the service layer runs
+        assert b"Invalid or expired invite code." in response.data
 
     def test_register_with_invalid_invite_fails(self, client: FlaskClient) -> None:
         response = client.post(

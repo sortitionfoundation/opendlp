@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
+{% from "components/signup_survey_fields.html" import signup_survey_fields %}
 {% block title %}{{ _("Create an Account") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
             <h1 class="govuk-heading-xl">{{ _("Create an Account") }}</h1>
-            <div class="govuk-inset-text">
-                {{ _("You need an invite code to create an account. If you do not have one, please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>.", email=support_email_address) }}
-            </div>
+            {% if not feature('open_signup') %}
+                <div class="govuk-inset-text">
+                    {{ _("You need an invite code to create an account. If you do not have one, please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>.", email=support_email_address) }}
+                </div>
+            {% endif %}
             {% if config.OAUTH_GOOGLE_CLIENT_ID or config.OAUTH_MICROSOFT_CLIENT_ID %}
                 <div class="govuk-!-margin-top-6">
                     <h2 class="govuk-heading-m">
@@ -58,7 +61,11 @@
                 {{ form.hidden_tag() }}
                 <div class="govuk-form-group{% if form.invite_code.errors %} govuk-form-group--error{% endif %}">
                     {{ form.invite_code.label(class="govuk-label govuk-label--m") }}
-                    {% if form.invite_code.description %}
+                    {% if feature('open_signup') %}
+                        <div id="invite-hint" class="govuk-hint">
+                            {{ _("Optional — if you were given an invite code, enter it here.") }}
+                        </div>
+                    {% elif form.invite_code.description %}
                         <div id="invite-hint" class="govuk-hint">{{ form.invite_code.description }}</div>
                     {% endif %}
                     {% if form.invite_code.errors %}
@@ -117,6 +124,7 @@
                 {% from "components/govuk_password_input.html" import govuk_password_input %}
                 {{ govuk_password_input(form.password, autocomplete="new-password") }}
                 {{ govuk_password_input(form.password_confirm, autocomplete="new-password") }}
+                {% if show_questions %}{{ signup_survey_fields(form) }}{% endif %}
                 <div class="govuk-form-group{% if form.accept_data_agreement.errors %} govuk-form-group--error{% endif %}">
                     <fieldset class="govuk-fieldset"
                               aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">

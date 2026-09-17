@@ -14,6 +14,7 @@ from werkzeug.wrappers import Response
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.users import User
+from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.extensions import oauth
 from opendlp.entrypoints.forms import (
     LoginForm,
@@ -22,7 +23,7 @@ from opendlp.entrypoints.forms import (
     RegistrationForm,
     ResendConfirmationForm,
 )
-from opendlp.feature_flags import default_dashboard_endpoint
+from opendlp.feature_flags import default_dashboard_endpoint, has_feature
 from opendlp.service_layer import totp_service
 from opendlp.service_layer.email_confirmation_service import (
     confirm_email_with_token,
@@ -48,6 +49,7 @@ from opendlp.service_layer.password_reset_service import (
     validate_reset_token,
 )
 from opendlp.service_layer.security import password_validators_help_text_html
+from opendlp.service_layer.signup_survey_service import save_signup_survey
 from opendlp.service_layer.two_factor_service import TwoFactorVerificationError
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.service_layer.user_service import authenticate_user, create_user, find_or_create_oauth_user
@@ -332,10 +334,21 @@ def logout() -> ResponseReturnValue:
     return redirect(url_for("main.index"))
 
 
+def _registration_role_args(invite_code: str | None) -> dict:
+    """create_user() role arguments for a registration.
+
+    An empty invite code has already passed form validation, so open signup is
+    on and the new account gets the lowest global role.
+    """
+    if invite_code:
+        return {"invite_code": invite_code}
+    return {"global_role": GlobalRole.USER}
+
+
 @auth_bp.route("/register", methods=["GET", "POST"])
 @auth_bp.route("/register/<invite_code>", methods=["GET", "POST"])
 def register(invite_code: str = "") -> ResponseReturnValue:
-    """User registration with invite code."""
+    """User registration, with an invite code or (when open signup is on) without one."""
     if current_user.is_authenticated:
         return redirect(url_for(default_dashboard_endpoint()))
 
@@ -345,6 +358,11 @@ def register(invite_code: str = "") -> ResponseReturnValue:
     if invite_code and not form.invite_code.data:
         form.invite_code.data = invite_code
 
+    # The optional survey questions show for open signups only, and an invite
+    # link can append ?skipq=1 to spare its invitees the questions. The form
+    # posts back to the same URL, so the flag survives the round trip.
+    show_questions = has_feature("open_signup") and request.args.get("skipq") != "1"
+
     if form.validate_on_submit():
         try:
             uow = bootstrap.get_flask_uow()
@@ -352,16 +370,17 @@ def register(invite_code: str = "") -> ResponseReturnValue:
                 # After form validation, required fields are guaranteed to be non-None
                 assert form.email.data is not None
                 assert form.password.data is not None
-                assert form.invite_code.data is not None
                 user, token = create_user(
                     uow=uow,
                     email=form.email.data,
                     password=form.password.data,
-                    invite_code=form.invite_code.data,
                     first_name=form.first_name.data or "",
                     last_name=form.last_name.data or "",
                     accept_data_agreement=form.accept_data_agreement.data or False,
+                    **_registration_role_args(form.invite_code.data),
                 )
+                if show_questions:
+                    save_signup_survey(uow, user.id, form.survey_answers())
 
                 # If OAuth user (token is None), auto-login as before
                 if token is None:
@@ -390,7 +409,12 @@ def register(invite_code: str = "") -> ResponseReturnValue:
             logger.exception("Registration error", error=str(e))
             flash(_("An error occurred during registration. Please try again."), "error")
 
-    return render_template("auth/register.html", form=form, password_help=password_validators_help_text_html())
+    return render_template(
+        "auth/register.html",
+        form=form,
+        password_help=password_validators_help_text_html(),
+        show_questions=show_questions,
+    )
 
 
 @auth_bp.route("/confirm-email/<token>", methods=["GET", "POST"])
