@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-17 13:40+0000\n"
+"POT-Creation-Date: 2026-09-17 14:36+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -4592,7 +4592,7 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:80
 #: templates/backoffice/respondent_field_schema/_editor.html:160
-#: templates/backoffice/target_sources/_checklist.html:53
+#: templates/backoffice/target_sources/_checklist.html:57
 #: templates/main/edit_assembly.html:3
 #: templates/targets/components/category_block.html:102
 msgid "Edit"
@@ -7713,7 +7713,7 @@ msgid ""
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_editor.html:185
-#: templates/backoffice/target_sources/_checklist.html:67
+#: templates/backoffice/target_sources/_checklist.html:114
 msgid "Recompute"
 msgstr ""
 
@@ -8034,82 +8034,91 @@ msgstr "Célhely"
 msgid "CSV download"
 msgstr "CSV letöltés"
 
-#: templates/backoffice/target_sources/_checklist.html:13
+#: templates/backoffice/target_sources/_checklist.html:14
 msgid ""
 "No targets have been set up for this assembly yet. Add your targets first"
 " — each one then gets a row here to say where its data comes from."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:15
+#: templates/backoffice/target_sources/_checklist.html:16
 msgid "Go to Targets"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:30
+#: templates/backoffice/target_sources/_checklist.html:31
 #, python-format
 msgid "Asked on the registration form as \"%(label)s\""
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:32
+#: templates/backoffice/target_sources/_checklist.html:33
 #, python-format
 msgid "Computed from \"%(source)s\""
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:35
+#: templates/backoffice/target_sources/_checklist.html:36
 #, python-format
 msgid "%(count)s lookup rows"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:38
+#: templates/backoffice/target_sources/_checklist.html:39
 #, python-format
 msgid ""
 "The existing question \"%(label)s\" shares this target's name but isn't "
 "linked to it yet."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:40
+#: templates/backoffice/target_sources/_checklist.html:41
 msgid "Data comes from your imported respondents."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:42
+#: templates/backoffice/target_sources/_checklist.html:43
 msgid "No data source yet."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:47
+#: templates/backoffice/target_sources/_checklist.html:48
 msgid ""
 "The target's values have changed since this field was set up — its "
 "answers no longer match."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:57
+#: templates/backoffice/target_sources/_checklist.html:62
 msgid "Upload table"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:77
+#: templates/backoffice/target_sources/_checklist.html:71
 msgid "Re-sync from target"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:86
-#: templates/profile/view.html:95 templates/profile/view.html:146
-msgid "Unlink"
-msgstr "Leválasztás"
-
 #: templates/backoffice/target_sources/_checklist.html:87
+#, python-format
+msgid "More actions for %(name)s"
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:102
+msgid "Re-upload table"
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:128
 msgid ""
 "Unlink this question from its target? The question stays on the "
 "registration page, but edits to it will no longer be checked against the "
 "target."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:97
+#: templates/backoffice/target_sources/_checklist.html:128
+#: templates/profile/view.html:95 templates/profile/view.html:146
+msgid "Unlink"
+msgstr "Leválasztás"
+
+#: templates/backoffice/target_sources/_checklist.html:140
 msgid "Link it"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:99
+#: templates/backoffice/target_sources/_checklist.html:142
 msgid "Set up differently"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:102
-#: templates/backoffice/target_sources/_checklist.html:105
+#: templates/backoffice/target_sources/_checklist.html:145
+#: templates/backoffice/target_sources/_checklist.html:148
 msgid "Set up"
 msgstr ""
 
