@@ -3,16 +3,24 @@ ABOUTME: Pie chart card atom for the assembly results dashboard (ticket 886)
 ABOUTME: Renders a Chart.js pie (built-in legend + hover tooltips) from segment counts, or a CSS skeleton + message when data is absent
 #}
 {# Default categorical palette, cycled when a segment gives no explicit colour.
-   Semantic tokens, so slices stay on-brand and theme-aware. A caller can override
-   per segment via a "color" key. #}
+   Data-viz tokens (Figma "Colors – data visualization", 100/400/700 steps),
+   ordered greedily so each colour maximises its minimum CIELab distance to
+   every colour before it — the first N slices of any pie stay as mutually
+   distinct as possible (ΔE ≥ 30 across the whole cycle). A caller can
+   override per segment via a "color" key. #}
 {% set _pie_palette = [
-"var(--color-info-600)",
-"var(--color-brand-400)",
-"var(--color-success-600)",
-"var(--color-warning-600)",
-"var(--color-info-400)",
-"var(--color-success-400)",
-"var(--color-warning-400)"
+"var(--color-data-blue-400)",
+"var(--color-data-orange-100)",
+"var(--color-data-pink-700)",
+"var(--color-data-green-700)",
+"var(--color-data-blood-orange-400)",
+"var(--color-data-indigo-700)",
+"var(--color-data-brown-700)",
+"var(--color-data-pink-100)",
+"var(--color-data-turquoise-100)",
+"var(--color-data-grey-400)",
+"var(--color-data-purple-700)",
+"var(--color-data-orange-400)"
 ] %}
 {% macro pie_chart_card(title, segments=none, message="", size=150, title_tag="p", gaps=false, legend=true) %}
     {#

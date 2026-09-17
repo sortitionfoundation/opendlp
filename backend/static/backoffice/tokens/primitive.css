@@ -57,6 +57,56 @@
     --color-neutral-900: #12141C;
 
     /* ========================================
+     DATA VISUALIZATION SCALE
+     Categorical chart colours from the Figma "Colors – data visualization"
+     page (node 5326-7654). Only the 100/400/700 steps are tokenised — the
+     steps charts actually cycle through.
+     ======================================== */
+
+    --color-data-orange-100: #FFEFB0;
+    --color-data-orange-400: #F1A535;
+    --color-data-orange-700: #B56C00;
+
+    --color-data-blood-orange-100: #FFC8B5;
+    --color-data-blood-orange-400: #F17946;
+    --color-data-blood-orange-700: #9C3418;
+
+    --color-data-pink-100: #FBBDD0;
+    --color-data-pink-400: #E08898;
+    --color-data-pink-700: #A11564;
+
+    --color-data-purple-100: #DBC4F1;
+    --color-data-purple-400: #9B65C8;
+    --color-data-purple-700: #6F1C90;
+
+    --color-data-indigo-100: #C3C9EB;
+    --color-data-indigo-400: #6574C4;
+    --color-data-indigo-700: #2D3A81;
+
+    --color-data-blue-100: #B1E4FC;
+    --color-data-blue-400: #33BAF6;
+    --color-data-blue-700: #0278AD;
+
+    --color-data-turquoise-100: #B0F2EF;
+    --color-data-turquoise-400: #33C9D0;
+    --color-data-turquoise-700: #008997;
+
+    --color-data-green-100: #CBE8C9;
+    /* Figma's green-400 swatch is filled with a stray blue (#71DBF3); the
+       value here follows the card's rgb(112,191,115) caption, which sits
+       where a green-400 belongs between green-300 and green-500. */
+    --color-data-green-400: #70BF73;
+    --color-data-green-700: #367C39;
+
+    --color-data-grey-100: #DDE3D8;
+    --color-data-grey-400: #8B97A2;
+    --color-data-grey-700: #4A5F63;
+
+    --color-data-brown-100: #D5CACC;
+    --color-data-brown-400: #8A7362;
+    --color-data-brown-700: #5E3C35;
+
+    /* ========================================
      SPACING SCALE
      ======================================== */
 
