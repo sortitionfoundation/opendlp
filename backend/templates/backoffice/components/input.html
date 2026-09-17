@@ -577,7 +577,9 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         {% else %}
             {# Editable switch with custom styling #}
             <label class="switch-container{% if disabled %} switch-disabled{% endif %}">
-                {# Hidden native checkbox with switch role for accessibility #}
+                {# Hidden native checkbox with switch role for accessibility. No aria-checked:
+                   the native checked state already conveys it, and a static attribute would
+                   go stale as soon as the switch is toggled. #}
                 <input
                     type="checkbox"
                     role="switch"
@@ -585,7 +587,6 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                     id="{{ input_id }}"
                     {% if checked %}checked{% endif %}
                     {% if disabled %}disabled{% endif %}
-                    aria-checked="{{ 'true' if checked else 'false' }}"
                     {% if attrs %}{{ attrs | safe }}{% endif %}
                     class="switch-input"
                 />
