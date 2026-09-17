@@ -3,7 +3,7 @@ ABOUTME: Registration questions list — a card per section, a row per question 
 ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_edit, icon_trash, icon_more_vert %}
+{% from "backoffice/components/icons.html" import icon_edit, icon_more_vert %}
 {# oob=true marks the fragment for an out-of-band swap: HTMX replaces #schema-editor
    in place while the (otherwise empty) response body clears #field-modal-container,
    closing whichever modal triggered the mutation. #}
@@ -115,28 +115,14 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                                     classes="row-link",
                                     aria_label=_("Edit %(question)s", question=field.label),
                                     attrs='hx-get="' ~ edit_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
-                                    {% if not field.is_fixed %}
-                                        <form method="post"
-                                              action="{{ url_for('respondent_field_schema.delete_field_view', assembly_id=assembly.id, field_id=field.id) }}"
-                                              class="inline-flex"
-                                              x-data
-                                              data-preserve-scroll
-                                              @submit.prevent="$confirm('{{ _("Remove this question? Respondent data keeps its values; they just stop being rendered.") }}', $el)">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            {{ button(variant="icon",
-                                            icon=icon_trash(classes="w-4 h-4"),
-                                            type="submit",
-                                            aria_label=_("Remove %(question)s", question=field.label)) }}
-                                        </form>
-                                    {% endif %}
                                     {# No "up" for a section's first question, no "down" for its last. Built
                                        without `set _ = list.append(...)`, which would shadow gettext here. #}
                                     {% set move_directions = ([("up", _("Move up"))] if not loop.first else []) + ([("down", _("Move down"))] if not loop.last else []) %}
                                     {# Less common actions behind a "more" menu - see the ROW LINK notes in
                                        main.css. Escape is bound on this element, not window, so it closes
-                                       only the menu and not the step dialog around it. A question alone in
-                                       its section, and not derived, has nothing to put there: no menu. #}
-                                    {% if move_directions or field.is_derived %}
+                                       only the menu and not the step dialog around it. A built-in question
+                                       alone in its section has nothing to put there: no menu. #}
+                                    {% if move_directions or field.is_derived or not field.is_fixed %}
                                         <div class="row-link-menu inline-flex"
                                              x-data="rowActionsMenu"
                                              x-bind:class="open ? 'is-open' : ''"
@@ -187,6 +173,18 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                                                            hx-target="#field-modal-container"
                                                            hx-swap="innerHTML">{{ _("Upload lookup table") }}</a>
                                                     {% endif %}
+                                                {% endif %}
+                                                {# Built-in questions can't be removed. Last, and marked as destructive. #}
+                                                {% if not field.is_fixed %}
+                                                    <form method="post"
+                                                          role="none"
+                                                          action="{{ url_for('respondent_field_schema.delete_field_view', assembly_id=assembly.id, field_id=field.id) }}"
+                                                          x-data
+                                                          data-preserve-scroll
+                                                          @submit.prevent="$confirm('{{ _("Remove this question? Respondent data keeps its values; they just stop being rendered.") }}', $el)">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <button type="submit" role="menuitem" class="menu-item menu-item--danger">{{ _("Remove") }}</button>
+                                                    </form>
                                                 {% endif %}
                                             </div>
                                         </div>

@@ -146,17 +146,37 @@ class TestQuestionsList:
                 assert add_link in body
         assert "No questions in this section yet." in body
 
-    def test_only_questions_that_can_be_removed_have_a_remove_button(
+    def test_remove_is_in_the_row_menu_only_for_questions_that_can_be_removed(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
         rows = self._rows(self._page(logged_in_admin, existing_assembly))
 
-        assert 'aria-label="Remove' not in rows["email"]
-        assert 'aria-label="Remove Custom notes"' in rows["custom_notes"]
+        assert ">Remove</button>" not in rows["email"]
+        custom_notes = rows["custom_notes"]
+        menu = custom_notes[custom_notes.index('role="menu"') :]
+        assert 'class="menu-item menu-item--danger">Remove</button>' in menu
+        assert "/fields/" in menu and "/delete" in menu
+        # No separate bin button beside the edit link any more
+        assert 'aria-label="Remove' not in custom_notes
 
-    def test_a_question_alone_in_its_section_has_no_empty_menu(
+    def test_a_built_in_question_alone_in_its_section_has_no_empty_menu(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, existing_assembly.id)
+        schema = _get_schema(fake_store, admin_user, existing_assembly)
+        email = next(f for f in schema if f.field_key == "email")
+        assert [f.field_key for f in schema if f.group == email.group] == ["email"]
+
+        rows = self._rows(self._page(logged_in_admin, existing_assembly))
+
+        # Can't move, isn't derived, can't be removed: no kebab that opens onto nothing
+        assert 'role="menu"' not in rows["email"]
+        assert "More actions for" not in rows["email"]
+
+    def test_a_removable_question_alone_in_its_section_still_has_its_menu(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
@@ -166,10 +186,9 @@ class TestQuestionsList:
 
         rows = self._rows(self._page(logged_in_admin, existing_assembly))
 
-        # Nothing to move and nothing derived: no kebab that opens onto nothing
-        assert 'role="menu"' not in rows["postcode"]
-        assert "More actions for" not in rows["postcode"]
-        assert 'role="menu"' in rows["first_name"]
+        assert "Move up" not in rows["postcode"]
+        assert "Move down" not in rows["postcode"]
+        assert ">Remove</button>" in rows["postcode"]
 
     def test_moves_are_in_the_row_menu_and_only_where_they_can_go(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

@@ -34,6 +34,13 @@ Feature: Respondent field schema
     And I click the "last_name" row
     Then the edit modal for "Last name" should be open
 
+  Scenario: Organiser removes a question from its row menu
+    Given there is an assembly with respondents imported from CSV called "Schema Remove Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Remove Demo"
+    And I choose "Remove" from the "custom_notes" row menu and confirm
+    Then the schema editor should not list the "custom_notes" field
+
   Scenario: Organiser adds a choice field through the modal
     Given there is an assembly with respondents imported from CSV called "Schema Modal Demo"
     And I am signed in as an admin user

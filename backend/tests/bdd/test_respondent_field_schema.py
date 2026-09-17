@@ -116,6 +116,17 @@ def open_add_field_modal(admin_logged_in_page: Page) -> None:
     expect(_field_dialog(admin_logged_in_page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when(parsers.parse('I choose "{item}" from the "{field_key}" row menu and confirm'))
+def choose_row_menu_item_and_confirm(admin_logged_in_page: Page, item: str, field_key: str) -> None:
+    page = admin_logged_in_page
+    row = page.locator(f"tr:has(code:text-is('{field_key}'))")
+    row.get_by_role("button", name="More actions for").click()
+    page.once("dialog", lambda dialog: dialog.accept())
+    with page.expect_navigation():
+        row.get_by_role("menuitem", name=item).click()
+    page.wait_for_load_state("networkidle")
+
+
 @when(parsers.parse('I click the "{field_key}" row'))
 def click_field_row(admin_logged_in_page: Page, field_key: str) -> None:
     """Click the row in its question type column - nowhere near its buttons - to exercise the whole-row link.
@@ -182,6 +193,11 @@ def see_collapsible_block(admin_logged_in_page: Page, label: str) -> None:
 @then(parsers.parse('the schema editor should list the "{field_key}" field'))
 def schema_lists_field(admin_logged_in_page: Page, field_key: str) -> None:
     expect(admin_logged_in_page.locator(f"code:text-is('{field_key}')")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the schema editor should not list the "{field_key}" field'))
+def schema_does_not_list_field(admin_logged_in_page: Page, field_key: str) -> None:
+    expect(admin_logged_in_page.locator(f"code:text-is('{field_key}')")).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the "{earlier_key}" field should appear before the "{later_key}" field'))
