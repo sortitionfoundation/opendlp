@@ -177,14 +177,14 @@ class TestAddField:
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
-        assert b"Add a field" in response.data
+        assert b"Add a question" in response.data
         assert f"/assembly/{existing_assembly.id}/respondent-schema/fields/new-modal".encode() in response.data
 
     def test_add_form_absent_without_schema(self, logged_in_admin, existing_assembly):
         # No schema yet: the Initialise prompt shows instead of the add form.
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
-        assert b"Add a field" not in response.data
+        assert b"Add a question" not in response.data
 
 
 class TestDeleteField:
@@ -214,7 +214,7 @@ class TestFieldsTab:
         # Bookmarks and in-flight links keep working; the page is step 2 now.
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
-        assert b"Registration fields" in response.data
+        assert b"Registration questions" in response.data
 
     def test_opens_as_a_takeover_dialog_over_the_registration_hub(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -398,7 +398,7 @@ class TestFieldTypeAndOptions:
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
-        assert b"Guess field types from data" in response.data
+        assert b"Guess question types from data" in response.data
 
     def test_guess_button_hidden_when_no_respondents(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         with FakeUnitOfWork(store=fake_store) as uow:
@@ -406,7 +406,7 @@ class TestFieldTypeAndOptions:
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
-        assert b"Guess field types from data" not in response.data
+        assert b"Guess question types from data" not in response.data
 
     def test_guess_button_hidden_when_no_text_fields(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
@@ -425,7 +425,7 @@ class TestFieldTypeAndOptions:
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
-        assert b"Guess field types from data" not in response.data
+        assert b"Guess question types from data" not in response.data
 
     def test_switch_choice_back_to_text_clears_options(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -497,7 +497,7 @@ class TestFieldModal:
         body = response.get_data(as_text=True)
         assert "<html" not in body
         assert 'role="dialog"' in body
-        assert "Add a field" in body
+        assert "Add a question" in body
 
     def test_new_modal_plain_request_renders_the_page_with_the_modal_open(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

@@ -35,7 +35,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                         · {{ _("%(count)s lookup rows", count="{:,}".format(status.mapping_row_count)) }}
                                     {% endif %}
                                 {% elif status.state == TargetSourceState.MATCHED_NOT_LINKED %}
-                                    {{ _("The existing field \"%(label)s\" shares this target's name but isn't linked to it yet.", label=status.field.label) }}
+                                    {{ _("The existing question \"%(label)s\" shares this target's name but isn't linked to it yet.", label=status.field.label) }}
                                 {% elif status.state == TargetSourceState.IMPORT_COVERED %}
                                     ✓ {{ _("Data comes from your imported respondents.") }}
                                 {% else %}
@@ -84,7 +84,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                       hx-swap="innerHTML">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     {{ button(_("Unlink") , type="submit", variant="secondary",
-                                    attrs='data-confirm="' ~ (_("Unlink this field from its target? The field stays on the registration form, but edits to it will no longer be checked against the target.") | e) ~ '"') }}
+                                    attrs='data-confirm="' ~ (_("Unlink this question from its target? The question stays on the registration page, but edits to it will no longer be checked against the target.") | e) ~ '"') }}
                                 </form>
                             {% elif status.state == TargetSourceState.MATCHED_NOT_LINKED %}
                                 <form method="post"

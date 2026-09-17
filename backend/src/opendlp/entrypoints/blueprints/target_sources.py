@@ -408,13 +408,13 @@ def _parse_source_spec(values: dict[str, Any], method: str) -> SourceFieldSpec:
     """The create-or-reuse source the form describes. Raises ValueError with a user message."""
     if values["source_mode"] == "reuse":
         if not values["reuse_field_id"]:
-            raise ValueError(_("Choose the field to use"))
+            raise ValueError(_("Choose the question to use"))
         return SourceFieldSpec(reuse_field_id=uuid.UUID(values["reuse_field_id"]))
     if method == _METHOD_EXACT:
         return SourceFieldSpec()
     field_key = values["new_field_key"].strip()
     if not field_key:
-        raise ValueError(_("Enter a name for the new registration field"))
+        raise ValueError(_("Enter a name for the new registration question"))
     if method == DerivationType.AGE_BRACKET.value:
         field_type = _SOURCE_TYPE_FOR_AGE.get(values["age_source_type"], FieldType.DATE)
     else:
@@ -436,7 +436,9 @@ def _parse_setup_spec(values: dict[str, Any]) -> TargetSourceSpec:
         return AgeBracketSpec(rule=parse_age_rule(values), source=source)
     if method == DerivationType.SMALL_MAPPING.value:
         if values["source_mode"] != "reuse":
-            raise ValueError(_("Choose the choice field to map from — add it on the registration fields step first"))
+            raise ValueError(
+                _("Choose the choice question to map from — add it on the registration questions step first")
+            )
         return SmallMappingSpec(rule=parse_small_mapping_rule(values), source=source)
     if method == DerivationType.LARGE_MAPPING.value:
         return LargeMappingSpec(rule=LargeMappingRule(), source=source)
@@ -541,7 +543,7 @@ def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturn
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
-    return _close_modal_response(assembly_id, _("Field linked to its target"))
+    return _close_modal_response(assembly_id, _("Question linked to its target"))
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/resync", methods=["POST"])
@@ -570,7 +572,7 @@ def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
     """Recompute the linked derived field across the pool."""
     field_id = _linked_field_id(assembly_id, category_id)
     if field_id is None:
-        flash(_("No field is linked to this target"), "error")
+        flash(_("No question is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
     try:
         uow = bootstrap.get_flask_uow()
@@ -626,7 +628,7 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     """Replace the linked mapping field's lookup table from an uploaded CSV, then recompute."""
     field_id = _linked_field_id(assembly_id, category_id)
     if field_id is None:
-        flash(_("No field is linked to this target"), "error")
+        flash(_("No question is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
     uploaded = request.files.get("mapping_file")
     if uploaded is None or not uploaded.filename:
@@ -669,4 +671,4 @@ def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     except NotFoundError:
         flash(_("Target not found"), "error")
         return redirect(_sources_url(assembly_id))
-    return _close_modal_response(assembly_id, _("Field unlinked from its target"))
+    return _close_modal_response(assembly_id, _("Question unlinked from its target"))

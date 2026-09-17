@@ -818,7 +818,7 @@ class TestFieldsChangedWarning:
 
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
 
-        assert b"registration fields have changed" in response.data
+        assert b"registration questions have changed" in response.data
 
     def test_quiet_when_the_html_is_newer_than_every_field(self, logged_in_admin, fake_store, assembly_id):
         self._seed_field(fake_store, assembly_id)
@@ -826,4 +826,4 @@ class TestFieldsChangedWarning:
 
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
 
-        assert b"registration fields have changed" not in response.data
+        assert b"registration questions have changed" not in response.data

@@ -20,7 +20,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
         <div class="dialog-header">
             <h2 class="dialog-title" id="field-modal-title">
                 {% if modal_ctx["mode"] == "new" %}
-                    {{ _("Add a field") }}
+                    {{ _("Add a question") }}
                 {% else %}
                     {{ _("Edit %(label)s", label=modal_ctx["field"].label) }}
                 {% endif %}
@@ -211,7 +211,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                 <div class="mb-4">
                     {{ textarea("help_text",
                     label=_("Help text"),
-                    hint=_("Optional hint shown beneath the field on the registration page."),
+                    hint=_("Optional hint shown beneath the question on the registration page."),
                     value=values["help_text"],
                     rows=2,
                     id="field-modal-help-text") }}

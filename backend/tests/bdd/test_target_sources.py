@@ -160,7 +160,7 @@ def rename_target(admin_logged_in_page: Page, old_name: str, new_name: str, requ
 
 @when("I confirm the unlinking")
 def confirm_unlinking(admin_logged_in_page: Page) -> None:
-    admin_logged_in_page.get_by_role("button", name="Unlink the fields and save").click()
+    admin_logged_in_page.get_by_role("button", name="Unlink the questions and save").click()
     admin_logged_in_page.wait_for_load_state("networkidle")
 
 
@@ -193,7 +193,7 @@ def see_recompute_report(admin_logged_in_page: Page) -> None:
 
 @then("I should be asked to confirm unlinking")
 def asked_to_confirm_unlinking(admin_logged_in_page: Page) -> None:
-    expect(admin_logged_in_page.get_by_text("registration fields linked")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(admin_logged_in_page.get_by_text("registration questions linked")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the schema editor should list the "{field_key}" field'))

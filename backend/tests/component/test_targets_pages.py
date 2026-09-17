@@ -1271,7 +1271,7 @@ class TestForceUnlinkConfirmation:
 
         html = response.data.decode()
         assert response.status_code == 200
-        assert "registration fields linked" in html
+        assert "registration questions linked" in html
         assert "Renaming the target" in html
         assert 'name="force_unlink" value="1"' in html
         # Nothing saved yet.

@@ -111,7 +111,7 @@ def _field_dialog(page: Page) -> Locator:
 
 @when("I open the add-field modal")
 def open_add_field_modal(admin_logged_in_page: Page) -> None:
-    admin_logged_in_page.get_by_role("button", name="Add a field").click()
+    admin_logged_in_page.get_by_role("button", name="Add a question").click()
     expect(_field_dialog(admin_logged_in_page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 

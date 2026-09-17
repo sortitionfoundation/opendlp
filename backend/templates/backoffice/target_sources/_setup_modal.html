@@ -50,24 +50,24 @@ ABOUTME: Selects and radios re-render the form over HTMX; saving configures sour
                 </div>
                 {% if values["method"] == "small_mapping" %}
                     {# The wider choice field must already exist — creating it with its
-                       full option list belongs in the registration fields step. #}
+                       full option list belongs in the registration questions step. #}
                     <div class="mb-4">
                         {% if setup["candidates"] %}
-                            {% set source_options = [{"value": "", "label": _("Choose a field…")}] %}
+                            {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
                             {% for candidate in setup["candidates"] %}
                                 {% set _ = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
                             {% endfor %}
                             <input type="hidden" name="source_mode" value="reuse">
                             {{ select("reuse_field_id",
-                            label=_("Choice field to map from"),
+                            label=_("Choice question to map from"),
                             options=source_options,
                             value=values["reuse_field_id"],
                             id="ts-reuse-field",
                             attrs=refresh_attrs) }}
                         {% else %}
-                            <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Choice field to map from") }}</span>
+                            <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Choice question to map from") }}</span>
                             <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                                {{ _("No choice field exists yet — add the more detailed question on the registration fields step first, then come back.") }}
+                                {{ _("No choice question exists yet — add the more detailed question on the registration questions step first, then come back.") }}
                             </p>
                         {% endif %}
                     </div>
@@ -75,16 +75,16 @@ ABOUTME: Selects and radios re-render the form over HTMX; saving configures sour
                     <fieldset class="mb-4">
                         <legend class="text-label-lg mb-2" style="color: var(--color-headings);">
                             {% if values["method"] == "exact" %}
-                                {{ _("Which field asks the question?") }}
+                                {{ _("Which question collects the data?") }}
                             {% else %}
-                                {{ _("Which field collects the source value?") }}
+                                {{ _("Which question collects the source value?") }}
                             {% endif %}
                         </legend>
                         {# NOT `set _ = ...`: outside a for loop that would shadow gettext for the rest of the template. #}
                         {% if setup["candidates"] %}
-                            {% set mode_options = [{"value": "reuse", "label": _("Use an existing field")}, {"value": "create", "label": _("Create a new field")}] %}
+                            {% set mode_options = [{"value": "reuse", "label": _("Use an existing question")}, {"value": "create", "label": _("Create a new question")}] %}
                         {% else %}
-                            {% set mode_options = [{"value": "create", "label": _("Create a new field")}] %}
+                            {% set mode_options = [{"value": "create", "label": _("Create a new question")}] %}
                         {% endif %}
                         {{ radio_group("source_mode",
                         options=mode_options,
@@ -94,12 +94,12 @@ ABOUTME: Selects and radios re-render the form over HTMX; saving configures sour
                     </fieldset>
                     {% if values["source_mode"] == "reuse" and setup["candidates"] %}
                         <div class="mb-4">
-                            {% set source_options = [{"value": "", "label": _("Choose a field…")}] %}
+                            {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
                             {% for candidate in setup["candidates"] %}
                                 {% set _ = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
                             {% endfor %}
                             {{ select("reuse_field_id",
-                            label=_("Existing field"),
+                            label=_("Existing question"),
                             options=source_options,
                             value=values["reuse_field_id"],
                             id="ts-reuse-field",
@@ -113,7 +113,7 @@ ABOUTME: Selects and radios re-render the form over HTMX; saving configures sour
                         <div class="flex gap-4 mb-4">
                             <div class="flex-1">
                                 {{ input("new_field_key",
-                                label=_("New field name"),
+                                label=_("New question name"),
                                 value=values["new_field_key"],
                                 id="ts-new-field-key") }}
                             </div>

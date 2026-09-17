@@ -1021,7 +1021,7 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     if _is_htmx():
         return _render_editor_fragment(assembly_id, oob=True)
-    flash(_("Field added"), "success")
+    flash(_("Question added"), "success")
     return _schema_page_redirect(assembly_id)
 
 
@@ -1338,7 +1338,7 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
         # A modal save clears the modal via the out-of-band swap; the row's
         # section select targets #schema-editor directly, so no OOB there.
         return _render_editor_fragment(assembly_id, oob=is_modal)
-    flash(_("Field updated"), "success")
+    flash(_("Question updated"), "success")
     return _schema_page_redirect(assembly_id)
 
 
@@ -1432,9 +1432,9 @@ def guess_types_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             changed = guess_field_types(uow, current_user.id, assembly_id)
         if changed:
-            flash(_("Guessed types for %(count)d fields", count=len(changed)), "success")
+            flash(_("Guessed types for %(count)d questions", count=len(changed)), "success")
         else:
-            flash(_("No fields were guessed — no untouched text rows to update"), "info")
+            flash(_("No question types were guessed — no untouched text rows to update"), "info")
     except InsufficientPermissions:
         flash(_("You don't have permission to edit the schema"), "error")
     except NotFoundError:
@@ -1601,7 +1601,7 @@ def delete_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
         uow = bootstrap.get_flask_uow()
         with uow:
             delete_field(uow, current_user.id, assembly_id, field_id)
-        flash(_("Field removed"), "success")
+        flash(_("Question removed"), "success")
     except FieldDefinitionConflictError as e:
         flash(str(e), "error")
     except FieldDefinitionNotFoundError:

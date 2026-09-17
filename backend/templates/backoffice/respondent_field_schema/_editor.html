@@ -16,9 +16,9 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                   x-data
                   x-preserve-scroll-on-submit>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                {{ button(_("Guess field types from data") , type="submit", variant="secondary") }}
+                {{ button(_("Guess question types from data") , type="submit", variant="secondary") }}
                 <span class="text-body-sm" style="color: var(--color-secondary-text);">
-                    {{ _("Only fields still set to Text will be updated; explicitly-typed fields are left alone.") }}
+                    {{ _("Only questions still set to Text will be updated; explicitly-typed questions are left alone.") }}
                 </span>
             </form>
         </section>
@@ -40,7 +40,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="text-label-lg py-2">{{ _("Field") }}</th>
+                            <th class="text-label-lg py-2">{{ _("Question") }}</th>
                             <th class="text-label-lg py-2">{{ _("Summary") }}</th>
                             <th class="text-label-lg py-2">{{ _("Tags") }}</th>
                             <th class="text-label-lg py-2">{{ _("Section") }}</th>
@@ -167,7 +167,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                                                   class="inline"
                                                   x-data
                                                   data-preserve-scroll
-                                                  @submit.prevent="$confirm('{{ _("Remove this field from the schema? Respondent data keeps its values; they just stop being rendered.") }}', $el)">
+                                                  @submit.prevent="$confirm('{{ _("Remove this question? Respondent data keeps its values; they just stop being rendered.") }}', $el)">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 {{ button(_("Remove") , type="submit", variant="danger") }}
                                             </form>
@@ -201,7 +201,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
         {% endif %}
     {% endfor %}
     <section class="mb-8 flex items-center gap-4 flex-wrap">
-        {{ button(_("Add a field") ,
+        {{ button(_("Add a question") ,
         variant="primary",
         href=url_for('respondent_field_schema.new_field_modal', assembly_id=assembly.id),
         attrs='hx-get="' ~ url_for('respondent_field_schema.new_field_modal', assembly_id=assembly.id) ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
@@ -209,7 +209,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
         variant="secondary",
         href=url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id)) }}
         <span class="text-body-sm" style="color: var(--color-secondary-text);">
-            {{ _("Generate the form skeleton from these fields in the page editor.") }}
+            {{ _("Generate the form skeleton from these questions in the page editor.") }}
         </span>
     </section>
 </div>

@@ -17,9 +17,9 @@ ABOUTME: Confirming resubmits the identical form data with force_unlink=1; cance
 {% endblock %}
 {% block page_content %}
     <section class="mb-8" style="max-width: 48rem;">
-        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("These targets have registration fields linked to them") }}</h2>
+        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("These targets have registration questions linked to them") }}</h2>
         <p class="text-body-md mb-4">
-            {{ _("A linked field takes its name and its answers from its target, and selection pairs the two by name. Saving these changes will unlink the fields below — they stay on the registration form and become freely editable, but they will no longer follow their target.") }}
+            {{ _("A linked question takes its name and its answers from its target, and selection pairs the two by name. Saving these changes will unlink the questions below — they stay on the registration page and become freely editable, but they will no longer follow their target.") }}
         </p>
         <ul class="mb-6 pl-4" style="list-style: disc;">
             {% for block in blocks %}
@@ -38,7 +38,7 @@ ABOUTME: Confirming resubmits the identical form data with force_unlink=1; cance
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {% for key, value in resubmit_fields %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
                 <input type="hidden" name="force_unlink" value="1">
-                {{ button(_("Unlink the fields and save") , type="submit", variant="danger") }}
+                {{ button(_("Unlink the questions and save") , type="submit", variant="danger") }}
             </form>
             {{ button(_("Cancel") , variant="secondary", href=url_for('targets.view_assembly_targets', assembly_id=assembly_id)) }}
         </div>
