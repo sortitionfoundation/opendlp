@@ -796,6 +796,101 @@ class TestFieldModal:
 
         assert re.search(r'<option value="longtext" selected>', self._type_select(body))
 
+    def _required_switch(self, body):
+        match = re.search(r'<label class="switch-container">.*?</label>', body, re.DOTALL)
+        assert match is not None, "no required switch"
+        return match.group(0)
+
+    def test_required_is_a_switch_with_no_not_on_form_choice(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        switch = self._required_switch(body)
+        assert re.search(r'role="switch"\s+name="required"', switch)
+        assert 'name="required_switch" value="1"' in body
+        assert 'name="on_registration_page"' not in body
+        assert "Not on form" not in body
+
+    def test_the_required_switch_says_what_each_type_of_question_needs(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        expected = {
+            "": "Required",
+            "bool": "Checkbox must be checked",
+            "text": "Text must be entered",
+            "email": "Text must be entered",
+            "integer": "Text must be entered",
+            "choice_radio": "An option must be chosen",
+            "choice_dropdown": "An option must be chosen",
+            "date": "Full date must be entered",
+        }
+
+        for question_type, label in expected.items():
+            body = logged_in_admin.get(
+                f"{self._base(existing_assembly)}/fields/new-modal",
+                query_string={"modal": "1", "question_type": question_type, "label": "Q"},
+                headers={"HX-Request": "true"},
+            ).get_data(as_text=True)
+            assert f'<span class="switch-label">{label}</span>' in self._required_switch(body), question_type
+
+    def test_the_required_switch_saves_required_or_optional(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+        form = {
+            "modal": "1",
+            "form_action": "save",
+            "label": "Custom notes",
+            "question_type": "text",
+            "help_text": "",
+            "required_switch": "1",
+        }
+
+        for switch_on, expected in (
+            (True, FieldOnRegistrationPage.YES_REQUIRED),
+            (False, FieldOnRegistrationPage.YES_OPTIONAL),
+        ):
+            data = {**form, "required": "1"} if switch_on else form
+            response = logged_in_admin.post(
+                f"{self._base(existing_assembly)}/fields/{custom.id}/update", data=data, headers={"HX-Request": "true"}
+            )
+            assert response.status_code == 200
+            saved = next(
+                f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+            )
+            assert saved.on_registration_page == expected
+
+    def test_the_required_switch_shows_the_saved_state(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        for state, checked in (
+            (FieldOnRegistrationPage.YES_REQUIRED, True),
+            (FieldOnRegistrationPage.YES_OPTIONAL, False),
+            (FieldOnRegistrationPage.NO, False),
+        ):
+            with FakeUnitOfWork(store=fake_store) as uow:
+                respondent_field_schema_service.update_field(
+                    uow, admin_user.id, existing_assembly.id, custom.id, on_registration_page=state
+                )
+            body = logged_in_admin.get(
+                f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+            ).get_data(as_text=True)
+            assert bool(re.search(r"\bchecked\b", self._required_switch(body))) is checked, state
+
     def _selected_group(self, body):
         select = re.search(r'<select[^>]*id="field-modal-group".*?</select>', body, re.DOTALL)
         assert select is not None, "no section select"

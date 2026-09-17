@@ -3,7 +3,7 @@ ABOUTME: Add/edit field modal fragment — served over HTMX or rendered open on 
 ABOUTME: Real form + hx-post enhancement; type changes and option rows round-trip through the server
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/input.html" import input, textarea, select, radio_group %}
+{% from "backoffice/components/input.html" import input, textarea, select, switch %}
 {% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
 {% set values = modal_ctx["values"] %}
 {% set is_derived_flow = modal_ctx["is_derived"] or values["type_choice"] == "derived" %}
@@ -78,32 +78,14 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         {{ input("label", label=_("Label"), value=values["label"], required=true, id="field-modal-label") }}
                     </div>
                 {% endif %}
-                {% if modal_ctx["mode"] == "new" and not is_derived_flow %}
-                    <details class="mb-4">
-                        <summary class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Change the field key") }}</summary>
-                        <div class="mt-2">
-                            {{ input("field_key",
-                            label=_("Field key"),
-                            hint=_("Left blank, it is generated from the label — lowercase letters, numbers and underscores."),
-                            value=values["field_key"],
-                            id="field-modal-key") }}
-                        </div>
-                    </details>
-                {% elif modal_ctx["mode"] == "edit" %}
-                    <div class="mb-4">
-                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Field key") }}</span>
-                        <code>{{ modal_ctx["field"].field_key }}</code>
-                    </div>
-                {% endif %}
-                {% if not modal_ctx["is_derived"] and not is_derived_flow %}
-                    <div class="mb-4">
-                        {{ select("group",
-                        label=_("Section"),
-                        options=group_choices,
-                        value=values["group"],
-                        id="field-modal-group") }}
-                    </div>
-                {% endif %}
+                <div class="mb-4">
+                    {{ textarea("help_text",
+                    label=_("Help text (optional)"),
+                    hint=_("Shown beneath the question on the registration page."),
+                    value=values["help_text"],
+                    rows=2,
+                    id="field-modal-help-text") }}
+                </div>
                 {% if modal_ctx["is_derived"] %}
                     {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
                 {% elif modal_ctx["type_locked"] %}
@@ -193,21 +175,43 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
                     {% endif %}
                 {% endif %}
-                <div class="mb-4">
-                    {{ textarea("help_text",
-                    label=_("Help text"),
-                    hint=_("Optional hint shown beneath the question on the registration page."),
-                    value=values["help_text"],
-                    rows=2,
-                    id="field-modal-help-text") }}
-                </div>
                 {% if not is_derived_flow %}
+                    {# Required or optional only: "Not on form" belongs to derived fields,
+                       which get it implicitly. The label says what an answer to this type of
+                       question has to be, so it follows the question type. #}
                     <div class="mb-4">
-                        {{ radio_group("on_registration_page",
-                        label=_("On the registration page"),
-                        options=on_registration_page_choices,
-                        value=values["on_registration_page"],
-                        id="field-modal-onreg") }}
+                        <input type="hidden" name="required_switch" value="1">
+                        {{ switch("required",
+                        label=modal_ctx["required_label"],
+                        checked=values["on_registration_page"] == "yes_required",
+                        id="field-modal-required",
+                        attrs='value="1"') }}
+                    </div>
+                {% endif %}
+                {% if not modal_ctx["is_derived"] and not is_derived_flow %}
+                    <div class="mb-4">
+                        {{ select("group",
+                        label=_("Section"),
+                        options=group_choices,
+                        value=values["group"],
+                        id="field-modal-group") }}
+                    </div>
+                {% endif %}
+                {% if modal_ctx["mode"] == "new" and not is_derived_flow %}
+                    <details class="mb-4">
+                        <summary class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Change the field key") }}</summary>
+                        <div class="mt-2">
+                            {{ input("field_key",
+                            label=_("Field key"),
+                            hint=_("Left blank, it is generated from the label — lowercase letters, numbers and underscores."),
+                            value=values["field_key"],
+                            id="field-modal-key") }}
+                        </div>
+                    </details>
+                {% elif modal_ctx["mode"] == "edit" %}
+                    <div class="mb-4">
+                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Field key") }}</span>
+                        <code>{{ modal_ctx["field"].field_key }}</code>
                     </div>
                 {% endif %}
             </div>

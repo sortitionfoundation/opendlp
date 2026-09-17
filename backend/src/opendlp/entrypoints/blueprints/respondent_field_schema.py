@@ -27,7 +27,6 @@ from opendlp.domain.respondent_field_schema import (
     FIELD_TYPE_LABELS,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
-    ON_REGISTRATION_PAGE_LABELS,
     ChoiceOption,
     DerivationType,
     FieldOnRegistrationPage,
@@ -223,6 +222,22 @@ def _question_type_help() -> dict[str, str]:
     }
 
 
+def _required_switch_label(values: dict[str, Any]) -> str:
+    """The Required switch's label, saying what an answer to this type of question has to be."""
+    if not values["type_choice"] or values["type_choice"] == "derived":
+        return _("Required")
+    field_type = _field_type_from_taxonomy(values)
+    if field_type == FieldType.BOOL:
+        return _("Checkbox must be checked")
+    if field_type in CHOICE_TYPES:
+        return _("An option must be chosen")
+    if field_type == FieldType.DATE:
+        return _("Full date must be entered")
+    if field_type in (FieldType.TEXT, FieldType.EMAIL, FieldType.INTEGER, FieldType.LONGTEXT):
+        return _("Text must be entered")
+    return _("Required")
+
+
 def _question_type_value(values: dict[str, Any]) -> str:
     """The question type dropdown's value for the modal state; "" until a type is chosen."""
     if not values["type_choice"] or values["type_choice"] == "derived":
@@ -292,6 +307,15 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
     # callers, the derived flow) still describe the type with type_choice.
     if "question_type" in source:
         values.update(_taxonomy_from_question_type(source.get("question_type", "")))
+    # The modal's Required switch: a checkbox, so it posts nothing when off -
+    # the hidden marker says the switch was there. "Not on form" is never
+    # chosen here; only derived fields are off the form, and they get it implicitly.
+    if "required_switch" in source:
+        values["on_registration_page"] = (
+            FieldOnRegistrationPage.YES_REQUIRED.value
+            if source.get("required")
+            else FieldOnRegistrationPage.YES_OPTIONAL.value
+        )
     return values
 
 
@@ -389,6 +413,7 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
         "question_type_choices": _question_type_choices(),
         "question_type": _question_type_value(values),
         "question_type_help": _question_type_help(),
+        "required_label": _required_switch_label(values),
         "type_locked": False,
         "target_locked": False,
         "linked_target_name": "",
@@ -431,6 +456,7 @@ def _edit_modal_ctx(
         "question_type_choices": _choice_style_choices() if target_locked else _question_type_choices(field),
         "question_type": _question_type_value(values),
         "question_type_help": _question_type_help(),
+        "required_label": _required_switch_label(values),
         "type_locked": field.is_fixed,
         "target_locked": target_locked,
         "linked_target_name": _linked_target_name(field),
@@ -836,14 +862,6 @@ def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict
             if group != RespondentFieldGroup.DERIVED
         ],
         "field_type_labels_by_value": {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType},
-        "on_registration_page_choices": [
-            {"value": member.value, "label": ON_REGISTRATION_PAGE_LABELS[member]}
-            for member in (
-                FieldOnRegistrationPage.NO,
-                FieldOnRegistrationPage.YES_OPTIONAL,
-                FieldOnRegistrationPage.YES_REQUIRED,
-            )
-        ],
         "schema_has_rows": schema_has_rows,
         "show_guess_button": show_guess_button,
         "data_source": data_source,
