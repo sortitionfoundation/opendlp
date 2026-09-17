@@ -92,6 +92,12 @@ def _schema_page_redirect(assembly_id: uuid.UUID) -> ResponseReturnValue:
     return redirect_preserving_scroll(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
 
 
+def _parse_registration_group(raw: str | None) -> RespondentFieldGroup | None:
+    """Parse a section a question can be placed in; derived fields have their own group, never chosen."""
+    group = _parse_group(raw)
+    return None if group == RespondentFieldGroup.DERIVED else group
+
+
 def _parse_group(raw: str | None) -> RespondentFieldGroup | None:
     """Parse a submitted group value; returns None if empty or unrecognised."""
     if not raw:
@@ -205,6 +211,7 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
     return {
         "label": source.get("label", ""),
         "field_key": source.get("field_key", ""),
+        "group": source.get("group", ""),
         "type_choice": source.get("type_choice", "free_text"),
         "free_text_subtype": source.get("free_text_subtype", "text"),
         "choice_style": source.get("choice_style", "choice_radio"),
@@ -231,6 +238,7 @@ def _modal_values_from_field(field: RespondentFieldDefinition) -> dict[str, Any]
     values.update({
         "label": field.label,
         "field_key": field.field_key,
+        "group": field.group.value,
         "help_text": field.help_text,
         "on_registration_page": field.on_registration_page.value,
         "options": [{"value": o.value, "help_text": o.help_text} for o in field.options or []],
@@ -266,6 +274,7 @@ def _default_modal_values() -> dict[str, Any]:
     return {
         "label": "",
         "field_key": "",
+        "group": RespondentFieldGroup.OTHER.value,
         "type_choice": "free_text",
         "free_text_subtype": "text",
         "choice_style": "choice_radio",
@@ -905,7 +914,13 @@ def new_field_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     plain navigation gets the whole schema page with the modal already open,
     so the flow still works (via full page loads) when JS is unavailable.
     """
-    values = _modal_values_from_request(request.args) if "modal" in request.args else _default_modal_values()
+    if "modal" in request.args:
+        values = _modal_values_from_request(request.args)
+    else:
+        # A section's own "Add a question" button opens the modal with that section chosen.
+        values = _default_modal_values()
+        if _parse_registration_group(request.args.get("group")) is not None:
+            values["group"] = request.args["group"]
     modal_ctx = _new_modal_ctx(assembly_id, values)
     try:
         if _is_htmx():
@@ -1390,6 +1405,7 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
     }
     if not field.is_derived:
         update_kwargs["on_registration_page"] = _parse_on_registration_page(values["on_registration_page"])
+        update_kwargs["group"] = _parse_registration_group(values["group"])
     if not field.is_fixed and not field.is_derived:
         field_type = _field_type_from_taxonomy(values)
         update_kwargs["field_type"] = field_type

@@ -574,6 +574,88 @@ class TestFieldModal:
         assert 'value="one"' in body
         assert 'value="first option"' in body
 
+    def _selected_group(self, body):
+        select = re.search(r'<select[^>]*id="field-modal-group".*?</select>', body, re.DOTALL)
+        assert select is not None, "no section select"
+        selected = re.search(r'<option value="([^"]*)" selected>', select.group(0))
+        return selected.group(1) if selected else ""
+
+    def test_new_modal_defaults_to_the_other_section(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        assert self._selected_group(body) == RespondentFieldGroup.OTHER.value
+        assert f'<option value="{RespondentFieldGroup.DERIVED.value}"' not in body
+
+    def test_new_modal_opened_from_a_section_chooses_that_section(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal",
+            query_string={"group": RespondentFieldGroup.ADDRESS.value},
+            headers={"HX-Request": "true"},
+        ).get_data(as_text=True)
+
+        assert self._selected_group(body) == RespondentFieldGroup.ADDRESS.value
+
+    def test_add_via_modal_puts_the_question_in_the_chosen_section(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Flat number",
+                "group": RespondentFieldGroup.ADDRESS.value,
+                "type_choice": "free_text",
+                "free_text_subtype": "text",
+                "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "flat_number")
+        assert field.group == RespondentFieldGroup.ADDRESS
+
+    def test_edit_modal_shows_and_saves_the_section(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+        assert self._selected_group(body) == custom.group.value
+        assert custom.group != RespondentFieldGroup.ABOUT_YOU
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Custom notes",
+                "group": RespondentFieldGroup.ABOUT_YOU.value,
+                "type_choice": "free_text",
+                "free_text_subtype": "text",
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 200
+        moved = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
+        assert moved.group == RespondentFieldGroup.ABOUT_YOU
+
     def test_add_via_modal_creates_field_with_options_and_help_text(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):

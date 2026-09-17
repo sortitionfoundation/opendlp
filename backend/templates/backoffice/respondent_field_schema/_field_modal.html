@@ -78,6 +78,15 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         <code>{{ modal_ctx["field"].field_key }}</code>
                     </div>
                 {% endif %}
+                {% if not modal_ctx["is_derived"] and not is_derived_flow %}
+                    <div class="mb-4">
+                        {{ select("group",
+                        label=_("Section"),
+                        options=group_choices,
+                        value=values["group"],
+                        id="field-modal-group") }}
+                    </div>
+                {% endif %}
                 {% if modal_ctx["is_derived"] %}
                     {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
                 {% elif modal_ctx["type_locked"] %}
