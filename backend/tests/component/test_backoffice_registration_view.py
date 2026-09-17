@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the backoffice registration view's read-only / edit-mode toggle
 # ABOUTME: Drives the real Flask route + services over a FakeUnitOfWork via a logged-in client
 
+import re
 import uuid
 from unittest.mock import patch
 
@@ -748,13 +749,29 @@ class TestSetupTaskList:
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert "1. Target data sources" in body
+        assert "Target data sources" in body
         assert "1 of 2 targets have a data source" in body
-        assert "2. Registration fields" in body
+        assert "Registration questions" in body
         assert "1 questions on the registration form" in body
-        assert "3. Registration pages" in body
         assert f"/assembly/{assembly_id}/target-sources" in body
         assert f"/assembly/{assembly_id}/respondent-schema" in body
+
+    def test_each_step_is_one_link_with_a_numbered_circle(self, logged_in_admin, assembly_id):
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        steps = re.findall(r'<a class="setup-step"\s+href="([^"]*)">(.*?)</a>', body, re.DOTALL)
+        assert [href for href, _ in steps] == [
+            f"/backoffice/assembly/{assembly_id}/target-sources",
+            f"/backoffice/assembly/{assembly_id}/respondent-schema",
+        ]
+        for index, (_, inner) in enumerate(steps, start=1):
+            assert re.search(rf'<span class="stepper-number" aria-hidden="true">\s*{index}\s*</span>', inner)
+
+    def test_the_page_authoring_step_is_not_listed(self, logged_in_admin, assembly_id):
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert "Registration pages" not in body
+        assert "Author the page HTML below" not in body
 
     def test_no_targets_yet_points_at_the_targets_tab(self, logged_in_admin, assembly_id):
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")

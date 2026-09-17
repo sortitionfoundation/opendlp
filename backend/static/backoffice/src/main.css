@@ -879,6 +879,56 @@
     }
 
     /* ========================================
+       SETUP STEP LIST STYLES
+       A vertical list of set-up steps, each a
+       whole-card link that opens that step.
+       Borrows .stepper-number for the circle.
+       ======================================== */
+
+    .setup-steps {
+        display: flex;
+        flex-direction: column;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* Vertical connector under every step but the last, centred on the circle
+       (8px card padding + half the 24px circle) */
+    .setup-steps > li:not(:last-child)::after {
+        content: '';
+        display: block;
+        width: 1px;
+        height: 24px;
+        margin: 4px 0 4px 20px;
+        background-color: var(--color-borders-dividers);
+    }
+
+    .setup-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 4px;
+        background-color: var(--color-tables-cards);
+        color: var(--color-headings);
+        text-decoration: none;
+    }
+
+    .setup-step:hover {
+        background-color: var(--color-subtle-background-panels);
+    }
+
+    .setup-step:focus-visible {
+        outline: 2px solid;
+        outline-offset: 2px;
+    }
+
+    .setup-step .stepper-number {
+        background-color: var(--color-primary-action);
+    }
+
+    /* ========================================
        BREADCRUMB COMPONENT STYLES
        Navigation trail with CSS-based separators
        ======================================== */
