@@ -22,7 +22,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                 {% set setup_url = url_for('target_sources.setup_modal', assembly_id=assembly.id, category_id=category.id) %}
                 {# The row's set-up link stretches over the whole card, so a click
                    anywhere on it opens the set-up dialog; the other buttons sit above it. #}
-                <li class="target-source-row rounded-lg p-4">
+                <li class="target-source-row row-link-host rounded-lg p-4">
                     <div class="flex items-start justify-between gap-4 flex-wrap">
                         <div>
                             <h3 class="text-heading-md mb-1" style="color: var(--color-headings);">{{ category.name }}</h3>
@@ -54,7 +54,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                 {% set is_large_mapping = status.field.derivation_type is not none and status.field.derivation_type.value == "large_mapping" %}
                                 {% set upload_url = url_for('target_sources.upload_modal', assembly_id=assembly.id, category_id=category.id) %}
                                 {% set upload_attrs = 'hx-get="' ~ upload_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"' %}
-                                {{ button(_("Edit") , variant="secondary", href=setup_url, classes="target-source-row__open",
+                                {{ button(_("Edit") , variant="secondary", href=setup_url, classes="row-link",
                                 attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                                 {# Until its lookup table is uploaded a postcode mapping cannot work, so the
                                    first upload stays in view; replacing the table goes in the menu. #}
@@ -77,7 +77,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                    only the menu and not the step dialog around it. Item text is bare (no
                                    inner span) so data-confirm, which reads the click target, sees the
                                    button itself. #}
-                                <div class="target-source-row__menu relative inline-flex"
+                                <div class="row-link-menu inline-flex"
                                      x-data="rowActionsMenu"
                                      x-bind:class="open ? 'is-open' : ''"
                                      @keydown.escape="closeOnEscape">
@@ -139,13 +139,13 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                     <input type="hidden" name="field_id" value="{{ status.field.id }}">
                                     {{ button(_("Link it") , type="submit", variant="primary") }}
                                 </form>
-                                {{ button(_("Set up differently") , variant="secondary", href=setup_url, classes="target-source-row__open",
+                                {{ button(_("Set up differently") , variant="secondary", href=setup_url, classes="row-link",
                                 attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                             {% elif status.state == TargetSourceState.IMPORT_COVERED %}
-                                {{ button(_("Set up") , variant="secondary", href=setup_url, classes="target-source-row__open",
+                                {{ button(_("Set up") , variant="secondary", href=setup_url, classes="row-link",
                                 attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                             {% else %}
-                                {{ button(_("Set up") , variant="primary", href=setup_url, classes="target-source-row__open",
+                                {{ button(_("Set up") , variant="primary", href=setup_url, classes="row-link",
                                 attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                             {% endif %}
                         </div>

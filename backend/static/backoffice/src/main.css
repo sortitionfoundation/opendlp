@@ -932,39 +932,44 @@
         background-color: var(--color-primary-action);
     }
 
-    /* Target data sources checklist row: its set-up link's ::after covers the
-       whole card, so a click anywhere opens the set-up dialog. The row's other
-       buttons are lifted above that overlay so they keep their own clicks. */
-    .target-source-row {
+    /* ========================================
+       ROW LINK
+       A card or table row that opens with a click anywhere on it. Mark the
+       card or row .row-link-host and its main link .row-link: the link's
+       ::after stretches over the host, and every other control in the host
+       is lifted above that overlay so it keeps its own clicks. A "more
+       actions" menu wrapper is .row-link-menu; add .is-open while its menu
+       shows, so the menu paints over the rows after it, whose controls are
+       lifted too. Hover styling belongs to the host's own component.
+       ======================================== */
+    .row-link-host {
         position: relative;
-        background-color: var(--color-tables-cards);
-        border: 1px solid var(--color-borders-dividers);
     }
 
-    .target-source-row:has(.target-source-row__open:hover) {
-        border-color: var(--color-primary-action);
-    }
-
-    .target-source-row__open::after {
+    .row-link::after {
         content: '';
         position: absolute;
         inset: 0;
     }
 
-    .target-source-row .btn:not(.target-source-row__open) {
+    .row-link-host :is(a, button):not(.row-link),
+    .row-link-menu {
         position: relative;
         z-index: 1;
     }
 
-    /* The "more actions" wrapper sits above the stretched link like the other
-       buttons. Once open, its menu has to paint over the rows below, whose
-       buttons are lifted too and come later in the page, so it goes higher. */
-    .target-source-row__menu {
-        z-index: 1;
+    .row-link-menu.is-open {
+        z-index: 2;
     }
 
-    .target-source-row__menu.is-open {
-        z-index: 2;
+    /* Target data sources checklist row: a card that opens its set-up dialog */
+    .target-source-row {
+        background-color: var(--color-tables-cards);
+        border: 1px solid var(--color-borders-dividers);
+    }
+
+    .target-source-row:has(.row-link:hover) {
+        border-color: var(--color-primary-action);
     }
 
     /* ========================================

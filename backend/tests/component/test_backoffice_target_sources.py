@@ -120,7 +120,7 @@ class TestChecklistPage:
         assert len(rows) == 2
         for row, category in zip(rows, (linked, unset), strict=True):
             # Exactly one link stretches over the card, and it opens that row's set-up dialog
-            open_links = re.findall(r'<a href="([^"]*)"\s+role="button"\s+class="[^"]*target-source-row__open', row)
+            open_links = re.findall(r'<a href="([^"]*)"\s+role="button"\s+class="[^"]*\brow-link\b', row)
             assert open_links == [
                 f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal"
             ]
