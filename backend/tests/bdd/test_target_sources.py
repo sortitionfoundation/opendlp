@@ -100,11 +100,15 @@ def open_target_sources(admin_logged_in_page: Page, title: str) -> None:
 
 @when(parsers.parse('I set up the "{target_name}" target as an exact copy'))
 def set_up_exact_copy(admin_logged_in_page: Page, target_name: str) -> None:
-    """Open the row's set-up modal; Exact copy is the default method, so just save."""
+    """Open the set-up modal by clicking the row itself, choose Exact copy, and save."""
     page = admin_logged_in_page
-    _row_for(page, target_name).get_by_role("button", name="Set up", exact=True).click()
+    # The centre of the card is clear of its buttons, so this exercises the whole-row link.
+    _row_for(page, target_name).click()
     expect(_setup_dialog(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    expect(page.locator('input[name="method"][value="exact"]')).to_be_checked(timeout=PLAYWRIGHT_TIMEOUT)
+    # Choosing a method round-trips through the server and swaps the modal back in.
+    with page.expect_response(lambda r: "setup-modal" in r.url):
+        page.select_option('select[name="method"]', "exact")
+    expect(_setup_dialog(page).get_by_text("will be created")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     page.get_by_role("button", name="Save").click()
     # A successful exact-copy save closes the modal via the out-of-band checklist swap.
     expect(_setup_dialog(page)).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
@@ -119,9 +123,9 @@ def set_up_age_ranges(admin_logged_in_page: Page, target_name: str, source_key: 
     # Each change round-trips through the server and swaps the modal back in;
     # waiting on the response stops the next action racing the swap.
     with page.expect_response(lambda r: "setup-modal" in r.url):
-        page.check('input[name="method"][value="age_bracket"]')
-    # The previous render had no reusable field, so "create" carried over; flip
-    # to reusing the seeded number field (another server round-trip).
+        page.select_option('select[name="method"]', "age_bracket")
+    # A reusable number field exists, so reuse should be offered and chosen;
+    # flip to it if not (another server round-trip).
     reuse_radio = page.locator('input[name="source_mode"][value="reuse"]')
     expect(reuse_radio).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     if not reuse_radio.is_checked():

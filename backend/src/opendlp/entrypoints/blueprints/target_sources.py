@@ -80,7 +80,7 @@ def _method_options() -> list[dict[str, str]]:
     return [
         {"value": _METHOD_EXACT, "label": _("Exact copy")},
         {"value": DerivationType.AGE_BRACKET.value, "label": _("Age ranges")},
-        {"value": DerivationType.SMALL_MAPPING.value, "label": _("Map from more options")},
+        {"value": DerivationType.SMALL_MAPPING.value, "label": _("Map more options to fewer")},
         {"value": DerivationType.LARGE_MAPPING.value, "label": _("Map postcode to value")},
     ]
 
@@ -96,6 +96,15 @@ def _method_help() -> dict[str, str]:
 
 def _method_labels() -> dict[str, str]:
     return {option["value"]: option["label"] for option in _method_options()}
+
+
+def _default_new_field_key(method: str, age_source_type: str) -> str:
+    """The name a created source question gets when the organiser isn't asked for one."""
+    if method == DerivationType.LARGE_MAPPING.value:
+        return "Postcode"
+    if method == DerivationType.AGE_BRACKET.value:
+        return "year_of_birth" if age_source_type == "year" else "date_of_birth"
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -138,7 +147,7 @@ class _EmptySource:
 
 
 def _default_setup_values(status: TargetSourceStatus) -> dict[str, Any]:
-    """Initial modal state: seeded from the linked field when editing, sensible defaults otherwise."""
+    """Initial modal state: seeded from the linked field when editing, no method chosen otherwise."""
     values = _setup_values_from_request(_EmptySource())
     field = status.field
     if field is not None and status.state in (TargetSourceState.LINKED_EXACT, TargetSourceState.MATCHED_NOT_LINKED):
@@ -151,9 +160,6 @@ def _default_setup_values(status: TargetSourceStatus) -> dict[str, Any]:
         if status.source_field is not None:
             values["reuse_field_id"] = str(status.source_field.id)
         _seed_from_derivation(values, field)
-    else:
-        values["method"] = _METHOD_EXACT
-        values["source_mode"] = "create"
     return values
 
 
@@ -284,16 +290,16 @@ def _setup_modal_ctx(
         target = {"id": category.id, "name": category.name, "values": [v.value for v in category.values]}
         fields = [f.create_detached_copy() for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)]
 
-    method = values["method"] if values["method"] in _method_labels() else _METHOD_EXACT
+    is_linked = any(f.target_category_id == category_id for f in fields)
+    # Until a method is chosen the modal asks only how the data is collected.
+    method = values["method"] if values["method"] in _method_labels() else ""
     values["method"] = method
 
-    candidates = _candidates_for_method(fields, method, target["values"])
+    candidates = _candidates_for_method(fields, method, target["values"]) if method else []
     selected_source = _resolve_source_selection(values, candidates, target["name"])
 
-    if method == DerivationType.LARGE_MAPPING.value and not values["new_field_key"]:
-        values["new_field_key"] = "Postcode"
-    if method == DerivationType.AGE_BRACKET.value and not values["new_field_key"]:
-        values["new_field_key"] = "date_of_birth"
+    if not values["new_field_key"]:
+        values["new_field_key"] = _default_new_field_key(method, values["age_source_type"])
 
     preview_labels: list[str] = []
     mismatch_labels: list[str] = []
@@ -315,6 +321,7 @@ def _setup_modal_ctx(
     new_field_name = target["name"] if method == _METHOD_EXACT else values["new_field_key"]
     return {
         "target": target,
+        "is_linked": is_linked,
         "values": values,
         "error": error,
         "method_options": _method_options(),
@@ -412,7 +419,8 @@ def _parse_source_spec(values: dict[str, Any], method: str) -> SourceFieldSpec:
         return SourceFieldSpec(reuse_field_id=uuid.UUID(values["reuse_field_id"]))
     if method == _METHOD_EXACT:
         return SourceFieldSpec()
-    field_key = values["new_field_key"].strip()
+    # With nothing to reuse the modal names the new question itself rather than asking.
+    field_key = values["new_field_key"].strip() or _default_new_field_key(method, values["age_source_type"])
     if not field_key:
         raise ValueError(_("Enter a name for the new registration question"))
     if method == DerivationType.AGE_BRACKET.value:
@@ -429,6 +437,8 @@ def _parse_source_spec(values: dict[str, Any], method: str) -> SourceFieldSpec:
 def _parse_setup_spec(values: dict[str, Any]) -> TargetSourceSpec:
     """The TargetSourceSpec the modal's values describe. Raises ValueError with a user message."""
     method = values["method"]
+    if method not in _method_labels():
+        raise ValueError(_("Choose how the data should be collected"))
     source = _parse_source_spec(values, method)
     if method == _METHOD_EXACT:
         return ExactCopySpec(source=source)
@@ -440,9 +450,7 @@ def _parse_setup_spec(values: dict[str, Any]) -> TargetSourceSpec:
                 _("Choose the choice question to map from — add it on the registration questions step first")
             )
         return SmallMappingSpec(rule=parse_small_mapping_rule(values), source=source)
-    if method == DerivationType.LARGE_MAPPING.value:
-        return LargeMappingSpec(rule=LargeMappingRule(), source=source)
-    raise ValueError(_("Choose how the data should be collected"))
+    return LargeMappingSpec(rule=LargeMappingRule(), source=source)
 
 
 def _linked_field_id(assembly_id: uuid.UUID, category_id: uuid.UUID) -> uuid.UUID | None:

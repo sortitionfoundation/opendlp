@@ -144,19 +144,90 @@ class TestChecklistPage:
 
 
 class TestSetupModal:
-    def test_serves_the_method_chooser(self, logged_in_admin, existing_assembly, fake_store):
+    def _setup_url(self, assembly, category, query=""):
+        return f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/setup-modal{query}"
+
+    def test_starts_with_only_the_method_question(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
 
+        response = logged_in_admin.get(self._setup_url(existing_assembly, category), headers=HTMX)
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "Set up data source for Gender" in body
+        assert "How is the data collected?" in body
+        assert re.search(r'<select\s+name="method"', body)
+        assert re.search(r'<option value="" selected>\s*Select one', body)
+        for label in ("Exact copy", "Age ranges", "Map more options to fewer", "Map postcode to value"):
+            assert label in body
+        # Nothing else is asked until a method is chosen
+        assert 'name="source_mode"' not in body
+        assert "Target values:" not in body
+
+    def test_editing_a_linked_target_opens_on_its_method(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Gender",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            target_category_id=category.id,
+        )
+
+        response = logged_in_admin.get(self._setup_url(existing_assembly, category), headers=HTMX)
+        body = response.get_data(as_text=True)
+
+        assert "Edit data source for Gender" in body
+        assert re.search(r'<option value="exact" selected>', body)
+        assert "Ask the question with exactly the target&#39;s values as the answers" in body
+
+    def test_with_nothing_to_reuse_it_names_the_question_it_will_create(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30-99"])
+
         response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            self._setup_url(existing_assembly, category, "?modal=1&method=age_bracket&age_source_type=year"),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert "A new question named 'year_of_birth' will be created" in body
+        assert 'name="source_mode"' not in body
+        assert 'name="new_field_key"' not in body
+        assert "Create a new question" not in body
+
+    def test_with_a_reusable_question_it_offers_the_choice(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "sex",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+        )
+
+        response = logged_in_admin.get(
+            self._setup_url(existing_assembly, category, "?modal=1&method=exact"), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Use an existing question" in body
+        assert "Create a new question" in body
+        assert "will be created" not in body
+
+    def test_saving_without_a_method_asks_for_one(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data={"modal": "1", "method": ""},
             headers=HTMX,
         )
 
-        assert response.status_code == 200
-        assert b"Exact copy" in response.data
-        assert b"Age ranges" in response.data
-        assert b"Map from more options" in response.data
-        assert b"Map postcode to value" in response.data
+        assert response.status_code == 422
+        assert b"Choose how the data should be collected" in response.data
 
     def test_full_page_render_without_htmx(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
@@ -251,6 +322,30 @@ class TestConfigureAgeBrackets:
         assert derived.is_derived is True
         assert derived.target_category_id == category.id
         assert _field_by_key(fake_store, existing_assembly, "date_of_birth") is not None
+
+    def test_creates_the_named_source_when_no_name_is_given(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data={
+                "modal": "1",
+                "method": "age_bracket",
+                "age_source_type": "year",
+                "as_of_day": "1",
+                "as_of_month": "6",
+                "as_of_year": "2027",
+                "min_age": "16",
+                "max_age": "100",
+                "boundaries": "30",
+            },
+            headers=HTMX,
+        )
+
+        assert response.status_code == 200
+        source = _field_by_key(fake_store, existing_assembly, "year_of_birth")
+        assert source is not None
+        assert source.field_type == FieldType.INTEGER
 
     def test_invalid_date_rerenders_as_422(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])

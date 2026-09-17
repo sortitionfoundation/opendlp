@@ -1,6 +1,6 @@
 {#
 ABOUTME: Set-up dialog wiring one target category to its data source (four methods)
-ABOUTME: Selects and radios re-render the form over HTMX; saving configures source + derived field in one go
+ABOUTME: Asks how the data is collected first; each answer re-renders the form over HTMX, and saving configures it all
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/input.html" import input, select, radio_group %}
@@ -18,7 +18,7 @@ ABOUTME: Selects and radios re-render the form over HTMX; saving configures sour
      aria-labelledby="target-source-setup-title">
     <div class="dialog-panel dialog-panel--default">
         <div class="dialog-header">
-            <h2 class="dialog-title" id="target-source-setup-title">{{ _("Data source for %(name)s", name=target["name"]) }}</h2>
+            <h2 class="dialog-title" id="target-source-setup-title">{% if setup["is_linked"] %}{{ _("Edit data source for %(name)s", name=target["name"]) }}{% else %}{{ _("Set up data source for %(name)s", name=target["name"]) }}{% endif %}</h2>
             <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">✕</a>
         </div>
         <form method="post"
@@ -36,18 +36,38 @@ ABOUTME: Selects and radios re-render the form over HTMX; saving configures sour
                         <p class="text-body-sm" style="color: var(--color-error-text);">{{ setup["error"] }}</p>
                     </div>
                 {% endif %}
-                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                    {{ _("Target values:") }} {{ target["values"] | join(", ") }}
-                </p>
                 <div class="mb-4">
-                    {{ radio_group("method",
+                    {% set method_options = [{"value": "", "label": _("Select one")}] + setup["method_options"] %}
+                    {{ select("method",
                     label=_("How is the data collected?"),
-                    options=setup["method_options"],
+                    options=method_options,
                     value=values["method"],
                     id="ts-method",
-                    option_help_text=setup["method_help"],
-                    attrs=refresh_attrs) }}
+                    attrs=refresh_attrs ~ (' aria-describedby="ts-method-help"' if values["method"] else "")) }}
+                    {% if values["method"] %}
+                        <p id="ts-method-help" class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                            {{ setup["method_help"][values["method"]] }}
+                        </p>
+                    {% endif %}
                 </div>
+                {% if values["method"] %}
+                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                        {{ _("Target values:") }} {{ target["values"] | join(", ") }}
+                    </p>
+                {% endif %}
+                {% set age_source_radio %}
+                    <div class="mb-4">
+                        {{ radio_group("age_source_type",
+                        label=_("What is asked for?"),
+                        options=[
+                        {"value": "date", "label": _("Date of birth")},
+                        {"value": "year", "label": _("Year of birth")},
+                        ],
+                        value=values["age_source_type"] or "date",
+                        id="ts-age-source-type",
+                        attrs=refresh_attrs) }}
+                    </div>
+                {% endset %}
                 {% if values["method"] == "small_mapping" %}
                     {# The wider choice field must already exist — creating it with its
                        full option list belongs in the registration questions step. #}
@@ -71,7 +91,13 @@ ABOUTME: Selects and radios re-render the form over HTMX; saving configures sour
                             </p>
                         {% endif %}
                     </div>
-                {% else %}
+                {% elif values["method"] and not setup["candidates"] %}
+                    {# Nothing to reuse, so there is no choice to offer: say what saving will create. #}
+                    {% if values["method"] == "age_bracket" %}{{ age_source_radio }}{% endif %}
+                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                        {{ _("A new question named '%(name)s' will be created — you can edit parts of it in the registration questions step.", name=setup["new_field_name"]) }}
+                    </p>
+                {% elif values["method"] %}
                     <fieldset class="mb-4">
                         <legend class="text-label-lg mb-2" style="color: var(--color-headings);">
                             {% if values["method"] == "exact" %}
@@ -80,19 +106,13 @@ ABOUTME: Selects and radios re-render the form over HTMX; saving configures sour
                                 {{ _("Which question collects the source value?") }}
                             {% endif %}
                         </legend>
-                        {# NOT `set _ = ...`: outside a for loop that would shadow gettext for the rest of the template. #}
-                        {% if setup["candidates"] %}
-                            {% set mode_options = [{"value": "reuse", "label": _("Use an existing question")}, {"value": "create", "label": _("Create a new question")}] %}
-                        {% else %}
-                            {% set mode_options = [{"value": "create", "label": _("Create a new question")}] %}
-                        {% endif %}
                         {{ radio_group("source_mode",
-                        options=mode_options,
-                        value=(values["source_mode"] if setup["candidates"] else "create"),
+                        options=[{"value": "reuse", "label": _("Use an existing question")}, {"value": "create", "label": _("Create a new question")}],
+                        value=values["source_mode"],
                         id="ts-source-mode",
                         attrs=refresh_attrs) }}
                     </fieldset>
-                    {% if values["source_mode"] == "reuse" and setup["candidates"] %}
+                    {% if values["source_mode"] == "reuse" %}
                         <div class="mb-4">
                             {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
                             {% for candidate in setup["candidates"] %}
@@ -124,19 +144,7 @@ ABOUTME: Selects and radios re-render the form over HTMX; saving configures sour
                                 id="ts-new-field-label") }}
                             </div>
                         </div>
-                        {% if values["method"] == "age_bracket" %}
-                            <div class="mb-4">
-                                {{ radio_group("age_source_type",
-                                label=_("What is asked for?"),
-                                options=[
-                                {"value": "date", "label": _("Date of birth")},
-                                {"value": "year", "label": _("Year of birth")},
-                                ],
-                                value=values["age_source_type"] or "date",
-                                id="ts-age-source-type",
-                                attrs=refresh_attrs) }}
-                            </div>
-                        {% endif %}
+                        {% if values["method"] == "age_bracket" %}{{ age_source_radio }}{% endif %}
                         {% if setup["new_field_name"] %}
                             <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
                                 {{ _("This will add \"%(name)s\" to your registration form.", name=setup["new_field_name"]) }}
