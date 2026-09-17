@@ -894,13 +894,13 @@
     }
 
     /* Vertical connector under every step but the last, centred on the circle
-       (8px card padding + half the 24px circle) */
+       (1px card border + 8px card padding + half the 24px circle) */
     .setup-steps > li:not(:last-child)::after {
         content: '';
         display: block;
         width: 1px;
         height: 24px;
-        margin: 4px 0 4px 20px;
+        margin: 4px 0 4px 21px;
         background-color: var(--color-borders-dividers);
     }
 
@@ -909,14 +909,18 @@
         align-items: center;
         gap: 8px;
         padding: 8px;
+        /* Transparent until hover, so colouring it does not shift the layout */
+        border: 1px solid transparent;
         border-radius: 4px;
         background-color: var(--color-tables-cards);
         color: var(--color-headings);
         text-decoration: none;
     }
 
+    /* Hover marks the card with its border; the background stays white so the
+       card doesn't blend into the page behind it */
     .setup-step:hover {
-        background-color: var(--color-subtle-background-panels);
+        border-color: var(--color-primary-action);
     }
 
     .setup-step:focus-visible {
