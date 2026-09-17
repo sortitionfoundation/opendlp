@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-17 17:47+0000\n"
+"POT-Creation-Date: 2026-09-17 20:48+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -3041,7 +3041,11 @@ msgstr ""
 msgid "The file could not be read as UTF-8 text"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:739
+#: src/opendlp/entrypoints/blueprints/target_sources.py:740
+msgid "Computed question removed"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:741
 msgid "Question unlinked from its target"
 msgstr ""
 
@@ -3477,7 +3481,7 @@ msgstr ""
 
 #: src/opendlp/service_layer/derivation_service.py:373
 #: src/opendlp/service_layer/respondent_field_schema_service.py:264
-#: src/opendlp/service_layer/target_source_service.py:261
+#: src/opendlp/service_layer/target_source_service.py:262
 msgid "Field key cannot be empty"
 msgstr "A mezőkulcs nem lehet üres"
 
@@ -3809,22 +3813,27 @@ msgstr ""
 msgid "A choice field must keep at least one option"
 msgstr "Egy választómezőnek legalább egy választható értéket meg kell tartania"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:666
+#: src/opendlp/service_layer/respondent_field_schema_service.py:695
+#, python-format
+msgid "A question named '%(key)s' already exists — rename or remove it first"
+msgstr ""
+
+#: src/opendlp/service_layer/respondent_field_schema_service.py:729
 #, python-format
 msgid "Fixed field '%(key)s' cannot be deleted"
 msgstr "'%(key)s' rögzített mező nem törölhető"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:671
+#: src/opendlp/service_layer/respondent_field_schema_service.py:734
 #, python-format
 msgid "'%(key)s' cannot be deleted — it is used to derive: %(deps)s"
 msgstr "\"%(key)s\" nem törölhető – ebből származtatott mezők: %(deps)s"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:860
+#: src/opendlp/service_layer/respondent_field_schema_service.py:923
 #, python-format
 msgid "%(columns)s and %(count)d more"
 msgstr "%(columns)s és még %(count)d"
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:870
+#: src/opendlp/service_layer/respondent_field_schema_service.py:933
 #, python-format
 msgid ""
 "This CSV has no column called '%(id_column)s'. Its columns are: "
@@ -3835,7 +3844,7 @@ msgstr ""
 "%(columns)s. Állítsd az ID oszlop mezőt ezek egyikére, vagy töröld ki, "
 "hogy az első oszlop (\"%(first)s\") legyen az azonosító."
 
-#: src/opendlp/service_layer/respondent_field_schema_service.py:878
+#: src/opendlp/service_layer/respondent_field_schema_service.py:941
 msgid "The ID Column field was pre-filled from your last upload."
 msgstr "Az ID oszlop mező az előző feltöltésed alapján előre ki van töltve."
 
@@ -3987,111 +3996,111 @@ msgstr ""
 "oszlopban. \"%(used)s\" érték lesz érvényes, a további %(count)s érték "
 "figyelmen kívül marad."
 
-#: src/opendlp/service_layer/target_service.py:826
+#: src/opendlp/service_layer/target_service.py:862
 #, python-format
 msgid "A target called '%(name)s' already exists"
 msgstr "Már létezik '%(name)s' nevű célszám"
 
-#: src/opendlp/service_layer/target_service.py:842
+#: src/opendlp/service_layer/target_service.py:878
 msgid "Enter a name for this target"
 msgstr "Adj nevet ennek a célszámnak"
 
-#: src/opendlp/service_layer/target_service.py:908
+#: src/opendlp/service_layer/target_service.py:944
 #, python-format
 msgid "Comment must be %(limit)s characters or fewer"
 msgstr "A megjegyzés legfeljebb %(limit)s karakter lehet"
 
-#: src/opendlp/service_layer/target_service.py:919
+#: src/opendlp/service_layer/target_service.py:955
 #, python-format
 msgid "Enter a full http:// or https:// address, %(limit)s characters or fewer"
 msgstr ""
 "Adj meg egy teljes http:// vagy https:// című webcímet, legfeljebb "
 "%(limit)s karakterrel"
 
-#: src/opendlp/service_layer/target_service.py:958
+#: src/opendlp/service_layer/target_service.py:994
 #, python-format
 msgid "Two values in this target are both called '%(name)s'"
 msgstr "Ebben a kiválasztási szempontban két érték neve is '%(name)s'"
 
-#: src/opendlp/service_layer/target_service.py:978
+#: src/opendlp/service_layer/target_service.py:1014
 msgid "Min cannot be negative"
 msgstr "A minimum nem lehet negatív"
 
-#: src/opendlp/service_layer/target_service.py:980
+#: src/opendlp/service_layer/target_service.py:1016
 msgid "Max cannot be negative"
 msgstr "A maximum nem lehet negatív"
 
-#: src/opendlp/service_layer/target_service.py:982
+#: src/opendlp/service_layer/target_service.py:1018
 msgid "Max must be at least the min"
 msgstr "A maximumnak legalább akkorának kell lennie, mint a minimum"
 
-#: src/opendlp/service_layer/target_service.py:984
+#: src/opendlp/service_layer/target_service.py:1020
 msgid "Population share must be between 0 and 100"
 msgstr "A népességi aránynak 0 és 100 között kell lennie"
 
-#: src/opendlp/service_layer/target_service.py:1008
+#: src/opendlp/service_layer/target_service.py:1044
 msgid "Check the numbers in this row"
 msgstr "Ellenőrizd a sorban szereplő számokat"
 
-#: src/opendlp/service_layer/target_source_service.py:189
+#: src/opendlp/service_layer/target_source_service.py:190
 #, python-format
 msgid ""
 "Target '%(name)s' has no values yet — add its values before wiring a data"
 " source"
 msgstr ""
 
-#: src/opendlp/service_layer/target_source_service.py:221
+#: src/opendlp/service_layer/target_source_service.py:222
 #, python-format
 msgid "Field '%(key)s' is missing options for these target values: %(values)s"
 msgstr ""
 
-#: src/opendlp/service_layer/target_source_service.py:255
+#: src/opendlp/service_layer/target_source_service.py:256
 #, python-format
 msgid "Field '%(key)s' cannot feed this kind of derivation"
 msgstr ""
 
-#: src/opendlp/service_layer/target_source_service.py:265
-#: src/opendlp/service_layer/target_source_service.py:320
+#: src/opendlp/service_layer/target_source_service.py:266
+#: src/opendlp/service_layer/target_source_service.py:321
 #, python-format
 msgid ""
 "Field '%(key)s' already exists in this assembly — choose it instead of "
 "creating a new one"
 msgstr ""
 
-#: src/opendlp/service_layer/target_source_service.py:284
+#: src/opendlp/service_layer/target_source_service.py:285
 #, python-format
 msgid "A '%(type)s' field cannot feed this kind of derivation"
 msgstr ""
 
-#: src/opendlp/service_layer/target_source_service.py:304
+#: src/opendlp/service_layer/target_source_service.py:305
 #, python-format
 msgid ""
 "Field '%(key)s' is derived — an exact copy must be a directly collected "
 "field"
 msgstr ""
 
-#: src/opendlp/service_layer/target_source_service.py:309
+#: src/opendlp/service_layer/target_source_service.py:310
 #, python-format
 msgid ""
 "Field '%(key)s' is not a choice field, so it cannot be an exact copy of a"
 " target"
 msgstr ""
 
-#: src/opendlp/service_layer/target_source_service.py:360
+#: src/opendlp/service_layer/target_source_service.py:361
 #, python-format
 msgid ""
 "Field '%(key)s' already exists and is not derived — use the exact copy "
 "method, or rename it first"
 msgstr ""
 
-#: src/opendlp/service_layer/target_source_service.py:524
+#: src/opendlp/service_layer/target_source_service.py:525
 #, python-format
 msgid ""
 "Field '%(key)s' does not share the target's name '%(name)s', so selection"
 " would not pair them"
 msgstr ""
 
-#: src/opendlp/service_layer/target_source_service.py:565
+#: src/opendlp/service_layer/target_source_service.py:566
 msgid ""
 "Age brackets come from the field's configuration — edit the age ranges or"
 " the target values instead"
@@ -4333,7 +4342,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/target_sources/_upload_modal.html:56
 #: templates/backoffice/targets/add_target_modal.html:29
 #: templates/backoffice/targets/create_from_columns_modal.html:87
-#: templates/backoffice/targets_force_unlink_confirm.html:43
+#: templates/backoffice/targets_force_unlink_confirm.html:52
 #: templates/db_selection/select.html:113
 #: templates/db_selection/settings.html:76
 #: templates/gsheets/create_config.html:236
@@ -6440,23 +6449,31 @@ msgstr ""
 #: templates/backoffice/targets_force_unlink_confirm.html:22
 msgid ""
 "A linked question takes its name and its answers from its target, and "
-"selection pairs the two by name. Saving these changes will unlink the "
-"questions below — they stay on the registration page and become freely "
-"editable, but they will no longer follow their target."
+"selection pairs the two by name. Saving these changes breaks those "
+"pairings. A question people answer stays on the registration page and "
+"becomes freely editable; a computed question exists only to feed its "
+"target, so it goes when the target does."
 msgstr ""
 
-#: templates/backoffice/targets_force_unlink_confirm.html:28
+#: templates/backoffice/targets_force_unlink_confirm.html:29
 #, python-format
 msgid "Deleting the target \"%(name)s\" unlinks: %(fields)s"
 msgstr ""
 
-#: templates/backoffice/targets_force_unlink_confirm.html:30
+#: templates/backoffice/targets_force_unlink_confirm.html:31
 #, python-format
 msgid "Renaming the target \"%(name)s\" unlinks: %(fields)s"
 msgstr ""
 
-#: templates/backoffice/targets_force_unlink_confirm.html:41
-msgid "Unlink the questions and save"
+#: templates/backoffice/targets_force_unlink_confirm.html:39
+#, python-format
+msgid ""
+"Deleting the target \"%(name)s\" also deletes the computed question "
+"\"%(field)s\", its answers and any lookup table it uses"
+msgstr ""
+
+#: templates/backoffice/targets_force_unlink_confirm.html:50
+msgid "Break the links and save"
 msgstr ""
 
 #: templates/backoffice/components/account_menu.html:44
@@ -8123,28 +8140,48 @@ msgstr ""
 msgid "Re-upload table"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:128
+#: templates/backoffice/target_sources/_checklist.html:122
+#, python-format
+msgid ""
+"Remove the computed question '%(name)s'? Its answers and its lookup table"
+" of %(count)s rows are deleted — you would have to upload the table "
+"again. The question it is computed from stays."
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:124
+#, python-format
+msgid ""
+"Remove the computed question '%(name)s'? Its answers are deleted. The "
+"question it is computed from stays, so you can set this target up again "
+"from it."
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:127
 msgid ""
 "Unlink this question from its target? The question stays on the "
 "registration page, but edits to it will no longer be checked against the "
 "target."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:128
+#: templates/backoffice/target_sources/_checklist.html:141
+msgid "Remove computed question"
+msgstr ""
+
+#: templates/backoffice/target_sources/_checklist.html:141
 #: templates/profile/view.html:95 templates/profile/view.html:146
 msgid "Unlink"
 msgstr "Leválasztás"
 
-#: templates/backoffice/target_sources/_checklist.html:140
+#: templates/backoffice/target_sources/_checklist.html:154
 msgid "Link it"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:142
+#: templates/backoffice/target_sources/_checklist.html:156
 msgid "Set up differently"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:145
-#: templates/backoffice/target_sources/_checklist.html:148
+#: templates/backoffice/target_sources/_checklist.html:159
+#: templates/backoffice/target_sources/_checklist.html:162
 msgid "Set up"
 msgstr ""
 
