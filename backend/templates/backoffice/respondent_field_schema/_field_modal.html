@@ -84,8 +84,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                     <div class="mb-4">
                         <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Type") }}</span>
                         <span class="text-body-sm">{{ field_type_labels_by_value[modal_ctx["field"].effective_field_type.value] }}</span>
-                        <strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>
-                        <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Fixed fields keep their built-in type.") }}</div>
+                        <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("This is a built-in question, so its type can't be changed.") }}</div>
                     </div>
                 {% elif modal_ctx["target_locked"] %}
                     <div class="mb-4">

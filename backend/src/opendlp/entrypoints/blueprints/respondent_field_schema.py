@@ -863,7 +863,7 @@ def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         with uow:
             inserted = initialise_empty_schema(uow, current_user.id, assembly_id)
         if inserted:
-            flash(_("Schema initialised with %(count)d fixed fields", count=inserted), "success")
+            flash(_("Schema initialised with %(count)d built-in questions", count=inserted), "success")
         else:
             flash(_("Schema already exists"), "info")
     except InsufficientPermissions:

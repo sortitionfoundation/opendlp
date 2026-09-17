@@ -91,7 +91,6 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                                 </td>
                                 <td class="py-3 pr-4 align-top">
                                     <div class="flex flex-wrap gap-1">
-                                        {% if field.is_fixed %}<strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>{% endif %}
                                         {% if linked_target_names.get(field.id) %}
                                             {# Always name the owner, never just lock: the chip says who owns the values and links there. #}
                                             <a href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}"

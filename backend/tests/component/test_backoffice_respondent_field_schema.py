@@ -59,6 +59,39 @@ class TestViewSchemaPage:
         assert b"Initialise empty schema" in response.data
 
 
+class TestBuiltInQuestions:
+    """The code calls them fixed fields; the interface never says "fixed"."""
+
+    def test_the_editor_does_not_tag_built_in_questions_as_fixed(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, existing_assembly.id)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema").get_data(
+            as_text=True
+        )
+
+        assert "email" in body
+        assert not re.search(r"\bfixed\b", re.sub(r"<[^>]+>", " ", body), re.IGNORECASE)
+
+    def test_the_edit_modal_explains_the_type_without_saying_fixed(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, existing_assembly.id)
+            email = uow.respondent_field_definitions.get_by_assembly_and_key(existing_assembly.id, "email")
+            email_id = email.id
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{email_id}/edit-modal",
+            headers={"HX-Request": "true"},
+        ).get_data(as_text=True)
+
+        assert "This is a built-in question, so its type can't be changed." in body
+        assert not re.search(r"\bfixed\b", re.sub(r"<[^>]+>", " ", body), re.IGNORECASE)
+
+
 class TestOnRegistrationPage:
     def test_schema_page_renders_registration_state_as_chips(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

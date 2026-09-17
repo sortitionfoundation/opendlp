@@ -112,6 +112,10 @@ word for the wider idea — a derived field computed from a question, a column
 imported from CSV or Google Sheets, a field key. Say "question" only where the
 reader is thinking about what the page asks.
 
+**built-in question** is a registration question every assembly has, such as
+email or consent, whose type can't be changed. The code calls these fixed fields
+(`is_fixed`); "fixed" never appears in the interface.
+
 **selection** is the backoffice word. "Democratic lottery" belongs to the brand
 and to introductory text ("Open Democratic Lottery Platform", "Run the democratic
 lottery selection for this assembly…"). "Sortition" appears only in "sortition

@@ -74,7 +74,7 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
         {% elif not schema_has_rows %}
             <section class="mb-8">
                 <p class="text-body-md mb-4">
-                    {{ _("No schema has been set up for this assembly yet. Upload a CSV of respondents to seed one automatically from the CSV headers, or click Initialise below to start from the reserved fixed fields only (email, consent, eligibility, etc).") }}
+                    {{ _("No schema has been set up for this assembly yet. Upload a CSV of respondents to seed one automatically from the CSV headers, or click Initialise below to start from the built-in questions only (email, consent, eligibility, etc).") }}
                 </p>
                 <form method="post"
                       action="{{ url_for('respondent_field_schema.initialise_schema', assembly_id=assembly.id) }}">
