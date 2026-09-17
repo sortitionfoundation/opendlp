@@ -98,9 +98,9 @@ def open_schema_editor(admin_logged_in_page: Page, title: str) -> None:
 def move_field_up(admin_logged_in_page: Page, field_key: str) -> None:
     row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
     expect(row).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    # Each row has two hidden-input move forms; the "up" one is the first.
-    move_button = row.locator("button", has_text="↑").first
-    move_button.click()
+    # Moving lives in the row's "more actions" menu.
+    row.get_by_role("button", name="More actions for").click()
+    row.get_by_role("menuitem", name="Move up").click()
     admin_logged_in_page.wait_for_load_state("networkidle")
 
 
@@ -111,8 +111,23 @@ def _field_dialog(page: Page) -> Locator:
 
 @when("I open the add-field modal")
 def open_add_field_modal(admin_logged_in_page: Page) -> None:
-    admin_logged_in_page.get_by_role("button", name="Add a question").click()
+    # Every section has its own add button; use the catch-all section's.
+    admin_logged_in_page.get_by_role("button", name="Add a question to Other").click()
     expect(_field_dialog(admin_logged_in_page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I click the "{field_key}" row'))
+def click_field_row(admin_logged_in_page: Page, field_key: str) -> None:
+    """Click the row in its question type column - nowhere near its buttons - to exercise the whole-row link.
+
+    The click targets the row, not the cell: the stretched edit link covers the
+    cells, and Playwright refuses to click an element something else covers.
+    """
+    row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
+    row_box = row.bounding_box()
+    type_cell_box = row.locator("td").nth(1).bounding_box()
+    assert row_box is not None and type_cell_box is not None
+    row.click(position={"x": type_cell_box["x"] - row_box["x"] + 10, "y": row_box["height"] / 2})
 
 
 @when(parsers.parse('I save a new choice field labelled "{label}" with options "{first}" and "{second}"'))
@@ -139,6 +154,13 @@ def save_choice_field_via_modal(admin_logged_in_page: Page, label: str, first: s
 # ---------------------------------------------------------------------------
 # Then steps
 # ---------------------------------------------------------------------------
+
+
+@then(parsers.parse('the edit modal for "{label}" should be open'))
+def edit_modal_open(admin_logged_in_page: Page, label: str) -> None:
+    dialog = _field_dialog(admin_logged_in_page)
+    expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(dialog.locator('input[name="label"]')).to_have_value(label, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the "{field_key}" row should summarise its options as "{summary}"'))

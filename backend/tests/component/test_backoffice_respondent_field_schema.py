@@ -94,6 +94,89 @@ class TestBuiltInQuestions:
         assert not re.search(r"\bfixed\b", re.sub(r"<[^>]+>", " ", body), re.IGNORECASE)
 
 
+class TestQuestionsList:
+    """A card per section and a row per question that opens its edit modal from anywhere."""
+
+    def _page(self, logged_in_admin, assembly):
+        return logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/respondent-schema").get_data(as_text=True)
+
+    def _rows(self, body):
+        return {
+            re.search(r"<code[^>]*>([^<]+)</code>", row).group(1): row
+            for row in re.findall(r'<tr class="question-row[^"]*">(.*?)</tr>', body, re.DOTALL)
+        }
+
+    def test_each_row_is_opened_by_one_stretched_edit_link(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        schema = _get_schema(fake_store, admin_user, existing_assembly)
+
+        rows = self._rows(self._page(logged_in_admin, existing_assembly))
+
+        assert rows
+        for field_key, row in rows.items():
+            field = next(f for f in schema if f.field_key == field_key)
+            links = re.findall(r'<a href="([^"]*)"\s+role="button"\s+class="[^"]*\brow-link\b', row)
+            assert links == [
+                f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{field.id}/edit-modal"
+            ]
+
+    def test_every_section_has_its_own_add_button_even_when_empty(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        # Empty the Address section by moving its only question out
+        postcode = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "postcode")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.update_field(
+                uow, admin_user.id, existing_assembly.id, postcode.id, group=RespondentFieldGroup.OTHER
+            )
+        assert not any(
+            f.group == RespondentFieldGroup.ADDRESS for f in _get_schema(fake_store, admin_user, existing_assembly)
+        )
+
+        body = self._page(logged_in_admin, existing_assembly)
+
+        for group in RespondentFieldGroup:
+            add_link = f"/respondent-schema/fields/new-modal?group={group.value}"
+            if group == RespondentFieldGroup.DERIVED:
+                assert add_link not in body
+            else:
+                assert add_link in body
+        assert "No questions in this section yet." in body
+
+    def test_only_questions_that_can_be_removed_have_a_remove_button(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        rows = self._rows(self._page(logged_in_admin, existing_assembly))
+
+        assert 'aria-label="Remove' not in rows["email"]
+        assert 'aria-label="Remove Custom notes"' in rows["custom_notes"]
+
+    def test_moves_are_in_the_row_menu_and_only_where_they_can_go(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = self._page(logged_in_admin, existing_assembly)
+        rows = self._rows(body)
+
+        # first_name and last_name share a section, in that order
+        assert body.index('<code class="text-body-sm" style="color: var(--color-body-text);">first_name') < body.index(
+            '<code class="text-body-sm" style="color: var(--color-body-text);">last_name'
+        )
+        first, last = rows["first_name"], rows["last_name"]
+        assert 'role="menuitem" class="menu-item">Move down' in first
+        assert last.count('role="menuitem" class="menu-item">Move up') == 1
+        assert "Move up" not in rows["eligible"]
+        # The old Section select and arrow columns are gone
+        assert 'id="row-group-' not in body
+        assert ">↑<" not in body
+
+
 class TestOnRegistrationPage:
     def test_schema_page_renders_registration_state_as_chips(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -274,7 +357,7 @@ class TestFieldTypeAndOptions:
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondent-schema")
         assert response.status_code == 200
         body = response.data
-        assert b"Summary" in body
+        assert b"Question type" in body
         assert b"Yes / No / Not set" in body  # fixed flags render as BOOL_OR_NONE
         assert b"Email" in body  # email fixed row renders as EMAIL type
 

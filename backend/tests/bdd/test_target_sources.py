@@ -240,4 +240,4 @@ def schema_lists_field(admin_logged_in_page: Page, field_key: str) -> None:
 @then(parsers.parse('the "{field_key}" row should carry the "{tag}" tag'))
 def row_carries_tag(admin_logged_in_page: Page, field_key: str, tag: str) -> None:
     row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
-    expect(row.locator(".govuk-tag", has_text=tag)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(row.locator(".question-tags li", has_text=tag)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)

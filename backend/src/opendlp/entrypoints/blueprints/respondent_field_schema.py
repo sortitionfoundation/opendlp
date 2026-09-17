@@ -1332,11 +1332,11 @@ def recompute_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetur
 )
 @login_required
 def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
-    """Update a field — from the edit modal, or the row's section select.
+    """Update a field — from the edit modal, or a plain form post.
 
-    Modal submissions carry the type taxonomy and a wholesale options list;
-    the row form posts just ``group``. A plain post with ``field_type`` (the
-    pre-modal shape) still works so scripted callers don't break.
+    Modal submissions carry the type taxonomy, section and a wholesale options
+    list. A plain post with ``group`` or ``field_type`` (the pre-modal shape)
+    still works so scripted callers don't break.
     """
     form_action = request.form.get("form_action", "save")
     is_modal = request.form.get("modal") == "1"
@@ -1371,8 +1371,8 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
         return _flash_failure_response(assembly_id, error)
 
     if _is_htmx():
-        # A modal save clears the modal via the out-of-band swap; the row's
-        # section select targets #schema-editor directly, so no OOB there.
+        # A modal save clears the modal via the out-of-band swap; a plain HTMX
+        # post targets #schema-editor directly, so no OOB there.
         return _render_editor_fragment(assembly_id, oob=is_modal)
     flash(_("Question updated"), "success")
     return _schema_page_redirect(assembly_id)

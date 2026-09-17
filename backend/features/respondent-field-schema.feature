@@ -27,6 +27,13 @@ Feature: Respondent field schema
     And I move the "last_name" field up
     Then the "last_name" field should appear before the "first_name" field
 
+  Scenario: Organiser opens a question by clicking its row
+    Given there is an assembly with respondents imported from CSV called "Schema Row Click Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Row Click Demo"
+    And I click the "last_name" row
+    Then the edit modal for "Last name" should be open
+
   Scenario: Organiser adds a choice field through the modal
     Given there is an assembly with respondents imported from CSV called "Schema Modal Demo"
     And I am signed in as an admin user
