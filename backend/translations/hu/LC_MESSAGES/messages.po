@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-17 09:18+0000\n"
+"POT-Creation-Date: 2026-09-17 09:22+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -148,7 +148,7 @@ msgstr "Egyéb"
 #: src/opendlp/domain/respondent_field_schema.py:104
 #: templates/backoffice/respondent_field_schema/_editor.html:95
 msgid "Derived"
-msgstr "Számított"
+msgstr "Származtatott"
 
 #: src/opendlp/domain/respondent_field_schema.py:134
 msgid "Not on form"
@@ -3250,17 +3250,19 @@ msgstr "Hiány"
 #: src/opendlp/service_layer/derivation_service.py:135
 #, python-format
 msgid "Field '%(key)s' is not a derived field"
-msgstr "\"%(key)s\" mező nem számított mező"
+msgstr "\"%(key)s\" mező nem származtatott mező"
 
 #: src/opendlp/service_layer/derivation_service.py:142
 #, python-format
 msgid "Source field '%(key)s' does not exist in this assembly"
-msgstr "\"%(key)s\" bemeneti mező nem létezik ebben a közösségi gyűlésben"
+msgstr "\"%(key)s\" forrásmező nem létezik ebben a közösségi gyűlésben"
 
 #: src/opendlp/service_layer/derivation_service.py:146
 #, python-format
 msgid "Source field '%(key)s' is itself derived — derivations cannot chain"
-msgstr "\"%(key)s\" bemeneti mező maga is számított – a számítások nem láncolhatók"
+msgstr ""
+"\"%(key)s\" forrásmező maga is származtatott – a származtatások nem "
+"láncolhatók"
 
 #: src/opendlp/service_layer/derivation_service.py:152
 #, python-format
@@ -3268,13 +3270,13 @@ msgid ""
 "This rule cannot derive from a %(source_type)s field. It needs one of: "
 "%(allowed)s"
 msgstr ""
-"Ez a szabály nem számíthat %(source_type)s típusú mezőből. A következők "
-"egyike szükséges: %(allowed)s"
+"Ez a szabály nem származtathat %(source_type)s típusú mezőből. A "
+"következők egyike szükséges: %(allowed)s"
 
 #: src/opendlp/service_layer/derivation_service.py:164
 msgid "A large mapping needs its output values declared when the field is created"
 msgstr ""
-"Nagy hozzárendelésnél a kimeneti értékeket a mező létrehozásakor meg kell"
+"Nagy megfeleltetésnél a kimeneti értékeket a mező létrehozásakor meg kell"
 " adni"
 
 #: src/opendlp/service_layer/derivation_service.py:373
@@ -3291,17 +3293,17 @@ msgstr "'%(key)s' mező már létezik ebben a közösségi gyűlésben"
 #: src/opendlp/service_layer/derivation_service.py:528
 #, python-format
 msgid "Field '%(key)s' does not use a large mapping"
-msgstr "\"%(key)s\" mező nem használ nagy hozzárendelést"
+msgstr "\"%(key)s\" mező nem használ nagy megfeleltetést"
 
 #: src/opendlp/service_layer/derivation_service.py:536
 msgid "The mapping file is empty"
-msgstr "A hozzárendelési fájl üres"
+msgstr "A megfeleltetési fájl üres"
 
 #: src/opendlp/service_layer/derivation_service.py:541
 #, python-format
 msgid "The mapping file has too many rows (%(count)s) — the limit is %(limit)s"
 msgstr ""
-"A hozzárendelési fájl túl sok sort tartalmaz (%(count)s) – a korlát "
+"A megfeleltetési fájl túl sok sort tartalmaz (%(count)s) – a korlát "
 "%(limit)s"
 
 #: src/opendlp/service_layer/derivation_service.py:569
@@ -3310,13 +3312,13 @@ msgid ""
 "The mapping file contains output values not in the field's options: "
 "%(values)s"
 msgstr ""
-"A hozzárendelési fájl olyan kimeneti értékeket tartalmaz, amelyek nem "
+"A megfeleltetési fájl olyan kimeneti értékeket tartalmaz, amelyek nem "
 "szerepelnek a mező választható értékei között: %(values)s"
 
 #: src/opendlp/service_layer/derivation_service.py:597
 msgid "The mapping file needs two columns: input value and output value"
 msgstr ""
-"A hozzárendelési fájlban két oszlop szükséges: bemeneti érték és kimeneti"
+"A megfeleltetési fájlban két oszlop szükséges: bemeneti érték és kimeneti"
 " érték"
 
 #: src/opendlp/service_layer/document_processing.py:12
@@ -3567,7 +3569,7 @@ msgstr "Érvénytelen jelentkezői állapotszűrő: %(value)s"
 #: src/opendlp/service_layer/respondent_field_schema_service.py:321
 #, python-format
 msgid "You can't change the type of '%(key)s' — it is used to derive: %(deps)s"
-msgstr "\"%(key)s\" típusát nem módosíthatod – ebből számított mezők: %(deps)s"
+msgstr "\"%(key)s\" típusát nem módosíthatod – ebből származtatott mezők: %(deps)s"
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:342
 msgid "You can't change the type or options of a fixed field"
@@ -3578,8 +3580,8 @@ msgid ""
 "You can't change the type or options of a derived field — they are owned "
 "by its derivation"
 msgstr ""
-"Számított mező típusát vagy választható értékeit nem módosíthatod – "
-"ezeket a számítás módja határozza meg"
+"Származtatott mező típusát vagy választható értékeit nem módosíthatod – "
+"ezeket a származtatás határozza meg"
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:462
 msgid "Options can only be set on choice fields"
@@ -3598,7 +3600,7 @@ msgid ""
 "derivation first."
 msgstr ""
 "\"%(value)s\" az utolsó választható érték, amelyre \"%(key)s\" "
-"hozzárendelése hivatkozik. Előbb azt a számítás módját módosítsd."
+"megfeleltetése hivatkozik. Előbb azt a származtatást módosítsd."
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:601
 msgid "A choice field must keep at least one option"
@@ -3612,7 +3614,7 @@ msgstr "'%(key)s' rögzített mező nem törölhető"
 #: src/opendlp/service_layer/respondent_field_schema_service.py:663
 #, python-format
 msgid "'%(key)s' cannot be deleted — it is used to derive: %(deps)s"
-msgstr "\"%(key)s\" nem törölhető – ebből számított mezők: %(deps)s"
+msgstr "\"%(key)s\" nem törölhető – ebből származtatott mezők: %(deps)s"
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:852
 #, python-format
@@ -3638,7 +3640,7 @@ msgstr "Az ID oszlop mező az előző feltöltésed alapján előre ki van tölt
 #, python-format
 msgid "Row %(row)s: supplied '%(key)s' was replaced by its derived value"
 msgstr ""
-"%(row)s. sor: a megadott \"%(key)s\" érték helyére a számított érték "
+"%(row)s. sor: a megadott \"%(key)s\" érték helyére a származtatott érték "
 "került"
 
 #: src/opendlp/service_layer/selection_report.py:194
