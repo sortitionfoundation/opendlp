@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-17 15:45+0000\n"
+"POT-Creation-Date: 2026-09-17 15:57+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -5196,6 +5196,7 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:78
 #: templates/backoffice/assembly_members.html:83
+#: templates/backoffice/respondent_field_schema/_editor.html:186
 #: templates/backoffice/respondent_field_schema/_field_modal.html:189
 #: templates/main/view_assembly_members.html:31 templates/profile/view.html:61
 msgid "Remove"
@@ -7687,51 +7688,46 @@ msgstr ""
 msgid "Edit %(question)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:124
-msgid ""
-"Remove this question? Respondent data keeps its values; they just stop "
-"being rendered."
-msgstr ""
+#: templates/backoffice/respondent_field_schema/_editor.html:120
+#: templates/backoffice/targets/bulk_edit_form.html:242
+msgid "Move up"
+msgstr "Mozgatás felfelé"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:129
-#, python-format
-msgid "Remove %(question)s"
-msgstr ""
+#: templates/backoffice/respondent_field_schema/_editor.html:120
+#: templates/backoffice/targets/bulk_edit_form.html:238
+msgid "Move down"
+msgstr "Mozgatás lefelé"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:142
+#: templates/backoffice/respondent_field_schema/_editor.html:133
 #: templates/backoffice/target_sources/_checklist.html:87
 #, python-format
 msgid "More actions for %(name)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:156
-#: templates/backoffice/targets/bulk_edit_form.html:242
-msgid "Move up"
-msgstr "Mozgatás felfelé"
-
-#: templates/backoffice/respondent_field_schema/_editor.html:156
-#: templates/backoffice/targets/bulk_edit_form.html:238
-msgid "Move down"
-msgstr "Mozgatás lefelé"
-
-#: templates/backoffice/respondent_field_schema/_editor.html:176
+#: templates/backoffice/respondent_field_schema/_editor.html:164
 #: templates/backoffice/target_sources/_checklist.html:114
 msgid "Recompute"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:186
+#: templates/backoffice/respondent_field_schema/_editor.html:174
 msgid "Upload lookup table"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:197
+#: templates/backoffice/respondent_field_schema/_editor.html:184
+msgid ""
+"Remove this question? Respondent data keeps its values; they just stop "
+"being rendered."
+msgstr ""
+
+#: templates/backoffice/respondent_field_schema/_editor.html:198
 msgid "No questions in this section yet."
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:206
+#: templates/backoffice/respondent_field_schema/_editor.html:207
 msgid "Next: build your registration page"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:210
+#: templates/backoffice/respondent_field_schema/_editor.html:211
 msgid "Generate the form skeleton from these questions in the page editor."
 msgstr ""
 
