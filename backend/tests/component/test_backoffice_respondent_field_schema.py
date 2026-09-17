@@ -392,7 +392,9 @@ class TestFieldTypeAndOptions:
         assert response.status_code == 200
         body = response.data
         assert b"Question type" in body
-        assert b"Yes / No / Not set" in body  # fixed flags render as BOOL_OR_NONE
+        # Fixed flags are BOOL_OR_NONE; both bool types are a checkbox in question wording
+        assert b"Checkbox" in body
+        assert b"Yes / No" not in body
         assert b"Email" in body  # email fixed row renders as EMAIL type
 
     def test_update_accepts_field_type(self, logged_in_admin, existing_assembly, admin_user, fake_store):
@@ -796,6 +798,28 @@ class TestFieldModal:
 
         assert re.search(r'<option value="longtext" selected>', self._type_select(body))
 
+    def test_the_nullable_bool_legacy_type_is_named_apart_from_the_plain_checkbox(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Both bool types are a checkbox, so the legacy one says what makes it different."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.update_field(
+                uow, admin_user.id, existing_assembly.id, custom.id, field_type=FieldType.BOOL_OR_NONE
+            )
+
+        type_select = self._type_select(
+            logged_in_admin.get(
+                f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+            ).get_data(as_text=True)
+        )
+
+        assert re.search(r'<option value="bool" >\s*Checkbox\s*</option>', type_select)
+        assert re.search(r'<option value="bool_or_none" selected>\s*Checkbox \(can be left unanswered\)', type_select)
+
     def _required_switch(self, body):
         match = re.search(r'<label class="switch-container">.*?</label>', body, re.DOTALL)
         assert match is not None, "no required switch"
@@ -823,6 +847,7 @@ class TestFieldModal:
         expected = {
             "": "Required",
             "bool": "Checkbox must be checked",
+            "bool_or_none": "Checkbox must be checked",
             "text": "Text must be entered",
             "email": "Text must be entered",
             "integer": "Text must be entered",

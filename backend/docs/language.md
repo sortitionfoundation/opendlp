@@ -116,6 +116,12 @@ reader is thinking about what the page asks.
 email or consent, whose type can't be changed. The code calls these fixed fields
 (`is_fixed`); "fixed" never appears in the interface.
 
+**checkbox** is what both boolean question types are called wherever we name a
+question's type. The code has two (`BOOL` and `BOOL_OR_NONE`, the second allowing
+no answer), and the backoffice form for editing a respondent offers Yes / No
+radios — but a question that asks for a checkbox is a checkbox either way, and the
+Required tag already says whether it may be left unanswered.
+
 **selection** is the backoffice word. "Democratic lottery" belongs to the brand
 and to introductory text ("Open Democratic Lottery Platform", "Run the democratic
 lottery selection for this assembly…"). "Sortition" appears only in "sortition

@@ -151,8 +151,10 @@ ON_REGISTRATION_PAGE_LABELS: dict[FieldOnRegistrationPage, str] = {
 FIELD_TYPE_LABELS: dict[FieldType, str] = {
     FieldType.TEXT: _l("Text"),
     FieldType.LONGTEXT: _l("Long text"),
-    FieldType.BOOL: _l("Yes / No"),
-    FieldType.BOOL_OR_NONE: _l("Yes / No / Not set"),
+    # Both bool types are a checkbox to whoever answers the question — they differ
+    # only in whether it may be left unanswered, which the Required tag already says.
+    FieldType.BOOL: _l("Checkbox"),
+    FieldType.BOOL_OR_NONE: _l("Checkbox"),
     FieldType.CHOICE_RADIO: _l("Choice (radios)"),
     FieldType.CHOICE_DROPDOWN: _l("Choice (dropdown)"),
     FieldType.INTEGER: _l("Whole number"),

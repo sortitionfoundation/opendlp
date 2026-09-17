@@ -22,6 +22,7 @@ from opendlp.domain.respondent_derivation import (
     SmallMappingRule,
 )
 from opendlp.domain.respondent_field_schema import (
+    BOOL_TYPES,
     CHOICE_TYPES,
     DERIVATION_TYPE_LABELS,
     FIELD_TYPE_LABELS,
@@ -75,6 +76,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
 )
 from opendlp.service_layer.respondent_field_spec_service import build_field_spec
 from opendlp.translations import gettext as _
+from opendlp.translations import lazy_gettext as _l
 
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
@@ -139,7 +141,9 @@ def _parse_on_registration_page(raw: str | None) -> FieldOnRegistrationPage | No
 
 _LEGACY_TYPE_CHOICES: dict[FieldType, dict[str, Any]] = {
     FieldType.LONGTEXT: {"value": "longtext", "label": FIELD_TYPE_LABELS[FieldType.LONGTEXT]},
-    FieldType.BOOL_OR_NONE: {"value": "bool_or_none", "label": FIELD_TYPE_LABELS[FieldType.BOOL_OR_NONE]},
+    # Labelled apart from the plain Checkbox entry above it: both are checkboxes, and
+    # a dropdown offering the same word twice would say nothing about the difference.
+    FieldType.BOOL_OR_NONE: {"value": "bool_or_none", "label": _l("Checkbox (can be left unanswered)")},
 }
 
 _FREE_TEXT_SUBTYPES: dict[str, FieldType] = {
@@ -227,7 +231,7 @@ def _required_switch_label(values: dict[str, Any]) -> str:
     if not values["type_choice"] or values["type_choice"] == "derived":
         return _("Required")
     field_type = _field_type_from_taxonomy(values)
-    if field_type == FieldType.BOOL:
+    if field_type in BOOL_TYPES:
         return _("Checkbox must be checked")
     if field_type in CHOICE_TYPES:
         return _("An option must be chosen")
