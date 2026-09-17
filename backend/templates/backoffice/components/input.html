@@ -226,7 +226,9 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
     Args:
         name: Select name attribute (required)
         label: Label text displayed above the select
-        options: List of options, each with "value" and "label" keys
+        options: List of options, each with "value" and "label" keys. An entry
+                 with "options" (and a "label") instead of "value" renders as an
+                 <optgroup> holding those options.
         value: Currently selected value
         hint: Help text displayed below the label
         error: Error message (displays select in error state)
@@ -284,9 +286,19 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                   "
         >
             {% for option in options %}
-                <option value="{{ option.value }}" {% if option.value == value %}selected{% endif %}>
-                    {{ option.label }}
-                </option>
+                {% if option.options is defined %}
+                    <optgroup label="{{ option.label }}">
+                        {% for grouped in option.options %}
+                            <option value="{{ grouped.value }}" {% if grouped.value == value %}selected{% endif %}>
+                                {{ grouped.label }}
+                            </option>
+                        {% endfor %}
+                    </optgroup>
+                {% else %}
+                    <option value="{{ option.value }}" {% if option.value == value %}selected{% endif %}>
+                        {{ option.label }}
+                    </option>
+                {% endif %}
             {% endfor %}
         </select>
 

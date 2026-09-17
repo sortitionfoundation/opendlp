@@ -138,13 +138,6 @@ def _parse_on_registration_page(raw: str | None) -> FieldOnRegistrationPage | No
 # and "choice" to CHOICE_RADIO/CHOICE_DROPDOWN.
 # ---------------------------------------------------------------------------
 
-_STANDARD_TYPE_CHOICES: list[dict[str, Any]] = [
-    {"value": "bool", "label": FIELD_TYPE_LABELS[FieldType.BOOL]},
-    {"value": "free_text", "label": FIELD_TYPE_LABELS[FieldType.TEXT]},
-    {"value": "choice", "label": FIELD_TYPE_LABELS[FieldType.CHOICE_RADIO]},
-    {"value": "date", "label": FIELD_TYPE_LABELS[FieldType.DATE]},
-]
-
 _LEGACY_TYPE_CHOICES: dict[FieldType, dict[str, Any]] = {
     FieldType.LONGTEXT: {"value": "longtext", "label": FIELD_TYPE_LABELS[FieldType.LONGTEXT]},
     FieldType.BOOL_OR_NONE: {"value": "bool_or_none", "label": FIELD_TYPE_LABELS[FieldType.BOOL_OR_NONE]},
@@ -180,6 +173,71 @@ def _field_type_from_taxonomy(values: dict[str, Any]) -> FieldType:
     return FieldType.TEXT
 
 
+def _question_type_choices(field: RespondentFieldDefinition | None = None) -> list[dict[str, Any]]:
+    """The modal's single question type dropdown: a few plain types, then text and choice groups.
+
+    Values are FieldType values. A field still on a legacy type keeps it as an
+    extra option, so opening its modal doesn't silently change the type.
+    """
+    choices: list[dict[str, Any]] = [
+        {"value": FieldType.BOOL.value, "label": _("Checkbox")},
+        {"value": FieldType.DATE.value, "label": _("Date")},
+        {
+            "label": _("Text"),
+            "options": [
+                {"value": FieldType.TEXT.value, "label": _("Text")},
+                {"value": FieldType.EMAIL.value, "label": _("Email")},
+                {"value": FieldType.INTEGER.value, "label": _("Number")},
+            ],
+        },
+        {
+            "label": _("Choice"),
+            "options": [
+                {"value": FieldType.CHOICE_RADIO.value, "label": _("Radio")},
+                {"value": FieldType.CHOICE_DROPDOWN.value, "label": _("Dropdown")},
+            ],
+        },
+    ]
+    if field is not None and field.field_type in _LEGACY_TYPE_CHOICES:
+        choices.append({"value": field.field_type.value, "label": _LEGACY_TYPE_CHOICES[field.field_type]["label"]})
+    return choices
+
+
+def _choice_style_choices() -> list[dict[str, Any]]:
+    """The question types a field whose options belong to a target can switch between."""
+    return [
+        {"value": FieldType.CHOICE_RADIO.value, "label": _("Radio")},
+        {"value": FieldType.CHOICE_DROPDOWN.value, "label": _("Dropdown")},
+    ]
+
+
+def _question_type_help() -> dict[str, str]:
+    """When to pick each question type that needs explaining, shown under the dropdown once chosen."""
+    return {
+        FieldType.CHOICE_RADIO.value: _(
+            "Use for a small number of options (typically fewer than 5) when users need to see and compare all choices."
+        ),
+        FieldType.CHOICE_DROPDOWN.value: _(
+            "Use for longer lists (typically more than 10 options) when displaying all choices would be impractical."
+        ),
+    }
+
+
+def _question_type_value(values: dict[str, Any]) -> str:
+    """The question type dropdown's value for the modal state; "" until a type is chosen."""
+    if not values["type_choice"] or values["type_choice"] == "derived":
+        return ""
+    return _field_type_from_taxonomy(values).value
+
+
+def _taxonomy_from_question_type(raw: str) -> dict[str, str]:
+    """The modal taxonomy values for a submitted question type; no type_choice when none is chosen."""
+    try:
+        return _taxonomy_from_field_type(FieldType(raw))
+    except ValueError:
+        return {"type_choice": ""}
+
+
 def _taxonomy_from_field_type(field_type: FieldType) -> dict[str, str]:
     """The modal taxonomy values that would produce ``field_type``."""
     values = {"type_choice": "free_text", "free_text_subtype": "text", "choice_style": "choice_radio"}
@@ -208,7 +266,7 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
         {"value": value, "help_text": help_text}
         for value, help_text in zip_longest(source.getlist("option_value"), source.getlist("option_help"), fillvalue="")
     ]
-    return {
+    values = {
         "label": source.get("label", ""),
         "field_key": source.get("field_key", ""),
         "group": source.get("group", ""),
@@ -230,6 +288,11 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
         "map_source": source.getlist("map_source"),
         "map_target": source.getlist("map_target"),
     }
+    # The modal's single question type dropdown; posts without it (scripted
+    # callers, the derived flow) still describe the type with type_choice.
+    if "question_type" in source:
+        values.update(_taxonomy_from_question_type(source.get("question_type", "")))
+    return values
 
 
 def _modal_values_from_field(field: RespondentFieldDefinition) -> dict[str, Any]:
@@ -275,7 +338,8 @@ def _default_modal_values() -> dict[str, Any]:
         "label": "",
         "field_key": "",
         "group": RespondentFieldGroup.OTHER.value,
-        "type_choice": "free_text",
+        # No type until one is chosen from the dropdown.
+        "type_choice": "",
         "free_text_subtype": "text",
         "choice_style": "choice_radio",
         "help_text": "",
@@ -316,14 +380,15 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
     # No Derived option here: a derived field feeds a target, so it is created
     # (and edited) on the target data sources step, never from this modal.
     has_targets = _assembly_has_targets(assembly_id)
-    type_choices = list(_STANDARD_TYPE_CHOICES)
     choice_candidate_key = _choice_candidate_key(values) if values["type_choice"] == "choice" else ""
     return {
         "mode": "new",
         "field": None,
         "action_url": action_url,
         "refresh_url": url_for("respondent_field_schema.new_field_modal", assembly_id=assembly_id),
-        "type_choices": type_choices,
+        "question_type_choices": _question_type_choices(),
+        "question_type": _question_type_value(values),
+        "question_type_help": _question_type_help(),
         "type_locked": False,
         "target_locked": False,
         "linked_target_name": "",
@@ -340,9 +405,6 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
 def _edit_modal_ctx(
     assembly_id: uuid.UUID, field: RespondentFieldDefinition, values: dict[str, Any], error: str = ""
 ) -> dict[str, Any]:
-    type_choices = list(_STANDARD_TYPE_CHOICES)
-    if field.field_type in _LEGACY_TYPE_CHOICES:
-        type_choices.append(_LEGACY_TYPE_CHOICES[field.field_type])
     # An existing derived field already has a stored bracket config, so the
     # target's value names must not be parsed over the top of it.
     derived = (
@@ -366,7 +428,9 @@ def _edit_modal_ctx(
         "field": field,
         "action_url": action_url,
         "refresh_url": url_for("respondent_field_schema.edit_field_modal", assembly_id=assembly_id, field_id=field.id),
-        "type_choices": type_choices,
+        "question_type_choices": _choice_style_choices() if target_locked else _question_type_choices(field),
+        "question_type": _question_type_value(values),
+        "question_type_help": _question_type_help(),
         "type_locked": field.is_fixed,
         "target_locked": target_locked,
         "linked_target_name": _linked_target_name(field),
@@ -986,6 +1050,8 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
             # off, Save pressed before the refresh button. Falling through
             # would quietly create a text field.
             return _("Choose the target and method for a derived field")
+        if not values["type_choice"]:
+            return _("Choose a question type")
         field_type = _field_type_from_taxonomy(values)
     else:
         field_type = _parse_field_type(request.form.get("field_type")) or FieldType.TEXT
@@ -1407,6 +1473,8 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
         update_kwargs["on_registration_page"] = _parse_on_registration_page(values["on_registration_page"])
         update_kwargs["group"] = _parse_registration_group(values["group"])
     if not field.is_fixed and not field.is_derived:
+        if not values["type_choice"]:
+            return {}, _("Choose a question type")
         field_type = _field_type_from_taxonomy(values)
         update_kwargs["field_type"] = field_type
         if field_type in CHOICE_TYPES:

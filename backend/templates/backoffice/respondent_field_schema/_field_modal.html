@@ -8,6 +8,23 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
 {% set values = modal_ctx["values"] %}
 {% set is_derived_flow = modal_ctx["is_derived"] or values["type_choice"] == "derived" %}
 {% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-target="#field-modal-container" hx-swap="innerHTML"' %}
+{# One dropdown for the question type (Figma: Add field, node 5394:18175). Choosing
+   a type re-renders the form, so its options editor and help appear. #}
+{% set question_type_help = modal_ctx.get("question_type_help", {}).get(modal_ctx.get("question_type", ""), "") %}
+{% set question_type_select %}
+    <div class="mb-4">
+        {% set type_options = ([{"value": "", "label": _("Choose one")}] if not modal_ctx["question_type"] else []) + modal_ctx["question_type_choices"] %}
+        {{ select("question_type",
+        label=_("Question type"),
+        options=type_options,
+        value=modal_ctx["question_type"],
+        id="field-modal-type",
+        attrs=refresh_attrs ~ (' aria-describedby="field-modal-type-help"' if question_type_help else "")) }}
+        {% if question_type_help %}
+            <p id="field-modal-type-help" class="text-body-sm mt-1" style="color: var(--color-secondary-text);">{{ question_type_help }}</p>
+        {% endif %}
+    </div>
+{% endset %}
 {# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
@@ -104,17 +121,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                             {{ _("Its answer values mirror the target's values — change those on the target data sources step, or unlink the field there.") }}
                         </div>
                     </div>
-                    <input type="hidden" name="type_choice" value="choice">
-                    <div class="mb-4 pl-4">
-                        {{ select("choice_style",
-                        label=_("Shown on the form as"),
-                        options=[
-                        {"value": "choice_radio", "label": _("Radio buttons")},
-                        {"value": "choice_dropdown", "label": _("Dropdown")},
-                        ],
-                        value=values["choice_style"],
-                        id="field-modal-choice-style") }}
-                    </div>
+                    {{ question_type_select }}
                     <fieldset class="mb-4">
                         <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
                         {% for option in values["options"] %}
@@ -132,42 +139,12 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         {% endfor %}
                     </fieldset>
                 {% else %}
-                    <div class="mb-4">
-                        {{ radio_group("type_choice",
-                        label=_("Type"),
-                        options=modal_ctx["type_choices"],
-                        value=values["type_choice"],
-                        id="field-modal-type",
-                        attrs=refresh_attrs) }}
-                    </div>
+                    {{ question_type_select }}
                     <noscript>
-                        {# Without JS the radios can't re-render the form, so offer an explicit refresh. #}
+                        {# Without JS the dropdown can't re-render the form, so offer an explicit refresh. #}
                         {{ button(_("Update the form for this type") , type="submit", variant="secondary", attrs='name="form_action" value="refresh"') }}
                     </noscript>
-                    {% if values["type_choice"] == "free_text" %}
-                        <div class="mb-4 pl-4">
-                            {{ select("free_text_subtype",
-                            label=_("Kind of text"),
-                            options=[
-                            {"value": "text", "label": _("Text")},
-                            {"value": "email", "label": _("Email")},
-                            {"value": "integer", "label": _("Number")},
-                            ],
-                            value=values["free_text_subtype"],
-                            id="field-modal-subtype") }}
-                        </div>
-                    {% endif %}
                     {% if values["type_choice"] == "choice" %}
-                        <div class="mb-4 pl-4">
-                            {{ select("choice_style",
-                            label=_("Shown on the form as"),
-                            options=[
-                            {"value": "choice_radio", "label": _("Radio buttons")},
-                            {"value": "choice_dropdown", "label": _("Dropdown")},
-                            ],
-                            value=values["choice_style"],
-                            id="field-modal-choice-style") }}
-                        </div>
                         <fieldset class="mb-4">
                             <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
                             {% for option in values["options"] %}

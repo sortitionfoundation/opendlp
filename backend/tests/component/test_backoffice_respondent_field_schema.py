@@ -687,9 +687,114 @@ class TestFieldModal:
         body = response.get_data(as_text=True)
         assert 'value="Custom notes"' in body
         assert "pick one" in body
-        assert 'value="choice" checked' in body.replace("\n", " ") or ('value="choice"' in body and "checked" in body)
+        assert re.search(r'<option value="choice_radio" selected>', body)
         assert 'value="one"' in body
         assert 'value="first option"' in body
+
+    def _type_select(self, body):
+        match = re.search(r'<select\s+name="question_type".*?</select>', body, re.DOTALL)
+        assert match is not None, "no question type select"
+        return match.group(0)
+
+    def test_new_modal_asks_for_the_question_type_in_one_grouped_dropdown(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+        type_select = self._type_select(body)
+
+        assert re.search(r'<option value="" selected>\s*Choose one', type_select)
+        assert re.findall(r'<option value="([^"]*)"', type_select) == [
+            "",
+            "bool",
+            "date",
+            "text",
+            "email",
+            "integer",
+            "choice_radio",
+            "choice_dropdown",
+        ]
+        assert '<optgroup label="Text">' in type_select
+        assert '<optgroup label="Choice">' in type_select
+        # The old radios and follow-up selects are gone
+        assert 'name="type_choice"' not in body
+        assert 'name="free_text_subtype"' not in body
+        assert 'name="choice_style"' not in body
+        # Nothing type-specific until a type is chosen
+        assert 'name="option_value"' not in body
+
+    def test_choosing_a_choice_type_shows_its_advice_and_options(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal",
+            query_string={"modal": "1", "question_type": "choice_dropdown", "label": "Region"},
+            headers={"HX-Request": "true"},
+        ).get_data(as_text=True)
+
+        assert re.search(r'<option value="choice_dropdown" selected>', self._type_select(body))
+        assert "Use for longer lists (typically more than 10 options)" in body
+        assert 'name="option_value"' in body
+
+    def test_saving_the_question_type_dropdown_sets_the_field_type(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Favourite number",
+                "question_type": "integer",
+                "on_registration_page": FieldOnRegistrationPage.YES_OPTIONAL.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 200
+        field = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "favourite_number"
+        )
+        assert field.field_type == FieldType.INTEGER
+
+    def test_saving_without_a_question_type_asks_for_one(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        before = len(_get_schema(fake_store, admin_user, existing_assembly))
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={"modal": "1", "form_action": "save", "label": "Mystery", "question_type": ""},
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 422
+        assert b"Choose a question type" in response.data
+        assert len(_get_schema(fake_store, admin_user, existing_assembly)) == before
+
+    def test_edit_modal_keeps_a_legacy_type_on_offer(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondent_field_schema_service.update_field(
+                uow, admin_user.id, existing_assembly.id, custom.id, field_type=FieldType.LONGTEXT
+            )
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        assert re.search(r'<option value="longtext" selected>', self._type_select(body))
 
     def _selected_group(self, body):
         select = re.search(r'<select[^>]*id="field-modal-group".*?</select>', body, re.DOTALL)
@@ -2005,9 +2110,9 @@ class TestTargetLinkedFieldUI:
         )
         body = response.get_data(as_text=True)
         assert "Feeds target: Gender" in body
-        # No free type radios; the presentation select and option help inputs remain.
-        assert 'name="type_choice" value="choice"' in body
-        assert 'name="choice_style"' in body
+        # The question type can only switch between the two choice styles; option help inputs remain.
+        type_select = re.search(r'<select\s+name="question_type".*?</select>', body, re.DOTALL).group(0)
+        assert re.findall(r'<option value="([^"]*)"', type_select) == ["choice_radio", "choice_dropdown"]
         assert 'name="option_help"' in body
         # Option values render as fixed text with hidden inputs, not editable boxes.
         assert 'name="option_value" value="Male"' in body

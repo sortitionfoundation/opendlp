@@ -143,10 +143,10 @@ def click_field_row(admin_logged_in_page: Page, field_key: str) -> None:
 
 @when(parsers.parse('I save a new choice field labelled "{label}" with options "{first}" and "{second}"'))
 def save_choice_field_via_modal(admin_logged_in_page: Page, label: str, first: str, second: str) -> None:
-    """Fill the modal: label, choice type (HTMX re-render), two option rows, save."""
+    """Fill the modal: label, radio choice type (HTMX re-render), two option rows, save."""
     page = admin_logged_in_page
     page.fill('input[name="label"]', label)
-    page.check('input[name="type_choice"][value="choice"]')
+    page.select_option('select[name="question_type"]', "choice_radio")
     # The type change re-renders the form fragment; the options editor appears.
     first_option = page.locator('input[name="option_value"]').first
     expect(first_option).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
