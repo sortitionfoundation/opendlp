@@ -48,7 +48,7 @@ ABOUTME: Shown in place of the field modal after a derivation save; Done closes 
                     {% endif %}
                     {% if upload_report.used_positional_headers %}
                         <div class="text-body-sm" style="color: var(--color-secondary-text);">
-                            {{ _("The header row didn't name the fields, so the first column was read as the input and the second as the output.") }}
+                            {{ _("The first row was used as column headings and not stored. Its headings didn't match the field names, so the first column was read as the input and the second as the output. If your file has no heading row, add one and upload it again.") }}
                         </div>
                     {% endif %}
                 </dl>

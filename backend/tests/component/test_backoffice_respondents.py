@@ -535,6 +535,29 @@ class TestBackofficeViewSingleRespondent:
         assert b"30-59" in body  # born 1990, as of 2026 -> age 36
         assert b"derivation not yet implemented" not in body
 
+    def test_view_respondent_shows_a_date_field_as_a_readable_date(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            import_respondents_from_csv(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                "external_id,date_of_birth\nR001,1985-07-03\n",
+                replace_existing=True,
+            )
+            schema = get_schema(uow, admin_user.id, existing_assembly.id)
+            source = next(f for f in schema if f.field_key == "date_of_birth")
+            update_field(uow, admin_user.id, existing_assembly.id, source.id, field_type=FieldType.DATE)
+            respondent = uow.respondents.get_by_assembly_id(existing_assembly.id)[0]
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/{respondent.id}")
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        # Formatted for the locale ("July 3, 1985" in en), never the stored ISO string.
+        assert "July" in body
+        assert "1985-07-03" not in body
+
     def test_view_respondent_wrong_assembly(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
     ) -> None:
@@ -821,6 +844,7 @@ class TestEditRespondentPage:
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         assert "Age bracket" in body
+        assert "Derived from year_of_birth" in body
         assert "recalculated when saved" in body
         # No editable control for the derived value — and no stale value shown at all.
         assert 'name="attr_age bracket"' not in body
@@ -848,6 +872,75 @@ class TestEditRespondentPage:
         assert b"first_name" in response.data or b"First name" in response.data
         assert b"Selection status" in response.data
         assert b"Change to" in response.data
+
+    def _make_respondent_with_date_of_birth(self, fake_store: FakeStore, admin_user, assembly_id, date_of_birth):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            import_respondents_from_csv(
+                uow,
+                admin_user.id,
+                assembly_id,
+                f"external_id,date_of_birth\nR001,{date_of_birth}\n",
+                replace_existing=True,
+            )
+            schema = get_schema(uow, admin_user.id, assembly_id)
+            source = next(f for f in schema if f.field_key == "date_of_birth")
+            update_field(uow, admin_user.id, assembly_id, source.id, field_type=FieldType.DATE)
+            return uow.respondents.get_by_assembly_id(assembly_id)[0].id
+
+    def test_date_field_renders_day_month_and_year_inputs(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        resp_id = self._make_respondent_with_date_of_birth(fake_store, admin_user, existing_assembly.id, "1985-07-03")
+
+        response = logged_in_admin.get(self._edit_url(existing_assembly.id, resp_id))
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert 'name="attr_date_of_birth-day"' in body
+        assert 'name="attr_date_of_birth-month"' in body
+        assert 'name="attr_date_of_birth-year"' in body
+        assert 'value="1985"' in body
+        assert 'name="attr_date_of_birth"' not in body
+
+    def test_post_date_parts_saves_an_iso_date(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        resp_id = self._make_respondent_with_date_of_birth(fake_store, admin_user, existing_assembly.id, "1985-07-03")
+
+        response = logged_in_admin.post(
+            self._edit_url(existing_assembly.id, resp_id),
+            data={
+                "attr_date_of_birth-day": "15",
+                "attr_date_of_birth-month": "6",
+                "attr_date_of_birth-year": "1990",
+                "comment": "corrected date of birth",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.get(resp_id).attributes["date_of_birth"] == "1990-06-15"
+
+    def test_post_invalid_date_rerenders_with_the_error_and_saves_nothing(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore
+    ) -> None:
+        resp_id = self._make_respondent_with_date_of_birth(fake_store, admin_user, existing_assembly.id, "1985-07-03")
+
+        response = logged_in_admin.post(
+            self._edit_url(existing_assembly.id, resp_id),
+            data={
+                "attr_date_of_birth-day": "31",
+                "attr_date_of_birth-month": "2",
+                "attr_date_of_birth-year": "1990",
+                "comment": "corrected date of birth",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "Please enter a valid date" in body
+        assert 'value="31"' in body
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondents.get(resp_id).attributes["date_of_birth"] == "1985-07-03"
 
     def test_get_with_uninitialised_schema_shows_init_prompt(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, admin_user, fake_store: FakeStore

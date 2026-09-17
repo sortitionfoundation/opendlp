@@ -2,7 +2,9 @@
 # ABOUTME: Drives the real backoffice schema routes + services against a seeded fake store (no PostgreSQL)
 
 import io
+import re
 import uuid
+from datetime import UTC, datetime
 
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
@@ -27,6 +29,14 @@ def _seed_schema(fake_store, admin_user, assembly):
             "external_id,first_name,last_name,gender,postcode,custom_notes\nR001,Alice,Jones,Female,SW1A 1AA,note\n",
             replace_existing=True,
         )
+
+
+def _input_value(body, input_id):
+    """The value attribute of the rendered input carrying ``input_id``."""
+    tag = re.search(rf'<input[^>]*id="{input_id}"[^>]*>', body)
+    assert tag is not None, f"no input with id {input_id}"
+    value = re.search(r'value="([^"]*)"', tag.group(0))
+    return value.group(1) if value else ""
 
 
 def _get_schema(fake_store, admin_user, assembly):
@@ -257,7 +267,7 @@ class TestFieldTypeAndOptions:
             follow_redirects=True,
         )
         assert response.status_code == 200
-        assert b"options list" in response.data
+        assert b"A choice field needs at least one option" in response.data
 
         field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
         assert field.field_type == FieldType.TEXT
@@ -615,6 +625,65 @@ class TestFieldModal:
         assert "already exists" in body
         assert 'value="Custom notes"' in body
 
+    def test_add_via_modal_duplicate_option_values_return_422(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Two rows with the same value would derive and count as one, so the save is refused."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Preferred contact",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Phone", "Email", "Phone"],
+                "option_help": ["", "", ""],
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        body = response.get_data(as_text=True)
+        assert "must be different" in body
+        assert "appears more than once" in body
+
+        assert not any(
+            f.field_key == "preferred_contact" for f in _get_schema(fake_store, admin_user, existing_assembly)
+        )
+
+    def test_edit_via_modal_duplicate_option_values_return_422(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Notes",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_value": ["Yes", "Yes"],
+                "option_help": ["", ""],
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        assert "appears more than once" in response.get_data(as_text=True)
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
+        assert field.field_type == FieldType.TEXT  # nothing was saved
+
     def test_add_option_action_re_renders_the_form_with_an_extra_row(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
@@ -697,6 +766,33 @@ class TestFieldModal:
         assert [o.value for o in field.options] == ["Yes", "No"]
         assert field.help_text == "a hint"
         assert field.on_registration_page == FieldOnRegistrationPage.NO
+
+    def test_edit_via_modal_strips_surrounding_space_from_the_help_text(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Create strips the help text, so an edit must too — otherwise a stray space sticks."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Notes",
+                "type_choice": "free_text",
+                "free_text_subtype": "text",
+                "help_text": "  anything else?  ",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes")
+        assert field.help_text == "anything else?"
 
     def test_edit_via_modal_on_a_fixed_field_updates_label_and_help_only(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -925,7 +1021,7 @@ class TestDerivedFieldModal:
             "source_key": "year_of_birth",
             "as_of_day": "1",
             "as_of_month": "6",
-            "as_of_year": "2026",
+            "as_of_year": str(datetime.now(UTC).date().year),
             "min_age": "16",
             "max_age": "60",
             "boundaries": "25, 40",
@@ -944,6 +1040,27 @@ class TestDerivedFieldModal:
         )
         body = response.get_data(as_text=True)
         assert 'value="derived"' not in body
+
+    def test_derived_submitted_to_the_plain_add_route_is_refused(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """With JS off, Save can reach the plain add route while Derived is picked — that must not make a text field."""
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Age band",
+                "type_choice": "derived",
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        assert "Choose the target and method" in response.get_data(as_text=True)
+
+        assert not any(f.field_key == "age_band" for f in _get_schema(fake_store, admin_user, existing_assembly))
 
     def test_derived_panel_lists_targets_and_filters_sources_by_method(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1063,6 +1180,21 @@ class TestDerivedFieldModal:
         assert response.status_code == 422
         assert "as-of date" in response.get_data(as_text=True)
 
+    def test_rule_validation_error_returns_422_with_the_organiser_message(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(min_age="50", max_age="40", boundaries=""),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 422
+        body = response.get_data(as_text=True)
+        assert "The maximum age must be greater than the minimum age" in body
+        assert "max_age must be greater than min_age" not in body
+
     def test_missing_target_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
 
@@ -1097,6 +1229,29 @@ class TestDerivedFieldModal:
         assert "delete this field and create it again" in body
         assert 'name="on_registration_page"' not in body  # derived fields are never collected
 
+    def test_edit_modal_keeps_a_stored_config_the_target_would_have_prefilled(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """A saved rule with no boundaries stays that way — the target's value names only seed a new field."""
+        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+        logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/add-derived",
+            data=self._derived_form(min_age="16", max_age="100", boundaries=""),
+            headers={"HX-Request": "true"},
+        )
+        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
+        assert field.derivation_config["boundaries"] == []
+
+        response = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{field.id}/edit-modal", headers={"HX-Request": "true"}
+        )
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        # The target reads as 16-24, 25-39, 40-59, 60+ — max 60 with boundaries
+        # 25, 40 — which is exactly what must not be written over the stored config.
+        assert _input_value(body, "derived-max-age") == "100"
+        assert _input_value(body, "derived-boundaries") == ""
+
     def test_update_derivation_config_recomputes_and_reports(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
@@ -1113,6 +1268,49 @@ class TestDerivedFieldModal:
         stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
         assert stored.derivation_config["boundaries"] == [30]
         assert stored.help_text == "derived from year of birth"
+
+    def test_update_derivation_strips_surrounding_space_from_the_help_text(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{field.id}/derivation",
+            data=self._derived_form(help_text="  from year of birth  "),
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+
+        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
+        assert stored.help_text == "from year of birth"
+
+    def test_relabel_a_source_field_via_the_modal(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
+        source = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "year_of_birth"
+        )
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{source.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Birth year",
+                "type_choice": "free_text",
+                "free_text_subtype": "integer",
+                "help_text": "",
+                "on_registration_page": FieldOnRegistrationPage.NO.value,
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert "You can&#39;t change the type" not in response.get_data(as_text=True)
+
+        stored = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "year_of_birth"
+        )
+        assert stored.label == "Birth year"
+        assert stored.field_type == FieldType.INTEGER
 
     def test_derived_fields_do_not_appear_on_the_fields_page(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1228,6 +1426,28 @@ class TestMappingUploadAndRecompute:
 
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
+
+    def test_upload_without_matching_headings_warns_that_the_first_row_was_not_stored(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = self._upload(logged_in_admin, existing_assembly, field, "SW1A 1AA,South\nM1 1AE,North\n")
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "The first row was used as column headings and not stored" in body
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 1
+
+    def test_upload_with_matching_headings_has_no_first_row_warning(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
+
+        response = self._upload(logged_in_admin, existing_assembly, field, "postcode,region\nSW1A 1AA,South\n")
+        assert response.status_code == 200
+        assert "used as column headings" not in response.get_data(as_text=True)
 
     def test_missing_file_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)

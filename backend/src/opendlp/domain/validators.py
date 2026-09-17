@@ -233,13 +233,13 @@ def validate_date_field(str_value: str) -> tuple[str | None, str | None]:
     ago are rejected: the DATE type exists for dates of birth, so both are typos.
     """
     if not str_value:
-        return None, "This field is required"
+        return None, _("This field is required")
     parsed = parse_date_text(str_value.strip())
     if parsed is None:
-        return None, "Please enter a valid date"
+        return None, _("Please enter a valid date")
     today = datetime.now(UTC).date()
     if parsed > today:
-        return None, "Date cannot be in the future"
+        return None, _("Date cannot be in the future")
     if parsed.year < today.year - _MAX_DATE_FIELD_AGE_YEARS:
-        return None, "Please check the year"
+        return None, _("Please check the year")
     return parsed.isoformat(), None

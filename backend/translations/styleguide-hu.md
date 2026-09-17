@@ -105,6 +105,40 @@ assembly is convened to decide, and Hungarian says that as a topic; *kérdése*
 reads as a query someone asked. No *fő*: the field is not one of several topics.
 The help text goes with it — "a fő téma, amellyel…", not "a fő kérdés". *(F28)*
 
+### Respondent fields
+
+These came in with derived fields, after the review, and no native speaker has
+checked them yet. Use them consistently until someone does.
+
+| English | Hungarian | |
+| --- | --- | --- |
+| derived field | számított mező |  |
+| derivation | számítás módja | |
+| source field | bemeneti mező | |
+| mapping (configuring one) | érték hozzárendelése | |
+| mapping (applying one) | érték cseréje | |
+| mapping file | hozzárendelési fájl | |
+| input / output value | bemeneti / kimeneti érték | |
+| options (of a choice field) | választható értékek | |
+
+**derived field** is *számított*, not *származtatott* — the existing `Derived`
+label has been updated to match, so both now read *Számított*.
+
+**mapping** splits in two, depending on which side of the feature a string is
+talking about. Setting one up — declaring or editing the rule that turns a
+source value into an output value, as in `A large mapping needs its output
+values declared…` or `The mapping file is empty` — is *érték hozzárendelése*
+(*hozzárendelés*), matching **mapping file** (*hozzárendelési fájl*), which is
+also about configuration. Running one — the moment a respondent's value is
+actually replaced by what the rule produces — is *érték cseréje*. Every string
+in the catalogue so far is about configuring a mapping, so *hozzárendelés* is
+what you will mostly reach for; reserve *érték cseréje* for a string that
+describes a value changing on a respondent's row, not the rule that will do
+it. **options** was already settled in the catalogue as *választható értékek*
+("Rögzített mező típusát vagy választható értékeit nem módosíthatod"); it is
+listed here so the derived-field strings do not drift to *opciók* or
+*lehetőségek*.
+
 ### Roles
 
 The global **Organiser** and the per-assembly **Assembly Manager** are different
@@ -132,6 +166,7 @@ roles and must not read as synonyms. *(C14)*
 | URL slug | URL-azonosító | |
 | 2FA / two-factor authentication | kétlépcsős azonosítás | |
 | backup code | tartalék kód | |
+| service account (Google) | szolgáltatásfiók | *(unreviewed)* |
 
 **cancel** as a button — backing out of a dialog or form without doing anything —
 is **Mégse**, the word every Hungarian UI uses for that button. Not

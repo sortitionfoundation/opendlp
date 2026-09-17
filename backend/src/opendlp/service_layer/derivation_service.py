@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from io import StringIO
+from itertools import islice
 from typing import Any
 
 from opendlp.domain.respondent_derivation import (
@@ -28,6 +29,7 @@ from opendlp.domain.respondent_derivation import (
 )
 from opendlp.domain.respondent_field_schema import (
     CHOICE_TYPES,
+    FIELD_TYPE_LABELS,
     DerivationType,
     FieldType,
     RespondentFieldDefinition,
@@ -37,6 +39,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.respondents import Respondent, normalise_field_name
 from opendlp.domain.validators import parse_date_text
 from opendlp.domain.value_objects import SelectionRunStatus
+from opendlp.service_layer.constants import SORT_ORDER_STEP
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
     FieldDefinitionConflictError,
@@ -146,9 +149,9 @@ def _validate_source(source: RespondentFieldDefinition | None, source_field_key:
     if source.effective_field_type not in compatible:
         raise FieldDefinitionConflictError(
             _l(
-                "A '%(source_type)s' field cannot be derived from with this rule — it needs one of: %(allowed)s",
-                source_type=source.effective_field_type.value,
-                allowed=", ".join(sorted(t.value for t in compatible)),
+                "This rule cannot derive from a %(source_type)s field. It needs one of: %(allowed)s",
+                source_type=FIELD_TYPE_LABELS[source.effective_field_type],
+                allowed=", ".join(sorted(str(FIELD_TYPE_LABELS[t]) for t in compatible)),
             )
         )
 
@@ -301,7 +304,11 @@ def apply_derivations(
             continue
         if field.derivation_type is None or field.derivation_config is None or not field.derived_from:
             continue  # a malformed row must not break a registration submission
-        derived, fallback, raw_text = _resolve_derived_value(respondent, field, defs_by_key, lookups)
+        try:
+            rule = rule_from_field(field.derivation_type, field.derivation_config)
+        except ValueError:
+            continue  # a stored config the rule now rejects is malformed too; same rule applies
+        derived, fallback, raw_text = _resolve_derived_value(respondent, field, rule, defs_by_key, lookups)
 
         existing = str(respondent.attributes.get(field.field_key, "") or "")
         if derived == fallback and keep_supplied_on_fallback and existing and existing != fallback:
@@ -325,13 +332,11 @@ def apply_derivations(
 def _resolve_derived_value(
     respondent: Respondent,
     field: RespondentFieldDefinition,
+    rule: DerivationRule,
     defs_by_key: Mapping[str, RespondentFieldDefinition],
     lookups: Mapping[uuid.UUID, Callable[[str], str | None]],
 ) -> tuple[str, str, str]:
     """Returns (derived value, the rule's fallback, the raw source text)."""
-    assert field.derivation_type is not None
-    assert field.derivation_config is not None
-    rule = rule_from_field(field.derivation_type, field.derivation_config)
     source_def = defs_by_key.get((field.derived_from or [""])[0])
     if source_def is None:
         return rule.fallback, rule.fallback, ""
@@ -374,7 +379,7 @@ def create_derived_field(
     assert source is not None  # _validate_source raised otherwise
 
     schema = uow.respondent_field_definitions.list_by_assembly(assembly_id)
-    next_sort_order = max((f.sort_order for f in schema if f.group == group), default=0) + 10
+    next_sort_order = max((f.sort_order for f in schema if f.group == group), default=0) + SORT_ORDER_STEP
     field = RespondentFieldDefinition(
         assembly_id=assembly_id,
         field_key=field_key,
@@ -413,10 +418,12 @@ def update_derivation(
 
     if isinstance(rule, LargeMappingRule) and output_values is None:
         # A rule edit (say, a new fallback) should not force re-declaring the
-        # output list — the existing options carry it.
-        options = list(field.options or [])
-    else:
-        options = _options_for(rule, output_values)
+        # output list — the existing options carry it, minus the old fallback
+        # so the new one takes its place.
+        assert field.derivation_type is not None  # _get_derived_field guarantees a derived field
+        old_rule = rule_from_field(field.derivation_type, field.derivation_config or {})
+        output_values = [o.value for o in field.options or [] if o.value != old_rule.fallback]
+    options = _options_for(rule, output_values)
     field.set_derivation(
         derivation_type=_DERIVATION_TYPE_FOR_RULE[type(rule)],
         derivation_config=rule.to_config(),
@@ -520,7 +527,11 @@ def upload_large_mapping(
     if field.derivation_type != DerivationType.LARGE_MAPPING:
         raise FieldDefinitionConflictError(_l("Field '%(key)s' does not use a large mapping", key=field.field_key))
 
-    rows = [row for row in csv.reader(StringIO(csv_content)) if any(cell.strip() for cell in row)]
+    non_blank_rows = (row for row in csv.reader(StringIO(csv_content)) if any(cell.strip() for cell in row))
+    # Stop parsing once the file is known to be over the cap: a header, the cap
+    # itself and one row beyond it are all the check below needs. An oversized
+    # file therefore reports the cap plus one rather than its true row count.
+    rows = list(islice(non_blank_rows, MAX_MAPPING_ROWS + 2))
     if not rows:
         raise FieldDefinitionConflictError(_l("The mapping file is empty"))
     headers, data_rows = rows[0], rows[1:]

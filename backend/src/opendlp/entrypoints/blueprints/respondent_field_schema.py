@@ -4,7 +4,7 @@ ABOUTME: Read-only schema rows plus an HTMX add/edit field modal; move, delete, 
 import contextlib
 import re
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from itertools import zip_longest
 from typing import Any
 
@@ -23,9 +23,11 @@ from opendlp.domain.respondent_derivation import (
 )
 from opendlp.domain.respondent_field_schema import (
     CHOICE_TYPES,
+    DERIVATION_TYPE_LABELS,
     FIELD_TYPE_LABELS,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
+    ON_REGISTRATION_PAGE_LABELS,
     ChoiceOption,
     DerivationType,
     FieldOnRegistrationPage,
@@ -292,7 +294,11 @@ def _normalise_modal_values(values: dict[str, Any]) -> dict[str, Any]:
 
 def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = "") -> dict[str, Any]:
     is_derived_choice = values["type_choice"] == "derived"
-    derived = _build_derived_ctx(assembly_id, values, target_locked=False) if is_derived_choice else None
+    derived = (
+        _build_derived_ctx(assembly_id, values, target_locked=False, prefill_from_target=True)
+        if is_derived_choice
+        else None
+    )
     if is_derived_choice:
         action_url = url_for("respondent_field_schema.add_derived_field_view", assembly_id=assembly_id)
     else:
@@ -327,7 +333,13 @@ def _edit_modal_ctx(
     type_choices = list(_STANDARD_TYPE_CHOICES)
     if field.field_type in _LEGACY_TYPE_CHOICES:
         type_choices.append(_LEGACY_TYPE_CHOICES[field.field_type])
-    derived = _build_derived_ctx(assembly_id, values, target_locked=True) if field.is_derived else None
+    # An existing derived field already has a stored bracket config, so the
+    # target's value names must not be parsed over the top of it.
+    derived = (
+        _build_derived_ctx(assembly_id, values, target_locked=True, prefill_from_target=False)
+        if field.is_derived
+        else None
+    )
     if field.is_derived:
         action_url = url_for(
             "respondent_field_schema.update_derivation_view", assembly_id=assembly_id, field_id=field.id
@@ -428,6 +440,30 @@ def _submitted_options(values: dict[str, Any]) -> list[ChoiceOption]:
     ]
 
 
+def duplicate_option_value(options: list[ChoiceOption]) -> str:
+    """The first option value that appears twice, or "" when they are all distinct.
+
+    Exact-match comparison, because every other place an option value is
+    matched is exact: add_choice_option rejects a repeat with ``==``, and
+    SmallMappingRule.derive looks the source value up in a plain dict. Two
+    values differing only in case are therefore two real values, not a typo.
+    """
+    seen: set[str] = set()
+    for option in options:
+        if option.value in seen:
+            return option.value
+        seen.add(option.value)
+    return ""
+
+
+def _duplicate_option_error(options: list[ChoiceOption]) -> str:
+    """A user-facing message naming a repeated option value, or "" when there is none."""
+    duplicate = duplicate_option_value(options)
+    if not duplicate:
+        return ""
+    return _("Option values must be different: '%(value)s' appears more than once", value=duplicate)
+
+
 # ---------------------------------------------------------------------------
 # The derived-field panel: source filtering, config parsing, and pre-fills.
 # ---------------------------------------------------------------------------
@@ -452,6 +488,14 @@ def parse_age_rule(values: dict[str, Any]) -> AgeBracketRule:
         as_of = date(int(values["as_of_year"]), int(values["as_of_month"]), int(values["as_of_day"]))
     except (TypeError, ValueError):
         raise ValueError(_("Enter a valid as-of date (day, month and year)")) from None
+    # The as-of date is usually the first assembly date, so it is always near
+    # today. A year outside this window is a typo, and a silent one: the
+    # brackets it produces look plausible and put everyone in the fallback.
+    this_year = datetime.now(UTC).date().year
+    if not (this_year - 1 <= as_of.year <= this_year + 1):
+        raise ValueError(
+            _("The as-of year must be between %(low)d and %(high)d", low=this_year - 1, high=this_year + 1)
+        )
     try:
         min_age = int(values["min_age"] or 16)
         max_age = int(values["max_age"] or 100)
@@ -530,7 +574,12 @@ def _assembly_has_targets(assembly_id: uuid.UUID) -> bool:
         return bool(list(uow.target_categories.get_by_assembly_id(assembly_id)))
 
 
-def _apply_age_prefills(values: dict[str, Any], selected_target: dict[str, Any] | None, first_date: Any) -> None:
+def _apply_age_prefills(
+    values: dict[str, Any],
+    selected_target: dict[str, Any] | None,
+    first_date: Any,
+    prefill_from_target: bool,
+) -> None:
     """Pre-fill blank age-config inputs: the as-of date from the assembly, brackets from the target."""
     if not (values["as_of_day"] or values["as_of_month"] or values["as_of_year"]) and first_date is not None:
         values["as_of_day"] = str(first_date.day)
@@ -538,7 +587,7 @@ def _apply_age_prefills(values: dict[str, Any], selected_target: dict[str, Any] 
         values["as_of_year"] = str(first_date.year)
     # While no boundaries have been entered, the target's values own the whole
     # bracket config — so a successful parse overwrites min/max defaults too.
-    if selected_target and not values["boundaries"]:
+    if prefill_from_target and selected_target and not values["boundaries"]:
         prefill = age_prefill_from_target(selected_target["values"])
         if prefill:
             values.update(prefill)
@@ -546,8 +595,15 @@ def _apply_age_prefills(values: dict[str, Any], selected_target: dict[str, Any] 
     values["max_age"] = values["max_age"] or "100"
 
 
-def _build_derived_ctx(assembly_id: uuid.UUID, values: dict[str, Any], target_locked: bool) -> dict[str, Any]:
-    """Everything the derived panel needs: targets, compatible sources, pre-fills and warnings."""
+def _build_derived_ctx(
+    assembly_id: uuid.UUID, values: dict[str, Any], target_locked: bool, prefill_from_target: bool
+) -> dict[str, Any]:
+    """Everything the derived panel needs: targets, compatible sources, pre-fills and warnings.
+
+    ``prefill_from_target`` is for a field being created: only then may the
+    target's value names fill in the bracket config, because only then is
+    there no stored config of the organiser's own to overwrite.
+    """
     uow = bootstrap.get_flask_uow()
     with uow:
         assembly = uow.assemblies.get(assembly_id)
@@ -570,7 +626,7 @@ def _build_derived_ctx(assembly_id: uuid.UUID, values: dict[str, Any], target_lo
     preview_labels: list[str] = []
     mismatch_labels: list[str] = []
     if derivation_type == DerivationType.AGE_BRACKET:
-        _apply_age_prefills(values, selected_target, first_date)
+        _apply_age_prefills(values, selected_target, first_date, prefill_from_target)
         try:
             rule = parse_age_rule(values)
         except ValueError:
@@ -601,9 +657,7 @@ def _build_derived_ctx(assembly_id: uuid.UUID, values: dict[str, Any], target_lo
         "map_rows": map_rows,
         "fallback": DEFAULT_FALLBACK,
         "method_options": [
-            {"value": DerivationType.AGE_BRACKET.value, "label": _("Age brackets")},
-            {"value": DerivationType.SMALL_MAPPING.value, "label": _("Map choices")},
-            {"value": DerivationType.LARGE_MAPPING.value, "label": _("Lookup table")},
+            {"value": method.value, "label": DERIVATION_TYPE_LABELS[method]} for method in DerivationType
         ],
         "method_help": {
             DerivationType.AGE_BRACKET.value: _("From a date of birth or a year of birth"),
@@ -616,14 +670,6 @@ def _build_derived_ctx(assembly_id: uuid.UUID, values: dict[str, Any], target_lo
 # ---------------------------------------------------------------------------
 # Page and fragment rendering.
 # ---------------------------------------------------------------------------
-
-
-def _derivation_type_labels() -> dict[str, str]:
-    return {
-        DerivationType.AGE_BRACKET.value: _("Age brackets"),
-        DerivationType.SMALL_MAPPING.value: _("Map choices"),
-        DerivationType.LARGE_MAPPING.value: _("Lookup table"),
-    }
 
 
 def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
@@ -687,11 +733,13 @@ def _schema_page_context(assembly_id: uuid.UUID) -> dict[str, Any]:
             if group != RespondentFieldGroup.DERIVED
         ],
         "field_type_labels_by_value": {ft.value: FIELD_TYPE_LABELS[ft] for ft in FieldType},
-        "derivation_type_labels": _derivation_type_labels(),
         "on_registration_page_choices": [
-            {"value": FieldOnRegistrationPage.NO.value, "label": _("Not shown")},
-            {"value": FieldOnRegistrationPage.YES_OPTIONAL.value, "label": _("Optional")},
-            {"value": FieldOnRegistrationPage.YES_REQUIRED.value, "label": _("Required")},
+            {"value": member.value, "label": ON_REGISTRATION_PAGE_LABELS[member]}
+            for member in (
+                FieldOnRegistrationPage.NO,
+                FieldOnRegistrationPage.YES_OPTIONAL,
+                FieldOnRegistrationPage.YES_REQUIRED,
+            )
         ],
         "schema_has_rows": schema_has_rows,
         "show_guess_button": show_guess_button,
@@ -887,6 +935,12 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
         return _("A label or field key is required (letters, numbers and underscores)")
     group = _parse_group(request.form.get("group")) or RespondentFieldGroup.OTHER
     if is_modal:
+        if values["type_choice"] == "derived":
+            # The derived panel posts to add-derived. Landing here means the
+            # type picker said Derived but the panel never rendered — with JS
+            # off, Save pressed before the refresh button. Falling through
+            # would quietly create a text field.
+            return _("Choose the target and method for a derived field")
         field_type = _field_type_from_taxonomy(values)
     else:
         field_type = _parse_field_type(request.form.get("field_type")) or FieldType.TEXT
@@ -897,6 +951,8 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
     options = _submitted_options(values) if field_type in CHOICE_TYPES else None
     if field_type in CHOICE_TYPES and not options:
         return _("A choice field needs at least one option")
+    if options and (duplicate_error := _duplicate_option_error(options)):
+        return duplicate_error
 
     try:
         uow = bootstrap.get_flask_uow()
@@ -1071,7 +1127,7 @@ def _try_update_derivation(
                 assembly_id,
                 field.id,
                 label=values["label"].strip() or None,
-                help_text=values["help_text"],
+                help_text=values["help_text"].strip(),
             )
     except FieldDefinitionConflictError as e:
         return None, str(e)
@@ -1300,7 +1356,7 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
     """
     update_kwargs: dict[str, Any] = {
         "label": values["label"].strip() or None,
-        "help_text": values["help_text"],
+        "help_text": values["help_text"].strip(),
     }
     if not field.is_derived:
         update_kwargs["on_registration_page"] = _parse_on_registration_page(values["on_registration_page"])
@@ -1311,6 +1367,8 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
             options = _submitted_options(values)
             if not options:
                 return {}, _("A choice field needs at least one option")
+            if duplicate_error := _duplicate_option_error(options):
+                return {}, duplicate_error
             update_kwargs["options"] = options
     return update_kwargs, ""
 

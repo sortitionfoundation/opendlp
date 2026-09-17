@@ -107,6 +107,7 @@ class TestTheDashboardPage:
 
         assert "Number to select:" in html
         # no charts or tables, and the empty-state copy instead
+        assert "data-pie-chart" not in html
         assert "conic-gradient(" not in html
         assert "No dashboard to display yet." in html
         assert "Set up your targets to get started." in html
@@ -115,7 +116,7 @@ class TestTheDashboardPage:
         html = logged_in_admin.get(f"{_dashboard_url(existing_assembly)}?view=table").get_data(as_text=True)
 
         assert "No dashboard to display yet." in html
-        assert "Target %" not in html
+        assert "Population %" not in html
 
     def test_the_registration_count_excludes_test_and_deleted_respondents(
         self,
@@ -134,11 +135,37 @@ class TestTheDashboardPage:
     def test_target_pie_is_populated_and_later_datasets_are_skeletons(self, logged_in_admin, assembly_with_targets):
         html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
 
-        # Target renders a real pie
+        # Target renders a real pie (a Chart.js canvas), the rest stay CSS skeletons
+        assert "data-pie-chart" in html
         assert "conic-gradient(" in html
+        # The fixture's targets have no population share, so Population is a skeleton
+        assert "Shows the population split once every value has a population share set in the targets." in html
         # Selected / Confirmed render their skeleton messages
         assert "Shows selected data once selection has happened." in html
         assert "Shows confirmed data once at least one selected respondent is confirmed." in html
+
+    def test_population_pie_renders_once_every_value_has_a_share(self, logged_in_admin, fake_store, existing_assembly):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=existing_assembly.id,
+                    name="Gender",
+                    values=[
+                        # Population share and seat band deliberately disagree: the
+                        # Population pie must show 70/30 while Target shows the bands.
+                        TargetValue(value="Male", min=10, max=12, percentage_target=70.0),
+                        TargetValue(value="Female", min=10, max=12, percentage_target=30.0),
+                    ],
+                )
+            )
+            uow.commit()
+
+        html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
+
+        assert ">Population<" in html
+        # The population legend shows the share itself, not a band or a count
+        assert "70.0%" in html
+        assert "Shows the population split once every value has a population share set in the targets." not in html
 
     def test_route_is_reachable_even_when_the_flag_is_off(self, logged_in_admin, existing_assembly):
         # The flag only hides the tab; the route stays reachable by URL.
@@ -149,8 +176,8 @@ class TestTheViewToggle:
     def test_chart_is_the_default_view(self, logged_in_admin, assembly_with_targets):
         html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
         # pies present, table header labels absent
-        assert "conic-gradient(" in html
-        assert "Target %" not in html
+        assert "data-pie-chart" in html
+        assert "Population %" not in html
 
     def test_both_view_links_are_present(self, logged_in_admin, existing_assembly):
         # The toggle is in the header, so it renders regardless of whether there is data.
@@ -161,17 +188,21 @@ class TestTheViewToggle:
     def test_table_view_renders_a_table_not_pies(self, logged_in_admin, assembly_with_targets):
         html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}?view=table").get_data(as_text=True)
         # column headers and a category value row
-        assert "Target %" in html
+        assert "Population %" in html
+        assert "Target (min/max)" in html
         assert "Respondents %" in html
         assert "Confirmed" in html
         assert "Male" in html
-        # no pie charts in the table view
+        # the fixture's targets carry no population share, so the column shows a dash
+        assert "—" in html
+        # no pie charts (canvases or skeletons) in the table view
+        assert "data-pie-chart" not in html
         assert "conic-gradient(" not in html
 
     def test_unknown_view_falls_back_to_chart(self, logged_in_admin, assembly_with_targets):
         html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}?view=bogus").get_data(as_text=True)
-        assert "conic-gradient(" in html
-        assert "Target %" not in html
+        assert "data-pie-chart" in html
+        assert "Population %" not in html
 
 
 class TestTheTabGating:
@@ -191,7 +222,7 @@ class TestThePieChartAtom:
         with app.test_request_context():
             return render_template_string(self._IMPORT + body, **ctx)
 
-    def test_populated_state_draws_a_pie_with_legends(self, app):
+    def test_populated_state_renders_a_chart_canvas(self, app):
         html = self._render(
             app,
             "{{ pie_chart_card('Gender', segments=segments, title_tag='h4') }}",
@@ -202,8 +233,11 @@ class TestThePieChartAtom:
             ],
         )
         assert 'role="img"' in html
-        assert "conic-gradient(" in html
-        # percentages are computed from the counts (10/20 = 50%)
+        assert "<canvas" in html
+        assert "data-pie-chart" in html
+        # percentages are computed from the counts (10/20 = 50%); the same
+        # precomputed "Label pct% (count)" strings feed the aria-label and the
+        # Chart.js tooltips
         assert "Male 50% (10)" in html
         # title_tag is honoured
         assert "<h4" in html
@@ -292,11 +326,35 @@ class TestTheExportButton:
         html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
         assert f"{_dashboard_url(existing_assembly)}/export/modal" not in html
 
-    def test_modal_offers_csv_only(self, logged_in_admin, assembly_with_targets):
+    def test_modal_asks_for_a_destination_url(self, logged_in_admin, assembly_with_targets, monkeypatch):
+        monkeypatch.setattr(
+            "opendlp.entrypoints.blueprints.backoffice.get_service_account_email",
+            lambda: "sheets-writer@example.iam.gserviceaccount.com",
+        )
         html = logged_in_admin.get(f"{_dashboard_url(assembly_with_targets)}/export/modal").get_data(as_text=True)
-        assert 'value="csv" checked' in html
+        assert 'value="csv" x-model="fileType" checked' in html
         assert 'value="xlsx" disabled' in html
-        assert 'value="gsheet" disabled' in html
+        assert 'value="gsheet" x-model="fileType"' in html
+        assert 'name="spreadsheet_url"' in html
+        # the url input is disabled while hidden, so a stale invalid value cannot
+        # silently block the CSV submit via native form validation
+        assert ":disabled=\"fileType !== 'gsheet'\"" in html
+
+    def test_modal_requires_view_permission(self, logged_in_user, existing_assembly):
+        response = logged_in_user.get(
+            f"{_dashboard_url(existing_assembly)}/export/modal",
+            follow_redirects=True,
+        )
+
+        assert b"You don&#39;t have permission to export the dashboard" in response.data
+
+    def test_modal_of_a_missing_assembly_redirects_to_the_dashboard(self, logged_in_admin):
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{uuid.uuid4()}/dashboard/export/modal",
+            follow_redirects=True,
+        )
+
+        assert b"Assembly not found" in response.data
 
     def test_export_requires_manage_permission(self, logged_in_user, existing_assembly):
         response = logged_in_user.post(

@@ -7,12 +7,14 @@ import pytest
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     CHOICE_TYPES,
+    DERIVATION_TYPE_LABELS,
     FIELD_TYPE_LABELS,
     FIXED_FIELD_ON_REGISTRATION_PAGE,
     FIXED_FIELD_TYPES,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
     IN_SCHEMA_FIXED_FIELDS,
+    ON_REGISTRATION_PAGE_LABELS,
     ChoiceOption,
     DerivationType,
     DerivedFieldError,
@@ -239,7 +241,7 @@ class TestRespondentFieldDefinition:
             group=RespondentFieldGroup.OTHER,
             sort_order=10,
         )
-        with pytest.raises(ValueError, match="label cannot be empty"):
+        with pytest.raises(ValueError, match="The label cannot be empty"):
             field.update(label="   ")
 
     def test_equality_by_id(self) -> None:
@@ -533,6 +535,20 @@ class TestFieldType:
     def test_field_type_labels_cover_every_value(self) -> None:
         assert set(FIELD_TYPE_LABELS) == set(FieldType)
 
+    @pytest.mark.parametrize("member", list(FieldOnRegistrationPage))
+    def test_every_on_registration_page_member_has_a_label(self, member: FieldOnRegistrationPage) -> None:
+        assert str(ON_REGISTRATION_PAGE_LABELS[member])
+
+    def test_on_registration_page_labels_cover_every_member(self) -> None:
+        assert set(ON_REGISTRATION_PAGE_LABELS) == set(FieldOnRegistrationPage)
+
+    @pytest.mark.parametrize("member", list(DerivationType))
+    def test_every_derivation_type_has_a_label(self, member: DerivationType) -> None:
+        assert str(DERIVATION_TYPE_LABELS[member])
+
+    def test_derivation_type_labels_cover_every_member(self) -> None:
+        assert set(DERIVATION_TYPE_LABELS) == set(DerivationType)
+
     def test_bool_types_and_choice_types_groupings(self) -> None:
         assert frozenset({FieldType.BOOL, FieldType.BOOL_OR_NONE}) == BOOL_TYPES
         assert frozenset({FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN}) == CHOICE_TYPES
@@ -547,7 +563,7 @@ class TestFieldType:
 
 class TestChoiceOption:
     def test_requires_non_blank_value(self) -> None:
-        with pytest.raises(ValueError, match="value cannot be blank"):
+        with pytest.raises(ValueError, match="An option value cannot be blank"):
             ChoiceOption(value="   ")
 
     def test_defaults_help_text_to_empty(self) -> None:
@@ -582,11 +598,11 @@ class TestRespondentFieldDefinitionTyping:
         assert field.options is None
 
     def test_rejects_choice_without_options(self) -> None:
-        with pytest.raises(ValueError, match="options"):
+        with pytest.raises(ValueError, match="A choice field needs at least one option"):
             self._field(field_type=FieldType.CHOICE_RADIO)
 
     def test_rejects_options_on_non_choice_type(self) -> None:
-        with pytest.raises(ValueError, match="options"):
+        with pytest.raises(ValueError, match="Only a choice field can have options"):
             self._field(field_type=FieldType.TEXT, options=[ChoiceOption(value="a")])
 
     def test_accepts_choice_radio_with_options(self) -> None:
@@ -930,5 +946,5 @@ class TestResyncOptions:
 
     def test_still_validates_the_options_invariant(self) -> None:
         field = self._linked_field()
-        with pytest.raises(ValueError, match="non-empty options"):
+        with pytest.raises(ValueError, match="needs at least one option"):
             field.resync_options([])

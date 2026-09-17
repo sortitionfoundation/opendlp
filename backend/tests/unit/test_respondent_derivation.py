@@ -6,6 +6,7 @@ from datetime import date
 import pytest
 
 from opendlp.domain.respondent_derivation import (
+    MAX_SANE_AGE,
     AgeBracketRule,
     LargeMappingRule,
     SmallMappingRule,
@@ -26,27 +27,27 @@ def _age_rule(**kwargs) -> AgeBracketRule:
 
 class TestAgeBracketRuleValidation:
     def test_min_age_must_be_positive(self) -> None:
-        with pytest.raises(ValueError, match="min_age must be greater than zero"):
+        with pytest.raises(ValueError, match="minimum age must be greater than zero"):
             _age_rule(min_age=0)
-        with pytest.raises(ValueError, match="min_age must be greater than zero"):
+        with pytest.raises(ValueError, match="minimum age must be greater than zero"):
             _age_rule(min_age=-5)
 
     def test_max_age_must_exceed_min_age(self) -> None:
-        with pytest.raises(ValueError, match="max_age must be greater than min_age"):
+        with pytest.raises(ValueError, match="maximum age must be greater than the minimum age"):
             _age_rule(min_age=50, max_age=50)
 
     def test_boundaries_must_be_sorted(self) -> None:
-        with pytest.raises(ValueError, match="boundaries must be sorted"):
+        with pytest.raises(ValueError, match="boundaries must be in ascending order"):
             _age_rule(boundaries=(30, 22))
 
     def test_boundaries_must_be_unique(self) -> None:
-        with pytest.raises(ValueError, match="boundaries must be sorted"):
+        with pytest.raises(ValueError, match="boundaries must be in ascending order"):
             _age_rule(boundaries=(22, 22, 30))
 
     def test_boundaries_must_be_strictly_between_min_and_max(self) -> None:
-        with pytest.raises(ValueError, match="strictly between"):
+        with pytest.raises(ValueError, match="must be between the minimum and maximum age"):
             _age_rule(boundaries=(16, 30))
-        with pytest.raises(ValueError, match="strictly between"):
+        with pytest.raises(ValueError, match="must be between the minimum and maximum age"):
             _age_rule(boundaries=(30, 100))
 
     def test_fallback_cannot_be_blank(self) -> None:
@@ -97,6 +98,17 @@ class TestDeriveFromDate:
 
     def test_implausibly_old_takes_the_fallback(self) -> None:
         assert _age_rule().derive_from_date(date(1899, 1, 1)) == "UNKNOWN"
+
+    def test_exactly_max_sane_age_is_still_a_person(self) -> None:
+        """MAX_SANE_AGE is inclusive: 120 brackets, 121 is read as a typo."""
+        rule = _age_rule()
+        oldest = date(AS_OF.year - MAX_SANE_AGE, AS_OF.month, AS_OF.day)
+        assert rule.derive_from_date(oldest) == "100+"
+        assert rule.derive_from_date(oldest.replace(year=oldest.year - 1)) == "UNKNOWN"
+
+    def test_born_on_the_as_of_date_is_age_zero(self) -> None:
+        """Age 0 is a real age, not a data error - it lands in the under-N bracket."""
+        assert _age_rule().derive_from_date(AS_OF) == "under-16"
 
 
 class TestDeriveFromYear:

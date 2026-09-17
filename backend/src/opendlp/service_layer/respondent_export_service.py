@@ -12,6 +12,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet, default_worksheet_name
 from opendlp.domain.respondent_field_schema import RespondentFieldDefinition
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import GSheetExportKind, RespondentStatus
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InvalidSelection
 from opendlp.service_layer.export_gsheet_config import save_export_gsheet_config
@@ -225,6 +226,10 @@ def export_respondents_to_gsheet(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
+    # Validate the destination URL BEFORE writing: gspread's URL parsing is laxer
+    # than the domain validator, so validating only at config-save time would let
+    # the write clear a tab of a sheet whose URL is then rejected.
+    GoogleSpreadsheetURLValidator().validate_str(spreadsheet_url.strip())
     worksheet_name = worksheet_name.strip() or default_worksheet_name(EXPORT_KIND)
     assembly = _load_assembly(uow, assembly_id)
 

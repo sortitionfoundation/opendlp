@@ -314,7 +314,7 @@ def update_field(
     field = uow.respondent_field_definitions.get(field_id)
     if field is None or field.assembly_id != assembly_id:
         raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-    if field_type is not None:
+    if field_type is not None and field_type != field.field_type:
         dependents = derivations_depending_on(uow, assembly_id, field.field_key)
         if dependents:
             raise FieldDefinitionConflictError(
@@ -324,6 +324,11 @@ def update_field(
                     deps=", ".join(f.field_key for f in dependents),
                 )
             )
+    removed_values: set[str] = set()
+    if options is not _UNSET_OPTIONS:
+        kept = {o.value for o in options or []}
+        removed_values = {o.value for o in field.options or [] if o.value not in kept}
+        _refuse_emptying_small_mappings(uow, assembly_id, field.field_key, removed_values)
     try:
         field.update(
             label=label,
@@ -347,6 +352,10 @@ def update_field(
                 "unlink it on the target data sources step first"
             )
         ) from exc
+    if removed_values:
+        # Options replaced wholesale drop mapping keys the same way removing
+        # them one at a time does; a key that can never match again is stale.
+        _drop_small_mapping_keys(uow, assembly_id, field.field_key, removed_values)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -531,19 +540,45 @@ def _rename_small_mapping_keys(
         )
 
 
+def _refuse_emptying_small_mappings(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    source_field_key: str,
+    values_to_remove: set[str],
+) -> None:
+    """A small mapping cannot be left empty, so its last mapped source options stay put.
+
+    Mirrors the "keep at least one option" rule on the source itself: the
+    organiser changes the derivation first, then tidies the source.
+    """
+    for dependent in derivations_depending_on(uow, assembly_id, source_field_key):
+        if dependent.derivation_type != DerivationType.SMALL_MAPPING or dependent.derivation_config is None:
+            continue
+        mapping = dependent.derivation_config.get("mapping", {})
+        if mapping and set(mapping) <= values_to_remove:
+            raise FieldDefinitionConflictError(
+                _l(
+                    "'%(value)s' is the last option mapped by '%(key)s'. Change that derivation first.",
+                    value=", ".join(sorted(set(mapping))),
+                    key=dependent.field_key,
+                )
+            )
+
+
 def _drop_small_mapping_keys(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
     source_field_key: str,
-    value: str,
+    values: set[str],
 ) -> None:
     for dependent in derivations_depending_on(uow, assembly_id, source_field_key):
         if dependent.derivation_type != DerivationType.SMALL_MAPPING or dependent.derivation_config is None:
             continue
         mapping = dict(dependent.derivation_config.get("mapping", {}))
-        if value not in mapping:
+        if not values & set(mapping):
             continue
-        del mapping[value]
+        for value in values:
+            mapping.pop(value, None)
         dependent.set_derivation(
             derivation_type=dependent.derivation_type,
             derivation_config={**dependent.derivation_config, "mapping": mapping},
@@ -572,10 +607,11 @@ def remove_choice_option(
         raise FieldDefinitionNotFoundError(f"Option '{value}' not found on field {field_id}")
     if not remaining:
         raise FieldDefinitionConflictError(_l("A choice field must keep at least one option"))
+    _refuse_emptying_small_mappings(uow, assembly_id, field.field_key, {value})
     field.update(options=remaining)
     # A mapping entry keyed on the removed option can never match again; drop
     # it so the config mirrors the source's real option set.
-    _drop_small_mapping_keys(uow, assembly_id, field.field_key, value)
+    _drop_small_mapping_keys(uow, assembly_id, field.field_key, {value})
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 

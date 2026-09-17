@@ -685,6 +685,22 @@ class TestDerivationOnWritePaths:
 
         assert respondent.attributes["age_bracket"] == "16-21"
 
+    def test_update_respondent_falls_back_when_source_edit_cannot_derive(self, uow):
+        user, assembly, respondent = _seed(uow)
+        self._add_dob_and_bracket(uow, assembly)
+        respondent.attributes = {"date_of_birth": "1990-06-15", "age_bracket": "30-54"}
+
+        respondent_service.update_respondent(
+            uow,
+            user.id,
+            assembly.id,
+            respondent.id,
+            comment="date of birth unknown after all",
+            attributes={"date_of_birth": "not a date"},
+        )
+
+        assert respondent.attributes["age_bracket"] == "UNKNOWN"
+
     def test_import_batch_lookup_is_one_query_not_one_per_row(self, uow, monkeypatch):
         user, assembly, _ = _seed(uow)
         self._add_postcode_and_region(uow, assembly)

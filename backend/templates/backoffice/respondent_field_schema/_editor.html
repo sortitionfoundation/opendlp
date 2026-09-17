@@ -64,7 +64,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                                     {% if field.is_derived %}
                                         <div class="text-body-sm">
                                             {{ _("Derived from %(source)s", source=(field.derived_from or []) | join(", ")) }}
-                                            {% if field.derivation_type %}· {{ derivation_type_labels[field.derivation_type.value] }}{% endif %}
+                                            {% if field.derivation_type %}· {{ derivation_type_labels[field.derivation_type] }}{% endif %}
                                         </div>
                                     {% else %}
                                         <div class="text-body-sm">{{ field_type_labels_by_value[field.effective_field_type.value] }}</div>
@@ -99,16 +99,16 @@ ABOUTME: Swapped wholesale over HTMX after modal saves and section moves; includ
                                                 <strong class="govuk-tag govuk-tag--green">{{ _("Feeds target: %(name)s", name=linked_target_names[field.id]) }}</strong>
                                             </a>
                                         {% endif %}
-                                        {% if field.is_derived %}
-                                            <strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>
-                                            <strong class="govuk-tag govuk-tag--grey">{{ _("Not on form") }}</strong>
-                                        {% elif field.on_registration_page.value == "yes_required" %}
-                                            <strong class="govuk-tag govuk-tag--blue">{{ _("Required") }}</strong>
+                                        {% if field.is_derived %}<strong class="govuk-tag govuk-tag--yellow">{{ _("Derived") }}</strong>{% endif %}
+                                        {# A derived field is always off the registration page, so it shows the "no" chip. #}
+                                        {% if field.on_registration_page.value == "yes_required" %}
+                                            {% set chip_class = "govuk-tag--blue" %}
                                         {% elif field.on_registration_page.value == "yes_optional" %}
-                                            <strong class="govuk-tag govuk-tag--turquoise">{{ _("Optional") }}</strong>
+                                            {% set chip_class = "govuk-tag--turquoise" %}
                                         {% else %}
-                                            <strong class="govuk-tag govuk-tag--grey">{{ _("Not on form") }}</strong>
+                                            {% set chip_class = "govuk-tag--grey" %}
                                         {% endif %}
+                                        <strong class="govuk-tag {{ chip_class }}">{{ on_registration_page_labels[field.on_registration_page] }}</strong>
                                     </div>
                                 </td>
                                 <td class="py-3 pr-4 align-top">

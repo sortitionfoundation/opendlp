@@ -2,6 +2,7 @@
 ABOUTME: Exercises exact-copy and age-ranges set-up, and the force-unlink confirmation, via Playwright"""
 
 import uuid
+from datetime import UTC, datetime
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -132,7 +133,8 @@ def set_up_age_ranges(admin_logged_in_page: Page, target_name: str, source_key: 
     expect(page.locator('input[name="boundaries"]')).to_have_value("25", timeout=PLAYWRIGHT_TIMEOUT)
     page.fill('input[name="as_of_day"]', "1")
     page.fill('input[name="as_of_month"]', "6")
-    page.fill('input[name="as_of_year"]', "2026")
+    # The as-of year must be within a year of today, so never hard-code it.
+    page.fill('input[name="as_of_year"]', str(datetime.now(UTC).year))
     page.get_by_role("button", name="Save").click()
 
 

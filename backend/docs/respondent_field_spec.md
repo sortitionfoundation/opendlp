@@ -129,6 +129,7 @@ describe a field the app does not have.
 | `choice_dropdown` | one of `options[].value`, matched exactly                      |
 | `integer`         | digits                                                         |
 | `email`           | an email address                                               |
+| `date`            | `yyyy-mm-dd` (ISO) or `dd/mm/yyyy`; stored as the ISO string   |
 
 **Booleans.** Only the five fixed fields (`eligible`, `can_attend`, `consent`,
 `stay_on_db`, plus `email` which is a string) are lifted out of the CSV row into
