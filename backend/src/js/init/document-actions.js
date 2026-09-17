@@ -28,8 +28,10 @@ export function downloadBackupCodes() {
 export function initDocumentActions() {
   // Handle button clicks for confirmations and print
   document.addEventListener("click", function (e) {
-    // Check for confirmation
-    const confirmMsg = e.target.dataset.confirm;
+    // Check for confirmation. closest() rather than the target itself: the
+    // click often lands on the button's label span, not the button.
+    const confirmElement = e.target.closest("[data-confirm]");
+    const confirmMsg = confirmElement ? confirmElement.dataset.confirm : "";
     if (confirmMsg && !confirm(confirmMsg)) {
       e.preventDefault();
       return;
