@@ -148,6 +148,26 @@ def set_up_age_ranges(admin_logged_in_page: Page, target_name: str, source_key: 
     page.get_by_role("button", name="Save").click()
 
 
+@when(parsers.parse('I open the more actions menu for the "{target_name}" target'))
+def open_more_actions(admin_logged_in_page: Page, target_name: str) -> None:
+    page = admin_logged_in_page
+    _row_for(page, target_name).get_by_role("button", name=f"More actions for {target_name}").click()
+    expect(_row_for(page, target_name).get_by_role("menu")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I press Escape")
+def press_escape(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.keyboard.press("Escape")
+
+
+@when(parsers.parse('I choose "{item}" from the menu and confirm'))
+def choose_menu_item_and_confirm(admin_logged_in_page: Page, item: str) -> None:
+    page = admin_logged_in_page
+    page.once("dialog", lambda dialog: dialog.accept())
+    with page.expect_response(lambda r: r.request.method == "POST"):
+        page.get_by_role("menuitem", name=item).click()
+
+
 @when(parsers.parse('I rename the "{old_name}" target to "{new_name}" on the targets page'))
 def rename_target(admin_logged_in_page: Page, old_name: str, new_name: str, request) -> None:
     page = admin_logged_in_page
@@ -192,6 +212,19 @@ def see_warning_toast(admin_logged_in_page: Page, text: str) -> None:
     expect(toast).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     expect(toast).to_have_attribute("style", re.compile(r"--color-warning-100"), timeout=PLAYWRIGHT_TIMEOUT)
     expect(_setup_dialog(admin_logged_in_page)).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the more actions menu for the "{target_name}" target should be closed'))
+def more_actions_closed(admin_logged_in_page: Page, target_name: str) -> None:
+    expect(_row_for(admin_logged_in_page, target_name).get_by_role("menu")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the target data sources should still be open")
+def target_sources_still_open(admin_logged_in_page: Page) -> None:
+    """Escape in the menu must not also close the step dialog around it."""
+    page = admin_logged_in_page
+    expect(page.get_by_role("dialog", name="Target data sources")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    assert page.url.endswith("/target-sources")
 
 
 @then("I should be asked to confirm unlinking")

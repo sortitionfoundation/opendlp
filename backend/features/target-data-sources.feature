@@ -35,3 +35,17 @@ Feature: Target data sources
     When I confirm the unlinking
     And I open the target data sources for "Force Unlink Demo"
     Then the "Areas" target row should say "No data source"
+
+  Scenario: Unlinking from a row's more actions menu
+    Given there is an assembly with respondents imported from CSV called "Menu Unlink Demo"
+    And the assembly "Menu Unlink Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Menu Unlink Demo"
+    And I set up the "Region" target as an exact copy
+    And I open the more actions menu for the "Region" target
+    And I press Escape
+    Then the more actions menu for the "Region" target should be closed
+    And the target data sources should still be open
+    When I open the more actions menu for the "Region" target
+    And I choose "Unlink" from the menu and confirm
+    Then the "Region" target row should say "isn't linked to it yet"

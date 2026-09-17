@@ -3,6 +3,7 @@ ABOUTME: The per-target checklist fragment — one row per target category with 
 ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors the database
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_more_vert %}
 {# oob=true marks the fragment for an out-of-band swap: HTMX replaces #target-sources-list
    in place while the (otherwise empty) response body clears #ts-modal-container,
    closing whichever modal triggered the mutation. #}
@@ -50,22 +51,15 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
                             {% if status.state in (TargetSourceState.LINKED_EXACT, TargetSourceState.LINKED_DERIVED) %}
+                                {% set is_large_mapping = status.field.derivation_type is not none and status.field.derivation_type.value == "large_mapping" %}
+                                {% set upload_url = url_for('target_sources.upload_modal', assembly_id=assembly.id, category_id=category.id) %}
+                                {% set upload_attrs = 'hx-get="' ~ upload_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"' %}
                                 {{ button(_("Edit") , variant="secondary", href=setup_url, classes="target-source-row__open",
                                 attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
-                                {% if status.field.derivation_type is not none and status.field.derivation_type.value == "large_mapping" %}
-                                    {% set upload_url = url_for('target_sources.upload_modal', assembly_id=assembly.id, category_id=category.id) %}
-                                    {{ button(_("Upload table") , variant="secondary", href=upload_url,
-                                    attrs='hx-get="' ~ upload_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
-                                {% endif %}
-                                {% if status.state == TargetSourceState.LINKED_DERIVED %}
-                                    <form method="post"
-                                          action="{{ url_for('target_sources.recompute_view', assembly_id=assembly.id, category_id=category.id) }}"
-                                          hx-post="{{ url_for('target_sources.recompute_view', assembly_id=assembly.id, category_id=category.id) }}"
-                                          hx-target="#ts-modal-container"
-                                          hx-swap="innerHTML">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        {{ button(_("Recompute") , type="submit", variant="secondary") }}
-                                    </form>
+                                {# Until its lookup table is uploaded a postcode mapping cannot work, so the
+                                   first upload stays in view; replacing the table goes in the menu. #}
+                                {% if is_large_mapping and not status.mapping_row_count %}
+                                    {{ button(_("Upload table") , variant="secondary", href=upload_url, attrs=upload_attrs) }}
                                 {% endif %}
                                 {% if status.stale and (status.field.derivation_type is none or status.field.derivation_type.value != "age_bracket") %}
                                     <form method="post"
@@ -77,15 +71,64 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                         {{ button(_("Re-sync from target") , type="submit", variant="secondary") }}
                                     </form>
                                 {% endif %}
-                                <form method="post"
-                                      action="{{ url_for('target_sources.unlink_view', assembly_id=assembly.id, category_id=category.id) }}"
-                                      hx-post="{{ url_for('target_sources.unlink_view', assembly_id=assembly.id, category_id=category.id) }}"
-                                      hx-target="#ts-modal-container"
-                                      hx-swap="innerHTML">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    {{ button(_("Unlink") , type="submit", variant="secondary",
-                                    attrs='data-confirm="' ~ (_("Unlink this question from its target? The question stays on the registration page, but edits to it will no longer be checked against the target.") | e) ~ '"') }}
-                                </form>
+                                {# The less common row actions, behind a "more" menu. Same open/close and
+                                   ARIA behaviour as the dropdown_button component, but mixing link and
+                                   submit items. Escape is bound on this element, not window, so it closes
+                                   only the menu and not the step dialog around it. Item text is bare (no
+                                   inner span) so data-confirm, which reads the click target, sees the
+                                   button itself. #}
+                                <div class="target-source-row__menu relative inline-flex"
+                                     x-data="rowActionsMenu"
+                                     x-bind:class="open ? 'is-open' : ''"
+                                     @keydown.escape="closeOnEscape">
+                                    {{ button(variant="icon",
+                                    icon=icon_more_vert(classes="w-4 h-4"),
+                                    id="ts-actions-" ~ category.id ~ "-toggle",
+                                    aria_label=_("More actions for %(name)s", name=category.name),
+                                    aria_haspopup="menu",
+                                    attrs='x-ref="menuToggle" @click="toggleMenu()" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="ts-actions-' ~ category.id ~ '-menu"') }}
+                                    <div x-show="open"
+                                         x-cloak
+                                         id="ts-actions-{{ category.id }}-menu"
+                                         role="menu"
+                                         aria-labelledby="ts-actions-{{ category.id }}-toggle"
+                                         class="menu menu--right"
+                                         style="min-width: 12rem;">
+                                        {% if is_large_mapping and status.mapping_row_count %}
+                                            <a role="menuitem"
+                                               class="menu-item"
+                                               href="{{ upload_url }}"
+                                               @click="closeMenu()"
+                                               {{ upload_attrs | safe }}>{{ _("Re-upload table") }}</a>
+                                        {% endif %}
+                                        {% if status.state == TargetSourceState.LINKED_DERIVED %}
+                                            {# role="none": a form is not a valid child of role="menu" - the
+                                               menuitem is the submit button inside it #}
+                                            <form method="post"
+                                                  role="none"
+                                                  action="{{ url_for('target_sources.recompute_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                                  hx-post="{{ url_for('target_sources.recompute_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                                  hx-target="#ts-modal-container"
+                                                  hx-swap="innerHTML">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" role="menuitem" class="menu-item" @click="closeMenu()">{{ _("Recompute") }}</button>
+                                            </form>
+                                        {% endif %}
+                                        <form method="post"
+                                              role="none"
+                                              action="{{ url_for('target_sources.unlink_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                              hx-post="{{ url_for('target_sources.unlink_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                              hx-target="#ts-modal-container"
+                                              hx-swap="innerHTML">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit"
+                                                    role="menuitem"
+                                                    class="menu-item"
+                                                    @click="closeMenu()"
+                                                    data-confirm="{{ _('Unlink this question from its target? The question stays on the registration page, but edits to it will no longer be checked against the target.') }}">{{ _("Unlink") }}</button>
+                                        </form>
+                                    </div>
+                                </div>
                             {% elif status.state == TargetSourceState.MATCHED_NOT_LINKED %}
                                 <form method="post"
                                       action="{{ url_for('target_sources.adopt_view', assembly_id=assembly.id, category_id=category.id) }}"

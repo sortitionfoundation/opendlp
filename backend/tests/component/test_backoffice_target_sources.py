@@ -597,6 +597,80 @@ class TestRowActions:
         assert re.search(r'id="floating-alerts"\s+hx-swap-oob="beforeend"', body)
         assert "Respondents recomputed" not in body
 
+    def _row_actions(self, logged_in_admin, assembly):
+        """Each row's (buttons outside the menu, items inside it), as text; items is None with no menu."""
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/target-sources").get_data(as_text=True)
+        rows = re.findall(r'<li class="target-source-row[^"]*">(.*?)</li>', body, re.DOTALL)
+        actions = []
+        for row in rows:
+            visible, _sep, menu = row.partition('role="menu"')
+            actions.append((
+                re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", visible)),
+                re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", menu)) if menu else None,
+            ))
+        return actions
+
+    def test_unlink_sits_in_the_more_actions_menu(self, logged_in_admin, existing_assembly, fake_store):
+        self._linked_exact(fake_store, existing_assembly)
+
+        [(visible, menu)] = self._row_actions(logged_in_admin, existing_assembly)
+
+        assert "Edit" in visible
+        assert "Unlink" not in visible
+        assert "Unlink" in menu
+        assert "Recompute" not in menu
+        assert "upload" not in menu.lower()
+
+    def test_a_derived_row_puts_recompute_in_the_menu_too(self, logged_in_admin, existing_assembly, fake_store):
+        self._linked_age_bracket(fake_store, existing_assembly)
+
+        [(visible, menu)] = self._row_actions(logged_in_admin, existing_assembly)
+
+        assert "Edit" in visible
+        assert "Recompute" not in visible
+        assert "Recompute" in menu
+        assert "Unlink" in menu
+
+    def test_the_first_lookup_table_upload_stays_out_of_the_menu(self, logged_in_admin, existing_assembly, fake_store):
+        TestMappingUpload()._linked_large_mapping(fake_store, existing_assembly)
+
+        [(visible, menu)] = self._row_actions(logged_in_admin, existing_assembly)
+
+        assert "Upload table" in visible
+        assert "upload" not in menu.lower()
+
+    def test_replacing_an_uploaded_lookup_table_is_in_the_menu(self, logged_in_admin, existing_assembly, fake_store):
+        category, _field = TestMappingUpload()._linked_large_mapping(fake_store, existing_assembly)
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            data={"mapping_file": (io.BytesIO(b"Postcode,Region\nSW1A 1AA,North\n"), "mapping.csv")},
+            content_type="multipart/form-data",
+            headers=HTMX,
+        )
+
+        [(visible, menu)] = self._row_actions(logged_in_admin, existing_assembly)
+
+        assert "Upload table" not in visible
+        assert "Re-upload table" in menu
+
+    def test_set_up_actions_are_never_in_a_menu(self, logged_in_admin, existing_assembly, fake_store):
+        _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+        _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "gender",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+        )
+        actions = self._row_actions(logged_in_admin, existing_assembly)
+
+        assert sorted(("Link it" in visible, "Set up" in visible) for visible, _menu in actions) == [
+            (False, True),
+            (True, True),
+        ]
+        assert all(menu is None for _visible, menu in actions)
+
     def test_unknown_category_404s_politely(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/target-sources/{uuid.uuid4()}/unlink",

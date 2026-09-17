@@ -956,6 +956,17 @@
         z-index: 1;
     }
 
+    /* The "more actions" wrapper sits above the stretched link like the other
+       buttons. Once open, its menu has to paint over the rows below, whose
+       buttons are lifted too and come later in the page, so it goes higher. */
+    .target-source-row__menu {
+        z-index: 1;
+    }
+
+    .target-source-row__menu.is-open {
+        z-index: 2;
+    }
+
     /* ========================================
        BREADCRUMB COMPONENT STYLES
        Navigation trail with CSS-based separators
