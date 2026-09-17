@@ -156,6 +156,21 @@ class TestQuestionsList:
         assert 'aria-label="Remove' not in rows["email"]
         assert 'aria-label="Remove Custom notes"' in rows["custom_notes"]
 
+    def test_a_question_alone_in_its_section_has_no_empty_menu(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        schema = _get_schema(fake_store, admin_user, existing_assembly)
+        postcode = next(f for f in schema if f.field_key == "postcode")
+        assert [f.field_key for f in schema if f.group == postcode.group] == ["postcode"]
+
+        rows = self._rows(self._page(logged_in_admin, existing_assembly))
+
+        # Nothing to move and nothing derived: no kebab that opens onto nothing
+        assert 'role="menu"' not in rows["postcode"]
+        assert "More actions for" not in rows["postcode"]
+        assert 'role="menu"' in rows["first_name"]
+
     def test_moves_are_in_the_row_menu_and_only_where_they_can_go(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
