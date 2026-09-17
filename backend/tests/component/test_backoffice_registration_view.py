@@ -514,6 +514,23 @@ class TestRegistrationListView:
         assert response.status_code == 200
         assert f"/backoffice/assembly/{assembly_id}/registration/create" in response.get_data(as_text=True)
 
+    def test_empty_assembly_shows_the_illustrated_empty_state(self, logged_in_admin, fake_store, assembly_id):
+        empty_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
+        populated_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        illustration = "/static/img/illustrations/no-registration-page.svg"
+        assert illustration in empty_body
+        assert "No registration page created yet" in empty_body
+        assert illustration not in populated_body
+        assert "No registration page created yet" not in populated_body
+
+    def test_empty_state_illustration_is_served(self, logged_in_admin):
+        response = logged_in_admin.get("/static/img/illustrations/no-registration-page.svg")
+
+        assert response.status_code == 200
+        assert response.mimetype == "image/svg+xml"
+
     def test_close_action_offered_only_for_published_pages(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
