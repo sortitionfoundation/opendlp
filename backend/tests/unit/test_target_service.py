@@ -8,15 +8,18 @@ import pytest
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    DerivationType,
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
+    humanise_field_key,
 )
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import target_csv_import, target_service
-from opendlp.service_layer.exceptions import InsufficientPermissions
+from opendlp.service_layer.exceptions import FieldDefinitionConflictError, InsufficientPermissions
 from opendlp.service_layer.target_service import (
     TargetCategoryEdit,
     TargetLinkedError,
@@ -239,6 +242,98 @@ class TestTargetLinkedGuards:
 
         assert uow.target_categories.get(category.id) is None
         assert field.target_category_id is None
+
+    def _derived_category(self, uow, assembly, name="Region"):
+        """A target fed by a computed field, which is in turn computed from a question."""
+        category = TargetCategory(
+            assembly_id=assembly.id,
+            name=name,
+            values=[TargetValue(value="North", min=1, max=5), TargetValue(value="South", min=1, max=5)],
+        )
+        uow.target_categories.add(category)
+        uow.respondent_field_definitions.add(
+            RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="postcode",
+                label="Postcode",
+                group=RespondentFieldGroup.ADDRESS,
+                sort_order=10,
+                field_type=FieldType.TEXT,
+            )
+        )
+        derived = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key=name,
+            label=humanise_field_key(name),
+            group=RespondentFieldGroup.DERIVED,
+            sort_order=20,
+            is_derived=True,
+            derived_from=["postcode"],
+            derivation_type=DerivationType.LARGE_MAPPING,
+            derivation_config={"fallback": "UNKNOWN"},
+            field_type=FieldType.CHOICE_DROPDOWN,
+            options=[ChoiceOption(value="North"), ChoiceOption(value="South")],
+            target_category_id=category.id,
+        )
+        uow.respondent_field_definitions.add(derived)
+        respondent = Respondent(
+            assembly_id=assembly.id, external_id="r1", attributes={"postcode": "E1 6AN", name: "North"}
+        )
+        uow.respondents.add(respondent)
+        return category, derived, respondent
+
+    def test_renaming_a_target_carries_its_computed_field_along(self, uow, admin, assembly):
+        """Selection pairs a target with its data by name, so the key has to follow the rename."""
+        category, derived, respondent = self._derived_category(uow, assembly)
+
+        # No confirmation: nothing is unlinked and nothing is lost.
+        target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="Area")
+
+        assert category.name == "Area"
+        assert derived.field_key == "Area"
+        assert derived.label == "Area"
+        assert derived.target_category_id == category.id
+        assert respondent.attributes == {"postcode": "E1 6AN", "Area": "North"}
+
+    def test_renaming_a_target_onto_an_existing_question_saves_nothing(self, uow, admin, assembly):
+        category, derived, _respondent = self._derived_category(uow, assembly)
+
+        with pytest.raises(FieldDefinitionConflictError, match="already exists"):
+            target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="postcode")
+
+        assert category.name == "Region"
+        assert derived.field_key == "Region"
+
+    def test_deleting_a_target_deletes_the_computed_field_that_fed_it(self, uow, admin, assembly):
+        category, derived, respondent = self._derived_category(uow, assembly)
+
+        with pytest.raises(TargetLinkedError) as excinfo:
+            target_service.delete_target_category(uow, admin.id, assembly.id, category.id)
+        (block,) = excinfo.value.blocks
+        # The confirmation separates what is unlinked from what is deleted
+        assert block.field_labels == []
+        assert block.deleted_labels == ["Region"]
+
+        target_service.delete_target_category(uow, admin.id, assembly.id, category.id, force_unlink=True)
+
+        assert uow.respondent_field_definitions.get(derived.id) is None
+        assert respondent.attributes == {"postcode": "E1 6AN"}
+        # The question it was computed from stays behind
+        assert uow.respondent_field_definitions.get_by_assembly_and_key(assembly.id, "postcode") is not None
+
+    def test_a_bulk_rename_that_only_carries_computed_fields_asks_nothing(self, uow, admin, assembly):
+        """Nothing is unlinked and nothing is lost, so there is nothing to confirm."""
+        region, _derived, _respondent = self._derived_category(uow, assembly, "Region")
+        gender, _field = self._linked_category(uow, assembly, "Gender")
+
+        edits = [
+            TargetCategoryEdit(category_id=region.id, name="Area"),
+            TargetCategoryEdit(category_id=gender.id, name="Sex"),
+        ]
+        with pytest.raises(TargetLinkedError) as excinfo:
+            target_service.save_all_targets(uow, admin.id, assembly.id, edits)
+
+        assert [block.category_name for block in excinfo.value.blocks] == ["Gender"]
 
     def test_bulk_save_collects_every_blocked_category_at_once(self, uow, admin, assembly):
         gender, _f1 = self._linked_category(uow, assembly, "Gender")

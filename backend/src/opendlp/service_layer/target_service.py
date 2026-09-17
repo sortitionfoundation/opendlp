@@ -31,6 +31,7 @@ from .exceptions import (
     UserNotFoundError,
 )
 from .permissions import can_manage_assembly, can_view_assembly
+from .respondent_field_schema_service import delete_derived_field, rename_derived_field
 from .respondent_service import get_respondent_attribute_columns, get_respondent_attribute_value_counts
 from .unit_of_work import AbstractUnitOfWork
 
@@ -111,12 +112,18 @@ class TargetEditError:
 
 @dataclass(frozen=True)
 class LinkedFieldBlock:
-    """One category whose rename or delete is held up by the fields feeding it."""
+    """One category whose rename or delete is held up by the fields feeding it.
+
+    ``field_labels`` are questions that will be unlinked and stay behind;
+    ``deleted_labels`` are derived fields that go with the target, which only
+    happens when the target itself is deleted.
+    """
 
     category_id: uuid.UUID
     category_name: str
     action: str  # "rename" or "delete"
     field_labels: list[str]
+    deleted_labels: list[str] = field(default_factory=list)
 
 
 class TargetLinkedError(ServiceLayerError):
@@ -147,9 +154,23 @@ def fields_linked_to_category(uow: AbstractUnitOfWork, category: TargetCategory)
     ]
 
 
-def _unlink_fields(uow: AbstractUnitOfWork, category: TargetCategory) -> None:
+def _break_links(uow: AbstractUnitOfWork, category: TargetCategory, new_name: str = "") -> None:
+    """Deal with the fields feeding a category that is being renamed or deleted.
+
+    A question someone answers is unlinked and stays behind, freely editable. A
+    derived field has no life of its own — no screen lists one — so it follows
+    its target: re-keyed when the target is renamed (``new_name``), deleted when
+    the target is. Left behind it would be invisible and unreachable, while
+    still filling a column of the respondent export.
+    """
     now = datetime.now(UTC)
     for field_def in fields_linked_to_category(uow, category):
+        if field_def.is_derived:
+            if new_name:
+                rename_derived_field(uow, category.assembly_id, field_def, new_name)
+            else:
+                delete_derived_field(uow, category.assembly_id, field_def)
+            continue
         field_def.target_category_id = None
         field_def.updated_at = now
 
@@ -159,8 +180,21 @@ def _linked_block(category: TargetCategory, action: str, linked: list[Any]) -> L
         category_id=category.id,
         category_name=category.name,
         action=action,
-        field_labels=[field_def.label for field_def in linked],
+        field_labels=[field_def.label for field_def in linked if not field_def.is_derived],
+        deleted_labels=[field_def.label for field_def in linked if field_def.is_derived],
     )
+
+
+def _needs_confirmation(action: str, linked: list[Any]) -> bool:
+    """Whether this rename or delete has a consequence worth stopping for.
+
+    A rename carries its derived fields along, so only the questions that would
+    be unlinked are worth asking about; a delete takes the derived fields with
+    it, which always is.
+    """
+    if action == "delete":
+        return bool(linked)
+    return any(not field_def.is_derived for field_def in linked)
 
 
 class TargetsNotSaved(ServiceLayerError):
@@ -344,10 +378,10 @@ def update_target_category(
 
     if name.strip() != category.name:
         linked = fields_linked_to_category(uow, category)
-        if linked and not force_unlink:
+        if _needs_confirmation("rename", linked) and not force_unlink:
             raise TargetLinkedError([_linked_block(category, "rename", linked)])
         if linked:
-            _unlink_fields(uow, category)
+            _break_links(uow, category, new_name=name.strip())
 
     category.name = name.strip()
     category.comment = validate_comment(comment)
@@ -394,7 +428,7 @@ def delete_target_category(
     if linked and not force_unlink:
         raise TargetLinkedError([_linked_block(category, "delete", linked)])
     if linked:
-        _unlink_fields(uow, category)
+        _break_links(uow, category)
 
     uow.target_categories.delete(category)
 
@@ -781,7 +815,8 @@ def _guard_linked_categories(
     cover the whole submission instead of one round trip per category.
     """
     blocks: list[LinkedFieldBlock] = []
-    to_unlink: list[TargetCategory] = []
+    # Each category paired with the name it is taking, or "" when it is going.
+    to_break: list[tuple[TargetCategory, str]] = []
     for category_edit in edits:
         if category_edit.category_id is None:
             continue
@@ -795,12 +830,13 @@ def _guard_linked_categories(
         linked = fields_linked_to_category(uow, category)
         if not linked:
             continue
-        blocks.append(_linked_block(category, action, linked))
-        to_unlink.append(category)
+        if _needs_confirmation(action, linked):
+            blocks.append(_linked_block(category, action, linked))
+        to_break.append((category, "" if action == "delete" else category_edit.name.strip()))
     if blocks and not force_unlink:
         raise TargetLinkedError(blocks)
-    for category in to_unlink:
-        _unlink_fields(uow, category)
+    for category, new_name in to_break:
+        _break_links(uow, category, new_name=new_name)
 
 
 def _save_one_category(

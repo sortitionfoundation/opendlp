@@ -47,6 +47,7 @@ from opendlp.service_layer.exceptions import (
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
+from opendlp.service_layer.respondent_field_schema_service import delete_derived_field
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns
 from opendlp.translations import lazy_gettext as _l
 
@@ -578,11 +579,14 @@ def unlink(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     target_category_id: uuid.UUID,
-) -> list[RespondentFieldDefinition]:
+) -> tuple[list[RespondentFieldDefinition], list[RespondentFieldDefinition]]:
     """Break the link between a target category and its fields.
 
-    The fields stay, fully editable again (a derivation, if any, keeps
-    running); only the link goes. Returns the unlinked fields.
+    A question someone answers stays, fully editable again; only the link goes.
+    A derived field is deleted, along with its lookup table and the values it
+    wrote: it exists only to feed this target, and no screen lists one that
+    feeds nothing. Returns the unlinked questions and the deleted derived
+    fields, as detached copies.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -591,7 +595,12 @@ def unlink(
     if category is None or category.assembly_id != assembly_id:
         raise NotFoundError(f"Target category {target_category_id} not found")
     unlinked = []
+    deleted = []
     for field in _fields_linked_to(uow, category):
+        if field.is_derived:
+            deleted.append(field.create_detached_copy())
+            delete_derived_field(uow, assembly_id, field)
+            continue
         field.target_category_id = None
         unlinked.append(field.create_detached_copy())
-    return unlinked
+    return unlinked, deleted

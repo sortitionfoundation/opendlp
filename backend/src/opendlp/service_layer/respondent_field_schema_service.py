@@ -644,6 +644,69 @@ def reorder_group(
         field.updated_at = now
 
 
+def delete_derived_field(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    field: RespondentFieldDefinition,
+) -> None:
+    """Delete a derived field, its lookup table and the values it wrote on respondents.
+
+    A derived field is the plumbing of the target it feeds: no screen lists one,
+    so a derived field with no target can never be reached again. Its values go
+    with it — left behind, they would keep filling a column of the respondent
+    export that no question on any page explains.
+
+    Permission is the caller's to check; this runs inside flows that already have.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    uow.respondent_field_mapping_entries.delete_all_for_field(field.id)
+    for respondent in uow.respondents.get_by_assembly_id(assembly_id):
+        if field.field_key not in respondent.attributes:
+            continue
+        # Reassign rather than mutate so the JSON column change is detected.
+        respondent.attributes = {k: v for k, v in respondent.attributes.items() if k != field.field_key}
+    uow.respondent_field_definitions.delete(field)
+
+
+def rename_derived_field(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    field: RespondentFieldDefinition,
+    new_field_key: str,
+) -> None:
+    """Re-key a derived field, and the values it wrote, so it still matches its target.
+
+    Selection pairs a target with respondent data by name, so a derived field's
+    key has to follow the target it feeds when that target is renamed. The label
+    follows too, unless someone has written one of their own.
+
+    Permission is the caller's to check; this runs inside flows that already have.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    new_field_key = new_field_key.strip()
+    old_field_key = field.field_key
+    if new_field_key == old_field_key:
+        return
+    clash = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, new_field_key)
+    if clash is not None and clash.id != field.id:
+        raise FieldDefinitionConflictError(
+            _l("A question named '%(key)s' already exists — rename or remove it first", key=new_field_key)
+        )
+    if field.label == humanise_field_key(old_field_key):
+        field.label = humanise_field_key(new_field_key)
+    field.field_key = new_field_key
+    field.updated_at = datetime.now(UTC)
+    for respondent in uow.respondents.get_by_assembly_id(assembly_id):
+        if old_field_key not in respondent.attributes:
+            continue
+        # Reassign rather than mutate so the JSON column change is detected.
+        respondent.attributes = {
+            (new_field_key if key == old_field_key else key): value for key, value in respondent.attributes.items()
+        }
+
+
 def delete_field(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,

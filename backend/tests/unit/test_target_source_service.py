@@ -625,11 +625,45 @@ class TestUnlink:
             target_category_id=category.id,
         )
 
-        unlinked = unlink(uow, user.id, assembly.id, category.id)
+        unlinked, deleted = unlink(uow, user.id, assembly.id, category.id)
 
         assert [f.field_key for f in unlinked] == ["Gender"]
+        assert deleted == []
         assert field.target_category_id is None
         assert uow.respondent_field_definitions.get(field.id) is not None
+
+    def test_a_derived_field_is_deleted_with_its_values_and_lookup_table(self, uow):
+        """Nothing lists a derived field, so one left behind could never be reached again."""
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Region", ["North", "South"])
+        respondent = Respondent(assembly_id=assembly.id, external_id="r1", attributes={"Postcode": "E1 6AN"})
+        uow.respondents.add(respondent)
+        configure_target_source(
+            uow,
+            user.id,
+            assembly.id,
+            category.id,
+            LargeMappingSpec(
+                rule=LargeMappingRule(fallback="UNKNOWN"),
+                source=SourceFieldSpec(field_key="Postcode", field_type=FieldType.TEXT),
+            ),
+        )
+        derived = _linked_field(uow, assembly, category)
+        uow.respondent_field_mapping_entries.bulk_add([
+            RespondentFieldMappingEntry(field_id=derived.id, lookup_key="E1 6AN", output_value="North")
+        ])
+
+        unlinked, deleted = unlink(uow, user.id, assembly.id, category.id)
+
+        assert [f.field_key for f in deleted] == ["Region"]
+        assert unlinked == []
+        assert uow.respondent_field_definitions.get(derived.id) is None
+        assert uow.respondent_field_mapping_entries.count_for_field(derived.id) == 0
+        # The values it wrote go too - otherwise they keep exporting as a column nothing explains
+        assert "Region" not in respondent.attributes
+        # The question it was computed from is untouched
+        assert uow.respondent_field_definitions.get_by_assembly_and_key(assembly.id, "Postcode") is not None
+        assert respondent.attributes["Postcode"] == "E1 6AN"
 
     def test_unknown_category_raises(self, uow):
         user, assembly = _seed(uow)

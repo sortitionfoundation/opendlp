@@ -36,6 +36,19 @@ Feature: Target data sources
     And I open the target data sources for "Force Unlink Demo"
     Then the "Areas" target row should say "No data source"
 
+  Scenario: Removing the computed question a target was set up with
+    Given there is an assembly with respondents imported from CSV called "Remove Computed Demo"
+    And the assembly "Remove Computed Demo" has a "year_of_birth" number field
+    And the assembly "Remove Computed Demo" has an "age bracket" target with values "16-24, 25-39, 40+"
+    And I am signed in as an admin user
+    When I open the target data sources for "Remove Computed Demo"
+    And I set up the "age bracket" target with age ranges from "year_of_birth"
+    And I open the more actions menu for the "age bracket" target
+    And I choose "Remove computed question" from the menu and confirm
+    Then the "age bracket" target row should say "No data source"
+    When I open the respondent field schema editor for "Remove Computed Demo"
+    Then the schema editor should list the "year_of_birth" field
+
   Scenario: Unlinking from a row's more actions menu
     Given there is an assembly with respondents imported from CSV called "Menu Unlink Demo"
     And the assembly "Menu Unlink Demo" has a "Region" target with values "North, South"

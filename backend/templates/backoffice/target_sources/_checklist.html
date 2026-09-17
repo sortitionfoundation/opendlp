@@ -114,6 +114,18 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                                 <button type="submit" role="menuitem" class="menu-item" @click="closeMenu()">{{ _("Recompute") }}</button>
                                             </form>
                                         {% endif %}
+                                        {# A computed question exists only to feed this target and is listed
+                                           on no other screen, so breaking the link removes it rather than
+                                           leaving it behind where nothing could reach it. #}
+                                        {% if status.state == TargetSourceState.LINKED_DERIVED %}
+                                            {% if is_large_mapping and status.mapping_row_count %}
+                                                {% set unlink_confirm = _("Remove the computed question '%(name)s'? Its answers and its lookup table of %(count)s rows are deleted — you would have to upload the table again. The question it is computed from stays.", name=status.field.label, count="{:,}".format(status.mapping_row_count)) %}
+                                            {% else %}
+                                                {% set unlink_confirm = _("Remove the computed question '%(name)s'? Its answers are deleted. The question it is computed from stays, so you can set this target up again from it.", name=status.field.label) %}
+                                            {% endif %}
+                                        {% else %}
+                                            {% set unlink_confirm = _('Unlink this question from its target? The question stays on the registration page, but edits to it will no longer be checked against the target.') %}
+                                        {% endif %}
                                         <form method="post"
                                               role="none"
                                               action="{{ url_for('target_sources.unlink_view', assembly_id=assembly.id, category_id=category.id) }}"
@@ -123,9 +135,11 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit"
                                                     role="menuitem"
-                                                    class="menu-item"
+                                                    class="menu-item{% if status.state == TargetSourceState.LINKED_DERIVED %} menu-item--danger{% endif %}"
                                                     @click="closeMenu()"
-                                                    data-confirm="{{ _('Unlink this question from its target? The question stays on the registration page, but edits to it will no longer be checked against the target.') }}">{{ _("Unlink") }}</button>
+                                                    data-confirm="{{ unlink_confirm }}">
+                                                {%- if status.state == TargetSourceState.LINKED_DERIVED %}{{ _("Remove computed question") }}{% else %}{{ _("Unlink") }}{% endif -%}
+                                            </button>
                                         </form>
                                     </div>
                                 </div>

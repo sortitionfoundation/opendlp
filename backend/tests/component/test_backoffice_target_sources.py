@@ -629,7 +629,9 @@ class TestRowActions:
         assert "Edit" in visible
         assert "Recompute" not in visible
         assert "Recompute" in menu
-        assert "Unlink" in menu
+        # A computed question is removed rather than unlinked - nothing would list it afterwards
+        assert "Remove computed question" in menu
+        assert "Unlink" not in menu
 
     def test_the_first_lookup_table_upload_stays_out_of_the_menu(self, logged_in_admin, existing_assembly, fake_store):
         TestMappingUpload()._linked_large_mapping(fake_store, existing_assembly)

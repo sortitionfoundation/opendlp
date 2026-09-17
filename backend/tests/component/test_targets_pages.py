@@ -10,6 +10,7 @@ from opendlp.adapters import database
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    DerivationType,
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
@@ -1296,6 +1297,85 @@ class TestForceUnlinkConfirmation:
             assert uow.target_categories.get(category.id).name == "Sex"
             refreshed = uow.respondent_field_definitions.get(field.id)
             assert refreshed.target_category_id is None
+
+    def _seed_computed(self, fake_store, admin_user, assembly):
+        """A target fed by a computed field, itself computed from a question."""
+        category = _create_category(fake_store, admin_user, assembly.id, "Region")
+        category = _add_value(fake_store, admin_user, assembly.id, category.id, "North", 3, 7)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.respondent_field_definitions.add(
+                RespondentFieldDefinition(
+                    assembly_id=assembly.id,
+                    field_key="postcode",
+                    label="Postcode",
+                    group=RespondentFieldGroup.ADDRESS,
+                    sort_order=10,
+                    field_type=FieldType.TEXT,
+                )
+            )
+            derived = RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="Region",
+                label="Region",
+                group=RespondentFieldGroup.DERIVED,
+                sort_order=20,
+                is_derived=True,
+                derived_from=["postcode"],
+                derivation_type=DerivationType.LARGE_MAPPING,
+                derivation_config={"fallback": "UNKNOWN"},
+                field_type=FieldType.CHOICE_DROPDOWN,
+                options=[ChoiceOption(value="North")],
+                target_category_id=category.id,
+            )
+            uow.respondent_field_definitions.add(derived)
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=assembly.id,
+                    external_id="r1",
+                    attributes={"postcode": "E1 6AN", "Region": "North"},
+                )
+            )
+        return category, derived
+
+    def test_renaming_a_target_carries_its_computed_field_without_asking(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Selection pairs a target with its data by name, so the key follows the rename."""
+        category, derived = self._seed_computed(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=self._rename_data(category, "Area"),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Area"
+            refreshed = uow.respondent_field_definitions.get(derived.id)
+            assert refreshed.field_key == "Area"
+            assert refreshed.target_category_id == category.id
+            (respondent,) = uow.respondents.get_by_assembly_id(existing_assembly.id)
+            assert respondent.attributes == {"postcode": "E1 6AN", "Area": "North"}
+
+    def test_deleting_a_target_says_the_computed_field_goes_with_it(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, derived = self._seed_computed(fake_store, admin_user, existing_assembly)
+
+        data = {f"cat[{category.id}][deleted]": "1", f"cat[{category.id}][name]": "Region"}
+        html = logged_in_admin.post(_targets_url(existing_assembly.id, "/save-all"), data=data).data.decode()
+
+        assert "also deletes the computed question" in html
+
+        data["force_unlink"] = "1"
+        response = logged_in_admin.post(_targets_url(existing_assembly.id, "/save-all"), data=data)
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondent_field_definitions.get(derived.id) is None
+            (respondent,) = uow.respondents.get_by_assembly_id(existing_assembly.id)
+            assert respondent.attributes == {"postcode": "E1 6AN"}
 
     def test_value_only_edits_save_without_asking(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         category, field = self._seed_linked(fake_store, admin_user, existing_assembly)

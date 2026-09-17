@@ -185,7 +185,7 @@ def rename_target(admin_logged_in_page: Page, old_name: str, new_name: str, requ
 
 @when("I confirm the unlinking")
 def confirm_unlinking(admin_logged_in_page: Page) -> None:
-    admin_logged_in_page.get_by_role("button", name="Unlink the questions and save").click()
+    admin_logged_in_page.get_by_role("button", name="Break the links and save").click()
     admin_logged_in_page.wait_for_load_state("networkidle")
 
 

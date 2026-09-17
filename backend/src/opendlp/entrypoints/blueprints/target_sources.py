@@ -726,14 +726,16 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/unlink", methods=["POST"])
 @login_required
 def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Break the link; the field stays behind as a free editable field."""
+    """Break the link: a question stays behind, a computed question is removed."""
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            unlink(uow, current_user.id, assembly_id, category_id)
+            _unlinked, deleted = unlink(uow, current_user.id, assembly_id, category_id)
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
         flash(_("Target not found"), "error")
         return redirect(_sources_url(assembly_id))
+    if deleted:
+        return _close_modal_response(assembly_id, _("Computed question removed"))
     return _close_modal_response(assembly_id, _("Question unlinked from its target"))
