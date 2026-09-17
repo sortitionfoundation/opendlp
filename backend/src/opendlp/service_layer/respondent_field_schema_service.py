@@ -313,7 +313,7 @@ def update_field(
     field = uow.respondent_field_definitions.get(field_id)
     if field is None or field.assembly_id != assembly_id:
         raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
-    if field_type is not None:
+    if field_type is not None and field_type != field.field_type:
         dependents = derivations_depending_on(uow, assembly_id, field.field_key)
         if dependents:
             raise FieldDefinitionConflictError(

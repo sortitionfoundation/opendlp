@@ -3,6 +3,10 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        {# Settle synchronously: the default 20ms timer only exists for CSS
+           transitions between swaps, which we don't use, and a deferred settle
+           leaves just-swapped hx-* elements briefly uninitialised. #}
+        <meta name="htmx-config" content='{"defaultSettleDelay": 0}'>
         <title>
             {% block title %}Backoffice{% endblock %}
             - OpenDLP</title>

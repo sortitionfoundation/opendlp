@@ -328,7 +328,7 @@ Domain/data/service only; no template changes (per review: migration work first)
 
 Commit: `feat(793): add field-level help text`
 
-### Step 2 — main page becomes read-only rows
+### Step 2 — main page becomes read-only rows ✅ DONE (landed with step 3 in one commit)
 
 1. Rewrite the editor branch of `view.html`: summary rows per §4 (label + key +
    help text, type/options summary with truncation, chips), section select with
@@ -343,7 +343,7 @@ Commit: `feat(793): add field-level help text`
 
 Commit: `refactor(793): read-only field rows on the Fields tab`
 
-### Step 3 — add/edit modal for ordinary fields
+### Step 3 — add/edit modal for ordinary fields ✅ DONE
 
 1. Fragment templates: modal shell (from the `dialog-*` atoms, `json-to-htmx`
    style), form partial, options add-another partial.
@@ -361,7 +361,7 @@ Commit: `refactor(793): read-only field rows on the Fields tab`
 
 Commit: `feat(793): add and edit fields in a modal`
 
-### Step 4 — derived-field flow
+### Step 4 — derived-field flow ✅ DONE (create + edit landed in one commit)
 
 1. Public helper for source compatibility in `derivation_service` (§9); unit
    test.
@@ -382,7 +382,7 @@ Commit: `feat(793): add and edit fields in a modal`
 Commits: `feat(793): create derived fields from the modal` then
 `feat(793): edit derivation config` (split if the step runs long).
 
-### Step 5 — lookup-table upload and recompute actions
+### Step 5 — lookup-table upload and recompute actions ✅ DONE
 
 1. `GET fields/<id>/mapping-modal` + `POST fields/<id>/mapping-upload`
    (upload then recompute, combined report) + `POST fields/<id>/recompute`.
@@ -393,7 +393,12 @@ Commits: `feat(793): create derived fields from the modal` then
 
 Commit: `feat(793): lookup table upload and recompute from the Fields tab`
 
-### Step 6 — BDD, translations, polish
+### Step 6 — BDD, translations, polish ✅ DONE
+
+All six steps are implemented and committed on `793-derived-fields-ui`
+(2026-09-09). One pre-existing BDD failure is unrelated to this work:
+`tests/bdd/test_replacement_selection.py::test_replacement_modal_shows_loading_state`
+fails identically on the pre-spike commit `df2c6271` (spinner-visibility race).
 
 1. BDD scenarios per §10; update `delete_all_except_standard_users()` only if
    new tables appeared (none expected).

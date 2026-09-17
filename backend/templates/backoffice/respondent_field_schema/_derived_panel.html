@@ -1,0 +1,164 @@
+{#
+ABOUTME: Derived-field panel inside the field modal — target, method, source and per-method config
+ABOUTME: Selects re-render the form over HTMX; the age preview is a client-only Alpine enhancement
+#}
+{% from "backoffice/components/input.html" import input, select, radio_group %}
+{% set derived = modal_ctx["derived"] %}
+{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-target="#field-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
+<div class="mb-4 pl-4"
+     style="border-left: 3px solid var(--color-borders-dividers);">
+    {% if derived["target_locked"] %}
+        <input type="hidden" name="target_name" value="{{ values['target_name'] }}">
+        <input type="hidden" name="source_key" value="{{ values['source_key'] }}">
+        <div class="mb-4 text-body-sm">
+            <div>
+                {{ _("Feeds the target:") }} <strong>{{ values["target_name"] }}</strong>
+            </div>
+            <div>
+                {{ _("Derived from:") }} <code>{{ values["source_key"] }}</code>
+            </div>
+            <div class="text-body-sm" style="color: var(--color-secondary-text);">
+                {{ _("To change the source or the target, delete this field and create it again.") }}
+            </div>
+        </div>
+    {% else %}
+        <div class="mb-4">
+            {% set target_options = [{"value": "", "label": _("Choose a target…")}] %}
+            {% for target in derived["targets"] %}
+                {% set _ = target_options.append({"value": target["name"], "label": target["name"]}) %}
+            {% endfor %}
+            {{ select("target_name",
+            label=_("Target it feeds"),
+            hint=_("The field takes its name and its set of values from this target."),
+            options=target_options,
+            value=(derived["selected_target"]["name"] if derived["selected_target"] else ""),
+            id="derived-target",
+            attrs=refresh_attrs) }}
+        </div>
+    {% endif %}
+    <div class="mb-4">
+        {{ radio_group("derivation_method",
+        label=_("How is it derived?"),
+        options=derived["method_options"],
+        value=values["derivation_method"],
+        id="derived-method",
+        option_help_text=derived["method_help"],
+        attrs=refresh_attrs) }}
+    </div>
+    {% if not derived["target_locked"] %}
+        <div class="mb-4">
+            {% if derived["sources"] %}
+                {% set source_options = [{"value": "", "label": _("Choose a field…")}] %}
+                {% for source in derived["sources"] %}
+                    {% set _ = source_options.append({"value": source.field_key, "label": source.label ~ " (" ~ source.field_key ~ ")"}) %}
+                {% endfor %}
+                {{ select("source_key",
+                label=_("Field it derives from"),
+                options=source_options,
+                value=values["source_key"],
+                id="derived-source",
+                attrs=refresh_attrs) }}
+            {% else %}
+                <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Field it derives from") }}</span>
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                    {{ _("No compatible field exists yet — add the source field first, then come back.") }}
+                </p>
+            {% endif %}
+        </div>
+    {% endif %}
+    {% if values["derivation_method"] == "age_bracket" %}
+        {# tojson escapes <>&' but not double quotes, so the attribute must be single-quoted. #}
+        <div x-data="ageBracketPreview"
+             data-fallback="{{ derived['fallback'] }}"
+             data-target-values='{{ (derived["selected_target"]["values"] if derived["selected_target"] else []) | tojson }}'
+             @input="recalc()">
+            {% if derived["source_is_integer"] %}
+                <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
+                    {{ _("Year-of-birth sources assume a 1 January birthday, so some people land one bracket up from their true age. Year of birth is still the recommended, data-minimising source.") }}
+                </p>
+            {% endif %}
+            <fieldset class="mb-4">
+                <legend class="text-label-lg" style="color: var(--color-headings);">{{ _("Ages as of") }}</legend>
+                <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
+                    {{ _("Usually the first assembly date. Never left to \"today\" — brackets must not shift with the calendar.") }}
+                </p>
+                <div class="flex gap-2">
+                    <div style="width: 5rem;">
+                        {{ input("as_of_day", label=_("Day"), value=values["as_of_day"], id="derived-as-of-day", attrs='inputmode="numeric"') }}
+                    </div>
+                    <div style="width: 5rem;">
+                        {{ input("as_of_month", label=_("Month"), value=values["as_of_month"], id="derived-as-of-month", attrs='inputmode="numeric"') }}
+                    </div>
+                    <div style="width: 7rem;">
+                        {{ input("as_of_year", label=_("Year"), value=values["as_of_year"], id="derived-as-of-year", attrs='inputmode="numeric"') }}
+                    </div>
+                </div>
+            </fieldset>
+            <div class="flex gap-4 mb-4">
+                <div style="width: 8rem;">
+                    {{ input("min_age", label=_("Minimum age"), value=values["min_age"], id="derived-min-age", attrs='inputmode="numeric"') }}
+                </div>
+                <div style="width: 8rem;">
+                    {{ input("max_age", label=_("Maximum age"), value=values["max_age"], id="derived-max-age", attrs='inputmode="numeric"') }}
+                </div>
+            </div>
+            <div class="mb-4">
+                {{ input("boundaries",
+                label=_("Bracket boundaries"),
+                hint=_("Ages where a new bracket starts, separated by commas — e.g. 25, 40, 60."),
+                value=values["boundaries"],
+                id="derived-boundaries") }}
+            </div>
+            <p class="text-body-sm mb-1">
+                {{ _("Generated brackets:") }}
+                <strong x-text="previewText">{{ derived["preview_labels"] | join(", ") }}</strong>
+            </p>
+            {% if derived["selected_target"] %}
+                <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
+                    {{ _("The target expects:") }} {{ derived["selected_target"]["values"] | join(", ") }}
+                </p>
+            {% endif %}
+            <p class="text-body-sm mb-2"
+               style="color: var(--color-error-text);"
+               x-show="mismatchLabels"
+               {% if not derived["mismatch_labels"] %}x-cloak{% endif %}>
+                {{ _("These brackets don't match the target's values, so those people won't count towards its quotas:") }}
+                <span x-text="mismatchLabels">{{ derived["mismatch_labels"] | join(", ") }}</span>
+            </p>
+        </div>
+    {% elif values["derivation_method"] == "small_mapping" %}
+        {% if not derived["selected_target"] %}
+            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                {{ _("Choose a target first — its values are what the answers map to.") }}
+            </p>
+        {% elif not derived["selected_source"] %}
+            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">{{ _("Choose the choice field to map from.") }}</p>
+        {% else %}
+            <fieldset class="mb-4">
+                <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Map each answer to a target value") }}</legend>
+                {% for row in derived["map_rows"] %}
+                    <div class="flex gap-2 items-center mb-2">
+                        <input type="hidden" name="map_source" value="{{ row['source_value'] }}">
+                        <span class="text-body-sm" style="min-width: 12rem;">{{ row["source_value"] }}</span>
+                        <span aria-hidden="true">→</span>
+                        {% set map_options = [{"value": "", "label": _("(fall back to %(fallback)s)", fallback=derived["fallback"])}] %}
+                        {% for target_value in derived["selected_target"]["values"] %}
+                            {% set _ = map_options.append({"value": target_value, "label": target_value}) %}
+                        {% endfor %}
+                        <div class="flex-1">
+                            {{ select("map_target",
+                            options=map_options,
+                            value=row["target_value"],
+                            id="derived-map-target-" ~ loop.index0,
+                            attrs='aria-label="' ~ (_('Target value for %(value)s', value=row['source_value']) | e) ~ '"') }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </fieldset>
+        {% endif %}
+    {% elif values["derivation_method"] == "large_mapping" %}
+        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+            {{ _("The field is created with an empty lookup table — upload the CSV from its row on the Fields tab afterwards. Values with no table entry fall back to %(fallback)s.", fallback=derived["fallback"]) }}
+        </p>
+    {% endif %}
+</div>

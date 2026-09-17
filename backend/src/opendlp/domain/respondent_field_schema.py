@@ -27,6 +27,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
+from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
 
 _UNSET: Any = object()
@@ -56,6 +57,13 @@ class DerivationType(Enum):
     AGE_BRACKET = "age_bracket"
     SMALL_MAPPING = "small_mapping"
     LARGE_MAPPING = "large_mapping"
+
+
+DERIVATION_TYPE_LABELS: dict[DerivationType, str] = {
+    DerivationType.AGE_BRACKET: _l("Age brackets"),
+    DerivationType.SMALL_MAPPING: _l("Map choices"),
+    DerivationType.LARGE_MAPPING: _l("Lookup table"),
+}
 
 
 class RespondentFieldGroup(Enum):
@@ -122,6 +130,13 @@ class FieldOnRegistrationPage(Enum):
     YES_REQUIRED = "yes_required"
 
 
+ON_REGISTRATION_PAGE_LABELS: dict[FieldOnRegistrationPage, str] = {
+    FieldOnRegistrationPage.NO: _l("Not on form"),
+    FieldOnRegistrationPage.YES_OPTIONAL: _l("Optional"),
+    FieldOnRegistrationPage.YES_REQUIRED: _l("Required"),
+}
+
+
 FIELD_TYPE_LABELS: dict[FieldType, str] = {
     FieldType.TEXT: _l("Text"),
     FieldType.LONGTEXT: _l("Long text"),
@@ -164,9 +179,9 @@ FIXED_FIELD_ON_REGISTRATION_PAGE: dict[str, FieldOnRegistrationPage] = {
 def _validate_type_and_options(field_type: "FieldType", options: "list[ChoiceOption] | None") -> None:
     if field_type in CHOICE_TYPES:
         if not options:
-            raise ValueError("Choice field requires a non-empty options list")
+            raise ValueError(_("A choice field needs at least one option"))
     elif options:
-        raise ValueError("options must be None for non-choice field types")
+        raise ValueError(_("Only a choice field can have options"))
 
 
 @dataclass(frozen=True)
@@ -176,7 +191,7 @@ class ChoiceOption:
 
     def __post_init__(self) -> None:
         if not self.value.strip():
-            raise ValueError("ChoiceOption value cannot be blank")
+            raise ValueError(_("An option value cannot be blank"))
 
     def to_dict(self) -> dict[str, str]:
         return {"value": self.value, "help_text": self.help_text}
@@ -272,7 +287,7 @@ class RespondentFieldDefinition:
         changed = False
         if label is not None:
             if not label.strip():
-                raise ValueError("label cannot be empty")
+                raise ValueError(_("The label cannot be empty"))
             self.label = label.strip()
             changed = True
         if group is not None:

@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from io import StringIO
+from itertools import islice
 from typing import Any
 
 from opendlp.domain.respondent_derivation import (
@@ -162,6 +163,21 @@ def _options_for(rule: DerivationRule, output_values: list[str] | None) -> "list
         raise FieldDefinitionConflictError(
             _l("A large mapping needs its output values declared when the field is created")
         ) from exc
+
+
+def compatible_source_fields(
+    field_defs: list[RespondentFieldDefinition], derivation_type: DerivationType
+) -> list[RespondentFieldDefinition]:
+    """The fields a derivation of this type may use as its source.
+
+    Mirrors ``_validate_source``: a source must not itself be derived, and its
+    *effective* type must be one the rule class can derive from. Exists so the
+    UI can filter its source pickers without reaching into the private
+    compatibility table.
+    """
+    rule_class = next(cls for cls, dtype in _DERIVATION_TYPE_FOR_RULE.items() if dtype == derivation_type)
+    compatible = _COMPATIBLE_SOURCE_TYPES[rule_class]
+    return [f for f in field_defs if not f.is_derived and f.effective_field_type in compatible]
 
 
 def derivations_depending_on(
@@ -511,7 +527,11 @@ def upload_large_mapping(
     if field.derivation_type != DerivationType.LARGE_MAPPING:
         raise FieldDefinitionConflictError(_l("Field '%(key)s' does not use a large mapping", key=field.field_key))
 
-    rows = [row for row in csv.reader(StringIO(csv_content)) if any(cell.strip() for cell in row)]
+    non_blank_rows = (row for row in csv.reader(StringIO(csv_content)) if any(cell.strip() for cell in row))
+    # Stop parsing once the file is known to be over the cap: a header, the cap
+    # itself and one row beyond it are all the check below needs. An oversized
+    # file therefore reports the cap plus one rather than its true row count.
+    rows = list(islice(non_blank_rows, MAX_MAPPING_ROWS + 2))
     if not rows:
         raise FieldDefinitionConflictError(_l("The mapping file is empty"))
     headers, data_rows = rows[0], rows[1:]

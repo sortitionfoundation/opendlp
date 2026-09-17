@@ -938,6 +938,38 @@ class TestUploadLargeMapping:
                 csv_content="postcode,region\nA1 1AA,London\nB2 2BB,London\nC3 3CC,North\n",
             )
 
+    def test_accepts_a_file_exactly_at_the_row_cap(self, uow, monkeypatch):
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+        monkeypatch.setattr(derivation_service, "MAX_MAPPING_ROWS", 2)
+
+        report = upload_large_mapping(
+            uow,
+            user.id,
+            assembly.id,
+            field.id,
+            csv_content="postcode,region\nA1 1AA,London\nB2 2BB,North\n",
+        )
+
+        assert report.row_count == 2
+
+    def test_stops_parsing_once_the_row_cap_is_exceeded(self, uow, monkeypatch):
+        user, assembly = _seed(uow)
+        field = self._region_field(uow, user, assembly)
+        monkeypatch.setattr(derivation_service, "MAX_MAPPING_ROWS", 2)
+        # A field beyond csv's own limit: reaching it would raise csv.Error, so
+        # only a FieldDefinitionConflictError proves parsing stopped at the cap.
+        oversized_row = "X" * 200_000 + ",London\n"
+
+        with pytest.raises(FieldDefinitionConflictError, match="too many rows"):
+            upload_large_mapping(
+                uow,
+                user.id,
+                assembly.id,
+                field.id,
+                csv_content="postcode,region\nA1 1AA,London\nB2 2BB,London\nC3 3CC,North\n" + oversized_row,
+            )
+
     def test_lookups_serve_derivation(self, uow):
         user, assembly = _seed(uow)
         field = self._region_field(uow, user, assembly)
@@ -989,6 +1021,13 @@ class TestSourceFieldProtection:
         user, assembly, source, _ = self._age_setup(uow)
         updated = update_field(uow, user.id, assembly.id, source.id, label="Birth date")
         assert updated.label == "Birth date"
+
+    def test_relabeling_a_source_field_while_passing_its_unchanged_type_is_allowed(self, uow):
+        # The edit modal always posts the field's type, even when only the label changed.
+        user, assembly, source, _ = self._age_setup(uow)
+        updated = update_field(uow, user.id, assembly.id, source.id, label="Birth date", field_type=FieldType.DATE)
+        assert updated.label == "Birth date"
+        assert updated.field_type == FieldType.DATE
 
     def test_changing_a_derived_fields_own_type_is_blocked(self, uow):
         user, assembly, _, derived = self._age_setup(uow)
@@ -1069,3 +1108,61 @@ class TestSourceFieldProtection:
         stored = uow.respondent_field_definitions.get(derived.id)
         assert stored.derivation_config["mapping"] == {"White British": "White"}
         assert [o.value for o in uow.respondent_field_definitions.get(source.id).options] == ["White British", "Asian"]
+
+
+class TestCompatibleSourceFields:
+    def _fields(self, uow):
+        _user, assembly = _seed(uow)
+        dob = _add_source(uow, assembly, "date_of_birth", FieldType.DATE)
+        yob = _add_source(uow, assembly, "year_of_birth", FieldType.INTEGER)
+        postcode = _add_source(uow, assembly, "postcode", FieldType.TEXT)
+        gender = _add_source(uow, assembly, "gender", FieldType.CHOICE_RADIO, options=[ChoiceOption(value="Female")])
+        return [dob, yob, postcode, gender]
+
+    def test_age_bracket_accepts_date_and_integer_sources(self, uow):
+        """Age brackets derive from a date of birth or a year of birth."""
+        fields = self._fields(uow)
+        keys = [f.field_key for f in derivation_service.compatible_source_fields(fields, DerivationType.AGE_BRACKET)]
+        assert keys == ["date_of_birth", "year_of_birth"]
+
+    def test_small_mapping_accepts_choice_sources(self, uow):
+        fields = self._fields(uow)
+        keys = [f.field_key for f in derivation_service.compatible_source_fields(fields, DerivationType.SMALL_MAPPING)]
+        assert keys == ["gender"]
+
+    def test_large_mapping_accepts_text_sources(self, uow):
+        fields = self._fields(uow)
+        keys = [f.field_key for f in derivation_service.compatible_source_fields(fields, DerivationType.LARGE_MAPPING)]
+        assert keys == ["postcode"]
+
+    def test_derived_fields_are_never_offered_as_sources(self, uow):
+        """Derivations cannot chain, so a derived field is excluded even with a compatible type."""
+        user, assembly = _seed(uow)
+        _add_source(uow, assembly, "date_of_birth", FieldType.DATE)
+        derived, _report = create_derived_field(
+            uow,
+            user.id,
+            assembly.id,
+            field_key="age_bracket",
+            label="Age bracket",
+            source_field_key="date_of_birth",
+            rule=AGE_RULE,
+        )
+        fields = uow.respondent_field_definitions.list_by_assembly(assembly.id)
+        compatible = derivation_service.compatible_source_fields(fields, DerivationType.SMALL_MAPPING)
+        assert derived.id not in [f.id for f in compatible]
+
+    def test_fixed_fields_use_their_effective_type(self, uow):
+        """The email fixed field is TEXT in storage but EMAIL effectively, so no rule accepts it."""
+        _user, assembly = _seed(uow)
+        email = RespondentFieldDefinition(
+            assembly_id=assembly.id,
+            field_key="email",
+            label="Email",
+            group=RespondentFieldGroup.NAME_AND_CONTACT,
+            sort_order=0,
+            is_fixed=True,
+            field_type=FieldType.TEXT,
+        )
+        uow.respondent_field_definitions.add(email)
+        assert derivation_service.compatible_source_fields([email], DerivationType.LARGE_MAPPING) == []
