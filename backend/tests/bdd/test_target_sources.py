@@ -1,6 +1,7 @@
 """ABOUTME: BDD tests for the target data sources checklist (registration step 1)
 ABOUTME: Exercises exact-copy and age-ranges set-up, and the force-unlink confirmation, via Playwright"""
 
+import re
 import uuid
 from datetime import UTC, datetime
 
@@ -168,12 +169,6 @@ def confirm_unlinking(admin_logged_in_page: Page) -> None:
     admin_logged_in_page.wait_for_load_state("networkidle")
 
 
-@when("I close the recompute report")
-def close_recompute_report(admin_logged_in_page: Page) -> None:
-    admin_logged_in_page.get_by_role("button", name="Done").click()
-    admin_logged_in_page.wait_for_load_state("networkidle")
-
-
 @when(parsers.parse('I open the respondent field schema editor for "{title}"'))
 def open_schema_editor(admin_logged_in_page: Page, title: str) -> None:
     admin_logged_in_page.goto(f"{Urls.base}/backoffice/assembly/{_assembly_ids[title]}/respondent-schema")
@@ -190,9 +185,13 @@ def target_row_says(admin_logged_in_page: Page, target_name: str, text: str) -> 
     expect(_row_for(admin_logged_in_page, target_name)).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
 
 
-@then("I should see the recompute report")
-def see_recompute_report(admin_logged_in_page: Page) -> None:
-    expect(admin_logged_in_page.get_by_text("Respondents recomputed")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+@then(parsers.parse('I should see a warning toast saying "{text}"'))
+def see_warning_toast(admin_logged_in_page: Page, text: str) -> None:
+    """The recompute outcome arrives out-of-band in the floating alerts, and the set-up modal closes."""
+    toast = admin_logged_in_page.locator("#floating-alerts [role='alert']", has_text=text)
+    expect(toast).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(toast).to_have_attribute("style", re.compile(r"--color-warning-100"), timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_setup_dialog(admin_logged_in_page)).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then("I should be asked to confirm unlinking")

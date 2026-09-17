@@ -21,9 +21,8 @@ Feature: Target data sources
     And I am signed in as an admin user
     When I open the target data sources for "Age Ranges Demo"
     And I set up the "age bracket" target with age ranges from "year_of_birth"
-    Then I should see the recompute report
-    When I close the recompute report
-    Then the "age bracket" target row should say "Computed from"
+    Then I should see a warning toast saying "2 fell back to UNKNOWN"
+    And the "age bracket" target row should say "Computed from"
 
   Scenario: Renaming a linked target asks before unlinking its field
     Given there is an assembly with respondents imported from CSV called "Force Unlink Demo"

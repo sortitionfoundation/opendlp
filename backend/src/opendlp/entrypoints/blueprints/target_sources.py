@@ -6,7 +6,7 @@ import uuid
 from typing import Any
 
 import structlog
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, render_template_string, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -393,6 +393,57 @@ def _report_response(
     ), 200
 
 
+def _recompute_toast(report: RecomputeReport, message: str) -> tuple[str, str]:
+    """The toast text and flash category for a recompute: a warning when anything needs a look."""
+    lines = [message]
+    category = "success"
+    if report.fell_back:
+        category = "warning"
+        lines.append(
+            _(
+                "%(count)d fell back to %(fallback)s because their answer matched no target value.",
+                count=report.fell_back,
+                fallback=DEFAULT_FALLBACK,
+            )
+        )
+        if report.unmatched_sample:
+            lines.append(_("Answers that matched nothing: %(values)s", values=", ".join(report.unmatched_sample)))
+    if report.completed_selection_runs:
+        category = "warning"
+        lines.append(
+            _(
+                "This assembly has %(count)d completed selection run(s). Recomputing changes the pool underneath them — the numbers those selections were made from no longer match what is stored.",
+                count=report.completed_selection_runs,
+            )
+        )
+    return "\n".join(lines), category
+
+
+def _toast_response(assembly_id: uuid.UUID, message: str, category: str) -> ResponseReturnValue:
+    """Close the modal, refresh the checklist and say what happened in a toast."""
+    flash(message, category)
+    if _is_htmx():
+        toasts = render_template_string(
+            '{% from "backoffice/components/floating_alerts.html" import floating_alerts %}'
+            "{{ floating_alerts(oob=true) }}"
+        )
+        return _render_checklist_fragment(assembly_id, oob=True) + toasts, 200
+    return redirect(_sources_url(assembly_id))
+
+
+def _saved_response(
+    assembly_id: uuid.UUID, report: RecomputeReport | None, saved: str, recomputed: str
+) -> ResponseReturnValue:
+    """After a save that may have recomputed the pool.
+
+    With no respondents yet - the usual case while an assembly is first being set
+    up - a recompute has done nothing worth reporting, so nothing is said about it.
+    """
+    if report is None or report.total == 0:
+        return _close_modal_response(assembly_id, saved)
+    return _toast_response(assembly_id, *_recompute_toast(report, recomputed))
+
+
 def _close_modal_response(assembly_id: uuid.UUID, message: str) -> ResponseReturnValue:
     """Success without a report: refresh the checklist, close the modal."""
     if _is_htmx():
@@ -527,11 +578,12 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
 
-    if report is not None:
-        return _report_response(
-            assembly_id, report, _("Data source saved — %(key)s recomputed", key=fields[-1].field_key)
-        )
-    return _close_modal_response(assembly_id, _("Data source saved"))
+    return _saved_response(
+        assembly_id,
+        report,
+        saved=_("Data source saved"),
+        recomputed=_("Data source saved — %(key)s recomputed for every respondent", key=fields[-1].field_key),
+    )
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/adopt", methods=["POST"])
@@ -569,9 +621,12 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
-    if report is not None:
-        return _report_response(assembly_id, report, _("Re-synced — %(key)s recomputed", key=field.field_key))
-    return _close_modal_response(assembly_id, _("Options re-synced from the target"))
+    return _saved_response(
+        assembly_id,
+        report,
+        saved=_("Options re-synced from the target"),
+        recomputed=_("Re-synced — %(key)s recomputed for every respondent", key=field.field_key),
+    )
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/recompute", methods=["POST"])
@@ -591,7 +646,9 @@ def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
-    return _report_response(assembly_id, report, _("Recompute finished"))
+    if report.total == 0:
+        return _toast_response(assembly_id, _("There are no respondents to recompute yet"), "info")
+    return _toast_response(assembly_id, *_recompute_toast(report, _("Recompute finished")))
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload-modal")

@@ -12,6 +12,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
     RespondentFieldGroup,
 )
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from tests.fakes import FakeUnitOfWork
 
@@ -41,6 +42,12 @@ def _seed_field(fake_store, assembly, field_key, **kwargs):
         )
         uow.respondent_field_definitions.add(field)
     return field
+
+
+def _seed_respondents(fake_store, assembly, attributes_list):
+    with FakeUnitOfWork(store=fake_store) as uow:
+        for index, attributes in enumerate(attributes_list):
+            uow.respondents.add(Respondent(assembly_id=assembly.id, external_id=f"R-{index}", attributes=attributes))
 
 
 def _field_by_key(fake_store, assembly, field_key):
@@ -295,33 +302,95 @@ class TestConfigureExactCopy:
 
 
 class TestConfigureAgeBrackets:
-    def test_create_source_and_derived_field_shows_the_report(self, logged_in_admin, existing_assembly, fake_store):
+    def _age_form(self, **overrides):
+        return {
+            "modal": "1",
+            "method": "age_bracket",
+            "source_mode": "create",
+            "new_field_key": "year_of_birth",
+            "age_source_type": "year",
+            "as_of_day": "1",
+            "as_of_month": "6",
+            "as_of_year": "2027",
+            "min_age": "16",
+            "max_age": "100",
+            "boundaries": "30",
+            **overrides,
+        }
+
+    def test_with_no_respondents_it_saves_without_a_recompute_report(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
-            data={
-                "modal": "1",
-                "method": "age_bracket",
-                "source_mode": "create",
-                "new_field_key": "date_of_birth",
-                "age_source_type": "date",
-                "as_of_day": "1",
-                "as_of_month": "6",
-                "as_of_year": "2027",
-                "min_age": "16",
-                "max_age": "100",
-                "boundaries": "30",
-            },
+            data=self._age_form(),
             headers=HTMX,
         )
+        body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert b"Respondents recomputed" in response.data
+        assert "recomputed" not in body.lower()
+        assert 'id="floating-alerts"' not in body
+        # The checklist still refreshes out-of-band, closing the modal
+        assert 'id="target-sources-list" hx-swap-oob="true"' in body
         derived = _field_by_key(fake_store, existing_assembly, "Age bracket")
         assert derived.is_derived is True
         assert derived.target_category_id == category.id
-        assert _field_by_key(fake_store, existing_assembly, "date_of_birth") is not None
+        assert _field_by_key(fake_store, existing_assembly, "year_of_birth") is not None
+
+    def test_a_clean_recompute_is_reported_in_a_success_toast(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
+        _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1990"}, {"year_of_birth": "2005"}])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=self._age_form(),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert re.search(r'id="floating-alerts"\s+hx-swap-oob="beforeend"', body)
+        assert "Data source saved — Age bracket recomputed for every respondent" in body
+        assert "var(--color-success-100)" in body
+        assert "fell back" not in body
+        # No report dialog: the toast replaces it
+        assert "Respondents recomputed" not in body
+        assert 'id="target-sources-list" hx-swap-oob="true"' in body
+
+    def test_a_recompute_with_fallbacks_is_reported_in_a_warning_toast(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
+        _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1990"}, {"year_of_birth": "soon"}])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=self._age_form(),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Data source saved — Age bracket recomputed for every respondent" in body
+        assert "1 fell back to UNKNOWN" in body
+        assert "var(--color-warning-100)" in body
+
+    def test_without_htmx_the_toast_is_flashed_on_the_checklist(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
+        _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1990"}])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=self._age_form(),
+            follow_redirects=True,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "Data source saved — Age bracket recomputed for every respondent" in body
+        assert "Respondents recomputed" not in body
 
     def test_creates_the_named_source_when_no_name_is_given(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
@@ -474,6 +543,59 @@ class TestRowActions:
         refreshed = _field_by_key(fake_store, existing_assembly, "Gender")
         assert refreshed is not None
         assert refreshed.target_category_id is None
+
+    def _linked_age_bracket(self, fake_store, assembly):
+        category = _seed_category(fake_store, assembly, "Age bracket", ["16-29", "30-99"])
+        _seed_field(fake_store, assembly, "year_of_birth", field_type=FieldType.INTEGER)
+        _seed_field(
+            fake_store,
+            assembly,
+            "Age bracket",
+            group=RespondentFieldGroup.DERIVED,
+            is_derived=True,
+            derived_from=["year_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={
+                "as_of_date": "2027-06-01",
+                "min_age": 16,
+                "max_age": 100,
+                "boundaries": [30],
+                "fallback": "UNKNOWN",
+            },
+            field_type=FieldType.CHOICE_DROPDOWN,
+            options=[ChoiceOption(value="16-29"), ChoiceOption(value="30-99"), ChoiceOption(value="UNKNOWN")],
+            target_category_id=category.id,
+        )
+        return category
+
+    def test_recompute_with_no_respondents_says_there_is_nothing_to_do(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = self._linked_age_bracket(fake_store, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/recompute",
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "There are no respondents to recompute yet" in body
+        assert "Respondents recomputed" not in body
+
+    def test_recompute_reports_in_a_toast(self, logged_in_admin, existing_assembly, fake_store):
+        category = self._linked_age_bracket(fake_store, existing_assembly)
+        _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1990"}, {"year_of_birth": "2001"}])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/recompute",
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Recompute finished" in body
+        assert re.search(r'id="floating-alerts"\s+hx-swap-oob="beforeend"', body)
+        assert "Respondents recomputed" not in body
 
     def test_unknown_category_404s_politely(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.post(

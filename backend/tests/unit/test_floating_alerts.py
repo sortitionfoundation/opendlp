@@ -1,6 +1,8 @@
 """ABOUTME: Jinja render tests for the floating_alerts and alert macros
 ABOUTME: Verifies floating alerts rendering with proper accessibility attributes"""
 
+import re
+
 from flask import Flask, render_template_string
 
 from opendlp import config
@@ -29,7 +31,7 @@ def _render_alert(message: str, variant: str = "info", dismissible: bool = False
         )
 
 
-def _render_floating_alerts_with_flash(messages: list[tuple[str, str]]) -> str:
+def _render_floating_alerts_with_flash(messages: list[tuple[str, str]], oob: bool = False) -> str:
     """Render floating_alerts macro with mocked flash messages."""
     app = _make_app()
     with app.test_request_context("/"):
@@ -37,7 +39,8 @@ def _render_floating_alerts_with_flash(messages: list[tuple[str, str]]) -> str:
         app.jinja_env.globals["get_flashed_messages"] = lambda with_categories=False: messages
         return render_template_string(
             """{% from "backoffice/components/floating_alerts.html" import floating_alerts %}
-            {{ floating_alerts() }}"""
+            {{ floating_alerts(oob=oob) }}""",
+            oob=oob,
         )
 
 
@@ -95,11 +98,18 @@ class TestAlertMacro:
 
 
 class TestFloatingAlertsMacro:
-    def test_floating_alerts_empty_when_no_messages(self) -> None:
-        """When no flash messages, container should not be rendered."""
+    def test_floating_alerts_renders_an_empty_live_region_when_no_messages(self) -> None:
+        """The container is always there, so HTMX responses can add alerts to it."""
         html = _render_floating_alerts_with_flash([])
-        # Should be empty or minimal whitespace
-        assert "floating-alerts" not in html
+        assert 'id="floating-alerts"' in html
+        assert 'aria-live="polite"' in html
+        assert 'role="alert"' not in html
+        assert "hx-swap-oob" not in html
+
+    def test_floating_alerts_oob_appends_to_the_page_container(self) -> None:
+        html = _render_floating_alerts_with_flash([("warning", "Recomputed")], oob=True)
+        assert re.search(r'id="floating-alerts"\s+hx-swap-oob="beforeend"', html)
+        assert "Recomputed" in html
 
     def test_floating_alerts_renders_success_message(self) -> None:
         html = _render_floating_alerts_with_flash([("success", "Changes saved!")])
