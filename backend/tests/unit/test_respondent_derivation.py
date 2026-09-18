@@ -10,6 +10,7 @@ from opendlp.domain.respondent_derivation import (
     AgeBracketRule,
     LargeMappingRule,
     SmallMappingRule,
+    age_brackets_from_labels,
     normalise_lookup_key,
     output_options,
     rule_from_field,
@@ -278,3 +279,30 @@ class TestOutputOptions:
     def test_fallback_is_not_duplicated_when_already_declared(self) -> None:
         options = output_options(LargeMappingRule(), declared_outputs=["London", "UNKNOWN"])
         assert [o.value for o in options] == ["London", "UNKNOWN"]
+
+
+class TestAgeBracketsFromLabels:
+    """The inverse of AgeBracketRule.bracket_labels: a target named like brackets tells us its rule."""
+
+    @pytest.mark.parametrize(
+        ("min_age", "max_age", "boundaries"),
+        [(16, 100, ()), (16, 100, (25, 40, 60)), (18, 90, (30,)), (1, 2, ())],
+    )
+    def test_it_undoes_bracket_labels(self, min_age, max_age, boundaries):
+        rule = AgeBracketRule(as_of_date=date(2027, 6, 1), min_age=min_age, max_age=max_age, boundaries=boundaries)
+
+        assert age_brackets_from_labels(rule.bracket_labels()) == (min_age, max_age, boundaries)
+
+    def test_the_under_label_may_be_missing(self):
+        """A target usually has no quota for the ineligible; the lowest range gives the minimum age."""
+        assert age_brackets_from_labels(["16-24", "25-39", "40+"]) == (16, 40, (25,))
+
+    def test_the_order_of_the_labels_does_not_matter(self):
+        assert age_brackets_from_labels(["40+", "25-39", "16-24"]) == (16, 40, (25,))
+
+    @pytest.mark.parametrize(
+        "labels",
+        [["Young", "Old"], ["16-24", "25-39"], ["under-16", "60+"], [], ["16-24", "25-39", "40+", "Prefer not to say"]],
+    )
+    def test_labels_that_are_not_a_complete_bracket_set_give_nothing(self, labels):
+        assert age_brackets_from_labels(labels) is None

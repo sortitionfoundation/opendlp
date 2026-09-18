@@ -23,7 +23,7 @@ from opendlp.domain.respondent_field_schema import (
     humanise_field_key,
 )
 from opendlp.entrypoints.blueprints.backoffice_registration import registration_hub_context
-from opendlp.entrypoints.blueprints.respondent_field_schema import (
+from opendlp.entrypoints.derivation_form_parser import (
     age_prefill_from_target,
     parse_age_rule,
     parse_small_mapping_rule,
