@@ -9,7 +9,7 @@ Feature: Target data sources
     And I am signed in as an admin user
     When I open the target data sources for "Exact Copy Demo"
     And I set up the "Region" target as an exact copy
-    Then the "Region" target row should say "Asked on the registration form"
+    Then the "Region" target row should say "Asked on the registration page"
     When I open the respondent field schema editor for "Exact Copy Demo"
     Then the schema editor should list the "Region" field
     And the "Region" row should carry the "Feeds target: Region" tag
