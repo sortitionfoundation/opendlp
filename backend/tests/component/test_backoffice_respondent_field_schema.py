@@ -2020,3 +2020,81 @@ class TestRoutesTurnAwayThoseWithoutAccess:
         response = self._call(logged_in_admin, method, path, uuid.uuid4(), uuid.uuid4())
 
         assert response.status_code in (302, 404)
+
+
+class TestOneUnitOfWorkPerRequest:
+    """A page read in several transactions can disagree with itself; each request here opens one block.
+
+    A save that fails is the exception: its block rolled back, so the dialog it
+    re-opens is read in a second one. Every request also spends one block loading
+    the signed-in user, which is counted and subtracted as the baseline.
+    """
+
+    @pytest.fixture
+    def blocks_opened(self, monkeypatch):
+        opened = []
+        enter = FakeUnitOfWork.__enter__
+
+        def counting_enter(uow):
+            opened.append(uow)
+            return enter(uow)
+
+        monkeypatch.setattr(FakeUnitOfWork, "__enter__", counting_enter)
+        return opened
+
+    def _blocks_for(self, blocks_opened, send, baseline):
+        blocks_opened.clear()
+        response = send()
+        return response, len(blocks_opened) - baseline
+
+    def _baseline(self, blocks_opened, client):
+        """The blocks a request costs before its route runs."""
+        blocks_opened.clear()
+        client.get("/backoffice/dev/does-not-exist")
+        return len(blocks_opened)
+
+    def _field_id(self, fake_store, assembly, field_key):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            return uow.respondent_field_definitions.get_by_assembly_and_key(assembly.id, field_key).id
+
+    def test_reads_and_saves_open_one_block_and_a_refused_save_two(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store, blocks_opened
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        notes_id = self._field_id(fake_store, existing_assembly, "custom_notes")
+        htmx = {"HX-Request": "true"}
+        baseline = self._baseline(blocks_opened, logged_in_admin)
+        new_question = {"modal": "1", "form_action": "save", "type_choice": "free_text", "free_text_subtype": "text"}
+
+        requests = {
+            "page": (lambda: logged_in_admin.get(base), 200, 1),
+            "new dialog": (lambda: logged_in_admin.get(f"{base}/fields/new-modal", headers=htmx), 200, 1),
+            "edit dialog": (lambda: logged_in_admin.get(f"{base}/fields/{notes_id}/edit-modal", headers=htmx), 200, 1),
+            "add": (
+                lambda: logged_in_admin.post(
+                    f"{base}/fields/add", data={**new_question, "label": "Shoe size"}, headers=htmx
+                ),
+                200,
+                1,
+            ),
+            "add refused": (
+                lambda: logged_in_admin.post(
+                    f"{base}/fields/add", data={**new_question, "label": "Shoe size"}, headers=htmx
+                ),
+                422,
+                2,
+            ),
+            "update": (
+                lambda: logged_in_admin.post(
+                    f"{base}/fields/{notes_id}/update",
+                    data={**new_question, "label": "Notes", "group": "other"},
+                    headers=htmx,
+                ),
+                200,
+                1,
+            ),
+        }
+        for name, (send, status, blocks) in requests.items():
+            response, opened = self._blocks_for(blocks_opened, send, baseline)
+            assert (name, response.status_code, opened) == (name, status, blocks)
