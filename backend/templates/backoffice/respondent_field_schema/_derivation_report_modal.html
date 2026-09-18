@@ -3,7 +3,7 @@ ABOUTME: Recompute report modal — what saving or recomputing a derivation did 
 ABOUTME: Shown in place of the field modal after a derivation save; Done closes via a plain link
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import dialog_close_icon %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
 {% set close_url = report_ctx.get("close_url") or url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
 {% set report = report_ctx["report"] %}
 <a href="{{ close_url }}"
@@ -14,11 +14,11 @@ ABOUTME: Shown in place of the field modal after a derivation save; Done closes 
      aria-modal="true"
      aria-labelledby="derivation-report-title">
     <div class="dialog-panel dialog-panel--default">
-        <div class="dialog-header">
-            <h2 class="dialog-title" id="derivation-report-title">{{ report_ctx["title"] }}</h2>
+        {% set dialog_title %}{{ report_ctx["title"] }}{% endset %}
+        {% call dialog_header(dialog_title, title_id="derivation-report-title") %}
             <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
-        </div>
-        <div class="dialog-body">
+        {% endcall %}
+        {% call dialog_body() %}
             {% if report.completed_selection_runs > 0 %}
                 <div class="rounded-md p-3 mb-4"
                      style="background-color: var(--color-warning-background);
@@ -74,7 +74,7 @@ ABOUTME: Shown in place of the field modal after a derivation save; Done closes 
                     {% for value in report.unmatched_sample %}<li class="text-body-sm">{{ value }}</li>{% endfor %}
                 </ul>
             {% endif %}
-        </div>
-        <div class="dialog-footer">{{ button(_("Done") , variant="primary", href=close_url) }}</div>
+        {% endcall %}
+        {% call dialog_footer() %}{{ button(_("Done") , variant="primary", href=close_url) }}{% endcall %}
     </div>
 </div>

@@ -410,6 +410,8 @@ class TestConfigureExactCopy:
 
         assert response.status_code == 422
         assert b"already exists" in response.data
+        # The error is an alert, so a screen reader announces it when the dialog is swapped in.
+        assert re.search(r'role="alert".*?already exists', response.get_data(as_text=True), re.DOTALL)
 
 
 class TestConfigureAgeBrackets:

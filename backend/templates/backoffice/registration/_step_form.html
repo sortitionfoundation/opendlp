@@ -22,13 +22,7 @@ ABOUTME: Included by assembly_registration.html when ?section=form
     {% set next_url = url_for("backoffice_registration.view_registration_page", assembly_id=assembly.id, url_slug=registration_page.url_slug, section="email") %}
     {% set save_label = _("Save and Republish") if registration_status == "PUBLISHED" else _("Save") %}
     {% if fields_changed_after_save | default(false) %}
-        <div class="rounded-md p-3 mb-4"
-             style="background-color: var(--color-warning-background);
-                    border: 1px solid var(--color-warning-text);">
-            <p class="text-body-sm" style="color: var(--color-warning-text);">
-                {{ _("The registration questions have changed since this form HTML was last saved — check the form still asks for the right things. The Form Skeleton reflects the current questions.") }}
-            </p>
-        </div>
+        {{ alert(_("The registration questions have changed since this form HTML was last saved — check the form still asks for the right things. The Form Skeleton reflects the current questions."), variant="warning") }}
     {% endif %}
     <form method="post"
           action="{{ url_for('backoffice_registration.save_assembly_registration', assembly_id=assembly.id, url_slug=registration_page.url_slug) }}"

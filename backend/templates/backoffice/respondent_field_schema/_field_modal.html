@@ -2,8 +2,9 @@
 ABOUTME: Add/edit field modal fragment — served over HTMX or rendered open on a full page load
 ABOUTME: Real form + hx-post enhancement; type changes and option rows round-trip through the server
 #}
+{% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import dialog_close_icon %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
 {% from "backoffice/components/input.html" import input, textarea, select, switch %}
 {% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
 {% set values = modal_ctx["values"] %}
@@ -35,16 +36,10 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
      aria-modal="true"
      aria-labelledby="field-modal-title">
     <div class="dialog-panel dialog-panel--default">
-        <div class="dialog-header">
-            <h2 class="dialog-title" id="field-modal-title">
-                {% if modal_ctx["mode"] == "new" %}
-                    {{ _("Add a question") }}
-                {% else %}
-                    {{ _("Edit %(label)s", label=modal_ctx["field"].label) }}
-                {% endif %}
-            </h2>
+        {% set dialog_title %}{% if modal_ctx["mode"] == "new" %}{{ _("Add a question") }}{% else %}{{ _("Edit %(label)s", label=modal_ctx["field"].label) }}{% endif %}{% endset %}
+        {% call dialog_header(dialog_title, title_id="field-modal-title") %}
             <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
-        </div>
+        {% endcall %}
         <form method="post"
               action="{{ modal_ctx['action_url'] }}"
               hx-post="{{ modal_ctx['action_url'] }}"
@@ -62,13 +57,9 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                     style="display: none"
                     aria-hidden="true"
                     tabindex="-1"></button>
-            <div class="dialog-body">
+            {% call dialog_body() %}
                 {% if modal_ctx["error"] %}
-                    <div class="rounded-md p-3 mb-4"
-                         style="background-color: var(--color-error-background);
-                                border: 1px solid var(--color-error-text);">
-                        <p class="text-body-sm" style="color: var(--color-error-text);">{{ modal_ctx["error"] }}</p>
-                    </div>
+                    {{ alert(modal_ctx["error"], variant="error") }}
                 {% endif %}
                 {% if is_derived_flow and modal_ctx["mode"] == "new" %}
                     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
@@ -220,11 +211,11 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         <code>{{ modal_ctx["field"].field_key }}</code>
                     </div>
                 {% endif %}
-            </div>
-            <div class="dialog-footer">
+            {% endcall %}
+            {% call dialog_footer() %}
                 {{ button(_("Cancel") , variant="secondary", href=close_url) }}
                 {{ button(_("Save") , type="submit", variant="primary", attrs='name="form_action" value="save"') }}
-            </div>
+            {% endcall %}
         </form>
     </div>
 </div>
