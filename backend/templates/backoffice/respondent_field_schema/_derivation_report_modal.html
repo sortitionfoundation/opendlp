@@ -1,10 +1,10 @@
 {#
 ABOUTME: Recompute report modal — what saving or recomputing a derivation did to the pool
-ABOUTME: Shown in place of the field modal after a derivation save; Done closes via a plain link
+ABOUTME: Shown in the target data sources dialog after an upload or recompute; Done closes via a plain link
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
-{% set close_url = report_ctx.get("close_url") or url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
+{% set close_url = report_ctx["close_url"] %}
 {% set report = report_ctx["report"] %}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"

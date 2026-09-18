@@ -63,6 +63,29 @@ Feature: Target data sources
     And I choose "Unlink" from the menu and confirm
     Then the "Region" target row should say "isn't linked to it yet"
 
+  Scenario: A lookup-table target moves straight on to uploading its table
+    Given there is an assembly with respondents imported from CSV called "Lookup Upload Demo"
+    And the assembly "Lookup Upload Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Lookup Upload Demo"
+    And I set up the "Region" target to map from "postcode"
+    Then the set-up dialog should be on "Step 2 of 2"
+    And the "Upload later" button should be hidden
+    When I upload a lookup table mapping "SW1A 1AA" to "North"
+    Then the set-up dialog should say "Rows stored:"
+    And the "Region" target row should say "1 lookup row"
+
+  Scenario: Putting off a lookup table upload
+    Given there is an assembly with respondents imported from CSV called "Lookup Defer Demo"
+    And the assembly "Lookup Defer Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Lookup Defer Demo"
+    And I set up the "Region" target to map from "postcode"
+    And I tick "I don't have the lookup table yet"
+    And I press the "Upload later" button
+    Then I should see a warning toast saying "Until the lookup table is uploaded, everyone's Region will be UNKNOWN."
+    And the "Region" target row should say "Until the lookup table is uploaded, everyone's Region is UNKNOWN."
+
   Scenario: Working a row's more actions menu from the keyboard
     Given there is an assembly with respondents imported from CSV called "Menu Keyboard Demo"
     And the assembly "Menu Keyboard Demo" has a "Region" target with values "North, South"

@@ -1034,6 +1034,20 @@ class TestSourceFieldProtection:
         with pytest.raises(FieldDefinitionConflictError, match="derived"):
             update_field(uow, user.id, assembly.id, derived.id, field_type=FieldType.TEXT)
 
+    def test_moving_a_derived_field_out_of_the_derived_section_is_blocked(self, uow):
+        """The registration questions editor hides the Derived section, so a field moved out would appear there."""
+        user, assembly, _, derived = self._age_setup(uow)
+        with pytest.raises(FieldDefinitionConflictError, match="Derived section"):
+            update_field(uow, user.id, assembly.id, derived.id, group=RespondentFieldGroup.ABOUT_YOU)
+        assert uow.respondent_field_definitions.get(derived.id).group == RespondentFieldGroup.DERIVED
+
+    def test_a_derived_field_can_be_relabelled_in_place(self, uow):
+        user, assembly, _, derived = self._age_setup(uow)
+        updated = update_field(
+            uow, user.id, assembly.id, derived.id, label="Age range", group=RespondentFieldGroup.DERIVED
+        )
+        assert updated.label == "Age range"
+
     def _small_mapping_setup(self, uow):
         user, assembly = _seed(uow)
         source = _add_source(

@@ -44,6 +44,11 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                     {{ icon_close(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("No data source yet.") }}
                                 {% endif %}
                             </p>
+                            {% if status.mapping_row_count == 0 %}
+                                <p class="text-body-sm" style="color: var(--color-error-text);">
+                                    {{ _("Until the lookup table is uploaded, everyone's %(key)s is %(fallback)s.", key=status.field.field_key, fallback=(status.field.derivation_config or {}).get("fallback", default_fallback)) }}
+                                </p>
+                            {% endif %}
                             {% if status.stale %}
                                 <p class="text-body-sm" style="color: var(--color-warning-text);">
                                     {{ _("The target's values have changed since this field was set up — its answers no longer match.") }}

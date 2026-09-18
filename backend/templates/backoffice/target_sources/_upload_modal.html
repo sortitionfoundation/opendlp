@@ -1,36 +1,48 @@
 {#
-ABOUTME: Lookup-table upload dialog reached from a target's checklist row
+ABOUTME: Lookup-table upload dialog, from a target's checklist row or as step 2 of its set-up dialog
 ABOUTME: Two-column CSV replaces the whole table; upload then recompute, combined report shown after
 #}
 {% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer %}
 {% from "backoffice/components/input.html" import checkbox, file_input %}
 {% set close_url = url_for('target_sources.view_sources', assembly_id=assembly.id) %}
 {% set upload_url = url_for('target_sources.upload_view', assembly_id=assembly.id, category_id=modal_ctx["category_id"]) %}
+{% set setup_step = modal_ctx["setup_step"] %}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
    aria-label="{{ _('Close') }}"></a>
 <div class="dialog-positioner"
      role="dialog"
      aria-modal="true"
-     aria-labelledby="ts-mapping-upload-title">
+     aria-labelledby="{% if setup_step %}ts-mapping-upload-step {% endif %}ts-mapping-upload-title">
     <div class="dialog-panel dialog-panel--default">
-        {% set dialog_title %}{{ _("Upload lookup table for %(label)s", label=modal_ctx["field"].label) }}{% endset %}
-        {% call dialog_header(dialog_title, title_id="ts-mapping-upload-title") %}
+        {# Not the dialog_header macro: the step line has to sit with the title, and the macro takes a title only. #}
+        <div class="dialog-header">
+            <div>
+                {% if setup_step %}
+                    <p id="ts-mapping-upload-step" class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Step 2 of 2") }}</p>
+                {% endif %}
+                <h2 class="dialog-title" id="ts-mapping-upload-title">{{ _("Upload lookup table for %(label)s", label=modal_ctx["field"].label) }}</h2>
+            </div>
             <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
-        {% endcall %}
+        </div>
         <form method="post"
               action="{{ upload_url }}"
               enctype="multipart/form-data"
               hx-post="{{ upload_url }}"
               hx-target="#ts-modal-container"
               hx-swap="innerHTML"
-              hx-encoding="multipart/form-data">
+              hx-encoding="multipart/form-data"
+              {% if setup_step %}x-data="{ deferred: {{ 'true' if modal_ctx['defer_upload'] else 'false' }} }"{% endif %}>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if setup_step %}<input type="hidden" name="setup_step" value="1">{% endif %}
             {% call dialog_body() %}
                 {% if modal_ctx["error"] %}
                     {{ alert(modal_ctx["error"], variant="error") }}
+                {% endif %}
+                {% if setup_step %}
+                    <p class="text-body-sm mb-4">{{ _("The data source is saved. Now upload the lookup table it reads from.") }}</p>
                 {% endif %}
                 <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
                     {{ _("A CSV with two columns: the %(source)s value, then the %(derived)s value. Uploading replaces the whole table. The file itself is not stored — only the rows.", source=(modal_ctx["field"].derived_from or [""])[0], derived=modal_ctx["field"].field_key) }}
@@ -49,10 +61,28 @@ ABOUTME: Two-column CSV replaces the whole table; upload then recompute, combine
                     value="1",
                     id="ts-mapping-allow-new-outputs") }}
                 </div>
+                {% if setup_step %}
+                    <div class="mb-4">
+                        {{ checkbox("defer_upload",
+                        label=_("I don't have the lookup table yet and will upload it later. Until it is uploaded, everyone's answers fall back to %(fallback)s and the targets can't be met.", fallback=modal_ctx["fallback"]),
+                        checked=modal_ctx["defer_upload"],
+                        value="1",
+                        id="ts-mapping-defer-upload",
+                        attrs='x-model="deferred"') }}
+                    </div>
+                {% endif %}
             {% endcall %}
             {% call dialog_footer() %}
-                {{ button(_("Cancel") , variant="secondary", href=close_url) }}
-                {{ button(_("Upload") , type="submit", variant="primary") }}
+                {% if setup_step %}
+                    {# Upload comes first in the DOM so Enter in the form uploads. The file
+                       input is required, so putting it off must skip validation. #}
+                    {{ button(_("Upload") , type="submit", variant="primary") }}
+                    {{ button(_("Upload later") , type="submit", variant="secondary",
+                    attrs='name="form_action" value="defer" formnovalidate x-show="deferred" x-cloak') }}
+                {% else %}
+                    {{ button(_("Cancel") , variant="secondary", href=close_url) }}
+                    {{ button(_("Upload") , type="submit", variant="primary") }}
+                {% endif %}
             {% endcall %}
         </form>
     </div>

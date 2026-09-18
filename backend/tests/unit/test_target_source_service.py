@@ -834,6 +834,31 @@ class TestTargetSetupData:
 
         assert target_setup_data(uow, user.id, assembly.id, category.id).is_linked is True
 
+    def test_it_counts_the_rows_of_a_linked_lookup_table(self, uow):
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Region", ["North", "South"])
+        _source, derived = configure_target_source(
+            uow,
+            user.id,
+            assembly.id,
+            category.id,
+            LargeMappingSpec(rule=LargeMappingRule(), source=SourceFieldSpec(field_key="Postcode")),
+        )[0]
+        assert target_setup_data(uow, user.id, assembly.id, category.id).mapping_row_count == 0
+
+        uow.respondent_field_mapping_entries.bulk_add([
+            RespondentFieldMappingEntry(field_id=derived.id, lookup_key="AB1", output_value="North")
+        ])
+
+        assert target_setup_data(uow, user.id, assembly.id, category.id).mapping_row_count == 1
+
+    def test_a_target_without_a_lookup_table_has_no_rows_to_count(self, uow):
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Gender", ["Male", "Female"])
+        configure_target_source(uow, user.id, assembly.id, category.id, ExactCopySpec())
+
+        assert target_setup_data(uow, user.id, assembly.id, category.id).mapping_row_count == 0
+
     def test_a_target_with_no_values_yet_still_opens(self, uow):
         """The dialog opens, and the save explains what is missing."""
         user, assembly = _seed(uow)

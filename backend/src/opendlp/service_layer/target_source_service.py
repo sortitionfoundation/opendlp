@@ -485,6 +485,8 @@ class TargetSetupData:
     fields: list[RespondentFieldDefinition]
     first_assembly_date: date | None
     is_linked: bool
+    # Rows in the linked field's lookup table; 0 unless the target is fed by a large mapping.
+    mapping_row_count: int
 
 
 def target_setup_data(
@@ -506,13 +508,20 @@ def target_setup_data(
     if category is None or category.assembly_id != assembly_id:
         raise NotFoundError(f"Target category {target_category_id} not found")
     fields = [f.create_detached_copy() for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)]
+    linked = next((f for f in fields if f.target_category_id == category.id), None)
+    mapping_row_count = (
+        uow.respondent_field_mapping_entries.count_for_field(linked.id)
+        if linked is not None and linked.derivation_type == DerivationType.LARGE_MAPPING
+        else 0
+    )
     return TargetSetupData(
         target_id=category.id,
         target_name=category.name,
         target_values=_target_option_values(category),
         fields=fields,
         first_assembly_date=assembly.first_assembly_date if assembly else None,
-        is_linked=any(f.target_category_id == category.id for f in fields),
+        is_linked=linked is not None,
+        mapping_row_count=mapping_row_count,
     )
 
 

@@ -290,6 +290,36 @@ def add_field(
     return field.create_detached_copy()
 
 
+def _refuse_retyping_a_derivation_source(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, field_key: str) -> None:
+    """Raise if any derived field is computed from ``field_key`` - its rule was built for the current type."""
+    dependents = derivations_depending_on(uow, assembly_id, field_key)
+    if dependents:
+        raise FieldDefinitionConflictError(
+            _l(
+                "You can't change the type of '%(key)s' — it is used to derive: %(deps)s",
+                key=field_key,
+                deps=", ".join(f.field_key for f in dependents),
+            )
+        )
+
+
+def _option_changes(
+    field: RespondentFieldDefinition,
+    options: list[ChoiceOption] | None,
+    option_renames: dict[str, str] | None,
+) -> tuple[dict[str, str], set[str]]:
+    """The real renames among ``option_renames``, and the values ``options`` removes outright."""
+    kept = {o.value for o in options or []}
+    current = {o.value for o in field.options or []}
+    renames = {
+        old: new
+        for old, new in (option_renames or {}).items()
+        if old in current and old not in kept and new in kept and new not in current
+    }
+    removed_values = {value for value in current if value not in kept and value not in renames}
+    return renames, removed_values
+
+
 def update_field(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -322,27 +352,16 @@ def update_field(
     field = uow.respondent_field_definitions.get(field_id)
     if field is None or field.assembly_id != assembly_id:
         raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+    if field.is_derived and group is not None and group != RespondentFieldGroup.DERIVED:
+        # Computed questions are managed on the target data sources step, and
+        # the registration questions editor hides the Derived section.
+        raise FieldDefinitionConflictError(_l("A computed question always stays in the Derived section"))
     if field_type is not None and field_type != field.field_type:
-        dependents = derivations_depending_on(uow, assembly_id, field.field_key)
-        if dependents:
-            raise FieldDefinitionConflictError(
-                _l(
-                    "You can't change the type of '%(key)s' — it is used to derive: %(deps)s",
-                    key=field.field_key,
-                    deps=", ".join(f.field_key for f in dependents),
-                )
-            )
+        _refuse_retyping_a_derivation_source(uow, assembly_id, field.field_key)
     removed_values: set[str] = set()
     renames: dict[str, str] = {}
     if options is not _UNSET_OPTIONS:
-        kept = {o.value for o in options or []}
-        current = {o.value for o in field.options or []}
-        renames = {
-            old: new
-            for old, new in (option_renames or {}).items()
-            if old in current and old not in kept and new in kept and new not in current
-        }
-        removed_values = {value for value in current if value not in kept and value not in renames}
+        renames, removed_values = _option_changes(field, options, option_renames)
         _refuse_emptying_small_mappings(uow, assembly_id, field.field_key, removed_values)
     try:
         field.update(

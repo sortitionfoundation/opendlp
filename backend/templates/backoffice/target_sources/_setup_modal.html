@@ -232,7 +232,11 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                     </fieldset>
                 {% elif values["method"] == "large_mapping" %}
                     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("The lookup table starts empty — upload its CSV from this target's row afterwards. Values with no table entry fall back to %(fallback)s.", fallback=setup["fallback"]) }}
+                        {% if setup["mapping_row_count"] %}
+                            {{ _("Saving keeps the existing lookup table of %(count)s rows — replace it from this target's row if it needs to change.", count="{:,}".format(setup["mapping_row_count"])) }}
+                        {% else %}
+                            {{ _("After saving you'll upload the lookup table: a CSV pairing each answer with a target value. Answers with no table entry fall back to %(fallback)s.", fallback=setup["fallback"]) }}
+                        {% endif %}
                     </p>
                 {% endif %}
             {% endcall %}
