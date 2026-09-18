@@ -672,6 +672,16 @@ class TestUnlink:
             unlink(uow, user.id, assembly.id, uuid.uuid4())
 
 
+def _write(action: str, uow: FakeUnitOfWork, user_id, assembly_id, category_id, field_id) -> None:
+    """Call one of the three row-action services by name, for tests parametrised over them."""
+    if action == "adopt":
+        adopt_field(uow, user_id, assembly_id, category_id, field_id)
+    elif action == "resync":
+        resync_from_target(uow, user_id, assembly_id, category_id)
+    else:
+        unlink(uow, user_id, assembly_id, category_id)
+
+
 class TestPermissions:
     def test_configure_requires_manage_permission(self, uow):
         _admin, assembly = _seed(uow)
@@ -689,3 +699,113 @@ class TestPermissions:
 
         with pytest.raises(InsufficientPermissions):
             target_source_status(uow, outsider.id, assembly.id)
+
+    @pytest.mark.parametrize("action", ["adopt", "resync", "unlink"])
+    def test_every_write_requires_manage_permission(self, uow, action):
+        _admin, assembly = _seed(uow)
+        outsider = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(outsider)
+        category = _add_category(uow, assembly, "Gender", ["Male", "Female"])
+        field = _add_field(
+            uow,
+            assembly,
+            "Gender",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            target_category_id=category.id,
+        )
+
+        with pytest.raises(InsufficientPermissions):
+            _write(action, uow, outsider.id, assembly.id, category.id, field.id)
+
+        assert field.target_category_id == category.id
+
+
+class TestIdsFromAnotherAssemblyAreRefused:
+    """Every id from a URL or form is checked against the assembly in the URL.
+
+    Each test hands a service an id that is real, but belongs to another
+    assembly the same admin can manage - so only the assembly check can refuse it.
+    """
+
+    @pytest.fixture
+    def two_assemblies(self, uow):
+        admin, mine = _seed(uow)
+        theirs = Assembly(title="Another Assembly", number_to_select=40)
+        uow.assemblies.add(theirs)
+        return admin, mine, theirs
+
+    def _choice_field(self, uow, assembly, **kwargs):
+        return _add_field(
+            uow,
+            assembly,
+            "Gender",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            **kwargs,
+        )
+
+    def test_configure_refuses_a_category_of_another_assembly(self, uow, two_assemblies):
+        admin, mine, theirs = two_assemblies
+        foreign = _add_category(uow, theirs, "Gender", ["Male", "Female"])
+
+        with pytest.raises(NotFoundError):
+            configure_target_source(uow, admin.id, mine.id, foreign.id, ExactCopySpec())
+
+        assert uow.respondent_field_definitions.list_by_assembly(mine.id) == []
+        assert uow.respondent_field_definitions.list_by_assembly(theirs.id) == []
+
+    def test_exact_copy_refuses_to_reuse_a_field_of_another_assembly(self, uow, two_assemblies):
+        admin, mine, theirs = two_assemblies
+        category = _add_category(uow, mine, "Gender", ["Male", "Female"])
+        foreign_field = self._choice_field(uow, theirs)
+
+        with pytest.raises(FieldDefinitionNotFoundError):
+            configure_target_source(
+                uow,
+                admin.id,
+                mine.id,
+                category.id,
+                ExactCopySpec(source=SourceFieldSpec(reuse_field_id=foreign_field.id)),
+            )
+
+        assert foreign_field.target_category_id is None
+
+    def test_a_derivation_refuses_a_source_field_of_another_assembly(self, uow, two_assemblies):
+        admin, mine, theirs = two_assemblies
+        category = _add_category(uow, mine, "Region", ["North", "South"])
+        foreign_field = _add_field(uow, theirs, "postcode", field_type=FieldType.TEXT)
+
+        with pytest.raises(FieldDefinitionNotFoundError):
+            configure_target_source(
+                uow,
+                admin.id,
+                mine.id,
+                category.id,
+                LargeMappingSpec(rule=LargeMappingRule(), source=SourceFieldSpec(reuse_field_id=foreign_field.id)),
+            )
+
+        assert uow.respondent_field_definitions.list_by_assembly(mine.id) == []
+
+    def test_adopt_refuses_a_field_of_another_assembly(self, uow, two_assemblies):
+        admin, mine, theirs = two_assemblies
+        category = _add_category(uow, mine, "Gender", ["Male", "Female"])
+        foreign_field = self._choice_field(uow, theirs)
+
+        with pytest.raises(FieldDefinitionNotFoundError):
+            adopt_field(uow, admin.id, mine.id, category.id, foreign_field.id)
+
+        assert foreign_field.target_category_id is None
+
+    @pytest.mark.parametrize("action", ["adopt", "resync", "unlink"])
+    def test_every_write_refuses_a_category_of_another_assembly(self, uow, two_assemblies, action):
+        admin, mine, theirs = two_assemblies
+        foreign = _add_category(uow, theirs, "Gender", ["Male", "Female", "Other"])
+        foreign_field = self._choice_field(uow, theirs, target_category_id=foreign.id)
+
+        with pytest.raises(NotFoundError):
+            _write(action, uow, admin.id, mine.id, foreign.id, foreign_field.id)
+
+        # Still linked, and not re-synced to the target's third value.
+        assert foreign_field.target_category_id == foreign.id
+        assert [option.value for option in foreign_field.options] == ["Male", "Female"]
