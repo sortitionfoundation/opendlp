@@ -100,24 +100,29 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                                        without `set _ = list.append(...)`, which would shadow gettext here. #}
                                     {% set move_directions = ([("up", _("Move up"))] if not loop.first else []) + ([("down", _("Move down"))] if not loop.last else []) %}
                                     {# Less common actions behind a "more" menu - see the ROW LINK notes in
-                                       main.css. Escape is bound on this element, not window, so it closes
+                                       main.css. rowActionsMenu makes it a WAI-ARIA menu button: arrow keys move
+                                       between the items, which are tabindex="-1" so the menu is one Tab stop.
+                                       Escape is bound on this element, not window, so it closes
                                        only the menu and not the step dialog around it. A built-in question
                                        alone in its section has nothing to put there: no menu. #}
                                     {% if move_directions or not field.is_fixed %}
                                         <div class="row-link-menu inline-flex"
                                              x-data="rowActionsMenu"
                                              x-bind:class="open ? 'is-open' : ''"
-                                             @keydown.escape="closeOnEscape">
+                                             @keydown.escape="closeOnEscape"
+                                             @focusout="closeOnFocusOut">
                                             {{ button(variant="icon",
                                             icon=icon_more_vert(classes="w-4 h-4"),
                                             id="question-actions-" ~ field.id ~ "-toggle",
                                             aria_label=_("More actions for %(name)s", name=field.label),
                                             aria_haspopup="menu",
-                                            attrs='x-ref="menuToggle" @click="toggleMenu()" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="question-actions-' ~ field.id ~ '-menu"') }}
+                                            attrs='x-ref="menuToggle" @click="toggleMenu()" @keydown="onToggleKeydown" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="question-actions-' ~ field.id ~ '-menu"') }}
                                             <div x-show="open"
                                                  x-cloak
                                                  id="question-actions-{{ field.id }}-menu"
                                                  role="menu"
+                                                 x-ref="menu"
+                                                 @keydown="onMenuKeydown"
                                                  aria-labelledby="question-actions-{{ field.id }}-toggle"
                                                  class="menu menu--right"
                                                  style="min-width: 12rem;">
@@ -131,7 +136,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                                                           x-preserve-scroll-on-submit>
                                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                         <input type="hidden" name="direction" value="{{ direction }}">
-                                                        <button type="submit" role="menuitem" class="menu-item">{{ direction_label }}</button>
+                                                        <button type="submit" role="menuitem" tabindex="-1" class="menu-item">{{ direction_label }}</button>
                                                     </form>
                                                 {% endfor %}
                                                 {# Built-in questions can't be removed. Last, and marked as destructive. #}
@@ -143,7 +148,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                                                           data-preserve-scroll
                                                           @submit.prevent="$confirm('{{ _("Remove this question? Respondent data keeps its values; they just stop being rendered.") }}', $el)">
                                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                        <button type="submit" role="menuitem" class="menu-item menu-item--danger">{{ _("Remove") }}</button>
+                                                        <button type="submit" role="menuitem" tabindex="-1" class="menu-item menu-item--danger">{{ _("Remove") }}</button>
                                                     </form>
                                                 {% endif %}
                                             </div>

@@ -2,13 +2,15 @@
 ABOUTME: Set-up dialog wiring one target category to its data source (four methods)
 ABOUTME: Asks how the data is collected first; each answer re-renders the form over HTMX, and saving configures it all
 #}
+{% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
 {% from "backoffice/components/input.html" import input, select, radio_group %}
 {% set setup = setup_ctx | default(modal_ctx) %}
 {% set values = setup["values"] %}
 {% set target = setup["target"] %}
 {% set close_url = url_for('target_sources.view_sources', assembly_id=assembly.id) %}
-{% set refresh_attrs = 'hx-get="' ~ setup["refresh_url"] ~ '" hx-include="closest form" hx-target="#ts-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
+{% set refresh_attrs = 'hx-get="' ~ setup["refresh_url"] ~ '" hx-include="closest form" hx-params="not csrf_token" hx-target="#ts-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
    aria-label="{{ _('Close') }}"></a>
@@ -17,10 +19,10 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
      aria-modal="true"
      aria-labelledby="target-source-setup-title">
     <div class="dialog-panel dialog-panel--default">
-        <div class="dialog-header">
-            <h2 class="dialog-title" id="target-source-setup-title">{% if setup["is_linked"] %}{{ _("Edit data source for %(name)s", name=target["name"]) }}{% else %}{{ _("Set up data source for %(name)s", name=target["name"]) }}{% endif %}</h2>
-            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">✕</a>
-        </div>
+        {% set dialog_title %}{% if setup["is_linked"] %}{{ _("Edit data source for %(name)s", name=target["name"]) }}{% else %}{{ _("Set up data source for %(name)s", name=target["name"]) }}{% endif %}{% endset %}
+        {% call dialog_header(dialog_title, title_id="target-source-setup-title") %}
+            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
+        {% endcall %}
         <form method="post"
               action="{{ setup['configure_url'] }}"
               hx-post="{{ setup['configure_url'] }}"
@@ -28,13 +30,9 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
               hx-swap="innerHTML">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="modal" value="1">
-            <div class="dialog-body">
+            {% call dialog_body() %}
                 {% if setup["error"] %}
-                    <div class="rounded-md p-3 mb-4"
-                         style="background-color: var(--color-error-background);
-                                border: 1px solid var(--color-error-text);">
-                        <p class="text-body-sm" style="color: var(--color-error-text);">{{ setup["error"] }}</p>
-                    </div>
+                    {{ alert(setup["error"], variant="error") }}
                 {% endif %}
                 <div class="mb-4">
                     {% set method_options = [{"value": "", "label": _("Select one")}] + setup["method_options"] %}
@@ -139,7 +137,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                             </div>
                             <div class="flex-1">
                                 {{ input("new_field_label",
-                                label=_("Label on the form (optional)"),
+                                label=_("Label on the registration page (optional)"),
                                 value=values["new_field_label"],
                                 id="ts-new-field-label") }}
                             </div>
@@ -241,11 +239,11 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                         {% endif %}
                     </p>
                 {% endif %}
-            </div>
-            <div class="dialog-footer">
+            {% endcall %}
+            {% call dialog_footer() %}
                 {{ button(_("Cancel") , variant="secondary", href=close_url) }}
                 {{ button(_("Save") , type="submit", variant="primary") }}
-            </div>
+            {% endcall %}
         </form>
     </div>
 </div>

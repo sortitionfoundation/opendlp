@@ -3,6 +3,7 @@ ABOUTME: Recompute report modal — what saving or recomputing a derivation did 
 ABOUTME: Shown in the target data sources dialog after an upload or recompute; Done closes via a plain link
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
 {% set close_url = report_ctx["close_url"] %}
 {% set report = report_ctx["report"] %}
 <a href="{{ close_url }}"
@@ -13,17 +14,17 @@ ABOUTME: Shown in the target data sources dialog after an upload or recompute; D
      aria-modal="true"
      aria-labelledby="derivation-report-title">
     <div class="dialog-panel dialog-panel--default">
-        <div class="dialog-header">
-            <h2 class="dialog-title" id="derivation-report-title">{{ report_ctx["title"] }}</h2>
-            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">✕</a>
-        </div>
-        <div class="dialog-body">
+        {% set dialog_title %}{{ report_ctx["title"] }}{% endset %}
+        {% call dialog_header(dialog_title, title_id="derivation-report-title") %}
+            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
+        {% endcall %}
+        {% call dialog_body() %}
             {% if report.completed_selection_runs > 0 %}
                 <div class="rounded-md p-3 mb-4"
                      style="background-color: var(--color-warning-background);
                             border: 1px solid var(--color-warning-text);">
                     <p class="text-body-sm" style="color: var(--color-warning-text);">
-                        {{ _("This assembly has %(count)d completed selection run(s). Recomputing changes the pool underneath them — the numbers those selections were made from no longer match what is stored.", count=report.completed_selection_runs) }}
+                        {{ ngettext("This assembly has %(num)s completed selection run. Recomputing changes the pool underneath it — the numbers that selection was made from no longer match what is stored.", "This assembly has %(num)s completed selection runs. Recomputing changes the pool underneath them — the numbers those selections were made from no longer match what is stored.", report.completed_selection_runs) }}
                     </p>
                 </div>
             {% endif %}
@@ -73,7 +74,7 @@ ABOUTME: Shown in the target data sources dialog after an upload or recompute; D
                     {% for value in report.unmatched_sample %}<li class="text-body-sm">{{ value }}</li>{% endfor %}
                 </ul>
             {% endif %}
-        </div>
-        <div class="dialog-footer">{{ button(_("Done") , variant="primary", href=close_url) }}</div>
+        {% endcall %}
+        {% call dialog_footer() %}{{ button(_("Done") , variant="primary", href=close_url) }}{% endcall %}
     </div>
 </div>

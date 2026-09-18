@@ -321,6 +321,50 @@ class TestTargetLinkedGuards:
         # The question it was computed from stays behind
         assert uow.respondent_field_definitions.get_by_assembly_and_key(assembly.id, "postcode") is not None
 
+    def test_deleting_every_target_breaks_the_links_first(self, uow, admin, assembly):
+        """One statement deletes them all, so nothing per-category gets a say unless it is asked first."""
+        _gender, question = self._linked_category(uow, assembly)
+        _region, derived, respondent = self._derived_category(uow, assembly)
+
+        deleted = target_service.delete_targets_for_assembly(uow, admin.id, assembly.id)
+
+        assert deleted == 2
+        assert question.target_category_id is None
+        assert uow.respondent_field_definitions.get(question.id) is not None
+        assert uow.respondent_field_definitions.get(derived.id) is None
+        assert respondent.attributes == {"postcode": "E1 6AN"}
+
+    def test_a_csv_reimport_keeps_the_set_up_of_targets_that_come_back(self, uow, admin, assembly):
+        _gender, question = self._linked_category(uow, assembly)
+        _region, derived, respondent = self._derived_category(uow, assembly)
+        csv_content = "feature,value,min,max\nGender,Male,2,6\nGender,Female,2,6\nRegion,North,1,5\nRegion,South,1,5"
+
+        target_csv_import.import_targets_from_csv(uow, admin.id, assembly.id, csv_content, replace_existing=True)
+
+        by_name = {c.name: c for c in uow.target_categories.get_by_assembly_id(assembly.id)}
+        assert question.target_category_id == by_name["Gender"].id
+        assert derived.target_category_id == by_name["Region"].id
+        assert respondent.attributes == {"postcode": "E1 6AN", "Region": "North"}
+
+    def test_a_csv_reimport_drops_the_set_up_of_targets_that_do_not(self, uow, admin, assembly):
+        _gender, question = self._linked_category(uow, assembly)
+        _region, derived, respondent = self._derived_category(uow, assembly)
+        csv_content = "feature,value,min,max\nAge,18-30,1,5\nAge,31+,1,5"
+
+        target_csv_import.import_targets_from_csv(uow, admin.id, assembly.id, csv_content, replace_existing=True)
+
+        assert question.target_category_id is None
+        assert uow.respondent_field_definitions.get(derived.id) is None
+        assert respondent.attributes == {"postcode": "E1 6AN"}
+
+    def test_a_csv_import_that_adds_to_the_targets_touches_no_links(self, uow, admin, assembly):
+        gender, question = self._linked_category(uow, assembly)
+        csv_content = "feature,value,min,max\nAge,18-30,1,5\nAge,31+,1,5"
+
+        target_csv_import.import_targets_from_csv(uow, admin.id, assembly.id, csv_content, replace_existing=False)
+
+        assert question.target_category_id == gender.id
+
     def test_a_bulk_rename_that_only_carries_computed_fields_asks_nothing(self, uow, admin, assembly):
         """Nothing is unlinked and nothing is lost, so there is nothing to confirm."""
         region, _derived, _respondent = self._derived_category(uow, assembly, "Region")

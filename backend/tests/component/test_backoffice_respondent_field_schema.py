@@ -5,7 +5,9 @@ import re
 import uuid
 from datetime import UTC, datetime
 
-from opendlp.domain.respondent_derivation import AgeBracketRule
+import pytest
+
+from opendlp.domain.respondent_derivation import AgeBracketRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -203,8 +205,8 @@ class TestQuestionsList:
             '<code class="text-body-sm" style="color: var(--color-body-text);">last_name'
         )
         first, last = rows["first_name"], rows["last_name"]
-        assert 'role="menuitem" class="menu-item">Move down' in first
-        assert last.count('role="menuitem" class="menu-item">Move up') == 1
+        assert 'role="menuitem" tabindex="-1" class="menu-item">Move down' in first
+        assert last.count('role="menuitem" tabindex="-1" class="menu-item">Move up') == 1
         assert "Move up" not in rows["eligible"]
         # The old Section select and arrow columns are gone
         assert 'id="row-group-' not in body
@@ -653,6 +655,20 @@ class TestFieldModal:
         assert 'role="dialog"' in body
         assert "Add a question" in body
 
+    def test_the_modal_refresh_keeps_the_csrf_token_out_of_the_url(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The refresh is a GET that includes the whole form; a token in a URL reaches logs and history."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        refreshing = re.findall(r"<[^>]*hx-get=[^>]*hx-include=[^>]*>", body)
+        assert refreshing
+        assert all('hx-params="not csrf_token"' in tag for tag in refreshing)
+
     def test_new_modal_plain_request_renders_the_page_with_the_modal_open(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
@@ -838,7 +854,7 @@ class TestFieldModal:
         assert re.search(r'role="switch"\s+name="required"', switch)
         assert 'name="required_switch" value="1"' in body
         assert 'name="on_registration_page"' not in body
-        assert "Not on form" not in body
+        assert "Not on registration page" not in body
 
     def test_the_required_switch_says_what_each_type_of_question_needs(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1240,6 +1256,90 @@ class TestFieldModal:
         assert [o.value for o in field.options] == ["Yes", "No"]
         assert field.help_text == "a hint"
         assert field.on_registration_page == FieldOnRegistrationPage.NO
+
+    def _mapped_choice_question(self, fake_store, admin_user, assembly):
+        """A choice question, and a small mapping computed from it. Returns (question, derived)."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            question = RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="ethnicity",
+                label="Ethnicity",
+                group=RespondentFieldGroup.ABOUT_YOU,
+                sort_order=900,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="White British"), ChoiceOption(value="White Irish")],
+            )
+            uow.respondent_field_definitions.add(question)
+            derived, _report = derivation_service.create_derived_field(
+                uow,
+                admin_user.id,
+                assembly.id,
+                field_key="ethnicity_group",
+                label="Ethnicity group",
+                source_field_key="ethnicity",
+                rule=SmallMappingRule(mapping={"White British": "White", "White Irish": "White"}),
+            )
+            return question.create_detached_copy(), derived
+
+    def test_renaming_an_option_in_the_modal_carries_a_small_mapping_with_it(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The dialog posts the whole option list; each row says what it was called when it opened."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        question, derived = self._mapped_choice_question(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{question.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Ethnicity",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_original": ["White British", "White Irish"],
+                "option_value": ["White (British)", "White Irish"],
+                "option_help": ["", ""],
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.respondent_field_definitions.get(derived.id)
+            assert stored.derivation_config["mapping"] == {"White (British)": "White", "White Irish": "White"}
+
+    def test_the_modal_remembers_what_each_option_was_called_through_a_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Adding a row re-renders the form; a rename typed before that must still be known as one."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        question, _derived = self._mapped_choice_question(fake_store, admin_user, existing_assembly)
+
+        opened = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{question.id}/edit-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+        assert re.findall(r'name="option_original" value="([^"]*)"', opened) == ["White British", "White Irish"]
+
+        after_adding_a_row = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{question.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "add_option",
+                "label": "Ethnicity",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_original": ["White British", "White Irish"],
+                "option_value": ["White (British)", "White Irish"],
+                "option_help": ["", ""],
+            },
+            headers={"HX-Request": "true"},
+        ).get_data(as_text=True)
+
+        assert re.findall(r'name="option_original" value="([^"]*)"', after_adding_a_row) == [
+            "White British",
+            "White Irish",
+            "",
+        ]
 
     def test_edit_via_modal_strips_surrounding_space_from_the_help_text(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1786,6 +1886,9 @@ class TestTargetLinkedFieldUI:
         )
         body = response.get_data(as_text=True)
         assert "Feeds target: Gender" in body
+        # The tag uses the backoffice's own tag style; GOV.UK's tag classes have no styles here.
+        assert "govuk-tag" not in body
+        assert re.search(r'<ul class="question-tags">.*?/target-sources.*?Feeds target: Gender', body, re.DOTALL)
         # The question type can only switch between the two choice styles; option help inputs remain.
         type_select = re.search(r'<select\s+name="question_type".*?</select>', body, re.DOTALL).group(0)
         assert re.findall(r'<option value="([^"]*)"', type_select) == ["choice_radio", "choice_dropdown"]
@@ -1846,3 +1949,60 @@ class TestTargetLinkedFieldUI:
         assert b"feeds a target" in response.data
         stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
         assert [o.value for o in stored.options] == ["Male", "Female"]
+
+
+# Every route on the blueprint that takes an assembly, as (method, path after /respondent-schema).
+_ALL_SCHEMA_ROUTES = [
+    ("get", ""),
+    ("get", ".json"),
+    ("post", "/initialise"),
+    ("get", "/fields/new-modal"),
+    ("get", "/fields/{field_id}/edit-modal"),
+    ("post", "/fields/add"),
+    ("post", "/fields/add-derived"),
+    ("post", "/fields/{field_id}/derivation"),
+    ("get", "/fields/{field_id}/mapping-modal"),
+    ("post", "/fields/{field_id}/mapping-upload"),
+    ("post", "/fields/{field_id}/recompute"),
+    ("post", "/fields/{field_id}/update"),
+    ("post", "/guess-types"),
+    ("post", "/fields/{field_id}/options/add"),
+    ("post", "/fields/{field_id}/options/update"),
+    ("post", "/fields/{field_id}/options/remove"),
+    ("post", "/fields/{field_id}/move"),
+    ("post", "/fields/{field_id}/delete"),
+]
+
+
+class TestRoutesTurnAwayThoseWithoutAccess:
+    """No route may answer a refusal with a server error, whatever order it checks things in.
+
+    The modal routes are posted to as the modal posts, over HTMX: that is the
+    path that re-renders the page around the modal when a save is refused.
+    """
+
+    def _call(self, client, method, path, assembly_id, field_id):
+        url = f"/backoffice/assembly/{assembly_id}/respondent-schema" + path.format(field_id=field_id)
+        if method == "get":
+            return client.get(url, headers={"HX-Request": "true"})
+        data = {"modal": "1", "field_key": "shoe_size", "type_choice": "text", "direction": "up", "value": "x"}
+        return client.post(url, data=data, headers={"HX-Request": "true"})
+
+    @pytest.mark.parametrize(("method", "path"), _ALL_SCHEMA_ROUTES)
+    def test_a_user_with_no_role_on_the_assembly_is_turned_away(
+        self, method, path, logged_in_user, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            field = uow.respondent_field_definitions.list_by_assembly(existing_assembly.id)[0]
+
+        response = self._call(logged_in_user, method, path, existing_assembly.id, field.id)
+
+        assert response.status_code in (302, 403, 404)
+        assert b"shoe_size" not in response.data
+
+    @pytest.mark.parametrize(("method", "path"), _ALL_SCHEMA_ROUTES)
+    def test_an_unknown_assembly_is_turned_away(self, method, path, logged_in_admin):
+        response = self._call(logged_in_admin, method, path, uuid.uuid4(), uuid.uuid4())
+
+        assert response.status_code in (302, 404)

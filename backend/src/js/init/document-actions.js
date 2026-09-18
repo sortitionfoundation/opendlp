@@ -3,6 +3,11 @@
 
 import { copyButtonText, copyToClipboard } from "../lib/clipboard.js";
 
+// Matches a form that HTMX submits, in either attribute spelling.
+const HTMX_FORM_SELECTOR = ["post", "get", "put", "patch", "delete"]
+  .map((verb) => `[hx-${verb}], [data-hx-${verb}]`)
+  .join(", ");
+
 /**
  * Download the rendered 2FA backup codes as a text file.
  */
@@ -29,8 +34,12 @@ export function initDocumentActions() {
   // Handle button clicks for confirmations and print
   document.addEventListener("click", function (e) {
     // Check for confirmation. closest() rather than the target itself: the
-    // click often lands on the button's label span, not the button.
-    const confirmElement = e.target.closest("[data-confirm]");
+    // click often lands on the button's label span, not the button. Only
+    // clickable controls match: a form carrying data-confirm is handled on
+    // submit, so clicks on the fields inside it do not prompt.
+    const confirmElement = e.target.closest(
+      "button[data-confirm], a[data-confirm]",
+    );
     const confirmMsg = confirmElement ? confirmElement.dataset.confirm : "";
     if (confirmMsg && !confirm(confirmMsg)) {
       e.preventDefault();
@@ -53,6 +62,20 @@ export function initDocumentActions() {
     // Check for backup codes download
     if (e.target.dataset.downloadBackupCodes !== undefined) {
       downloadBackupCodes();
+    }
+  });
+
+  // Confirm a form that carries data-confirm when it is submitted. Forms that
+  // HTMX submits are ignored: htmx listens for submit on the form itself, which
+  // fires before this document-level listener, so the request is already sent
+  // by the time a dialog could appear. An HTMX form should put data-confirm on
+  // its submit button, or use hx-confirm.
+  document.addEventListener("submit", function (e) {
+    const form = e.target;
+    if (!form.matches("form[data-confirm]")) return;
+    if (form.matches(HTMX_FORM_SELECTOR)) return;
+    if (!confirm(form.dataset.confirm)) {
+      e.preventDefault();
     }
   });
 

@@ -2,7 +2,9 @@
 ABOUTME: Read-only schema rows plus an HTMX add/edit field modal; move, delete, initialise"""
 
 import contextlib
+import functools
 import uuid
+from collections.abc import Callable
 from itertools import zip_longest
 from typing import Any
 
@@ -61,6 +63,30 @@ from opendlp.translations import lazy_gettext as _l
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
 logger = structlog.get_logger(__name__)
+
+
+def _refusals_go_to_the_dashboard(view: Callable[..., ResponseReturnValue]) -> Callable[..., ResponseReturnValue]:
+    """Answer a refusal that escapes the view with the dashboard, not a server error.
+
+    The modal routes report a failed save by re-rendering the page around the
+    modal, and building that page checks the assembly and the user's access
+    again. When the save failed *because* of one of those, the re-render raises
+    the very error the view had just handled - from somewhere no ``except``
+    clause in the view covers.
+    """
+
+    @functools.wraps(view)
+    def guarded(*args: Any, **kwargs: Any) -> ResponseReturnValue:
+        try:
+            return view(*args, **kwargs)
+        except InsufficientPermissions:
+            flash(_("You don't have permission to edit the schema"), "error")
+            return redirect(url_for("backoffice.dashboard"))
+        except NotFoundError:
+            flash(_("Assembly not found"), "error")
+            return redirect(url_for("backoffice.dashboard"))
+
+    return guarded
 
 
 def _is_htmx() -> bool:
@@ -263,9 +289,17 @@ def _taxonomy_from_field_type(field_type: FieldType) -> dict[str, str]:
 
 def _modal_values_from_request(source: Any) -> dict[str, Any]:
     """Rebuild the modal form state from a submitted (or hx-included) form."""
+    # "original" is the value a row had when the dialog opened ("" for a row added
+    # since). It rides along through every round trip, so a save can tell an
+    # option that was renamed from one that was removed and another added.
     options = [
-        {"value": value, "help_text": help_text}
-        for value, help_text in zip_longest(source.getlist("option_value"), source.getlist("option_help"), fillvalue="")
+        {"value": value, "help_text": help_text, "original": original}
+        for value, help_text, original in zip_longest(
+            source.getlist("option_value"),
+            source.getlist("option_help"),
+            source.getlist("option_original"),
+            fillvalue="",
+        )
     ]
     values = {
         "label": source.get("label", ""),
@@ -283,7 +317,7 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
     if "question_type" in source:
         values.update(_taxonomy_from_question_type(source.get("question_type", "")))
     # The modal's Required switch: a checkbox, so it posts nothing when off -
-    # the hidden marker says the switch was there. "Not on form" is never
+    # the hidden marker says the switch was there. "Not on registration page" is never
     # chosen here; only derived fields are off the form, and they get it implicitly.
     if "required_switch" in source:
         values["on_registration_page"] = (
@@ -303,7 +337,7 @@ def _modal_values_from_field(field: RespondentFieldDefinition) -> dict[str, Any]
         "group": field.group.value,
         "help_text": field.help_text,
         "on_registration_page": field.on_registration_page.value,
-        "options": [{"value": o.value, "help_text": o.help_text} for o in field.options or []],
+        "options": [{"value": o.value, "help_text": o.help_text, "original": o.value} for o in field.options or []],
     })
     values.update(_taxonomy_from_field_type(field.field_type))
     return values
@@ -327,7 +361,7 @@ def _default_modal_values() -> dict[str, Any]:
 def _normalise_modal_values(values: dict[str, Any]) -> dict[str, Any]:
     """Keep the rendered form coherent: a choice type always shows ≥1 option row."""
     if values["type_choice"] == "choice" and not values["options"]:
-        values["options"] = [{"value": "", "help_text": ""}]
+        values["options"] = [{"value": "", "help_text": "", "original": ""}]
     return values
 
 
@@ -387,14 +421,18 @@ def _linked_target_name(field: RespondentFieldDefinition) -> str:
         return ""
     uow = bootstrap.get_flask_uow()
     with uow:
+        # Checks who is asking: nothing else on the way to the edit dialog has, by this point.
+        get_assembly_with_permissions(uow, field.assembly_id, current_user.id)
         category = uow.target_categories.get(field.target_category_id)
-        return category.name if category is not None else ""
+        if category is None or category.assembly_id != field.assembly_id:
+            return ""
+        return str(category.name)
 
 
 def _apply_option_action(values: dict[str, Any], form_action: str) -> dict[str, Any]:
     """Apply an options-editor round-trip action (add/remove a row) to the form state."""
     if form_action == "add_option":
-        values["options"].append({"value": "", "help_text": ""})
+        values["options"].append({"value": "", "help_text": "", "original": ""})
     elif form_action.startswith("remove_option_"):
         try:
             index = int(form_action.removeprefix("remove_option_"))
@@ -438,7 +476,10 @@ def _copy_target_options(assembly_id: uuid.UUID, values: dict[str, Any], candida
     if target is None:
         return values
     existing_help = {row["value"]: row["help_text"] for row in values["options"]}
-    values["options"] = [{"value": value, "help_text": existing_help.get(value, "")} for value in target["values"]]
+    # A copied list is a new list: rows that keep their value are not renames, and the rest are gone.
+    values["options"] = [
+        {"value": value, "help_text": existing_help.get(value, ""), "original": ""} for value in target["values"]
+    ]
     return values
 
 
@@ -449,6 +490,19 @@ def _submitted_options(values: dict[str, Any]) -> list[ChoiceOption]:
         for row in values["options"]
         if row["value"].strip()
     ]
+
+
+def _submitted_option_renames(values: dict[str, Any]) -> dict[str, str]:
+    """Old value -> new value for each option row whose value was edited in the dialog.
+
+    The service checks each pair against the field's real options, so a row
+    whose "original" was tampered with describes no rename at all.
+    """
+    return {
+        row["original"]: row["value"].strip()
+        for row in values["options"]
+        if row["original"] and row["value"].strip() and row["original"] != row["value"].strip()
+    }
 
 
 def duplicate_option_value(options: list[ChoiceOption]) -> str:
@@ -526,6 +580,14 @@ def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict
         with contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
+        # Read in the same transaction as the schema above, so the page is one snapshot.
+        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+        all_fields = [f for group_fields in grouped.values() for f in group_fields]
+        has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
+        hub_context: dict[str, Any] = {}
+        if with_hub:
+            hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
+
     # The DERIVED group is deliberately absent: derived fields are managed on
     # the target data sources step, not arranged on the registration page.
     sections = [
@@ -539,19 +601,12 @@ def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict
     ]
     schema_has_rows = any(section["fields"] for section in sections)
 
-    data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
 
-    all_fields = [f for group_fields in grouped.values() for f in group_fields]
     fed_target_names = _fed_target_names(all_fields, category_names_by_id)
     has_guessable_text_rows = any(
         not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
     )
-    hub_context: dict[str, Any] = {}
-    with uow:
-        has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
-        if with_hub:
-            hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
     show_guess_button = has_guessable_text_rows and has_respondents
 
     return {
@@ -827,6 +882,7 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
     methods=["POST"],
 )
 @login_required
+@_refusals_go_to_the_dashboard
 def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Add a new field to the schema — from the modal, or a plain form post.
 
@@ -865,6 +921,7 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     methods=["POST"],
 )
 @login_required
+@_refusals_go_to_the_dashboard
 def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
     """Update a field — from the edit modal, or a plain form post.
 
@@ -952,6 +1009,7 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
             if duplicate_error := _duplicate_option_error(options):
                 return {}, duplicate_error
             update_kwargs["options"] = options
+            update_kwargs["option_renames"] = _submitted_option_renames(values)
     return update_kwargs, ""
 
 

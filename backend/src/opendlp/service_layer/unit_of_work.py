@@ -124,6 +124,16 @@ class AbstractUnitOfWork(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def flush(self) -> None:
+        """Send pending changes to the database without committing.
+
+        Needed where one row must exist before another refers to it and no
+        relationship() tells the session which comes first - a foreign key held
+        as a plain UUID column gives it no ordering to work from.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def expire_all(self) -> None:
         """Drop cached attributes on all loaded objects.
 

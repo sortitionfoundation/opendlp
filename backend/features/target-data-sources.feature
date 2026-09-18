@@ -73,7 +73,7 @@ Feature: Target data sources
     And the "Upload later" button should be hidden
     When I upload a lookup table mapping "SW1A 1AA" to "North"
     Then the set-up dialog should say "Rows stored:"
-    And the "Region" target row should say "1 lookup rows"
+    And the "Region" target row should say "1 lookup row"
 
   Scenario: Putting off a lookup table upload
     Given there is an assembly with respondents imported from CSV called "Lookup Defer Demo"
@@ -85,3 +85,16 @@ Feature: Target data sources
     And I press the "Upload later" button
     Then I should see a warning toast saying "Until the lookup table is uploaded, everyone's Region will be UNKNOWN."
     And the "Region" target row should say "Until the lookup table is uploaded, everyone's Region is UNKNOWN."
+
+  Scenario: Working a row's more actions menu from the keyboard
+    Given there is an assembly with respondents imported from CSV called "Menu Keyboard Demo"
+    And the assembly "Menu Keyboard Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Menu Keyboard Demo"
+    And I set up the "Region" target as an exact copy
+    And I focus the more actions button for the "Region" target and press "ArrowDown"
+    Then keyboard focus should be on the "Unlink" menu item
+    When I press Escape
+    Then the more actions menu for the "Region" target should be closed
+    And keyboard focus should be on the more actions button for the "Region" target
+    And the target data sources should still be open

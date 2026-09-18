@@ -5,6 +5,8 @@ import io
 import re
 import uuid
 
+import pytest
+
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -15,6 +17,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.service_layer import derivation_service
+from opendlp.service_layer.assembly_service import create_assembly
 from tests.fakes import FakeUnitOfWork
 
 HTMX = {"HX-Request": "true"}
@@ -85,6 +88,20 @@ class TestChecklistPage:
         assert b"Asked on the registration form" in response.data
         assert b"No data source yet" in response.data
 
+    def test_status_marks_and_close_buttons_are_icons_not_text_glyphs(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """A screen reader reads a bare tick or cross aloud, as "check mark" or "ballot x"."""
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        checklist = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        modal = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+        )
+
+        for body in (checklist.get_data(as_text=True), modal.get_data(as_text=True)):
+            assert not re.search("[\u2713\u2717\u2715]", body)
+
     def test_flags_a_stale_linked_field(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female", "Other"])
         _seed_field(
@@ -151,6 +168,90 @@ class TestChecklistPage:
         assert 'class="setup-step"' not in response.get_data(as_text=True)
 
 
+def _flashes(client):
+    with client.session_transaction() as session:
+        return [message for _category, message in session.get("_flashes", [])]
+
+
+# Every route on the blueprint, as (method, path after /target-sources).
+_ALL_ROUTES = [
+    ("get", ""),
+    ("get", "/{category_id}/setup-modal"),
+    ("post", "/{category_id}/configure"),
+    ("post", "/{category_id}/adopt"),
+    ("post", "/{category_id}/resync"),
+    ("post", "/{category_id}/recompute"),
+    ("get", "/{category_id}/upload-modal"),
+    ("post", "/{category_id}/upload"),
+    ("post", "/{category_id}/unlink"),
+]
+
+
+class TestRoutesTurnAwayThoseWithoutAccess:
+    """No route may answer a refusal with a server error, whatever order it checks things in."""
+
+    def _call(self, client, method, path, assembly_id, category_id):
+        url = f"/backoffice/assembly/{assembly_id}/target-sources" + path.format(category_id=category_id)
+        if method == "get":
+            return client.get(url, follow_redirects=False)
+        # A well-formed field_id, so the adopt route gets as far as asking the service.
+        return client.post(url, data={"field_id": str(uuid.uuid4())}, follow_redirects=False)
+
+    @pytest.mark.parametrize(("method", "path"), _ALL_ROUTES)
+    def test_a_user_with_no_role_on_the_assembly_goes_back_to_the_dashboard(
+        self, method, path, logged_in_user, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        response = self._call(logged_in_user, method, path, existing_assembly.id, category.id)
+
+        assert response.status_code == 302
+        assert response.location.endswith("/backoffice/dashboard")
+        (message,) = _flashes(logged_in_user)
+        assert "permission" in message
+
+    @pytest.mark.parametrize(("method", "path"), _ALL_ROUTES)
+    def test_an_unknown_assembly_goes_back_to_the_dashboard(self, method, path, logged_in_admin):
+        response = self._call(logged_in_admin, method, path, uuid.uuid4(), uuid.uuid4())
+
+        assert response.status_code == 302
+        assert response.location.endswith("/backoffice/dashboard")
+        assert _flashes(logged_in_admin) == ["Assembly not found"]
+
+    def test_an_invalid_set_up_form_from_a_user_with_no_role_is_still_turned_away(
+        self, logged_in_user, existing_assembly, fake_store
+    ):
+        """The form is parsed before anyone checks who is asking, so the error path must check too."""
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        response = logged_in_user.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data={"method": ""},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith("/backoffice/dashboard")
+
+    def test_a_target_of_another_assembly_cannot_be_set_up_from_this_one(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            other = create_assembly(uow=uow, title="Another Assembly", created_by_user_id=admin_user.id)
+            other_assembly = other.create_detached_copy()
+        foreign = _seed_category(fake_store, other_assembly, "Gender", ["Male", "Female"])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{foreign.id}/configure",
+            data={"method": "exact", "source_mode": "create"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert _field_by_key(fake_store, existing_assembly, "Gender") is None
+        assert _field_by_key(fake_store, other_assembly, "Gender") is None
+
+
 class TestSetupModal:
     def _setup_url(self, assembly, category, query=""):
         return f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/setup-modal{query}"
@@ -171,6 +272,16 @@ class TestSetupModal:
         # Nothing else is asked until a method is chosen
         assert 'name="source_mode"' not in body
         assert "Target values:" not in body
+
+    def test_the_refresh_keeps_the_csrf_token_out_of_the_url(self, logged_in_admin, existing_assembly, fake_store):
+        """The refresh is a GET that includes the whole form; a token in a URL reaches logs and history."""
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        body = logged_in_admin.get(self._setup_url(existing_assembly, category), headers=HTMX).get_data(as_text=True)
+
+        refreshing = re.findall(r"<[^>]*hx-get=[^>]*hx-include=[^>]*>", body)
+        assert refreshing
+        assert all('hx-params="not csrf_token"' in tag for tag in refreshing)
 
     def test_editing_a_linked_target_opens_on_its_method(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
@@ -300,6 +411,67 @@ class TestConfigureExactCopy:
 
         assert response.status_code == 422
         assert b"already exists" in response.data
+        # The error is an alert, so a screen reader announces it when the dialog is swapped in.
+        assert re.search(r'role="alert".*?already exists', response.get_data(as_text=True), re.DOTALL)
+
+
+class TestErrorsShownToTheOrganiser:
+    """A not-found error names internal ids, so the page never shows its message."""
+
+    def test_reusing_a_question_that_does_not_exist_shows_a_generic_message(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        missing = uuid.uuid4()
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data={"modal": "1", "method": "exact", "source_mode": "reuse", "reuse_field_id": str(missing)},
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert re.search(r'role="alert".*?Field not found', body, re.DOTALL)
+        assert str(missing) not in body
+        assert str(existing_assembly.id) not in re.search(r'role="alert".*?</div>', body, re.DOTALL).group(0)
+
+    def test_a_reuse_id_that_is_not_an_id_asks_for_a_question(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data={"modal": "1", "method": "exact", "source_mode": "reuse", "reuse_field_id": "not-an-id"},
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert "Choose the question to use" in body
+        assert "hexadecimal" not in body
+
+    def test_adopting_a_question_that_does_not_exist_shows_a_generic_message(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        missing = uuid.uuid4()
+
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/adopt",
+            data={"field_id": str(missing)},
+        )
+
+        assert _flashes(logged_in_admin) == ["Field not found"]
+
+    def test_recomputing_a_target_with_nothing_linked_says_so(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        for action in ("resync", "recompute"):
+            logged_in_admin.post(
+                f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/{action}",
+            )
+
+        assert _flashes(logged_in_admin) == ["No question is linked to this target"] * 2
 
 
 class TestConfigureAgeBrackets:
@@ -682,6 +854,35 @@ class TestRowActions:
         refreshed = _field_by_key(fake_store, existing_assembly, "Gender")
         assert [o.value for o in refreshed.options] == ["Male", "Female", "Other"]
 
+    def test_resync_of_a_derivation_that_no_longer_parses_says_to_set_it_up_again(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """A stored config can predate a code change; the row must say so rather than fall over."""
+        category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+        _seed_field(fake_store, existing_assembly, "area", field_type=FieldType.TEXT)
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Region",
+            group=RespondentFieldGroup.DERIVED,
+            is_derived=True,
+            derived_from=["area"],
+            derivation_type=DerivationType.SMALL_MAPPING,
+            derivation_config={"mapping": {}},
+            field_type=FieldType.CHOICE_DROPDOWN,
+            options=[ChoiceOption(value="North")],
+            target_category_id=category.id,
+        )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/resync",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith("/target-sources")
+        assert _flashes(logged_in_admin) == ["This data source could not be re-synced — set it up again"]
+
     def test_unlink_clears_the_link_but_keeps_the_field(self, logged_in_admin, existing_assembly, fake_store):
         category, _field = self._linked_exact(fake_store, existing_assembly)
 
@@ -771,6 +972,21 @@ class TestRowActions:
         assert "Unlink" in menu
         assert "Recompute" not in menu
         assert "upload" not in menu.lower()
+
+    def test_the_menu_is_wired_as_a_keyboard_menu_button(self, logged_in_admin, existing_assembly, fake_store):
+        """role="menu" promises arrow keys; every item is out of the Tab order so the menu is one stop."""
+        self._linked_exact(fake_store, existing_assembly)
+
+        actions = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(
+            as_text=True
+        )
+
+        assert '@keydown="onToggleKeydown"' in actions
+        assert '@keydown="onMenuKeydown"' in actions
+        assert '@focusout="closeOnFocusOut"' in actions
+        items = re.findall(r'<[^>]*role="menuitem"[^>]*>', actions)
+        assert items
+        assert all('tabindex="-1"' in item for item in items)
 
     def test_a_derived_row_puts_recompute_in_the_menu_too(self, logged_in_admin, existing_assembly, fake_store):
         self._linked_age_bracket(fake_store, existing_assembly)
@@ -1069,6 +1285,25 @@ class TestMappingUpload:
         assert b"Rows stored:" in response.data
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
+
+    @pytest.mark.parametrize(
+        ("rows", "expected"),
+        [(b"SW1A 1AA,North\n", "1 lookup row"), (b"SW1A 1AA,North\nEH1 1AA,South\n", "2 lookup rows")],
+    )
+    def test_the_row_counts_its_lookup_rows_in_the_right_number(
+        self, rows, expected, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            data={"mapping_file": (io.BytesIO(b"Postcode,Region\n" + rows), "mapping.csv")},
+            content_type="multipart/form-data",
+            headers=HTMX,
+        )
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        assert re.search(rf"{expected}\b(?!s)", body)
 
     def test_missing_file_rerenders_as_422(self, logged_in_admin, existing_assembly, fake_store):
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)

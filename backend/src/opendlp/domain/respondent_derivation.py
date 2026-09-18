@@ -13,6 +13,7 @@ in target counts, and is the organiser's signal that source data needs
 attention. The house convention is the literal ``"UNKNOWN"``.
 """
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
@@ -134,6 +135,41 @@ class AgeBracketRule:
             boundaries=tuple(config.get("boundaries", ())),
             fallback=config.get("fallback", DEFAULT_FALLBACK),
         )
+
+
+_UNDER_LABEL = re.compile(r"^under-(\d+)$")
+_PLUS_LABEL = re.compile(r"^(\d+)\+$")
+_RANGE_LABEL = re.compile(r"^(\d+)-(\d+)$")
+
+
+def age_brackets_from_labels(labels: list[str]) -> tuple[int, int, tuple[int, ...]] | None:
+    """The (min_age, max_age, boundaries) that ``AgeBracketRule.bracket_labels`` would turn into these labels.
+
+    The inverse of ``bracket_labels``, kept beside it so the two cannot drift:
+    a target whose values are named like brackets tells us the rule that feeds
+    it. The "under-N" label may be missing, as it is from a target that has no
+    quota for the ineligible; the lowest range then supplies the minimum age.
+    Returns None when the labels are not a complete bracket set - any label of
+    another shape, no ranges at all, or no open-ended "N+" to close the top.
+    """
+    min_age: int | None = None
+    max_age: int | None = None
+    lowers: list[int] = []
+    for label in labels:
+        if under := _UNDER_LABEL.match(label):
+            min_age = int(under.group(1))
+        elif plus := _PLUS_LABEL.match(label):
+            max_age = int(plus.group(1))
+        elif bracket := _RANGE_LABEL.match(label):
+            lowers.append(int(bracket.group(1)))
+        else:
+            return None
+    if not lowers or max_age is None:
+        return None
+    lowers = sorted(set(lowers))
+    if min_age is None:
+        min_age = lowers[0]
+    return min_age, max_age, tuple(lower for lower in lowers if lower != min_age)
 
 
 @dataclass(frozen=True)

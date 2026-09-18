@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 import pytest
 
 from opendlp.domain.respondent_derivation import AgeBracketRule, SmallMappingRule
-from opendlp.entrypoints.blueprints.target_sources import (
+from opendlp.entrypoints.derivation_form_parser import (
     age_prefill_from_target,
     parse_age_rule,
     parse_boundaries,

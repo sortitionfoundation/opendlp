@@ -1098,6 +1098,60 @@ class TestSourceFieldProtection:
         stored = uow.respondent_field_definitions.get(derived.id)
         assert stored.derivation_config["mapping"] == {"White British": "White"}
 
+    def test_a_wholesale_replace_that_says_what_was_renamed_carries_the_mapping_key(self, uow):
+        """The question dialog submits the whole list; without the hint a rename reads as remove + add."""
+        user, assembly, source, derived = self._small_mapping_setup(uow)
+
+        update_field(
+            uow,
+            user.id,
+            assembly.id,
+            source.id,
+            options=[ChoiceOption(value="White (British)"), ChoiceOption(value="White Irish")],
+            option_renames={"White British": "White (British)"},
+        )
+
+        stored = uow.respondent_field_definitions.get(derived.id)
+        assert stored.derivation_config["mapping"] == {"White (British)": "White", "White Irish": "White"}
+
+    def test_renaming_every_mapped_option_at_once_is_not_mistaken_for_emptying_the_mapping(self, uow):
+        user, assembly, source, derived = self._small_mapping_setup(uow)
+
+        update_field(
+            uow,
+            user.id,
+            assembly.id,
+            source.id,
+            options=[ChoiceOption(value="British"), ChoiceOption(value="Irish")],
+            option_renames={"White British": "British", "White Irish": "Irish"},
+        )
+
+        stored = uow.respondent_field_definitions.get(derived.id)
+        assert stored.derivation_config["mapping"] == {"British": "White", "Irish": "White"}
+
+    @pytest.mark.parametrize(
+        "renames",
+        [
+            {"Never an option": "Asian"},  # the old value is not one of the field's options
+            {"White Irish": "Not submitted"},  # the new value is not in the new list
+            {"White British": "Asian"},  # the old value is still in the list, so nothing was renamed
+        ],
+    )
+    def test_a_rename_hint_that_describes_no_real_rename_is_ignored(self, uow, renames):
+        user, assembly, source, derived = self._small_mapping_setup(uow)
+
+        update_field(
+            uow,
+            user.id,
+            assembly.id,
+            source.id,
+            options=[ChoiceOption(value="White British"), ChoiceOption(value="Asian")],
+            option_renames=renames,
+        )
+
+        stored = uow.respondent_field_definitions.get(derived.id)
+        assert stored.derivation_config["mapping"] == {"White British": "White"}
+
     def test_replacing_source_options_that_empties_a_mapping_is_refused(self, uow):
         user, assembly, source, derived = self._small_mapping_setup(uow)
 

@@ -1,5 +1,5 @@
 // ABOUTME: Unit tests for the document-level action handlers
-// ABOUTME: Covers data-confirm, including clicks that land on an element inside the confirming one
+// ABOUTME: Covers data-confirm on buttons (click, including inner elements) and on forms (submit)
 
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -10,6 +10,18 @@ function click(element) {
   element.dispatchEvent(event);
   return event;
 }
+
+// jsdom does not implement form submission, so dispatch the event directly.
+function submit(form) {
+  const event = new Event("submit", { bubbles: true, cancelable: true });
+  form.dispatchEvent(event);
+  return event;
+}
+
+const CONFIRMING_FORM =
+  '<form data-confirm="Disable it?">' +
+  '<label for="code">Code</label><input type="text" id="code">' +
+  '<button type="submit"><span>Disable</span></button></form>';
 
 describe("initDocumentActions data-confirm", () => {
   // One shared window per test file, so register the listeners exactly once.
@@ -65,4 +77,60 @@ describe("initDocumentActions data-confirm", () => {
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
   });
+
+  it("does not ask for clicks on the fields of a confirming form", () => {
+    document.body.innerHTML = CONFIRMING_FORM;
+    const confirmSpy = vi.spyOn(window, "confirm");
+
+    const inputEvent = click(document.querySelector("input"));
+    const labelEvent = click(document.querySelector("label"));
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(inputEvent.defaultPrevented).toBe(false);
+    expect(labelEvent.defaultPrevented).toBe(false);
+  });
+
+  it("asks once when a confirming form is submitted and cancels it when declined", () => {
+    document.body.innerHTML = CONFIRMING_FORM;
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    const event = submit(document.querySelector("form"));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(confirmSpy).toHaveBeenCalledWith("Disable it?");
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it("lets a confirming form submit when confirmed", () => {
+    document.body.innerHTML = CONFIRMING_FORM;
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    const event = submit(document.querySelector("form"));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("does not ask when a form without data-confirm is submitted", () => {
+    document.body.innerHTML = "<form><button>Save</button></form>";
+    const confirmSpy = vi.spyOn(window, "confirm");
+
+    const event = submit(document.querySelector("form"));
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it.each(["hx-post", "data-hx-delete"])(
+    "ignores a confirming form that HTMX submits via %s",
+    (attribute) => {
+      document.body.innerHTML = `<form data-confirm="Disable it?" ${attribute}="/x"><button>Go</button></form>`;
+      const confirmSpy = vi.spyOn(window, "confirm");
+
+      const event = submit(document.querySelector("form"));
+
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    },
+  );
 });

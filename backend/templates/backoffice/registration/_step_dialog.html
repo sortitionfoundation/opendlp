@@ -2,7 +2,7 @@
 ABOUTME: Takeover dialog shell for a registration set-up step, opened over the registration hub
 ABOUTME: Closing it - X, backdrop click or Escape - is a link back to the hub
 #}
-{% from "backoffice/components/modal.html" import dialog_close_icon %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_header %}
 {#
     Render from a view's page_overlay block, with page_takeover=True so the hub
     painted in page_content is inert behind it. Every change on a set-up step
@@ -24,17 +24,18 @@ ABOUTME: Closing it - X, backdrop click or Escape - is a link back to the hub
          aria-modal="true"
          aria-labelledby="{{ title_id }}">
         <div class="dialog-panel dialog-panel--takeover">
-            <div class="dialog-header">
-                <h2 class="dialog-title" id="{{ title_id }}">{{ title }}</h2>
+            {# Captured here: inside the call blocks below, `caller` would be the block's own. #}
+            {% set step_content = caller() %}
+            {% call dialog_header(title, title_id=title_id) %}
                 <a href="{{ close_url }}"
                    class="dialog-close-btn"
                    aria-label="{{ _('Close and return to registration') }}">
                     {{ dialog_close_icon() }}
                 </a>
-            </div>
-            <div class="dialog-body">
-                {{ caller() }}
-            </div>
+            {% endcall %}
+            {% call dialog_body() %}
+                {{ step_content }}
+            {% endcall %}
         </div>
     </div>
 {% endmacro %}
