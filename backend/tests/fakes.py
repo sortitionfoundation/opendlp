@@ -1184,6 +1184,9 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         """
         self.commit()
 
+    def flush(self) -> None:
+        """Nothing to send anywhere: the fake store has no write ordering to get wrong."""
+
     def rollback(self) -> None:
         """Undo uncommitted changes.
 

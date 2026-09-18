@@ -2,6 +2,7 @@
 ABOUTME: Provides CRUD, CSV import and percentage-driven min/max for assembly targets"""
 
 import uuid
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, cast
@@ -172,6 +173,41 @@ def _break_links(uow: AbstractUnitOfWork, category: TargetCategory, new_name: st
                 delete_derived_field(uow, category.assembly_id, field_def)
             continue
         field_def.target_category_id = None
+        field_def.updated_at = now
+
+
+def release_links_before_deleting_all(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, surviving_names: Collection[str] = ()
+) -> dict[str, list[Any]]:
+    """Deal with every linked field of an assembly whose targets are all about to be deleted.
+
+    Deleting every category in one statement goes round the per-category guards,
+    and the database would answer by nulling each link - leaving a derived field
+    with no target, which no screen can reach. So the links are broken here
+    first, exactly as deleting each category would: questions are unlinked and
+    stay, derived fields go with their target.
+
+    ``surviving_names`` are the categories about to be recreated under the same
+    name, as a CSV re-import does. Their fields are left alone and returned by
+    category name, for ``relink_fields`` to point at the new category - a
+    re-import of the same targets should not throw away how they were set up.
+    """
+    held: dict[str, list[Any]] = {}
+    for category in uow.target_categories.get_by_assembly_id(assembly_id):
+        if category.name in surviving_names:
+            linked = fields_linked_to_category(uow, category)
+            if linked:
+                held[category.name] = linked
+        else:
+            _break_links(uow, category)
+    return held
+
+
+def relink_fields(held: dict[str, list[Any]], category: TargetCategory) -> None:
+    """Point the fields held back for a recreated category at its new id."""
+    now = datetime.now(UTC)
+    for field_def in held.get(category.name, []):
+        field_def.target_category_id = category.id
         field_def.updated_at = now
 
 
@@ -679,6 +715,7 @@ def delete_targets_for_assembly(
             required_role="assembly-manager or admin",
         )
 
+    release_links_before_deleting_all(uow, assembly_id)
     return uow.target_categories.delete_all_for_assembly(assembly_id)
 
 

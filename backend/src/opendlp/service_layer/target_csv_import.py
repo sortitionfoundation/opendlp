@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import csv as csv_module
 from io import StringIO
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from sortition_algorithms.features import read_in_features
 
@@ -14,7 +14,7 @@ from opendlp.translations import gettext as _
 
 from .constants import SORT_ORDER_STEP
 from .exceptions import InvalidSelection
-from .target_service import _load_user_and_assembly
+from .target_service import _load_user_and_assembly, release_links_before_deleting_all, relink_fields
 
 if TYPE_CHECKING:
     import uuid
@@ -175,8 +175,13 @@ def import_targets_from_csv(
     value_extras, category_extras = _collect_csv_extras(body, columns, feature_col, value_col)
     warnings: list[str] = []
 
-    # Replace existing if requested
+    # Replace existing if requested. A target that comes back under the same
+    # name keeps the questions that feed it; one that does not loses them.
+    held_fields: dict[str, list[Any]] = {}
     if replace_existing:
+        held_fields = release_links_before_deleting_all(
+            uow, assembly_id, surviving_names=set(feature_collection.keys())
+        )
         uow.target_categories.delete_all_for_assembly(assembly_id)
 
     # Convert to TargetCategory objects
@@ -222,6 +227,10 @@ def import_targets_from_csv(
         _fill_missing_percentages(category, assembly.number_to_select)
 
         uow.target_categories.add(category)
+        if category.name in held_fields:
+            # The category has to reach the database before a field can point at it.
+            uow.flush()
+            relink_fields(held_fields, category)
         categories.append(category)
 
     return TargetImportResult(
