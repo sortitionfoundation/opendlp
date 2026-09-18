@@ -307,9 +307,17 @@ def _taxonomy_from_field_type(field_type: FieldType) -> dict[str, str]:
 
 def _modal_values_from_request(source: Any) -> dict[str, Any]:
     """Rebuild the modal form state from a submitted (or hx-included) form."""
+    # "original" is the value a row had when the dialog opened ("" for a row added
+    # since). It rides along through every round trip, so a save can tell an
+    # option that was renamed from one that was removed and another added.
     options = [
-        {"value": value, "help_text": help_text}
-        for value, help_text in zip_longest(source.getlist("option_value"), source.getlist("option_help"), fillvalue="")
+        {"value": value, "help_text": help_text, "original": original}
+        for value, help_text, original in zip_longest(
+            source.getlist("option_value"),
+            source.getlist("option_help"),
+            source.getlist("option_original"),
+            fillvalue="",
+        )
     ]
     values = {
         "label": source.get("label", ""),
@@ -358,7 +366,7 @@ def _modal_values_from_field(field: RespondentFieldDefinition) -> dict[str, Any]
         "group": field.group.value,
         "help_text": field.help_text,
         "on_registration_page": field.on_registration_page.value,
-        "options": [{"value": o.value, "help_text": o.help_text} for o in field.options or []],
+        "options": [{"value": o.value, "help_text": o.help_text, "original": o.value} for o in field.options or []],
     })
     values.update(_taxonomy_from_field_type(field.field_type))
     if field.is_derived:
@@ -416,7 +424,7 @@ def _default_modal_values() -> dict[str, Any]:
 def _normalise_modal_values(values: dict[str, Any]) -> dict[str, Any]:
     """Keep the rendered form coherent: a choice type always shows ≥1 option row."""
     if values["type_choice"] == "choice" and not values["options"]:
-        values["options"] = [{"value": "", "help_text": ""}]
+        values["options"] = [{"value": "", "help_text": "", "original": ""}]
     return values
 
 
@@ -513,7 +521,7 @@ def _linked_target_name(field: RespondentFieldDefinition) -> str:
 def _apply_option_action(values: dict[str, Any], form_action: str) -> dict[str, Any]:
     """Apply an options-editor round-trip action (add/remove a row) to the form state."""
     if form_action == "add_option":
-        values["options"].append({"value": "", "help_text": ""})
+        values["options"].append({"value": "", "help_text": "", "original": ""})
     elif form_action.startswith("remove_option_"):
         try:
             index = int(form_action.removeprefix("remove_option_"))
@@ -557,7 +565,10 @@ def _copy_target_options(assembly_id: uuid.UUID, values: dict[str, Any], candida
     if target is None:
         return values
     existing_help = {row["value"]: row["help_text"] for row in values["options"]}
-    values["options"] = [{"value": value, "help_text": existing_help.get(value, "")} for value in target["values"]]
+    # A copied list is a new list: rows that keep their value are not renames, and the rest are gone.
+    values["options"] = [
+        {"value": value, "help_text": existing_help.get(value, ""), "original": ""} for value in target["values"]
+    ]
     return values
 
 
@@ -568,6 +579,19 @@ def _submitted_options(values: dict[str, Any]) -> list[ChoiceOption]:
         for row in values["options"]
         if row["value"].strip()
     ]
+
+
+def _submitted_option_renames(values: dict[str, Any]) -> dict[str, str]:
+    """Old value -> new value for each option row whose value was edited in the dialog.
+
+    The service checks each pair against the field's real options, so a row
+    whose "original" was tampered with describes no rename at all.
+    """
+    return {
+        row["original"]: row["value"].strip()
+        for row in values["options"]
+        if row["original"] and row["value"].strip() and row["original"] != row["value"].strip()
+    }
 
 
 def duplicate_option_value(options: list[ChoiceOption]) -> str:
@@ -1537,6 +1561,7 @@ def _modal_update_kwargs(field: RespondentFieldDefinition, values: dict[str, Any
             if duplicate_error := _duplicate_option_error(options):
                 return {}, duplicate_error
             update_kwargs["options"] = options
+            update_kwargs["option_renames"] = _submitted_option_renames(values)
     return update_kwargs, ""
 
 

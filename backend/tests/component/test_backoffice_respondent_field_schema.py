@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 
 import pytest
 
+from opendlp.domain.respondent_derivation import SmallMappingRule
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -1256,6 +1257,90 @@ class TestFieldModal:
         assert [o.value for o in field.options] == ["Yes", "No"]
         assert field.help_text == "a hint"
         assert field.on_registration_page == FieldOnRegistrationPage.NO
+
+    def _mapped_choice_question(self, fake_store, admin_user, assembly):
+        """A choice question, and a small mapping computed from it. Returns (question, derived)."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            question = RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="ethnicity",
+                label="Ethnicity",
+                group=RespondentFieldGroup.ABOUT_YOU,
+                sort_order=900,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="White British"), ChoiceOption(value="White Irish")],
+            )
+            uow.respondent_field_definitions.add(question)
+            derived, _report = derivation_service.create_derived_field(
+                uow,
+                admin_user.id,
+                assembly.id,
+                field_key="ethnicity_group",
+                label="Ethnicity group",
+                source_field_key="ethnicity",
+                rule=SmallMappingRule(mapping={"White British": "White", "White Irish": "White"}),
+            )
+            return question.create_detached_copy(), derived
+
+    def test_renaming_an_option_in_the_modal_carries_a_small_mapping_with_it(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The dialog posts the whole option list; each row says what it was called when it opened."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        question, derived = self._mapped_choice_question(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{question.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "save",
+                "label": "Ethnicity",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_original": ["White British", "White Irish"],
+                "option_value": ["White (British)", "White Irish"],
+                "option_help": ["", ""],
+                "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
+            },
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            stored = uow.respondent_field_definitions.get(derived.id)
+            assert stored.derivation_config["mapping"] == {"White (British)": "White", "White Irish": "White"}
+
+    def test_the_modal_remembers_what_each_option_was_called_through_a_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Adding a row re-renders the form; a rename typed before that must still be known as one."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        question, _derived = self._mapped_choice_question(fake_store, admin_user, existing_assembly)
+
+        opened = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{question.id}/edit-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+        assert re.findall(r'name="option_original" value="([^"]*)"', opened) == ["White British", "White Irish"]
+
+        after_adding_a_row = logged_in_admin.post(
+            f"{self._base(existing_assembly)}/fields/{question.id}/update",
+            data={
+                "modal": "1",
+                "form_action": "add_option",
+                "label": "Ethnicity",
+                "type_choice": "choice",
+                "choice_style": "choice_radio",
+                "option_original": ["White British", "White Irish"],
+                "option_value": ["White (British)", "White Irish"],
+                "option_help": ["", ""],
+            },
+            headers={"HX-Request": "true"},
+        ).get_data(as_text=True)
+
+        assert re.findall(r'name="option_original" value="([^"]*)"', after_adding_a_row) == [
+            "White British",
+            "White Irish",
+            "",
+        ]
 
     def test_edit_via_modal_strips_surrounding_space_from_the_help_text(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

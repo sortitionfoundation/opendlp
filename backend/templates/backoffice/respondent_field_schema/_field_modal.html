@@ -128,6 +128,10 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                             <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
                             {% for option in values["options"] %}
                                 <div class="flex gap-2 items-end mb-2">
+                                    {# What this row was called when the dialog opened, so a save can tell a
+                                       rename from a removal - a small mapping keyed on the old value follows
+                                       a rename, and drops a removal. #}
+                                    <input type="hidden" name="option_original" value="{{ option['original'] | default('') }}">
                                     <div class="flex-1">
                                         {{ input("option_value",
                                         value=option["value"],
