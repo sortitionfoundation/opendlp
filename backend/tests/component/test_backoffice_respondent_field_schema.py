@@ -203,8 +203,8 @@ class TestQuestionsList:
             '<code class="text-body-sm" style="color: var(--color-body-text);">last_name'
         )
         first, last = rows["first_name"], rows["last_name"]
-        assert 'role="menuitem" class="menu-item">Move down' in first
-        assert last.count('role="menuitem" class="menu-item">Move up') == 1
+        assert 'role="menuitem" tabindex="-1" class="menu-item">Move down' in first
+        assert last.count('role="menuitem" tabindex="-1" class="menu-item">Move up') == 1
         assert "Move up" not in rows["eligible"]
         # The old Section select and arrow columns are gone
         assert 'id="row-group-' not in body

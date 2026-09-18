@@ -155,6 +155,13 @@ def open_more_actions(admin_logged_in_page: Page, target_name: str) -> None:
     expect(_row_for(page, target_name).get_by_role("menu")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when(parsers.parse('I focus the more actions button for the "{target_name}" target and press "{key}"'))
+def focus_more_actions_and_press(admin_logged_in_page: Page, target_name: str, key: str) -> None:
+    toggle = _row_for(admin_logged_in_page, target_name).get_by_role("button", name=f"More actions for {target_name}")
+    toggle.focus()
+    admin_logged_in_page.keyboard.press(key)
+
+
 @when("I press Escape")
 def press_escape(admin_logged_in_page: Page) -> None:
     admin_logged_in_page.keyboard.press("Escape")
@@ -217,6 +224,17 @@ def see_warning_toast(admin_logged_in_page: Page, text: str) -> None:
 @then(parsers.parse('the more actions menu for the "{target_name}" target should be closed'))
 def more_actions_closed(admin_logged_in_page: Page, target_name: str) -> None:
     expect(_row_for(admin_logged_in_page, target_name).get_by_role("menu")).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('keyboard focus should be on the "{item}" menu item'))
+def focus_on_menu_item(admin_logged_in_page: Page, item: str) -> None:
+    expect(admin_logged_in_page.get_by_role("menuitem", name=item)).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('keyboard focus should be on the more actions button for the "{target_name}" target'))
+def focus_on_more_actions(admin_logged_in_page: Page, target_name: str) -> None:
+    toggle = _row_for(admin_logged_in_page, target_name).get_by_role("button", name=f"More actions for {target_name}")
+    expect(toggle).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then("the target data sources should still be open")

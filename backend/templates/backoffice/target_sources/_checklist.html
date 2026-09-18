@@ -72,31 +72,36 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                         {{ button(_("Re-sync from target") , type="submit", variant="secondary") }}
                                     </form>
                                 {% endif %}
-                                {# The less common row actions, behind a "more" menu. Same open/close and
-                                   ARIA behaviour as the dropdown_button component, but mixing link and
-                                   submit items. Escape is bound on this element, not window, so it closes
+                                {# The less common row actions, behind a "more" menu mixing link and submit
+                                   items. rowActionsMenu makes it a WAI-ARIA menu button: opening moves focus
+                                   to the first item, the arrow keys, Home and End move between items (each
+                                   is tabindex="-1", so the menu is one Tab stop), and tabbing out closes
+                                   it. Escape is bound on this element, not window, so it closes
                                    only the menu and not the step dialog around it. Item text is bare (no
                                    inner span); data-confirm does not depend on that, as it looks up from
                                    the click target to the enclosing button. #}
                                 <div class="row-link-menu inline-flex"
                                      x-data="rowActionsMenu"
                                      x-bind:class="open ? 'is-open' : ''"
-                                     @keydown.escape="closeOnEscape">
+                                     @keydown.escape="closeOnEscape"
+                                     @focusout="closeOnFocusOut">
                                     {{ button(variant="icon",
                                     icon=icon_more_vert(classes="w-4 h-4"),
                                     id="ts-actions-" ~ category.id ~ "-toggle",
                                     aria_label=_("More actions for %(name)s", name=category.name),
                                     aria_haspopup="menu",
-                                    attrs='x-ref="menuToggle" @click="toggleMenu()" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="ts-actions-' ~ category.id ~ '-menu"') }}
+                                    attrs='x-ref="menuToggle" @click="toggleMenu()" @keydown="onToggleKeydown" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="ts-actions-' ~ category.id ~ '-menu"') }}
                                     <div x-show="open"
                                          x-cloak
                                          id="ts-actions-{{ category.id }}-menu"
                                          role="menu"
+                                         x-ref="menu"
+                                         @keydown="onMenuKeydown"
                                          aria-labelledby="ts-actions-{{ category.id }}-toggle"
                                          class="menu menu--right"
                                          style="min-width: 12rem;">
                                         {% if is_large_mapping and status.mapping_row_count %}
-                                            <a role="menuitem"
+                                            <a role="menuitem" tabindex="-1"
                                                class="menu-item"
                                                href="{{ upload_url }}"
                                                @click="closeMenu()"
@@ -112,7 +117,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                                   hx-target="#ts-modal-container"
                                                   hx-swap="innerHTML">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" role="menuitem" class="menu-item" @click="closeMenu()">{{ _("Recompute") }}</button>
+                                                <button type="submit" role="menuitem" tabindex="-1" class="menu-item" @click="closeMenu()">{{ _("Recompute") }}</button>
                                             </form>
                                         {% endif %}
                                         {# A computed question exists only to feed this target and is listed
@@ -135,7 +140,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                               hx-swap="innerHTML">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit"
-                                                    role="menuitem"
+                                                    role="menuitem" tabindex="-1"
                                                     class="menu-item{% if status.state == TargetSourceState.LINKED_DERIVED %} menu-item--danger{% endif %}"
                                                     @click="closeMenu()"
                                                     data-confirm="{{ unlink_confirm }}">

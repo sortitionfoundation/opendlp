@@ -763,6 +763,21 @@ class TestRowActions:
         assert "Recompute" not in menu
         assert "upload" not in menu.lower()
 
+    def test_the_menu_is_wired_as_a_keyboard_menu_button(self, logged_in_admin, existing_assembly, fake_store):
+        """role="menu" promises arrow keys; every item is out of the Tab order so the menu is one stop."""
+        self._linked_exact(fake_store, existing_assembly)
+
+        actions = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(
+            as_text=True
+        )
+
+        assert '@keydown="onToggleKeydown"' in actions
+        assert '@keydown="onMenuKeydown"' in actions
+        assert '@focusout="closeOnFocusOut"' in actions
+        items = re.findall(r'<[^>]*role="menuitem"[^>]*>', actions)
+        assert items
+        assert all('tabindex="-1"' in item for item in items)
+
     def test_a_derived_row_puts_recompute_in_the_menu_too(self, logged_in_admin, existing_assembly, fake_store):
         self._linked_age_bracket(fake_store, existing_assembly)
 

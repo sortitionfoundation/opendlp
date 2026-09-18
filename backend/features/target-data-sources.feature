@@ -62,3 +62,16 @@ Feature: Target data sources
     When I open the more actions menu for the "Region" target
     And I choose "Unlink" from the menu and confirm
     Then the "Region" target row should say "isn't linked to it yet"
+
+  Scenario: Working a row's more actions menu from the keyboard
+    Given there is an assembly with respondents imported from CSV called "Menu Keyboard Demo"
+    And the assembly "Menu Keyboard Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Menu Keyboard Demo"
+    And I set up the "Region" target as an exact copy
+    And I focus the more actions button for the "Region" target and press "ArrowDown"
+    Then keyboard focus should be on the "Unlink" menu item
+    When I press Escape
+    Then the more actions menu for the "Region" target should be closed
+    And keyboard focus should be on the more actions button for the "Region" target
+    And the target data sources should still be open
