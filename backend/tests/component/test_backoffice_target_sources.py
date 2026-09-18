@@ -414,6 +414,65 @@ class TestConfigureExactCopy:
         assert re.search(r'role="alert".*?already exists', response.get_data(as_text=True), re.DOTALL)
 
 
+class TestErrorsShownToTheOrganiser:
+    """A not-found error names internal ids, so the page never shows its message."""
+
+    def test_reusing_a_question_that_does_not_exist_shows_a_generic_message(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        missing = uuid.uuid4()
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data={"modal": "1", "method": "exact", "source_mode": "reuse", "reuse_field_id": str(missing)},
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert re.search(r'role="alert".*?Field not found', body, re.DOTALL)
+        assert str(missing) not in body
+        assert str(existing_assembly.id) not in re.search(r'role="alert".*?</div>', body, re.DOTALL).group(0)
+
+    def test_a_reuse_id_that_is_not_an_id_asks_for_a_question(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data={"modal": "1", "method": "exact", "source_mode": "reuse", "reuse_field_id": "not-an-id"},
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert "Choose the question to use" in body
+        assert "hexadecimal" not in body
+
+    def test_adopting_a_question_that_does_not_exist_shows_a_generic_message(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        missing = uuid.uuid4()
+
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/adopt",
+            data={"field_id": str(missing)},
+        )
+
+        assert _flashes(logged_in_admin) == ["Field not found"]
+
+    def test_recomputing_a_target_with_nothing_linked_says_so(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        for action in ("resync", "recompute"):
+            logged_in_admin.post(
+                f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/{action}",
+            )
+
+        assert _flashes(logged_in_admin) == ["No question is linked to this target"] * 2
+
+
 class TestConfigureAgeBrackets:
     def _age_form(self, **overrides):
         return {

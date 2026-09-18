@@ -15,8 +15,11 @@ from opendlp.domain.respondent_derivation import DEFAULT_FALLBACK, LargeMappingR
 from opendlp.domain.respondent_field_schema import (
     CHOICE_TYPES,
     DerivationType,
+    DerivedFieldError,
     FieldType,
+    FixedFieldError,
     RespondentFieldDefinition,
+    TargetLinkedFieldError,
     humanise_field_key,
 )
 from opendlp.entrypoints.blueprints.backoffice_registration import registration_hub_context
@@ -470,7 +473,11 @@ def _parse_source_spec(values: dict[str, Any], method: str) -> SourceFieldSpec:
     if values["source_mode"] == "reuse":
         if not values["reuse_field_id"]:
             raise ValueError(_("Choose the question to use"))
-        return SourceFieldSpec(reuse_field_id=uuid.UUID(values["reuse_field_id"]))
+        try:
+            return SourceFieldSpec(reuse_field_id=uuid.UUID(values["reuse_field_id"]))
+        except ValueError as e:
+            # Only a hand-edited form sends something that is not an id.
+            raise ValueError(_("Choose the question to use")) from e
     if method == _METHOD_EXACT:
         return SourceFieldSpec()
     # With nothing to reuse the modal names the new question itself rather than asking.
@@ -590,8 +597,18 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         uow = bootstrap.get_flask_uow()
         with uow:
             fields, report = configure_target_source(uow, current_user.id, assembly_id, category_id, spec)
-    except (ValueError, FieldDefinitionConflictError, FieldDefinitionNotFoundError) as e:
+    except (FixedFieldError, DerivedFieldError, TargetLinkedFieldError):
+        # Domain guards the form cannot trip; their messages are written for a developer.
+        logger.exception("Target source set-up refused by a domain guard", assembly_id=str(assembly_id))
+        return _setup_error_response(assembly_id, category_id, values, _("This data source could not be saved"))
+    except ValueError as e:
+        # Raised by the form parsers and the rule constructors, each with a message written for the organiser.
         return _setup_error_response(assembly_id, category_id, values, str(e))
+    except FieldDefinitionConflictError as e:
+        return _setup_error_response(assembly_id, category_id, values, e.user_msg())
+    except FieldDefinitionNotFoundError:
+        # The message names internal ids - show a generic one.
+        return _setup_error_response(assembly_id, category_id, values, _("Field not found"))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
@@ -615,8 +632,12 @@ def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturn
         uow = bootstrap.get_flask_uow()
         with uow:
             adopt_field(uow, current_user.id, assembly_id, category_id, field_id)
-    except (ValueError, FieldDefinitionConflictError, FieldDefinitionNotFoundError) as e:
-        flash(str(e) if not isinstance(e, ValueError) else _("Field not found"), "error")
+    except FieldDefinitionConflictError as e:
+        flash(e.user_msg(), "error")
+        return redirect(_sources_url(assembly_id))
+    except (ValueError, FieldDefinitionNotFoundError):
+        # A malformed id, or one the service does not know; its message names internal ids.
+        flash(_("Field not found"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
@@ -633,8 +654,12 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         uow = bootstrap.get_flask_uow()
         with uow:
             field, report = resync_from_target(uow, current_user.id, assembly_id, category_id)
-    except (FieldDefinitionConflictError, FieldDefinitionNotFoundError) as e:
-        flash(str(e), "error")
+    except FieldDefinitionConflictError as e:
+        flash(e.user_msg(), "error")
+        return redirect(_sources_url(assembly_id))
+    except FieldDefinitionNotFoundError:
+        # The message names internal ids - show a generic one.
+        flash(_("No question is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
     except ValueError:
         # The linked field's stored derivation no longer parses, so there is no rule to re-sync.
@@ -664,8 +689,12 @@ def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         uow = bootstrap.get_flask_uow()
         with uow:
             report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
-    except (FieldDefinitionConflictError, FieldDefinitionNotFoundError) as e:
-        flash(str(e), "error")
+    except FieldDefinitionConflictError as e:
+        flash(e.user_msg(), "error")
+        return redirect(_sources_url(assembly_id))
+    except FieldDefinitionNotFoundError:
+        # The message names internal ids - show a generic one.
+        flash(_("No question is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
@@ -746,8 +775,11 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
                 allow_new_outputs=request.form.get("allow_new_outputs") == "1",
             )
             report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
-    except (FieldDefinitionConflictError, FieldDefinitionNotFoundError) as e:
-        return _upload_modal_response(assembly_id, category_id, error=str(e), status=422)
+    except FieldDefinitionConflictError as e:
+        return _upload_modal_response(assembly_id, category_id, error=e.user_msg(), status=422)
+    except FieldDefinitionNotFoundError:
+        # The message names internal ids - show a generic one.
+        return _upload_modal_response(assembly_id, category_id, error=_("Field not found"), status=422)
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
