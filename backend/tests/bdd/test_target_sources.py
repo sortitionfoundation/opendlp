@@ -211,6 +211,27 @@ def focus_more_actions_and_press(admin_logged_in_page: Page, target_name: str, k
     admin_logged_in_page.keyboard.press(key)
 
 
+def _row_opener(page: Page, target_name: str):
+    """The row's set-up or edit button - whichever its state shows - which is where focus returns."""
+    return _row_for(page, target_name).locator("[data-focus-id]")
+
+
+@when(parsers.parse('I focus the set-up button for the "{target_name}" target and press "{key}"'))
+def focus_set_up_and_press(admin_logged_in_page: Page, target_name: str, key: str) -> None:
+    _row_opener(admin_logged_in_page, target_name).focus()
+    admin_logged_in_page.keyboard.press(key)
+    expect(_setup_dialog(admin_logged_in_page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I choose the "{method}" method from the keyboard'))
+def choose_method_from_keyboard(admin_logged_in_page: Page, method: str) -> None:
+    """Changing the method re-renders the whole dialog, replacing the select that has focus."""
+    page = admin_logged_in_page
+    with page.expect_response(lambda r: "setup-modal" in r.url):
+        page.locator('select[name="method"]:focus').select_option(method)
+    expect(_setup_dialog(page).get_by_text("will be created")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when("I press Escape")
 def press_escape(admin_logged_in_page: Page) -> None:
     admin_logged_in_page.keyboard.press("Escape")
@@ -297,6 +318,25 @@ def focus_on_menu_item(admin_logged_in_page: Page, item: str) -> None:
 def focus_on_more_actions(admin_logged_in_page: Page, target_name: str) -> None:
     toggle = _row_for(admin_logged_in_page, target_name).get_by_role("button", name=f"More actions for {target_name}")
     expect(toggle).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("keyboard focus should be on the method chooser in the set-up dialog")
+def focus_on_method_chooser(admin_logged_in_page: Page) -> None:
+    expect(_setup_dialog(admin_logged_in_page).locator('select[name="method"]')).to_be_focused(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@then("the checklist behind the set-up dialog should be out of reach")
+def checklist_is_inert(admin_logged_in_page: Page) -> None:
+    """Inert, so neither Tab nor a screen reader's browse mode reaches what the dialog covers."""
+    step = admin_logged_in_page.locator('[role="dialog"][aria-labelledby="target-sources-title"]')
+    expect(step).to_have_attribute("inert", "", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('keyboard focus should be on the set-up button for the "{target_name}" target'))
+def focus_on_set_up_button(admin_logged_in_page: Page, target_name: str) -> None:
+    expect(_row_opener(admin_logged_in_page, target_name)).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then("the target data sources should still be open")

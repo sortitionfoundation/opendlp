@@ -13,7 +13,8 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
 {% set refresh_attrs = 'hx-get="' ~ setup["refresh_url"] ~ '" hx-include="closest form" hx-params="not csrf_token" hx-target="#ts-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
-   aria-label="{{ _('Close') }}"></a>
+   tabindex="-1"
+   aria-hidden="true"></a>
 <div class="dialog-positioner"
      role="dialog"
      aria-modal="true"

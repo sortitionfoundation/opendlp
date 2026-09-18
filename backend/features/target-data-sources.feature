@@ -98,3 +98,16 @@ Feature: Target data sources
     Then the more actions menu for the "Region" target should be closed
     And keyboard focus should be on the more actions button for the "Region" target
     And the target data sources should still be open
+
+  Scenario: Keyboard focus follows a set-up dialog in and back out
+    Given there is an assembly with respondents imported from CSV called "Dialog Focus Demo"
+    And the assembly "Dialog Focus Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Dialog Focus Demo"
+    And I focus the set-up button for the "Region" target and press "Enter"
+    Then keyboard focus should be on the method chooser in the set-up dialog
+    And the checklist behind the set-up dialog should be out of reach
+    When I choose the "exact" method from the keyboard
+    Then keyboard focus should be on the method chooser in the set-up dialog
+    When I press the "Save" button
+    Then keyboard focus should be on the set-up button for the "Region" target

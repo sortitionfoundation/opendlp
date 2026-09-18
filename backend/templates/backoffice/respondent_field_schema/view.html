@@ -87,7 +87,7 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
         {% endif %}
     {% endcall %}
     {% if schema_has_rows and not (data_source == "gsheet" and gsheet) %}
-        <div id="field-modal-container">
+        <div id="field-modal-container" data-fragment-dialog-host>
             {% if modal_ctx %}
                 {% include "backoffice/respondent_field_schema/_field_modal.html" %}
             {% endif %}

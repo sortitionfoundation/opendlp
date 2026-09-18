@@ -29,7 +29,8 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
 {# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
-   aria-label="{{ _('Close') }}"></a>
+   tabindex="-1"
+   aria-hidden="true"></a>
 <div class="dialog-positioner"
      role="dialog"
      aria-modal="true"

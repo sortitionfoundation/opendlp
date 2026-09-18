@@ -669,6 +669,20 @@ class TestFieldModal:
         assert refreshing
         assert all('hx-params="not csrf_token"' in tag for tag in refreshing)
 
+    def test_the_page_says_where_keyboard_focus_returns_when_a_dialog_closes(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """fragment-dialog-focus.js finds the opener again by these, after the editor has been re-rendered."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(self._base(existing_assembly)).get_data(as_text=True)
+
+        assert 'id="field-modal-container" data-fragment-dialog-host' in body
+        edit_ids = re.findall(r'data-focus-id="(question-[^"]+)"', body)
+        add_ids = re.findall(r'data-focus-id="(add-question-[^"]+)"', body)
+        assert edit_ids and len(edit_ids) == len(set(edit_ids))
+        assert add_ids and len(add_ids) == len(set(add_ids))
+
     def test_new_modal_plain_request_renders_the_page_with_the_modal_open(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):

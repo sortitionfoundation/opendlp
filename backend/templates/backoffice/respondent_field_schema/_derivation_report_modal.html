@@ -8,7 +8,8 @@ ABOUTME: Shown in the target data sources dialog after an upload or recompute; D
 {% set report = report_ctx["report"] %}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
-   aria-label="{{ _('Close') }}"></a>
+   tabindex="-1"
+   aria-hidden="true"></a>
 <div class="dialog-positioner"
      role="dialog"
      aria-modal="true"

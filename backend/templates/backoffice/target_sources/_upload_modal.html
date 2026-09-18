@@ -11,7 +11,8 @@ ABOUTME: Two-column CSV replaces the whole table; upload then recompute, combine
 {% set setup_step = modal_ctx["setup_step"] %}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
-   aria-label="{{ _('Close') }}"></a>
+   tabindex="-1"
+   aria-hidden="true"></a>
 <div class="dialog-positioner"
      role="dialog"
      aria-modal="true"

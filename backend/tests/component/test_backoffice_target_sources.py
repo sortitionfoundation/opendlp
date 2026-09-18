@@ -134,7 +134,7 @@ class TestChecklistPage:
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
         body = response.get_data(as_text=True)
 
-        rows = re.findall(r'<li class="target-source-row[^"]*">(.*?)</li>', body, re.DOTALL)
+        rows = re.findall(r'<li class="target-source-row[^"]*"[^>]*>(.*?)</li>', body, re.DOTALL)
         assert len(rows) == 2
         for row, category in zip(rows, (linked, unset), strict=True):
             # Exactly one link stretches over the card, and it opens that row's set-up dialog
@@ -142,6 +142,34 @@ class TestChecklistPage:
             assert open_links == [
                 f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal"
             ]
+
+    def test_each_row_says_where_keyboard_focus_returns_when_its_dialog_closes(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """fragment-dialog-focus.js finds the opener again by these, after the checklist has been re-rendered."""
+        category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        assert 'id="ts-modal-container" data-fragment-dialog-host' in body
+        assert f'data-focus-row="ts-{category.id}"' in body
+        assert body.count(f'data-focus-id="ts-row-{category.id}"') == 1
+
+    def test_the_dialog_backdrop_is_not_a_second_close_link_for_keyboard_users(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """It is a pointer affordance: the X and Escape close the dialog from the keyboard."""
+        category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+        ).get_data(as_text=True)
+
+        backdrop = re.search(r'<a [^>]*class="dialog-backdrop dialog-backdrop--clickable block"[^>]*>', body)
+        assert backdrop is not None
+        assert 'tabindex="-1"' in backdrop.group(0)
+        assert 'aria-hidden="true"' in backdrop.group(0)
+        assert "aria-label" not in backdrop.group(0)
 
     def test_opens_as_a_takeover_dialog_over_the_registration_hub(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
@@ -952,7 +980,7 @@ class TestRowActions:
     def _row_actions(self, logged_in_admin, assembly):
         """Each row's (buttons outside the menu, items inside it), as text; items is None with no menu."""
         body = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/target-sources").get_data(as_text=True)
-        rows = re.findall(r'<li class="target-source-row[^"]*">(.*?)</li>', body, re.DOTALL)
+        rows = re.findall(r'<li class="target-source-row[^"]*"[^>]*>(.*?)</li>', body, re.DOTALL)
         actions = []
         for row in rows:
             visible, _sep, menu = row.partition('role="menu"')

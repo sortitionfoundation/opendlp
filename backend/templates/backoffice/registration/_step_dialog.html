@@ -18,7 +18,8 @@ ABOUTME: Closing it - X, backdrop click or Escape - is a link back to the hub
 {% macro step_dialog(title_id, title, close_url) %}
     <a href="{{ close_url }}"
        class="dialog-backdrop dialog-backdrop--clickable block"
-       aria-label="{{ _('Close') }}"></a>
+       tabindex="-1"
+       aria-hidden="true"></a>
     <div class="dialog-positioner"
          role="dialog"
          aria-modal="true"

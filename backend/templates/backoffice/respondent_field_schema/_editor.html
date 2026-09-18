@@ -33,7 +33,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                 variant="secondary",
                 href=add_url,
                 aria_label=_("Add a question to %(section)s", section=section.label),
-                attrs='hx-get="' ~ add_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
+                attrs='data-focus-id="add-question-' ~ section.group.value ~ '" hx-get="' ~ add_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
             </div>
             <table class="question-table">
                 <colgroup>
@@ -95,7 +95,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                                     href=edit_url,
                                     classes="row-link",
                                     aria_label=_("Edit %(question)s", question=field.label),
-                                    attrs='hx-get="' ~ edit_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
+                                    attrs='data-focus-id="question-' ~ field.id ~ '" hx-get="' ~ edit_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
                                     {# No "up" for a section's first question, no "down" for its last. Built
                                        without `set _ = list.append(...)`, which would shadow gettext here. #}
                                     {% set move_directions = ([("up", _("Move up"))] if not loop.first else []) + ([("down", _("Move down"))] if not loop.last else []) %}
