@@ -98,7 +98,12 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                     <div class="mb-4">
                         <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Type") }}</span>
                         <span class="text-body-sm">{{ field_type_labels_by_value[modal_ctx["field"].effective_field_type.value] }}</span>
-                        <strong class="govuk-tag govuk-tag--green">{{ _("Feeds target: %(name)s", name=modal_ctx["linked_target_name"]) }}</strong>
+                        {# The same tag, in the same style, as the question's row in the editor behind this dialog. #}
+                        <ul class="question-tags">
+                            <li>
+                                <a href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}">{{ _("Feeds target: %(name)s", name=modal_ctx["linked_target_name"]) }}</a>
+                            </li>
+                        </ul>
                         <div class="text-body-sm" style="color: var(--color-secondary-text);">
                             {{ _("Its answer values mirror the target's values — change those on the target data sources step, or unlink the field there.") }}
                         </div>

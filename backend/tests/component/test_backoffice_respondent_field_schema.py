@@ -2244,6 +2244,9 @@ class TestTargetLinkedFieldUI:
         )
         body = response.get_data(as_text=True)
         assert "Feeds target: Gender" in body
+        # The tag uses the backoffice's own tag style; GOV.UK's tag classes have no styles here.
+        assert "govuk-tag" not in body
+        assert re.search(r'<ul class="question-tags">.*?/target-sources.*?Feeds target: Gender', body, re.DOTALL)
         # The question type can only switch between the two choice styles; option help inputs remain.
         type_select = re.search(r'<select\s+name="question_type".*?</select>', body, re.DOTALL).group(0)
         assert re.findall(r'<option value="([^"]*)"', type_select) == ["choice_radio", "choice_dropdown"]
