@@ -85,20 +85,35 @@ Only for critical functionality that must run before external scripts load.
 
 ```html
 <!-- ❌ WRONG - violates CSP -->
-<form onsubmit="return confirm('Are you sure?')">
-  <!-- ✅ CORRECT - use data attributes -->
-  <form data-confirm="Are you sure?"></form>
-</form>
+<form onsubmit="return confirm('Are you sure?')"></form>
+<!-- ✅ CORRECT - use data attributes, on the form... -->
+<form data-confirm="Are you sure?"></form>
+<!-- ...or on the button or link that triggers the action -->
+<button type="submit" data-confirm="Are you sure?">Delete</button>
 ```
 
-Implement handler in external JS:
+The handlers live in `src/js/init/document-actions.js`. `data-confirm` on a
+`<button>` or `<a>` is handled on **click**; `data-confirm` on a `<form>` is
+handled on the **submit** event, so clicking into the form's fields never
+prompts:
 
 ```javascript
+document.addEventListener("click", function (e) {
+  const el = e.target.closest("button[data-confirm], a[data-confirm]");
+  if (el && !confirm(el.dataset.confirm)) e.preventDefault();
+});
+
 document.addEventListener("submit", function (e) {
   const msg = e.target.dataset.confirm;
   if (msg && !confirm(msg)) e.preventDefault();
 });
 ```
+
+**HTMX forms:** form-level `data-confirm` is ignored on a form that HTMX submits
+(`hx-post`, `hx-get`, ...). htmx listens for `submit` on the form itself, which
+fires before the document-level listener, so the request would already be sent
+when the dialog appeared. Put `data-confirm` on the submit button, or use
+`hx-confirm`.
 
 ## Alpine.js Usage
 

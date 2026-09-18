@@ -75,8 +75,8 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                    ARIA behaviour as the dropdown_button component, but mixing link and
                                    submit items. Escape is bound on this element, not window, so it closes
                                    only the menu and not the step dialog around it. Item text is bare (no
-                                   inner span) so data-confirm, which reads the click target, sees the
-                                   button itself. #}
+                                   inner span); data-confirm does not depend on that, as it looks up from
+                                   the click target to the enclosing button. #}
                                 <div class="row-link-menu inline-flex"
                                      x-data="rowActionsMenu"
                                      x-bind:class="open ? 'is-open' : ''"
