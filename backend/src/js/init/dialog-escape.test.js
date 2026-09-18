@@ -1,5 +1,5 @@
 // ABOUTME: Unit tests for the Escape-key close of fragment dialogs
-// ABOUTME: Covers the no-dialog case, single dialog, and topmost-of-several
+// ABOUTME: Covers the no-dialog case, single dialog, topmost-of-several, and the presses it must leave alone
 
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -65,6 +65,57 @@ describe("initDialogEscape", () => {
 
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledOnce();
+  });
+
+  it("leaves Escape alone once a component has claimed it", () => {
+    document.body.innerHTML =
+      '<a class="dialog-backdrop--clickable" href="#close"></a>';
+    const clicked = vi.fn();
+    document.querySelector("a").addEventListener("click", (e) => {
+      e.preventDefault();
+      clicked();
+    });
+    const event = new KeyboardEvent("keydown", {
+      key: "Escape",
+      cancelable: true,
+    });
+    event.preventDefault();
+
+    window.dispatchEvent(event);
+
+    expect(clicked).not.toHaveBeenCalled();
+  });
+
+  it("leaves Escape alone while it is ending an IME composition", () => {
+    document.body.innerHTML =
+      '<a class="dialog-backdrop--clickable" href="#close"></a>';
+    const clicked = vi.fn();
+    document.querySelector("a").addEventListener("click", (e) => {
+      e.preventDefault();
+      clicked();
+    });
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        cancelable: true,
+        isComposing: true,
+      }),
+    );
+
+    expect(clicked).not.toHaveBeenCalled();
+  });
+
+  it("ignores the backdrop of an Alpine modal, which is not a link", () => {
+    document.body.innerHTML =
+      '<div class="dialog-backdrop dialog-backdrop--clickable"></div>';
+    const clicked = vi.fn();
+    document.querySelector("div").addEventListener("click", clicked);
+
+    const event = pressEscape();
+
+    expect(clicked).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it("ignores other keys", () => {
