@@ -2,8 +2,10 @@
 ABOUTME: Read-only schema rows plus an HTMX add/edit field modal; move, delete, initialise"""
 
 import contextlib
+import functools
 import re
 import uuid
+from collections.abc import Callable
 from datetime import UTC, date, datetime
 from itertools import zip_longest
 from typing import Any
@@ -81,6 +83,30 @@ from opendlp.translations import lazy_gettext as _l
 respondent_field_schema_bp = Blueprint("respondent_field_schema", __name__)
 
 logger = structlog.get_logger(__name__)
+
+
+def _refusals_go_to_the_dashboard(view: Callable[..., ResponseReturnValue]) -> Callable[..., ResponseReturnValue]:
+    """Answer a refusal that escapes the view with the dashboard, not a server error.
+
+    The modal routes report a failed save by re-rendering the page around the
+    modal, and building that page checks the assembly and the user's access
+    again. When the save failed *because* of one of those, the re-render raises
+    the very error the view had just handled - from somewhere no ``except``
+    clause in the view covers.
+    """
+
+    @functools.wraps(view)
+    def guarded(*args: Any, **kwargs: Any) -> ResponseReturnValue:
+        try:
+            return view(*args, **kwargs)
+        except InsufficientPermissions:
+            flash(_("You don't have permission to edit the schema"), "error")
+            return redirect(url_for("backoffice.dashboard"))
+        except NotFoundError:
+            flash(_("Assembly not found"), "error")
+            return redirect(url_for("backoffice.dashboard"))
+
+    return guarded
 
 
 def _is_htmx() -> bool:
@@ -1116,6 +1142,7 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
     methods=["POST"],
 )
 @login_required
+@_refusals_go_to_the_dashboard
 def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Add a new field to the schema — from the modal, or a plain form post.
 
@@ -1218,6 +1245,7 @@ def _try_create_derived(assembly_id: uuid.UUID, values: dict[str, Any]) -> tuple
     methods=["POST"],
 )
 @login_required
+@_refusals_go_to_the_dashboard
 def add_derived_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Create a derived field from the modal's derived panel.
 
@@ -1278,6 +1306,7 @@ def _try_update_derivation(
     methods=["POST"],
 )
 @login_required
+@_refusals_go_to_the_dashboard
 def update_derivation_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
     """Edit a derived field's method config (and label/help text) from the modal.
 
@@ -1350,6 +1379,7 @@ def mapping_upload_modal(assembly_id: uuid.UUID, field_id: uuid.UUID) -> Respons
     methods=["POST"],
 )
 @login_required
+@_refusals_go_to_the_dashboard
 def mapping_upload_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
     """Replace a lookup table from an uploaded CSV, recompute, and show the combined report.
 
@@ -1419,6 +1449,7 @@ def recompute_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetur
     methods=["POST"],
 )
 @login_required
+@_refusals_go_to_the_dashboard
 def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
     """Update a field — from the edit modal, or a plain form post.
 

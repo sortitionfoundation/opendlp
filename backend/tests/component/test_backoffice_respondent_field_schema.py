@@ -6,6 +6,8 @@ import re
 import uuid
 from datetime import UTC, datetime
 
+import pytest
+
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -2307,3 +2309,60 @@ class TestTargetLinkedFieldUI:
         assert b"feeds a target" in response.data
         stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
         assert [o.value for o in stored.options] == ["Male", "Female"]
+
+
+# Every route on the blueprint that takes an assembly, as (method, path after /respondent-schema).
+_ALL_SCHEMA_ROUTES = [
+    ("get", ""),
+    ("get", ".json"),
+    ("post", "/initialise"),
+    ("get", "/fields/new-modal"),
+    ("get", "/fields/{field_id}/edit-modal"),
+    ("post", "/fields/add"),
+    ("post", "/fields/add-derived"),
+    ("post", "/fields/{field_id}/derivation"),
+    ("get", "/fields/{field_id}/mapping-modal"),
+    ("post", "/fields/{field_id}/mapping-upload"),
+    ("post", "/fields/{field_id}/recompute"),
+    ("post", "/fields/{field_id}/update"),
+    ("post", "/guess-types"),
+    ("post", "/fields/{field_id}/options/add"),
+    ("post", "/fields/{field_id}/options/update"),
+    ("post", "/fields/{field_id}/options/remove"),
+    ("post", "/fields/{field_id}/move"),
+    ("post", "/fields/{field_id}/delete"),
+]
+
+
+class TestRoutesTurnAwayThoseWithoutAccess:
+    """No route may answer a refusal with a server error, whatever order it checks things in.
+
+    The modal routes are posted to as the modal posts, over HTMX: that is the
+    path that re-renders the page around the modal when a save is refused.
+    """
+
+    def _call(self, client, method, path, assembly_id, field_id):
+        url = f"/backoffice/assembly/{assembly_id}/respondent-schema" + path.format(field_id=field_id)
+        if method == "get":
+            return client.get(url, headers={"HX-Request": "true"})
+        data = {"modal": "1", "field_key": "shoe_size", "type_choice": "text", "direction": "up", "value": "x"}
+        return client.post(url, data=data, headers={"HX-Request": "true"})
+
+    @pytest.mark.parametrize(("method", "path"), _ALL_SCHEMA_ROUTES)
+    def test_a_user_with_no_role_on_the_assembly_is_turned_away(
+        self, method, path, logged_in_user, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            field = uow.respondent_field_definitions.list_by_assembly(existing_assembly.id)[0]
+
+        response = self._call(logged_in_user, method, path, existing_assembly.id, field.id)
+
+        assert response.status_code in (302, 403, 404)
+        assert b"shoe_size" not in response.data
+
+    @pytest.mark.parametrize(("method", "path"), _ALL_SCHEMA_ROUTES)
+    def test_an_unknown_assembly_is_turned_away(self, method, path, logged_in_admin):
+        response = self._call(logged_in_admin, method, path, uuid.uuid4(), uuid.uuid4())
+
+        assert response.status_code in (302, 404)
