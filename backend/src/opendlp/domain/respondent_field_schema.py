@@ -71,9 +71,9 @@ class DerivationType(Enum):
 
 
 DERIVATION_TYPE_LABELS: dict[DerivationType, str] = {
-    DerivationType.AGE_BRACKET: _l("Age brackets"),
-    DerivationType.SMALL_MAPPING: _l("Map choices"),
-    DerivationType.LARGE_MAPPING: _l("Lookup table"),
+    DerivationType.AGE_BRACKET: _l("Age ranges"),
+    DerivationType.SMALL_MAPPING: _l("Map more options to fewer"),
+    DerivationType.LARGE_MAPPING: _l("Map postcode to value"),
 }
 
 

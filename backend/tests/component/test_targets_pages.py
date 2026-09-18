@@ -1392,7 +1392,7 @@ class TestForceUnlinkConfirmation:
         assert response.status_code == 302
         with logged_in_admin.session_transaction() as session:
             messages = [message for _category, message in session.get("_flashes", [])]
-        assert messages == ["A question named 'postcode' already exists — rename or remove it first"]
+        assert messages == ["A question named 'postcode' already exists — rename or delete it first"]
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.target_categories.get(category.id).name == "Region"
             assert uow.respondent_field_definitions.get(derived.id).field_key == "Region"

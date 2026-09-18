@@ -844,7 +844,7 @@ class TestEditRespondentPage:
         assert response.status_code == 200
         body = response.get_data(as_text=True)
         assert "Age bracket" in body
-        assert "Derived from year_of_birth" in body
+        assert "Computed from year_of_birth" in body
         assert "recalculated when saved" in body
         # No editable control for the derived value — and no stale value shown at all.
         assert 'name="attr_age bracket"' not in body

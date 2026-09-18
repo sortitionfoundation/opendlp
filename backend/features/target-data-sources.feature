@@ -44,7 +44,7 @@ Feature: Target data sources
     When I open the target data sources for "Remove Computed Demo"
     And I set up the "age bracket" target with age ranges from "year_of_birth"
     And I open the more actions menu for the "age bracket" target
-    And I choose "Remove computed question" from the menu and confirm
+    And I choose "Delete computed question" from the menu and confirm
     Then the "age bracket" target row should say "No data source"
     When I open the respondent field schema editor for "Remove Computed Demo"
     Then the schema editor should list the "year_of_birth" field

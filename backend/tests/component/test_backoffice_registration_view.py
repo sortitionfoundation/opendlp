@@ -769,7 +769,7 @@ class TestSetupTaskList:
         assert "Target data sources" in body
         assert "1 of 2 targets have a data source" in body
         assert "Registration questions" in body
-        assert "1 questions on the registration form" in body
+        assert "1 question on the registration page" in body
         assert f"/assembly/{assembly_id}/target-sources" in body
         assert f"/assembly/{assembly_id}/respondent-schema" in body
 

@@ -85,7 +85,7 @@ class TestChecklistPage:
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
 
         assert response.status_code == 200
-        assert b"Asked on the registration form" in response.data
+        assert b"Asked on the registration page" in response.data
         assert b"No data source yet" in response.data
 
     def test_status_marks_and_close_buttons_are_icons_not_text_glyphs(
@@ -997,7 +997,7 @@ class TestRowActions:
         assert "Recompute" not in visible
         assert "Recompute" in menu
         # A computed question is removed rather than unlinked - nothing would list it afterwards
-        assert "Remove computed question" in menu
+        assert "Delete computed question" in menu
         assert "Unlink" not in menu
 
     def test_the_first_lookup_table_upload_stays_out_of_the_menu(self, logged_in_admin, existing_assembly, fake_store):

@@ -125,7 +125,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                         </div>
                     {% elif values["method"] == "exact" %}
                         <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                            {{ _("This will add \"%(name)s\" to your registration form, with the target's values as the answers.", name=target["name"]) }}
+                            {{ _("This will add '%(name)s' to your registration page, with the target's values as the answers.", name=target["name"]) }}
                         </p>
                     {% else %}
                         <div class="flex gap-4 mb-4">
@@ -145,7 +145,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                         {% if values["method"] == "age_bracket" %}{{ age_source_radio }}{% endif %}
                         {% if setup["new_field_name"] %}
                             <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                                {{ _("This will add \"%(name)s\" to your registration form.", name=setup["new_field_name"]) }}
+                                {{ _("This will add '%(name)s' to your registration page.", name=setup["new_field_name"]) }}
                             </p>
                         {% endif %}
                     {% endif %}

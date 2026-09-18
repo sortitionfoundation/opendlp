@@ -22,6 +22,7 @@ from opendlp.domain.respondent_derivation import (
 )
 from opendlp.domain.respondent_field_schema import (
     CHOICE_TYPES,
+    FIELD_TYPE_LABELS,
     ChoiceOption,
     DerivationType,
     FieldOnRegistrationPage,
@@ -283,7 +284,7 @@ def _resolve_source_field(
     )
     if derivation_type is not None and field not in compatible_source_fields([field], derivation_type):
         raise FieldDefinitionConflictError(
-            _l("A '%(type)s' field cannot feed this kind of derivation", type=spec.field_type.value)
+            _l("A '%(type)s' field cannot feed this kind of derivation", type=FIELD_TYPE_LABELS[spec.field_type])
         )
     uow.respondent_field_definitions.add(field)
     return field

@@ -13,6 +13,7 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.domain.respondent_derivation import DEFAULT_FALLBACK, LargeMappingRule
 from opendlp.domain.respondent_field_schema import (
+    DERIVATION_TYPE_LABELS,
     DerivationType,
     DerivedFieldError,
     FieldType,
@@ -85,9 +86,7 @@ def _is_htmx() -> bool:
 def _method_options() -> list[dict[str, str]]:
     return [
         {"value": _METHOD_EXACT, "label": _("Exact copy")},
-        {"value": DerivationType.AGE_BRACKET.value, "label": _("Age ranges")},
-        {"value": DerivationType.SMALL_MAPPING.value, "label": _("Map more options to fewer")},
-        {"value": DerivationType.LARGE_MAPPING.value, "label": _("Map postcode to value")},
+        *({"value": method.value, "label": str(label)} for method, label in DERIVATION_TYPE_LABELS.items()),
     ]
 
 
@@ -221,7 +220,6 @@ def _page_context(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, with_hub: boo
         "assembly": assembly,
         "statuses": statuses,
         "TargetSourceState": TargetSourceState,
-        "method_labels": _method_labels(),
         "default_fallback": DEFAULT_FALLBACK,
         "data_source": data_source,
         "gsheet": gsheet,
@@ -867,7 +865,7 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/unlink", methods=["POST"])
 @login_required
 def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Break the link: a question stays behind, a computed question is removed."""
+    """Break the link: a question stays behind, a computed question is deleted."""
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -881,5 +879,5 @@ def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         flash(_("Target not found"), "error")
         return redirect(_sources_url(assembly_id))
     if deleted:
-        return _close_modal_response(assembly_id, page_ctx, _("Computed question removed"))
+        return _close_modal_response(assembly_id, page_ctx, _("Computed question deleted"))
     return _close_modal_response(assembly_id, page_ctx, _("Question unlinked from its target"))

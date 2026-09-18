@@ -190,18 +190,17 @@ def _question_type_choices(field: RespondentFieldDefinition | None = None) -> li
     Values are FieldType values. A field still on a legacy type keeps it as an
     extra option, so opening its modal doesn't silently change the type.
     """
+
+    def plain(field_type: FieldType) -> dict[str, Any]:
+        return {"value": field_type.value, "label": str(FIELD_TYPE_LABELS[field_type])}
+
     choices: list[dict[str, Any]] = [
-        {"value": FieldType.BOOL.value, "label": _("Checkbox")},
-        {"value": FieldType.DATE.value, "label": _("Date")},
+        plain(FieldType.BOOL),
+        plain(FieldType.DATE),
+        {"label": _("Text"), "options": [plain(FieldType.TEXT), plain(FieldType.EMAIL), plain(FieldType.INTEGER)]},
         {
-            "label": _("Text"),
-            "options": [
-                {"value": FieldType.TEXT.value, "label": _("Text")},
-                {"value": FieldType.EMAIL.value, "label": _("Email")},
-                {"value": FieldType.INTEGER.value, "label": _("Number")},
-            ],
-        },
-        {
+            # Short forms of FIELD_TYPE_LABELS' "Choice (radios)" and "Choice (dropdown)":
+            # the group heading already says "Choice".
             "label": _("Choice"),
             "options": [
                 {"value": FieldType.CHOICE_RADIO.value, "label": _("Radio")},
@@ -217,8 +216,8 @@ def _question_type_choices(field: RespondentFieldDefinition | None = None) -> li
 def _choice_style_choices() -> list[dict[str, Any]]:
     """The question types a field whose options belong to a target can switch between."""
     return [
-        {"value": FieldType.CHOICE_RADIO.value, "label": _("Radio")},
-        {"value": FieldType.CHOICE_DROPDOWN.value, "label": _("Dropdown")},
+        {"value": field_type.value, "label": str(FIELD_TYPE_LABELS[field_type])}
+        for field_type in (FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN)
     ]
 
 

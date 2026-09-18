@@ -268,6 +268,18 @@ class TestConfigureAgeBracket:
                 AgeBracketSpec(rule=AGE_RULE, source=SourceFieldSpec(reuse_field_id=existing.id)),
             )
 
+    def test_refusing_a_new_source_names_its_type_as_the_interface_does(self, uow):
+        """The label an organiser picked from, not the enum token stored for it."""
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Age bracket", ["16-29", "30-99"])
+        spec = AgeBracketSpec(rule=AGE_RULE, source=SourceFieldSpec(field_key="notes", field_type=FieldType.LONGTEXT))
+
+        with pytest.raises(FieldDefinitionConflictError) as refusal:
+            configure_target_source(uow, user.id, assembly.id, category.id, spec)
+
+        assert "'Long text'" in str(refusal.value)
+        assert "longtext" not in str(refusal.value)
+
     def test_reconfiguring_updates_the_existing_derived_field(self, uow):
         user, assembly = _seed(uow)
         category = _add_category(uow, assembly, "Age bracket", ["16-29", "30-99"])

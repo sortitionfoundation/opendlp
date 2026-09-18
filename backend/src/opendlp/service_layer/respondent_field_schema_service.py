@@ -729,7 +729,7 @@ def rename_derived_field(
     clash = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, new_field_key)
     if clash is not None and clash.id != field.id:
         raise FieldDefinitionConflictError(
-            _l("A question named '%(key)s' already exists — rename or remove it first", key=new_field_key)
+            _l("A question named '%(key)s' already exists — rename or delete it first", key=new_field_key)
         )
     if field.label == humanise_field_key(old_field_key):
         field.label = humanise_field_key(new_field_key)
