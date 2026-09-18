@@ -67,6 +67,23 @@ Also:
 
 ### 2. Uncaught exceptions that become 500s
 
+> **Done**, with local fixes - each bullet below, plus one the new tests found:
+> `unlink_view` answered an unknown *assembly* with "Target not found", because
+> `AssemblyNotFoundError` is a `NotFoundError`. The legacy delete route answers an
+> HTMX request with `HX-Redirect`, since a followed 302 would swap the whole page
+> into the category block. Covered by `TestRoutesTurnAwayThoseWithoutAccess`
+> (every target-sources route, as a user with no role and with an unknown
+> assembly), `TestLegacyPagesRefuseLinkedTargets`, and one test each for the
+> `save_all` rename collision and the unparsable resync. Thirteen of those tests
+> fail without the fixes, which confirms the 500s were real.
+>
+> App-level handlers for `InsufficientPermissions` / `NotFoundError` are written
+> up as an issue in [future-work.md](future-work.md), not done here. A handler for
+> `ServiceLayerError` is argued against there.
+>
+> Not addressed: these routes still show `str(e)` for the uncurated
+> `FieldDefinitionNotFoundError` - that is the first Medium finding below.
+
 `flask_app.py` has handlers for 404, 500, 403, 413 and CSRF only - nothing for
 `InsufficientPermissions`, `AssemblyNotFoundError` or `ServiceLayerError`.
 
@@ -137,6 +154,13 @@ copy.
   `uuid4()`. Deleting the `assembly_id` half of any guard would break no test.
 
 This is the masking problem the TODO in `docs/testing.md` warns about.
+
+> **Partly done** alongside finding 2: every target-sources route is now
+> exercised as a user with no role on the assembly and with an unknown assembly,
+> and one test sends a target belonging to another assembly to `configure`. Still
+> open: a read-only role (can view, cannot manage) against the POST routes; unit
+> permission tests for `adopt_field`, `resync_from_target` and `unlink`;
+> cross-assembly tests for `adopt`, `resync`, `unlink` and `reuse_field_id`.
 
 ## Medium
 
