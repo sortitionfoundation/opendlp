@@ -15,6 +15,12 @@ been missed.
 
 All paths are relative to `backend/`.
 
+**Status (2026-09-18, later):** each `COMMENT:` line below is followed by what
+was done about it. Everything marked "fix" is done except one item where two
+comments disagree (must-fix 4 / modal focus). After the fixes: `just check`
+passes, `just test-nobdd` 5,879 passed, `just test-bdd-headless` 184 passed and
+5 skipped (none of them new).
+
 ## Fix before merge
 
 ### 1. `data-confirm` regression on legacy pages (confirmed by hand)
@@ -139,6 +145,26 @@ copy.
 
 COMMENT: fix it
 
+> **Done** in `4ce9ff00`. Both paths now break the links first, exactly as
+> deleting each category would: questions are unlinked and stay, computed
+> questions go with their target.
+>
+> **One judgement call to check.** A CSV re-import (`replace_existing`) gives
+> every category a new id, so breaking all the links would throw away the whole
+> data sources set-up each time someone re-uploads the same targets with new
+> numbers. So a target that comes back *under the same name* keeps its fields,
+> re-linked to the new row; only targets that do not come back lose theirs. If
+> the values changed, the existing staleness check flags it. "Delete all targets"
+> has no such nuance and takes the computed questions with it - it does so
+> without the naming confirmation that deleting one target gets. If you want
+> that confirmation there too, it needs a confirm page for that route; say so.
+>
+> The real-Postgres test earned its keep: the re-link failed there with a
+> foreign key violation the fake store could never show (with no
+> `relationship()`, the session flushed the field UPDATE before the new category
+> INSERT). `AbstractUnitOfWork` gains `flush()` for it. `TestDeletingEveryTargetKeepsLinksHonest`
+> also pins the `SET NULL` rule itself.
+
 ### 4. Authorisation is not tested
 
 - `tests/component/test_backoffice_target_sources.py` uses `logged_in_admin`
@@ -166,6 +192,15 @@ This is the masking problem the TODO in `docs/testing.md` warns about.
 
 COMMENT: add the cross-assembly tests and unit permission tests. I can live without the read-only role tests
 
+> **Done** in `742cdfa7` (with the route-level half in `b1f7ce54`).
+> `TestIdsFromAnotherAssemblyAreRefused` hands every guard an id that is real but
+> belongs to another assembly the same admin manages: a foreign category to
+> `configure`, `adopt`, `resync` and `unlink`; a foreign field to `adopt`, to
+> exact-copy reuse and to a derivation's `reuse_field_id`. Mutation-checked:
+> stripping the five `assembly_id` guards fails all seven tests. `adopt_field`,
+> `resync_from_target` and `unlink` have the permission test too. Read-only-role
+> tests not written, as agreed.
+
 ### 5. Editing a saved age rule shows the target's prefill, not the stored config (regression, confirmed by probe)
 
 Must-fix 2 of the [`793-derived-fields-ui` review](../793-derived-fields/ui-branch-review.md)
@@ -187,6 +222,10 @@ that pinned the old fix
 the old modal, which the UI no longer reaches - see "Carried over" below.
 
 COMMENT: defer - I want to make some changes to how the age brackets work, so I'll do that in another branch.
+
+> **Deferred** to the age brackets branch. Note the related nit under "Carried
+> over" (the prefill overwriting typed min/max for a new field) is the same
+> function, so it travels with this.
 
 ## Medium
 
@@ -222,6 +261,37 @@ COMMENT: defer - I want to make some changes to how the age brackets work, so I'
   pattern, smaller.
 
 COMMENT: fix all these
+
+> **Done**, in four commits.
+>
+> - `c126608e` - `str(e)`. Not-found now shows a generic message, a conflict its
+>   curated one, a malformed reuse id "Choose the question to use"; a domain guard
+>   the form cannot trip is logged rather than displayed. `ValueError` from the
+>   form parsers and rule constructors is still shown as-is - those are written
+>   for the organiser, in `_()`. One exception I left: `SmallMappingRule` and
+>   `LargeMappingRule` raise untranslated `"mapping cannot be empty"` /
+>   `"fallback cannot be blank"`; `parse_small_mapping_rule` pre-empts the first,
+>   and nothing in the form can produce the second.
+> - `26965765` - the parsers leave the blueprint (see should-fix 13 below).
+> - `172c0886` - `target_sources.py`: every route opens **one** `with uow:` around
+>   everything it reads and writes, including the page context its response is
+>   rendered from, and renders after the block closes. `recompute` and `upload`
+>   find the linked field in the transaction that writes to it. The one exception
+>   is a failed save: its block has rolled back, so the dialog it re-opens is read
+>   in a fresh one - that is two units of work, not a lapse.
+>   `_setup_modal_ctx`'s repository reads moved into
+>   `target_source_service.target_setup_data`, which checks permission itself, and
+>   the reuse-candidate rules into `reusable_source_fields`. Checked against real
+>   Postgres by the BDD suite, since a page context read after a write in the same
+>   session is exactly where a detached-instance error would show.
+> - `52040ecf` - `_schema_page_context` opens one block instead of two, and
+>   `_linked_target_name` checks permission and the category's assembly.
+>
+> **Not done, deliberately:** the rest of `respondent_field_schema.py` still opens
+> a block per helper (`_matching_choice_target`, `_assembly_has_targets`,
+> `_build_derived_ctx`, `_load_field`, then the page context). Converting it means
+> re-plumbing every route in a 1,700-line file of which `f3b0f09b` deletes 600
+> lines, so it is far cheaper on `793-large-mapping-flow`. Still open, there.
 
 ### i18n / language
 
@@ -267,6 +337,10 @@ COMMENT: fix all these
 
 COMMENT: defer for now
 
+> **Deferred.** Two things done elsewhere touch this list: "Not on form" and
+> "Label on the form" were fixed under should-fix 15, and the `.value` in a user
+> message (`target_source_service.py:285`) is still open here.
+
 ### Templates / accessibility
 
 - **Row-actions menu is not a full APG menu button**
@@ -285,11 +359,26 @@ COMMENT: defer for now
 
 COMMENT: fix it
 
+> **Done** in `b8d8edd1`. `rowActionsMenu` is now a WAI-ARIA menu button: opening
+> moves focus to the first item; ArrowUp/Down (wrapping), Home and End move
+> between items; ArrowDown / ArrowUp on the kebab open it on the first / last
+> item; items are `tabindex="-1"` so the menu is one Tab stop; tabbing out closes
+> it. A `focusout` with no `relatedTarget` is ignored - Safari does not focus a
+> clicked button, and closing there would let the kebab's own click reopen the
+> menu. 15 Vitest cases over real DOM, including the end-to-end one the review
+> asked for (first Escape closes the menu, second closes the dialog), and a BDD
+> scenario driving it from the keyboard in a real browser.
+> `dropdown_button.html` still has the gap - not touched, it is not this branch's.
+
 - **`_editor.html:180`** - the Remove form inside `role="menu"` is missing
   `role="none"`. Siblings at `:143,154,165` have it, and the comment at `:140`
   explains why it is needed.
 
 COMMENT: fix it
+
+> **No change needed - the finding was wrong.** The Remove form at `_editor.html:180`
+> already has `role="none"`, as does every form inside either menu. The only form
+> without it (`_checklist.html:149`, adopt) is outside the menu.
 
 - **HTMX fragment dialogs do not manage focus** (`_setup_modal.html`,
   `_upload_modal.html`, `_field_modal.html`, `_step_dialog.html`). The ARIA is
@@ -310,6 +399,9 @@ COMMENT: fix it
 
 COMMENT: defer for now
 
+> **Deferred.** See the note under must-fix 4 below, where the same work is
+> marked "fix this".
+
 - **`dialog-escape.js:13-22`** - the window-level Escape handler never checks
   `event.defaultPrevented` or `event.isComposing`; the only opt-out is
   `stopPropagation`. Components listening with `@keydown.escape.window`
@@ -323,6 +415,16 @@ COMMENT: defer for now
   today and `_step_dialog.html:11-13` documents the assumption.
 
 COMMENT: fix this
+
+> **Done** in `bad26085`. The handler skips an Escape that is `defaultPrevented`
+> or `isComposing`, and its doc comment states the contract: a component that
+> uses Escape for itself claims it with `preventDefault()` or
+> `stopPropagation()`, from a listener on its own element. **What this does not
+> fix:** a component listening on *window* (`dropdown_button`, `account_menu`,
+> the Alpine modals) may run after this handler, so it cannot rely on that. None
+> sits inside a step dialog today; moving them to element-level listeners is the
+> real fix, and not this branch's. Unsaved input lost to a stray Escape is
+> unchanged - that is a design question (a leave guard), not a bug fix.
 
 - **Hand-rolled markup where components exist.**
   - `_setup_modal.html:12-23`, `_upload_modal.html:9-20`, `_field_modal.html`
@@ -341,6 +443,14 @@ COMMENT: fix this
 
 COMMENT: fix this
 
+> **Done** in `8421791a`. The five dialogs and `step_dialog` use `dialog_header`,
+> `dialog_body` and `dialog_footer`; error banners and the `_step_form.html`
+> warning use `alert()`, so they now carry `role="alert"` (asserted in a test).
+> `step_dialog` captures `caller()` before its nested call blocks.
+> **Left alone:** the two gsheet info cards. They are copies of the same card on
+> `assembly_targets.html` and `assembly_respondents.html`; changing two of four
+> would be the inconsistency. Worth a `info_card` macro one day, across all four.
+
 - **Text glyphs instead of icon macros.** `✕` at `_setup_modal.html:22`,
   `_upload_modal.html:19`, `_field_modal.html:45` (`_step_dialog.html:32`
   correctly uses `dialog_close_icon()`); `✓`/`✗` at `_checklist.html:31-43`, read
@@ -349,6 +459,11 @@ COMMENT: fix this
 
 COMMENT: fix this
 
+> **Done** in `4516ea69`. Close buttons use `dialog_close_icon()`; the checklist's
+> tick and cross are `icon_check` / `icon_close`, `aria-hidden`, since each status
+> sentence already says the same in words. A test fails if any of the three
+> glyphs reappears in the checklist or the set-up dialog.
+
 - **`_field_modal.html:99`** - `govuk-tag govuk-tag--green` has no styling in the
   backoffice (`backoffice/base.html` loads only the Tailwind `main.css` and the
   tokens; `.govuk-tag` lives in `src/scss/application.scss`). The "Feeds target"
@@ -356,6 +471,11 @@ COMMENT: fix this
   so the habit is inherited, but the line is new.
 
 COMMENT: fix this
+
+> **Done** in `dcd5e6f5`. The tag now uses `.question-tags`, the same style - and
+> the same link to the data sources step - as the question's row in the editor.
+> Note `respondent_status_form.html` and `confirm_upload_diff.html` use the
+> unstyled `govuk-tag` too; they are on main, so not touched.
 
 
 ### Tests
@@ -469,6 +589,11 @@ verified.)
 
 COMMENT: fix this
 
+> **Done** in `db9a7b2f`. A `_refusals_go_to_the_dashboard` decorator on the five
+> dialog POST routes. `TestRoutesTurnAwayThoseWithoutAccess` now runs **every**
+> route on the blueprint as a user with no role and with an unknown assembly; ten
+> of those cases failed before the fix.
+
 - **Must-fix 3 - renaming an option in the modal drops it from small mappings.**
   Unchanged. `_submitted_options` (`respondent_field_schema.py:538-545`) still
   builds the list wholesale with no option identity, so the service sees a rename
@@ -480,6 +605,15 @@ COMMENT: fix this
 
 COMMENT: fix this
 
+> **Done** in `cb8748cd`. Each option row carries a hidden `option_original`, which
+> survives the dialog's add/remove round trips, and `update_field` takes
+> `option_renames`. It checks each pair against the field's real options - old
+> value is an option, is no longer in the list, new value is - so a tampered
+> `original` describes no rename. Renaming every mapped option at once is no
+> longer mistaken for emptying the mapping. **Not covered:** respondents' stored
+> answers still hold the old value; that is equally true of the single-option
+> rename route, which this mirrors.
+
 - **Must-fix 4 - HTMX modal accessibility contract.** Partly done: Escape now
   works everywhere via `dialog-escape.js`. Focus into the fragment, focus return,
   the trap, and the focusable backdrop link named "Close" are all still open, for
@@ -487,6 +621,14 @@ COMMENT: fix this
   dialogs do not manage focus" in Medium above.
 
 COMMENT: fix this
+
+> **Not done - your two comments disagree.** This is the same work as "HTMX
+> fragment dialogs do not manage focus" under Medium, which you marked "defer for
+> now". I followed the defer: it is the larger instruction (focus-in after the
+> swap, `inert` on the step dialog, focus return across an OOB swap that replaces
+> the button, and keeping focus through every `hx-trigger="change"` re-render),
+> and the last of those really wants a design decision - morph the form rather
+> than replace it, or restore focus by element id. Tell me which you meant.
 
 - **Should-fix 11 - CSRF token in GET query strings.** Unchanged, and the new
   modal copies it: `hx-include="closest form"` on a refresh `hx-get` at
@@ -497,10 +639,16 @@ COMMENT: fix this
 
 COMMENT: fix this
 
+> **Done** in `7eaf3d98`: `hx-params="not csrf_token"` on all three refresh
+> requests, with a test on each live dialog.
+
 - **Should-fix 12 - several `with uow:` blocks per request.** Unchanged in the
   schema blueprint and repeated in the new one - already under Medium above.
 
 COMMENT: fix this
+
+> **Done for `target_sources.py`, partly for the schema blueprint** - see the
+> note under "Python / architecture" in Medium above.
 
 - **Should-fix 13 - business logic in the blueprint.** Worse.
   `age_prefill_from_target` (the inverse of `AgeBracketRule.bracket_labels()`),
@@ -510,6 +658,20 @@ COMMENT: fix this
   domain or service layer, which fixes both.
 
 COMMENT: fix this
+
+> **Done** in `26965765`. The form parsers live in
+> `entrypoints/derivation_form_parser.py`, which both blueprints import, so
+> `target_sources.py` no longer imports from `respondent_field_schema.py`. The
+> reading of bracket-shaped target values is now
+> `domain.respondent_derivation.age_brackets_from_labels`, beside the
+> `bracket_labels()` it inverts, with a round-trip test that fails if either
+> changes alone.
+>
+> **Expect a conflict:** `f3b0f09b` moves these same functions into
+> `target_sources.py`. The resolution is to keep this branch's module and delete
+> that branch's copies - and move its `test_target_source_parsers.py` imports to
+> match. The import of `registration_hub_context` from `backoffice_registration.py`
+> remains (it was not part of this item).
 
 - **Should-fix 15 - wording.**
   - "Not on form" is still the label for `FieldOnRegistrationPage.NO`
@@ -524,6 +686,17 @@ COMMENT: fix this
     item under Medium above.
 
 COMMENT: fix this
+
+> **Done** in `2f9a2ab9` (catalogue in `d2d3a850`), except the remove-vs-delete
+> bullet, which belongs to the deferred i18n section.
+>
+> - "Not on form" -> "Not on registration page"; "Label on the form (optional)" ->
+>   "Label on the registration page (optional)". The first had a Hungarian
+>   translation, now lost.
+> - The lookup-row and selection-run counts use `ngettext`, and the two lookup-row
+>   msgids are one. `opendlp.translations` had no `ngettext`, so it gains a wrapper
+>   mirroring `gettext` (Flask-Babel in a request, the loaded catalogue outside).
+>   `translate-check` passes; the new plural entries need Hungarian.
 
 - **Should-fix 16 - hand-rolled components.** Unchanged, and copied into the new
   templates - already under Medium above.
@@ -703,6 +876,10 @@ accept. Two look incidental and could be reverted to save retranslation:
 - `tests/e2e/test_backoffice_respondent_field_schema.py:48-49` - positive
   `b"Fixed" in body` became negative `b">Fixed<" not in body`. Justified product
   change, and other positive assertions keep the test from being vacuous.
+- Spotted while fixing: `_setup_modal.html:76,117,221` build their option lists
+  with `{% set _ = list.append(...) %}`, which shadows gettext's `_` for the rest
+  of that scope. It works today only because nothing after it in the loop body
+  calls `_()`. `_editor.html` carries a comment warning against exactly this.
 - Not this branch (raise an issue): `docs/frontend_build.md`'s entry-point table
   omits `backoffice/js/pie-chart`, which came in from main.
 
