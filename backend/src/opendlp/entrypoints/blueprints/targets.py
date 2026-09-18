@@ -24,6 +24,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.exceptions import (
+    FieldDefinitionConflictError,
     InsufficientPermissions,
     InvalidSelection,
     NotFoundError,
@@ -493,6 +494,10 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
         return _render_force_unlink_confirm(assembly_id, request.form, e.blocks)
     except TargetsNotSaved as e:
         return _render_targets_edit_errors(assembly_id, request.form, e.errors)
+    except FieldDefinitionConflictError as e:
+        # Renaming a target re-keys its computed question, which can collide with an existing one.
+        flash(e.user_msg(), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
     except (ValueError, NotFoundError) as e:
         flash(_("Error: %(error)s", error=str(e)), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))

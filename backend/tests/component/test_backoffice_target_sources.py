@@ -5,6 +5,8 @@ import io
 import re
 import uuid
 
+import pytest
+
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -14,6 +16,7 @@ from opendlp.domain.respondent_field_schema import (
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.service_layer.assembly_service import create_assembly
 from tests.fakes import FakeUnitOfWork
 
 HTMX = {"HX-Request": "true"}
@@ -148,6 +151,90 @@ class TestChecklistPage:
         )
 
         assert 'class="setup-step"' not in response.get_data(as_text=True)
+
+
+def _flashes(client):
+    with client.session_transaction() as session:
+        return [message for _category, message in session.get("_flashes", [])]
+
+
+# Every route on the blueprint, as (method, path after /target-sources).
+_ALL_ROUTES = [
+    ("get", ""),
+    ("get", "/{category_id}/setup-modal"),
+    ("post", "/{category_id}/configure"),
+    ("post", "/{category_id}/adopt"),
+    ("post", "/{category_id}/resync"),
+    ("post", "/{category_id}/recompute"),
+    ("get", "/{category_id}/upload-modal"),
+    ("post", "/{category_id}/upload"),
+    ("post", "/{category_id}/unlink"),
+]
+
+
+class TestRoutesTurnAwayThoseWithoutAccess:
+    """No route may answer a refusal with a server error, whatever order it checks things in."""
+
+    def _call(self, client, method, path, assembly_id, category_id):
+        url = f"/backoffice/assembly/{assembly_id}/target-sources" + path.format(category_id=category_id)
+        if method == "get":
+            return client.get(url, follow_redirects=False)
+        # A well-formed field_id, so the adopt route gets as far as asking the service.
+        return client.post(url, data={"field_id": str(uuid.uuid4())}, follow_redirects=False)
+
+    @pytest.mark.parametrize(("method", "path"), _ALL_ROUTES)
+    def test_a_user_with_no_role_on_the_assembly_goes_back_to_the_dashboard(
+        self, method, path, logged_in_user, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        response = self._call(logged_in_user, method, path, existing_assembly.id, category.id)
+
+        assert response.status_code == 302
+        assert response.location.endswith("/backoffice/dashboard")
+        (message,) = _flashes(logged_in_user)
+        assert "permission" in message
+
+    @pytest.mark.parametrize(("method", "path"), _ALL_ROUTES)
+    def test_an_unknown_assembly_goes_back_to_the_dashboard(self, method, path, logged_in_admin):
+        response = self._call(logged_in_admin, method, path, uuid.uuid4(), uuid.uuid4())
+
+        assert response.status_code == 302
+        assert response.location.endswith("/backoffice/dashboard")
+        assert _flashes(logged_in_admin) == ["Assembly not found"]
+
+    def test_an_invalid_set_up_form_from_a_user_with_no_role_is_still_turned_away(
+        self, logged_in_user, existing_assembly, fake_store
+    ):
+        """The form is parsed before anyone checks who is asking, so the error path must check too."""
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        response = logged_in_user.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data={"method": ""},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith("/backoffice/dashboard")
+
+    def test_a_target_of_another_assembly_cannot_be_set_up_from_this_one(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            other = create_assembly(uow=uow, title="Another Assembly", created_by_user_id=admin_user.id)
+            other_assembly = other.create_detached_copy()
+        foreign = _seed_category(fake_store, other_assembly, "Gender", ["Male", "Female"])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{foreign.id}/configure",
+            data={"method": "exact", "source_mode": "create"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert _field_by_key(fake_store, existing_assembly, "Gender") is None
+        assert _field_by_key(fake_store, other_assembly, "Gender") is None
 
 
 class TestSetupModal:
@@ -530,6 +617,35 @@ class TestRowActions:
         assert response.status_code == 200
         refreshed = _field_by_key(fake_store, existing_assembly, "Gender")
         assert [o.value for o in refreshed.options] == ["Male", "Female", "Other"]
+
+    def test_resync_of_a_derivation_that_no_longer_parses_says_to_set_it_up_again(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """A stored config can predate a code change; the row must say so rather than fall over."""
+        category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+        _seed_field(fake_store, existing_assembly, "area", field_type=FieldType.TEXT)
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Region",
+            group=RespondentFieldGroup.DERIVED,
+            is_derived=True,
+            derived_from=["area"],
+            derivation_type=DerivationType.SMALL_MAPPING,
+            derivation_config={"mapping": {}},
+            field_type=FieldType.CHOICE_DROPDOWN,
+            options=[ChoiceOption(value="North")],
+            target_category_id=category.id,
+        )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/resync",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        assert response.location.endswith("/target-sources")
+        assert _flashes(logged_in_admin) == ["This data source could not be re-synced — set it up again"]
 
     def test_unlink_clears_the_link_but_keeps_the_field(self, logged_in_admin, existing_assembly, fake_store):
         category, _field = self._linked_exact(fake_store, existing_assembly)

@@ -40,6 +40,7 @@ from opendlp.service_layer.derivation_service import (
     upload_large_mapping,
 )
 from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
     FieldDefinitionConflictError,
     FieldDefinitionNotFoundError,
     InsufficientPermissions,
@@ -561,6 +562,22 @@ def setup_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         return _dashboard_redirect(_("You don't have permission to view this assembly"))
 
 
+def _setup_error_response(
+    assembly_id: uuid.UUID, category_id: uuid.UUID, values: dict[str, Any], error: str
+) -> ResponseReturnValue:
+    """Re-render the set-up modal with an error.
+
+    Building the modal loads the assembly and the target, so it can fail in its
+    own right — the form is parsed before anything checks who is asking.
+    """
+    try:
+        return _render_setup_modal(assembly_id, _setup_modal_ctx(assembly_id, category_id, values, error=error), 422)
+    except NotFoundError:
+        return _dashboard_redirect(_("Assembly not found"))
+    except InsufficientPermissions:
+        return _dashboard_redirect(_("You don't have permission to view this assembly"))
+
+
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/configure", methods=["POST"])
 @login_required
 def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
@@ -572,7 +589,7 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         with uow:
             fields, report = configure_target_source(uow, current_user.id, assembly_id, category_id, spec)
     except (ValueError, FieldDefinitionConflictError, FieldDefinitionNotFoundError) as e:
-        return _render_setup_modal(assembly_id, _setup_modal_ctx(assembly_id, category_id, values, error=str(e)), 422)
+        return _setup_error_response(assembly_id, category_id, values, str(e))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
@@ -617,6 +634,10 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     except (FieldDefinitionConflictError, FieldDefinitionNotFoundError) as e:
         flash(str(e), "error")
         return redirect(_sources_url(assembly_id))
+    except ValueError:
+        # The linked field's stored derivation no longer parses, so there is no rule to re-sync.
+        flash(_("This data source could not be re-synced — set it up again"), "error")
+        return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
@@ -633,11 +654,11 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
 @login_required
 def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Recompute the linked derived field across the pool."""
-    field_id = _linked_field_id(assembly_id, category_id)
-    if field_id is None:
-        flash(_("No question is linked to this target"), "error")
-        return redirect(_sources_url(assembly_id))
     try:
+        field_id = _linked_field_id(assembly_id, category_id)
+        if field_id is None:
+            flash(_("No question is linked to this target"), "error")
+            return redirect(_sources_url(assembly_id))
         uow = bootstrap.get_flask_uow()
         with uow:
             report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
@@ -646,6 +667,8 @@ def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+    except NotFoundError:
+        return _dashboard_redirect(_("Assembly not found"))
     if report.total == 0:
         return _toast_response(assembly_id, _("There are no respondents to recompute yet"), "info")
     return _toast_response(assembly_id, *_recompute_toast(report, _("Recompute finished")))
@@ -691,7 +714,12 @@ def _upload_modal_response(
 @login_required
 def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Replace the linked mapping field's lookup table from an uploaded CSV, then recompute."""
-    field_id = _linked_field_id(assembly_id, category_id)
+    try:
+        field_id = _linked_field_id(assembly_id, category_id)
+    except InsufficientPermissions:
+        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+    except NotFoundError:
+        return _dashboard_redirect(_("Assembly not found"))
     if field_id is None:
         flash(_("No question is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
@@ -720,6 +748,8 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         return _upload_modal_response(assembly_id, category_id, error=str(e), status=422)
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+    except NotFoundError:
+        return _dashboard_redirect(_("Assembly not found"))
     return _report_response(assembly_id, report, _("Lookup table uploaded"), upload_report=upload_report)
 
 
@@ -733,6 +763,8 @@ def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
             _unlinked, deleted = unlink(uow, current_user.id, assembly_id, category_id)
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+    except AssemblyNotFoundError:
+        return _dashboard_redirect(_("Assembly not found"))
     except NotFoundError:
         flash(_("Target not found"), "error")
         return redirect(_sources_url(assembly_id))

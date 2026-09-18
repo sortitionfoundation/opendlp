@@ -1377,6 +1377,26 @@ class TestForceUnlinkConfirmation:
             (respondent,) = uow.respondents.get_by_assembly_id(existing_assembly.id)
             assert respondent.attributes == {"postcode": "E1 6AN"}
 
+    def test_a_rename_that_collides_with_another_question_says_so(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The computed field is re-keyed to the target's new name, which another question may hold."""
+        category, derived = self._seed_computed(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=self._rename_data(category, "postcode"),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        with logged_in_admin.session_transaction() as session:
+            messages = [message for _category, message in session.get("_flashes", [])]
+        assert messages == ["A question named 'postcode' already exists — rename or remove it first"]
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Region"
+            assert uow.respondent_field_definitions.get(derived.id).field_key == "Region"
+
     def test_value_only_edits_save_without_asking(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         category, field = self._seed_linked(fake_store, admin_user, existing_assembly)
 
@@ -1389,3 +1409,73 @@ class TestForceUnlinkConfirmation:
         assert response.status_code == 302
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondent_field_definitions.get(field.id).target_category_id == category.id
+
+
+class TestLegacyPagesRefuseLinkedTargets:
+    """The legacy targets page cannot confirm an unlink, so it refuses and says why."""
+
+    def _legacy_url(self, assembly_id, category_id, suffix=""):
+        return f"/assemblies/{assembly_id}/targets/categories/{category_id}{suffix}"
+
+    def _seed_linked(self, fake_store, admin_user, assembly):
+        return TestForceUnlinkConfirmation()._seed_linked(fake_store, admin_user, assembly)
+
+    def _flashes(self, client):
+        with client.session_transaction() as session:
+            return [message for _category, message in session.get("_flashes", [])]
+
+    def test_renaming_a_linked_target_is_refused(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category, field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            self._legacy_url(existing_assembly.id, category.id), data={"name": "Sex"}, follow_redirects=False
+        )
+
+        assert response.status_code == 302
+        assert self._flashes(logged_in_admin) == [
+            "This target is linked to a registration question, so it cannot be renamed here"
+        ]
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Gender"
+            assert uow.respondent_field_definitions.get(field.id).target_category_id == category.id
+
+    def test_renaming_a_linked_target_inline_puts_the_refusal_on_the_field(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, _field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            self._legacy_url(existing_assembly.id, category.id), data={"name": "Sex"}, headers={"HX-Request": "true"}
+        )
+
+        assert response.status_code == 422
+        assert "so it cannot be renamed here" in response.get_data(as_text=True)
+
+    def test_deleting_a_linked_target_is_refused(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category, field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            self._legacy_url(existing_assembly.id, category.id, "/delete"), follow_redirects=False
+        )
+
+        assert response.status_code == 302
+        assert self._flashes(logged_in_admin) == [
+            "This target is linked to a registration question, so it cannot be deleted here"
+        ]
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id) is not None
+            assert uow.respondent_field_definitions.get(field.id).target_category_id == category.id
+
+    def test_deleting_a_linked_target_inline_reloads_the_page_rather_than_swapping_it_in(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, _field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            self._legacy_url(existing_assembly.id, category.id, "/delete"), headers={"HX-Request": "true"}
+        )
+
+        assert response.status_code == 200
+        assert response.headers["HX-Redirect"] == f"/assemblies/{existing_assembly.id}/targets"
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id) is not None
