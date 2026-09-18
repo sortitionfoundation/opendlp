@@ -513,8 +513,12 @@ def _linked_target_name(field: RespondentFieldDefinition) -> str:
         return ""
     uow = bootstrap.get_flask_uow()
     with uow:
+        # Checks who is asking: nothing else on the way to the edit dialog has, by this point.
+        get_assembly_with_permissions(uow, field.assembly_id, current_user.id)
         category = uow.target_categories.get(field.target_category_id)
-        return category.name if category is not None else ""
+        if category is None or category.assembly_id != field.assembly_id:
+            return ""
+        return str(category.name)
 
 
 def _apply_option_action(values: dict[str, Any], form_action: str) -> dict[str, Any]:
@@ -772,6 +776,20 @@ def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict
         with contextlib.suppress(ServiceLayerError):
             csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
+        # Read in the same transaction as the schema above, so the page is one snapshot.
+        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+        all_fields = [f for group_fields in grouped.values() for f in group_fields]
+        large_mapping_fields = [
+            f for f in all_fields if f.is_derived and f.derivation_type == DerivationType.LARGE_MAPPING
+        ]
+        has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
+        mapping_row_counts = {
+            f.id: uow.respondent_field_mapping_entries.count_for_field(f.id) for f in large_mapping_fields
+        }
+        hub_context: dict[str, Any] = {}
+        if with_hub:
+            hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
+
     # The DERIVED group is deliberately absent: derived fields are managed on
     # the target data sources step, not arranged on the registration page.
     sections = [
@@ -785,23 +803,12 @@ def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict
     ]
     schema_has_rows = any(section["fields"] for section in sections)
 
-    data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
 
-    all_fields = [f for group_fields in grouped.values() for f in group_fields]
     fed_target_names = _fed_target_names(all_fields, category_names_by_id)
     has_guessable_text_rows = any(
         not f.is_fixed and not f.is_derived and f.field_type == FieldType.TEXT for f in all_fields
     )
-    large_mapping_fields = [f for f in all_fields if f.is_derived and f.derivation_type == DerivationType.LARGE_MAPPING]
-    hub_context: dict[str, Any] = {}
-    with uow:
-        has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
-        mapping_row_counts = {
-            f.id: uow.respondent_field_mapping_entries.count_for_field(f.id) for f in large_mapping_fields
-        }
-        if with_hub:
-            hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
     show_guess_button = has_guessable_text_rows and has_respondents
 
     return {
