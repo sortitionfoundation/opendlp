@@ -37,6 +37,8 @@ from opendlp.service_layer.target_source_service import (
     adopt_field,
     configure_target_source,
     resync_from_target,
+    reusable_source_fields,
+    target_setup_data,
     target_source_status,
     unlink,
 )
@@ -809,3 +811,89 @@ class TestIdsFromAnotherAssemblyAreRefused:
         # Still linked, and not re-synced to the target's third value.
         assert foreign_field.target_category_id == foreign.id
         assert [option.value for option in foreign_field.options] == ["Male", "Female"]
+
+
+class TestTargetSetupData:
+    """What the set-up dialog is built from - which used to be read with no check of who was asking."""
+
+    def test_it_describes_the_target_and_the_fields_of_its_assembly(self, uow):
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Gender", ["Male", "Female"])
+        _add_field(uow, assembly, "postcode", field_type=FieldType.TEXT)
+
+        setup = target_setup_data(uow, user.id, assembly.id, category.id)
+
+        assert (setup.target_id, setup.target_name, setup.target_values) == (category.id, "Gender", ["Male", "Female"])
+        assert [f.field_key for f in setup.fields] == ["postcode"]
+        assert setup.is_linked is False
+
+    def test_it_says_when_the_target_already_has_a_field(self, uow):
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Gender", ["Male", "Female"])
+        configure_target_source(uow, user.id, assembly.id, category.id, ExactCopySpec())
+
+        assert target_setup_data(uow, user.id, assembly.id, category.id).is_linked is True
+
+    def test_a_target_with_no_values_yet_still_opens(self, uow):
+        """The dialog opens, and the save explains what is missing."""
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Gender", [])
+
+        assert target_setup_data(uow, user.id, assembly.id, category.id).target_values == []
+
+    def test_it_requires_view_permission(self, uow):
+        _admin, assembly = _seed(uow)
+        outsider = User(email="user@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(outsider)
+        category = _add_category(uow, assembly, "Gender", ["Male", "Female"])
+
+        with pytest.raises(InsufficientPermissions):
+            target_setup_data(uow, outsider.id, assembly.id, category.id)
+
+    def test_it_refuses_a_target_of_another_assembly(self, uow):
+        admin, mine = _seed(uow)
+        theirs = Assembly(title="Another Assembly", number_to_select=40)
+        uow.assemblies.add(theirs)
+        foreign = _add_category(uow, theirs, "Gender", ["Male", "Female"])
+
+        with pytest.raises(NotFoundError):
+            target_setup_data(uow, admin.id, mine.id, foreign.id)
+
+
+class TestReusableSourceFields:
+    def _fields(self, uow, assembly):
+        covers = _add_field(
+            uow,
+            assembly,
+            "sex",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female"), ChoiceOption(value="Other")],
+        )
+        _add_field(uow, assembly, "Gender", field_type=FieldType.CHOICE_RADIO, options=[ChoiceOption(value="Male")])
+        _add_field(uow, assembly, "postcode", field_type=FieldType.TEXT)
+        _add_field(uow, assembly, "year_of_birth", field_type=FieldType.INTEGER)
+        return covers
+
+    def test_an_exact_copy_can_reuse_a_choice_question_covering_every_target_value(self, uow):
+        _user, assembly = _seed(uow)
+        covers = self._fields(uow, assembly)
+        fields = uow.respondent_field_definitions.list_by_assembly(assembly.id)
+
+        assert reusable_source_fields(fields, None, ["Male", "Female"]) == [covers]
+
+    def test_a_derivation_can_reuse_what_it_can_be_computed_from(self, uow):
+        _user, assembly = _seed(uow)
+        self._fields(uow, assembly)
+        fields = uow.respondent_field_definitions.list_by_assembly(assembly.id)
+
+        keys = [f.field_key for f in reusable_source_fields(fields, DerivationType.AGE_BRACKET, ["16-24", "25+"])]
+
+        assert keys == ["year_of_birth"]
+
+    def test_candidates_come_back_in_field_key_order_whatever_their_case(self, uow):
+        _user, assembly = _seed(uow)
+        for key in ("zebra", "Apple", "mango"):
+            _add_field(uow, assembly, key, field_type=FieldType.CHOICE_RADIO, options=[ChoiceOption(value="Male")])
+        fields = uow.respondent_field_definitions.list_by_assembly(assembly.id)
+
+        assert [f.field_key for f in reusable_source_fields(fields, None, ["Male"])] == ["Apple", "mango", "zebra"]

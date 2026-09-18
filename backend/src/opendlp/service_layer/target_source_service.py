@@ -53,6 +53,7 @@ from opendlp.translations import lazy_gettext as _l
 
 if TYPE_CHECKING:
     import uuid
+    from datetime import date
 
     from opendlp.domain.targets import TargetCategory
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -472,6 +473,71 @@ def _status_for_category(
     if category.name.casefold() in attribute_columns:
         return TargetSourceStatus(category=detached_category, state=TargetSourceState.IMPORT_COVERED)
     return TargetSourceStatus(category=detached_category, state=TargetSourceState.NONE)
+
+
+@dataclass(frozen=True)
+class TargetSetupData:
+    """What the set-up dialog for one target needs to know before it can ask anything."""
+
+    target_id: uuid.UUID
+    target_name: str
+    target_values: list[str]
+    fields: list[RespondentFieldDefinition]
+    first_assembly_date: date | None
+    is_linked: bool
+
+
+def target_setup_data(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    target_category_id: uuid.UUID,
+) -> TargetSetupData:
+    """The target, and the assembly's fields, that a set-up dialog is built from.
+
+    Unlike ``configure_target_source`` this accepts a target with no values yet:
+    the dialog should open and let the save explain what is missing.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    _ensure_view_permission(uow, user_id, assembly_id)
+    assembly = uow.assemblies.get(assembly_id)
+    category: TargetCategory | None = uow.target_categories.get(target_category_id)
+    if category is None or category.assembly_id != assembly_id:
+        raise NotFoundError(f"Target category {target_category_id} not found")
+    fields = [f.create_detached_copy() for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)]
+    return TargetSetupData(
+        target_id=category.id,
+        target_name=category.name,
+        target_values=_target_option_values(category),
+        fields=fields,
+        first_assembly_date=assembly.first_assembly_date if assembly else None,
+        is_linked=any(f.target_category_id == category.id for f in fields),
+    )
+
+
+def reusable_source_fields(
+    fields: list[RespondentFieldDefinition],
+    derivation_type: DerivationType | None,
+    target_values: list[str],
+) -> list[RespondentFieldDefinition]:
+    """The existing fields a target could take its data from, by field key.
+
+    ``derivation_type`` None asks for an exact copy: a question someone answers,
+    whose options already cover every value of the target. Otherwise it is
+    whatever the derivation can be computed from.
+    """
+    if derivation_type is None:
+        candidates = [
+            field
+            for field in fields
+            if not field.is_derived
+            and field.effective_field_type in CHOICE_TYPES
+            and set(target_values) <= {option.value for option in field.options or []}
+        ]
+    else:
+        candidates = compatible_source_fields(fields, derivation_type)
+    return sorted(candidates, key=lambda f: f.field_key.casefold())
 
 
 def target_source_status(

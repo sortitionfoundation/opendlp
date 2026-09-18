@@ -13,7 +13,6 @@ from flask_login import current_user, login_required
 from opendlp import bootstrap
 from opendlp.domain.respondent_derivation import DEFAULT_FALLBACK, LargeMappingRule
 from opendlp.domain.respondent_field_schema import (
-    CHOICE_TYPES,
     DerivationType,
     DerivedFieldError,
     FieldType,
@@ -38,7 +37,6 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.derivation_service import (
     MappingUploadReport,
     RecomputeReport,
-    compatible_source_fields,
     recompute_derived_field,
     upload_large_mapping,
 )
@@ -62,9 +60,12 @@ from opendlp.service_layer.target_source_service import (
     adopt_field,
     configure_target_source,
     resync_from_target,
+    reusable_source_fields,
+    target_setup_data,
     target_source_status,
     unlink,
 )
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 from opendlp.translations import ngettext
 
@@ -189,26 +190,30 @@ def _seed_from_derivation(values: dict[str, Any], field: RespondentFieldDefiniti
 # ---------------------------------------------------------------------------
 
 
-def _page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict[str, Any]:
-    """Everything view.html and _checklist.html need.
+def _page_context(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, with_hub: bool | None = None) -> dict[str, Any]:
+    """Everything view.html and _checklist.html need, read through the route's open ``uow``.
+
+    Called after a route's writes, inside the same block, so the page it
+    describes is the one the request leaves behind.
 
     ``with_hub`` adds the registration hub that view.html paints, inert, behind
-    the step's takeover dialog; fragments leave it out.
+    the step's takeover dialog; fragments leave it out. Left unset, it follows
+    the request: a full page gets the hub, an HTMX fragment does not.
     """
-    uow = bootstrap.get_flask_uow()
+    if with_hub is None:
+        with_hub = not _is_htmx()
     gsheet = None
     csv_status = None
     hub_context: dict[str, Any] = {}
-    with uow:
-        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-        statuses = target_source_status(uow, current_user.id, assembly_id)
-        with contextlib.suppress(ServiceLayerError):
-            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-        with contextlib.suppress(ServiceLayerError):
-            csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
-        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
-        if with_hub:
-            hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
+    assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+    statuses = target_source_status(uow, current_user.id, assembly_id)
+    with contextlib.suppress(ServiceLayerError):
+        gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+    with contextlib.suppress(ServiceLayerError):
+        csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
+    data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+    if with_hub:
+        hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
 
     targets_enabled, respondents_enabled, selection_enabled = get_tab_enabled_states(data_source, gsheet, csv_status)
     return {
@@ -229,20 +234,6 @@ def _status_for(statuses: list[TargetSourceStatus], category_id: uuid.UUID) -> T
     return next((s for s in statuses if s.category.id == category_id), None)
 
 
-def _exact_reuse_candidates(
-    fields: list[RespondentFieldDefinition], target_values: list[str]
-) -> list[RespondentFieldDefinition]:
-    """Non-derived choice fields whose options cover every target value."""
-    candidates = []
-    for field in fields:
-        if field.is_derived or field.effective_field_type not in CHOICE_TYPES:
-            continue
-        option_values = {option.value for option in field.options or []}
-        if all(value in option_values for value in target_values):
-            candidates.append(field)
-    return candidates
-
-
 def _apply_age_prefills(values: dict[str, Any], target_values: list[str], first_date: Any) -> None:
     """Pre-fill blank age inputs: the as-of date from the assembly, brackets from the target."""
     if not (values["as_of_day"] or values["as_of_month"] or values["as_of_year"]) and first_date is not None:
@@ -255,17 +246,6 @@ def _apply_age_prefills(values: dict[str, Any], target_values: list[str], first_
             values.update(prefill)
     values["min_age"] = values["min_age"] or "16"
     values["max_age"] = values["max_age"] or "100"
-
-
-def _candidates_for_method(
-    fields: list[RespondentFieldDefinition], method: str, target_values: list[str]
-) -> list[RespondentFieldDefinition]:
-    """The existing fields the chosen method could reuse as its source."""
-    if method == _METHOD_EXACT:
-        candidates = _exact_reuse_candidates(fields, target_values)
-    else:
-        candidates = compatible_source_fields(fields, DerivationType(method))
-    return sorted(candidates, key=lambda f: f.field_key.casefold())
 
 
 def _resolve_source_selection(
@@ -282,25 +262,25 @@ def _resolve_source_selection(
 
 
 def _setup_modal_ctx(
-    assembly_id: uuid.UUID, category_id: uuid.UUID, values: dict[str, Any], error: str = ""
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    category_id: uuid.UUID,
+    values: dict[str, Any],
+    error: str = "",
 ) -> dict[str, Any]:
     """Everything the set-up modal needs for the chosen method and source."""
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        assembly = uow.assemblies.get(assembly_id)
-        first_date = assembly.first_assembly_date if assembly else None
-        category = uow.target_categories.get(category_id)
-        if category is None or category.assembly_id != assembly_id:
-            raise NotFoundError(f"Target category {category_id} not found")
-        target = {"id": category.id, "name": category.name, "values": [v.value for v in category.values]}
-        fields = [f.create_detached_copy() for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)]
-
-    is_linked = any(f.target_category_id == category_id for f in fields)
+    setup = target_setup_data(uow, current_user.id, assembly_id, category_id)
+    target: dict[str, Any] = {"id": setup.target_id, "name": setup.target_name, "values": setup.target_values}
+    first_date = setup.first_assembly_date
+    is_linked = setup.is_linked
     # Until a method is chosen the modal asks only how the data is collected.
     method = values["method"] if values["method"] in _method_labels() else ""
     values["method"] = method
 
-    candidates = _candidates_for_method(fields, method, target["values"]) if method else []
+    candidates: list[RespondentFieldDefinition] = []
+    if method:
+        derivation_type = None if method == _METHOD_EXACT else DerivationType(method)
+        candidates = reusable_source_fields(setup.fields, derivation_type, setup.target_values)
     selected_source = _resolve_source_selection(values, candidates, target["name"])
 
     if not values["new_field_key"]:
@@ -353,34 +333,35 @@ def _sources_url(assembly_id: uuid.UUID) -> str:
     return url_for("target_sources.view_sources", assembly_id=assembly_id)
 
 
+# Each takes the page context its route built inside its ``with uow:`` block, and
+# renders outside it: a template is the slow part of a request, and a
+# transaction held open across it is how a connection pool runs dry.
+
+
 def _render_page(
-    assembly_id: uuid.UUID, modal_ctx: dict[str, Any] | None = None, status: int = 200
+    page_ctx: dict[str, Any], modal_ctx: dict[str, Any] | None = None, status: int = 200
 ) -> ResponseReturnValue:
-    return render_template(
-        "backoffice/target_sources/view.html", modal_ctx=modal_ctx, **_page_context(assembly_id, with_hub=True)
-    ), status
+    return render_template("backoffice/target_sources/view.html", modal_ctx=modal_ctx, **page_ctx), status
 
 
-def _render_checklist_fragment(assembly_id: uuid.UUID, oob: bool = False) -> str:
-    return render_template("backoffice/target_sources/_checklist.html", oob=oob, **_page_context(assembly_id))
+def _render_checklist_fragment(page_ctx: dict[str, Any], oob: bool = False) -> str:
+    return render_template("backoffice/target_sources/_checklist.html", oob=oob, **page_ctx)
 
 
-def _render_setup_modal(assembly_id: uuid.UUID, modal_ctx: dict[str, Any], status: int = 200) -> ResponseReturnValue:
+def _render_setup_modal(page_ctx: dict[str, Any], modal_ctx: dict[str, Any], status: int = 200) -> ResponseReturnValue:
     if _is_htmx():
-        return render_template(
-            "backoffice/target_sources/_setup_modal.html", modal_ctx=modal_ctx, **_page_context(assembly_id)
-        ), status
-    return _render_page(assembly_id, modal_ctx={"mode": "setup", "setup_ctx": modal_ctx}, status=status)
+        return render_template("backoffice/target_sources/_setup_modal.html", modal_ctx=modal_ctx, **page_ctx), status
+    return _render_page(page_ctx, modal_ctx={"mode": "setup", "setup_ctx": modal_ctx}, status=status)
 
 
 def _report_response(
     assembly_id: uuid.UUID,
+    page_ctx: dict[str, Any],
     report: RecomputeReport,
     title: str,
     upload_report: MappingUploadReport | None = None,
 ) -> ResponseReturnValue:
     """Show the recompute report in the modal and refresh the checklist behind it."""
-    page_ctx = _page_context(assembly_id, with_hub=not _is_htmx())
     report_ctx = {
         "report": report,
         "title": title,
@@ -425,7 +406,9 @@ def _recompute_toast(report: RecomputeReport, message: str) -> tuple[str, str]:
     return "\n".join(lines), category
 
 
-def _toast_response(assembly_id: uuid.UUID, message: str, category: str) -> ResponseReturnValue:
+def _toast_response(
+    assembly_id: uuid.UUID, page_ctx: dict[str, Any], message: str, category: str
+) -> ResponseReturnValue:
     """Close the modal, refresh the checklist and say what happened in a toast."""
     flash(message, category)
     if _is_htmx():
@@ -433,12 +416,12 @@ def _toast_response(assembly_id: uuid.UUID, message: str, category: str) -> Resp
             '{% from "backoffice/components/floating_alerts.html" import floating_alerts %}'
             "{{ floating_alerts(oob=true) }}"
         )
-        return _render_checklist_fragment(assembly_id, oob=True) + toasts, 200
+        return _render_checklist_fragment(page_ctx, oob=True) + toasts, 200
     return redirect(_sources_url(assembly_id))
 
 
 def _saved_response(
-    assembly_id: uuid.UUID, report: RecomputeReport | None, saved: str, recomputed: str
+    assembly_id: uuid.UUID, page_ctx: dict[str, Any], report: RecomputeReport | None, saved: str, recomputed: str
 ) -> ResponseReturnValue:
     """After a save that may have recomputed the pool.
 
@@ -446,14 +429,14 @@ def _saved_response(
     up - a recompute has done nothing worth reporting, so nothing is said about it.
     """
     if report is None or report.total == 0:
-        return _close_modal_response(assembly_id, saved)
-    return _toast_response(assembly_id, *_recompute_toast(report, recomputed))
+        return _close_modal_response(assembly_id, page_ctx, saved)
+    return _toast_response(assembly_id, page_ctx, *_recompute_toast(report, recomputed))
 
 
-def _close_modal_response(assembly_id: uuid.UUID, message: str) -> ResponseReturnValue:
+def _close_modal_response(assembly_id: uuid.UUID, page_ctx: dict[str, Any], message: str) -> ResponseReturnValue:
     """Success without a report: refresh the checklist, close the modal."""
     if _is_htmx():
-        return _render_checklist_fragment(assembly_id, oob=True), 200
+        return _render_checklist_fragment(page_ctx, oob=True), 200
     flash(message, "success")
     return redirect(_sources_url(assembly_id))
 
@@ -514,10 +497,8 @@ def _parse_setup_spec(values: dict[str, Any]) -> TargetSourceSpec:
     return LargeMappingSpec(rule=LargeMappingRule(), source=source)
 
 
-def _linked_field_id(assembly_id: uuid.UUID, category_id: uuid.UUID) -> uuid.UUID | None:
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        statuses = target_source_status(uow, current_user.id, assembly_id)
+def _linked_field_id(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, category_id: uuid.UUID) -> uuid.UUID | None:
+    statuses = target_source_status(uow, current_user.id, assembly_id)
     status = _status_for(statuses, category_id)
     if (
         status is None
@@ -534,6 +515,11 @@ def _linked_field_id(assembly_id: uuid.UUID, category_id: uuid.UUID) -> uuid.UUI
 
 # ---------------------------------------------------------------------------
 # Routes.
+#
+# Each opens one ``with uow:`` block around everything it reads and writes,
+# including the page context its response is rendered from, and renders after
+# the block has closed. The one exception is a save that fails: its block has
+# rolled back, so the dialog it re-opens is read in a block of its own.
 # ---------------------------------------------------------------------------
 
 
@@ -542,11 +528,14 @@ def _linked_field_id(assembly_id: uuid.UUID, category_id: uuid.UUID) -> uuid.UUI
 def view_sources(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """The per-target data sources checklist."""
     try:
-        return _render_page(assembly_id)
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            page_ctx = _page_context(uow, assembly_id, with_hub=True)
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to view this assembly"))
+    return _render_page(page_ctx)
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/setup-modal")
@@ -554,37 +543,43 @@ def view_sources(assembly_id: uuid.UUID) -> ResponseReturnValue:
 def setup_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Serve the set-up modal — fragment for HTMX, full page with the modal open otherwise."""
     try:
-        if "modal" in request.args:
-            values = _setup_values_from_request(request.args)
-        else:
-            uow = bootstrap.get_flask_uow()
-            with uow:
-                statuses = target_source_status(uow, current_user.id, assembly_id)
-            status = _status_for(statuses, category_id)
-            if status is None:
-                return _dashboard_redirect(_("Target not found"))
-            values = _default_setup_values(status)
-        return _render_setup_modal(assembly_id, _setup_modal_ctx(assembly_id, category_id, values))
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            page_ctx = _page_context(uow, assembly_id)
+            if "modal" in request.args:
+                values = _setup_values_from_request(request.args)
+            else:
+                status = _status_for(page_ctx["statuses"], category_id)
+                if status is None:
+                    return _dashboard_redirect(_("Target not found"))
+                values = _default_setup_values(status)
+            modal_ctx = _setup_modal_ctx(uow, assembly_id, category_id, values)
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to view this assembly"))
+    return _render_setup_modal(page_ctx, modal_ctx)
 
 
 def _setup_error_response(
     assembly_id: uuid.UUID, category_id: uuid.UUID, values: dict[str, Any], error: str
 ) -> ResponseReturnValue:
-    """Re-render the set-up modal with an error.
+    """Re-open the set-up modal with an error, after a save that did not happen.
 
-    Building the modal loads the assembly and the target, so it can fail in its
-    own right — the form is parsed before anything checks who is asking.
+    The save's block has rolled back, so the dialog is read in a fresh one.
+    Building it loads the assembly and the target, so it can fail in its own
+    right — the form is parsed before anything checks who is asking.
     """
     try:
-        return _render_setup_modal(assembly_id, _setup_modal_ctx(assembly_id, category_id, values, error=error), 422)
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            page_ctx = _page_context(uow, assembly_id)
+            modal_ctx = _setup_modal_ctx(uow, assembly_id, category_id, values, error=error)
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to view this assembly"))
+    return _render_setup_modal(page_ctx, modal_ctx, 422)
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/configure", methods=["POST"])
@@ -597,6 +592,7 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         uow = bootstrap.get_flask_uow()
         with uow:
             fields, report = configure_target_source(uow, current_user.id, assembly_id, category_id, spec)
+            page_ctx = _page_context(uow, assembly_id)
     except (FixedFieldError, DerivedFieldError, TargetLinkedFieldError):
         # Domain guards the form cannot trip; their messages are written for a developer.
         logger.exception("Target source set-up refused by a domain guard", assembly_id=str(assembly_id))
@@ -616,6 +612,7 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
 
     return _saved_response(
         assembly_id,
+        page_ctx,
         report,
         saved=_("Data source saved"),
         recomputed=_("Data source saved — %(key)s recomputed for every respondent", key=fields[-1].field_key),
@@ -632,6 +629,7 @@ def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturn
         uow = bootstrap.get_flask_uow()
         with uow:
             adopt_field(uow, current_user.id, assembly_id, category_id, field_id)
+            page_ctx = _page_context(uow, assembly_id)
     except FieldDefinitionConflictError as e:
         flash(e.user_msg(), "error")
         return redirect(_sources_url(assembly_id))
@@ -643,7 +641,7 @@ def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturn
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
-    return _close_modal_response(assembly_id, _("Question linked to its target"))
+    return _close_modal_response(assembly_id, page_ctx, _("Question linked to its target"))
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/resync", methods=["POST"])
@@ -654,6 +652,7 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         uow = bootstrap.get_flask_uow()
         with uow:
             field, report = resync_from_target(uow, current_user.id, assembly_id, category_id)
+            page_ctx = _page_context(uow, assembly_id)
     except FieldDefinitionConflictError as e:
         flash(e.user_msg(), "error")
         return redirect(_sources_url(assembly_id))
@@ -671,6 +670,7 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         return _dashboard_redirect(_("Assembly not found"))
     return _saved_response(
         assembly_id,
+        page_ctx,
         report,
         saved=_("Options re-synced from the target"),
         recomputed=_("Re-synced — %(key)s recomputed for every respondent", key=field.field_key),
@@ -682,13 +682,15 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
 def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Recompute the linked derived field across the pool."""
     try:
-        field_id = _linked_field_id(assembly_id, category_id)
-        if field_id is None:
-            flash(_("No question is linked to this target"), "error")
-            return redirect(_sources_url(assembly_id))
         uow = bootstrap.get_flask_uow()
         with uow:
+            # Found and recomputed in one transaction, so the link cannot change in between.
+            field_id = _linked_field_id(uow, assembly_id, category_id)
+            if field_id is None:
+                flash(_("No question is linked to this target"), "error")
+                return redirect(_sources_url(assembly_id))
             report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
+            page_ctx = _page_context(uow, assembly_id)
     except FieldDefinitionConflictError as e:
         flash(e.user_msg(), "error")
         return redirect(_sources_url(assembly_id))
@@ -701,8 +703,8 @@ def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
     if report.total == 0:
-        return _toast_response(assembly_id, _("There are no respondents to recompute yet"), "info")
-    return _toast_response(assembly_id, *_recompute_toast(report, _("Recompute finished")))
+        return _toast_response(assembly_id, page_ctx, _("There are no respondents to recompute yet"), "info")
+    return _toast_response(assembly_id, page_ctx, *_recompute_toast(report, _("Recompute finished")))
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload-modal")
@@ -715,15 +717,15 @@ def upload_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetu
 def _upload_modal_response(
     assembly_id: uuid.UUID, category_id: uuid.UUID, error: str = "", status: int = 200
 ) -> ResponseReturnValue:
-    uow = bootstrap.get_flask_uow()
     try:
+        uow = bootstrap.get_flask_uow()
         with uow:
-            statuses = target_source_status(uow, current_user.id, assembly_id)
+            page_ctx = _page_context(uow, assembly_id)
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to view this assembly"))
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
-    source_status = _status_for(statuses, category_id)
+    source_status = _status_for(page_ctx["statuses"], category_id)
     if source_status is None or source_status.field is None or not source_status.field.is_derived:
         flash(_("No lookup-table field is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
@@ -735,25 +737,14 @@ def _upload_modal_response(
         "allow_new_outputs": request.form.get("allow_new_outputs") == "1",
     }
     if _is_htmx():
-        return render_template(
-            "backoffice/target_sources/_upload_modal.html", modal_ctx=modal_ctx, **_page_context(assembly_id)
-        ), status
-    return _render_page(assembly_id, modal_ctx=modal_ctx, status=status)
+        return render_template("backoffice/target_sources/_upload_modal.html", modal_ctx=modal_ctx, **page_ctx), status
+    return _render_page(page_ctx, modal_ctx=modal_ctx, status=status)
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload", methods=["POST"])
 @login_required
 def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
     """Replace the linked mapping field's lookup table from an uploaded CSV, then recompute."""
-    try:
-        field_id = _linked_field_id(assembly_id, category_id)
-    except InsufficientPermissions:
-        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
-    except NotFoundError:
-        return _dashboard_redirect(_("Assembly not found"))
-    if field_id is None:
-        flash(_("No question is linked to this target"), "error")
-        return redirect(_sources_url(assembly_id))
     uploaded = request.files.get("mapping_file")
     if uploaded is None or not uploaded.filename:
         return _upload_modal_response(assembly_id, category_id, error=_("Choose a CSV file to upload"), status=422)
@@ -766,6 +757,11 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
+            # Found, uploaded to and recomputed in one transaction, so the link cannot change in between.
+            field_id = _linked_field_id(uow, assembly_id, category_id)
+            if field_id is None:
+                flash(_("No question is linked to this target"), "error")
+                return redirect(_sources_url(assembly_id))
             upload_report = upload_large_mapping(
                 uow,
                 current_user.id,
@@ -775,6 +771,7 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
                 allow_new_outputs=request.form.get("allow_new_outputs") == "1",
             )
             report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
+            page_ctx = _page_context(uow, assembly_id)
     except FieldDefinitionConflictError as e:
         return _upload_modal_response(assembly_id, category_id, error=e.user_msg(), status=422)
     except FieldDefinitionNotFoundError:
@@ -784,7 +781,7 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
-    return _report_response(assembly_id, report, _("Lookup table uploaded"), upload_report=upload_report)
+    return _report_response(assembly_id, page_ctx, report, _("Lookup table uploaded"), upload_report=upload_report)
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/unlink", methods=["POST"])
@@ -795,6 +792,7 @@ def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         uow = bootstrap.get_flask_uow()
         with uow:
             _unlinked, deleted = unlink(uow, current_user.id, assembly_id, category_id)
+            page_ctx = _page_context(uow, assembly_id)
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except AssemblyNotFoundError:
@@ -803,5 +801,5 @@ def unlink_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         flash(_("Target not found"), "error")
         return redirect(_sources_url(assembly_id))
     if deleted:
-        return _close_modal_response(assembly_id, _("Computed question removed"))
-    return _close_modal_response(assembly_id, _("Question unlinked from its target"))
+        return _close_modal_response(assembly_id, page_ctx, _("Computed question removed"))
+    return _close_modal_response(assembly_id, page_ctx, _("Question unlinked from its target"))
