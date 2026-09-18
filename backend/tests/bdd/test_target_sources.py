@@ -1,5 +1,5 @@
 """ABOUTME: BDD tests for the target data sources checklist (registration step 1)
-ABOUTME: Exercises exact-copy and age-ranges set-up, and the force-unlink confirmation, via Playwright"""
+ABOUTME: Exercises exact-copy, age-ranges and lookup-table set-up, and the force-unlink confirmation, via Playwright"""
 
 import re
 import uuid
@@ -148,6 +148,55 @@ def set_up_age_ranges(admin_logged_in_page: Page, target_name: str, source_key: 
     page.get_by_role("button", name="Save").click()
 
 
+@when(parsers.parse('I set up the "{target_name}" target to map from "{source_key}"'))
+def set_up_lookup_table(admin_logged_in_page: Page, target_name: str, source_key: str) -> None:
+    """Walk the modal: Map postcode to value → reuse the imported question → save."""
+    page = admin_logged_in_page
+    _row_for(page, target_name).get_by_role("button", name="Set up", exact=True).click()
+    expect(_setup_dialog(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    with page.expect_response(lambda r: "setup-modal" in r.url):
+        page.select_option('select[name="method"]', "large_mapping")
+    reuse_radio = page.locator('input[name="source_mode"][value="reuse"]')
+    expect(reuse_radio).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    if not reuse_radio.is_checked():
+        with page.expect_response(lambda r: "setup-modal" in r.url):
+            reuse_radio.check()
+    reuse_select = page.locator('select[name="reuse_field_id"]')
+    expect(reuse_select).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    option_value = reuse_select.locator("option", has_text=f"({source_key})").first.get_attribute("value")
+    assert option_value, f"No source option offering {source_key!r}"
+    with page.expect_response(lambda r: "setup-modal" in r.url):
+        reuse_select.select_option(option_value)
+    with page.expect_response(lambda r: "configure" in r.url):
+        page.get_by_role("button", name="Save").click()
+
+
+@when(parsers.parse('I upload a lookup table mapping "{source_value}" to "{target_value}"'))
+def upload_lookup_table(admin_logged_in_page: Page, source_value: str, target_value: str) -> None:
+    page = admin_logged_in_page
+    csv_bytes = f"postcode,Region\n{source_value},{target_value}\n".encode()
+    page.locator('input[name="mapping_file"]').set_input_files({
+        "name": "mapping.csv",
+        "mimeType": "text/csv",
+        "buffer": csv_bytes,
+    })
+    with page.expect_response(lambda r: r.url.endswith("/upload")):
+        _setup_dialog(page).get_by_role("button", name="Upload", exact=True).click()
+
+
+@when(parsers.parse('I tick "{label}"'))
+def tick_checkbox(admin_logged_in_page: Page, label: str) -> None:
+    # The native checkbox is visually hidden behind a styled box, so click its label as a person would.
+    _setup_dialog(admin_logged_in_page).locator("label.checkbox-container", has_text=label).click()
+
+
+@when(parsers.parse('I press the "{name}" button'))
+def press_button(admin_logged_in_page: Page, name: str) -> None:
+    page = admin_logged_in_page
+    with page.expect_response(lambda r: r.request.method == "POST"):
+        _setup_dialog(page).get_by_role("button", name=name, exact=True).click()
+
+
 @when(parsers.parse('I open the more actions menu for the "{target_name}" target'))
 def open_more_actions(admin_logged_in_page: Page, target_name: str) -> None:
     page = admin_logged_in_page
@@ -203,6 +252,19 @@ def open_schema_editor(admin_logged_in_page: Page, title: str) -> None:
 @then(parsers.parse('the "{target_name}" target row should say "{text}"'))
 def target_row_says(admin_logged_in_page: Page, target_name: str, text: str) -> None:
     expect(_row_for(admin_logged_in_page, target_name)).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the set-up dialog should be on "{caption}"'))
+@then(parsers.parse('the set-up dialog should say "{caption}"'))
+def setup_dialog_says(admin_logged_in_page: Page, caption: str) -> None:
+    expect(_setup_dialog(admin_logged_in_page)).to_contain_text(caption, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{name}" button should be hidden'))
+def button_hidden(admin_logged_in_page: Page, name: str) -> None:
+    button = _setup_dialog(admin_logged_in_page).locator("button", has_text=name)
+    expect(button).to_have_count(1)
+    expect(button).to_be_hidden(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('I should see a warning toast saying "{text}"'))

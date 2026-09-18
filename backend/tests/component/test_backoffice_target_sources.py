@@ -453,6 +453,124 @@ class TestConfigureLargeMapping:
         assert derived.target_category_id == category.id
         assert _field_by_key(fake_store, existing_assembly, "Postcode").field_type == FieldType.TEXT
 
+    def _configure(self, logged_in_admin, assembly, category, data, headers=HTMX, **kwargs):
+        return logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/configure",
+            data={"modal": "1", "method": "large_mapping", **data},
+            headers=headers,
+            **kwargs,
+        )
+
+    def test_saving_moves_on_to_the_upload_step(self, logged_in_admin, existing_assembly, fake_store):
+        """Save keeps the dialog open on step 2, and refreshes the row behind it."""
+        category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        response = self._configure(
+            logged_in_admin, existing_assembly, category, {"source_mode": "create", "new_field_key": "Postcode"}
+        )
+        body = response.get_data(as_text=True)
+        dialog, _sep, _checklist = body.partition('id="target-sources-list"')
+
+        assert response.status_code == 200
+        assert "Step 2 of 2" in dialog
+        assert "Upload lookup table for Region" in dialog
+        assert 'name="defer_upload"' in dialog
+        assert 'name="setup_step"' in dialog
+        assert "Upload later" in dialog
+        assert "Cancel" not in dialog
+        assert 'id="target-sources-list" hx-swap-oob="true"' in body
+        assert 'id="floating-alerts"' not in body
+
+    def test_the_upload_step_hides_the_step_one_recompute_report(self, logged_in_admin, existing_assembly, fake_store):
+        """With an empty table every respondent falls back, so reporting it is noise."""
+        category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+        _seed_respondents(fake_store, existing_assembly, [{"Postcode": "SW1A 1AA"}])
+
+        response = self._configure(
+            logged_in_admin, existing_assembly, category, {"source_mode": "create", "new_field_key": "Postcode"}
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Step 2 of 2" in body
+        assert 'id="floating-alerts"' not in body
+        assert "fell back" not in body
+
+    def test_re_editing_with_an_empty_table_moves_on_to_the_upload_step(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, _field = TestMappingUpload()._linked_large_mapping(fake_store, existing_assembly)
+        postcode = _field_by_key(fake_store, existing_assembly, "Postcode")
+
+        response = self._configure(
+            logged_in_admin,
+            existing_assembly,
+            category,
+            {"source_mode": "reuse", "reuse_field_id": str(postcode.id)},
+        )
+
+        assert response.status_code == 200
+        assert "Step 2 of 2" in response.get_data(as_text=True)
+
+    def test_re_editing_with_a_table_uploaded_closes_the_dialog(self, logged_in_admin, existing_assembly, fake_store):
+        category, _field = TestMappingUpload()._linked_large_mapping(fake_store, existing_assembly)
+        TestMappingUpload()._upload(logged_in_admin, existing_assembly, category)
+        postcode = _field_by_key(fake_store, existing_assembly, "Postcode")
+
+        response = self._configure(
+            logged_in_admin,
+            existing_assembly,
+            category,
+            {"source_mode": "reuse", "reuse_field_id": str(postcode.id)},
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "Step 2 of 2" not in body
+        assert 'id="target-sources-list" hx-swap-oob="true"' in body
+
+    def test_without_htmx_saving_redirects_to_the_upload_step(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        response = self._configure(
+            logged_in_admin,
+            existing_assembly,
+            category,
+            {"source_mode": "create", "new_field_key": "Postcode"},
+            headers={},
+        )
+
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith(f"/target-sources/{category.id}/upload-modal?step=setup")
+        page = logged_in_admin.get(response.headers["Location"]).get_data(as_text=True)
+        assert "Step 2 of 2" in page
+        assert 'name="defer_upload"' in page
+
+    def test_the_set_up_form_says_the_upload_comes_next(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            query_string={"modal": "1", "method": "large_mapping", "source_mode": "create"},
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert "After saving you'll upload the lookup table" in body
+        assert "afterwards" not in body
+
+    def test_editing_with_a_table_uploaded_says_saving_keeps_it(self, logged_in_admin, existing_assembly, fake_store):
+        category, _field = TestMappingUpload()._linked_large_mapping(fake_store, existing_assembly)
+        TestMappingUpload()._upload(logged_in_admin, existing_assembly, category)
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Saving keeps the existing lookup table of 1 rows" in body
+        assert "After saving" not in body
+
 
 class TestConfigureSmallMapping:
     def test_maps_an_existing_choice_field(self, logged_in_admin, existing_assembly, fake_store):
@@ -699,6 +817,125 @@ class TestMappingUpload:
             target_category_id=category.id,
         )
         return category, field
+
+    def _upload(self, logged_in_admin, assembly, category, data=None):
+        return logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/upload",
+            data={"mapping_file": (io.BytesIO(b"Postcode,Region\nSW1A 1AA,North\n"), "mapping.csv"), **(data or {})},
+            content_type="multipart/form-data",
+            headers=HTMX,
+        )
+
+    def _row_count(self, fake_store, field):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            return uow.respondent_field_mapping_entries.count_for_field(field.id)
+
+    def test_the_row_upload_dialog_is_not_a_set_up_step(self, logged_in_admin, existing_assembly, fake_store):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload-modal",
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Step 2 of 2" not in body
+        assert 'name="defer_upload"' not in body
+        assert "Upload later" not in body
+        assert "Cancel" in body
+
+    def test_the_set_up_step_can_be_opened_directly(self, logged_in_admin, existing_assembly, fake_store):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload-modal?step=setup",
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Step 2 of 2" in body
+        assert "I don't have the lookup table yet" in body
+        assert "fall back to UNKNOWN" in body
+
+    def test_upload_later_with_the_box_ticked_closes_with_a_warning(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            data={"setup_step": "1", "defer_upload": "1", "form_action": "defer"},
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "Data source saved. Until the lookup table is uploaded, everyone&#39;s Region will be UNKNOWN." in body
+        assert "var(--color-warning-100)" in body
+        assert 'id="target-sources-list" hx-swap-oob="true"' in body
+        assert self._row_count(fake_store, field) == 0
+
+    def test_upload_later_without_the_box_ticked_stays_on_the_step(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            data={"setup_step": "1", "form_action": "defer"},
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert "Step 2 of 2" in body
+        assert "Tick the box to upload the lookup table later" in body
+        assert self._row_count(fake_store, field) == 0
+
+    def test_a_missing_file_in_the_set_up_step_stays_on_the_step(self, logged_in_admin, existing_assembly, fake_store):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            data={"setup_step": "1"},
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert "Choose a CSV file" in body
+        assert "Step 2 of 2" in body
+
+    def test_a_bad_csv_in_the_set_up_step_stays_on_the_step(self, logged_in_admin, existing_assembly, fake_store):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            data={"setup_step": "1", "mapping_file": (io.BytesIO(b"\xff\xfe\xfa"), "mapping.csv")},
+            content_type="multipart/form-data",
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert "could not be read as UTF-8" in body
+        assert "Step 2 of 2" in body
+
+    def test_uploading_in_the_set_up_step_shows_the_report(self, logged_in_admin, existing_assembly, fake_store):
+        category, field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = self._upload(logged_in_admin, existing_assembly, category, {"setup_step": "1"})
+
+        assert response.status_code == 200
+        assert b"Rows stored:" in response.data
+        assert self._row_count(fake_store, field) == 1
+
+    def test_an_empty_table_is_flagged_on_its_row(self, logged_in_admin, existing_assembly, fake_store):
+        self._linked_large_mapping(fake_store, existing_assembly)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        assert "Until the lookup table is uploaded, everyone's Region is UNKNOWN." in body
 
     def test_upload_modal_names_the_field(self, logged_in_admin, existing_assembly, fake_store):
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)

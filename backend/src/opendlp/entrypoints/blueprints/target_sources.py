@@ -212,6 +212,7 @@ def _page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict[str, A
         "statuses": statuses,
         "TargetSourceState": TargetSourceState,
         "method_labels": _method_labels(),
+        "default_fallback": DEFAULT_FALLBACK,
         "data_source": data_source,
         "gsheet": gsheet,
         "targets_enabled": targets_enabled,
@@ -289,8 +290,14 @@ def _setup_modal_ctx(
             raise NotFoundError(f"Target category {category_id} not found")
         target = {"id": category.id, "name": category.name, "values": [v.value for v in category.values]}
         fields = [f.create_detached_copy() for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)]
+        linked = next((f for f in fields if f.target_category_id == category_id), None)
+        mapping_row_count = (
+            uow.respondent_field_mapping_entries.count_for_field(linked.id)
+            if linked is not None and linked.derivation_type == DerivationType.LARGE_MAPPING
+            else 0
+        )
 
-    is_linked = any(f.target_category_id == category_id for f in fields)
+    is_linked = linked is not None
     # Until a method is chosen the modal asks only how the data is collected.
     method = values["method"] if values["method"] in _method_labels() else ""
     values["method"] = method
@@ -322,6 +329,7 @@ def _setup_modal_ctx(
     return {
         "target": target,
         "is_linked": is_linked,
+        "mapping_row_count": mapping_row_count,
         "values": values,
         "error": error,
         "method_options": _method_options(),
@@ -571,6 +579,11 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         uow = bootstrap.get_flask_uow()
         with uow:
             fields, report = configure_target_source(uow, current_user.id, assembly_id, category_id, spec)
+            linked = fields[-1]
+            needs_table = (
+                linked.derivation_type == DerivationType.LARGE_MAPPING
+                and uow.respondent_field_mapping_entries.count_for_field(linked.id) == 0
+            )
     except (ValueError, FieldDefinitionConflictError, FieldDefinitionNotFoundError) as e:
         return _render_setup_modal(assembly_id, _setup_modal_ctx(assembly_id, category_id, values, error=str(e)), 422)
     except InsufficientPermissions:
@@ -578,6 +591,14 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
     except NotFoundError:
         return _dashboard_redirect(_("Assembly not found"))
 
+    if needs_table:
+        # A lookup table with no rows maps everyone to the fallback, so the
+        # dialog moves straight on to uploading it rather than closing.
+        if _is_htmx():
+            return _upload_modal_response(assembly_id, category_id, setup_step=True, refresh_checklist=True)
+        return redirect(
+            url_for("target_sources.upload_modal", assembly_id=assembly_id, category_id=category_id, step="setup")
+        )
     return _saved_response(
         assembly_id,
         report,
@@ -654,12 +675,20 @@ def recompute_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload-modal")
 @login_required
 def upload_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Serve the lookup-table upload dialog for the target's linked mapping field."""
-    return _upload_modal_response(assembly_id, category_id)
+    """Serve the lookup-table upload dialog for the target's linked mapping field.
+
+    ``?step=setup`` serves it as the second step of the set-up dialog.
+    """
+    return _upload_modal_response(assembly_id, category_id, setup_step=request.args.get("step") == "setup")
 
 
 def _upload_modal_response(
-    assembly_id: uuid.UUID, category_id: uuid.UUID, error: str = "", status: int = 200
+    assembly_id: uuid.UUID,
+    category_id: uuid.UUID,
+    error: str = "",
+    status: int = 200,
+    setup_step: bool = False,
+    refresh_checklist: bool = False,
 ) -> ResponseReturnValue:
     uow = bootstrap.get_flask_uow()
     try:
@@ -679,12 +708,47 @@ def _upload_modal_response(
         "category_id": category_id,
         "error": error,
         "allow_new_outputs": request.form.get("allow_new_outputs") == "1",
+        "setup_step": setup_step,
+        "defer_upload": request.form.get("defer_upload") == "1",
+        "fallback": LargeMappingRule.from_config(source_status.field.derivation_config or {}).fallback,
     }
     if _is_htmx():
-        return render_template(
-            "backoffice/target_sources/_upload_modal.html", modal_ctx=modal_ctx, **_page_context(assembly_id)
-        ), status
+        page_ctx = _page_context(assembly_id)
+        dialog_html = render_template("backoffice/target_sources/_upload_modal.html", modal_ctx=modal_ctx, **page_ctx)
+        if refresh_checklist:
+            dialog_html += render_template("backoffice/target_sources/_checklist.html", oob=True, **page_ctx)
+        return dialog_html, status
     return _render_page(assembly_id, modal_ctx=modal_ctx, status=status)
+
+
+def _defer_upload_response(assembly_id: uuid.UUID, category_id: uuid.UUID, setup_step: bool) -> ResponseReturnValue:
+    """Close the set-up dialog without a lookup table, once the organiser has said so."""
+    if request.form.get("defer_upload") != "1":
+        return _upload_modal_response(
+            assembly_id,
+            category_id,
+            error=_("Tick the box to upload the lookup table later"),
+            status=422,
+            setup_step=setup_step,
+        )
+    uow = bootstrap.get_flask_uow()
+    try:
+        with uow:
+            source_status = _status_for(target_source_status(uow, current_user.id, assembly_id), category_id)
+    except InsufficientPermissions:
+        return _dashboard_redirect(_("You don't have permission to edit this assembly"))
+    except NotFoundError:
+        return _dashboard_redirect(_("Assembly not found"))
+    if source_status is None or source_status.field is None:
+        flash(_("No question is linked to this target"), "error")
+        return redirect(_sources_url(assembly_id))
+    field = source_status.field
+    message = _(
+        "Data source saved. Until the lookup table is uploaded, everyone's %(key)s will be %(fallback)s.",
+        key=field.field_key,
+        fallback=LargeMappingRule.from_config(field.derivation_config or {}).fallback,
+    )
+    return _toast_response(assembly_id, message, "warning")
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/upload", methods=["POST"])
@@ -695,14 +759,23 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     if field_id is None:
         flash(_("No question is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
+    setup_step = request.form.get("setup_step") == "1"
+    if request.form.get("form_action") == "defer":
+        return _defer_upload_response(assembly_id, category_id, setup_step)
     uploaded = request.files.get("mapping_file")
     if uploaded is None or not uploaded.filename:
-        return _upload_modal_response(assembly_id, category_id, error=_("Choose a CSV file to upload"), status=422)
+        return _upload_modal_response(
+            assembly_id, category_id, error=_("Choose a CSV file to upload"), status=422, setup_step=setup_step
+        )
     try:
         csv_content = uploaded.read().decode("utf-8-sig")
     except UnicodeDecodeError:
         return _upload_modal_response(
-            assembly_id, category_id, error=_("The file could not be read as UTF-8 text"), status=422
+            assembly_id,
+            category_id,
+            error=_("The file could not be read as UTF-8 text"),
+            status=422,
+            setup_step=setup_step,
         )
     try:
         uow = bootstrap.get_flask_uow()
@@ -717,7 +790,7 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
             )
             report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
     except (FieldDefinitionConflictError, FieldDefinitionNotFoundError) as e:
-        return _upload_modal_response(assembly_id, category_id, error=str(e), status=422)
+        return _upload_modal_response(assembly_id, category_id, error=str(e), status=422, setup_step=setup_step)
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     return _report_response(assembly_id, report, _("Lookup table uploaded"), upload_report=upload_report)
