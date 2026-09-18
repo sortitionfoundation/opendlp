@@ -199,6 +199,9 @@ When `setup_step` is not set, the modal is unchanged. It is the
   table" item is ever rendered, and the `type_choice == "derived"` branches
   can only be reached by a hand-crafted request.
 
+✅ **Guard done** — `update_field` raises `FieldDefinitionConflictError` for a
+group change on a derived field.
+
 The only way left to move a derived field out of DERIVED is a hand-crafted
 POST to `update_field_view` with a `group`. Close it in the same chunk.
 Either `update_field` in the service layer rejects a group change on a
