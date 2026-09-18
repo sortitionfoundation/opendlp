@@ -3,6 +3,7 @@ ABOUTME: Recompute report modal — what saving or recomputing a derivation did 
 ABOUTME: Shown in place of the field modal after a derivation save; Done closes via a plain link
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/modal.html" import dialog_close_icon %}
 {% set close_url = report_ctx.get("close_url") or url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
 {% set report = report_ctx["report"] %}
 <a href="{{ close_url }}"
@@ -15,7 +16,7 @@ ABOUTME: Shown in place of the field modal after a derivation save; Done closes 
     <div class="dialog-panel dialog-panel--default">
         <div class="dialog-header">
             <h2 class="dialog-title" id="derivation-report-title">{{ report_ctx["title"] }}</h2>
-            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">✕</a>
+            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
         </div>
         <div class="dialog-body">
             {% if report.completed_selection_runs > 0 %}

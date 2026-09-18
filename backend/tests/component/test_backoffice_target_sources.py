@@ -87,6 +87,20 @@ class TestChecklistPage:
         assert b"Asked on the registration form" in response.data
         assert b"No data source yet" in response.data
 
+    def test_status_marks_and_close_buttons_are_icons_not_text_glyphs(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """A screen reader reads a bare tick or cross aloud, as "check mark" or "ballot x"."""
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        checklist = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+        modal = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+        )
+
+        for body in (checklist.get_data(as_text=True), modal.get_data(as_text=True)):
+            assert not re.search("[\u2713\u2717\u2715]", body)
+
     def test_flags_a_stale_linked_field(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female", "Other"])
         _seed_field(

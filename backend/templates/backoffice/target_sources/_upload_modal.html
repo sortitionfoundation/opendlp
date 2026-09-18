@@ -3,6 +3,7 @@ ABOUTME: Lookup-table upload dialog reached from a target's checklist row
 ABOUTME: Two-column CSV replaces the whole table; upload then recompute, combined report shown after
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/modal.html" import dialog_close_icon %}
 {% from "backoffice/components/input.html" import checkbox, file_input %}
 {% set close_url = url_for('target_sources.view_sources', assembly_id=assembly.id) %}
 {% set upload_url = url_for('target_sources.upload_view', assembly_id=assembly.id, category_id=modal_ctx["category_id"]) %}
@@ -16,7 +17,7 @@ ABOUTME: Two-column CSV replaces the whole table; upload then recompute, combine
     <div class="dialog-panel dialog-panel--default">
         <div class="dialog-header">
             <h2 class="dialog-title" id="ts-mapping-upload-title">{{ _("Upload lookup table for %(label)s", label=modal_ctx["field"].label) }}</h2>
-            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">✕</a>
+            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
         </div>
         <form method="post"
               action="{{ upload_url }}"
