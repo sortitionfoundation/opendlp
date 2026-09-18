@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-17 20:48+0000\n"
+"POT-Creation-Date: 2026-09-18 10:57+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1444,13 +1444,14 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/respondents.py:787
 #: src/opendlp/entrypoints/blueprints/respondents.py:945
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:85
-#: src/opendlp/entrypoints/blueprints/target_sources.py:539
-#: src/opendlp/entrypoints/blueprints/target_sources.py:561
-#: src/opendlp/entrypoints/blueprints/target_sources.py:669
-#: src/opendlp/entrypoints/blueprints/targets.py:153
-#: src/opendlp/entrypoints/blueprints/targets.py:394
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:109
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:757
+#: src/opendlp/entrypoints/blueprints/target_sources.py:540
+#: src/opendlp/entrypoints/blueprints/target_sources.py:562
+#: src/opendlp/entrypoints/blueprints/target_sources.py:578
+#: src/opendlp/entrypoints/blueprints/target_sources.py:692
+#: src/opendlp/entrypoints/blueprints/targets.py:154
+#: src/opendlp/entrypoints/blueprints/targets.py:395
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:115
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:791
 msgid "You don't have permission to view this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 
@@ -1532,19 +1533,24 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:82
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:170
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:194
-#: src/opendlp/entrypoints/blueprints/target_sources.py:537
-#: src/opendlp/entrypoints/blueprints/target_sources.py:559
-#: src/opendlp/entrypoints/blueprints/target_sources.py:579
-#: src/opendlp/entrypoints/blueprints/target_sources.py:605
-#: src/opendlp/entrypoints/blueprints/target_sources.py:623
+#: src/opendlp/entrypoints/blueprints/target_sources.py:538
+#: src/opendlp/entrypoints/blueprints/target_sources.py:560
+#: src/opendlp/entrypoints/blueprints/target_sources.py:576
+#: src/opendlp/entrypoints/blueprints/target_sources.py:596
+#: src/opendlp/entrypoints/blueprints/target_sources.py:622
+#: src/opendlp/entrypoints/blueprints/target_sources.py:644
 #: src/opendlp/entrypoints/blueprints/target_sources.py:671
-#: src/opendlp/entrypoints/blueprints/targets.py:144
-#: src/opendlp/entrypoints/blueprints/targets.py:218
-#: src/opendlp/entrypoints/blueprints/targets.py:263
-#: src/opendlp/entrypoints/blueprints/targets.py:391
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:106
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:176
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:754
+#: src/opendlp/entrypoints/blueprints/target_sources.py:694
+#: src/opendlp/entrypoints/blueprints/target_sources.py:722
+#: src/opendlp/entrypoints/blueprints/target_sources.py:752
+#: src/opendlp/entrypoints/blueprints/target_sources.py:767
+#: src/opendlp/entrypoints/blueprints/targets.py:145
+#: src/opendlp/entrypoints/blueprints/targets.py:219
+#: src/opendlp/entrypoints/blueprints/targets.py:264
+#: src/opendlp/entrypoints/blueprints/targets.py:392
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:112
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:182
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:788
 msgid "Assembly not found"
 msgstr "A közösségi gyűlés nem található"
 
@@ -1638,12 +1644,13 @@ msgstr "A '%(title)s' közösségi gyűlés sikeresen frissült"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:573
 #: src/opendlp/entrypoints/blueprints/backoffice.py:605
 #: src/opendlp/entrypoints/blueprints/main.py:279
-#: src/opendlp/entrypoints/blueprints/target_sources.py:577
-#: src/opendlp/entrypoints/blueprints/target_sources.py:603
-#: src/opendlp/entrypoints/blueprints/target_sources.py:621
-#: src/opendlp/entrypoints/blueprints/target_sources.py:648
-#: src/opendlp/entrypoints/blueprints/target_sources.py:722
-#: src/opendlp/entrypoints/blueprints/target_sources.py:735
+#: src/opendlp/entrypoints/blueprints/target_sources.py:594
+#: src/opendlp/entrypoints/blueprints/target_sources.py:620
+#: src/opendlp/entrypoints/blueprints/target_sources.py:642
+#: src/opendlp/entrypoints/blueprints/target_sources.py:669
+#: src/opendlp/entrypoints/blueprints/target_sources.py:720
+#: src/opendlp/entrypoints/blueprints/target_sources.py:750
+#: src/opendlp/entrypoints/blueprints/target_sources.py:765
 msgid "You don't have permission to edit this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés szerkesztéséhez"
 
@@ -2137,7 +2144,7 @@ msgstr "A kiválasztási beállítások mentve"
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:456
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:89
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:201
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:113
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:119
 msgid "An unexpected error occurred"
 msgstr "Váratlan hiba történt"
 
@@ -2596,7 +2603,7 @@ msgstr "Nincs jogosultságod a séma szerkesztéséhez"
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1593
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1693
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1735
-#: src/opendlp/entrypoints/blueprints/target_sources.py:600
+#: src/opendlp/entrypoints/blueprints/target_sources.py:617
 msgid "Field not found"
 msgstr "A mező nem található"
 
@@ -2643,7 +2650,7 @@ msgid "Could not read the file — it must be UTF-8 encoded CSV."
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1391
-#: src/opendlp/entrypoints/blueprints/target_sources.py:723
+#: src/opendlp/entrypoints/blueprints/target_sources.py:753
 msgid "Lookup table uploaded"
 msgstr ""
 
@@ -2896,8 +2903,8 @@ msgid "%(count)s rows were skipped: %(errors)s"
 msgstr "%(count)s sor kihagyva: %(errors)s"
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:167
-#: src/opendlp/entrypoints/blueprints/targets.py:215
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:173
+#: src/opendlp/entrypoints/blueprints/targets.py:216
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:179
 #, python-format
 msgid "CSV import failed: %(error)s"
 msgstr "A CSV importálása sikertelen: %(error)s"
@@ -2907,62 +2914,62 @@ msgid "You don't have permission to import respondents"
 msgstr "Nincs jogosultságod jelentkezők importálásához"
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:176
-#: src/opendlp/entrypoints/blueprints/targets.py:224
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:182
+#: src/opendlp/entrypoints/blueprints/targets.py:225
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:188
 msgid "Could not read CSV file. Please ensure it is UTF-8 encoded."
 msgstr "Nem sikerült beolvasni a CSV fájlt. Győződj meg róla, hogy UTF-8 kódolású."
 
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:180
-#: src/opendlp/entrypoints/blueprints/targets.py:228
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:186
+#: src/opendlp/entrypoints/blueprints/targets.py:229
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:192
 msgid "An unexpected error occurred during import"
 msgstr "Váratlan hiba történt az importálás közben"
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:81
+#: src/opendlp/entrypoints/blueprints/target_sources.py:82
 msgid "Exact copy"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:82
+#: src/opendlp/entrypoints/blueprints/target_sources.py:83
 msgid "Age ranges"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:83
+#: src/opendlp/entrypoints/blueprints/target_sources.py:84
 msgid "Map more options to fewer"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:84
+#: src/opendlp/entrypoints/blueprints/target_sources.py:85
 msgid "Map postcode to value"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:90
+#: src/opendlp/entrypoints/blueprints/target_sources.py:91
 msgid "Ask the question with exactly the target's values as the answers"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:91
+#: src/opendlp/entrypoints/blueprints/target_sources.py:92
 msgid "Ask for a date or year of birth and compute the age range"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:92
+#: src/opendlp/entrypoints/blueprints/target_sources.py:93
 msgid "Ask with more detailed answers and map each one to a target value"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:93
+#: src/opendlp/entrypoints/blueprints/target_sources.py:94
 msgid "Ask for a value like a postcode and look each answer up in a table"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:404
+#: src/opendlp/entrypoints/blueprints/target_sources.py:405
 #, python-format
 msgid ""
 "%(count)d fell back to %(fallback)s because their answer matched no "
 "target value."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:410
+#: src/opendlp/entrypoints/blueprints/target_sources.py:411
 #, python-format
 msgid "Answers that matched nothing: %(values)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:415
+#: src/opendlp/entrypoints/blueprints/target_sources.py:416
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:26
 #, python-format
 msgid ""
@@ -2971,209 +2978,225 @@ msgid ""
 " from no longer match what is stored."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:469
+#: src/opendlp/entrypoints/blueprints/target_sources.py:470
 msgid "Choose the question to use"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:476
+#: src/opendlp/entrypoints/blueprints/target_sources.py:477
 msgid "Enter a name for the new registration question"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:492
+#: src/opendlp/entrypoints/blueprints/target_sources.py:493
 msgid "Choose how the data should be collected"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:501
+#: src/opendlp/entrypoints/blueprints/target_sources.py:502
 msgid ""
 "Choose the choice question to map from — add it on the registration "
 "questions step first"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:555
-#: src/opendlp/entrypoints/blueprints/target_sources.py:737
+#: src/opendlp/entrypoints/blueprints/target_sources.py:556
+#: src/opendlp/entrypoints/blueprints/target_sources.py:769
 msgid "Target not found"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:584
+#: src/opendlp/entrypoints/blueprints/target_sources.py:601
 msgid "Data source saved"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:585
+#: src/opendlp/entrypoints/blueprints/target_sources.py:602
 #, python-format
 msgid "Data source saved — %(key)s recomputed for every respondent"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:606
+#: src/opendlp/entrypoints/blueprints/target_sources.py:623
 msgid "Question linked to its target"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:627
+#: src/opendlp/entrypoints/blueprints/target_sources.py:639
+msgid "This data source could not be re-synced — set it up again"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/target_sources.py:648
 msgid "Options re-synced from the target"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:628
+#: src/opendlp/entrypoints/blueprints/target_sources.py:649
 #, python-format
 msgid "Re-synced — %(key)s recomputed for every respondent"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:638
-#: src/opendlp/entrypoints/blueprints/target_sources.py:696
+#: src/opendlp/entrypoints/blueprints/target_sources.py:660
+#: src/opendlp/entrypoints/blueprints/target_sources.py:724
 msgid "No question is linked to this target"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:650
+#: src/opendlp/entrypoints/blueprints/target_sources.py:673
 msgid "There are no respondents to recompute yet"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:651
+#: src/opendlp/entrypoints/blueprints/target_sources.py:674
 msgid "Recompute finished"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:674
+#: src/opendlp/entrypoints/blueprints/target_sources.py:697
 msgid "No lookup-table field is linked to this target"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:700
+#: src/opendlp/entrypoints/blueprints/target_sources.py:728
 msgid "Choose a CSV file to upload"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:705
+#: src/opendlp/entrypoints/blueprints/target_sources.py:733
 msgid "The file could not be read as UTF-8 text"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:740
+#: src/opendlp/entrypoints/blueprints/target_sources.py:772
 msgid "Computed question removed"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/target_sources.py:741
+#: src/opendlp/entrypoints/blueprints/target_sources.py:773
 msgid "Question unlinked from its target"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/targets.py:159
+#: src/opendlp/entrypoints/blueprints/targets.py:160
 msgid "An error occurred while loading assembly targets"
 msgstr "Hiba történt a közösségi gyűlés célszámainak betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:201
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:161
+#: src/opendlp/entrypoints/blueprints/targets.py:202
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:167
 #, python-format
 msgid "Successfully imported %(cats)s targets with %(vals)s values from %(file)s"
 msgstr ""
 "Sikeresen importálva %(cats)s kiválasztási szempont %(vals)s értékkel a "
 "következő fájlból: %(file)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:221
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:179
+#: src/opendlp/entrypoints/blueprints/targets.py:222
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:185
 msgid "You don't have permission to import targets"
 msgstr "Nincs jogosultságod célszámok importálásához"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:245
+#: src/opendlp/entrypoints/blueprints/targets.py:246
 #, python-format
 msgid "Targets deleted: %(count)d"
 msgstr "Kiválasztási szempontok törölve: %(count)d"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:257
+#: src/opendlp/entrypoints/blueprints/targets.py:258
 msgid "You don't have permission to delete targets"
 msgstr "Nincs jogosultságod célszámok törléséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:269
+#: src/opendlp/entrypoints/blueprints/targets.py:270
 msgid "An error occurred while deleting targets"
 msgstr "Hiba történt a célszámok törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:285
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:629
+#: src/opendlp/entrypoints/blueprints/targets.py:286
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:663
 msgid "No columns selected"
 msgstr "Nincs kiválasztott oszlop"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:327
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:697
+#: src/opendlp/entrypoints/blueprints/targets.py:328
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:731
 msgid "No new targets were created"
 msgstr "Nem jött létre új kiválasztási szempont"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:333
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:684
+#: src/opendlp/entrypoints/blueprints/targets.py:334
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:718
 #, python-format
 msgid "Created %(count)s targets with %(values)s values: %(names)s"
 msgstr "%(count)s kiválasztási szempont létrehozva %(values)s értékkel: %(names)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:342
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:693
+#: src/opendlp/entrypoints/blueprints/targets.py:343
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:727
 #, python-format
 msgid "Created %(count)s targets: %(names)s"
 msgstr "%(count)s kiválasztási szempont létrehozva: %(names)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:398
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:761
+#: src/opendlp/entrypoints/blueprints/targets.py:399
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:795
 msgid "An unexpected error occurred while checking targets"
 msgstr "Váratlan hiba történt a célszámok ellenőrzése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:422
+#: src/opendlp/entrypoints/blueprints/targets.py:423
 msgid "Your targets were not saved. Please correct the errors below."
 msgstr "A célszámaid nem lettek elmentve. Javítsd az alábbi hibákat."
 
-#: src/opendlp/entrypoints/blueprints/targets.py:469
+#: src/opendlp/entrypoints/blueprints/targets.py:470
 msgid "Please try again"
 msgstr "Kérjük, próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:487
+#: src/opendlp/entrypoints/blueprints/targets.py:488
 msgid "Targets saved"
 msgstr "A célszámok mentve"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:497
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:247
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:311
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:423
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:512
+#: src/opendlp/entrypoints/blueprints/targets.py:502
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:253
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:335
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:457
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:546
 #, python-format
 msgid "Error: %(error)s"
 msgstr "Hiba: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:500
+#: src/opendlp/entrypoints/blueprints/targets.py:505
 msgid "You don't have permission to edit these targets"
 msgstr "Nincs jogosultságod ezeknek a célszámoknak a szerkesztéséhez"
 
-#: src/opendlp/entrypoints/blueprints/targets.py:508
+#: src/opendlp/entrypoints/blueprints/targets.py:513
 msgid "An error occurred while saving the targets"
 msgstr "Hiba történt a célszámok mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:202
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:271
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:369
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:457
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:208
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:277
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:403
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:491
 msgid "Please correct the errors below"
 msgstr "Javítsd az alábbi hibákat"
 
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:236
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:242
 #, python-format
 msgid "Category '%(name)s' added"
 msgstr "'%(name)s' kiválasztási szempont hozzáadva"
 
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:298
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:304
 #, python-format
 msgid "Category renamed to '%(name)s'"
 msgstr "A kiválasztási szempont új neve: '%(name)s'"
 
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:334
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:310
+msgid ""
+"This target is linked to a registration question, so it cannot be renamed"
+" here"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:358
 msgid "Category deleted"
 msgstr "A kiválasztási szempont törölve"
 
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:400
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:363
+msgid ""
+"This target is linked to a registration question, so it cannot be deleted"
+" here"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:434
 #, python-format
 msgid "Value '%(value)s' added"
 msgstr "'%(value)s' érték hozzáadva"
 
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:489
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:523
 msgid "Value updated"
 msgstr "Az érték frissítve"
 
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:546
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:580
 msgid "Value deleted"
 msgstr "Az érték törölve"
 
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:564
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:598
 msgid "No values to add"
 msgstr "Nincs hozzáadandó érték"
 
-#: src/opendlp/entrypoints/blueprints/targets_legacy.py:609
+#: src/opendlp/entrypoints/blueprints/targets_legacy.py:643
 #, python-format
 msgid "Added %(count)s values"
 msgstr "%(count)s érték hozzáadva"
