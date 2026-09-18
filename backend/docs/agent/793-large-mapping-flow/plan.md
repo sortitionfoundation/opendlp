@@ -1,6 +1,6 @@
 # Large-mapping set-up flow — implementation plan
 
-**Status:** In progress — Chunks A and B done; i18n and docs to go
+**Status:** Implemented — all chunks landed on `793-large-mapping-flow` (2026-09-18)
 **Date:** 2026-09-18
 **Branch:** `793-large-mapping-flow` (off `793-two-step-fields`)
 
@@ -284,6 +284,11 @@ Templates:
 
 ### 2.4 Tests and docs
 
+✅ Done. The explainers under `docs/explainers/` still describe older designs;
+their `ABOUT.md` says they are not maintained, so they were left as they
+are. `docs/respondent_field_spec.md` and `docs/language.md` describe derived
+fields as data, not the editor, and needed no change.
+
 - Delete the component and e2e tests for the retired routes: about 21 hits
   in `tests/component/test_backoffice_respondent_field_schema.py` (for
   example `test_derived_panel_lists_targets_and_filters_sources_by_method`)
@@ -305,7 +310,7 @@ Templates:
 
 ---
 
-## 3. Suggested commit sequence
+## 3. Suggested commit sequence ✅ done
 
 Each lands green on its own:
 
