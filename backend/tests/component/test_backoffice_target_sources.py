@@ -258,6 +258,16 @@ class TestSetupModal:
         assert 'name="source_mode"' not in body
         assert "Target values:" not in body
 
+    def test_the_refresh_keeps_the_csrf_token_out_of_the_url(self, logged_in_admin, existing_assembly, fake_store):
+        """The refresh is a GET that includes the whole form; a token in a URL reaches logs and history."""
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        body = logged_in_admin.get(self._setup_url(existing_assembly, category), headers=HTMX).get_data(as_text=True)
+
+        refreshing = re.findall(r"<[^>]*hx-get=[^>]*hx-include=[^>]*>", body)
+        assert refreshing
+        assert all('hx-params="not csrf_token"' in tag for tag in refreshing)
+
     def test_editing_a_linked_target_opens_on_its_method(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
         _seed_field(

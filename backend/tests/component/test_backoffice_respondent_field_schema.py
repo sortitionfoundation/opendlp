@@ -653,6 +653,20 @@ class TestFieldModal:
         assert 'role="dialog"' in body
         assert "Add a question" in body
 
+    def test_the_modal_refresh_keeps_the_csrf_token_out_of_the_url(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The refresh is a GET that includes the whole form; a token in a URL reaches logs and history."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        refreshing = re.findall(r"<[^>]*hx-get=[^>]*hx-include=[^>]*>", body)
+        assert refreshing
+        assert all('hx-params="not csrf_token"' in tag for tag in refreshing)
+
     def test_new_modal_plain_request_renders_the_page_with_the_modal_open(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):

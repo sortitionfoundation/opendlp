@@ -8,7 +8,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
 {% set values = setup["values"] %}
 {% set target = setup["target"] %}
 {% set close_url = url_for('target_sources.view_sources', assembly_id=assembly.id) %}
-{% set refresh_attrs = 'hx-get="' ~ setup["refresh_url"] ~ '" hx-include="closest form" hx-target="#ts-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
+{% set refresh_attrs = 'hx-get="' ~ setup["refresh_url"] ~ '" hx-include="closest form" hx-params="not csrf_token" hx-target="#ts-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
    aria-label="{{ _('Close') }}"></a>

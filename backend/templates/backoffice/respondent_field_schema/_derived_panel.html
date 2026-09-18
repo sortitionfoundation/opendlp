@@ -4,7 +4,7 @@ ABOUTME: Selects re-render the form over HTMX; the age preview is a client-only 
 #}
 {% from "backoffice/components/input.html" import input, select, radio_group %}
 {% set derived = modal_ctx["derived"] %}
-{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-target="#field-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
+{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-params="not csrf_token" hx-target="#field-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
 <div class="mb-4 pl-4"
      style="border-left: 3px solid var(--color-borders-dividers);">
     {% if derived["target_locked"] %}

@@ -7,7 +7,7 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
 {% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
 {% set values = modal_ctx["values"] %}
 {% set is_derived_flow = modal_ctx["is_derived"] or values["type_choice"] == "derived" %}
-{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-target="#field-modal-container" hx-swap="innerHTML"' %}
+{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-params="not csrf_token" hx-target="#field-modal-container" hx-swap="innerHTML"' %}
 {# One dropdown for the question type (Figma: Add field, node 5394:18175). Choosing
    a type re-renders the form, so its options editor and help appear. #}
 {% set question_type_help = modal_ctx.get("question_type_help", {}).get(modal_ctx.get("question_type", ""), "") %}
