@@ -2,7 +2,10 @@
 ABOUTME: One row per target; a set-up modal wires each to its field via the four methods"""
 
 import contextlib
+import re
 import uuid
+from datetime import UTC, date, datetime
+from itertools import zip_longest
 from typing import Any
 
 import structlog
@@ -11,7 +14,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.domain.respondent_derivation import DEFAULT_FALLBACK, LargeMappingRule
+from opendlp.domain.respondent_derivation import DEFAULT_FALLBACK, AgeBracketRule, LargeMappingRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import (
     CHOICE_TYPES,
     DerivationType,
@@ -20,11 +23,6 @@ from opendlp.domain.respondent_field_schema import (
     humanise_field_key,
 )
 from opendlp.entrypoints.blueprints.backoffice_registration import registration_hub_context
-from opendlp.entrypoints.blueprints.respondent_field_schema import (
-    age_prefill_from_target,
-    parse_age_rule,
-    parse_small_mapping_rule,
-)
 from opendlp.service_layer.assembly_service import (
     determine_data_source,
     get_assembly_gsheet,
@@ -177,6 +175,98 @@ def _seed_from_derivation(values: dict[str, Any], field: RespondentFieldDefiniti
         mapping = config.get("mapping", {})
         values["map_source"] = list(mapping.keys())
         values["map_target"] = list(mapping.values())
+
+
+# ---------------------------------------------------------------------------
+# Parsing the set-up form's age and mapping config.
+# ---------------------------------------------------------------------------
+
+_UNDER_RE = re.compile(r"^under-(\d+)$")
+_PLUS_RE = re.compile(r"^(\d+)\+$")
+_RANGE_RE = re.compile(r"^(\d+)-(\d+)$")
+
+
+def parse_boundaries(raw: str) -> tuple[int, ...]:
+    """A comma-separated boundaries string as sorted unique ints. Raises ValueError."""
+    parts = [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
+    try:
+        return tuple(sorted({int(p) for p in parts}))
+    except ValueError:
+        raise ValueError(_("Boundaries must be whole numbers separated by commas, e.g. 25, 40, 60")) from None
+
+
+def parse_age_rule(values: dict[str, Any]) -> AgeBracketRule:
+    """Build an AgeBracketRule from the modal's age-config values. Raises ValueError."""
+    try:
+        as_of = date(int(values["as_of_year"]), int(values["as_of_month"]), int(values["as_of_day"]))
+    except (TypeError, ValueError):
+        raise ValueError(_("Enter a valid as-of date (day, month and year)")) from None
+    # The as-of date is usually the first assembly date, so it is always near
+    # today. A year outside this window is a typo, and a silent one: the
+    # brackets it produces look plausible and put everyone in the fallback.
+    this_year = datetime.now(UTC).date().year
+    if not (this_year - 1 <= as_of.year <= this_year + 1):
+        raise ValueError(
+            _("The as-of year must be between %(low)d and %(high)d", low=this_year - 1, high=this_year + 1)
+        )
+    try:
+        min_age = int(values["min_age"] or 16)
+        max_age = int(values["max_age"] or 100)
+    except ValueError:
+        raise ValueError(_("Minimum and maximum age must be whole numbers")) from None
+    return AgeBracketRule(
+        as_of_date=as_of,
+        min_age=min_age,
+        max_age=max_age,
+        boundaries=parse_boundaries(values["boundaries"]),
+    )
+
+
+def parse_small_mapping_rule(values: dict[str, Any]) -> SmallMappingRule:
+    """Build a SmallMappingRule from the modal's mapping-table rows. Raises ValueError.
+
+    A row whose target select was left on the fall-back entry is simply not in
+    the mapping — those source values fall back to UNKNOWN at derivation time.
+    """
+    mapping = {
+        source.strip(): target.strip()
+        for source, target in zip_longest(values["map_source"], values["map_target"], fillvalue="")
+        if source.strip() and target.strip()
+    }
+    if not mapping:
+        raise ValueError(_("Map at least one answer to a target value"))
+    return SmallMappingRule(mapping=mapping)
+
+
+def age_prefill_from_target(target_values: list[str]) -> dict[str, str] | None:
+    """min/max/boundaries form values parsed from "16-24"-style target value names.
+
+    Returns None when the target's values don't look like a complete bracket
+    set — the caller leaves the inputs blank for the user to fill in (Q9).
+    """
+    min_age: int | None = None
+    max_age: int | None = None
+    lowers: list[int] = []
+    for value in target_values:
+        if under := _UNDER_RE.match(value):
+            min_age = int(under.group(1))
+        elif plus := _PLUS_RE.match(value):
+            max_age = int(plus.group(1))
+        elif rng := _RANGE_RE.match(value):
+            lowers.append(int(rng.group(1)))
+        else:
+            return None
+    if not lowers or max_age is None:
+        return None
+    lowers = sorted(set(lowers))
+    if min_age is None:
+        min_age = lowers[0]
+    boundaries = [lower for lower in lowers if lower != min_age]
+    return {
+        "min_age": str(min_age),
+        "max_age": str(max_age),
+        "boundaries": ", ".join(str(b) for b in boundaries),
+    }
 
 
 # ---------------------------------------------------------------------------

@@ -14,6 +14,7 @@ from opendlp.domain.respondent_field_schema import (
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.service_layer import derivation_service
 from tests.fakes import FakeUnitOfWork
 
 HTMX = {"HX-Request": "true"}
@@ -435,6 +436,38 @@ class TestConfigureAgeBrackets:
 
         assert response.status_code == 422
         assert b"as-of date" in response.data
+
+    def test_a_rule_error_is_shown_in_the_organisers_words(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=self._age_form(min_age="50", max_age="40", boundaries=""),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert "The maximum age must be greater than the minimum age" in body
+        assert "max_age must be greater than min_age" not in body
+
+    def test_brackets_prefill_from_the_target_and_the_date_from_the_assembly(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """Choosing age ranges for a "16-24"-style target fills in min/max/boundaries and the as-of date."""
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-24", "25-39", "40-59", "60+"])
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            query_string={"modal": "1", "method": "age_bracket", "source_mode": "create"},
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert re.search(r'name="min_age"[^>]*value="16"', body)
+        assert re.search(r'name="max_age"[^>]*value="60"', body)
+        assert re.search(r'name="boundaries"[^>]*value="25, 40"', body)
+        assert re.search(rf'name="as_of_year"[^>]*value="{existing_assembly.first_assembly_date.year}"', body)
 
 
 class TestConfigureLargeMapping:
@@ -936,6 +969,79 @@ class TestMappingUpload:
         body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
 
         assert "Until the lookup table is uploaded, everyone's Region is UNKNOWN." in body
+
+    def _upload_csv(self, logged_in_admin, assembly, category, csv_content, allow_new_outputs=False):
+        data = {"mapping_file": (io.BytesIO(csv_content.encode("utf-8")), "mapping.csv")}
+        if allow_new_outputs:
+            data["allow_new_outputs"] = "1"
+        return logged_in_admin.post(
+            f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/upload",
+            data=data,
+            content_type="multipart/form-data",
+            headers=HTMX,
+        )
+
+    def test_upload_without_matching_headings_warns_that_the_first_row_was_not_stored(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = self._upload_csv(logged_in_admin, existing_assembly, category, "SW1A 1AA,South\nM1 1AE,North\n")
+
+        assert response.status_code == 200
+        assert "The first row was used as column headings and not stored" in response.get_data(as_text=True)
+        assert self._row_count(fake_store, field) == 1
+
+    def test_upload_with_matching_headings_has_no_first_row_warning(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = self._upload_csv(logged_in_admin, existing_assembly, category, "Postcode,Region\nSW1A 1AA,South\n")
+
+        assert response.status_code == 200
+        assert "used as column headings" not in response.get_data(as_text=True)
+
+    def test_empty_file_rerenders_as_422(self, logged_in_admin, existing_assembly, fake_store):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = self._upload_csv(logged_in_admin, existing_assembly, category, "")
+
+        assert response.status_code == 422
+        assert b"empty" in response.data
+
+    def test_row_cap_is_enforced(self, logged_in_admin, existing_assembly, fake_store, monkeypatch):
+        """The 500k cap, exercised with a lowered limit rather than a 500k-row file."""
+        monkeypatch.setattr(derivation_service, "MAX_MAPPING_ROWS", 2)
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = self._upload_csv(
+            logged_in_admin, existing_assembly, category, "Postcode,Region\nA,North\nB,South\nC,North\n"
+        )
+
+        assert response.status_code == 422
+        assert b"too many rows" in response.data
+
+    def test_unknown_outputs_rejected_without_the_checkbox(self, logged_in_admin, existing_assembly, fake_store):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = self._upload_csv(logged_in_admin, existing_assembly, category, "Postcode,Region\nA,East\n")
+
+        assert response.status_code == 422
+        assert b"output values not in the field" in response.data
+
+    def test_unknown_outputs_accepted_with_the_checkbox_and_extend_the_options(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+
+        response = self._upload_csv(
+            logged_in_admin, existing_assembly, category, "Postcode,Region\nA,East\n", allow_new_outputs=True
+        )
+
+        assert response.status_code == 200
+        assert b"New output values added:" in response.data
+        assert "East" in [o.value for o in _field_by_key(fake_store, existing_assembly, "Region").options]
 
     def test_upload_modal_names_the_field(self, logged_in_admin, existing_assembly, fake_store):
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)

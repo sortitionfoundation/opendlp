@@ -1,6 +1,6 @@
 # Large-mapping set-up flow — implementation plan
 
-**Status:** In progress — Chunk A done
+**Status:** In progress — Chunks A and B done; i18n and docs to go
 **Date:** 2026-09-18
 **Branch:** `793-large-mapping-flow` (off `793-two-step-fields`)
 
@@ -181,7 +181,32 @@ When `setup_step` is not set, the modal is unchanged. It is the
 
 ---
 
-## 2. Chunk B — retire the derived-field UI from the registration questions editor
+## 2. Chunk B — retire the derived-field UI from the registration questions editor ✅ done
+
+Notes from implementing it:
+
+- Deleting the `type_choice == "derived"` guard in `_try_add_field` would
+  have let an unrecognised type fall through to a text question, so it
+  became a general check: any `type_choice` the modal does not offer gets
+  "Choose a question type".
+- `edit_field_modal` for a derived field answers HTMX with an `HX-Redirect`
+  header (a plain redirect would load the whole page into the modal
+  container) and a plain request with a 302, both with an info flash.
+- The `report` mode of the registration questions page went too — only the
+  retired routes produced it. `_derivation_report_modal.html` now requires
+  `close_url`, which the target sources step always passes.
+- `parse_derivation_rule` had no caller left and was deleted with its test.
+  The parser unit tests moved to `tests/unit/test_target_source_parsers.py`;
+  `test_field_schema_modal_parsers.py` keeps the option-value check.
+- The two Postgres round trips in the old e2e file (age bracket; lookup
+  table upload) were ported to `tests/e2e/test_backoffice_target_sources.py`
+  rather than dropped, and the upload behaviours only tested on the old
+  route (first-row warning, empty file, row cap, new output values) were
+  ported to the target sources component tests.
+- Left alone: `DERIVATION_TYPE_LABELS` and its `derivation_type_labels`
+  Jinja global no longer have a template using them. They follow the
+  enum-labels convention and have their own unit tests, so removing them
+  is a separate decision.
 
 ### 2.1 Why it is unreachable
 
