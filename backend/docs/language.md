@@ -61,6 +61,7 @@ in, and don't add a third variant.
 | replacements          | The people a replacement selection selects                                    | replacement participants, members  |
 | team member           | A user with a role on an assembly                                             | member (for a respondent)          |
 | registration page     | The public page where people put themselves forward for an assembly           | registration form                  |
+| registration question | One thing the registration page asks, such as date of birth                   | registration field                 |
 | invite                | What an admin sends so that someone can create an account                     |                                    |
 | invite code           | The code in an invite                                                         | invitation code                    |
 | assembly question     | What the assembly is convened to decide                                       |                                    |
@@ -103,6 +104,23 @@ never means a respondent, whatever state they are in.
 
 **registration page** is the thing an organiser creates, publishes and closes —
 not "registration form".
+
+**registration question** is what the registration set-up screens call the things
+a registration page asks: "Add a question", "Registration questions". The code
+calls them fields (`RespondentFieldDefinition`), and "field" is still the right
+word for the wider idea — a derived field computed from a question, a column
+imported from CSV or Google Sheets, a field key. Say "question" only where the
+reader is thinking about what the page asks.
+
+**built-in question** is a registration question every assembly has, such as
+email or consent, whose type can't be changed. The code calls these fixed fields
+(`is_fixed`); "fixed" never appears in the interface.
+
+**checkbox** is what both boolean question types are called wherever we name a
+question's type. The code has two (`BOOL` and `BOOL_OR_NONE`, the second allowing
+no answer), and the backoffice form for editing a respondent offers Yes / No
+radios — but a question that asks for a checkbox is a checkbox either way, and the
+Required tag already says whether it may be left unanswered.
 
 **selection** is the backoffice word. "Democratic lottery" belongs to the brand
 and to introductory text ("Open Democratic Lottery Platform", "Run the democratic

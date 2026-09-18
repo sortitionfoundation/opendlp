@@ -45,8 +45,8 @@ class TestViewSchemaPage:
         assert b"About you" in body
         # Custom CSV column appears somewhere on the page.
         assert b"custom_notes" in body
-        # Fixed fields render their "Fixed" tag.
-        assert b"Fixed" in body
+        # Built-in fields carry no "Fixed" tag: "fixed" is the code's word, not the user's.
+        assert b">Fixed<" not in body
         # Initialise button is not shown when schema already exists.
         assert b"Initialise empty schema" not in body
 

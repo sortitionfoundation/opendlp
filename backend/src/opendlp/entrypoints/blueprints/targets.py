@@ -24,6 +24,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.exceptions import (
+    FieldDefinitionConflictError,
     InsufficientPermissions,
     InvalidSelection,
     NotFoundError,
@@ -41,6 +42,7 @@ from opendlp.service_layer.target_respondent_helpers import (
 )
 from opendlp.service_layer.target_service import (
     TargetEditError,
+    TargetLinkedError,
     TargetsNotSaved,
     add_target_value,
     create_target_category,
@@ -436,6 +438,29 @@ def _render_targets_edit_errors(
     ), 200
 
 
+def _render_force_unlink_confirm(
+    assembly_id: uuid.UUID,
+    form_data: Any,
+    blocks: list[Any],
+) -> ResponseReturnValue:
+    """Ask before a rename/delete unlinks the fields feeding those targets.
+
+    The whole submission is echoed back as hidden inputs so confirming
+    resubmits exactly what was typed, plus force_unlink=1.
+    """
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+    resubmit_fields = [(key, value) for key in form_data for value in form_data.getlist(key) if key != "csrf_token"]
+    return render_template(
+        "backoffice/targets_force_unlink_confirm.html",
+        assembly=assembly,
+        assembly_id=assembly_id,
+        blocks=blocks,
+        resubmit_fields=resubmit_fields,
+    ), 200
+
+
 @targets_bp.route("/assembly/<uuid:assembly_id>/targets/save-all", methods=["POST"])
 @login_required
 def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -452,15 +477,27 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         uow = bootstrap.get_flask_uow()
         with uow:
-            save_all_targets(uow, current_user.id, assembly_id, edits)
+            save_all_targets(
+                uow,
+                current_user.id,
+                assembly_id,
+                edits,
+                force_unlink=request.form.get("force_unlink") == "1",
+            )
 
         flash(_("Targets saved"), "success")
         # The detailed check is the whole point of saving: land on the page that
         # runs it, so its annotations arrive without anyone asking for them.
         return redirect(url_for("targets.check_targets", assembly_id=assembly_id))
 
+    except TargetLinkedError as e:
+        return _render_force_unlink_confirm(assembly_id, request.form, e.blocks)
     except TargetsNotSaved as e:
         return _render_targets_edit_errors(assembly_id, request.form, e.errors)
+    except FieldDefinitionConflictError as e:
+        # Renaming a target re-keys its computed question, which can collide with an existing one.
+        flash(e.user_msg(), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
     except (ValueError, NotFoundError) as e:
         flash(_("Error: %(error)s", error=str(e)), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))

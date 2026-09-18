@@ -340,9 +340,13 @@ def search_has_aria_haspopup(page_with_user_search: Page):
 
 @then("the page should have a live region for screen reader announcements")
 def has_live_region(page_with_user_search: Page):
-    """Verify live region exists."""
+    """Verify the search dropdown's own live region exists.
+
+    Scoped to the search status region: the page also carries the floating
+    alerts container, which is a polite live region too.
+    """
     page = page_with_user_search
-    live_region = page.locator('[aria-live="polite"]')
+    live_region = page.locator('.sr-only[aria-live="polite"]')
     expect(live_region).to_be_attached()
 
 

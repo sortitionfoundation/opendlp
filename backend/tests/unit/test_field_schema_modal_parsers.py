@@ -7,9 +7,9 @@ import pytest
 
 from opendlp.domain.respondent_derivation import AgeBracketRule, LargeMappingRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import ChoiceOption
-from opendlp.entrypoints.blueprints.respondent_field_schema import (
+from opendlp.entrypoints.blueprints.respondent_field_schema import duplicate_option_value
+from opendlp.entrypoints.derivation_form_parser import (
     age_prefill_from_target,
-    duplicate_option_value,
     parse_age_rule,
     parse_boundaries,
     parse_derivation_rule,
