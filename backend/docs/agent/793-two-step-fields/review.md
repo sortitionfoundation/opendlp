@@ -21,6 +21,15 @@ comments disagree (must-fix 4 / modal focus). After the fixes: `just check`
 passes, `just test-nobdd` 5,879 passed, `just test-bdd-headless` 184 passed and
 5 skipped (none of them new).
 
+**Status (2026-09-18, on `793-large-mapping-flow`):** this branch was merged into
+`793-large-mapping-flow` (`714067fd`) and the items marked "defer" were worked
+through there. Each has a dated note below. Done: the i18n / language section,
+the fragment dialogs' focus management (which is also must-fix 4), and the
+schema blueprint's units of work that this branch had left for that one. **Still
+open, on purpose:** finding 5, which you deferred to the age brackets branch.
+After that work: `just check` passes, `just test-nobdd` 5,887 passed, `just test-js`
+521 passed, `just test-bdd-headless` 187 passed and 5 skipped (the same five).
+
 ## Fix before merge
 
 ### 1. `data-confirm` regression on legacy pages (confirmed by hand)
@@ -226,6 +235,14 @@ COMMENT: defer - I want to make some changes to how the age brackets work, so I'
 > **Deferred** to the age brackets branch. Note the related nit under "Carried
 > over" (the prefill overwriting typed min/max for a new field) is the same
 > function, so it travels with this.
+>
+> **Still deferred (2026-09-18, `793-large-mapping-flow`).** Not touched when the
+> other deferred items were done: you said the age brackets are changing on their
+> own branch, and a fix here would be conflict bait for it. Worth keeping in mind
+> that until then the regression is live - opening a saved age rule with no
+> boundaries and pressing Save rewrites its min and max. `_apply_age_prefills` is
+> now at `target_sources.py:229`. If that branch is more than a few days off, the
+> one-line guard (`if not setup.is_linked`) is cheap and I would take it.
 
 ## Medium
 
@@ -292,6 +309,19 @@ COMMENT: fix all these
 > `_build_derived_ctx`, `_load_field`, then the page context). Converting it means
 > re-plumbing every route in a 1,700-line file of which `f3b0f09b` deletes 600
 > lines, so it is far cheaper on `793-large-mapping-flow`. Still open, there.
+>
+> **Done on `793-large-mapping-flow`** in `e23ee18a`. With the derived routes gone
+> only five routes built a page or dialog, and each now opens one block: helpers
+> take the route's `uow`, `_modal_response` reads the page and then the dialog in
+> one block, and the render happens after it closes. A refused save is the one
+> exception, as in `target_sources.py`. `_matching_choice_target` turned out to
+> read a target's name and values with no permission check of its own - the same
+> latent IDOR this finding describes for `_setup_modal_ctx` - and now makes one.
+> `TestOneUnitOfWorkPerRequest` counts the blocks each kind of request opens
+> (mutation-checked: it fails on the old blueprint, at the edit dialog).
+> The option/move/delete/guess routes already opened one block and redirect.
+> **Not touched:** `str(e)` for `FieldDefinitionConflictError` at four flashes in
+> that file - curated messages, so safe, but `e.user_msg()` is the house form.
 
 ### i18n / language
 
@@ -340,6 +370,36 @@ COMMENT: defer for now
 > **Deferred.** Two things done elsewhere touch this list: "Not on form" and
 > "Label on the form" were fixed under should-fix 15, and the `.value` in a user
 > message (`target_source_service.py:285`) is still open here.
+>
+> **Done on `793-large-mapping-flow`** in `3c7187db` (catalogue `007d8d1c`, BDD
+> wording `27f90679`). No Hungarian translation was lost: none of the reworded
+> msgids had one.
+>
+> - *Enum `.value` in a message* - the refusal names the type with
+>   `FIELD_TYPE_LABELS`; a unit test asserts "Long text", not "longtext".
+> - *Two label sets for `DerivationType`* - one now. `f3b0f09b` had left the
+>   domain's "Age brackets / Map choices / Lookup table" with no reader, so
+>   `DERIVATION_TYPE_LABELS` carries the wording the organiser actually sees
+>   ("Age ranges", "Map more options to fewer", "Map postcode to value").
+>   `_method_options()` is built from it, and the checklist indexes
+>   `derivation_type_labels[...]` - no `.value`, no fallback to a raw token.
+> - *`FieldType` split* - the type picker reads `FIELD_TYPE_LABELS`, which turns
+>   its "Number" into "Whole number". **Judgement call:** "Radio" and "Dropdown"
+>   stay as short forms, because they sit under a "Choice" group heading and
+>   "Choice > Choice (radios)" reads worse; a comment says so. The flat list a
+>   target-locked question gets has no heading, so it uses the full labels.
+> - *"registration form"* - "registration page" in all five strings; the hub's
+>   question count became an `ngettext` while it was being reworded, and the
+>   reworded strings take single quotes round placeholders (two Low items).
+> - *Remove vs delete* - "Delete the computed question ...?", "Delete computed
+>   question", "Computed question deleted", "rename or delete it first".
+> - *"Computed question"* - it is the term, and `docs/language.md` has an entry.
+>   The two places an organiser could still read "derived" now say "computed"
+>   (the edit-respondent page, the CSV import row message). **Left alone:**
+>   "derived" in refusals only a hand-made request can reach
+>   (`derivation_service.py:135,146`, `target_source_service.py:306`,
+>   `respondent_field_schema_service.py:358,380`) - the glossary entry says so -
+>   and the "Derived" section name, which no screen shows any more.
 
 ### Templates / accessibility
 
@@ -401,6 +461,37 @@ COMMENT: defer for now
 
 > **Deferred.** See the note under must-fix 4 below, where the same work is
 > marked "fix this".
+>
+> **Done on `793-large-mapping-flow`** in `acefb291`, with the design decision
+> made for you - say if you disagree. **No morphing**: idiomorph would be a new
+> library, and restoring focus by identity needs nothing new.
+> `src/js/init/fragment-dialog-focus.js` reads the state of a
+> `[data-fragment-dialog-host]` around each HTMX swap:
+>
+> - *focus in* - opening focuses the first control in `.dialog-body` (or a
+>   `data-dialog-initial-focus`); a page that loads with a dialog open gets the
+>   same;
+> - *re-render* - the control that had focus gets it back, by id, or by name and
+>   value for a radio or checkbox without one;
+> - *inert* - the host's siblings (the step dialog) are `inert` while a dialog is
+>   open, and only what the module made inert is released;
+> - *focus return* - to the opener, found again by `data-focus-id` after the
+>   out-of-band swap has replaced it; a menu item or form borrows the id of the
+>   marked control in its `data-focus-row`. The plain close links (Cancel, X,
+>   backdrop) reload the page, so they are given `#focus=<id>`, which the existing
+>   `focus-restore.js` reads;
+> - *two "Close" links* - the backdrop link is `tabindex="-1" aria-hidden="true"`
+>   in all five dialogs: a pointer affordance, with the X and Escape for the
+>   keyboard. `dialog-escape.js` still clicks it.
+>
+> 11 Vitest cases, component tests for the markup, and a BDD scenario in a real
+> browser (open from the keyboard, focus lands in the dialog, the step dialog is
+> inert, focus survives the method change, Save returns focus to the row).
+> `component_accessibility.md` documents the pattern. **Not covered:** the export
+> dialogs on the dashboard and respondents pages are fragment dialogs too, but
+> not this branch's - they need only the host attribute to opt in. Safari, which
+> does not focus a clicked button, gives a mouse user no opener to return to;
+> that is harmless, since they were not using the keyboard.
 
 - **`dialog-escape.js:13-22`** - the window-level Escape handler never checks
   `event.defaultPrevented` or `event.isComposing`; the only opt-out is
@@ -629,6 +720,9 @@ COMMENT: fix this
 > the button, and keeping focus through every `hx-trigger="change"` re-render),
 > and the last of those really wants a design decision - morph the form rather
 > than replace it, or restore focus by element id. Tell me which you meant.
+>
+> **Done on `793-large-mapping-flow`** in `acefb291` - restore by identity, not
+> morph. See the note under "HTMX fragment dialogs do not manage focus" above.
 
 - **Should-fix 11 - CSRF token in GET query strings.** Unchanged, and the new
   modal copies it: `hx-include="closest form"` on a refresh `hx-get` at
@@ -649,6 +743,7 @@ COMMENT: fix this
 
 > **Done for `target_sources.py`, partly for the schema blueprint** - see the
 > note under "Python / architecture" in Medium above.
+> The schema blueprint was finished on `793-large-mapping-flow` in `e23ee18a`.
 
 - **Should-fix 13 - business logic in the blueprint.** Worse.
   `age_prefill_from_target` (the inverse of `AgeBracketRule.bracket_labels()`),
@@ -672,6 +767,10 @@ COMMENT: fix this
 > that branch's copies - and move its `test_target_source_parsers.py` imports to
 > match. The import of `registration_hub_context` from `backoffice_registration.py`
 > remains (it was not part of this item).
+>
+> **Merged as predicted** (`714067fd`): this branch's module kept, that branch's
+> copies deleted, `test_target_source_parsers.py` repointed. `parse_derivation_rule`
+> went too - its only callers were the routes `f3b0f09b` retired.
 
 - **Should-fix 15 - wording.**
   - "Not on form" is still the label for `FieldOnRegistrationPage.NO`
@@ -689,6 +788,7 @@ COMMENT: fix this
 
 > **Done** in `2f9a2ab9` (catalogue in `d2d3a850`), except the remove-vs-delete
 > bullet, which belongs to the deferred i18n section.
+> That bullet has since been done, in `3c7187db`.
 >
 > - "Not on form" -> "Not on registration page"; "Label on the form (optional)" ->
 >   "Label on the registration page (optional)". The first had a Hungarian
