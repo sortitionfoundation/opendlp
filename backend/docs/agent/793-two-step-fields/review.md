@@ -137,6 +137,8 @@ objects after `flush()`, never commits and reloads, and never checks `SET NULL`.
 `tests/integration/test_create_assembly_persistence.py:120` is the pattern to
 copy.
 
+COMMENT: fix it
+
 ### 4. Authorisation is not tested
 
 - `tests/component/test_backoffice_target_sources.py` uses `logged_in_admin`
@@ -161,6 +163,30 @@ This is the masking problem the TODO in `docs/testing.md` warns about.
 > open: a read-only role (can view, cannot manage) against the POST routes; unit
 > permission tests for `adopt_field`, `resync_from_target` and `unlink`;
 > cross-assembly tests for `adopt`, `resync`, `unlink` and `reuse_field_id`.
+
+COMMENT: add the cross-assembly tests and unit permission tests. I can live without the read-only role tests
+
+### 5. Editing a saved age rule shows the target's prefill, not the stored config (regression, confirmed by probe)
+
+Must-fix 2 of the [`793-derived-fields-ui` review](../793-derived-fields/ui-branch-review.md)
+was fixed there in `d8c35a1f` (`prefill_from_target`, true only for a new field).
+The set-up modal on this branch reintroduces it. `_setup_modal_ctx`
+(`target_sources.py:308`) calls `_apply_age_prefills` whenever the method is age
+brackets, new or edit, and that function (`:242-253`) runs
+`values.update(prefill)` whenever the boundaries string is blank - which it is
+for any stored rule with no boundaries.
+
+Probed with a throwaway component test: a linked field stored as min 18, max 90,
+no boundaries, feeding a target `16-24, 25-39, 40+`, opens in the modal as
+**min 16, max 40, boundaries 25**. Pressing Save persists those and recomputes
+the pool. The organiser changed nothing.
+
+The prefill should run only when the target has no linked field yet. The test
+that pinned the old fix
+(`test_edit_modal_keeps_a_stored_config_the_target_would_have_prefilled`) covers
+the old modal, which the UI no longer reaches - see "Carried over" below.
+
+COMMENT: defer - I want to make some changes to how the age brackets work, so I'll do that in another branch.
 
 ## Medium
 
@@ -194,6 +220,8 @@ This is the masking problem the TODO in `docs/testing.md` warns about.
   staleness, prefills) that belongs in `target_source_service`.
   `_linked_target_name` (`respondent_field_schema.py:477-484`) is the same
   pattern, smaller.
+
+COMMENT: fix all these
 
 ### i18n / language
 
@@ -237,6 +265,8 @@ This is the masking problem the TODO in `docs/testing.md` warns about.
   "Derived from %(source)s" (`_editor.html:135,237`), and "is derived" in service
   errors. Pick one and record it in the glossary.
 
+COMMENT: defer for now
+
 ### Templates / accessibility
 
 - **Row-actions menu is not a full APG menu button**
@@ -252,9 +282,15 @@ This is the masking problem the TODO in `docs/testing.md` warns about.
   rationale; the template comments only say "same behaviour as dropdown_button".
   `role="menu"` tells screen-reader users arrow keys work. Either add the key
   handling (with tests) or drop the menu roles.
+
+COMMENT: fix it
+
 - **`_editor.html:180`** - the Remove form inside `role="menu"` is missing
   `role="none"`. Siblings at `:143,154,165` have it, and the comment at `:140`
   explains why it is needed.
+
+COMMENT: fix it
+
 - **HTMX fragment dialogs do not manage focus** (`_setup_modal.html`,
   `_upload_modal.html`, `_field_modal.html`, `_step_dialog.html`). The ARIA is
   right and Escape works, but:
@@ -271,6 +307,9 @@ This is the masking problem the TODO in `docs/testing.md` warns about.
   - the first focusable element is the full-screen backdrop
     `<a aria-label="Close">` (`_step_dialog.html:20-22`), so screen readers
     announce two "Close" links.
+
+COMMENT: defer for now
+
 - **`dialog-escape.js:13-22`** - the window-level Escape handler never checks
   `event.defaultPrevented` or `event.isComposing`; the only opt-out is
   `stopPropagation`. Components listening with `@keydown.escape.window`
@@ -282,6 +321,9 @@ This is the masking problem the TODO in `docs/testing.md` warns about.
   often. Native `<dialog>` is not involved; HTMX-swapped content is handled
   correctly (the query runs at keypress time); "last in the DOM is topmost" holds
   today and `_step_dialog.html:11-13` documents the assumption.
+
+COMMENT: fix this
+
 - **Hand-rolled markup where components exist.**
   - `_setup_modal.html:12-23`, `_upload_modal.html:9-20`, `_field_modal.html`
     and `_step_dialog.html` write `.dialog-header/body/footer` by hand;
@@ -296,16 +338,25 @@ This is the masking problem the TODO in `docs/testing.md` warns about.
     `respondent_field_schema/view.html:38-44` are hand-rolled.
   - The "✕" close link and error div already exist on main in `_field_modal.html`,
     so the branch copies rather than invents them.
+
+COMMENT: fix this
+
 - **Text glyphs instead of icon macros.** `✕` at `_setup_modal.html:22`,
   `_upload_modal.html:19`, `_field_modal.html:45` (`_step_dialog.html:32`
   correctly uses `dialog_close_icon()`); `✓`/`✗` at `_checklist.html:31-43`, read
   out as "check mark" / "ballot x". `test_icons.py` cannot catch these - they are
   not `<svg>`.
+
+COMMENT: fix this
+
 - **`_field_modal.html:99`** - `govuk-tag govuk-tag--green` has no styling in the
   backoffice (`backoffice/base.html` loads only the Tailwind `main.css` and the
   tokens; `.govuk-tag` lives in `src/scss/application.scss`). The "Feeds target"
   tag renders as plain bold text. Main used `govuk-tag--grey` in the same spot,
   so the habit is inherited, but the line is new.
+
+COMMENT: fix this
+
 
 ### Tests
 
@@ -344,6 +395,211 @@ This is the masking problem the TODO in `docs/testing.md` warns about.
   exercised end to end; a jsdom test wiring both would pin it.
   `dialog-escape.test.js` has no case showing a `div.dialog-backdrop--clickable`
   (the Alpine modals) is ignored.
+
+## Carried over from the `793-derived-fields-ui` review
+
+[ui-branch-review.md](../793-derived-fields/ui-branch-review.md) marked items
+**DEFERRED** to this branch to avoid merge conflicts. Each was re-checked against
+the current code on 2026-09-18. The one that came back as a regression is
+finding 5 above.
+
+### First, what changed underneath them
+
+Derived fields no longer appear in the fields editor: `_schema_page_context`
+drops the `DERIVED` group (`respondent_field_schema.py:825-835`) and "Derived" is
+gone from the question-type picker. They are created and edited from the target
+data sources step instead. But the old machinery is all still there:
+
+- routes `fields/add-derived`, `fields/<id>/derivation`,
+  `fields/<id>/mapping-modal`, `fields/<id>/mapping-upload` and
+  `fields/<id>/recompute` in `respondent_field_schema.py`;
+- `_derived_panel.html`, `_mapping_upload_modal.html`, and the `field.is_derived`
+  branches of `_editor.html:156-175` and `_field_modal.html:90,175`;
+- their component and e2e tests, which keep all of it green.
+
+No link in the UI reaches any of it, but every route answers a direct POST. And
+`add-derived` still creates a derived field **without** setting
+`target_category_id` (`respondent_field_schema.py:1195-1204`) - the state
+`delete_derived_field`'s docstring calls "can never be reached again". (It is
+probably recoverable: the checklist's name match should offer to adopt it. Not
+verified.)
+
+> **Decided, and done on `793-large-mapping-flow`** (`f3b0f09b`, "retire the
+> derived-field UI from the registration questions editor"). That commit removes
+> the five routes, `_derived_panel.html`, `_mapping_upload_modal.html` and the
+> derived branches of `_editor.html` and `_field_modal.html`; redirects an old
+> link to a computed question's edit dialog to the data sources step; and moves
+> the upload and Postgres round-trip tests over to target sources. Nothing to do
+> on this branch. What it changes for the items below (checked against the tree
+> at that commit, not run):
+>
+> - "Only in the unreachable code" - both items go away with the routes.
+> - Must-fix 1 shrinks to the two live routes, `fields/add` and
+>   `fields/<id>/update`; `_modal_roundtrip_response` is unchanged there.
+> - Should-fix 13 is half done: the parsers and `age_prefill_from_target` move
+>   into `target_sources.py`, which ends the import from
+>   `respondent_field_schema.py` (the import of `registration_hub_context` from
+>   `backoffice_registration.py` remains). They are still in a blueprint, not the
+>   domain, so the drift risk against `AgeBracketRule.bracket_labels()` stands.
+> - Should-fix 11 loses the `_derived_panel.html` site; `_field_modal.html` and
+>   `_setup_modal.html` still send the token.
+> - **Finding 5 is not fixed there** - `_apply_age_prefills` is unchanged at that
+>   commit - and neither are must-fix 3, the report modal nits or "Copy options
+>   from target".
+>
+> One practical note: `f3b0f09b` rewrites about a hundred lines of
+> `target_sources.py`, and the finding 2 fixes on this branch (`b1f7ce54`) touch
+> the same file, so expect conflicts there when `793-large-mapping-flow` picks
+> this branch up. Any further fixes to `target_sources.py` - finding 5 in
+> particular - may be cheaper to make on that branch.
+
+### Still open
+
+- **Must-fix 1 - modal POST error paths raise uncaught (confirmed by probe).**
+  A user with no role on the assembly POSTing to `fields/add`,
+  `fields/add-derived`, `fields/<id>/derivation`, `fields/<id>/mapping-upload` or
+  `fields/<id>/update` gets `InsufficientPermissions` out of the route: the
+  `_try_*` helper catches it and returns a friendly message, then
+  `_modal_roundtrip_response` -> `_schema_page_context` raises it again with no
+  handler. `fields/<id>/recompute` is fine. Same shape as finding 2, same fix (a
+  guarded re-render helper), and the parametrised "no route answers a refusal
+  with a 500" test written for target sources would carry over directly.
+  `fields/add` and `fields/<id>/update` are live UI routes, so this one does not
+  wait on the dead-code decision.
+
+COMMENT: fix this
+
+- **Must-fix 3 - renaming an option in the modal drops it from small mappings.**
+  Unchanged. `_submitted_options` (`respondent_field_schema.py:538-545`) still
+  builds the list wholesale with no option identity, so the service sees a rename
+  as remove + add and `_drop_small_mapping_keys` deletes the mapping row.
+  Respondents who gave the old answer fall to UNKNOWN on the next recompute, with
+  nothing on screen saying so. Live: small-mapping sources are ordinary choice
+  questions edited in the live modal. Either carry a hidden original value per
+  row, or report the dropped keys.
+
+COMMENT: fix this
+
+- **Must-fix 4 - HTMX modal accessibility contract.** Partly done: Escape now
+  works everywhere via `dialog-escape.js`. Focus into the fragment, focus return,
+  the trap, and the focusable backdrop link named "Close" are all still open, for
+  the old modals and the new ones alike - already written up under "HTMX fragment
+  dialogs do not manage focus" in Medium above.
+
+COMMENT: fix this
+
+- **Should-fix 11 - CSRF token in GET query strings.** Unchanged, and the new
+  modal copies it: `hx-include="closest form"` on a refresh `hx-get` at
+  `_field_modal.html:10`, `_derived_panel.html:7` and now
+  `target_sources/_setup_modal.html:11`. The token and the whole form go into the
+  URL, so into access logs and browser history. No `hx-params` anywhere in either
+  template directory. Fix: `hx-params="not csrf_token"`.
+
+COMMENT: fix this
+
+- **Should-fix 12 - several `with uow:` blocks per request.** Unchanged in the
+  schema blueprint and repeated in the new one - already under Medium above.
+
+COMMENT: fix this
+
+- **Should-fix 13 - business logic in the blueprint.** Worse.
+  `age_prefill_from_target` (the inverse of `AgeBracketRule.bracket_labels()`),
+  `parse_age_rule` and `parse_small_mapping_rule` still live in
+  `respondent_field_schema.py`, and `target_sources.py` now imports them from
+  there - the blueprint-imports-blueprint item under Low. They want to move to the
+  domain or service layer, which fixes both.
+
+COMMENT: fix this
+
+- **Should-fix 15 - wording.**
+  - "Not on form" is still the label for `FieldOnRegistrationPage.NO`
+    (`domain/respondent_field_schema.py:145`), and the new
+    "Label on the form (optional)" (`_setup_modal.html:142`) joins it. Glossary:
+    "registration page". "Shown on the form as" has gone.
+  - Hand-built plurals: "%(count)d lookup rows" (`_editor.html:92`), its new
+    near-duplicate "%(count)s lookup rows" (`_checklist.html:36`), and
+    "%(count)d completed selection run(s)" - now in two places
+    (`_derivation_report_modal.html:26`, `target_sources.py:416`). Use `ngettext`.
+  - "Remove" deleting what other copy calls "delete" - now the remove-vs-delete
+    item under Medium above.
+
+COMMENT: fix this
+
+- **Should-fix 16 - hand-rolled components.** Unchanged, and copied into the new
+  templates - already under Medium above.
+- **Should-fix 17 - JS preview diverges from the server.** Half open. The blank
+  min/max case is closed in the new modal, because the server writes 16 and 100
+  into the inputs before rendering. But `age-bracket-preview.js:39,58-60` still
+  accepts `min_age = 0` (`/^\d+$/`, then only `maxAge <= minAge`) while
+  `AgeBracketRule` rejects `min_age <= 0`, so the preview shows brackets for a
+  rule the save will refuse.
+- **Nit - report modal.** `_derivation_report_modal.html:71` still hardcodes
+  `limit=20` rather than `UNMATCHED_SAMPLE_SIZE`, and `:66` still hardcodes
+  "UNKNOWN" in the msgid "Fell back to UNKNOWN:" while sibling strings pass
+  `%(fallback)s`. The modal is shared by the new target-sources flow, so this is
+  live.
+- **Nit - double quotes round placeholders** in `_field_modal.html:156,165`
+  (moved from 178,186) - joins the double-quote item under Low above.
+- **Nit - prefill overwrites typed min/max for a new field.** Still true, in its
+  new home: `_apply_age_prefills` (`target_sources.py:248-251`) replaces min, max
+  and boundaries together whenever boundaries is blank, and the modal refreshes on
+  every `change`. Same function as finding 5; fix them together by only filling
+  fields that are blank.
+- **Nit - hardcoded English `Day` / `Month` / `Year`** in the generated public
+  registration form (`registration_page.py:515,617`). Unchanged; still the known
+  gap that the sandboxed environment has no `_`.
+- **Nit - `data-target-values` attribute route.** Unchanged and now used by the new
+  modal - already under Low above.
+- **Deviation - a non-HTMX POST answered with a 200 page, so a refresh re-runs the
+  work.** Mostly fixed in the new flow: configure, adopt, resync, recompute and
+  unlink redirect when the request is not HTMX, and HTMX successes now raise a
+  toast. One left: `_report_response` (`target_sources.py:372-395`), used by the
+  lookup-table upload, still renders `view.html` with a 200, so refreshing
+  re-posts the upload and recomputes again. The old schema routes are unchanged
+  but unreachable.
+
+### Only in the unreachable code - removed by `f3b0f09b`, nothing to do
+
+- **Should-fix 10 - editing a small mapping after a target rename shrinks its
+  options.** `_try_update_derivation` (`respondent_field_schema.py:1251-1252`)
+  still finds the target by lower-cased `field_key` rather than by the
+  `target_category_id` link that now exists. The original trigger is mostly closed
+  anyway, since renaming a target now re-keys its derived field.
+- **Nit - `create_derived_field`'s duplicate check is exact-match**
+  (`derivation_service.py:374`) while target matching is case-insensitive. The new
+  flow compares with `casefold()` throughout (`target_source_service.py:465-522`),
+  so `Gender` beside `gender` is only reachable through the old `add-derived`
+  route.
+
+### Fixed along the way
+
+- **Nit - `<th>` without `scope="col"`.** Fixed: `_editor.html:47-50`.
+- **Deviation Q4** (key override as a `<details>` disclosure) - superseded; the new
+  modal names the question it will create.
+- **Deviation - "Derived option disabled with hint"** - superseded; the option is
+  gone from the picker.
+- **Deviation - no flash or toast on an HTMX success** - fixed in the new flow
+  (`_toast_response`, `_saved_response`).
+
+### Deviations still standing, to confirm as deliberate
+
+- **Q8 - the derived field key is the target name verbatim**, not
+  `normalise_field_key`. Still so, and now load-bearing: `rename_derived_field`
+  keeps key and target name in step.
+- **"Copy options from target"** is still in the field modal (`_field_modal.html:156`)
+  and still not in any plan. With exact-copy set-up on the data sources step doing
+  the same job properly - linked, and re-syncable - is it still wanted?
+
+### Test gaps carried over
+
+The earlier review left its test-gap list open. Not re-audited line by line; the
+ones that visibly still matter:
+
+- No permission-denied test on the schema blueprint's modal routes - which is why
+  must-fix 1 is still there two branches on.
+- No modal-path 422 test for `FieldDefinitionConflictError` on edit.
+- `age-bracket-preview.test.js` still lacks the zero-age case (should-fix 17).
+- The rest sat in the derived-field tests, which `f3b0f09b` removes or moves.
 
 ## Rewords - your call
 
@@ -505,6 +761,10 @@ accept. Two look incidental and could be reverted to save retranslation:
    to protect.
 3. Finding 2 - the 500s.
 4. Finding 4 - the tests that would have caught part of 2.
+
+Added after re-checking the deferred items: finding 5 belongs with 3, since both
+silently change data. Carried-over must-fix 1 is the same fix as finding 2 and is
+cheap to do alongside it. Must-fix 3 is the remaining silent data loss.
 
 One thing to push back on in advance: if the APG menu gap is waved through
 because `dropdown_button` does it too, that makes two components announcing
