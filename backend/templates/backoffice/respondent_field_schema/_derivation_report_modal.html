@@ -24,7 +24,7 @@ ABOUTME: Shown in place of the field modal after a derivation save; Done closes 
                      style="background-color: var(--color-warning-background);
                             border: 1px solid var(--color-warning-text);">
                     <p class="text-body-sm" style="color: var(--color-warning-text);">
-                        {{ _("This assembly has %(count)d completed selection run(s). Recomputing changes the pool underneath them — the numbers those selections were made from no longer match what is stored.", count=report.completed_selection_runs) }}
+                        {{ ngettext("This assembly has %(num)s completed selection run. Recomputing changes the pool underneath it — the numbers that selection was made from no longer match what is stored.", "This assembly has %(num)s completed selection runs. Recomputing changes the pool underneath them — the numbers those selections were made from no longer match what is stored.", report.completed_selection_runs) }}
                     </p>
                 </div>
             {% endif %}

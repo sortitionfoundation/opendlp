@@ -63,6 +63,7 @@ from opendlp.service_layer.target_source_service import (
     unlink,
 )
 from opendlp.translations import gettext as _
+from opendlp.translations import ngettext
 
 target_sources_bp = Blueprint("target_sources", __name__)
 
@@ -412,9 +413,10 @@ def _recompute_toast(report: RecomputeReport, message: str) -> tuple[str, str]:
     if report.completed_selection_runs:
         category = "warning"
         lines.append(
-            _(
-                "This assembly has %(count)d completed selection run(s). Recomputing changes the pool underneath them — the numbers those selections were made from no longer match what is stored.",
-                count=report.completed_selection_runs,
+            ngettext(
+                "This assembly has %(num)s completed selection run. Recomputing changes the pool underneath it — the numbers that selection was made from no longer match what is stored.",
+                "This assembly has %(num)s completed selection runs. Recomputing changes the pool underneath them — the numbers those selections were made from no longer match what is stored.",
+                report.completed_selection_runs,
             )
         )
     return "\n".join(lines), category

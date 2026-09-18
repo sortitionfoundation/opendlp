@@ -142,7 +142,7 @@ class FieldOnRegistrationPage(Enum):
 
 
 ON_REGISTRATION_PAGE_LABELS: dict[FieldOnRegistrationPage, str] = {
-    FieldOnRegistrationPage.NO: _l("Not on form"),
+    FieldOnRegistrationPage.NO: _l("Not on registration page"),
     FieldOnRegistrationPage.YES_OPTIONAL: _l("Optional"),
     FieldOnRegistrationPage.YES_REQUIRED: _l("Required"),
 }

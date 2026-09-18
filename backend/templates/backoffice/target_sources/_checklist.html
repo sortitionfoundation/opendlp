@@ -34,7 +34,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                     {{ icon_check(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("Computed from \"%(source)s\"", source=(status.source_field.label if status.source_field else (status.field.derived_from or [""])[0])) }}
                                     — {{ method_labels.get(status.field.derivation_type.value, status.field.derivation_type.value) }}
                                     {% if status.mapping_row_count is not none %}
-                                        · {{ _("%(count)s lookup rows", count="{:,}".format(status.mapping_row_count)) }}
+                                        · {{ ngettext("%(count)s lookup row", "%(count)s lookup rows", status.mapping_row_count, count="{:,}".format(status.mapping_row_count)) }}
                                     {% endif %}
                                 {% elif status.state == TargetSourceState.MATCHED_NOT_LINKED %}
                                     {{ _("The existing question \"%(label)s\" shares this target's name but isn't linked to it yet.", label=status.field.label) }}

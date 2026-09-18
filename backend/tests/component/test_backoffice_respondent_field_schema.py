@@ -855,7 +855,7 @@ class TestFieldModal:
         assert re.search(r'role="switch"\s+name="required"', switch)
         assert 'name="required_switch" value="1"' in body
         assert 'name="on_registration_page"' not in body
-        assert "Not on form" not in body
+        assert "Not on registration page" not in body
 
     def test_the_required_switch_says_what_each_type_of_question_needs(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

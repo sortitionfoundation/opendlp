@@ -346,7 +346,7 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
     if "question_type" in source:
         values.update(_taxonomy_from_question_type(source.get("question_type", "")))
     # The modal's Required switch: a checkbox, so it posts nothing when off -
-    # the hidden marker says the switch was there. "Not on form" is never
+    # the hidden marker says the switch was there. "Not on registration page" is never
     # chosen here; only derived fields are off the form, and they get it implicitly.
     if "required_switch" in source:
         values["on_registration_page"] = (

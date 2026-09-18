@@ -884,6 +884,25 @@ class TestMappingUpload:
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
 
+    @pytest.mark.parametrize(
+        ("rows", "expected"),
+        [(b"SW1A 1AA,North\n", "1 lookup row"), (b"SW1A 1AA,North\nEH1 1AA,South\n", "2 lookup rows")],
+    )
+    def test_the_row_counts_its_lookup_rows_in_the_right_number(
+        self, rows, expected, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, _field = self._linked_large_mapping(fake_store, existing_assembly)
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/upload",
+            data={"mapping_file": (io.BytesIO(b"Postcode,Region\n" + rows), "mapping.csv")},
+            content_type="multipart/form-data",
+            headers=HTMX,
+        )
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        assert re.search(rf"{expected}\b(?!s)", body)
+
     def test_missing_file_rerenders_as_422(self, logged_in_admin, existing_assembly, fake_store):
         category, _field = self._linked_large_mapping(fake_store, existing_assembly)
 

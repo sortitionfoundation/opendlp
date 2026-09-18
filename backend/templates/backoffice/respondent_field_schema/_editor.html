@@ -89,7 +89,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                                         {% if mapping_rows == 0 %}
                                             {{ _("0 rows — upload a lookup table") }}
                                         {% else %}
-                                            {{ _("%(count)d lookup rows", count=mapping_rows) }}
+                                            {{ ngettext("%(count)s lookup row", "%(count)s lookup rows", mapping_rows, count="{:,}".format(mapping_rows)) }}
                                         {% endif %}
                                     </div>
                                 {% endif %}
