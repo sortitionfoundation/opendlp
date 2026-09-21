@@ -3,6 +3,7 @@
 
 import json
 import re
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -75,10 +76,46 @@ def _component_source() -> str:
     )
 
 
+_VOID_ELEMENTS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+_BOUND_EVENTS = {"@click", "@change", "@input", "@submit"}
+
+
+class _ServiceDocsBindings(HTMLParser):
+    """The Alpine event expressions on elements the serviceDocsController component owns.
+
+    A nested x-data starts a component of its own, and so does anything outside
+    the console - the account menu in the page header, say. Their methods are
+    their own components' business, not this one's.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.owned_stack: list[bool] = []
+        self.expressions: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        x_data = attributes.get("x-data")
+        if x_data is not None:
+            owned = x_data.startswith("serviceDocsController")
+        else:
+            owned = bool(self.owned_stack) and self.owned_stack[-1]
+        if owned:
+            self.expressions.extend(value for name, value in attrs if name in _BOUND_EVENTS and value)
+        if tag not in _VOID_ELEMENTS:
+            self.owned_stack.append(owned)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag not in _VOID_ELEMENTS and self.owned_stack:
+            self.owned_stack.pop()
+
+
 def _bound_calls(html: str) -> set[str]:
-    """Method names called from an Alpine @click / @change expression."""
+    """Method names called from an Alpine @click / @change expression the console owns."""
+    parser = _ServiceDocsBindings()
+    parser.feed(html)
     calls = set()
-    for expression in re.findall(r'@(?:click|change|input|submit)="([^"]+)"', html):
+    for expression in parser.expressions:
         calls.update(re.findall(r"\b([a-zA-Z_$][\w$]*)\s*\(", expression))
     return calls - ALPINE_BUILTINS
 
