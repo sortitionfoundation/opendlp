@@ -4,7 +4,6 @@ ABOUTME: One row per page with status, publish date and a per-row actions menu
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/page_header.html" import page_header %}
-{% from "backoffice/components/registration_page_list.html" import registration_page_list %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% block title %}{{ assembly.title }} - Registration{% endblock %}
 {% block page_header %}
@@ -24,5 +23,5 @@ ABOUTME: One row per page with status, publish date and a per-row actions menu
     </div>
 {% endblock %}
 {% block page_content %}
-    {{ registration_page_list(assembly, page_rows) }}
+    {% include "backoffice/registration/_hub.html" %}
 {% endblock %}

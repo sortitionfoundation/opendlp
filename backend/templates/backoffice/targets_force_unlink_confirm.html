@@ -1,0 +1,55 @@
+{#
+ABOUTME: Confirmation page shown when a targets save would rename/delete a category that fields feed
+ABOUTME: Confirming resubmits the identical form data with force_unlink=1; cancelling returns to the targets page
+#}
+{% extends "backoffice/base_page.html" %}
+{% from "backoffice/components/page_header.html" import page_header %}
+{% from "backoffice/components/button.html" import button %}
+{% block title %}{{ _("Confirm target changes") }} - {{ assembly.title }}{% endblock %}
+{% block page_header %}
+    <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
+        {{ page_header(
+        title=assembly.title,
+        back_href=url_for('targets.view_assembly_targets', assembly_id=assembly_id),
+        back_label=_("Back to Targets")
+        ) }}
+    </div>
+{% endblock %}
+{% block page_content %}
+    <section class="mb-8" style="max-width: 48rem;">
+        <h2 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ _("These targets have registration questions linked to them") }}</h2>
+        <p class="text-body-md mb-4">
+            {{ _("A linked question takes its name and its answers from its target, and selection pairs the two by name. Saving these changes breaks those pairings. A question people answer stays on the registration page and becomes freely editable; a computed question exists only to feed its target, so it goes when the target does.") }}
+        </p>
+        <ul class="mb-6 pl-4" style="list-style: disc;">
+            {% for block in blocks %}
+                {% if block.field_labels %}
+                    <li class="text-body-md mb-2">
+                        {% if block.action == "delete" %}
+                            {{ _("Deleting the target \"%(name)s\" unlinks: %(fields)s", name=block.category_name, fields=block.field_labels | join(", ")) }}
+                        {% else %}
+                            {{ _("Renaming the target \"%(name)s\" unlinks: %(fields)s", name=block.category_name, fields=block.field_labels | join(", ")) }}
+                        {% endif %}
+                    </li>
+                {% endif %}
+                {# A computed question feeds this target and nothing else, and no other
+                   screen lists one, so it goes when the target goes. #}
+                {% for label in block.deleted_labels %}
+                    <li class="text-body-md mb-2">
+                        {{ _("Deleting the target \"%(name)s\" also deletes the computed question \"%(field)s\", its answers and any lookup table it uses", name=block.category_name, field=label) }}
+                    </li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+        <div class="flex gap-3">
+            <form method="post"
+                  action="{{ url_for('targets.save_all', assembly_id=assembly_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% for key, value in resubmit_fields %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+                <input type="hidden" name="force_unlink" value="1">
+                {{ button(_("Break the links and save") , type="submit", variant="danger") }}
+            </form>
+            {{ button(_("Cancel") , variant="secondary", href=url_for('targets.view_assembly_targets', assembly_id=assembly_id)) }}
+        </div>
+    </section>
+{% endblock %}

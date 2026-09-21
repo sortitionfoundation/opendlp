@@ -2,12 +2,31 @@
 ABOUTME: Add/edit field modal fragment — served over HTMX or rendered open on a full page load
 ABOUTME: Real form + hx-post enhancement; type changes and option rows round-trip through the server
 #}
+{% from "backoffice/components/alert.html" import alert %}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/input.html" import input, textarea, select, radio_group %}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
+{% from "backoffice/components/input.html" import input, textarea, select, switch %}
 {% set close_url = url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
 {% set values = modal_ctx["values"] %}
 {% set is_derived_flow = modal_ctx["is_derived"] or values["type_choice"] == "derived" %}
-{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-target="#field-modal-container" hx-swap="innerHTML"' %}
+{% set refresh_attrs = 'hx-get="' ~ modal_ctx["refresh_url"] ~ '" hx-include="closest form" hx-params="not csrf_token" hx-target="#field-modal-container" hx-swap="innerHTML"' %}
+{# One dropdown for the question type (Figma: Add field, node 5394:18175). Choosing
+   a type re-renders the form, so its options editor and help appear. #}
+{% set question_type_help = modal_ctx.get("question_type_help", {}).get(modal_ctx.get("question_type", ""), "") %}
+{% set question_type_select %}
+    <div class="mb-4">
+        {% set type_options = ([{"value": "", "label": _("Choose one")}] if not modal_ctx["question_type"] else []) + modal_ctx["question_type_choices"] %}
+        {{ select("question_type",
+        label=_("Question type"),
+        options=type_options,
+        value=modal_ctx["question_type"],
+        id="field-modal-type",
+        attrs=refresh_attrs ~ (' aria-describedby="field-modal-type-help"' if question_type_help else "")) }}
+        {% if question_type_help %}
+            <p id="field-modal-type-help" class="text-body-sm mt-1" style="color: var(--color-secondary-text);">{{ question_type_help }}</p>
+        {% endif %}
+    </div>
+{% endset %}
 {# Backdrop overlay — an anchor so closing works without JS (full page reload) #}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
@@ -17,16 +36,10 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
      aria-modal="true"
      aria-labelledby="field-modal-title">
     <div class="dialog-panel dialog-panel--default">
-        <div class="dialog-header">
-            <h2 class="dialog-title" id="field-modal-title">
-                {% if modal_ctx["mode"] == "new" %}
-                    {{ _("Add a field") }}
-                {% else %}
-                    {{ _("Edit %(label)s", label=modal_ctx["field"].label) }}
-                {% endif %}
-            </h2>
-            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">✕</a>
-        </div>
+        {% set dialog_title %}{% if modal_ctx["mode"] == "new" %}{{ _("Add a question") }}{% else %}{{ _("Edit %(label)s", label=modal_ctx["field"].label) }}{% endif %}{% endset %}
+        {% call dialog_header(dialog_title, title_id="field-modal-title") %}
+            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
+        {% endcall %}
         <form method="post"
               action="{{ modal_ctx['action_url'] }}"
               hx-post="{{ modal_ctx['action_url'] }}"
@@ -44,13 +57,9 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                     style="display: none"
                     aria-hidden="true"
                     tabindex="-1"></button>
-            <div class="dialog-body">
+            {% call dialog_body() %}
                 {% if modal_ctx["error"] %}
-                    <div class="rounded-md p-3 mb-4"
-                         style="background-color: var(--color-error-background);
-                                border: 1px solid var(--color-error-text);">
-                        <p class="text-body-sm" style="color: var(--color-error-text);">{{ modal_ctx["error"] }}</p>
-                    </div>
+                    {{ alert(modal_ctx["error"], variant="error") }}
                 {% endif %}
                 {% if is_derived_flow and modal_ctx["mode"] == "new" %}
                     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
@@ -61,78 +70,68 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         {{ input("label", label=_("Label"), value=values["label"], required=true, id="field-modal-label") }}
                     </div>
                 {% endif %}
-                {% if modal_ctx["mode"] == "new" and not is_derived_flow %}
-                    <details class="mb-4">
-                        <summary class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Change the field key") }}</summary>
-                        <div class="mt-2">
-                            {{ input("field_key",
-                            label=_("Field key"),
-                            hint=_("Left blank, it is generated from the label — lowercase letters, numbers and underscores."),
-                            value=values["field_key"],
-                            id="field-modal-key") }}
-                        </div>
-                    </details>
-                {% elif modal_ctx["mode"] == "edit" %}
-                    <div class="mb-4">
-                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Field key") }}</span>
-                        <code>{{ modal_ctx["field"].field_key }}</code>
-                    </div>
-                {% endif %}
+                <div class="mb-4">
+                    {{ textarea("help_text",
+                    label=_("Help text (optional)"),
+                    hint=_("Shown beneath the question on the registration page."),
+                    value=values["help_text"],
+                    rows=2,
+                    id="field-modal-help-text") }}
+                </div>
                 {% if modal_ctx["is_derived"] %}
                     {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
                 {% elif modal_ctx["type_locked"] %}
                     <div class="mb-4">
                         <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Type") }}</span>
                         <span class="text-body-sm">{{ field_type_labels_by_value[modal_ctx["field"].effective_field_type.value] }}</span>
-                        <strong class="govuk-tag govuk-tag--grey">{{ _("Fixed") }}</strong>
-                        <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Fixed fields keep their built-in type.") }}</div>
+                        <div class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("This is a built-in question, so its type can't be changed.") }}</div>
                     </div>
-                {% else %}
+                {% elif modal_ctx["target_locked"] %}
                     <div class="mb-4">
-                        {{ radio_group("type_choice",
-                        label=_("Type"),
-                        options=modal_ctx["type_choices"],
-                        value=values["type_choice"],
-                        id="field-modal-type",
-                        attrs=refresh_attrs) }}
-                        {% if modal_ctx["mode"] == "new" and not modal_ctx["has_targets"] %}
-                            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
-                                {{ _("Create targets first to add a derived field — it feeds one.") }}
-                            </p>
-                        {% endif %}
+                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Type") }}</span>
+                        <span class="text-body-sm">{{ field_type_labels_by_value[modal_ctx["field"].effective_field_type.value] }}</span>
+                        {# The same tag, in the same style, as the question's row in the editor behind this dialog. #}
+                        <ul class="question-tags">
+                            <li>
+                                <a href="{{ url_for('target_sources.view_sources', assembly_id=assembly.id) }}">{{ _("Feeds target: %(name)s", name=modal_ctx["linked_target_name"]) }}</a>
+                            </li>
+                        </ul>
+                        <div class="text-body-sm" style="color: var(--color-secondary-text);">
+                            {{ _("Its answer values mirror the target's values — change those on the target data sources step, or unlink the field there.") }}
+                        </div>
                     </div>
+                    {{ question_type_select }}
+                    <fieldset class="mb-4">
+                        <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
+                        {% for option in values["options"] %}
+                            <div class="flex gap-2 items-center mb-2">
+                                <input type="hidden" name="option_value" value="{{ option['value'] }}">
+                                <span class="text-body-sm" style="min-width: 12rem;">{{ option["value"] }}</span>
+                                <div class="flex-1">
+                                    {{ input("option_help",
+                                    value=option["help_text"],
+                                    placeholder=_("help text (optional)"),
+                                    aria_label=_('Help text for %(value)s', value=option["value"]),
+                                    id="field-modal-option-help-" ~ loop.index0) }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </fieldset>
+                {% else %}
+                    {{ question_type_select }}
                     <noscript>
-                        {# Without JS the radios can't re-render the form, so offer an explicit refresh. #}
+                        {# Without JS the dropdown can't re-render the form, so offer an explicit refresh. #}
                         {{ button(_("Update the form for this type") , type="submit", variant="secondary", attrs='name="form_action" value="refresh"') }}
                     </noscript>
-                    {% if values["type_choice"] == "free_text" %}
-                        <div class="mb-4 pl-4">
-                            {{ select("free_text_subtype",
-                            label=_("Kind of text"),
-                            options=[
-                            {"value": "text", "label": _("Text")},
-                            {"value": "email", "label": _("Email")},
-                            {"value": "integer", "label": _("Number")},
-                            ],
-                            value=values["free_text_subtype"],
-                            id="field-modal-subtype") }}
-                        </div>
-                    {% endif %}
                     {% if values["type_choice"] == "choice" %}
-                        <div class="mb-4 pl-4">
-                            {{ select("choice_style",
-                            label=_("Shown on the form as"),
-                            options=[
-                            {"value": "choice_radio", "label": _("Radio buttons")},
-                            {"value": "choice_dropdown", "label": _("Dropdown")},
-                            ],
-                            value=values["choice_style"],
-                            id="field-modal-choice-style") }}
-                        </div>
                         <fieldset class="mb-4">
                             <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Options") }}</legend>
                             {% for option in values["options"] %}
                                 <div class="flex gap-2 items-end mb-2">
+                                    {# What this row was called when the dialog opened, so a save can tell a
+                                       rename from a removal - a small mapping keyed on the old value follows
+                                       a rename, and drops a removal. #}
+                                    <input type="hidden" name="option_original" value="{{ option['original'] | default('') }}">
                                     <div class="flex-1">
                                         {{ input("option_value",
                                         value=option["value"],
@@ -177,28 +176,50 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         {% include "backoffice/respondent_field_schema/_derived_panel.html" %}
                     {% endif %}
                 {% endif %}
-                <div class="mb-4">
-                    {{ textarea("help_text",
-                    label=_("Help text"),
-                    hint=_("Optional hint shown beneath the field on the registration page."),
-                    value=values["help_text"],
-                    rows=2,
-                    id="field-modal-help-text") }}
-                </div>
                 {% if not is_derived_flow %}
+                    {# Required or optional only: "Not on registration page" belongs to derived fields,
+                       which get it implicitly. The label says what an answer to this type of
+                       question has to be, so it follows the question type. #}
                     <div class="mb-4">
-                        {{ radio_group("on_registration_page",
-                        label=_("On the registration page"),
-                        options=on_registration_page_choices,
-                        value=values["on_registration_page"],
-                        id="field-modal-onreg") }}
+                        <input type="hidden" name="required_switch" value="1">
+                        {{ switch("required",
+                        label=modal_ctx["required_label"],
+                        checked=values["on_registration_page"] == "yes_required",
+                        id="field-modal-required",
+                        attrs='value="1"') }}
                     </div>
                 {% endif %}
-            </div>
-            <div class="dialog-footer">
+                {% if not modal_ctx["is_derived"] and not is_derived_flow %}
+                    <div class="mb-4">
+                        {{ select("group",
+                        label=_("Section"),
+                        options=group_choices,
+                        value=values["group"],
+                        id="field-modal-group") }}
+                    </div>
+                {% endif %}
+                {% if modal_ctx["mode"] == "new" and not is_derived_flow %}
+                    <details class="mb-4">
+                        <summary class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Change the field key") }}</summary>
+                        <div class="mt-2">
+                            {{ input("field_key",
+                            label=_("Field key"),
+                            hint=_("Left blank, it is generated from the label — lowercase letters, numbers and underscores."),
+                            value=values["field_key"],
+                            id="field-modal-key") }}
+                        </div>
+                    </details>
+                {% elif modal_ctx["mode"] == "edit" %}
+                    <div class="mb-4">
+                        <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Field key") }}</span>
+                        <code>{{ modal_ctx["field"].field_key }}</code>
+                    </div>
+                {% endif %}
+            {% endcall %}
+            {% call dialog_footer() %}
                 {{ button(_("Cancel") , variant="secondary", href=close_url) }}
                 {{ button(_("Save") , type="submit", variant="primary", attrs='name="form_action" value="save"') }}
-            </div>
+            {% endcall %}
         </form>
     </div>
 </div>

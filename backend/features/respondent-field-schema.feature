@@ -27,6 +27,20 @@ Feature: Respondent field schema
     And I move the "last_name" field up
     Then the "last_name" field should appear before the "first_name" field
 
+  Scenario: Organiser opens a question by clicking its row
+    Given there is an assembly with respondents imported from CSV called "Schema Row Click Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Row Click Demo"
+    And I click the "last_name" row
+    Then the edit modal for "Last name" should be open
+
+  Scenario: Organiser removes a question from its row menu
+    Given there is an assembly with respondents imported from CSV called "Schema Remove Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Remove Demo"
+    And I choose "Remove" from the "custom_notes" row menu and confirm
+    Then the schema editor should not list the "custom_notes" field
+
   Scenario: Organiser adds a choice field through the modal
     Given there is an assembly with respondents imported from CSV called "Schema Modal Demo"
     And I am signed in as an admin user
@@ -35,15 +49,3 @@ Feature: Respondent field schema
     And I save a new choice field labelled "Preferred contact" with options "Phone" and "Email"
     Then the schema editor should list the "preferred_contact" field
     And the "preferred_contact" row should summarise its options as "Phone, Email"
-
-  Scenario: Organiser creates an age-bracket derived field and sees the recompute report
-    Given there is an assembly with respondents imported from CSV called "Derived Field Demo"
-    And the assembly "Derived Field Demo" has a "year_of_birth" number field
-    And the assembly "Derived Field Demo" has an "age bracket" target with values "16-24, 25-39, 40+"
-    And I am signed in as an admin user
-    When I open the respondent field schema editor for "Derived Field Demo"
-    And I create an age-bracket derived field feeding "age bracket" from "year_of_birth"
-    Then I should see the recompute report
-    When I close the recompute report
-    Then the schema editor should list the "age bracket" field
-    And the "age bracket" row should carry the "Derived" tag

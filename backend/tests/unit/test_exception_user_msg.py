@@ -40,7 +40,7 @@ from opendlp.service_layer.exceptions import (
     UserAlreadyExists,
     UserNotFoundError,
 )
-from opendlp.service_layer.target_service import TargetsNotSaved
+from opendlp.service_layer.target_service import TargetLinkedError, TargetsNotSaved
 
 CURATED = [
     UserAlreadyExists("someone@example.org"),
@@ -81,6 +81,7 @@ UNCURATED = [
     # Its own message is a marker, not a sentence. What the user reads is the
     # per-field messages on `.errors`, which the bulk edit form renders itself.
     TargetsNotSaved([]),
+    TargetLinkedError([]),
 ]
 
 

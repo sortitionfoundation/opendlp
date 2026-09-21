@@ -632,6 +632,16 @@ respondent_field_definitions = Table(
         default=FieldOnRegistrationPage.YES_REQUIRED,
     ),
     Column("help_text", Text, nullable=False, default="", server_default=""),
+    # The target category this field feeds (directly for an exact copy, or via
+    # its derivation). SET NULL so deleting a category leaves the field behind
+    # as a free editable field rather than dropping it.
+    Column(
+        "target_category_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("target_categories.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    ),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # Unique field_key per assembly

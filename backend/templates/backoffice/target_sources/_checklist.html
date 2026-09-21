@@ -1,0 +1,177 @@
+{#
+ABOUTME: The per-target checklist fragment — one row per target category with its data-source status
+ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors the database
+#}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/icons.html" import icon_check, icon_close, icon_more_vert %}
+{# oob=true marks the fragment for an out-of-band swap: HTMX replaces #target-sources-list
+   in place while the (otherwise empty) response body clears #ts-modal-container,
+   closing whichever modal triggered the mutation. #}
+<div id="target-sources-list" {% if oob | default(false) %}hx-swap-oob="true"{% endif %}>
+    {% if not statuses %}
+        <section class="mb-8">
+            <p class="text-body-md mb-4">
+                {{ _("No targets have been set up for this assembly yet. Add your targets first — each one then gets a row here to say where its data comes from.") }}
+            </p>
+            {{ button(_("Go to Targets") , href=url_for('targets.view_assembly_targets', assembly_id=assembly.id), variant="primary") }}
+        </section>
+    {% else %}
+        <ul class="flex flex-col gap-3 mb-8" style="list-style: none; padding: 0;">
+            {% for status in statuses %}
+                {% set category = status.category %}
+                {% set setup_url = url_for('target_sources.setup_modal', assembly_id=assembly.id, category_id=category.id) %}
+                {# The row's set-up link stretches over the whole card, so a click
+                   anywhere on it opens the set-up dialog; the other buttons sit above it. #}
+                <li class="target-source-row row-link-host rounded-lg p-4">
+                    <div class="flex items-start justify-between gap-4 flex-wrap">
+                        <div>
+                            <h3 class="text-heading-md mb-1" style="color: var(--color-headings);">{{ category.name }}</h3>
+                            {# The tick and cross are decoration: each sentence says the same in words. #}
+                            <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
+                                {% if status.state == TargetSourceState.LINKED_EXACT %}
+                                    {{ icon_check(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("Asked on the registration form as \"%(label)s\"", label=status.field.label) }}
+                                {% elif status.state == TargetSourceState.LINKED_DERIVED %}
+                                    {{ icon_check(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("Computed from \"%(source)s\"", source=(status.source_field.label if status.source_field else (status.field.derived_from or [""])[0])) }}
+                                    — {{ method_labels.get(status.field.derivation_type.value, status.field.derivation_type.value) }}
+                                    {% if status.mapping_row_count is not none %}
+                                        · {{ ngettext("%(count)s lookup row", "%(count)s lookup rows", status.mapping_row_count, count="{:,}".format(status.mapping_row_count)) }}
+                                    {% endif %}
+                                {% elif status.state == TargetSourceState.MATCHED_NOT_LINKED %}
+                                    {{ _("The existing question \"%(label)s\" shares this target's name but isn't linked to it yet.", label=status.field.label) }}
+                                {% elif status.state == TargetSourceState.IMPORT_COVERED %}
+                                    {{ icon_check(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("Data comes from your imported respondents.") }}
+                                {% else %}
+                                    {{ icon_close(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("No data source yet.") }}
+                                {% endif %}
+                            </p>
+                            {% if status.stale %}
+                                <p class="text-body-sm" style="color: var(--color-warning-text);">
+                                    {{ _("The target's values have changed since this field was set up — its answers no longer match.") }}
+                                </p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            {% if status.state in (TargetSourceState.LINKED_EXACT, TargetSourceState.LINKED_DERIVED) %}
+                                {% set is_large_mapping = status.field.derivation_type is not none and status.field.derivation_type.value == "large_mapping" %}
+                                {% set upload_url = url_for('target_sources.upload_modal', assembly_id=assembly.id, category_id=category.id) %}
+                                {% set upload_attrs = 'hx-get="' ~ upload_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"' %}
+                                {{ button(_("Edit") , variant="secondary", href=setup_url, classes="row-link",
+                                attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
+                                {# Until its lookup table is uploaded a postcode mapping cannot work, so the
+                                   first upload stays in view; replacing the table goes in the menu. #}
+                                {% if is_large_mapping and not status.mapping_row_count %}
+                                    {{ button(_("Upload table") , variant="secondary", href=upload_url, attrs=upload_attrs) }}
+                                {% endif %}
+                                {% if status.stale and (status.field.derivation_type is none or status.field.derivation_type.value != "age_bracket") %}
+                                    <form method="post"
+                                          action="{{ url_for('target_sources.resync_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                          hx-post="{{ url_for('target_sources.resync_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                          hx-target="#ts-modal-container"
+                                          hx-swap="innerHTML">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        {{ button(_("Re-sync from target") , type="submit", variant="secondary") }}
+                                    </form>
+                                {% endif %}
+                                {# The less common row actions, behind a "more" menu mixing link and submit
+                                   items. rowActionsMenu makes it a WAI-ARIA menu button: opening moves focus
+                                   to the first item, the arrow keys, Home and End move between items (each
+                                   is tabindex="-1", so the menu is one Tab stop), and tabbing out closes
+                                   it. Escape is bound on this element, not window, so it closes
+                                   only the menu and not the step dialog around it. Item text is bare (no
+                                   inner span); data-confirm does not depend on that, as it looks up from
+                                   the click target to the enclosing button. #}
+                                <div class="row-link-menu inline-flex"
+                                     x-data="rowActionsMenu"
+                                     x-bind:class="open ? 'is-open' : ''"
+                                     @keydown.escape="closeOnEscape"
+                                     @focusout="closeOnFocusOut">
+                                    {{ button(variant="icon",
+                                    icon=icon_more_vert(classes="w-4 h-4"),
+                                    id="ts-actions-" ~ category.id ~ "-toggle",
+                                    aria_label=_("More actions for %(name)s", name=category.name),
+                                    aria_haspopup="menu",
+                                    attrs='x-ref="menuToggle" @click="toggleMenu()" @keydown="onToggleKeydown" @click.outside="closeMenu()" x-bind:aria-expanded="open ? \'true\' : \'false\'" aria-controls="ts-actions-' ~ category.id ~ '-menu"') }}
+                                    <div x-show="open"
+                                         x-cloak
+                                         id="ts-actions-{{ category.id }}-menu"
+                                         role="menu"
+                                         x-ref="menu"
+                                         @keydown="onMenuKeydown"
+                                         aria-labelledby="ts-actions-{{ category.id }}-toggle"
+                                         class="menu menu--right"
+                                         style="min-width: 12rem;">
+                                        {% if is_large_mapping and status.mapping_row_count %}
+                                            <a role="menuitem" tabindex="-1"
+                                               class="menu-item"
+                                               href="{{ upload_url }}"
+                                               @click="closeMenu()"
+                                               {{ upload_attrs | safe }}>{{ _("Re-upload table") }}</a>
+                                        {% endif %}
+                                        {% if status.state == TargetSourceState.LINKED_DERIVED %}
+                                            {# role="none": a form is not a valid child of role="menu" - the
+                                               menuitem is the submit button inside it #}
+                                            <form method="post"
+                                                  role="none"
+                                                  action="{{ url_for('target_sources.recompute_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                                  hx-post="{{ url_for('target_sources.recompute_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                                  hx-target="#ts-modal-container"
+                                                  hx-swap="innerHTML">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" role="menuitem" tabindex="-1" class="menu-item" @click="closeMenu()">{{ _("Recompute") }}</button>
+                                            </form>
+                                        {% endif %}
+                                        {# A computed question exists only to feed this target and is listed
+                                           on no other screen, so breaking the link removes it rather than
+                                           leaving it behind where nothing could reach it. #}
+                                        {% if status.state == TargetSourceState.LINKED_DERIVED %}
+                                            {% if is_large_mapping and status.mapping_row_count %}
+                                                {% set unlink_confirm = _("Remove the computed question '%(name)s'? Its answers and its lookup table of %(count)s rows are deleted — you would have to upload the table again. The question it is computed from stays.", name=status.field.label, count="{:,}".format(status.mapping_row_count)) %}
+                                            {% else %}
+                                                {% set unlink_confirm = _("Remove the computed question '%(name)s'? Its answers are deleted. The question it is computed from stays, so you can set this target up again from it.", name=status.field.label) %}
+                                            {% endif %}
+                                        {% else %}
+                                            {% set unlink_confirm = _('Unlink this question from its target? The question stays on the registration page, but edits to it will no longer be checked against the target.') %}
+                                        {% endif %}
+                                        <form method="post"
+                                              role="none"
+                                              action="{{ url_for('target_sources.unlink_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                              hx-post="{{ url_for('target_sources.unlink_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                              hx-target="#ts-modal-container"
+                                              hx-swap="innerHTML">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit"
+                                                    role="menuitem" tabindex="-1"
+                                                    class="menu-item{% if status.state == TargetSourceState.LINKED_DERIVED %} menu-item--danger{% endif %}"
+                                                    @click="closeMenu()"
+                                                    data-confirm="{{ unlink_confirm }}">
+                                                {%- if status.state == TargetSourceState.LINKED_DERIVED %}{{ _("Remove computed question") }}{% else %}{{ _("Unlink") }}{% endif -%}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% elif status.state == TargetSourceState.MATCHED_NOT_LINKED %}
+                                <form method="post"
+                                      action="{{ url_for('target_sources.adopt_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                      hx-post="{{ url_for('target_sources.adopt_view', assembly_id=assembly.id, category_id=category.id) }}"
+                                      hx-target="#ts-modal-container"
+                                      hx-swap="innerHTML">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="field_id" value="{{ status.field.id }}">
+                                    {{ button(_("Link it") , type="submit", variant="primary") }}
+                                </form>
+                                {{ button(_("Set up differently") , variant="secondary", href=setup_url, classes="row-link",
+                                attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
+                            {% elif status.state == TargetSourceState.IMPORT_COVERED %}
+                                {{ button(_("Set up") , variant="secondary", href=setup_url, classes="row-link",
+                                attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
+                            {% else %}
+                                {{ button(_("Set up") , variant="primary", href=setup_url, classes="row-link",
+                                attrs='hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>
