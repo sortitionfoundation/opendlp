@@ -702,10 +702,13 @@ def delete_targets_for_assembly(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
+    force_unlink: bool = False,
 ) -> int:
     """Delete all target categories for an assembly.
 
-    Returns the number of categories deleted.
+    Returns the number of categories deleted. When any category has fields
+    feeding it, raises :class:`TargetLinkedError` naming them all, unless
+    ``force_unlink`` is passed - the same confirmation deleting one category asks for.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -723,6 +726,14 @@ def delete_targets_for_assembly(
             required_role="assembly-manager or admin",
         )
 
+    if not force_unlink:
+        blocks = [
+            _linked_block(category, LinkAction.DELETE, linked)
+            for category in uow.target_categories.get_by_assembly_id(assembly_id)
+            if (linked := fields_linked_to_category(uow, category))
+        ]
+        if blocks:
+            raise TargetLinkedError(blocks)
     release_links_before_deleting_all(uow, assembly_id)
     return uow.target_categories.delete_all_for_assembly(assembly_id)
 

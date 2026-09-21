@@ -1624,7 +1624,9 @@ class TestDeletingEveryTargetKeepsLinksHonest:
         question_id, derived_id = self._seed_linked(postgres_session_factory, test_assembly)
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
-            deleted = target_service.delete_targets_for_assembly(uow, admin_user.id, test_assembly.id)
+            deleted = target_service.delete_targets_for_assembly(
+                uow, admin_user.id, test_assembly.id, force_unlink=True
+            )
 
         assert deleted == 2
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
