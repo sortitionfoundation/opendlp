@@ -189,7 +189,10 @@ def _get_category(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, category_id: 
         raise NotFoundError(f"Target category {category_id} not found")
     if not category.values:
         raise FieldDefinitionConflictError(
-            _l("Target '%(name)s' has no values yet — add its values before wiring a data source", name=category.name)
+            _l(
+                "Target '%(name)s' has no values yet — add its values before setting up a data source",
+                name=category.name,
+            )
         )
     return category
 

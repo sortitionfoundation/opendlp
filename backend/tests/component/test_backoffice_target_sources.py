@@ -294,7 +294,7 @@ class TestSetupModal:
         assert "Set up data source for Gender" in body
         assert "How is the data collected?" in body
         assert re.search(r'<select\s+name="method"', body)
-        assert re.search(r'<option value="" selected>\s*Select one', body)
+        assert re.search(r'<option value="" selected>\s*Choose one', body)
         for label in ("Exact copy", "Age ranges", "Map more options to fewer", "Map postcode to value"):
             assert label in body
         # Nothing else is asked until a method is chosen
@@ -476,7 +476,7 @@ class TestErrorsShownToTheOrganiser:
         body = response.get_data(as_text=True)
 
         assert response.status_code == 422
-        assert re.search(r'role="alert".*?Field not found', body, re.DOTALL)
+        assert re.search(r'role="alert".*?Question not found', body, re.DOTALL)
         assert str(missing) not in body
         assert str(existing_assembly.id) not in re.search(r'role="alert".*?</div>', body, re.DOTALL).group(0)
 
@@ -505,7 +505,7 @@ class TestErrorsShownToTheOrganiser:
             data={"field_id": str(missing)},
         )
 
-        assert _flashes(logged_in_admin) == ["Field not found"]
+        assert _flashes(logged_in_admin) == ["Question not found"]
 
     def test_recomputing_a_target_with_nothing_linked_says_so(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])

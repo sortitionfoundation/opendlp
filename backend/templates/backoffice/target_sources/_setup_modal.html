@@ -50,7 +50,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                         {{ alert(setup["error"], variant="error") }}
                     {% endif %}
                     <div class="mb-4">
-                        {% set method_options = [{"value": "", "label": _("Select one")}] + setup["method_options"] %}
+                        {% set method_options = [{"value": "", "label": _("Choose one")}] + setup["method_options"] %}
                         {{ select("method",
                         label=_("How is the data collected?"),
                         options=method_options,
@@ -86,7 +86,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                        full option list belongs in the registration questions step. #}
                         <div class="mb-4">
                             {% if setup["candidates"] %}
-                                {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
+                                {% set source_options = [{"value": "", "label": _("Choose one")}] %}
                                 {# The append's result goes to a throwaway name: `set _ = ...` would
                                    shadow gettext's _. #}
                                 {% for candidate in setup["candidates"] %}
@@ -129,7 +129,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                         </fieldset>
                         {% if values["source_mode"] == "reuse" %}
                             <div class="mb-4">
-                                {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
+                                {% set source_options = [{"value": "", "label": _("Choose one")}] %}
                                 {% for candidate in setup["candidates"] %}
                                     {% set _appended = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
                                 {% endfor %}

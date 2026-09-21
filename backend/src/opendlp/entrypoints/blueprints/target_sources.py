@@ -606,7 +606,7 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         return _setup_error_response(assembly_id, category_id, values, e.user_msg())
     except FieldDefinitionNotFoundError:
         # The message names internal ids - show a generic one.
-        return _setup_error_response(assembly_id, category_id, values, _("Field not found"))
+        return _setup_error_response(assembly_id, category_id, values, _("Question not found"))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
     except NotFoundError:
@@ -647,7 +647,7 @@ def adopt_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturn
         return redirect(_sources_url(assembly_id))
     except (ValueError, FieldDefinitionNotFoundError):
         # A malformed id, or one the service does not know; its message names internal ids.
-        flash(_("Field not found"), "error")
+        flash(_("Question not found"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
@@ -759,7 +759,7 @@ def _render_upload_modal(
 ) -> ResponseReturnValue:
     source_status = _status_for(page_ctx["statuses"], category_id)
     if source_status is None or source_status.field is None or not source_status.field.is_derived:
-        flash(_("No lookup-table field is linked to this target"), "error")
+        flash(_("No question with a lookup table is linked to this target"), "error")
         return redirect(_sources_url(assembly_id))
     modal_ctx = {
         "mode": "upload",
@@ -855,7 +855,7 @@ def upload_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     except FieldDefinitionNotFoundError:
         # The message names internal ids - show a generic one.
         return _upload_modal_response(
-            assembly_id, category_id, error=_("Field not found"), status=422, setup_step=setup_step
+            assembly_id, category_id, error=_("Question not found"), status=422, setup_step=setup_step
         )
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
