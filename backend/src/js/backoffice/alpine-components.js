@@ -9,7 +9,7 @@ import { bulkTargetsValueRow } from "../components/bulk-targets-value-row.js";
 import { dialogLeaveGuard } from "../components/dialog-leave-guard.js";
 import { modal } from "../components/modal.js";
 import { registrationPageRow } from "../components/registration-page-row.js";
-import { rowActionsMenu } from "../components/row-actions-menu.js";
+import { menuButton } from "../components/menu-button.js";
 import {
   buttonLoadingDemo,
   progressModalDemo,
@@ -38,7 +38,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("modal", modal);
   Alpine.data("progressModalDemo", progressModalDemo);
   Alpine.data("registrationPageRow", registrationPageRow);
-  Alpine.data("rowActionsMenu", rowActionsMenu);
+  Alpine.data("menuButton", menuButton);
   Alpine.data("showcaseNav", showcaseNav);
   Alpine.data("tabsKeyboard", tabsKeyboard);
   Alpine.data("targetsPage", targetsPage);

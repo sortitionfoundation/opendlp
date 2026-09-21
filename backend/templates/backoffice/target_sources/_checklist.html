@@ -78,7 +78,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                     </form>
                                 {% endif %}
                                 {# The less common row actions, behind a "more" menu mixing link and submit
-                                   items. rowActionsMenu makes it a WAI-ARIA menu button: opening moves focus
+                                   items. menuButton makes it a WAI-ARIA menu button: opening moves focus
                                    to the first item, the arrow keys, Home and End move between items (each
                                    is tabindex="-1", so the menu is one Tab stop), and tabbing out closes
                                    it. Escape is bound on this element, not window, so it closes
@@ -86,7 +86,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                    inner span); data-confirm does not depend on that, as it looks up from
                                    the click target to the enclosing button. #}
                                 <div class="row-link-menu inline-flex"
-                                     x-data="rowActionsMenu"
+                                     x-data="menuButton"
                                      x-bind:class="open ? 'is-open' : ''"
                                      @keydown.escape="closeOnEscape"
                                      @focusout="closeOnFocusOut">

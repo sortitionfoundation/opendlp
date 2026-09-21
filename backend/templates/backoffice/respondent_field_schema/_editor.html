@@ -100,14 +100,14 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                                        without `set _ = list.append(...)`, which would shadow gettext here. #}
                                     {% set move_directions = ([("up", _("Move up"))] if not loop.first else []) + ([("down", _("Move down"))] if not loop.last else []) %}
                                     {# Less common actions behind a "more" menu - see the ROW LINK notes in
-                                       main.css. rowActionsMenu makes it a WAI-ARIA menu button: arrow keys move
+                                       main.css. menuButton makes it a WAI-ARIA menu button: arrow keys move
                                        between the items, which are tabindex="-1" so the menu is one Tab stop.
                                        Escape is bound on this element, not window, so it closes
                                        only the menu and not the step dialog around it. A built-in question
                                        alone in its section has nothing to put there: no menu. #}
                                     {% if move_directions or not field.is_fixed %}
                                         <div class="row-link-menu inline-flex"
-                                             x-data="rowActionsMenu"
+                                             x-data="menuButton"
                                              x-bind:class="open ? 'is-open' : ''"
                                              @keydown.escape="closeOnEscape"
                                              @focusout="closeOnFocusOut">
