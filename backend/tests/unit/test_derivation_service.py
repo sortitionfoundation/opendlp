@@ -143,6 +143,7 @@ class TestCreateDerivedField:
         assert report.changed == 2
         assert report.fell_back == 1
         assert "not a date" in report.unmatched_sample
+        assert report.fallback == "UNKNOWN"
 
     def test_requires_manage_permission(self, uow):
         _, assembly = _seed(uow)

@@ -1314,6 +1314,20 @@ class TestMappingUpload:
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
 
+    def test_the_report_names_the_rules_own_fallback_and_sample_size(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category, field = self._linked_large_mapping(fake_store, existing_assembly)
+        field.derivation_config = {"fallback": "Elsewhere"}
+        field.options = [ChoiceOption(value="North"), ChoiceOption(value="South"), ChoiceOption(value="Elsewhere")]
+        _seed_respondents(fake_store, existing_assembly, [{"Postcode": "ZZ9 9ZZ"}])
+
+        body = self._upload(logged_in_admin, existing_assembly, category).get_data(as_text=True)
+
+        assert "Fell back to Elsewhere:" in body
+        assert "UNKNOWN" not in body
+        assert f"(up to {derivation_service.UNMATCHED_SAMPLE_SIZE} shown)" in body
+
     @pytest.mark.parametrize(
         ("rows", "expected"),
         [(b"SW1A 1AA,North\n", "1 lookup row"), (b"SW1A 1AA,North\nEH1 1AA,South\n", "2 lookup rows")],

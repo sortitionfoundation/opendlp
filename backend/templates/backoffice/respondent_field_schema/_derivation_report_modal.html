@@ -65,12 +65,12 @@ ABOUTME: Shown in the target data sources dialog after an upload or recompute; D
                     <dd class="text-body-md">{{ report.changed }}</dd>
                 </div>
                 <div class="flex gap-2">
-                    <dt class="text-label-lg">{{ _("Fell back to UNKNOWN:") }}</dt>
+                    <dt class="text-label-lg">{{ _("Fell back to %(fallback)s:", fallback=report.fallback) }}</dt>
                     <dd class="text-body-md">{{ report.fell_back }}</dd>
                 </div>
             </dl>
             {% if report.unmatched_sample %}
-                <p class="text-body-sm mb-1">{{ _("Source values that didn't match anything (up to %(limit)d shown):", limit=20) }}</p>
+                <p class="text-body-sm mb-1">{{ _("Source values that didn't match anything (up to %(limit)d shown):", limit=report_ctx["sample_size"]) }}</p>
                 <ul class="mb-4 pl-4" style="list-style: disc;">
                     {% for value in report.unmatched_sample %}<li class="text-body-sm">{{ value }}</li>{% endfor %}
                 </ul>

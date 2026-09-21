@@ -36,6 +36,7 @@ from opendlp.service_layer.assembly_service import (
     get_tab_enabled_states,
 )
 from opendlp.service_layer.derivation_service import (
+    UNMATCHED_SAMPLE_SIZE,
     MappingUploadReport,
     RecomputeReport,
     recompute_derived_field,
@@ -367,6 +368,7 @@ def _report_response(
         "title": title,
         "upload_report": upload_report,
         "close_url": _sources_url(assembly_id),
+        "sample_size": UNMATCHED_SAMPLE_SIZE,
     }
     if _is_htmx():
         report_html = render_template(
@@ -389,7 +391,7 @@ def _recompute_toast(report: RecomputeReport, message: str) -> tuple[str, str]:
             _(
                 "%(count)d fell back to %(fallback)s because their answer matched no target value.",
                 count=report.fell_back,
-                fallback=DEFAULT_FALLBACK,
+                fallback=report.fallback,
             )
         )
         if report.unmatched_sample:

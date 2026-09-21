@@ -19,6 +19,7 @@ from itertools import islice
 from typing import Any
 
 from opendlp.domain.respondent_derivation import (
+    DEFAULT_FALLBACK,
     AgeBracketRule,
     DerivationRule,
     LargeMappingRule,
@@ -81,6 +82,7 @@ class RecomputeReport:
     fell_back: int
     unmatched_sample: list[str] = dataclass_field(default_factory=list)
     completed_selection_runs: int = 0
+    fallback: str = DEFAULT_FALLBACK
 
 
 @dataclass(frozen=True)
@@ -502,6 +504,7 @@ def _recompute(
         fell_back=fell_back,
         unmatched_sample=unmatched,
         completed_selection_runs=completed_runs,
+        fallback=rule.fallback,
     )
 
 
