@@ -29,7 +29,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
     normalise_field_key,
 )
-from opendlp.entrypoints.blueprints.backoffice_registration import registration_hub_context
+from opendlp.entrypoints.registration_hub import registration_hub_context
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     determine_data_source,

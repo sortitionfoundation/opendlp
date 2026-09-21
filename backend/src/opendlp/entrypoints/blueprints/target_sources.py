@@ -22,12 +22,12 @@ from opendlp.domain.respondent_field_schema import (
     TargetLinkedFieldError,
     humanise_field_key,
 )
-from opendlp.entrypoints.blueprints.backoffice_registration import registration_hub_context
 from opendlp.entrypoints.derivation_form_parser import (
     age_prefill_from_target,
     parse_age_rule,
     parse_small_mapping_rule,
 )
+from opendlp.entrypoints.registration_hub import registration_hub_context
 from opendlp.service_layer.assembly_service import (
     determine_data_source,
     get_assembly_gsheet,
