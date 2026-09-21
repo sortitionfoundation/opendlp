@@ -8,6 +8,7 @@ import pytest
 from jinja2 import UndefinedError
 from jinja2.exceptions import SecurityError
 
+from opendlp.domain import registration_page as registration_page_module
 from opendlp.domain.registration_page import (
     DEFAULT_THANK_YOU_HTML,
     REQUIRED_TOKENS,
@@ -1418,6 +1419,20 @@ class TestGenerateStarterFormHtml:
 
         for part in ("day", "month", "year"):
             assert f"value=\"{{{{ value('date_of_birth-{part}') }}}}\" required>" in html
+
+    @pytest.mark.parametrize("generate", [generate_starter_form_html, generate_starter_form_html_govuk])
+    def test_date_part_labels_are_translated_and_escaped(self, generate, monkeypatch):
+        """They are words on the organiser's form, so they come in the organiser's language."""
+        translated = {"Day": "Nap", "Month": "Hónap", "Year": "<Év>"}
+        monkeypatch.setattr(registration_page_module, "_", lambda message: translated[message])
+        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+
+        html = generate(fields)
+
+        assert "Nap" in html
+        assert "Hónap" in html
+        assert "&lt;Év&gt;" in html
+        assert ">Day" not in html
 
     def test_date_field_hint_describes_the_fieldset(self):
         fields = [

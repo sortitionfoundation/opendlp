@@ -22,6 +22,7 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldGroup,
 )
 from opendlp.domain.validators import InvalidSlug, SlugError, UrlSlugValidator
+from opendlp.translations import gettext as _
 
 _SANDBOX_ENV = SandboxedEnvironment(autoescape=True, undefined=StrictUndefined)
 
@@ -499,6 +500,21 @@ def _render_checkbox(field: RespondentFieldDefinition, required_attr: str) -> li
     return parts
 
 
+def _date_parts() -> list[tuple[str, str, str]]:
+    """The day, month and year inputs: name suffix, width, and escaped label.
+
+    The labels are translated when the starter form is generated, into the
+    organiser's language - the same language as the question labels they sit
+    beside, which the organiser typed. The generated HTML is theirs to edit
+    from then on, so it carries the words, not a lookup.
+    """
+    return [
+        ("day", "2", html_lib.escape(_("Day"))),
+        ("month", "2", html_lib.escape(_("Month"))),
+        ("year", "4", html_lib.escape(_("Year"))),
+    ]
+
+
 def _render_date(field: RespondentFieldDefinition, required_attr: str) -> list[str]:
     """Day/month/year inputs in one flex row — the shape _date_form_value assembles.
 
@@ -512,7 +528,7 @@ def _render_date(field: RespondentFieldDefinition, required_attr: str) -> list[s
     if hint_html:
         parts.append(hint_html)
     parts.append('<div style="display: flex; gap: 0.5em;">')
-    for suffix, size, label in (("day", "2", "Day"), ("month", "2", "Month"), ("year", "4", "Year")):
+    for suffix, size, label in _date_parts():
         value_expr = _jinja_call("value", f"{field.field_key}-{suffix}")
         parts.append(
             f"<label>{label} "
@@ -614,7 +630,7 @@ def _render_date_govuk(field: RespondentFieldDefinition, required_attr: str) -> 
     if hint_html:
         parts.append(hint_html)
     parts.append(f'<div class="govuk-date-input" id="{key}">')
-    for suffix, width, label in (("day", "2", "Day"), ("month", "2", "Month"), ("year", "4", "Year")):
+    for suffix, width, label in _date_parts():
         item_id = f"{key}-{suffix}"
         value_expr = _jinja_call("value", f"{field.field_key}-{suffix}")
         parts.append('<div class="govuk-date-input__item">')
