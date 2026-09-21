@@ -1005,35 +1005,39 @@
         text-align: left;
     }
 
-    .question-table th {
+    .question-table thead th {
         padding: 0 8px 8px;
         font: 600 0.75rem/1rem var(--font-body);
         letter-spacing: 0.4px;
         color: var(--color-headings);
     }
 
-    .question-table td {
+    /* Each row's question cell is its row header (th scope="row"), styled as a
+       plain cell - a header for screen readers, not a heading to look at. */
+    .question-table td,
+    .question-table tbody th {
         padding: 10px 8px;
         vertical-align: middle;
         overflow-wrap: anywhere;
+        font-weight: inherit;
     }
 
-    .question-table tbody tr:nth-child(odd) > td {
+    .question-table tbody tr:nth-child(odd) > :is(td, th) {
         background-color: var(--color-table-row-alt);
     }
 
     /* Hovering a row outlines it, as the set-up step cards do; the zebra
        background stays so the row doesn't blend into its neighbours. A table
        row takes no border of its own, so the cells draw the outline. */
-    .question-row:has(.row-link:hover) > td {
+    .question-row:has(.row-link:hover) > :is(td, th) {
         box-shadow: inset 0 1px 0 var(--color-primary-action), inset 0 -1px 0 var(--color-primary-action);
     }
 
-    .question-row:has(.row-link:hover) > td:first-child {
+    .question-row:has(.row-link:hover) > :first-child {
         box-shadow: inset 1px 1px 0 var(--color-primary-action), inset 0 -1px 0 var(--color-primary-action);
     }
 
-    .question-row:has(.row-link:hover) > td:last-child {
+    .question-row:has(.row-link:hover) > :last-child {
         box-shadow: inset -1px 1px 0 var(--color-primary-action), inset 0 -1px 0 var(--color-primary-action);
     }
 

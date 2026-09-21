@@ -124,6 +124,18 @@ class TestQuestionsList:
                 f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{field.id}/edit-modal"
             ]
 
+    def test_each_rows_question_is_its_row_header(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """A screen reader names the question when reading any other cell in its row."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        rows = self._rows(self._page(logged_in_admin, existing_assembly))
+
+        assert rows
+        for field_key, row in rows.items():
+            header = re.search(r'<th scope="row">(.*?)</th>', row, re.DOTALL)
+            assert header is not None
+            assert f">{field_key}</code>" in header.group(1)
+
     def test_every_section_has_its_own_add_button_even_when_empty(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
