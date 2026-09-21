@@ -87,8 +87,10 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                         <div class="mb-4">
                             {% if setup["candidates"] %}
                                 {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
+                                {# The append's result goes to a throwaway name: `set _ = ...` would
+                                   shadow gettext's _. #}
                                 {% for candidate in setup["candidates"] %}
-                                    {% set _ = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
+                                    {% set _appended = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
                                 {% endfor %}
                                 <input type="hidden" name="source_mode" value="reuse">
                                 {{ select("reuse_field_id",
@@ -129,7 +131,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                             <div class="mb-4">
                                 {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
                                 {% for candidate in setup["candidates"] %}
-                                    {% set _ = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
+                                    {% set _appended = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
                                 {% endfor %}
                                 {{ select("reuse_field_id",
                                 label=_("Existing question"),
@@ -233,7 +235,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                                     <span aria-hidden="true">→</span>
                                     {% set map_options = [{"value": "", "label": _("(fall back to %(fallback)s)", fallback=setup["fallback"])}] %}
                                     {% for target_value in target["values"] %}
-                                        {% set _ = map_options.append({"value": target_value, "label": target_value}) %}
+                                        {% set _appended = map_options.append({"value": target_value, "label": target_value}) %}
                                     {% endfor %}
                                     <div class="flex-1">
                                         {{ select("map_target",
