@@ -372,7 +372,6 @@ def _new_modal_ctx(
 ) -> dict[str, Any]:
     # No Derived option here: a derived field feeds a target, so it is created
     # (and edited) on the target data sources step, never from this modal.
-    choice_candidate_key = _choice_candidate_key(values) if values["type_choice"] == "choice" else ""
     return {
         "mode": "new",
         "field": None,
@@ -385,8 +384,6 @@ def _new_modal_ctx(
         "type_locked": False,
         "target_locked": False,
         "linked_target_name": "",
-        "choice_candidate_key": choice_candidate_key,
-        "choice_target": _matching_choice_target(uow, assembly_id, choice_candidate_key),
         "error": error,
         "values": _normalise_modal_values(values),
     }
@@ -400,10 +397,6 @@ def _edit_modal_ctx(
     error: str = "",
 ) -> dict[str, Any]:
     target_locked = field.target_category_id is not None and not field.is_fixed and not field.is_derived
-    offers_choice = (
-        values["type_choice"] == "choice" and not field.is_fixed and not field.is_derived and not target_locked
-    )
-    choice_candidate_key = _choice_candidate_key(values, field) if offers_choice else ""
     return {
         "mode": "edit",
         "field": field,
@@ -416,8 +409,6 @@ def _edit_modal_ctx(
         "type_locked": field.is_fixed,
         "target_locked": target_locked,
         "linked_target_name": _linked_target_name(uow, field),
-        "choice_candidate_key": choice_candidate_key,
-        "choice_target": _matching_choice_target(uow, assembly_id, choice_candidate_key),
         "error": error,
         "values": _normalise_modal_values(values),
     }
@@ -446,50 +437,6 @@ def _apply_option_action(values: dict[str, Any], form_action: str) -> dict[str, 
             return values
         if 0 <= index < len(values["options"]):
             values["options"].pop(index)
-    return values
-
-
-def _choice_candidate_key(values: dict[str, Any], field: RespondentFieldDefinition | None = None) -> str:
-    """The field key this choice field will carry — what a target's name has to match."""
-    if field is not None:
-        return field.field_key
-    return normalise_field_key(values["field_key"] or values["label"])
-
-
-def _matching_choice_target(
-    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, candidate_key: str
-) -> dict[str, Any] | None:
-    """The target category whose name matches the field key, for the copy-options button.
-
-    Case-insensitive exact name match — the same join the field spec and
-    selection use, so a copy also means the field will actually feed the target.
-    """
-    if not candidate_key:
-        return None
-    # Checks who is asking: a target's name and values are the assembly's own.
-    get_assembly_with_permissions(uow, assembly_id, current_user.id)
-    for category in uow.target_categories.get_by_assembly_id(assembly_id):
-        if category.name.lower() == candidate_key.lower():
-            return {"name": category.name, "values": [v.value for v in category.values]}
-    return None
-
-
-def _copy_target_options(
-    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, values: dict[str, Any], candidate_key: str
-) -> dict[str, Any]:
-    """Replace the option rows with the matching target's values (a one-off copy, no link).
-
-    Help text already written against a matching value survives the copy;
-    without a matching target this is a no-op re-render.
-    """
-    target = _matching_choice_target(uow, assembly_id, candidate_key)
-    if target is None:
-        return values
-    existing_help = {row["value"]: row["help_text"] for row in values["options"]}
-    # A copied list is a new list: rows that keep their value are not renames, and the rest are gone.
-    values["options"] = [
-        {"value": value, "help_text": existing_help.get(value, ""), "original": ""} for value in target["values"]
-    ]
     return values
 
 
@@ -924,14 +871,10 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     values = _modal_values_from_request(request.form)
 
     if is_modal and form_action != "save":
-        # An options-editor round-trip (add/remove/copy rows) or a no-JS type
+        # An options-editor round-trip (add/remove rows) or a no-JS type
         # refresh — re-render the form with the entered values, saving nothing.
         def roundtrip(uow: AbstractUnitOfWork) -> dict[str, Any]:
-            if form_action == "copy_target_options":
-                acted_on = _copy_target_options(uow, assembly_id, values, _choice_candidate_key(values))
-            else:
-                acted_on = _apply_option_action(values, form_action)
-            return _new_modal_ctx(uow, assembly_id, acted_on)
+            return _new_modal_ctx(uow, assembly_id, _apply_option_action(values, form_action))
 
         return _modal_response(assembly_id, roundtrip)
 
@@ -962,9 +905,7 @@ def _edit_dialog(
         if field is None:
             return None
         acted_on = values
-        if form_action == "copy_target_options":
-            acted_on = _copy_target_options(uow, assembly_id, values, _choice_candidate_key(values, field))
-        elif form_action != "save":
+        if form_action != "save":
             acted_on = _apply_option_action(values, form_action)
         return _edit_modal_ctx(uow, assembly_id, field, acted_on, error=error)
 
