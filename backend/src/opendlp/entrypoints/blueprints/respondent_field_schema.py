@@ -897,7 +897,7 @@ def _try_add_field(assembly_id: uuid.UUID, add_kwargs: dict[str, Any]) -> tuple[
             if _is_htmx():
                 page_ctx = _schema_page_context(uow, assembly_id)
     except FieldDefinitionConflictError as e:
-        return {}, str(e)
+        return {}, e.user_msg()
     except InsufficientPermissions:
         return {}, _("You don't have permission to edit the schema")
     except NotFoundError:
@@ -1101,7 +1101,7 @@ def _try_update_field(
             if _is_htmx() and not attempt.error:
                 attempt.page_ctx = _schema_page_context(uow, assembly_id)
     except FieldDefinitionConflictError as e:
-        attempt.error = str(e)
+        attempt.error = e.user_msg()
     except FieldDefinitionNotFoundError:
         # The message may carry internal detail — show a generic one.
         attempt.error = _("Field not found")
@@ -1157,7 +1157,7 @@ def add_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetu
             add_choice_option(uow, current_user.id, assembly_id, field_id, value, help_text)
         flash(_("Option added"), "success")
     except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
+        flash(e.user_msg(), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Field not found"), "error")
     except InsufficientPermissions:
@@ -1198,7 +1198,7 @@ def update_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
             )
         flash(_("Option updated"), "success")
     except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
+        flash(e.user_msg(), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Option not found"), "error")
     except InsufficientPermissions:
@@ -1226,7 +1226,7 @@ def remove_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
             remove_choice_option(uow, current_user.id, assembly_id, field_id, value)
         flash(_("Option removed"), "success")
     except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
+        flash(e.user_msg(), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Option not found"), "error")
     except InsufficientPermissions:
@@ -1299,7 +1299,7 @@ def delete_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
             delete_field(uow, current_user.id, assembly_id, field_id)
         flash(_("Question removed"), "success")
     except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
+        flash(e.user_msg(), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Field not found"), "error")
     except InsufficientPermissions:
