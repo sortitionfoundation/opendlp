@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the backoffice respondents blueprint over a FakeUnitOfWork
 # ABOUTME: Drives the real respondents Flask routes + services against a seeded fake store, no PostgreSQL
 
+import re
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from io import BytesIO
@@ -307,6 +308,17 @@ class TestUploadDiffConfirmation:
         assert "<code>person_ref</code>" in body
         assert "&lt;code&gt;" not in body
 
+    def test_the_warnings_are_styled_tags(self, logged_in_admin: FlaskClient, existing_assembly: Assembly) -> None:
+        """The backoffice does not load the GOV.UK stylesheet, so a govuk-tag would render as bare text."""
+        _upload(logged_in_admin, existing_assembly.id, "external_id,first_name\nR001,Alice\n")
+        _upload(logged_in_admin, existing_assembly.id, "person_ref,first_name\nP001,Bob\n", id_column="person_ref")
+
+        body = self._confirm_diff_page(logged_in_admin, existing_assembly.id)
+
+        assert "govuk-tag" not in body
+        assert re.search(r"var\(--color-warning-background\)[^>]*>ID column changed</strong>", body)
+        assert re.search(r"var\(--color-error-background\)[^>]*>Destructive action</strong>", body)
+
     def test_id_column_change_escapes_the_column_names(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
@@ -490,7 +502,8 @@ class TestBackofficeViewSingleRespondent:
         assert response.status_code == 200
         body = response.data
         assert b"R001" in body
-        assert b"govuk-tag" in body
+        assert b"background-color: var(--color-subtle-background-panels)" in body
+        assert b">Pool</strong>" in body
         assert b"Name and contact" in body
         assert b"About you" in body
         assert b"Address" in body

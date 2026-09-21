@@ -4,6 +4,7 @@ ABOUTME: Lists added / absent columns and id-column changes; user confirms or ca
 #}
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/tag.html" import tag %}
 
 {% block title %}{{ _("Confirm upload") }} - {{ assembly.title }}{% endblock %}
 
@@ -21,7 +22,7 @@ ABOUTME: Lists added / absent columns and id-column changes; user confirms or ca
 
     {% if diff.id_column_changed %}
         <section class="mb-6">
-            <strong class="govuk-tag govuk-tag--yellow">{{ _("ID column changed") }}</strong>
+            {{ tag(_("ID column changed"), colour="yellow") }}
             {# The <code> wrappers are built as block-set markup so the column names,
                which come from the uploaded CSV, are still escaped. #}
             {% set old_id_column %}<code>{{ diff.id_column_changed[0] }}</code>{% endset %}
@@ -86,7 +87,7 @@ ABOUTME: Lists added / absent columns and id-column changes; user confirms or ca
     {% endif %}
 
     <section class="mb-8">
-        <strong class="govuk-tag govuk-tag--red">{{ _("Destructive action") }}</strong>
+        {{ tag(_("Destructive action"), colour="red") }}
         <p class="text-body-md mt-2">
             {{ _("Confirming will replace all existing respondents for this assembly with the contents of the new CSV. This cannot be undone.") }}
         </p>
