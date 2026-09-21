@@ -21,6 +21,7 @@ from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import target_csv_import, target_service
 from opendlp.service_layer.exceptions import FieldDefinitionConflictError, InsufficientPermissions
 from opendlp.service_layer.target_service import (
+    LinkAction,
     TargetCategoryEdit,
     TargetLinkedError,
     TargetValueEdit,
@@ -208,7 +209,7 @@ class TestTargetLinkedGuards:
             target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="Sex")
 
         (block,) = excinfo.value.blocks
-        assert block.action == "rename"
+        assert block.action == LinkAction.RENAME
         assert block.category_name == "Gender"
         assert block.field_labels == ["Gender"]
         assert category.name == "Gender"
@@ -236,7 +237,7 @@ class TestTargetLinkedGuards:
 
         with pytest.raises(TargetLinkedError) as excinfo:
             target_service.delete_target_category(uow, admin.id, assembly.id, category.id)
-        assert excinfo.value.blocks[0].action == "delete"
+        assert excinfo.value.blocks[0].action == LinkAction.DELETE
 
         target_service.delete_target_category(uow, admin.id, assembly.id, category.id, force_unlink=True)
 
@@ -391,4 +392,4 @@ class TestTargetLinkedGuards:
             target_service.save_all_targets(uow, admin.id, assembly.id, edits)
 
         actions = {block.category_name: block.action for block in excinfo.value.blocks}
-        assert actions == {"Gender": "rename", "Region": "delete"}
+        assert actions == {"Gender": LinkAction.RENAME, "Region": LinkAction.DELETE}

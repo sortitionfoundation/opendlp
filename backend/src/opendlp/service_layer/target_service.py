@@ -5,6 +5,7 @@ import uuid
 from collections.abc import Collection
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from enum import Enum
 from typing import Any, cast
 
 from sortition_algorithms.adapters import SelectionData
@@ -111,6 +112,13 @@ class TargetEditError:
     field: str = ""
 
 
+class LinkAction(Enum):
+    """What is happening to a target category that fields feed."""
+
+    RENAME = "rename"
+    DELETE = "delete"
+
+
 @dataclass(frozen=True)
 class LinkedFieldBlock:
     """One category whose rename or delete is held up by the fields feeding it.
@@ -122,7 +130,7 @@ class LinkedFieldBlock:
 
     category_id: uuid.UUID
     category_name: str
-    action: str  # "rename" or "delete"
+    action: LinkAction
     field_labels: list[str]
     deleted_labels: list[str] = field(default_factory=list)
 
@@ -211,7 +219,7 @@ def relink_fields(held: dict[str, list[Any]], category: TargetCategory) -> None:
         field_def.updated_at = now
 
 
-def _linked_block(category: TargetCategory, action: str, linked: list[Any]) -> LinkedFieldBlock:
+def _linked_block(category: TargetCategory, action: LinkAction, linked: list[Any]) -> LinkedFieldBlock:
     return LinkedFieldBlock(
         category_id=category.id,
         category_name=category.name,
@@ -221,14 +229,14 @@ def _linked_block(category: TargetCategory, action: str, linked: list[Any]) -> L
     )
 
 
-def _needs_confirmation(action: str, linked: list[Any]) -> bool:
+def _needs_confirmation(action: LinkAction, linked: list[Any]) -> bool:
     """Whether this rename or delete has a consequence worth stopping for.
 
     A rename carries its derived fields along, so only the questions that would
     be unlinked are worth asking about; a delete takes the derived fields with
     it, which always is.
     """
-    if action == "delete":
+    if action == LinkAction.DELETE:
         return bool(linked)
     return any(not field_def.is_derived for field_def in linked)
 
@@ -414,8 +422,8 @@ def update_target_category(
 
     if name.strip() != category.name:
         linked = fields_linked_to_category(uow, category)
-        if _needs_confirmation("rename", linked) and not force_unlink:
-            raise TargetLinkedError([_linked_block(category, "rename", linked)])
+        if _needs_confirmation(LinkAction.RENAME, linked) and not force_unlink:
+            raise TargetLinkedError([_linked_block(category, LinkAction.RENAME, linked)])
         if linked:
             _break_links(uow, category, new_name=name.strip())
 
@@ -462,7 +470,7 @@ def delete_target_category(
 
     linked = fields_linked_to_category(uow, category)
     if linked and not force_unlink:
-        raise TargetLinkedError([_linked_block(category, "delete", linked)])
+        raise TargetLinkedError([_linked_block(category, LinkAction.DELETE, linked)])
     if linked:
         _break_links(uow, category)
 
@@ -859,9 +867,9 @@ def _guard_linked_categories(
             continue
         category = _get_category(uow, assembly_id, category_edit.category_id)
         if category_edit.deleted:
-            action = "delete"
+            action = LinkAction.DELETE
         elif category_edit.name.strip() != category.name:
-            action = "rename"
+            action = LinkAction.RENAME
         else:
             continue
         linked = fields_linked_to_category(uow, category)
@@ -869,7 +877,7 @@ def _guard_linked_categories(
             continue
         if _needs_confirmation(action, linked):
             blocks.append(_linked_block(category, action, linked))
-        to_break.append((category, "" if action == "delete" else category_edit.name.strip()))
+        to_break.append((category, "" if action == LinkAction.DELETE else category_edit.name.strip()))
     if blocks and not force_unlink:
         raise TargetLinkedError(blocks)
     for category, new_name in to_break:

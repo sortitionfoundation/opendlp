@@ -25,7 +25,7 @@ ABOUTME: Confirming resubmits the identical form data with force_unlink=1; cance
             {% for block in blocks %}
                 {% if block.field_labels %}
                     <li class="text-body-md mb-2">
-                        {% if block.action == "delete" %}
+                        {% if block.action.value == "delete" %}
                             {{ _("Deleting the target \"%(name)s\" unlinks: %(fields)s", name=block.category_name, fields=block.field_labels | join(", ")) }}
                         {% else %}
                             {{ _("Renaming the target \"%(name)s\" unlinks: %(fields)s", name=block.category_name, fields=block.field_labels | join(", ")) }}
