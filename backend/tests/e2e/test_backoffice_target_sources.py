@@ -4,9 +4,9 @@ ABOUTME: Behavioural coverage (validation, render, transitions) lives in tests/c
 import io
 from datetime import UTC, datetime
 
-from opendlp.domain.respondent_field_schema import FieldType
+from opendlp.domain.respondent_field_schema import ChoiceOption, FieldType
 from opendlp.domain.targets import TargetCategory, TargetValue
-from opendlp.service_layer import respondent_field_schema_service
+from opendlp.service_layer import respondent_field_schema_service, target_service
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
@@ -83,6 +83,78 @@ class TestConfigureAgeBrackets:
         assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40+", "UNKNOWN"]
 
 
+def _csrf(client, assembly):
+    return get_csrf_token(client, f"/backoffice/assembly/{assembly.id}/target-sources")
+
+
+class TestPagesRender:
+    def test_the_checklist_and_set_up_dialog_render(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            category_id = _add_target(uow, existing_assembly, "Region", ["North", "South"])
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+        page = logged_in_admin.get(base)
+        dialog = logged_in_admin.get(f"{base}/{category_id}/setup-modal", headers={"HX-Request": "true"})
+
+        assert page.status_code == 200
+        assert b"Region" in page.data
+        assert dialog.status_code == 200
+        assert b"Set up data source for Region" in dialog.data
+
+
+class TestExactCopyLifecycle:
+    def test_adopt_resync_then_unlink(self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory):
+        """Link a name-matched question, follow a new target value, then let the question go."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            question = respondent_field_schema_service.add_field(
+                uow,
+                admin_user.id,
+                existing_assembly.id,
+                field_key="Tenure",
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Own"), ChoiceOption(value="Rent")],
+            )
+            category_id = _add_target(uow, existing_assembly, "Tenure", ["Own", "Rent"])
+        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+
+        adopt = logged_in_admin.post(
+            f"{base}/{category_id}/adopt",
+            data={"field_id": str(question.id), "csrf_token": _csrf(logged_in_admin, existing_assembly)},
+            headers={"HX-Request": "true"},
+        )
+        assert adopt.status_code == 200
+        assert _field(postgres_session_factory, admin_user, existing_assembly, "Tenure").target_category_id == (
+            category_id
+        )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            target_service.add_target_value(
+                uow, admin_user.id, existing_assembly.id, category_id, "Other", min_count=0, max_count=5
+            )
+            uow.commit()
+        resync = logged_in_admin.post(
+            f"{base}/{category_id}/resync",
+            data={"csrf_token": _csrf(logged_in_admin, existing_assembly)},
+            headers={"HX-Request": "true"},
+        )
+        assert resync.status_code == 200
+        field = _field(postgres_session_factory, admin_user, existing_assembly, "Tenure")
+        assert [o.value for o in field.options] == ["Own", "Rent", "Other"]
+
+        unlink = logged_in_admin.post(
+            f"{base}/{category_id}/unlink",
+            data={"csrf_token": _csrf(logged_in_admin, existing_assembly)},
+            headers={"HX-Request": "true"},
+        )
+        assert unlink.status_code == 200
+        field = _field(postgres_session_factory, admin_user, existing_assembly, "Tenure")
+        assert field.target_category_id is None
+
+
 class TestLookupTable:
     def test_set_up_then_upload_round_trip(
         self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
@@ -125,3 +197,17 @@ class TestLookupTable:
 
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
+
+        upload_dialog = logged_in_admin.get(f"{base}/{category_id}/upload-modal", headers={"HX-Request": "true"})
+        assert upload_dialog.status_code == 200
+        assert b"Upload lookup table" in upload_dialog.data
+
+        recompute = logged_in_admin.post(
+            f"{base}/{category_id}/recompute",
+            data={"csrf_token": get_csrf_token(logged_in_admin, base)},
+            headers={"HX-Request": "true"},
+        )
+        assert recompute.status_code == 200
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            respondent = uow.respondents.get_by_external_id(existing_assembly.id, "R001")
+            assert respondent.attributes["region"] == "South"
