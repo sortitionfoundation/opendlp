@@ -655,6 +655,22 @@ class TestFieldModal:
         assert 'role="dialog"' in body
         assert "Add a question" in body
 
+    @pytest.mark.parametrize(("query", "expected"), [("", ""), ("?dirty=1", "1")])
+    def test_the_modal_carries_its_unsaved_input_flag_through_a_refresh(
+        self, query, expected, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Opened fresh it is clean; a refresh after typing comes back dirty, so closing still asks first."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal{query}", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        assert 'x-data="dialogLeaveGuard"' in body
+        assert re.search(rf'name="dirty"\s+value="{expected}"\s+x-ref="dirtyInput"', body)
+        assert len(re.findall(r'@click="guardLeave\(\$event\)"', body)) == 3
+        assert "Discard changes?" in body
+
     def test_the_modal_refresh_keeps_the_csrf_token_out_of_the_url(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):

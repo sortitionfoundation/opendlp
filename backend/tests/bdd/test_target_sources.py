@@ -237,6 +237,11 @@ def press_escape(admin_logged_in_page: Page) -> None:
     admin_logged_in_page.keyboard.press("Escape")
 
 
+@when(parsers.parse('I choose "{name}"'))
+def choose_in_leave_dialog(admin_logged_in_page: Page, name: str) -> None:
+    admin_logged_in_page.get_by_role("alertdialog").get_by_role("button", name=name, exact=True).click()
+
+
 @when(parsers.parse('I choose "{item}" from the menu and confirm'))
 def choose_menu_item_and_confirm(admin_logged_in_page: Page, item: str) -> None:
     page = admin_logged_in_page
@@ -345,6 +350,26 @@ def target_sources_still_open(admin_logged_in_page: Page) -> None:
     page = admin_logged_in_page
     expect(page.get_by_role("dialog", name="Target data sources")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     assert page.url.endswith("/target-sources")
+
+
+@then("I should be asked whether to discard my changes")
+def asked_to_discard(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.get_by_role("alertdialog", name="Discard changes?")).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+    expect(_setup_dialog(admin_logged_in_page)).to_be_visible()
+
+
+@then(parsers.parse('the set-up dialog should still have the "{method}" method chosen'))
+def setup_dialog_keeps_method(admin_logged_in_page: Page, method: str) -> None:
+    page = admin_logged_in_page
+    expect(page.get_by_role("alertdialog")).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
+    expect(_setup_dialog(page).locator('select[name="method"]')).to_have_value(method)
+
+
+@then("the set-up dialog should be closed")
+def setup_dialog_closed(admin_logged_in_page: Page) -> None:
+    expect(_setup_dialog(admin_logged_in_page)).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then("I should be asked to confirm unlinking")

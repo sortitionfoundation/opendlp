@@ -301,6 +301,22 @@ class TestSetupModal:
         assert 'name="source_mode"' not in body
         assert "Target values:" not in body
 
+    @pytest.mark.parametrize(("query", "expected"), [("", ""), ("?method=exact&dirty=1", "1")])
+    def test_the_dialog_carries_its_unsaved_input_flag_through_a_refresh(
+        self, query, expected, logged_in_admin, existing_assembly, fake_store
+    ):
+        """Opened fresh it is clean; a refresh after a choice comes back dirty, so closing still asks first."""
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+
+        body = logged_in_admin.get(self._setup_url(existing_assembly, category, query), headers=HTMX).get_data(
+            as_text=True
+        )
+
+        assert 'x-data="dialogLeaveGuard"' in body
+        assert re.search(rf'name="dirty"\s+value="{expected}"\s+x-ref="dirtyInput"', body)
+        assert len(re.findall(r'@click="guardLeave\(\$event\)"', body)) == 3
+        assert "Discard changes?" in body
+
     def test_the_refresh_keeps_the_csrf_token_out_of_the_url(self, logged_in_admin, existing_assembly, fake_store):
         """The refresh is a GET that includes the whole form; a token in a URL reaches logs and history."""
         category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])

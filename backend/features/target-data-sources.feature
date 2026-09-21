@@ -111,3 +111,21 @@ Feature: Target data sources
     Then keyboard focus should be on the method chooser in the set-up dialog
     When I press the "Save" button
     Then keyboard focus should be on the set-up button for the "Region" target
+
+  Scenario: A stray Escape does not throw away a set-up in progress
+    Given there is an assembly with respondents imported from CSV called "Leave Guard Demo"
+    And the assembly "Leave Guard Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Leave Guard Demo"
+    And I focus the set-up button for the "Region" target and press "Enter"
+    And I press Escape
+    Then the set-up dialog should be closed
+    When I focus the set-up button for the "Region" target and press "Enter"
+    And I choose the "exact" method from the keyboard
+    And I press Escape
+    Then I should be asked whether to discard my changes
+    When I choose "Keep editing"
+    Then the set-up dialog should still have the "exact" method chosen
+    When I press Escape
+    And I choose "Discard changes"
+    Then the set-up dialog should be closed

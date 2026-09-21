@@ -11,240 +11,256 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
 {% set target = setup["target"] %}
 {% set close_url = url_for('target_sources.view_sources', assembly_id=assembly.id) %}
 {% set refresh_attrs = 'hx-get="' ~ setup["refresh_url"] ~ '" hx-include="closest form" hx-params="not csrf_token" hx-target="#ts-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
-<a href="{{ close_url }}"
-   class="dialog-backdrop dialog-backdrop--clickable block"
-   tabindex="-1"
-   aria-hidden="true"></a>
-<div class="dialog-positioner"
-     role="dialog"
-     aria-modal="true"
-     aria-labelledby="target-source-setup-title">
-    <div class="dialog-panel dialog-panel--default">
-        {% set dialog_title %}{% if setup["is_linked"] %}{{ _("Edit data source for %(name)s", name=target["name"]) }}{% else %}{{ _("Set up data source for %(name)s", name=target["name"]) }}{% endif %}{% endset %}
-        {% call dialog_header(dialog_title, title_id="target-source-setup-title") %}
-            <a href="{{ close_url }}" class="dialog-close-btn" aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
-        {% endcall %}
-        <form method="post"
-              action="{{ setup['configure_url'] }}"
-              hx-post="{{ setup['configure_url'] }}"
-              hx-target="#ts-modal-container"
-              hx-swap="innerHTML">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="modal" value="1">
-            {% call dialog_body() %}
-                {% if setup["error"] %}
-                    {{ alert(setup["error"], variant="error") }}
-                {% endif %}
-                <div class="mb-4">
-                    {% set method_options = [{"value": "", "label": _("Select one")}] + setup["method_options"] %}
-                    {{ select("method",
-                    label=_("How is the data collected?"),
-                    options=method_options,
-                    value=values["method"],
-                    id="ts-method",
-                    attrs=refresh_attrs ~ (' aria-describedby="ts-method-help"' if values["method"] else "")) }}
+{# What was typed survives a stray Escape: the close links ask first once
+   anything has changed. The dirty flag rides the hidden "dirty" input through
+   each re-render - see components/dialog-leave-guard.js. #}
+<div x-data="dialogLeaveGuard">
+    <a href="{{ close_url }}"
+       @click="guardLeave($event)"
+       class="dialog-backdrop dialog-backdrop--clickable block"
+       tabindex="-1"
+       aria-hidden="true"></a>
+    <div class="dialog-positioner"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="target-source-setup-title">
+        <div class="dialog-panel dialog-panel--default">
+            {% set dialog_title %}{% if setup["is_linked"] %}{{ _("Edit data source for %(name)s", name=target["name"]) }}{% else %}{{ _("Set up data source for %(name)s", name=target["name"]) }}{% endif %}{% endset %}
+            {% call dialog_header(dialog_title, title_id="target-source-setup-title") %}
+                <a href="{{ close_url }}"
+                   @click="guardLeave($event)"
+                   class="dialog-close-btn"
+                   aria-label="{{ _('Close') }}">{{ dialog_close_icon() }}</a>
+            {% endcall %}
+            <form method="post"
+                  action="{{ setup['configure_url'] }}"
+                  hx-post="{{ setup['configure_url'] }}"
+                  hx-target="#ts-modal-container"
+                  hx-swap="innerHTML"
+                  @input="markDialogDirty()"
+                  @change="markDialogDirty()">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden"
+                       name="dirty"
+                       value="{{ '1' if request.values.get('dirty') == '1' else '' }}"
+                       x-ref="dirtyInput">
+                <input type="hidden" name="modal" value="1">
+                {% call dialog_body() %}
+                    {% if setup["error"] %}
+                        {{ alert(setup["error"], variant="error") }}
+                    {% endif %}
+                    <div class="mb-4">
+                        {% set method_options = [{"value": "", "label": _("Select one")}] + setup["method_options"] %}
+                        {{ select("method",
+                        label=_("How is the data collected?"),
+                        options=method_options,
+                        value=values["method"],
+                        id="ts-method",
+                        attrs=refresh_attrs ~ (' aria-describedby="ts-method-help"' if values["method"] else "")) }}
+                        {% if values["method"] %}
+                            <p id="ts-method-help" class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
+                                {{ setup["method_help"][values["method"]] }}
+                            </p>
+                        {% endif %}
+                    </div>
                     {% if values["method"] %}
-                        <p id="ts-method-help" class="text-body-sm mt-1" style="color: var(--color-secondary-text);">
-                            {{ setup["method_help"][values["method"]] }}
+                        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                            {{ _("Target values:") }} {{ target["values"] | join(", ") }}
                         </p>
                     {% endif %}
-                </div>
-                {% if values["method"] %}
-                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("Target values:") }} {{ target["values"] | join(", ") }}
-                    </p>
-                {% endif %}
-                {% set age_source_radio %}
-                    <div class="mb-4">
-                        {{ radio_group("age_source_type",
-                        label=_("What is asked for?"),
-                        options=[
-                        {"value": "date", "label": _("Date of birth")},
-                        {"value": "year", "label": _("Year of birth")},
-                        ],
-                        value=values["age_source_type"] or "date",
-                        id="ts-age-source-type",
-                        attrs=refresh_attrs) }}
-                    </div>
-                {% endset %}
-                {% if values["method"] == "small_mapping" %}
+                    {% set age_source_radio %}
+                        <div class="mb-4">
+                            {{ radio_group("age_source_type",
+                            label=_("What is asked for?"),
+                            options=[
+                            {"value": "date", "label": _("Date of birth")},
+                            {"value": "year", "label": _("Year of birth")},
+                            ],
+                            value=values["age_source_type"] or "date",
+                            id="ts-age-source-type",
+                            attrs=refresh_attrs) }}
+                        </div>
+                    {% endset %}
+                    {% if values["method"] == "small_mapping" %}
                     {# The wider choice field must already exist — creating it with its
                        full option list belongs in the registration questions step. #}
-                    <div class="mb-4">
-                        {% if setup["candidates"] %}
-                            {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
-                            {% for candidate in setup["candidates"] %}
-                                {% set _ = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
-                            {% endfor %}
-                            <input type="hidden" name="source_mode" value="reuse">
-                            {{ select("reuse_field_id",
-                            label=_("Choice question to map from"),
-                            options=source_options,
-                            value=values["reuse_field_id"],
-                            id="ts-reuse-field",
-                            attrs=refresh_attrs) }}
-                        {% else %}
-                            <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Choice question to map from") }}</span>
-                            <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                                {{ _("No choice question exists yet — add the more detailed question on the registration questions step first, then come back.") }}
-                            </p>
-                        {% endif %}
-                    </div>
-                {% elif values["method"] and not setup["candidates"] %}
-                    {# Nothing to reuse, so there is no choice to offer: say what saving will create. #}
-                    {% if values["method"] == "age_bracket" %}{{ age_source_radio }}{% endif %}
-                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("A new question named '%(name)s' will be created — you can edit parts of it in the registration questions step.", name=setup["new_field_name"]) }}
-                    </p>
-                {% elif values["method"] %}
-                    <fieldset class="mb-4">
-                        <legend class="text-label-lg mb-2" style="color: var(--color-headings);">
-                            {% if values["method"] == "exact" %}
-                                {{ _("Which question collects the data?") }}
-                            {% else %}
-                                {{ _("Which question collects the source value?") }}
-                            {% endif %}
-                        </legend>
-                        {{ radio_group("source_mode",
-                        options=[{"value": "reuse", "label": _("Use an existing question")}, {"value": "create", "label": _("Create a new question")}],
-                        value=values["source_mode"],
-                        id="ts-source-mode",
-                        attrs=refresh_attrs) }}
-                    </fieldset>
-                    {% if values["source_mode"] == "reuse" %}
                         <div class="mb-4">
-                            {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
-                            {% for candidate in setup["candidates"] %}
-                                {% set _ = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
-                            {% endfor %}
-                            {{ select("reuse_field_id",
-                            label=_("Existing question"),
-                            options=source_options,
-                            value=values["reuse_field_id"],
-                            id="ts-reuse-field",
-                            attrs=refresh_attrs) }}
+                            {% if setup["candidates"] %}
+                                {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
+                                {% for candidate in setup["candidates"] %}
+                                    {% set _ = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
+                                {% endfor %}
+                                <input type="hidden" name="source_mode" value="reuse">
+                                {{ select("reuse_field_id",
+                                label=_("Choice question to map from"),
+                                options=source_options,
+                                value=values["reuse_field_id"],
+                                id="ts-reuse-field",
+                                attrs=refresh_attrs) }}
+                            {% else %}
+                                <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Choice question to map from") }}</span>
+                                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                                    {{ _("No choice question exists yet — add the more detailed question on the registration questions step first, then come back.") }}
+                                </p>
+                            {% endif %}
                         </div>
-                    {% elif values["method"] == "exact" %}
-                        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                            {{ _("This will add '%(name)s' to your registration page, with the target's values as the answers.", name=target["name"]) }}
-                        </p>
-                    {% else %}
-                        <div class="flex gap-4 mb-4">
-                            <div class="flex-1">
-                                {{ input("new_field_key",
-                                label=_("New question name"),
-                                value=values["new_field_key"],
-                                id="ts-new-field-key") }}
-                            </div>
-                            <div class="flex-1">
-                                {{ input("new_field_label",
-                                label=_("Label on the registration page (optional)"),
-                                value=values["new_field_label"],
-                                id="ts-new-field-label") }}
-                            </div>
-                        </div>
+                    {% elif values["method"] and not setup["candidates"] %}
+                    {# Nothing to reuse, so there is no choice to offer: say what saving will create. #}
                         {% if values["method"] == "age_bracket" %}{{ age_source_radio }}{% endif %}
-                        {% if setup["new_field_name"] %}
+                        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                            {{ _("A new question named '%(name)s' will be created — you can edit parts of it in the registration questions step.", name=setup["new_field_name"]) }}
+                        </p>
+                    {% elif values["method"] %}
+                        <fieldset class="mb-4">
+                            <legend class="text-label-lg mb-2" style="color: var(--color-headings);">
+                                {% if values["method"] == "exact" %}
+                                    {{ _("Which question collects the data?") }}
+                                {% else %}
+                                    {{ _("Which question collects the source value?") }}
+                                {% endif %}
+                            </legend>
+                            {{ radio_group("source_mode",
+                            options=[{"value": "reuse", "label": _("Use an existing question")}, {"value": "create", "label": _("Create a new question")}],
+                            value=values["source_mode"],
+                            id="ts-source-mode",
+                            attrs=refresh_attrs) }}
+                        </fieldset>
+                        {% if values["source_mode"] == "reuse" %}
+                            <div class="mb-4">
+                                {% set source_options = [{"value": "", "label": _("Choose a question…")}] %}
+                                {% for candidate in setup["candidates"] %}
+                                    {% set _ = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
+                                {% endfor %}
+                                {{ select("reuse_field_id",
+                                label=_("Existing question"),
+                                options=source_options,
+                                value=values["reuse_field_id"],
+                                id="ts-reuse-field",
+                                attrs=refresh_attrs) }}
+                            </div>
+                        {% elif values["method"] == "exact" %}
                             <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                                {{ _("This will add '%(name)s' to your registration page.", name=setup["new_field_name"]) }}
+                                {{ _("This will add '%(name)s' to your registration page, with the target's values as the answers.", name=target["name"]) }}
                             </p>
+                        {% else %}
+                            <div class="flex gap-4 mb-4">
+                                <div class="flex-1">
+                                    {{ input("new_field_key",
+                                    label=_("New question name"),
+                                    value=values["new_field_key"],
+                                    id="ts-new-field-key") }}
+                                </div>
+                                <div class="flex-1">
+                                    {{ input("new_field_label",
+                                    label=_("Label on the registration page (optional)"),
+                                    value=values["new_field_label"],
+                                    id="ts-new-field-label") }}
+                                </div>
+                            </div>
+                            {% if values["method"] == "age_bracket" %}{{ age_source_radio }}{% endif %}
+                            {% if setup["new_field_name"] %}
+                                <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                    {{ _("This will add '%(name)s' to your registration page.", name=setup["new_field_name"]) }}
+                                </p>
+                            {% endif %}
                         {% endif %}
                     {% endif %}
-                {% endif %}
-                {% if values["method"] == "age_bracket" %}
+                    {% if values["method"] == "age_bracket" %}
                     {# tojson escapes <>&' but not double quotes, so the attribute must be single-quoted. #}
-                    <div x-data="ageBracketPreview"
-                         data-fallback="{{ setup['fallback'] }}"
-                         data-target-values='{{ target["values"] | tojson }}'
-                         @input="recalc()">
-                        {% if setup["source_is_integer"] %}
-                            <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
-                                {{ _("Year-of-birth sources assume a 1 January birthday, so some people land one bracket up from their true age. Year of birth is still the recommended, data-minimising source.") }}
+                        <div x-data="ageBracketPreview"
+                             data-fallback="{{ setup['fallback'] }}"
+                             data-target-values='{{ target["values"] | tojson }}'
+                             @input="recalc()">
+                            {% if setup["source_is_integer"] %}
+                                <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
+                                    {{ _("Year-of-birth sources assume a 1 January birthday, so some people land one bracket up from their true age. Year of birth is still the recommended, data-minimising source.") }}
+                                </p>
+                            {% endif %}
+                            <fieldset class="mb-4">
+                                <legend class="text-label-lg" style="color: var(--color-headings);">{{ _("Ages as of") }}</legend>
+                                <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
+                                    {{ _("Usually the first assembly date. Never left to \"today\" — brackets must not shift with the calendar.") }}
+                                </p>
+                                <div class="flex gap-2">
+                                    <div style="width: 5rem;">
+                                        {{ input("as_of_day", label=_("Day"), value=values["as_of_day"], id="ts-as-of-day", attrs='inputmode="numeric"') }}
+                                    </div>
+                                    <div style="width: 5rem;">
+                                        {{ input("as_of_month", label=_("Month"), value=values["as_of_month"], id="ts-as-of-month", attrs='inputmode="numeric"') }}
+                                    </div>
+                                    <div style="width: 7rem;">
+                                        {{ input("as_of_year", label=_("Year"), value=values["as_of_year"], id="ts-as-of-year", attrs='inputmode="numeric"') }}
+                                    </div>
+                                </div>
+                            </fieldset>
+                            <div class="flex gap-4 mb-4">
+                                <div style="width: 8rem;">
+                                    {{ input("min_age", label=_("Minimum age"), value=values["min_age"], id="ts-min-age", attrs='inputmode="numeric"') }}
+                                </div>
+                                <div style="width: 8rem;">
+                                    {{ input("max_age", label=_("Maximum age"), value=values["max_age"], id="ts-max-age", attrs='inputmode="numeric"') }}
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                {{ input("boundaries",
+                                label=_("Bracket boundaries"),
+                                hint=_("Ages where a new bracket starts, separated by commas — e.g. 25, 40, 60."),
+                                value=values["boundaries"],
+                                id="ts-boundaries") }}
+                            </div>
+                            <p class="text-body-sm mb-1">
+                                {{ _("Generated brackets:") }}
+                                <strong x-text="previewText">{{ setup["preview_labels"] | join(", ") }}</strong>
                             </p>
-                        {% endif %}
+                            <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
+                                {{ _("The target expects:") }} {{ target["values"] | join(", ") }}
+                            </p>
+                            <p class="text-body-sm mb-2"
+                               style="color: var(--color-error-text);"
+                               x-show="mismatchLabels"
+                               {% if not setup["mismatch_labels"] %}x-cloak{% endif %}>
+                                {{ _("These brackets don't match the target's values, so those people won't count towards its quotas:") }}
+                                <span x-text="mismatchLabels">{{ setup["mismatch_labels"] | join(", ") }}</span>
+                            </p>
+                        </div>
+                    {% elif values["method"] == "small_mapping" and setup["map_rows"] %}
                         <fieldset class="mb-4">
-                            <legend class="text-label-lg" style="color: var(--color-headings);">{{ _("Ages as of") }}</legend>
-                            <p class="text-body-sm mb-2" style="color: var(--color-secondary-text);">
-                                {{ _("Usually the first assembly date. Never left to \"today\" — brackets must not shift with the calendar.") }}
-                            </p>
-                            <div class="flex gap-2">
-                                <div style="width: 5rem;">
-                                    {{ input("as_of_day", label=_("Day"), value=values["as_of_day"], id="ts-as-of-day", attrs='inputmode="numeric"') }}
+                            <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Map each answer to a target value") }}</legend>
+                            {% for row in setup["map_rows"] %}
+                                <div class="flex gap-2 items-center mb-2">
+                                    <input type="hidden" name="map_source" value="{{ row['source_value'] }}">
+                                    <span class="text-body-sm" style="min-width: 12rem;">{{ row["source_value"] }}</span>
+                                    <span aria-hidden="true">→</span>
+                                    {% set map_options = [{"value": "", "label": _("(fall back to %(fallback)s)", fallback=setup["fallback"])}] %}
+                                    {% for target_value in target["values"] %}
+                                        {% set _ = map_options.append({"value": target_value, "label": target_value}) %}
+                                    {% endfor %}
+                                    <div class="flex-1">
+                                        {{ select("map_target",
+                                        options=map_options,
+                                        value=row["target_value"],
+                                        id="ts-map-target-" ~ loop.index0,
+                                        attrs='aria-label="' ~ (_('Target value for %(value)s', value=row['source_value']) | e) ~ '"') }}
+                                    </div>
                                 </div>
-                                <div style="width: 5rem;">
-                                    {{ input("as_of_month", label=_("Month"), value=values["as_of_month"], id="ts-as-of-month", attrs='inputmode="numeric"') }}
-                                </div>
-                                <div style="width: 7rem;">
-                                    {{ input("as_of_year", label=_("Year"), value=values["as_of_year"], id="ts-as-of-year", attrs='inputmode="numeric"') }}
-                                </div>
-                            </div>
+                            {% endfor %}
                         </fieldset>
-                        <div class="flex gap-4 mb-4">
-                            <div style="width: 8rem;">
-                                {{ input("min_age", label=_("Minimum age"), value=values["min_age"], id="ts-min-age", attrs='inputmode="numeric"') }}
-                            </div>
-                            <div style="width: 8rem;">
-                                {{ input("max_age", label=_("Maximum age"), value=values["max_age"], id="ts-max-age", attrs='inputmode="numeric"') }}
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            {{ input("boundaries",
-                            label=_("Bracket boundaries"),
-                            hint=_("Ages where a new bracket starts, separated by commas — e.g. 25, 40, 60."),
-                            value=values["boundaries"],
-                            id="ts-boundaries") }}
-                        </div>
-                        <p class="text-body-sm mb-1">
-                            {{ _("Generated brackets:") }}
-                            <strong x-text="previewText">{{ setup["preview_labels"] | join(", ") }}</strong>
+                    {% elif values["method"] == "large_mapping" %}
+                        <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                            {% if setup["mapping_row_count"] %}
+                                {{ _("Saving keeps the existing lookup table of %(count)s rows — replace it from this target's row if it needs to change.", count="{:,}".format(setup["mapping_row_count"])) }}
+                            {% else %}
+                                {{ _("After saving you'll upload the lookup table: a CSV pairing each answer with a target value. Answers with no table entry fall back to %(fallback)s.", fallback=setup["fallback"]) }}
+                            {% endif %}
                         </p>
-                        <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
-                            {{ _("The target expects:") }} {{ target["values"] | join(", ") }}
-                        </p>
-                        <p class="text-body-sm mb-2"
-                           style="color: var(--color-error-text);"
-                           x-show="mismatchLabels"
-                           {% if not setup["mismatch_labels"] %}x-cloak{% endif %}>
-                            {{ _("These brackets don't match the target's values, so those people won't count towards its quotas:") }}
-                            <span x-text="mismatchLabels">{{ setup["mismatch_labels"] | join(", ") }}</span>
-                        </p>
-                    </div>
-                {% elif values["method"] == "small_mapping" and setup["map_rows"] %}
-                    <fieldset class="mb-4">
-                        <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Map each answer to a target value") }}</legend>
-                        {% for row in setup["map_rows"] %}
-                            <div class="flex gap-2 items-center mb-2">
-                                <input type="hidden" name="map_source" value="{{ row['source_value'] }}">
-                                <span class="text-body-sm" style="min-width: 12rem;">{{ row["source_value"] }}</span>
-                                <span aria-hidden="true">→</span>
-                                {% set map_options = [{"value": "", "label": _("(fall back to %(fallback)s)", fallback=setup["fallback"])}] %}
-                                {% for target_value in target["values"] %}
-                                    {% set _ = map_options.append({"value": target_value, "label": target_value}) %}
-                                {% endfor %}
-                                <div class="flex-1">
-                                    {{ select("map_target",
-                                    options=map_options,
-                                    value=row["target_value"],
-                                    id="ts-map-target-" ~ loop.index0,
-                                    attrs='aria-label="' ~ (_('Target value for %(value)s', value=row['source_value']) | e) ~ '"') }}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </fieldset>
-                {% elif values["method"] == "large_mapping" %}
-                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                        {% if setup["mapping_row_count"] %}
-                            {{ _("Saving keeps the existing lookup table of %(count)s rows — replace it from this target's row if it needs to change.", count="{:,}".format(setup["mapping_row_count"])) }}
-                        {% else %}
-                            {{ _("After saving you'll upload the lookup table: a CSV pairing each answer with a target value. Answers with no table entry fall back to %(fallback)s.", fallback=setup["fallback"]) }}
-                        {% endif %}
-                    </p>
-                {% endif %}
-            {% endcall %}
-            {% call dialog_footer() %}
-                {{ button(_("Cancel") , variant="secondary", href=close_url) }}
-                {{ button(_("Save") , type="submit", variant="primary") }}
-            {% endcall %}
-        </form>
+                    {% endif %}
+                {% endcall %}
+                {% call dialog_footer() %}
+                    {{ button(_("Cancel") , variant="secondary", href=close_url, attrs='@click="guardLeave($event)"') }}
+                    {{ button(_("Save") , type="submit", variant="primary") }}
+                {% endcall %}
+            </form>
+        </div>
     </div>
+    {% include "backoffice/components/leave_guard_modal.html" %}
 </div>
