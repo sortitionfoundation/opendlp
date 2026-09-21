@@ -1,7 +1,7 @@
 // ABOUTME: Unit tests for keyboard focus in the fragment dialogs HTMX swaps into a host
-// ABOUTME: Covers focus on open, through a re-render, back to the opener on close, inert siblings and tagged close links
+// ABOUTME: Covers focus on open, through a re-render, back to the opener on close, inert siblings, tagged close links and self-closing modals
 
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   focusDialogsOpenOnLoad,
@@ -172,6 +172,54 @@ describe("initFragmentDialogFocus", () => {
     swap(step, step.innerHTML + "<p>refreshed</p>", step);
 
     expect(step.hasAttribute("inert")).toBe(false);
+  });
+
+  it("tries focus again after paint when the dialog is still hidden", () => {
+    // A hidden control refuses focus: the first attempt takes, the rest do not.
+    const realFocus = HTMLElement.prototype.focus;
+    let attempts = 0;
+    const focus = vi
+      .spyOn(HTMLElement.prototype, "focus")
+      .mockImplementation(function () {
+        attempts += 1;
+        if (attempts > 1) realFocus.call(this);
+      });
+    const frame = vi
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((callback) => callback());
+
+    swap(host, DIALOG, document.getElementById("add"));
+
+    expect(frame).toHaveBeenCalledOnce();
+    expect(document.activeElement).toBe(
+      host.querySelector('[name="method"][value="exact"]'),
+    );
+    focus.mockRestore();
+    frame.mockRestore();
+  });
+
+  it("clears away an Alpine modal that closed itself, and undoes what opening did", () => {
+    swap(host, DIALOG, document.getElementById("add"));
+
+    host
+      .querySelector('[role="dialog"]')
+      .dispatchEvent(new CustomEvent("modal-closed", { bubbles: true }));
+
+    expect(host.innerHTML).toBe("");
+    expect(document.getElementById("step-dialog").hasAttribute("inert")).toBe(
+      false,
+    );
+    expect(document.activeElement.id).toBe("add");
+  });
+
+  it("ignores a modal closing outside any host", () => {
+    document.getElementById("add").focus();
+
+    document
+      .getElementById("step-dialog")
+      .dispatchEvent(new CustomEvent("modal-closed", { bubbles: true }));
+
+    expect(document.getElementById("step-dialog").innerHTML).toContain("Edit");
   });
 
   it("moves focus into a dialog that was already open when the page loaded", () => {

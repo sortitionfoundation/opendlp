@@ -87,7 +87,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                         {% endif %}
                     </div>
                 </div>
-                <div id="export-modal-container"></div>
+                <div id="export-modal-container" data-fragment-dialog-host></div>
                 {# Filter controls - show when there are respondents or when filter is active #}
                 {% if total_count > 0 or status_filter %}
                     <div class="flex items-center justify-end gap-4 mb-4">
@@ -109,6 +109,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                         </div>
                         {% if total_count > 0 %}
                             <button type="button"
+                                    data-focus-id="respondents-export"
                                     class="px-4 py-2 rounded-lg text-body-md"
                                     style="background-color: var(--color-primary-action); color: white;"
                                     hx-get="{{ url_for('respondents.export_modal', assembly_id=assembly.id) }}{% if status_filter %}?status={{ status_filter }}{% endif %}"

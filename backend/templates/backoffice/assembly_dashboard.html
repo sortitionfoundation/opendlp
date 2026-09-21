@@ -70,11 +70,11 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
             </div>
             {% if dashboard_sections %}
                 {{ button(_("Export"), variant="primary",
-                attrs='hx-get="' ~ url_for('backoffice.dashboard_export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
+                attrs='data-focus-id="dashboard-export" hx-get="' ~ url_for('backoffice.dashboard_export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
             {% endif %}
         </div>
     </div>
-    <div id="export-modal-container"></div>
+    <div id="export-modal-container" data-fragment-dialog-host></div>
 
     {% if not dashboard_sections %}
         {# Empty state: no target categories, so there is nothing to chart or tabulate.

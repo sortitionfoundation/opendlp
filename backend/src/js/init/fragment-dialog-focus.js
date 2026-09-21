@@ -26,6 +26,10 @@
  * A dialog also closes through plain links (Cancel, the X, the backdrop), which
  * load the page afresh. Those get `#focus=<data-focus-id>` added, which
  * init/focus-restore.js reads after the load.
+ *
+ * An Alpine modal() swapped into a host closes by hiding itself, with no swap
+ * to see. It announces the close with a bubbling "modal-closed" event instead
+ * (components/modal.js); the host is then emptied and closed as a swap would.
  */
 
 var HOST_SELECTOR = "[data-fragment-dialog-host]";
@@ -158,7 +162,16 @@ function focusInto(host) {
     dialog.querySelector("[data-dialog-initial-focus]") ||
     firstFocusable(dialog.querySelector(".dialog-body")) ||
     firstFocusable(dialog);
-  if (target) target.focus();
+  if (!target) return;
+  target.focus();
+  if (document.activeElement !== target) {
+    // An Alpine modal is still hidden (x-cloak, x-show) until Alpine has
+    // initialised it, and a hidden control cannot take focus. Try again once
+    // it has painted.
+    requestAnimationFrame(function () {
+      target.focus();
+    });
+  }
 }
 
 /** A request aimed at a closed host is what opens its dialog: remember what sent it. */
@@ -182,11 +195,7 @@ function afterSwap(host) {
   syncInert(host, isOpen);
 
   if (!isOpen) {
-    if (wasOpen) {
-      var opener = findOpener(openers.get(host));
-      if (opener) opener.focus();
-    }
-    openers.delete(host);
+    closed(host, wasOpen);
     return;
   }
   tagCloseLinks(host, openers.get(host));
@@ -197,6 +206,23 @@ function afterSwap(host) {
   } else {
     focusInto(host);
   }
+}
+
+/** Undo what opening did: the rest of the page back in reach, focus back on the opener. */
+function closed(host, wasOpen) {
+  syncInert(host, false);
+  if (wasOpen) {
+    var opener = findOpener(openers.get(host));
+    if (opener) opener.focus();
+  }
+  openers.delete(host);
+}
+
+/** An Alpine modal in a host has hidden itself: clear it away, as a swap to empty would. */
+function modalClosed(host) {
+  if (!dialogIn(host)) return;
+  host.innerHTML = "";
+  closed(host, true);
 }
 
 /** A full page load can arrive with a dialog already open in its host. */
@@ -227,6 +253,10 @@ export function initFragmentDialogFocus() {
     document.body.addEventListener("htmx:afterSettle", function (event) {
       var host = hostOf(event.detail.target);
       if (host && host === event.detail.target) afterSwap(host);
+    });
+    document.body.addEventListener("modal-closed", function (event) {
+      var host = hostOf(event.target);
+      if (host) modalClosed(host);
     });
   });
 }
