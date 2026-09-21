@@ -552,6 +552,23 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def remove_attribute(self, assembly_id: uuid.UUID, key: str) -> int:
+        """Remove one attribute from every non-deleted respondent of an assembly.
+
+        Every other attribute keeps its place. Returns the number of respondents changed.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def rename_attribute(self, assembly_id: uuid.UUID, old_key: str, new_key: str) -> int:
+        """Re-key one attribute on every non-deleted respondent of an assembly that has it.
+
+        The renamed attribute keeps its place, and replaces any attribute already
+        under ``new_key``. Returns the number of respondents changed.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_attribute_columns(self, assembly_id: uuid.UUID) -> list[str]:
         """Get sorted list of attribute column names from a sample respondent for an assembly."""
         raise NotImplementedError

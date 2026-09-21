@@ -698,11 +698,7 @@ def delete_derived_field(
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     uow.respondent_field_mapping_entries.delete_all_for_field(field.id)
-    for respondent in uow.respondents.get_by_assembly_id(assembly_id):
-        if field.field_key not in respondent.attributes:
-            continue
-        # Reassign rather than mutate so the JSON column change is detected.
-        respondent.attributes = {k: v for k, v in respondent.attributes.items() if k != field.field_key}
+    uow.respondents.remove_attribute(assembly_id, field.field_key)
     uow.respondent_field_definitions.delete(field)
 
 
@@ -735,13 +731,7 @@ def rename_derived_field(
         field.label = humanise_field_key(new_field_key)
     field.field_key = new_field_key
     field.updated_at = datetime.now(UTC)
-    for respondent in uow.respondents.get_by_assembly_id(assembly_id):
-        if old_field_key not in respondent.attributes:
-            continue
-        # Reassign rather than mutate so the JSON column change is detected.
-        respondent.attributes = {
-            (new_field_key if key == old_field_key else key): value for key, value in respondent.attributes.items()
-        }
+    uow.respondents.rename_attribute(assembly_id, old_field_key, new_field_key)
 
 
 def delete_field(

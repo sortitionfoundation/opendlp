@@ -880,6 +880,25 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                     selection_run_id=selection_run_id,
                 )
 
+    def _with_attribute(self, assembly_id: uuid.UUID, key: str) -> list[Respondent]:
+        return [
+            r
+            for r in self._items
+            if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.DELETED and key in r.attributes
+        ]
+
+    def remove_attribute(self, assembly_id: uuid.UUID, key: str) -> int:
+        changed = self._with_attribute(assembly_id, key)
+        for r in changed:
+            r.attributes = {k: v for k, v in r.attributes.items() if k != key}
+        return len(changed)
+
+    def rename_attribute(self, assembly_id: uuid.UUID, old_key: str, new_key: str) -> int:
+        changed = self._with_attribute(assembly_id, old_key)
+        for r in changed:
+            r.attributes = {(new_key if k == old_key else k): v for k, v in r.attributes.items() if k != new_key}
+        return len(changed)
+
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
         count = 0
         for r in self._items:
