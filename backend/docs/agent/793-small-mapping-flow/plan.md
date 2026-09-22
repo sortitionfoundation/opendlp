@@ -1,6 +1,6 @@
 # Small-mapping set-up flow — implementation plan
 
-**Status:** Decisions agreed with Chewie (2026-09-22) — ready to implement
+**Status:** Implemented — all chunks landed on `793-small-mapping-flow` (2026-09-22)
 **Date:** 2026-09-22
 **Branch:** `793-small-mapping-flow` (off `main`, which now carries both
 `793-two-step-fields` and `793-large-mapping-flow`)
@@ -163,9 +163,34 @@ reader is thinking about what the page asks).
 
 ---
 
-## 3. Implementation
+## 3. Implementation ✅ done
 
-### 3.1 Form values (`target_sources.py`)
+Notes from implementing it:
+
+- `parse_answer_options` in `derivation_form_parser.py` turns the typed
+  `map_source` rows into the new question's options (blank rows dropped,
+  repeats refused by name). The blueprint's `_parse_source_spec` calls it
+  for the small-mapping method and sets `field_type` with `choice_type_for`.
+- `_setup_modal_response` is the general "re-open with these values" helper;
+  `_setup_error_response` wraps it with an error and 422. A `form_action`
+  other than `save` in `configure_view` is a row round trip and saves nothing.
+- `_map_rows` builds the table for either mode. In create mode with nothing
+  typed it pads to D1's row count; removing every row therefore re-pads,
+  which is harmless.
+- The service refuses a `SmallMappingRule` whose outputs are not all target
+  values (`_require_mapping_outputs_are_target_values`), for both modes.
+- The template renders the mapping as a `<table>` with `scope="col"`
+  headings; the create-mode row is a labelled text input, the select, and a
+  labelled Remove button. The hidden default submitter from
+  `_field_modal.html` is copied so Enter saves. Column headings use
+  `text-label-md` (`text-label-sm` does not exist in the design system).
+- No focus work was needed: `fragment-dialog-focus.js` already puts focus
+  back on the control that had it, by id, after a re-render, and the row
+  inputs have stable ids.
+- The Hungarian catalogue regeneration also picked up a stale `signup`
+  msgid from an earlier branch; it is untranslated and harmless.
+
+### 3.1 Form values (`target_sources.py`) ✅
 
 - `_setup_values_from_request` already reads `map_source` and `map_target`
   as lists. **Keep those names in create mode too**: the create-mode row's
@@ -190,7 +215,7 @@ reader is thinking about what the page asks).
   both create and reuse mode, and the §4 note about stray *keys* stays a
   separate, lower-value follow-up.
 
-### 3.2 Round trips (`configure_view`)
+### 3.2 Round trips (`configure_view`) ✅
 
 - Read `form_action = request.form.get("form_action", "save")`.
 - If it is not `"save"`: apply `add_option` (append a blank pair) or
@@ -206,7 +231,7 @@ reader is thinking about what the page asks).
 - Without JS the same buttons post the same form and get the full page with
   the modal open via `_render_setup_modal`. Nothing extra to do.
 
-### 3.3 Spec building (`_parse_source_spec`, `_parse_setup_spec`)
+### 3.3 Spec building (`_parse_source_spec`, `_parse_setup_spec`) ✅
 
 - Drop the `source_mode != "reuse"` refusal in `_parse_setup_spec` for
   `SMALL_MAPPING`.
@@ -231,7 +256,7 @@ reader is thinking about what the page asks).
   wants to revisit key normalisation later, in one consistent step across
   every place a key is entered, not piecemeal here. Listed in §4.
 
-### 3.4 Template (`_setup_modal.html`)
+### 3.4 Template (`_setup_modal.html`) ✅
 
 - Remove the small-mapping-only branch (the forced `source_mode=reuse` hidden
   input and the "add it on the registration questions step first" copy).
@@ -266,7 +291,7 @@ reader is thinking about what the page asks).
   identity — give the added row's input a stable id so "Add another answer"
   can move focus there; check what the questions modal does and copy it).
 
-### 3.5 Copy
+### 3.5 Copy ✅
 
 New msgids, checked against `docs/language.md`:
 
@@ -285,7 +310,7 @@ come back." Run `just translate-regen` and `just translate-check`.
 
 The "Map from more options" method help text stays as it is.
 
-### 3.6 Tests
+### 3.6 Tests ✅
 
 - **Unit** (`tests/unit/test_target_source_parsers.py`): options from
   `map_source` in create mode — blank rows dropped, whitespace stripped,
@@ -318,7 +343,7 @@ The "Map from more options" method help text stays as it is.
   add/remove round trip needs Playwright to prove focus handling.
 - No JS unit test unless a new Alpine component appears; none is planned.
 
-### 3.7 Docs
+### 3.7 Docs ✅
 
 - `docs/agent/793-two-step-fields/plan.md` §3 implementation note ("the
   small-mapping method reuses an existing choice field only"): add a pointer
@@ -327,7 +352,7 @@ The "Map from more options" method help text stays as it is.
   the small-mapping constraint; grep for "registration questions step first".
 - Memory note update at the end.
 
-### 3.8 Commit sequence
+### 3.8 Commit sequence ✅
 
 Each lands green (`just check`, `just test-nobdd`, then
 `just test-bdd-headless`):
