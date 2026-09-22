@@ -524,6 +524,10 @@ class FlaskBaseConfig:
         self.LOGIN_RATE_LIMIT_PER_IP: int = int(os.environ.get("LOGIN_RATE_LIMIT_PER_IP", "20"))
         self.LOGIN_RATE_LIMIT_WINDOW_MINUTES: int = int(os.environ.get("LOGIN_RATE_LIMIT_WINDOW_MINUTES", "15"))
 
+        # Account signup rate limiting (open signup, FF_OPEN_SIGNUP)
+        self.SIGNUP_RATE_LIMIT_PER_IP: int = int(os.environ.get("SIGNUP_RATE_LIMIT_PER_IP", "10"))
+        self.SIGNUP_RATE_LIMIT_WINDOW_MINUTES: int = int(os.environ.get("SIGNUP_RATE_LIMIT_WINDOW_MINUTES", "60"))
+
         # Registration bot protection
         self.REGISTRATION_RATE_LIMIT_PER_IP: int = int(os.environ.get("REGISTRATION_RATE_LIMIT_PER_IP", "30"))
         self.REGISTRATION_RATE_LIMIT_PER_EMAIL: int = int(os.environ.get("REGISTRATION_RATE_LIMIT_PER_EMAIL", "5"))

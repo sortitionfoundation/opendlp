@@ -212,6 +212,22 @@ The form-timing check is additionally gated on the
 the test config). This is a config-class setting rather than an environment
 variable; see [docs/bot-protection.md](bot-protection.md).
 
+### Account Signup Rate Limiting
+
+The `/auth/register` account signup form has its own per-IP limit, separate
+from the registration-page bot protection above - it matters mainly with
+`FF_OPEN_SIGNUP` on, when no invite code gates account creation. Only
+successful account creations count towards the limit, so failed form
+submissions cannot lock a shared IP out of registering.
+
+```bash
+# Max account creations per source IP per window (default: 10)
+SIGNUP_RATE_LIMIT_PER_IP=10
+
+# Signup rate-limit window in minutes (default: 60)
+SIGNUP_RATE_LIMIT_WINDOW_MINUTES=60
+```
+
 ### Monitoring
 
 Enable end-to-end selection monitoring (issue #582) by pointing both

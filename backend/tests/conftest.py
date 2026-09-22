@@ -116,6 +116,7 @@ LEAKY_ENV_PREFIXES = (
     "MONITOR_",
     "OAUTH_",
     "REGISTRATION_",
+    "SIGNUP_RATE_LIMIT_",
     "SITE_BANNER_",
     "SMTP_",
 )
