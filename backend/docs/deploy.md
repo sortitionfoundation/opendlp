@@ -91,7 +91,7 @@ The production entrypoint is gunicorn with sync workers. Three things matter whe
 - **Pass `--timeout` above the application's I/O timeouts.** The app bounds all of its outbound I/O (SMTP, OAuth, Google Sheets, Redis, PostgreSQL - see the timeout constants at each adapter). Keeping the gunicorn timeout above all of them (we use 60s) means a hang surfaces as a logged application error with a stack trace, instead of an opaque worker kill.
 - **Publish the port on localhost only** (e.g. `127.0.0.1:8080:8080` in compose). Docker's iptables rules for published ports bypass ufw, so `8080:8080` is reachable from the public internet even with a default-deny firewall. Stalled direct connections (port scanners) block a sync worker until the arbiter kills it, logged as `WORKER TIMEOUT ... (no URI read)`.
 
-`gunicorn.conf.py` (shipped in the image at `/app`, auto-loaded from the working directory) enables `faulthandler`, so a worker that does exceed the timeout dumps every thread's Python stack to stderr before dying - including when it is stuck inside a C extension such as libpq. If a worker is killed, look for that traceback in the container logs; it names the exact blocking call.
+`gunicorn.conf.py` (shipped in the image at `/app`, auto-loaded from the working directory) enables `faulthandler` in the `post_worker_init` hook, so a worker that does exceed the timeout dumps every thread's Python stack to stderr before dying - including when it is stuck inside a C extension such as libpq. If a worker is killed, look for that traceback in the container logs; it names the exact blocking call.
 
 ## Subpath Deployment
 
