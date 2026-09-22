@@ -15,6 +15,7 @@ from wtforms import (
     IntegerField,
     PasswordField,
     RadioField,
+    SelectField,
     StringField,
     TextAreaField,
 )
@@ -25,15 +26,18 @@ from wtforms.validators import (
     Length,
     NumberRange,
     Optional,
+    StopValidation,
     ValidationError,
 )
 
 from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.selection_settings import OTHER_TEAM
 from opendlp.domain.targets import MAX_COMMENT_LENGTH, MAX_SOURCE_URL_LENGTH, validate_source_url
+from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, SignupSurveyQuestion, SurveyFieldType
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.validators import validate_email as domain_validate_email
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
+from opendlp.feature_flags import has_feature
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
 
@@ -137,12 +141,107 @@ class LoginForm(FlaskForm):  # type: ignore[no-any-unimported]
     remember_me = BooleanField(_l("Keep me signed in for 7 days (sets a cookie on this device)"))
 
 
-class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
+class InviteCodeRequiredUnlessOpenSignup:
+    """Require an invite code unless the open_signup feature flag is on.
+
+    Handles the empty field entirely by itself - a required-error when the
+    flag is off, a silent stop when it is on, so the Length check never sees
+    an empty value. Not composable with Optional(): that validator CLEARS the
+    field's accumulated errors before stopping the chain, which would wipe
+    the required-error this one just raised.
+    """
+
+    def __call__(self, form: Any, field: Any) -> None:
+        if field.data:
+            return
+        if not has_feature("open_signup"):
+            raise StopValidation(_("An invite code is required to register."))
+        raise StopValidation()
+
+
+def _validate_invite_code_field(invite_code: StringField) -> None:
+    """Check a submitted invite code exists and is valid.
+
+    Emptiness is InviteCodeRequiredUnlessOpenSignup's business; an empty field
+    never reaches this inline validator (Optional() stops the chain). The check
+    is only skipped if the database cannot be reached, in which case the
+    service layer repeats it and the user sees its message instead.
+    """
+    if not invite_code.data:
+        return
+    invite = None
+    checked = False
+    try:
+        with get_flask_uow() as uow:
+            invite = uow.user_invites.get_by_code(invite_code.data)
+        checked = True
+    except Exception:  # noqa: S110
+        # If we can't check (e.g., database error), allow form to continue
+        # The service layer will handle this case properly
+        pass
+    if checked and (not invite or not invite.is_valid()):
+        raise ValidationError(_("Invalid or expired invite code."))
+
+
+def _make_survey_field(question: SignupSurveyQuestion) -> Any:
+    """Build the WTForms field for one signup survey question.
+
+    Choice fields skip WTForms' own choice validation (an unanswered radio
+    group submits nothing, which it would reject); survey_answers() drops any
+    value that is not a known choice instead.
+    """
+    hint = question.hint
+    if question.field_type == SurveyFieldType.SELECT:
+        choices = [("", _l("Please select")), *question.choices.items()]
+        return SelectField(
+            question.label, choices=choices, validators=[Optional()], validate_choice=False, description=hint
+        )
+    if question.field_type == SurveyFieldType.RADIO:
+        return RadioField(
+            question.label,
+            choices=list(question.choices.items()),
+            validators=[Optional()],
+            validate_choice=False,
+            description=hint,
+        )
+    if question.field_type == SurveyFieldType.TEXTAREA:
+        return TextAreaField(question.label, validators=[Optional(), Length(max=2000)], description=hint)
+    return StringField(question.label, validators=[Optional(), Length(max=255)], description=hint)
+
+
+class SignupSurveyFormMixin:
+    """Optional signup survey fields, generated from SIGNUP_SURVEY_QUESTIONS.
+
+    The fields are added below with setattr, so a question added to the spec
+    appears on every registration form without touching this module.
+    """
+
+    def survey_fields(self) -> list[Any]:
+        """The bound survey fields, in the spec's display order."""
+        return [getattr(self, f"survey_{question.key}") for question in SIGNUP_SURVEY_QUESTIONS]
+
+    def survey_answers(self) -> dict[str, str]:
+        """The submitted answers keyed by question key, empty ones dropped."""
+        answers = {}
+        for question in SIGNUP_SURVEY_QUESTIONS:
+            value = (getattr(self, f"survey_{question.key}").data or "").strip()
+            if question.choices and value not in question.choices:
+                continue
+            if value:
+                answers[question.key] = value
+        return answers
+
+
+for _question in SIGNUP_SURVEY_QUESTIONS:
+    setattr(SignupSurveyFormMixin, f"survey_{_question.key}", _make_survey_field(_question))
+
+
+class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any-unimported]
     """Registration form with invite code, names, email and password."""
 
     invite_code = StringField(
         _l("Invite Code"),
-        validators=[DataRequired(), Length(min=5, max=50)],
+        validators=[InviteCodeRequiredUnlessOpenSignup(), Length(min=5, max=50)],
         description=_l("Enter your invite code to register"),
     )
 
@@ -183,18 +282,8 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     def validate_invite_code(self, invite_code: StringField) -> None:
-        """Validate that invite code exists and is valid."""
-        if not invite_code.data:
-            return
-        try:
-            with get_flask_uow() as uow:
-                invite = uow.user_invites.get_by_code(invite_code.data)
-                if not invite or not invite.is_valid():
-                    raise ValidationError(_("Invalid or expired invite code."))
-        except Exception:  # noqa: S110
-            # If we can't check (e.g., database error), allow form to continue
-            # The service layer will handle this case properly
-            pass
+        """Validate that invite code is present when needed, and valid when given."""
+        _validate_invite_code_field(invite_code)
 
 
 class PasswordResetRequestForm(FlaskForm):  # type: ignore[no-any-unimported]
@@ -554,17 +643,7 @@ class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     def validate_invite_code(self, invite_code: StringField) -> None:
         """Validate that invite code exists and is valid."""
-        if not invite_code.data:
-            return
-        try:
-            with get_flask_uow() as uow:
-                invite = uow.user_invites.get_by_code(invite_code.data)
-                if not invite or not invite.is_valid():
-                    raise ValidationError(_("Invalid or expired invite code."))
-        except Exception:  # noqa: S110
-            # If we can't check (e.g., database error), allow form to continue
-            # The service layer will handle this case properly
-            pass
+        _validate_invite_code_field(invite_code)
 
 
 class UploadTargetsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
