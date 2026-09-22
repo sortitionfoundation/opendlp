@@ -183,7 +183,7 @@ class TestOpenSignup:
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             user = uow.users.get_by_email("opensignup@example.com")
             assert user is not None
-            assert user.global_role == GlobalRole.USER
+            assert user.global_role == GlobalRole.ORGANISER
             survey = get_signup_survey(uow, user.id, admin_user.id)
             assert survey is not None
             assert survey.answers == {

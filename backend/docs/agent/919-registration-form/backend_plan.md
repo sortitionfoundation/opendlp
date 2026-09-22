@@ -96,7 +96,7 @@ To extend open signup to OAuth (reference branch has all of this working):
    is None, else `create_user(..., global_role=open_signup_role)`. An invite
    code, when given, still wins.
 2. Callbacks (`google_callback`, `microsoft_callback`) pass
-   `open_signup_role=GlobalRole.USER if has_feature("open_signup") else None`,
+   `open_signup_role=GlobalRole.ORGANISER if has_feature("open_signup") else None`,
    and when `created` is true call `save_signup_survey(uow, user.id,
    session.get("oauth_survey_answers") or {})` inside the same `with uow:`;
    pop `oauth_survey_answers` with the other oauth session keys.

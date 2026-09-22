@@ -338,11 +338,13 @@ def _registration_role_args(invite_code: str | None) -> dict:
     """create_user() role arguments for a registration.
 
     An empty invite code has already passed form validation, so open signup is
-    on and the new account gets the lowest global role.
+    on and the new account gets the organiser role: open signups are people who
+    want to run a deliberative process, so they can create assemblies straight
+    away.
     """
     if invite_code:
         return {"invite_code": invite_code}
-    return {"global_role": GlobalRole.USER}
+    return {"global_role": GlobalRole.ORGANISER}
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
