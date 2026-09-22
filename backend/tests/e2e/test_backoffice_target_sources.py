@@ -83,6 +83,42 @@ class TestConfigureAgeBrackets:
         assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40+", "UNKNOWN"]
 
 
+class TestConfigureSmallMapping:
+    def test_create_the_question_and_map_its_answers_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Type the new question's answers and their mapping in the set-up dialog, then read both fields back."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            category_id = _add_target(uow, existing_assembly, "Age group", ["Younger", "Older"])
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+        response = logged_in_admin.post(
+            f"{base}/{category_id}/configure",
+            data={
+                "modal": "1",
+                "method": "small_mapping",
+                "source_mode": "create",
+                "new_field_key": "age_band",
+                "new_field_label": "Which age group are you in?",
+                "map_source": ["16-29", "30-44", ""],
+                "map_target": ["Younger", "Older", ""],
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+
+        source = _field(postgres_session_factory, admin_user, existing_assembly, "age_band")
+        assert source.label == "Which age group are you in?"
+        assert source.field_type == FieldType.CHOICE_RADIO
+        assert [o.value for o in source.options] == ["16-29", "30-44"]
+        derived = _field(postgres_session_factory, admin_user, existing_assembly, "Age group")
+        assert derived.derived_from == ["age_band"]
+        assert derived.target_category_id == category_id
+        assert derived.derivation_config["mapping"] == {"16-29": "Younger", "30-44": "Older"}
+
+
 def _csrf(client, assembly):
     return get_csrf_token(client, f"/backoffice/assembly/{assembly.id}/target-sources")
 

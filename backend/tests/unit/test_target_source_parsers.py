@@ -6,9 +6,11 @@ from datetime import UTC, datetime
 import pytest
 
 from opendlp.domain.respondent_derivation import AgeBracketRule, SmallMappingRule
+from opendlp.domain.respondent_field_schema import ChoiceOption
 from opendlp.entrypoints.derivation_form_parser import (
     age_prefill_from_target,
     parse_age_rule,
+    parse_answer_options,
     parse_boundaries,
     parse_small_mapping_rule,
 )
@@ -101,6 +103,25 @@ class TestParseSmallMappingRule:
     def test_an_entirely_unmapped_table_is_rejected(self):
         with pytest.raises(ValueError, match="at least one"):
             parse_small_mapping_rule({"map_source": ["A", "B"], "map_target": ["", ""]})
+
+
+class TestParseAnswerOptions:
+    def test_typed_answers_become_options_in_order(self):
+        options = parse_answer_options({"map_source": ["16-29", "30-44"], "map_target": ["Younger", "Older"]})
+        assert options == [ChoiceOption(value="16-29"), ChoiceOption(value="30-44")]
+
+    def test_blank_rows_are_dropped_and_values_stripped(self):
+        """The table starts with spare blank rows, and a stray space is not part of an answer."""
+        options = parse_answer_options({"map_source": [" 16-29 ", "", "  "], "map_target": []})
+        assert options == [ChoiceOption(value="16-29")]
+
+    def test_no_answers_at_all_is_refused(self):
+        with pytest.raises(ValueError, match="Enter at least one answer"):
+            parse_answer_options({"map_source": ["", ""], "map_target": []})
+
+    def test_a_repeated_answer_is_refused_by_name(self):
+        with pytest.raises(ValueError, match="'16-29' appears more than once"):
+            parse_answer_options({"map_source": ["16-29", "30-44", "16-29"], "map_target": []})
 
 
 class TestAgePrefillFromTarget:

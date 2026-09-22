@@ -3,6 +3,7 @@ ABOUTME: One row per target; a set-up modal wires each to its field via the four
 
 import contextlib
 import uuid
+from itertools import zip_longest
 from typing import Any
 
 import structlog
@@ -25,6 +26,7 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.entrypoints.derivation_form_parser import (
     age_prefill_from_target,
     parse_age_rule,
+    parse_answer_options,
     parse_small_mapping_rule,
 )
 from opendlp.entrypoints.registration_hub import registration_hub_context
@@ -60,6 +62,7 @@ from opendlp.service_layer.target_source_service import (
     TargetSourceState,
     TargetSourceStatus,
     adopt_field,
+    choice_type_for,
     configure_target_source,
     resync_from_target,
     reusable_source_fields,
@@ -139,6 +142,23 @@ def _setup_values_from_request(source: Any) -> dict[str, Any]:
     }
     values["map_source"] = source.getlist("map_source")
     values["map_target"] = source.getlist("map_target")
+    return values
+
+
+def _apply_row_action(values: dict[str, Any], form_action: str) -> dict[str, Any]:
+    """Apply a mapping-table round trip (add or remove an answer row) to the form state."""
+    if form_action == "add_option":
+        values["map_source"].append("")
+        values["map_target"].append("")
+    elif form_action.startswith("remove_option_"):
+        try:
+            index = int(form_action.removeprefix("remove_option_"))
+        except ValueError:
+            return values
+        if 0 <= index < len(values["map_source"]):
+            values["map_source"].pop(index)
+            if index < len(values["map_target"]):
+                values["map_target"].pop(index)
     return values
 
 
@@ -261,6 +281,35 @@ def _resolve_source_selection(
     return next((f for f in candidates if str(f.id) == values["reuse_field_id"]), None)
 
 
+def _map_rows(
+    values: dict[str, Any],
+    method: str,
+    selected_source: RespondentFieldDefinition | None,
+    target_values: list[str],
+) -> list[dict[str, str]]:
+    """The mapping table's rows: one per option of the reused question, or the answers typed so far.
+
+    A new question starts with one more blank row than the target has values,
+    since mapping from more options means at least that many.
+    """
+    if method != DerivationType.SMALL_MAPPING.value:
+        return []
+    if values["source_mode"] == "create":
+        if not values["map_source"]:
+            return [{"source_value": "", "target_value": ""} for _unused in range(len(target_values) + 1)]
+        return [
+            {"source_value": source, "target_value": target}
+            for source, target in zip_longest(values["map_source"], values["map_target"], fillvalue="")
+        ]
+    if selected_source is None or not selected_source.options:
+        return []
+    submitted = dict(zip(values["map_source"], values["map_target"], strict=False))
+    return [
+        {"source_value": option.value, "target_value": submitted.get(option.value, "")}
+        for option in selected_source.options
+    ]
+
+
 def _setup_modal_ctx(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
@@ -295,13 +344,7 @@ def _setup_modal_ctx(
             preview_labels = [*rule.bracket_labels(), rule.fallback]
             mismatch_labels = [label for label in rule.bracket_labels() if label not in set(target["values"])]
 
-    map_rows: list[dict[str, str]] = []
-    if method == DerivationType.SMALL_MAPPING.value and selected_source is not None and selected_source.options:
-        submitted = dict(zip(values["map_source"], values["map_target"], strict=False))
-        map_rows = [
-            {"source_value": option.value, "target_value": submitted.get(option.value, "")}
-            for option in selected_source.options
-        ]
+    map_rows = _map_rows(values, method, selected_source, target["values"])
 
     new_field_name = target["name"] if method == _METHOD_EXACT else values["new_field_key"]
     return {
@@ -469,14 +512,19 @@ def _parse_source_spec(values: dict[str, Any], method: str) -> SourceFieldSpec:
     field_key = values["new_field_key"].strip() or _default_new_field_key(method, values["age_source_type"])
     if not field_key:
         raise ValueError(_("Enter a name for the new registration question"))
+    options = None
     if method == DerivationType.AGE_BRACKET.value:
         field_type = _SOURCE_TYPE_FOR_AGE.get(values["age_source_type"], FieldType.DATE)
+    elif method == DerivationType.SMALL_MAPPING.value:
+        options = tuple(parse_answer_options(values))
+        field_type = choice_type_for(len(options))
     else:
         field_type = FieldType.TEXT
     return SourceFieldSpec(
         field_key=field_key,
         label=values["new_field_label"].strip() or humanise_field_key(field_key),
         field_type=field_type,
+        options=options,
     )
 
 
@@ -491,10 +539,6 @@ def _parse_setup_spec(values: dict[str, Any]) -> TargetSourceSpec:
     if method == DerivationType.AGE_BRACKET.value:
         return AgeBracketSpec(rule=parse_age_rule(values), source=source)
     if method == DerivationType.SMALL_MAPPING.value:
-        if values["source_mode"] != "reuse":
-            raise ValueError(
-                _("Choose the choice question to map from — add it on the registration questions step first")
-            )
         return SmallMappingSpec(rule=parse_small_mapping_rule(values), source=source)
     return LargeMappingSpec(rule=LargeMappingRule(), source=source)
 
@@ -563,14 +607,15 @@ def setup_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     return _render_setup_modal(page_ctx, modal_ctx)
 
 
-def _setup_error_response(
-    assembly_id: uuid.UUID, category_id: uuid.UUID, values: dict[str, Any], error: str
+def _setup_modal_response(
+    assembly_id: uuid.UUID, category_id: uuid.UUID, values: dict[str, Any], error: str = "", status: int = 200
 ) -> ResponseReturnValue:
-    """Re-open the set-up modal with an error, after a save that did not happen.
+    """Re-open the set-up modal with the submitted values, when nothing was saved.
 
-    The save's block has rolled back, so the dialog is read in a fresh one.
-    Building it loads the assembly and the target, so it can fail in its own
-    right — the form is parsed before anything checks who is asking.
+    Either the save's block has rolled back, or there was no save (a mapping
+    table round trip), so the dialog is read in a block of its own. Building it
+    loads the assembly and the target, so it can fail in its own right — the
+    form is parsed before anything checks who is asking.
     """
     try:
         uow = bootstrap.get_flask_uow()
@@ -581,14 +626,29 @@ def _setup_error_response(
         return _dashboard_redirect(_("Assembly not found"))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to view this assembly"))
-    return _render_setup_modal(page_ctx, modal_ctx, 422)
+    return _render_setup_modal(page_ctx, modal_ctx, status)
+
+
+def _setup_error_response(
+    assembly_id: uuid.UUID, category_id: uuid.UUID, values: dict[str, Any], error: str
+) -> ResponseReturnValue:
+    """Re-open the set-up modal with an error, after a save that did not happen."""
+    return _setup_modal_response(assembly_id, category_id, values, error=error, status=422)
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/configure", methods=["POST"])
 @login_required
 def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Save the set-up modal: wire the target to its source in one transaction."""
+    """Save the set-up modal: wire the target to its source in one transaction.
+
+    A ``form_action`` other than save is a mapping-table round trip (add or
+    remove an answer row): the dialog is re-rendered with the typed values and
+    nothing is saved.
+    """
     values = _setup_values_from_request(request.form)
+    form_action = request.form.get("form_action", "save")
+    if form_action != "save":
+        return _setup_modal_response(assembly_id, category_id, _apply_row_action(values, form_action))
     try:
         spec = _parse_setup_spec(values)
         uow = bootstrap.get_flask_uow()

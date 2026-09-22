@@ -231,6 +231,14 @@ def _require_target_values_covered(field: RespondentFieldDefinition, category: T
         )
 
 
+def _require_mapping_outputs_are_target_values(rule: SmallMappingRule, category: TargetCategory) -> None:
+    """Refuse a mapping to a value the target does not have: nothing would count it."""
+    target_values = set(_target_option_values(category))
+    stray = next((value for value in rule.mapping.values() if value not in target_values), None)
+    if stray is not None:
+        raise FieldDefinitionConflictError(_l("'%(value)s' is not one of the target's values", value=stray))
+
+
 def _relink(uow: AbstractUnitOfWork, category: TargetCategory, field: RespondentFieldDefinition) -> None:
     """Point the category's link at ``field``, clearing it from any other field."""
     for other in _fields_linked_to(uow, category):
@@ -353,6 +361,8 @@ def _configure_derivation(
     source_spec: SourceFieldSpec,
 ) -> tuple[RespondentFieldDefinition, RecomputeReport]:
     derivation_type = _DERIVATION_TYPE_FOR_RULE[type(rule)]
+    if isinstance(rule, SmallMappingRule):
+        _require_mapping_outputs_are_target_values(rule, category)
     source = _resolve_source_field(uow, assembly_id, category, source_spec, derivation_type)
 
     # An age rule's outputs are its bracket labels; mapping rules output the

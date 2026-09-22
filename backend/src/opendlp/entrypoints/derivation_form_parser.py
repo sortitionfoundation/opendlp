@@ -10,6 +10,7 @@ from opendlp.domain.respondent_derivation import (
     SmallMappingRule,
     age_brackets_from_labels,
 )
+from opendlp.domain.respondent_field_schema import ChoiceOption, duplicate_option_value
 from opendlp.translations import gettext as _
 
 
@@ -63,6 +64,21 @@ def parse_small_mapping_rule(values: dict[str, Any]) -> SmallMappingRule:
     if not mapping:
         raise ValueError(_("Map at least one answer to a target value"))
     return SmallMappingRule(mapping=mapping)
+
+
+def parse_answer_options(values: dict[str, Any]) -> list[ChoiceOption]:
+    """The answers typed into the mapping table, as the options of the question being created.
+
+    Blank rows are dropped. Raises ValueError with a message for the organiser
+    when nothing is left, or when an answer is repeated.
+    """
+    options = [ChoiceOption(value=source.strip()) for source in values["map_source"] if source.strip()]
+    if not options:
+        raise ValueError(_("Enter at least one answer"))
+    duplicate = duplicate_option_value(options)
+    if duplicate:
+        raise ValueError(_("Answer values must be different: '%(value)s' appears more than once", value=duplicate))
+    return options
 
 
 def age_prefill_from_target(target_values: list[str]) -> dict[str, str] | None:
