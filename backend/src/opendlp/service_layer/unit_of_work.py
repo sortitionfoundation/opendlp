@@ -29,6 +29,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserBackupCodeRepository,
     SqlAlchemyUserInviteRepository,
     SqlAlchemyUserRepository,
+    SqlAlchemyUserSignupSurveyRepository,
 )
 
 if TYPE_CHECKING:
@@ -59,6 +60,7 @@ if TYPE_CHECKING:
         UserBackupCodeRepository,
         UserInviteRepository,
         UserRepository,
+        UserSignupSurveyRepository,
     )
 
 
@@ -70,6 +72,7 @@ class AbstractUnitOfWork(abc.ABC):
     assembly_gsheets: AssemblyGSheetRepository
     assembly_export_gsheets: AssemblyExportGSheetRepository
     user_invites: UserInviteRepository
+    user_signup_surveys: UserSignupSurveyRepository
     user_assembly_roles: UserAssemblyRoleRepository
     selection_run_records: SelectionRunRecordRepository
     password_reset_tokens: PasswordResetTokenRepository
@@ -197,6 +200,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.assembly_gsheets = SqlAlchemyAssemblyGSheetRepository(self.session)
         self.assembly_export_gsheets = SqlAlchemyAssemblyExportGSheetRepository(self.session)
         self.user_invites = SqlAlchemyUserInviteRepository(self.session)
+        self.user_signup_surveys = SqlAlchemyUserSignupSurveyRepository(self.session)
         self.user_assembly_roles = SqlAlchemyUserAssemblyRoleRepository(self.session)
         self.selection_run_records = SqlAlchemySelectionRunRecordRepository(self.session)
         self.password_reset_tokens = SqlAlchemyPasswordResetTokenRepository(self.session)

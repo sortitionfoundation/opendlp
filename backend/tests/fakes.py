@@ -28,6 +28,7 @@ from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
+from opendlp.domain.user_signup_surveys import UserSignupSurvey
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import (
     COUNTED_RESPONDENT_STATUSES,
@@ -63,6 +64,7 @@ from opendlp.service_layer.repositories import (
     UserBackupCodeRepository,
     UserInviteRepository,
     UserRepository,
+    UserSignupSurveyRepository,
 )
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork, UnitOfWorkError
 
@@ -299,6 +301,17 @@ class FakeUserInviteRepository(FakeRepository, UserInviteRepository):
         """Delete an invite from the repository."""
         if item in self._items:
             self._items.remove(item)
+
+
+class FakeUserSignupSurveyRepository(FakeRepository, UserSignupSurveyRepository):
+    """Fake implementation of UserSignupSurveyRepository."""
+
+    def get_by_user_id(self, user_id: uuid.UUID) -> UserSignupSurvey | None:
+        """Get the signup survey for a user, or None if they have none."""
+        for survey in self._items:
+            if survey.user_id == user_id:
+                return survey
+        return None
 
 
 class FakeUserAssemblyRoleRepository(FakeRepository, UserAssemblyRoleRepository):
@@ -1068,6 +1081,7 @@ _REPO_NAMES = (
     "assembly_gsheets",
     "assembly_export_gsheets",
     "user_invites",
+    "user_signup_surveys",
     "user_assembly_roles",
     "selection_run_records",
     "user_backup_codes",
@@ -1103,6 +1117,7 @@ class FakeStore:
         self.assembly_gsheets = FakeAssemblyGSheetRepository()
         self.assembly_export_gsheets = FakeAssemblyExportGSheetRepository()
         self.user_invites = FakeUserInviteRepository()
+        self.user_signup_surveys = FakeUserSignupSurveyRepository()
         self.user_assembly_roles = FakeUserAssemblyRoleRepository(users=self.users)
         self.selection_run_records = FakeSelectionRunRecordRepository()
         self.user_backup_codes = FakeUserBackupCodeRepository()
