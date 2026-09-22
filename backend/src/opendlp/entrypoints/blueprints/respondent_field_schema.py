@@ -27,6 +27,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
+    duplicate_option_value,
     normalise_field_key,
 )
 from opendlp.entrypoints.registration_hub import registration_hub_context
@@ -460,22 +461,6 @@ def _submitted_option_renames(values: dict[str, Any]) -> dict[str, str]:
         for row in values["options"]
         if row["original"] and row["value"].strip() and row["original"] != row["value"].strip()
     }
-
-
-def duplicate_option_value(options: list[ChoiceOption]) -> str:
-    """The first option value that appears twice, or "" when they are all distinct.
-
-    Exact-match comparison, because every other place an option value is
-    matched is exact: add_choice_option rejects a repeat with ``==``, and
-    SmallMappingRule.derive looks the source value up in a plain dict. Two
-    values differing only in case are therefore two real values, not a typo.
-    """
-    seen: set[str] = set()
-    for option in options:
-        if option.value in seen:
-            return option.value
-        seen.add(option.value)
-    return ""
 
 
 def _duplicate_option_error(options: list[ChoiceOption]) -> str:

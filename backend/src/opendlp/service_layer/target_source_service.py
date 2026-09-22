@@ -209,7 +209,7 @@ def _fields_linked_to(uow: AbstractUnitOfWork, category: TargetCategory) -> list
     ]
 
 
-def _choice_type_for(n_options: int) -> FieldType:
+def choice_type_for(n_options: int) -> FieldType:
     return FieldType.CHOICE_RADIO if n_options <= _MAX_RADIO_OPTIONS else FieldType.CHOICE_DROPDOWN
 
 
@@ -335,7 +335,7 @@ def _configure_exact_copy(
         label=spec.source.label.strip() or humanise_field_key(category.name),
         group=group,
         sort_order=_next_sort_order_in_group(existing, group),
-        field_type=_choice_type_for(len(target_values)),
+        field_type=choice_type_for(len(target_values)),
         options=[ChoiceOption(value=value) for value in target_values],
         on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
         help_text=spec.source.help_text,
