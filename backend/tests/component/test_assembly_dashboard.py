@@ -322,6 +322,12 @@ class TestTheExportButton:
         assert f"{_dashboard_url(assembly_with_targets)}/export/modal" in html
         assert 'id="export-modal-container"' in html
 
+    def test_the_modal_gets_the_fragment_dialog_focus_handling(self, logged_in_admin, assembly_with_targets):
+        """Focus goes into the modal on open and back to the button on close, found by its focus id."""
+        html = logged_in_admin.get(_dashboard_url(assembly_with_targets)).get_data(as_text=True)
+        assert '<div id="export-modal-container" data-fragment-dialog-host>' in html
+        assert 'data-focus-id="dashboard-export"' in html
+
     def test_export_button_is_hidden_on_the_empty_state(self, logged_in_admin, existing_assembly):
         html = logged_in_admin.get(_dashboard_url(existing_assembly)).get_data(as_text=True)
         assert f"{_dashboard_url(existing_assembly)}/export/modal" not in html

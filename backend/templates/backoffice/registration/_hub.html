@@ -44,7 +44,7 @@ ABOUTME: The Registration tab's landing page, and the dimmed backdrop behind eac
                         <span class="block text-heading-sm">{{ _("Registration questions") }}</span>
                         <span class="block text-body-sm" style="color: var(--color-secondary-text);">{{ _("Configure the questions for the registration page.") }}</span>
                         <span class="block text-body-sm" style="color: var(--color-secondary-text);">
-                            {{ _("%(count)s questions on the registration form", count=setup_summary["fields_on_form"]) }}
+                            {{ ngettext("%(num)s question on the registration page", "%(num)s questions on the registration page", setup_summary["fields_on_form"]) }}
                         </span>
                     </span>
                     {{ icon_arrow_forward(classes="w-6 h-6 flex-shrink-0") }}

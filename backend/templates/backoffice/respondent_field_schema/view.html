@@ -3,7 +3,7 @@ ABOUTME: Backoffice page for viewing and editing the respondent field schema
 ABOUTME: Read-only summary rows with section/order controls; field editing happens in a modal
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/icons.html" import icon_info %}
+{% from "backoffice/components/info_card.html" import info_card %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
@@ -35,42 +35,30 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
     {% call step_dialog("registration-questions-title", _("Registration questions"), url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id)) %}
         {% if data_source == "gsheet" and gsheet %}
             {# Google Sheet source - fields come from the spreadsheet columns, not from this UI. #}
-            <section class="mb-8">
-                <div class="rounded-lg p-6"
-                     style="background-color: var(--color-tables-cards);
-                            border: 1px solid var(--color-borders-dividers);">
-                    <div class="flex items-start gap-4">
-                        <div class="flex-shrink-0">
-                            {{ icon_info(classes="w-6 h-6", style="color: var(--color-primary-action);") }}
-                        </div>
-                        <div>
-                            <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Fields are defined by your Google Sheets spreadsheet") }}</h2>
-                            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                                {{ _("The fields for this assembly are the columns in the respondent tabs of your Google Sheets spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
-                            </p>
-                            <dl class="flex flex-col gap-2">
-                                <div class="flex gap-2">
-                                    <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Initial Selection Respondents Tab:") }}</dt>
-                                    <dd class="text-body-md" style="color: var(--color-body-text);">
-                                        <code class="px-2 py-0.5 rounded"
-                                              style="background-color: var(--color-page-background);">{{ gsheet.select_registrants_tab or _("Not configured") }}</code>
-                                    </dd>
-                                </div>
-                                <div class="flex gap-2">
-                                    <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Replacement Respondents Tab:") }}</dt>
-                                    <dd class="text-body-md" style="color: var(--color-body-text);">
-                                        <code class="px-2 py-0.5 rounded"
-                                              style="background-color: var(--color-page-background);">{{ gsheet.replace_registrants_tab or _("Not configured") }}</code>
-                                    </dd>
-                                </div>
-                            </dl>
-                            <div class="mt-4">
-                                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
-                            </div>
-                        </div>
+            {% call info_card(title=_("Fields are defined by your Google Sheets spreadsheet")) %}
+                <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                    {{ _("The fields for this assembly are the columns in the respondent tabs of your Google Sheets spreadsheet. Edit the spreadsheet to add, remove, or rename fields.") }}
+                </p>
+                <dl class="flex flex-col gap-2">
+                    <div class="flex gap-2">
+                        <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Initial Selection Respondents Tab:") }}</dt>
+                        <dd class="text-body-md" style="color: var(--color-body-text);">
+                            <code class="px-2 py-0.5 rounded"
+                                  style="background-color: var(--color-page-background);">{{ gsheet.select_registrants_tab or _("Not configured") }}</code>
+                        </dd>
                     </div>
+                    <div class="flex gap-2">
+                        <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Replacement Respondents Tab:") }}</dt>
+                        <dd class="text-body-md" style="color: var(--color-body-text);">
+                            <code class="px-2 py-0.5 rounded"
+                                  style="background-color: var(--color-page-background);">{{ gsheet.replace_registrants_tab or _("Not configured") }}</code>
+                        </dd>
+                    </div>
+                </dl>
+                <div class="mt-4">
+                    {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
                 </div>
-            </section>
+            {% endcall %}
         {% elif not schema_has_rows %}
             <section class="mb-8">
                 <p class="text-body-md mb-4">
@@ -87,13 +75,8 @@ ABOUTME: Read-only summary rows with section/order controls; field editing happe
         {% endif %}
     {% endcall %}
     {% if schema_has_rows and not (data_source == "gsheet" and gsheet) %}
-        <div id="field-modal-container">
-            {% if modal_ctx and modal_ctx["mode"] == "report" %}
-                {% set report_ctx = modal_ctx["report_ctx"] %}
-                {% include "backoffice/respondent_field_schema/_derivation_report_modal.html" %}
-            {% elif modal_ctx and modal_ctx["mode"] == "mapping" %}
-                {% include "backoffice/respondent_field_schema/_mapping_upload_modal.html" %}
-            {% elif modal_ctx %}
+        <div id="field-modal-container" data-fragment-dialog-host>
+            {% if modal_ctx %}
                 {% include "backoffice/respondent_field_schema/_field_modal.html" %}
             {% endif %}
         </div>

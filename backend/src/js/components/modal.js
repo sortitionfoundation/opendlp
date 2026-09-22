@@ -38,6 +38,12 @@ export function modal(options) {
       this.isOpen = true;
     },
 
+    /**
+     * Close, then navigate or reload if configured to. A close that stays on
+     * the page announces itself with a bubbling "modal-closed" event, so a
+     * fragment dialog host around the modal (init/fragment-dialog-focus.js)
+     * can clear it away and send focus back to what opened it.
+     */
     close: function () {
       if (this.canClose) {
         this.isOpen = false;
@@ -45,6 +51,10 @@ export function modal(options) {
           window.location.href = closeUrl;
         } else if (refreshOnClose) {
           window.location.reload();
+        } else if (this.$root) {
+          this.$root.dispatchEvent(
+            new CustomEvent("modal-closed", { bubbles: true }),
+          );
         }
       }
     },

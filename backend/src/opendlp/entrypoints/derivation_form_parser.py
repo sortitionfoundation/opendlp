@@ -1,5 +1,5 @@
 """ABOUTME: Parsers turning the derivation set-up forms into domain rules
-ABOUTME: Shared by the blueprints that render those forms; every ValueError carries a message for the organiser"""
+ABOUTME: Used by the target data sources blueprint; every ValueError carries a message for the organiser"""
 
 from datetime import UTC, date, datetime
 from itertools import zip_longest
@@ -7,12 +7,9 @@ from typing import Any
 
 from opendlp.domain.respondent_derivation import (
     AgeBracketRule,
-    DerivationRule,
-    LargeMappingRule,
     SmallMappingRule,
     age_brackets_from_labels,
 )
-from opendlp.domain.respondent_field_schema import DerivationType
 from opendlp.translations import gettext as _
 
 
@@ -66,18 +63,6 @@ def parse_small_mapping_rule(values: dict[str, Any]) -> SmallMappingRule:
     if not mapping:
         raise ValueError(_("Map at least one answer to a target value"))
     return SmallMappingRule(mapping=mapping)
-
-
-def parse_derivation_rule(values: dict[str, Any]) -> DerivationRule:
-    """The rule the modal's derived-panel values describe. Raises ValueError."""
-    method = values["derivation_method"]
-    if method == DerivationType.AGE_BRACKET.value:
-        return parse_age_rule(values)
-    if method == DerivationType.SMALL_MAPPING.value:
-        return parse_small_mapping_rule(values)
-    if method == DerivationType.LARGE_MAPPING.value:
-        return LargeMappingRule()
-    raise ValueError(_("Choose how the field should be derived"))
 
 
 def age_prefill_from_target(target_values: list[str]) -> dict[str, str] | None:

@@ -1,14 +1,15 @@
 {#
 ABOUTME: Recompute report modal — what saving or recomputing a derivation did to the pool
-ABOUTME: Shown in place of the field modal after a derivation save; Done closes via a plain link
+ABOUTME: Shown in the target data sources dialog after an upload or recompute; Done closes via a plain link
 #}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_footer, dialog_header %}
-{% set close_url = report_ctx.get("close_url") or url_for('respondent_field_schema.view_schema', assembly_id=assembly.id) %}
+{% set close_url = report_ctx["close_url"] %}
 {% set report = report_ctx["report"] %}
 <a href="{{ close_url }}"
    class="dialog-backdrop dialog-backdrop--clickable block"
-   aria-label="{{ _('Close') }}"></a>
+   tabindex="-1"
+   aria-hidden="true"></a>
 <div class="dialog-positioner"
      role="dialog"
      aria-modal="true"
@@ -64,12 +65,12 @@ ABOUTME: Shown in place of the field modal after a derivation save; Done closes 
                     <dd class="text-body-md">{{ report.changed }}</dd>
                 </div>
                 <div class="flex gap-2">
-                    <dt class="text-label-lg">{{ _("Fell back to UNKNOWN:") }}</dt>
+                    <dt class="text-label-lg">{{ _("Fell back to %(fallback)s:", fallback=report.fallback) }}</dt>
                     <dd class="text-body-md">{{ report.fell_back }}</dd>
                 </div>
             </dl>
             {% if report.unmatched_sample %}
-                <p class="text-body-sm mb-1">{{ _("Source values that didn't match anything (up to %(limit)d shown):", limit=20) }}</p>
+                <p class="text-body-sm mb-1">{{ _("Source values that didn't match anything (up to %(limit)d shown):", limit=report_ctx["sample_size"]) }}</p>
                 <ul class="mb-4 pl-4" style="list-style: disc;">
                     {% for value in report.unmatched_sample %}<li class="text-body-sm">{{ value }}</li>{% endfor %}
                 </ul>

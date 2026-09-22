@@ -1,10 +1,10 @@
-// ABOUTME: Alpine component for a row's "more actions" menu behind a kebab button
+// ABOUTME: Alpine component for a menu behind a button - a row's kebab, or the dropdown_button macro
 // ABOUTME: A WAI-ARIA menu button: arrow keys move between items, Escape closes just the menu
 
 var ITEM_SELECTOR = '[role="menuitem"]:not([disabled])';
 
 /**
- * Build the state for a kebab actions menu, following the WAI-ARIA menu button
+ * Build the state for a menu behind a button, following the WAI-ARIA menu button
  * pattern (https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/).
  *
  * The template gives the toggle x-ref="menuToggle" and the role="menu" element
@@ -14,7 +14,7 @@ var ITEM_SELECTOR = '[role="menuitem"]:not([disabled])';
  * Bind on the element wrapping the toggle and menu (not on window):
  *   @keydown.escape="closeOnEscape"  - when the menu is open the key press stops
  *       there, so dialog-escape.js - listening on window - does not also close
- *       the dialog the row lives in; focus returns to the kebab. With the menu
+ *       the dialog the menu lives in; focus returns to the toggle. With the menu
  *       shut, Escape carries on to the dialog as usual.
  *   @focusout="closeOnFocusOut"      - tabbing out of the menu closes it.
  * Bind @keydown="onToggleKeydown" on the toggle and @keydown="onMenuKeydown" on
@@ -22,7 +22,7 @@ var ITEM_SELECTOR = '[role="menuitem"]:not([disabled])';
  *
  * @returns {Object} Alpine component state
  */
-export function rowActionsMenu() {
+export function menuButton() {
   return {
     open: false,
 

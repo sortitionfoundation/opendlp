@@ -11,6 +11,12 @@ from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
@@ -654,6 +660,53 @@ class TestBackofficeCsvDelete:
         )
         assert response.status_code == 200
         assert b"deleted" in response.data.lower() or b"success" in response.data.lower()
+
+    def _link_a_question(self, fake_store: FakeStore, assembly: Assembly) -> RespondentFieldDefinition:
+        with FakeUnitOfWork(store=fake_store) as uow:
+            category = uow.target_categories.get_by_assembly_id(assembly.id)[0]
+            question = RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="gender",
+                label="Your gender",
+                group=RespondentFieldGroup.ABOUT_YOU,
+                sort_order=10,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+                target_category_id=category.id,
+            )
+            uow.respondent_field_definitions.add(question)
+            uow.commit()
+            return question
+
+    def test_delete_targets_with_a_linked_question_asks_first(
+        self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly, fake_store: FakeStore
+    ) -> None:
+        self._link_a_question(fake_store, assembly_with_targets)
+
+        response = logged_in_admin.post(f"/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets")
+
+        body = response.get_data(as_text=True)
+        assert response.status_code == 200
+        assert 'Deleting the target "Gender" unlinks: Your gender' in body
+        assert f'action="/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets"' in body
+        assert 'name="force_unlink" value="1"' in body
+        assert "Break the links and delete all targets" in body
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert len(uow.target_categories.get_by_assembly_id(assembly_with_targets.id)) == 1
+
+    def test_confirming_deletes_the_targets_and_unlinks_the_question(
+        self, logged_in_admin: FlaskClient, assembly_with_targets: Assembly, fake_store: FakeStore
+    ) -> None:
+        question = self._link_a_question(fake_store, assembly_with_targets)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_targets.id}/data/delete-targets", data={"force_unlink": "1"}
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get_by_assembly_id(assembly_with_targets.id) == []
+            assert uow.respondent_field_definitions.get(question.id).target_category_id is None
 
 
 class TestBackofficeCsvViewPages:

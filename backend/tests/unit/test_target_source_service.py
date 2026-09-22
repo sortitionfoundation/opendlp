@@ -268,6 +268,18 @@ class TestConfigureAgeBracket:
                 AgeBracketSpec(rule=AGE_RULE, source=SourceFieldSpec(reuse_field_id=existing.id)),
             )
 
+    def test_refusing_a_new_source_names_its_type_as_the_interface_does(self, uow):
+        """The label an organiser picked from, not the enum token stored for it."""
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Age bracket", ["16-29", "30-99"])
+        spec = AgeBracketSpec(rule=AGE_RULE, source=SourceFieldSpec(field_key="notes", field_type=FieldType.LONGTEXT))
+
+        with pytest.raises(FieldDefinitionConflictError) as refusal:
+            configure_target_source(uow, user.id, assembly.id, category.id, spec)
+
+        assert "'Long text'" in str(refusal.value)
+        assert "longtext" not in str(refusal.value)
+
     def test_reconfiguring_updates_the_existing_derived_field(self, uow):
         user, assembly = _seed(uow)
         category = _add_category(uow, assembly, "Age bracket", ["16-29", "30-99"])
@@ -833,6 +845,31 @@ class TestTargetSetupData:
         configure_target_source(uow, user.id, assembly.id, category.id, ExactCopySpec())
 
         assert target_setup_data(uow, user.id, assembly.id, category.id).is_linked is True
+
+    def test_it_counts_the_rows_of_a_linked_lookup_table(self, uow):
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Region", ["North", "South"])
+        _source, derived = configure_target_source(
+            uow,
+            user.id,
+            assembly.id,
+            category.id,
+            LargeMappingSpec(rule=LargeMappingRule(), source=SourceFieldSpec(field_key="Postcode")),
+        )[0]
+        assert target_setup_data(uow, user.id, assembly.id, category.id).mapping_row_count == 0
+
+        uow.respondent_field_mapping_entries.bulk_add([
+            RespondentFieldMappingEntry(field_id=derived.id, lookup_key="AB1", output_value="North")
+        ])
+
+        assert target_setup_data(uow, user.id, assembly.id, category.id).mapping_row_count == 1
+
+    def test_a_target_without_a_lookup_table_has_no_rows_to_count(self, uow):
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Gender", ["Male", "Female"])
+        configure_target_source(uow, user.id, assembly.id, category.id, ExactCopySpec())
+
+        assert target_setup_data(uow, user.id, assembly.id, category.id).mapping_row_count == 0
 
     def test_a_target_with_no_values_yet_still_opens(self, uow):
         """The dialog opens, and the save explains what is missing."""

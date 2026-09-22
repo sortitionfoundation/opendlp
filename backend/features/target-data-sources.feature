@@ -9,7 +9,7 @@ Feature: Target data sources
     And I am signed in as an admin user
     When I open the target data sources for "Exact Copy Demo"
     And I set up the "Region" target as an exact copy
-    Then the "Region" target row should say "Asked on the registration form"
+    Then the "Region" target row should say "Asked on the registration page"
     When I open the respondent field schema editor for "Exact Copy Demo"
     Then the schema editor should list the "Region" field
     And the "Region" row should carry the "Feeds target: Region" tag
@@ -44,7 +44,7 @@ Feature: Target data sources
     When I open the target data sources for "Remove Computed Demo"
     And I set up the "age bracket" target with age ranges from "year_of_birth"
     And I open the more actions menu for the "age bracket" target
-    And I choose "Remove computed question" from the menu and confirm
+    And I choose "Delete computed question" from the menu and confirm
     Then the "age bracket" target row should say "No data source"
     When I open the respondent field schema editor for "Remove Computed Demo"
     Then the schema editor should list the "year_of_birth" field
@@ -63,6 +63,29 @@ Feature: Target data sources
     And I choose "Unlink" from the menu and confirm
     Then the "Region" target row should say "isn't linked to it yet"
 
+  Scenario: A lookup-table target moves straight on to uploading its table
+    Given there is an assembly with respondents imported from CSV called "Lookup Upload Demo"
+    And the assembly "Lookup Upload Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Lookup Upload Demo"
+    And I set up the "Region" target to map from "postcode"
+    Then the set-up dialog should be on "Step 2 of 2"
+    And the "Upload later" button should be hidden
+    When I upload a lookup table mapping "SW1A 1AA" to "North"
+    Then the set-up dialog should say "Rows stored:"
+    And the "Region" target row should say "1 lookup row"
+
+  Scenario: Putting off a lookup table upload
+    Given there is an assembly with respondents imported from CSV called "Lookup Defer Demo"
+    And the assembly "Lookup Defer Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Lookup Defer Demo"
+    And I set up the "Region" target to map from "postcode"
+    And I tick "I don't have the lookup table yet"
+    And I press the "Upload later" button
+    Then I should see a warning toast saying "Until the lookup table is uploaded, everyone's Region will be UNKNOWN."
+    And the "Region" target row should say "Until the lookup table is uploaded, everyone's Region is UNKNOWN."
+
   Scenario: Working a row's more actions menu from the keyboard
     Given there is an assembly with respondents imported from CSV called "Menu Keyboard Demo"
     And the assembly "Menu Keyboard Demo" has a "Region" target with values "North, South"
@@ -75,3 +98,34 @@ Feature: Target data sources
     Then the more actions menu for the "Region" target should be closed
     And keyboard focus should be on the more actions button for the "Region" target
     And the target data sources should still be open
+
+  Scenario: Keyboard focus follows a set-up dialog in and back out
+    Given there is an assembly with respondents imported from CSV called "Dialog Focus Demo"
+    And the assembly "Dialog Focus Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Dialog Focus Demo"
+    And I focus the set-up button for the "Region" target and press "Enter"
+    Then keyboard focus should be on the method chooser in the set-up dialog
+    And the checklist behind the set-up dialog should be out of reach
+    When I choose the "exact" method from the keyboard
+    Then keyboard focus should be on the method chooser in the set-up dialog
+    When I press the "Save" button
+    Then keyboard focus should be on the set-up button for the "Region" target
+
+  Scenario: A stray Escape does not throw away a set-up in progress
+    Given there is an assembly with respondents imported from CSV called "Leave Guard Demo"
+    And the assembly "Leave Guard Demo" has a "Region" target with values "North, South"
+    And I am signed in as an admin user
+    When I open the target data sources for "Leave Guard Demo"
+    And I focus the set-up button for the "Region" target and press "Enter"
+    And I press Escape
+    Then the set-up dialog should be closed
+    When I focus the set-up button for the "Region" target and press "Enter"
+    And I choose the "exact" method from the keyboard
+    And I press Escape
+    Then I should be asked whether to discard my changes
+    When I choose "Keep editing"
+    Then the set-up dialog should still have the "exact" method chosen
+    When I press Escape
+    And I choose "Discard changes"
+    Then the set-up dialog should be closed

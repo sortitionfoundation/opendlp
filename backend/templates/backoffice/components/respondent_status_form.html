@@ -3,6 +3,7 @@ ABOUTME: Selection-status block for a respondent — current status + transition
 ABOUTME: Shared between the view-respondent and edit-respondent pages
 #}
 {% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/tag.html" import tag %}
 {# Selection status block: current value, optional run id, and per-target
    collapsible transition forms.
 
@@ -22,7 +23,7 @@ Args:
         <div class="flex items-baseline gap-3">
             <dt class="text-label-lg">{{ _("Current status:") }}</dt>
             <dd>
-                <strong class="govuk-tag govuk-tag--{{ status_colour }}">{{ status_key|title }}</strong>
+                {{ tag(status_key|title, colour=status_colour) }}
             </dd>
         </div>
         {% if respondent.selection_run_id %}

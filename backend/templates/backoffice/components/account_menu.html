@@ -26,19 +26,28 @@ ABOUTME: Reuses the .menu / .menu-item atoms and the Alpine open/close pattern
           items are ordinary navigation links, so no menu/menuitem roles are used
           — that pattern would promise arrow-key navigation this component does
           not implement.
-        - Keyboard: Tab moves through the links; Escape closes; click outside closes.
+        - Keyboard: Tab moves through the links; Escape closes and returns focus to
+          the trigger; tabbing out or clicking outside closes.
+        - Open, close, Escape and focus-out come from the menuButton component; its
+          arrow-key handlers are left unbound, and with no x-ref="menu" opening
+          moves no focus. Escape is bound on this element, not window, so inside
+          a fragment dialog it would close only this panel.
     #}
     {% set items = items or [] %}
     {% set menu_id = id ~ "-menu" %}
     {% set toggle_id = id ~ "-toggle" %}
 
-    <div class="relative inline-flex" x-data="{ open: false }" @keydown.escape.window="open = false">
+    <div class="relative inline-flex"
+         x-data="menuButton"
+         @keydown.escape="closeOnEscape"
+         @focusout="closeOnFocusOut">
         <button type="button"
                 id="{{ toggle_id }}"
                 class="inline-flex items-center gap-1 rounded-full p-0.5 transition-opacity hover:opacity-80"
                 style="color: var(--color-body-text); background: transparent; border: none; cursor: pointer;"
-                @click="open = !open"
-                @click.outside="open = false"
+                x-ref="menuToggle"
+                @click="toggleMenu()"
+                @click.outside="closeMenu()"
                 x-bind:aria-expanded="open ? 'true' : 'false'"
                 aria-controls="{{ menu_id }}"
                 aria-label="{{ label if label else _('Account menu') }}">
@@ -60,7 +69,7 @@ ABOUTME: Reuses the .menu / .menu-item atoms and the Alpine open/close pattern
                     {% else %}
                         <a href="{{ item.href }}"
                            class="menu-item"
-                           @click="open = false"
+                           @click="closeMenu()"
                            {% for key, value in item.items() if key not in ['label', 'href', 'icon', 'isVisible', 'divider'] %} {{ key }}="{{ value }}"{% endfor %}>
                             <span class="flex items-center gap-2">
                                 {% if item.icon %}

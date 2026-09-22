@@ -18,3 +18,15 @@ Feature: Export respondents
     And I open the export modal
     And I dismiss the export modal with the Cancel button
     Then the export modal is no longer visible
+
+  Scenario: Keyboard focus follows the export modal in and back out
+    Given there is an assembly with respondents ready to export called "Export Focus Demo"
+    And I am signed in as an admin user
+    When I open the respondents page for "Export Focus Demo"
+    And I open the export modal
+    Then keyboard focus should be inside the export modal
+    And the page behind the export modal should be out of reach
+    When I press Escape
+    Then the export modal is no longer visible
+    And keyboard focus should be on the Export button
+    And the page behind the export modal should be back in reach

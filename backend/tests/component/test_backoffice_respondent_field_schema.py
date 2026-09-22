@@ -1,14 +1,13 @@
 # ABOUTME: Component tests for the respondent field schema management UI over a FakeUnitOfWork
 # ABOUTME: Drives the real backoffice schema routes + services against a seeded fake store (no PostgreSQL)
 
-import io
 import re
 import uuid
 from datetime import UTC, datetime
 
 import pytest
 
-from opendlp.domain.respondent_derivation import SmallMappingRule
+from opendlp.domain.respondent_derivation import AgeBracketRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -124,6 +123,18 @@ class TestQuestionsList:
             assert links == [
                 f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{field.id}/edit-modal"
             ]
+
+    def test_each_rows_question_is_its_row_header(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        """A screen reader names the question when reading any other cell in its row."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        rows = self._rows(self._page(logged_in_admin, existing_assembly))
+
+        assert rows
+        for field_key, row in rows.items():
+            header = re.search(r'<th scope="row">(.*?)</th>', row, re.DOTALL)
+            assert header is not None
+            assert f">{field_key}</code>" in header.group(1)
 
     def test_every_section_has_its_own_add_button_even_when_empty(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -656,6 +667,22 @@ class TestFieldModal:
         assert 'role="dialog"' in body
         assert "Add a question" in body
 
+    @pytest.mark.parametrize(("query", "expected"), [("", ""), ("?dirty=1", "1")])
+    def test_the_modal_carries_its_unsaved_input_flag_through_a_refresh(
+        self, query, expected, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Opened fresh it is clean; a refresh after typing comes back dirty, so closing still asks first."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal{query}", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        assert 'x-data="dialogLeaveGuard"' in body
+        assert re.search(rf'name="dirty"\s+value="{expected}"\s+x-ref="dirtyInput"', body)
+        assert len(re.findall(r'@click="guardLeave\(\$event\)"', body)) == 3
+        assert "Discard changes?" in body
+
     def test_the_modal_refresh_keeps_the_csrf_token_out_of_the_url(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
@@ -669,6 +696,20 @@ class TestFieldModal:
         refreshing = re.findall(r"<[^>]*hx-get=[^>]*hx-include=[^>]*>", body)
         assert refreshing
         assert all('hx-params="not csrf_token"' in tag for tag in refreshing)
+
+    def test_the_page_says_where_keyboard_focus_returns_when_a_dialog_closes(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """fragment-dialog-focus.js finds the opener again by these, after the editor has been re-rendered."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(self._base(existing_assembly)).get_data(as_text=True)
+
+        assert 'id="field-modal-container" data-fragment-dialog-host' in body
+        edit_ids = re.findall(r'data-focus-id="(question-[^"]+)"', body)
+        add_ids = re.findall(r'data-focus-id="(add-question-[^"]+)"', body)
+        assert edit_ids and len(edit_ids) == len(set(edit_ids))
+        assert add_ids and len(add_ids) == len(set(add_ids))
 
     def test_new_modal_plain_request_renders_the_page_with_the_modal_open(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -1533,14 +1574,14 @@ class TestFieldSpecJson:
         assert body["unmatched_target_categories"] == []
 
 
-class TestDerivedFieldModal:
-    """The derived-field flow: panel rendering, creation per method, editing, and reports."""
+class TestDerivedFieldsLiveOnTargetSources:
+    """Computed questions are set up on the target data sources step; this editor never shows or edits them."""
 
     def _base(self, existing_assembly):
         return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
 
-    def _seed_sources_and_targets(self, fake_store, admin_user, existing_assembly):
-        """A year_of_birth INTEGER source, a gender choice source, and matching targets."""
+    def _create_derived(self, fake_store, admin_user, existing_assembly):
+        """An age bracket computed from a year_of_birth question, created the way the target step does."""
         _seed_schema(fake_store, admin_user, existing_assembly)
         with FakeUnitOfWork(store=fake_store) as uow:
             respondent_field_schema_service.add_field(
@@ -1550,65 +1591,19 @@ class TestDerivedFieldModal:
                 field_key="year_of_birth",
                 field_type=FieldType.INTEGER,
             )
-            gender = next(
-                f
-                for f in respondent_field_schema_service.get_schema(uow, admin_user.id, existing_assembly.id)
-                if f.field_key == "gender"
-            )
-            respondent_field_schema_service.update_field(
+            derived, _report = derivation_service.create_derived_field(
                 uow,
                 admin_user.id,
                 existing_assembly.id,
-                gender.id,
-                field_type=FieldType.CHOICE_RADIO,
-                options=[ChoiceOption(value="Female"), ChoiceOption(value="Male")],
+                field_key="age bracket",
+                label="age bracket",
+                source_field_key="year_of_birth",
+                rule=AgeBracketRule(as_of_date=datetime.now(UTC).date(), min_age=16, max_age=60, boundaries=(25, 40)),
             )
-            uow.target_categories.add(
-                TargetCategory(
-                    assembly_id=existing_assembly.id,
-                    name="age bracket",
-                    values=[
-                        TargetValue(value="16-24", min=5, max=10),
-                        TargetValue(value="25-39", min=5, max=10),
-                        TargetValue(value="40-59", min=5, max=10),
-                        TargetValue(value="60+", min=5, max=10),
-                    ],
-                )
-            )
-            uow.target_categories.add(
-                TargetCategory(
-                    assembly_id=existing_assembly.id,
-                    name="gender group",
-                    values=[
-                        TargetValue(value="Women", min=10, max=12),
-                        TargetValue(value="Men", min=10, max=12),
-                    ],
-                )
-            )
-
-    def _derived_form(self, **overrides):
-        data = {
-            "modal": "1",
-            "form_action": "save",
-            "type_choice": "derived",
-            "target_name": "age bracket",
-            "derivation_method": "age_bracket",
-            "source_key": "year_of_birth",
-            "as_of_day": "1",
-            "as_of_month": "6",
-            "as_of_year": str(datetime.now(UTC).date().year),
-            "min_age": "16",
-            "max_age": "60",
-            "boundaries": "25, 40",
-            "help_text": "",
-            "label": "",
-        }
-        data.update(overrides)
-        return data
+        return derived
 
     def test_derived_type_is_never_offered(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        """Derived fields are created on the target data sources step, not from this modal."""
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+        _seed_schema(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.get(
             f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
@@ -1616,11 +1611,11 @@ class TestDerivedFieldModal:
         body = response.get_data(as_text=True)
         assert 'value="derived"' not in body
 
-    def test_derived_submitted_to_the_plain_add_route_is_refused(
+    def test_a_question_type_the_modal_does_not_offer_is_refused(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """With JS off, Save can reach the plain add route while Derived is picked — that must not make a text field."""
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+        """An unrecognised type must not quietly become a text question."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.post(
             f"{self._base(existing_assembly)}/fields/add",
@@ -1633,234 +1628,56 @@ class TestDerivedFieldModal:
             headers={"HX-Request": "true"},
         )
         assert response.status_code == 422
-        assert "Choose the target and method" in response.get_data(as_text=True)
-
+        assert "Choose a question type" in response.get_data(as_text=True)
         assert not any(f.field_key == "age_band" for f in _get_schema(fake_store, admin_user, existing_assembly))
 
-    def test_derived_panel_lists_targets_and_filters_sources_by_method(
+    def test_derived_fields_do_not_appear_on_the_fields_page(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
-        """Age brackets offer the INTEGER source but not the choice field; targets fill the select."""
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+        derived = self._create_derived(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(self._base(existing_assembly))
+        body = response.get_data(as_text=True)
+        assert "age bracket" not in body
+        assert f"/fields/{derived.id}/" not in body
+
+    def test_editing_a_derived_field_redirects_to_the_target_data_sources(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """An old link to a computed question's edit dialog lands where it is managed now."""
+        derived = self._create_derived(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.get(f"{self._base(existing_assembly)}/fields/{derived.id}/edit-modal")
+        assert response.status_code == 302
+        assert response.location.endswith(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
+
+        page = logged_in_admin.get(response.location).get_data(as_text=True)
+        assert "Computed questions are set up on the target data sources step" in page
+
+    def test_editing_a_derived_field_over_htmx_redirects_the_whole_page(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        derived = self._create_derived(fake_store, admin_user, existing_assembly)
 
         response = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/new-modal",
-            query_string={"modal": "1", "type_choice": "derived", "derivation_method": "age_bracket"},
-            headers={"HX-Request": "true"},
+            f"{self._base(existing_assembly)}/fields/{derived.id}/edit-modal", headers={"HX-Request": "true"}
         )
         assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        assert 'value="age bracket"' in body
-        assert 'value="gender group"' in body
-        assert 'value="year_of_birth"' in body
-        assert 'value="gender"' not in body  # a choice field can't feed an age bracket
+        assert response.headers["HX-Redirect"].endswith(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
 
-    def test_age_config_prefills_boundaries_from_the_target_and_date_from_the_assembly(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """Choosing a "16-24"-style target pre-fills min/max/boundaries; the as-of date comes from the assembly."""
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
+    def test_the_derived_field_routes_are_gone(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        derived = self._create_derived(fake_store, admin_user, existing_assembly)
+        base = self._base(existing_assembly)
 
-        response = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/new-modal",
-            query_string={
-                "modal": "1",
-                "type_choice": "derived",
-                "derivation_method": "age_bracket",
-                "target_name": "age bracket",
-            },
-            headers={"HX-Request": "true"},
-        )
-        body = response.get_data(as_text=True)
-        assert 'name="min_age"' in body
-        assert 'value="16"' in body
-        assert 'value="60"' in body
-        assert 'value="25, 40"' in body
-        # The as-of date inputs are pre-filled from first_assembly_date (set on the fixture).
-        assert f'value="{existing_assembly.first_assembly_date.year}"' in body
-
-    def test_create_age_bracket_derived_field_shows_the_recompute_report(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add-derived",
-            data=self._derived_form(),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        assert "Derived field created" in body
-        assert "Respondents recomputed" in body
-        assert 'id="schema-editor"' in body
-        assert "hx-swap-oob" in body
-
-        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
-        assert field.is_derived
-        assert field.derived_from == ["year_of_birth"]
-        assert field.derivation_config["boundaries"] == [25, 40]
-        assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40-59", "60+", "UNKNOWN"]
-
-    def test_create_small_mapping_derived_field(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add-derived",
-            data=self._derived_form(
-                target_name="gender group",
-                derivation_method="small_mapping",
-                source_key="gender",
-                map_source=["Female", "Male"],
-                map_target=["Women", "Men"],
-            ),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-
-        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender group")
-        assert field.derivation_config["mapping"] == {"Female": "Women", "Male": "Men"}
-        assert [o.value for o in field.options] == ["Women", "Men", "UNKNOWN"]
-
-    def test_create_large_mapping_derived_field_with_an_empty_table(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add-derived",
-            data=self._derived_form(
-                target_name="gender group",
-                derivation_method="large_mapping",
-                source_key="postcode",
-            ),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-
-        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender group")
-        assert field.derivation_config == {"fallback": "UNKNOWN"}
-        assert [o.value for o in field.options] == ["Women", "Men", "UNKNOWN"]
-
-    def test_invalid_age_config_returns_422_with_the_error_inline(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add-derived",
-            data=self._derived_form(as_of_month="13"),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 422
-        assert "as-of date" in response.get_data(as_text=True)
-
-    def test_rule_validation_error_returns_422_with_the_organiser_message(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add-derived",
-            data=self._derived_form(min_age="50", max_age="40", boundaries=""),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 422
-        body = response.get_data(as_text=True)
-        assert "The maximum age must be greater than the minimum age" in body
-        assert "max_age must be greater than min_age" not in body
-
-    def test_missing_target_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add-derived",
-            data=self._derived_form(target_name=""),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 422
-        assert "Choose the target" in response.get_data(as_text=True)
-
-    def _create_derived(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
-        logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add-derived",
-            data=self._derived_form(),
-            headers={"HX-Request": "true"},
-        )
-        return next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
-
-    def test_edit_modal_for_a_derived_field_prefills_the_config(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        field = self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/{field.id}/edit-modal", headers={"HX-Request": "true"}
-        )
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        assert 'value="25, 40"' in body
-        assert "delete this field and create it again" in body
-        assert 'name="on_registration_page"' not in body  # derived fields are never collected
-
-    def test_edit_modal_keeps_a_stored_config_the_target_would_have_prefilled(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """A saved rule with no boundaries stays that way — the target's value names only seed a new field."""
-        self._seed_sources_and_targets(fake_store, admin_user, existing_assembly)
-        logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add-derived",
-            data=self._derived_form(min_age="16", max_age="100", boundaries=""),
-            headers={"HX-Request": "true"},
-        )
-        field = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
-        assert field.derivation_config["boundaries"] == []
-
-        response = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/{field.id}/edit-modal", headers={"HX-Request": "true"}
-        )
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        # The target reads as 16-24, 25-39, 40-59, 60+ — max 60 with boundaries
-        # 25, 40 — which is exactly what must not be written over the stored config.
-        assert _input_value(body, "derived-max-age") == "100"
-        assert _input_value(body, "derived-boundaries") == ""
-
-    def test_update_derivation_config_recomputes_and_reports(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        field = self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/{field.id}/derivation",
-            data=self._derived_form(boundaries="30", label="Age bracket", help_text="derived from year of birth"),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        assert "Derivation updated" in response.get_data(as_text=True)
-
-        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
-        assert stored.derivation_config["boundaries"] == [30]
-        assert stored.help_text == "derived from year of birth"
-
-    def test_update_derivation_strips_surrounding_space_from_the_help_text(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        field = self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/{field.id}/derivation",
-            data=self._derived_form(help_text="  from year of birth  "),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-
-        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "age bracket")
-        assert stored.help_text == "from year of birth"
+        assert logged_in_admin.post(f"{base}/fields/add-derived", data={}).status_code == 404
+        assert logged_in_admin.post(f"{base}/fields/{derived.id}/derivation", data={}).status_code == 404
+        assert logged_in_admin.get(f"{base}/fields/{derived.id}/mapping-modal").status_code == 404
+        assert logged_in_admin.post(f"{base}/fields/{derived.id}/mapping-upload", data={}).status_code == 404
+        assert logged_in_admin.post(f"{base}/fields/{derived.id}/recompute", data={}).status_code == 404
 
     def test_relabel_a_source_field_via_the_modal(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
+        """A question something is computed from keeps its type, so relabelling it is fine."""
+        self._create_derived(fake_store, admin_user, existing_assembly)
         source = next(
             f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "year_of_birth"
         )
@@ -1886,367 +1703,6 @@ class TestDerivedFieldModal:
         )
         assert stored.label == "Birth year"
         assert stored.field_type == FieldType.INTEGER
-
-    def test_derived_fields_do_not_appear_on_the_fields_page(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """Derived fields live on the target data sources step, not the registration fields editor."""
-        self._create_derived(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = logged_in_admin.get(self._base(existing_assembly))
-        body = response.get_data(as_text=True)
-        assert "Derived from year_of_birth" not in body
-        assert "age bracket" not in body
-
-
-class TestMappingUploadAndRecompute:
-    """The lookup-table upload dialog and the per-row recompute action."""
-
-    def _base(self, existing_assembly):
-        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
-
-    def _create_large_mapping_field(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        """A postcode → region large-mapping derived field, created through the modal."""
-        _seed_schema(fake_store, admin_user, existing_assembly)
-        with FakeUnitOfWork(store=fake_store) as uow:
-            uow.target_categories.add(
-                TargetCategory(
-                    assembly_id=existing_assembly.id,
-                    name="region",
-                    values=[
-                        TargetValue(value="North", min=5, max=10),
-                        TargetValue(value="South", min=5, max=10),
-                    ],
-                )
-            )
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add-derived",
-            data={
-                "modal": "1",
-                "form_action": "save",
-                "type_choice": "derived",
-                "target_name": "region",
-                "derivation_method": "large_mapping",
-                "source_key": "postcode",
-                "help_text": "",
-                "label": "",
-            },
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        return next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "region")
-
-    def test_derived_rows_and_their_actions_are_off_the_fields_page(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """Upload/recompute now live on the target data sources checklist, not this editor."""
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = logged_in_admin.get(self._base(existing_assembly))
-        body = response.get_data(as_text=True)
-        assert f"/fields/{field.id}/mapping-modal" not in body
-        assert f"/fields/{field.id}/recompute" not in body
-
-    def test_mapping_modal_renders_as_a_fragment(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/{field.id}/mapping-modal", headers={"HX-Request": "true"}
-        )
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        assert "<html" not in body
-        assert 'name="mapping_file"' in body
-        assert 'name="allow_new_outputs"' in body
-
-    def test_mapping_modal_for_a_non_mapping_field_is_refused(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        _seed_schema(fake_store, admin_user, existing_assembly)
-        plain = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "postcode")
-
-        response = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/{plain.id}/mapping-modal", follow_redirects=True
-        )
-        assert response.status_code == 200
-        assert b"Field not found" in response.data
-
-    def _upload(self, logged_in_admin, existing_assembly, field, csv_content, allow_new_outputs=False):
-        data = {"mapping_file": (io.BytesIO(csv_content.encode("utf-8")), "mapping.csv")}
-        if allow_new_outputs:
-            data["allow_new_outputs"] = "1"
-        return logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/{field.id}/mapping-upload",
-            data=data,
-            content_type="multipart/form-data",
-            headers={"HX-Request": "true"},
-        )
-
-    def test_upload_stores_the_table_and_shows_the_combined_report(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = self._upload(
-            logged_in_admin,
-            existing_assembly,
-            field,
-            "postcode,region\nSW1A 1AA,South\nM1 1AE,North\n",
-        )
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        assert "Lookup table uploaded" in body
-        assert "Rows stored:" in body
-        assert "Respondents recomputed" in body
-
-        with FakeUnitOfWork(store=fake_store) as uow:
-            assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 2
-
-    def test_upload_without_matching_headings_warns_that_the_first_row_was_not_stored(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = self._upload(logged_in_admin, existing_assembly, field, "SW1A 1AA,South\nM1 1AE,North\n")
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        assert "The first row was used as column headings and not stored" in body
-
-        with FakeUnitOfWork(store=fake_store) as uow:
-            assert uow.respondent_field_mapping_entries.count_for_field(field.id) == 1
-
-    def test_upload_with_matching_headings_has_no_first_row_warning(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = self._upload(logged_in_admin, existing_assembly, field, "postcode,region\nSW1A 1AA,South\n")
-        assert response.status_code == 200
-        assert "used as column headings" not in response.get_data(as_text=True)
-
-    def test_missing_file_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/{field.id}/mapping-upload",
-            data={},
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 422
-        assert b"Choose a CSV file" in response.data
-
-    def test_empty_file_returns_422(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = self._upload(logged_in_admin, existing_assembly, field, "")
-        assert response.status_code == 422
-        assert b"empty" in response.data
-
-    def test_row_cap_is_enforced(self, logged_in_admin, existing_assembly, admin_user, fake_store, monkeypatch):
-        """The 500k cap, exercised with a lowered limit rather than a 500k-row file."""
-        monkeypatch.setattr(derivation_service, "MAX_MAPPING_ROWS", 2)
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = self._upload(
-            logged_in_admin,
-            existing_assembly,
-            field,
-            "postcode,region\nA,North\nB,South\nC,North\n",
-        )
-        assert response.status_code == 422
-        assert b"too many rows" in response.data
-
-    def test_unknown_outputs_rejected_without_the_checkbox(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = self._upload(logged_in_admin, existing_assembly, field, "postcode,region\nA,East\n")
-        assert response.status_code == 422
-        assert b"output values not in the field" in response.data
-
-    def test_unknown_outputs_accepted_with_the_checkbox_and_extend_the_options(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = self._upload(
-            logged_in_admin, existing_assembly, field, "postcode,region\nA,East\n", allow_new_outputs=True
-        )
-        assert response.status_code == 200
-        assert b"New output values added:" in response.data
-
-        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "region")
-        assert "East" in [o.value for o in stored.options]
-
-    def test_recompute_action_shows_the_report(self, logged_in_admin, existing_assembly, admin_user, fake_store):
-        field = self._create_large_mapping_field(logged_in_admin, existing_assembly, admin_user, fake_store)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/{field.id}/recompute",
-            data={},
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        assert "Recompute complete" in body
-        assert "Respondents recomputed" in body
-        assert 'id="schema-editor"' in body
-
-    def test_recompute_on_a_non_derived_field_is_refused(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        _seed_schema(fake_store, admin_user, existing_assembly)
-        plain = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "postcode")
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/{plain.id}/recompute",
-            data={},
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        assert b"Field not found" in response.data
-
-
-class TestCopyOptionsFromTarget:
-    """The Choice type's one-off copy of a matching target's values into the option rows."""
-
-    def _base(self, existing_assembly):
-        return f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
-
-    def _seed_with_gender_target(self, fake_store, admin_user, existing_assembly):
-        _seed_schema(fake_store, admin_user, existing_assembly)
-        with FakeUnitOfWork(store=fake_store) as uow:
-            uow.target_categories.add(
-                TargetCategory(
-                    assembly_id=existing_assembly.id,
-                    name="gender",
-                    values=[
-                        TargetValue(value="Female", min=10, max=12),
-                        TargetValue(value="Male", min=10, max=12),
-                        TargetValue(value="Non-binary", min=1, max=3),
-                    ],
-                )
-            )
-
-    def _modal_form(self, **overrides):
-        data = {
-            "modal": "1",
-            "label": "Gender",
-            "field_key": "",
-            "type_choice": "choice",
-            "choice_style": "choice_radio",
-            "option_value": [],
-            "option_help": [],
-            "help_text": "",
-            "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
-        }
-        data.update(overrides)
-        return data
-
-    def test_button_offered_when_the_field_key_matches_a_target(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """A label that normalises to a target's name enables the copy button."""
-        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/new-modal",
-            query_string=self._modal_form(),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        assert "Copy options from the" in body
-        assert 'value="copy_target_options"' in body
-
-    def test_button_greyed_out_with_a_hint_when_no_target_matches(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/new-modal",
-            query_string=self._modal_form(label="Favourite colour"),
-            headers={"HX-Request": "true"},
-        )
-        body = response.get_data(as_text=True)
-        assert 'value="copy_target_options"' not in body
-        assert "Copy options from a target" in body
-        assert "disabled" in body
-        assert "favourite_colour" in body  # the hint names the key that found no target
-        assert "change the label or field key to match" in body
-
-    def test_copy_action_fills_the_option_rows_without_saving(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
-        before = len(_get_schema(fake_store, admin_user, existing_assembly))
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add",
-            data=self._modal_form(form_action="copy_target_options"),
-            headers={"HX-Request": "true"},
-        )
-        assert response.status_code == 200
-        body = response.get_data(as_text=True)
-        assert 'value="Female"' in body
-        assert 'value="Male"' in body
-        assert 'value="Non-binary"' in body
-        assert len(_get_schema(fake_store, admin_user, existing_assembly)) == before
-
-    def test_copy_keeps_help_text_on_options_whose_value_matches(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """A copy is a replace, but help text already written for a matching value survives."""
-        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/add",
-            data=self._modal_form(
-                form_action="copy_target_options",
-                option_value=["Female", "Woman"],
-                option_help=["Includes trans women", "dropped with its row"],
-            ),
-            headers={"HX-Request": "true"},
-        )
-        body = response.get_data(as_text=True)
-        assert 'value="Includes trans women"' in body
-        assert 'value="Woman"' not in body
-        assert "dropped with its row" not in body
-
-    def test_copy_works_when_editing_an_existing_choice_field(
-        self, logged_in_admin, existing_assembly, admin_user, fake_store
-    ):
-        """The edit modal matches on the stored field key."""
-        self._seed_with_gender_target(fake_store, admin_user, existing_assembly)
-        gender = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
-        with FakeUnitOfWork(store=fake_store) as uow:
-            respondent_field_schema_service.update_field(
-                uow,
-                admin_user.id,
-                existing_assembly.id,
-                gender.id,
-                field_type=FieldType.CHOICE_RADIO,
-                options=[ChoiceOption(value="F"), ChoiceOption(value="M")],
-            )
-
-        modal = logged_in_admin.get(
-            f"{self._base(existing_assembly)}/fields/{gender.id}/edit-modal", headers={"HX-Request": "true"}
-        )
-        assert 'value="copy_target_options"' in modal.get_data(as_text=True)
-
-        response = logged_in_admin.post(
-            f"{self._base(existing_assembly)}/fields/{gender.id}/update",
-            data=self._modal_form(form_action="copy_target_options", option_value=["F", "M"], option_help=["", ""]),
-            headers={"HX-Request": "true"},
-        )
-        body = response.get_data(as_text=True)
-        assert 'value="Female"' in body
-        assert 'value="Non-binary"' in body
-
-        stored = next(f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "gender")
-        assert [o.value for o in stored.options] == ["F", "M"]  # nothing saved yet
 
 
 class TestTargetLinkedFieldUI:
@@ -2451,3 +1907,81 @@ class TestRoutesTurnAwayThoseWithoutAccess:
         response = self._call(logged_in_admin, method, path, uuid.uuid4(), uuid.uuid4())
 
         assert response.status_code in (302, 404)
+
+
+class TestOneUnitOfWorkPerRequest:
+    """A page read in several transactions can disagree with itself; each request here opens one block.
+
+    A save that fails is the exception: its block rolled back, so the dialog it
+    re-opens is read in a second one. Every request also spends one block loading
+    the signed-in user, which is counted and subtracted as the baseline.
+    """
+
+    @pytest.fixture
+    def blocks_opened(self, monkeypatch):
+        opened = []
+        enter = FakeUnitOfWork.__enter__
+
+        def counting_enter(uow):
+            opened.append(uow)
+            return enter(uow)
+
+        monkeypatch.setattr(FakeUnitOfWork, "__enter__", counting_enter)
+        return opened
+
+    def _blocks_for(self, blocks_opened, send, baseline):
+        blocks_opened.clear()
+        response = send()
+        return response, len(blocks_opened) - baseline
+
+    def _baseline(self, blocks_opened, client):
+        """The blocks a request costs before its route runs."""
+        blocks_opened.clear()
+        client.get("/backoffice/dev/does-not-exist")
+        return len(blocks_opened)
+
+    def _field_id(self, fake_store, assembly, field_key):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            return uow.respondent_field_definitions.get_by_assembly_and_key(assembly.id, field_key).id
+
+    def test_reads_and_saves_open_one_block_and_a_refused_save_two(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store, blocks_opened
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        base = f"/backoffice/assembly/{existing_assembly.id}/respondent-schema"
+        notes_id = self._field_id(fake_store, existing_assembly, "custom_notes")
+        htmx = {"HX-Request": "true"}
+        baseline = self._baseline(blocks_opened, logged_in_admin)
+        new_question = {"modal": "1", "form_action": "save", "type_choice": "free_text", "free_text_subtype": "text"}
+
+        requests = {
+            "page": (lambda: logged_in_admin.get(base), 200, 1),
+            "new dialog": (lambda: logged_in_admin.get(f"{base}/fields/new-modal", headers=htmx), 200, 1),
+            "edit dialog": (lambda: logged_in_admin.get(f"{base}/fields/{notes_id}/edit-modal", headers=htmx), 200, 1),
+            "add": (
+                lambda: logged_in_admin.post(
+                    f"{base}/fields/add", data={**new_question, "label": "Shoe size"}, headers=htmx
+                ),
+                200,
+                1,
+            ),
+            "add refused": (
+                lambda: logged_in_admin.post(
+                    f"{base}/fields/add", data={**new_question, "label": "Shoe size"}, headers=htmx
+                ),
+                422,
+                2,
+            ),
+            "update": (
+                lambda: logged_in_admin.post(
+                    f"{base}/fields/{notes_id}/update",
+                    data={**new_question, "label": "Notes", "group": "other"},
+                    headers=htmx,
+                ),
+                200,
+                1,
+            ),
+        }
+        for name, (send, status, blocks) in requests.items():
+            response, opened = self._blocks_for(blocks_opened, send, baseline)
+            assert (name, response.status_code, opened) == (name, status, blocks)

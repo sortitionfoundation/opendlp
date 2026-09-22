@@ -1,10 +1,10 @@
-// ABOUTME: Unit tests for the rowActionsMenu Alpine component
+// ABOUTME: Unit tests for the menuButton Alpine component
 // ABOUTME: Covers the menu button keyboard pattern and the Escape handling that must not reach an enclosing dialog
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { initDialogEscape } from "../init/dialog-escape.js";
-import { rowActionsMenu } from "./row-actions-menu.js";
+import { menuButton } from "./menu-button.js";
 
 /**
  * Build a component over real DOM, wired the way the templates wire it.
@@ -23,7 +23,7 @@ function buildMenu(itemCount = 3) {
       <div role="menu" id="menu">${items}</div>
     </div>
     <button type="button" id="after">After</button>`;
-  const state = rowActionsMenu();
+  const state = menuButton();
   state.$el = document.getElementById("wrapper");
   state.$refs = {
     menuToggle: document.getElementById("toggle"),
@@ -45,7 +45,7 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("rowActionsMenu", () => {
+describe("menuButton", () => {
   it("starts closed and toggles open and shut", () => {
     const state = buildMenu();
     expect(state.open).toBe(false);
@@ -201,7 +201,7 @@ describe("rowActionsMenu", () => {
   });
 });
 
-describe("rowActionsMenu inside a fragment dialog", () => {
+describe("menuButton inside a fragment dialog", () => {
   function pressEscapeOn(element) {
     element.dispatchEvent(
       new KeyboardEvent("keydown", {

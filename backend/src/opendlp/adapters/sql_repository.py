@@ -4,9 +4,9 @@ ABOUTME: Provides concrete database operations using SQLAlchemy sessions"""
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import and_, delete, distinct, func, insert, or_, select, update
+from sqlalchemy import and_, delete, distinct, func, insert, or_, select, text, update
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
@@ -71,6 +71,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from sqlalchemy.orm import Session
+    from sqlalchemy.sql.elements import TextClause
 
 
 class SqlAlchemyRepository:
@@ -1315,6 +1316,58 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 action=RespondentAction.SELECT,
                 selection_run_id=selection_run_id,
             )
+
+    # Both rebuild the object from json_each's rows in their original order:
+    # jsonb operators would be shorter, but a jsonb round trip reorders keys,
+    # and selection takes its column order from the first respondent's.
+    _REMOVE_ATTRIBUTE = text(
+        """
+        UPDATE respondents SET attributes = (
+            SELECT coalesce(json_object_agg(e.key, e.value ORDER BY e.ord), '{}'::json)
+            FROM json_each(respondents.attributes) WITH ORDINALITY AS e(key, value, ord)
+            WHERE e.key <> :key
+        )
+        WHERE assembly_id = :assembly_id
+          AND selection_status <> :deleted
+          AND attributes::jsonb ? :key
+        """
+    )
+    _RENAME_ATTRIBUTE = text(
+        """
+        UPDATE respondents SET attributes = (
+            SELECT json_object_agg(
+                CASE WHEN e.key = :old_key THEN :new_key ELSE e.key END, e.value ORDER BY e.ord
+            )
+            FROM json_each(respondents.attributes) WITH ORDINALITY AS e(key, value, ord)
+            WHERE e.key <> :new_key
+        )
+        WHERE assembly_id = :assembly_id
+          AND selection_status <> :deleted
+          AND attributes::jsonb ? :old_key
+        """
+    )
+
+    def _rewrite_attributes(self, statement: TextClause, **params: Any) -> int:
+        """Run a set-based attributes rewrite, keeping loaded respondents in step with it.
+
+        Pending changes are flushed first so the statement sees them, and every
+        loaded respondent's attributes are expired after, so the next read comes
+        from the database rather than a copy the statement has made stale.
+        """
+        self.session.flush()
+        result = self.session.execute(statement, {**params, "deleted": RespondentStatus.DELETED.value})
+        for loaded in list(self.session.identity_map.values()):
+            if isinstance(loaded, Respondent):
+                self.session.expire(loaded, ["attributes"])
+        return result.rowcount  # type: ignore[attr-defined, no-any-return]
+
+    def remove_attribute(self, assembly_id: uuid.UUID, key: str) -> int:
+        return self._rewrite_attributes(self._REMOVE_ATTRIBUTE, assembly_id=assembly_id, key=key)
+
+    def rename_attribute(self, assembly_id: uuid.UUID, old_key: str, new_key: str) -> int:
+        return self._rewrite_attributes(
+            self._RENAME_ATTRIBUTE, assembly_id=assembly_id, old_key=old_key, new_key=new_key
+        )
 
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
         count: int = (

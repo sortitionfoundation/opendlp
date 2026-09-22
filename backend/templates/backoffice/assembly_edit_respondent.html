@@ -56,7 +56,7 @@ ABOUTME: Dynamic form grouped by RespondentFieldGroup, with a required change-no
                                 <div class="flex flex-col gap-1.5">
                                     <span class="text-label-lg" style="color: var(--color-headings);">{{ field.label }}</span>
                                     <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                                        {{ _("Derived from %(source)s", source=(field.derived_from or []) | join(", ")) }}.
+                                        {{ _("Computed from %(source)s", source=(field.derived_from or []) | join(", ")) }}.
                                         {{ _("Will be recalculated when saved.") }}
                                     </p>
                                 </div>

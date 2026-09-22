@@ -21,6 +21,7 @@ from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import target_csv_import, target_service
 from opendlp.service_layer.exceptions import FieldDefinitionConflictError, InsufficientPermissions
 from opendlp.service_layer.target_service import (
+    LinkAction,
     TargetCategoryEdit,
     TargetLinkedError,
     TargetValueEdit,
@@ -208,7 +209,7 @@ class TestTargetLinkedGuards:
             target_service.update_target_category(uow, admin.id, assembly.id, category.id, name="Sex")
 
         (block,) = excinfo.value.blocks
-        assert block.action == "rename"
+        assert block.action == LinkAction.RENAME
         assert block.category_name == "Gender"
         assert block.field_labels == ["Gender"]
         assert category.name == "Gender"
@@ -236,7 +237,7 @@ class TestTargetLinkedGuards:
 
         with pytest.raises(TargetLinkedError) as excinfo:
             target_service.delete_target_category(uow, admin.id, assembly.id, category.id)
-        assert excinfo.value.blocks[0].action == "delete"
+        assert excinfo.value.blocks[0].action == LinkAction.DELETE
 
         target_service.delete_target_category(uow, admin.id, assembly.id, category.id, force_unlink=True)
 
@@ -326,13 +327,29 @@ class TestTargetLinkedGuards:
         _gender, question = self._linked_category(uow, assembly)
         _region, derived, respondent = self._derived_category(uow, assembly)
 
-        deleted = target_service.delete_targets_for_assembly(uow, admin.id, assembly.id)
+        deleted = target_service.delete_targets_for_assembly(uow, admin.id, assembly.id, force_unlink=True)
 
         assert deleted == 2
         assert question.target_category_id is None
         assert uow.respondent_field_definitions.get(question.id) is not None
         assert uow.respondent_field_definitions.get(derived.id) is None
         assert respondent.attributes == {"postcode": "E1 6AN"}
+
+    def test_deleting_every_target_names_what_it_would_unlink_and_delete(self, uow, admin, assembly):
+        _gender, question = self._linked_category(uow, assembly)
+        _region, derived, _respondent = self._derived_category(uow, assembly)
+
+        with pytest.raises(TargetLinkedError) as excinfo:
+            target_service.delete_targets_for_assembly(uow, admin.id, assembly.id)
+
+        blocks = {block.category_name: block for block in excinfo.value.blocks}
+        assert blocks["Gender"].action == LinkAction.DELETE
+        assert blocks["Gender"].field_labels == [question.label]
+        assert blocks["Region"].deleted_labels == [derived.label]
+        # Nothing went while it waited for an answer
+        assert len(uow.target_categories.get_by_assembly_id(assembly.id)) == 2
+        assert question.target_category_id is not None
+        assert uow.respondent_field_definitions.get(derived.id) is not None
 
     def test_a_csv_reimport_keeps_the_set_up_of_targets_that_come_back(self, uow, admin, assembly):
         _gender, question = self._linked_category(uow, assembly)
@@ -391,4 +408,4 @@ class TestTargetLinkedGuards:
             target_service.save_all_targets(uow, admin.id, assembly.id, edits)
 
         actions = {block.category_name: block.action for block in excinfo.value.blocks}
-        assert actions == {"Gender": "rename", "Region": "delete"}
+        assert actions == {"Gender": LinkAction.RENAME, "Region": LinkAction.DELETE}

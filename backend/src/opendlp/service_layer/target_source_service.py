@@ -22,6 +22,7 @@ from opendlp.domain.respondent_derivation import (
 )
 from opendlp.domain.respondent_field_schema import (
     CHOICE_TYPES,
+    FIELD_TYPE_LABELS,
     ChoiceOption,
     DerivationType,
     FieldOnRegistrationPage,
@@ -188,7 +189,10 @@ def _get_category(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, category_id: 
         raise NotFoundError(f"Target category {category_id} not found")
     if not category.values:
         raise FieldDefinitionConflictError(
-            _l("Target '%(name)s' has no values yet — add its values before wiring a data source", name=category.name)
+            _l(
+                "Target '%(name)s' has no values yet — add its values before setting up a data source",
+                name=category.name,
+            )
         )
     return category
 
@@ -283,7 +287,7 @@ def _resolve_source_field(
     )
     if derivation_type is not None and field not in compatible_source_fields([field], derivation_type):
         raise FieldDefinitionConflictError(
-            _l("A '%(type)s' field cannot feed this kind of derivation", type=spec.field_type.value)
+            _l("A '%(type)s' field cannot feed this kind of derivation", type=FIELD_TYPE_LABELS[spec.field_type])
         )
     uow.respondent_field_definitions.add(field)
     return field
@@ -485,6 +489,8 @@ class TargetSetupData:
     fields: list[RespondentFieldDefinition]
     first_assembly_date: date | None
     is_linked: bool
+    # Rows in the linked field's lookup table; 0 unless the target is fed by a large mapping.
+    mapping_row_count: int
 
 
 def target_setup_data(
@@ -506,13 +512,20 @@ def target_setup_data(
     if category is None or category.assembly_id != assembly_id:
         raise NotFoundError(f"Target category {target_category_id} not found")
     fields = [f.create_detached_copy() for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)]
+    linked = next((f for f in fields if f.target_category_id == category.id), None)
+    mapping_row_count = (
+        uow.respondent_field_mapping_entries.count_for_field(linked.id)
+        if linked is not None and linked.derivation_type == DerivationType.LARGE_MAPPING
+        else 0
+    )
     return TargetSetupData(
         target_id=category.id,
         target_name=category.name,
         target_values=_target_option_values(category),
         fields=fields,
         first_assembly_date=assembly.first_assembly_date if assembly else None,
-        is_linked=any(f.target_category_id == category.id for f in fields),
+        is_linked=linked is not None,
+        mapping_row_count=mapping_row_count,
     )
 
 

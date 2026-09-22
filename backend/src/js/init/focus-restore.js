@@ -55,11 +55,28 @@ export function restoreScrollFromQuery() {
 }
 
 /**
- * Run both restorations once the DOM is ready.
+ * Reload when a #focus= hash arrives on the page that is already open.
+ *
+ * A link to this page plus a #focus= hash differs from the current URL only in
+ * its hash, which the browser treats as a jump within the page, not a load. The
+ * links that carry one mean "load this page again and come back here" - a
+ * fragment dialog's close links point at the page the dialog sits over - so
+ * this does the load, and the load restores focus.
+ */
+export function reloadOnFocusHash() {
+  if (window.location.hash.startsWith("#focus=")) {
+    window.location.reload();
+  }
+}
+
+/**
+ * Run both restorations once the DOM is ready, and reload for a #focus= hash
+ * that arrives later.
  */
 export function initFocusRestore() {
   document.addEventListener("DOMContentLoaded", function () {
     restoreFocusFromHash();
     restoreScrollFromQuery();
   });
+  window.addEventListener("hashchange", reloadOnFocusHash);
 }

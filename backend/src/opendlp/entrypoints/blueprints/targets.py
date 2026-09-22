@@ -233,7 +233,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @targets_bp.route("/assembly/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
 @login_required
 def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Delete all targets for an assembly."""
+    """Delete all targets for an assembly, asking first when questions are linked to them."""
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -241,6 +241,7 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
+                force_unlink=request.form.get("force_unlink") == "1",
             )
 
         flash(_("Targets deleted: %(count)d", count=count), "success")
@@ -248,6 +249,15 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )
 
+    except TargetLinkedError as e:
+        return _render_force_unlink_confirm(
+            assembly_id,
+            request.form,
+            e.blocks,
+            confirm_url=url_for("targets.delete_targets", assembly_id=assembly_id),
+            cancel_url=url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"),
+            deleting_all=True,
+        )
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to delete targets",
@@ -442,11 +452,15 @@ def _render_force_unlink_confirm(
     assembly_id: uuid.UUID,
     form_data: Any,
     blocks: list[Any],
+    confirm_url: str = "",
+    cancel_url: str = "",
+    deleting_all: bool = False,
 ) -> ResponseReturnValue:
     """Ask before a rename/delete unlinks the fields feeding those targets.
 
     The whole submission is echoed back as hidden inputs so confirming
-    resubmits exactly what was typed, plus force_unlink=1.
+    resubmits exactly what was typed, plus force_unlink=1. It goes back to the
+    save-all route unless ``confirm_url`` says otherwise.
     """
     uow = bootstrap.get_flask_uow()
     with uow:
@@ -458,6 +472,9 @@ def _render_force_unlink_confirm(
         assembly_id=assembly_id,
         blocks=blocks,
         resubmit_fields=resubmit_fields,
+        confirm_url=confirm_url or url_for("targets.save_all", assembly_id=assembly_id),
+        cancel_url=cancel_url or url_for("targets.view_assembly_targets", assembly_id=assembly_id),
+        deleting_all=deleting_all,
     ), 200
 
 

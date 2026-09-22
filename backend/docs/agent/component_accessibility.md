@@ -140,6 +140,7 @@ Components with accessibility support implemented:
 | Button | `components/button.html` | `aria-label`, `aria-pressed`, `aria-haspopup`, `aria-expanded`, `aria-describedby`, `role="button"` on links |
 | Search Dropdown | `components/search_dropdown.html` | WAI-ARIA combobox pattern: `role="combobox/listbox/option"`, `aria-expanded`, `aria-activedescendant`, `aria-selected`, live region for results count, keyboard nav (arrows/enter/escape) |
 | Select Dropdown | `components/select_dropdown.html` | Native `<select>` with built-in a11y, `aria-describedby` for hints/errors, `aria-required`, `aria-invalid`, `aria-disabled`, keyboard nav (arrows/enter/space/escape/type-ahead) |
+| Fragment dialog (HTMX) | `src/js/init/fragment-dialog-focus.js`, `dialog-escape.js` | Mark the element the dialog is swapped into with `data-fragment-dialog-host`. Focus moves into the dialog on open (first control in `.dialog-body`, or `data-dialog-initial-focus`), stays on the same control through a re-render, and returns to the opener on close - give the opener a `data-focus-id`, and its row a `data-focus-row` if menu items or forms in the row open dialogs too. The host's siblings are `inert` while a dialog is open. The full-screen backdrop link is `tabindex="-1" aria-hidden="true"`: a pointer affordance only, since the X and Escape serve keyboard users. |
 
 ## Common Mistakes to Avoid
 

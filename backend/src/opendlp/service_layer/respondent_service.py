@@ -229,7 +229,7 @@ def import_respondents_from_rows(  # noqa: C901
         if derived_defs:
             outcome = apply_derivations(respondent, field_definitions, lookups)
             errors.extend(
-                _("Row %(row)s: supplied '%(key)s' was replaced by its derived value", row=row_number, key=key)
+                _("Row %(row)s: supplied '%(key)s' was replaced by its computed value", row=row_number, key=key)
                 for key in outcome.overwrote_supplied
             )
         respondents.append(respondent)

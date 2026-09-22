@@ -1,5 +1,5 @@
 // ABOUTME: Unit tests for the modal Alpine component's open/close state machine
-// ABOUTME: Covers the canClose gate and the closeUrl / refreshOnClose branches
+// ABOUTME: Covers the canClose gate, the closeUrl / refreshOnClose branches and the modal-closed event
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -87,6 +87,29 @@ describe("modal close side effects", () => {
     }).close();
     expect(window.location.href).toBe("/assemblies");
     expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("announces a close that stays on the page, for a fragment dialog host", () => {
+    const state = modal({ initialOpen: true });
+    state.$root = document.createElement("div");
+    const heard = vi.fn();
+    state.$root.addEventListener("modal-closed", heard);
+
+    state.close();
+
+    expect(heard).toHaveBeenCalledOnce();
+    expect(heard.mock.calls[0][0].bubbles).toBe(true);
+  });
+
+  it("announces nothing when the close navigates away", () => {
+    const state = modal({ initialOpen: true, closeUrl: "/assemblies" });
+    state.$root = document.createElement("div");
+    const heard = vi.fn();
+    state.$root.addEventListener("modal-closed", heard);
+
+    state.close();
+
+    expect(heard).not.toHaveBeenCalled();
   });
 
   it("does nothing to the page when closing is blocked", () => {

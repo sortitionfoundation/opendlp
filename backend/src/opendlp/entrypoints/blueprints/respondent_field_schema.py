@@ -5,39 +5,31 @@ import contextlib
 import functools
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from itertools import zip_longest
 from typing import Any
 
 import structlog
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, make_response, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.domain.respondent_derivation import (
-    DEFAULT_FALLBACK,
-)
 from opendlp.domain.respondent_field_schema import (
     BOOL_TYPES,
     CHOICE_TYPES,
-    DERIVATION_TYPE_LABELS,
     FIELD_TYPE_LABELS,
     GROUP_DISPLAY_ORDER,
     GROUP_LABELS,
     ChoiceOption,
-    DerivationType,
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
     normalise_field_key,
 )
-from opendlp.entrypoints.blueprints.backoffice_registration import registration_hub_context
-from opendlp.entrypoints.derivation_form_parser import (
-    age_prefill_from_target,
-    parse_age_rule,
-    parse_derivation_rule,
-)
+from opendlp.entrypoints.registration_hub import registration_hub_context
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import (
     determine_data_source,
@@ -45,15 +37,6 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
     get_csv_upload_status,
     get_tab_enabled_states,
-)
-from opendlp.service_layer.derivation_service import (
-    MappingUploadReport,
-    RecomputeReport,
-    compatible_source_fields,
-    create_derived_field,
-    recompute_derived_field,
-    update_derivation,
-    upload_large_mapping,
 )
 from opendlp.service_layer.exceptions import (
     InsufficientPermissions,
@@ -76,6 +59,7 @@ from opendlp.service_layer.respondent_field_schema_service import (
     update_field,
 )
 from opendlp.service_layer.respondent_field_spec_service import build_field_spec
+from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
 
@@ -182,6 +166,8 @@ _CHOICE_STYLES: dict[str, FieldType] = {
     "choice_dropdown": FieldType.CHOICE_DROPDOWN,
 }
 
+_TYPE_CHOICES = frozenset({"bool", "free_text", "choice", "date", "longtext", "bool_or_none"})
+
 
 def _field_type_from_taxonomy(values: dict[str, Any]) -> FieldType:
     """Map the modal's type_choice/subtype/style values onto a FieldType."""
@@ -207,18 +193,17 @@ def _question_type_choices(field: RespondentFieldDefinition | None = None) -> li
     Values are FieldType values. A field still on a legacy type keeps it as an
     extra option, so opening its modal doesn't silently change the type.
     """
+
+    def plain(field_type: FieldType) -> dict[str, Any]:
+        return {"value": field_type.value, "label": str(FIELD_TYPE_LABELS[field_type])}
+
     choices: list[dict[str, Any]] = [
-        {"value": FieldType.BOOL.value, "label": _("Checkbox")},
-        {"value": FieldType.DATE.value, "label": _("Date")},
+        plain(FieldType.BOOL),
+        plain(FieldType.DATE),
+        {"label": _("Text"), "options": [plain(FieldType.TEXT), plain(FieldType.EMAIL), plain(FieldType.INTEGER)]},
         {
-            "label": _("Text"),
-            "options": [
-                {"value": FieldType.TEXT.value, "label": _("Text")},
-                {"value": FieldType.EMAIL.value, "label": _("Email")},
-                {"value": FieldType.INTEGER.value, "label": _("Number")},
-            ],
-        },
-        {
+            # Short forms of FIELD_TYPE_LABELS' "Choice (radios)" and "Choice (dropdown)":
+            # the group heading already says "Choice".
             "label": _("Choice"),
             "options": [
                 {"value": FieldType.CHOICE_RADIO.value, "label": _("Radio")},
@@ -234,8 +219,8 @@ def _question_type_choices(field: RespondentFieldDefinition | None = None) -> li
 def _choice_style_choices() -> list[dict[str, Any]]:
     """The question types a field whose options belong to a target can switch between."""
     return [
-        {"value": FieldType.CHOICE_RADIO.value, "label": _("Radio")},
-        {"value": FieldType.CHOICE_DROPDOWN.value, "label": _("Dropdown")},
+        {"value": field_type.value, "label": str(FIELD_TYPE_LABELS[field_type])}
+        for field_type in (FieldType.CHOICE_RADIO, FieldType.CHOICE_DROPDOWN)
     ]
 
 
@@ -253,7 +238,7 @@ def _question_type_help() -> dict[str, str]:
 
 def _required_switch_label(values: dict[str, Any]) -> str:
     """The Required switch's label, saying what an answer to this type of question has to be."""
-    if not values["type_choice"] or values["type_choice"] == "derived":
+    if not values["type_choice"]:
         return _("Required")
     field_type = _field_type_from_taxonomy(values)
     if field_type in BOOL_TYPES:
@@ -269,7 +254,7 @@ def _required_switch_label(values: dict[str, Any]) -> str:
 
 def _question_type_value(values: dict[str, Any]) -> str:
     """The question type dropdown's value for the modal state; "" until a type is chosen."""
-    if not values["type_choice"] or values["type_choice"] == "derived":
+    if not values["type_choice"]:
         return ""
     return _field_type_from_taxonomy(values).value
 
@@ -328,20 +313,9 @@ def _modal_values_from_request(source: Any) -> dict[str, Any]:
         "help_text": source.get("help_text", ""),
         "on_registration_page": source.get("on_registration_page", FieldOnRegistrationPage.YES_REQUIRED.value),
         "options": options,
-        "target_name": source.get("target_name", ""),
-        "derivation_method": source.get("derivation_method", DerivationType.AGE_BRACKET.value),
-        "source_key": source.get("source_key", ""),
-        "as_of_day": source.get("as_of_day", ""),
-        "as_of_month": source.get("as_of_month", ""),
-        "as_of_year": source.get("as_of_year", ""),
-        "min_age": source.get("min_age", ""),
-        "max_age": source.get("max_age", ""),
-        "boundaries": source.get("boundaries", ""),
-        "map_source": source.getlist("map_source"),
-        "map_target": source.getlist("map_target"),
     }
     # The modal's single question type dropdown; posts without it (scripted
-    # callers, the derived flow) still describe the type with type_choice.
+    # callers) still describe the type with type_choice.
     if "question_type" in source:
         values.update(_taxonomy_from_question_type(source.get("question_type", "")))
     # The modal's Required switch: a checkbox, so it posts nothing when off -
@@ -368,30 +342,7 @@ def _modal_values_from_field(field: RespondentFieldDefinition) -> dict[str, Any]
         "options": [{"value": o.value, "help_text": o.help_text, "original": o.value} for o in field.options or []],
     })
     values.update(_taxonomy_from_field_type(field.field_type))
-    if field.is_derived:
-        values["type_choice"] = "derived"
-        values["derivation_method"] = field.derivation_type.value if field.derivation_type else ""
-        values["source_key"] = (field.derived_from or [""])[0]
-        values["target_name"] = field.field_key
-        _seed_config_values(values, field)
     return values
-
-
-def _seed_config_values(values: dict[str, Any], field: RespondentFieldDefinition) -> None:
-    """Fill the method-config form values from a derived field's stored derivation_config."""
-    config = field.derivation_config or {}
-    if field.derivation_type == DerivationType.AGE_BRACKET:
-        raw_date = config.get("as_of_date", "")
-        if raw_date:
-            year, month, day = raw_date.split("-")
-            values.update({"as_of_year": year, "as_of_month": str(int(month)), "as_of_day": str(int(day))})
-        values["min_age"] = str(config.get("min_age", 16))
-        values["max_age"] = str(config.get("max_age", 100))
-        values["boundaries"] = ", ".join(str(b) for b in config.get("boundaries", []))
-    elif field.derivation_type == DerivationType.SMALL_MAPPING:
-        mapping = config.get("mapping", {})
-        values["map_source"] = list(mapping.keys())
-        values["map_target"] = list(mapping.values())
 
 
 def _default_modal_values() -> dict[str, Any]:
@@ -406,17 +357,6 @@ def _default_modal_values() -> dict[str, Any]:
         "help_text": "",
         "on_registration_page": FieldOnRegistrationPage.YES_REQUIRED.value,
         "options": [],
-        "target_name": "",
-        "derivation_method": DerivationType.AGE_BRACKET.value,
-        "source_key": "",
-        "as_of_day": "",
-        "as_of_month": "",
-        "as_of_year": "",
-        "min_age": "",
-        "max_age": "",
-        "boundaries": "",
-        "map_source": [],
-        "map_target": [],
     }
 
 
@@ -427,25 +367,15 @@ def _normalise_modal_values(values: dict[str, Any]) -> dict[str, Any]:
     return values
 
 
-def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = "") -> dict[str, Any]:
-    is_derived_choice = values["type_choice"] == "derived"
-    derived = (
-        _build_derived_ctx(assembly_id, values, target_locked=False, prefill_from_target=True)
-        if is_derived_choice
-        else None
-    )
-    if is_derived_choice:
-        action_url = url_for("respondent_field_schema.add_derived_field_view", assembly_id=assembly_id)
-    else:
-        action_url = url_for("respondent_field_schema.add_field_view", assembly_id=assembly_id)
+def _new_modal_ctx(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, values: dict[str, Any], error: str = ""
+) -> dict[str, Any]:
     # No Derived option here: a derived field feeds a target, so it is created
     # (and edited) on the target data sources step, never from this modal.
-    has_targets = _assembly_has_targets(assembly_id)
-    choice_candidate_key = _choice_candidate_key(values) if values["type_choice"] == "choice" else ""
     return {
         "mode": "new",
         "field": None,
-        "action_url": action_url,
+        "action_url": url_for("respondent_field_schema.add_field_view", assembly_id=assembly_id),
         "refresh_url": url_for("respondent_field_schema.new_field_modal", assembly_id=assembly_id),
         "question_type_choices": _question_type_choices(),
         "question_type": _question_type_value(values),
@@ -454,41 +384,23 @@ def _new_modal_ctx(assembly_id: uuid.UUID, values: dict[str, Any], error: str = 
         "type_locked": False,
         "target_locked": False,
         "linked_target_name": "",
-        "is_derived": False,
-        "has_targets": has_targets,
-        "derived": derived,
-        "choice_candidate_key": choice_candidate_key,
-        "choice_target": _matching_choice_target(assembly_id, choice_candidate_key),
         "error": error,
         "values": _normalise_modal_values(values),
     }
 
 
 def _edit_modal_ctx(
-    assembly_id: uuid.UUID, field: RespondentFieldDefinition, values: dict[str, Any], error: str = ""
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    field: RespondentFieldDefinition,
+    values: dict[str, Any],
+    error: str = "",
 ) -> dict[str, Any]:
-    # An existing derived field already has a stored bracket config, so the
-    # target's value names must not be parsed over the top of it.
-    derived = (
-        _build_derived_ctx(assembly_id, values, target_locked=True, prefill_from_target=False)
-        if field.is_derived
-        else None
-    )
-    if field.is_derived:
-        action_url = url_for(
-            "respondent_field_schema.update_derivation_view", assembly_id=assembly_id, field_id=field.id
-        )
-    else:
-        action_url = url_for("respondent_field_schema.update_field_view", assembly_id=assembly_id, field_id=field.id)
     target_locked = field.target_category_id is not None and not field.is_fixed and not field.is_derived
-    offers_choice = (
-        values["type_choice"] == "choice" and not field.is_fixed and not field.is_derived and not target_locked
-    )
-    choice_candidate_key = _choice_candidate_key(values, field) if offers_choice else ""
     return {
         "mode": "edit",
         "field": field,
-        "action_url": action_url,
+        "action_url": url_for("respondent_field_schema.update_field_view", assembly_id=assembly_id, field_id=field.id),
         "refresh_url": url_for("respondent_field_schema.edit_field_modal", assembly_id=assembly_id, field_id=field.id),
         "question_type_choices": _choice_style_choices() if target_locked else _question_type_choices(field),
         "question_type": _question_type_value(values),
@@ -496,29 +408,22 @@ def _edit_modal_ctx(
         "required_label": _required_switch_label(values),
         "type_locked": field.is_fixed,
         "target_locked": target_locked,
-        "linked_target_name": _linked_target_name(field),
-        "is_derived": field.is_derived,
-        "has_targets": True,
-        "derived": derived,
-        "choice_candidate_key": choice_candidate_key,
-        "choice_target": _matching_choice_target(assembly_id, choice_candidate_key),
+        "linked_target_name": _linked_target_name(uow, field),
         "error": error,
         "values": _normalise_modal_values(values),
     }
 
 
-def _linked_target_name(field: RespondentFieldDefinition) -> str:
+def _linked_target_name(uow: AbstractUnitOfWork, field: RespondentFieldDefinition) -> str:
     """The name of the target category this field feeds, or "" when unlinked."""
     if field.target_category_id is None:
         return ""
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        # Checks who is asking: nothing else on the way to the edit dialog has, by this point.
-        get_assembly_with_permissions(uow, field.assembly_id, current_user.id)
-        category = uow.target_categories.get(field.target_category_id)
-        if category is None or category.assembly_id != field.assembly_id:
-            return ""
-        return str(category.name)
+    # Checks who is asking: the dialog's context may be built before the page's, which is what else would.
+    get_assembly_with_permissions(uow, field.assembly_id, current_user.id)
+    category = uow.target_categories.get(field.target_category_id)
+    if category is None or category.assembly_id != field.assembly_id:
+        return ""
+    return str(category.name)
 
 
 def _apply_option_action(values: dict[str, Any], form_action: str) -> dict[str, Any]:
@@ -532,46 +437,6 @@ def _apply_option_action(values: dict[str, Any], form_action: str) -> dict[str, 
             return values
         if 0 <= index < len(values["options"]):
             values["options"].pop(index)
-    return values
-
-
-def _choice_candidate_key(values: dict[str, Any], field: RespondentFieldDefinition | None = None) -> str:
-    """The field key this choice field will carry — what a target's name has to match."""
-    if field is not None:
-        return field.field_key
-    return normalise_field_key(values["field_key"] or values["label"])
-
-
-def _matching_choice_target(assembly_id: uuid.UUID, candidate_key: str) -> dict[str, Any] | None:
-    """The target category whose name matches the field key, for the copy-options button.
-
-    Case-insensitive exact name match — the same join the field spec and
-    selection use, so a copy also means the field will actually feed the target.
-    """
-    if not candidate_key:
-        return None
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        for category in uow.target_categories.get_by_assembly_id(assembly_id):
-            if category.name.lower() == candidate_key.lower():
-                return {"name": category.name, "values": [v.value for v in category.values]}
-    return None
-
-
-def _copy_target_options(assembly_id: uuid.UUID, values: dict[str, Any], candidate_key: str) -> dict[str, Any]:
-    """Replace the option rows with the matching target's values (a one-off copy, no link).
-
-    Help text already written against a matching value survives the copy;
-    without a matching target this is a no-op re-render.
-    """
-    target = _matching_choice_target(assembly_id, candidate_key)
-    if target is None:
-        return values
-    existing_help = {row["value"]: row["help_text"] for row in values["options"]}
-    # A copied list is a new list: rows that keep their value are not renames, and the rest are gone.
-    values["options"] = [
-        {"value": value, "help_text": existing_help.get(value, ""), "original": ""} for value in target["values"]
-    ]
     return values
 
 
@@ -622,110 +487,6 @@ def _duplicate_option_error(options: list[ChoiceOption]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# The derived-field panel: source filtering, config parsing, and pre-fills.
-# ---------------------------------------------------------------------------
-
-
-def _assembly_has_targets(assembly_id: uuid.UUID) -> bool:
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        return bool(list(uow.target_categories.get_by_assembly_id(assembly_id)))
-
-
-def _apply_age_prefills(
-    values: dict[str, Any],
-    selected_target: dict[str, Any] | None,
-    first_date: Any,
-    prefill_from_target: bool,
-) -> None:
-    """Pre-fill blank age-config inputs: the as-of date from the assembly, brackets from the target."""
-    if not (values["as_of_day"] or values["as_of_month"] or values["as_of_year"]) and first_date is not None:
-        values["as_of_day"] = str(first_date.day)
-        values["as_of_month"] = str(first_date.month)
-        values["as_of_year"] = str(first_date.year)
-    # While no boundaries have been entered, the target's values own the whole
-    # bracket config — so a successful parse overwrites min/max defaults too.
-    if prefill_from_target and selected_target and not values["boundaries"]:
-        prefill = age_prefill_from_target(selected_target["values"])
-        if prefill:
-            values.update(prefill)
-    values["min_age"] = values["min_age"] or "16"
-    values["max_age"] = values["max_age"] or "100"
-
-
-def _build_derived_ctx(
-    assembly_id: uuid.UUID, values: dict[str, Any], target_locked: bool, prefill_from_target: bool
-) -> dict[str, Any]:
-    """Everything the derived panel needs: targets, compatible sources, pre-fills and warnings.
-
-    ``prefill_from_target`` is for a field being created: only then may the
-    target's value names fill in the bracket config, because only then is
-    there no stored config of the organiser's own to overwrite.
-    """
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        assembly = uow.assemblies.get(assembly_id)
-        first_date = assembly.first_assembly_date if assembly else None
-        categories = list(uow.target_categories.get_by_assembly_id(assembly_id))
-        targets: list[dict[str, Any]] = [{"name": c.name, "values": [v.value for v in c.values]} for c in categories]
-        schema = [f.create_detached_copy() for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)]
-
-    method = values["derivation_method"]
-    try:
-        derivation_type = DerivationType(method)
-    except ValueError:
-        derivation_type = DerivationType.AGE_BRACKET
-        values["derivation_method"] = derivation_type.value
-
-    sources = sorted(compatible_source_fields(schema, derivation_type), key=lambda f: f.field_key)
-    selected_target = next((t for t in targets if t["name"].lower() == values["target_name"].lower()), None)
-    selected_source = next((f for f in sources if f.field_key == values["source_key"]), None)
-
-    preview_labels: list[str] = []
-    mismatch_labels: list[str] = []
-    if derivation_type == DerivationType.AGE_BRACKET:
-        _apply_age_prefills(values, selected_target, first_date, prefill_from_target)
-        try:
-            rule = parse_age_rule(values)
-        except ValueError:
-            pass  # incomplete config — no preview or mismatch warning yet
-        else:
-            preview_labels = [*rule.bracket_labels(), rule.fallback]
-            if selected_target:
-                target_value_set = set(selected_target["values"])
-                mismatch_labels = [label for label in rule.bracket_labels() if label not in target_value_set]
-
-    map_rows: list[dict[str, str]] = []
-    if derivation_type == DerivationType.SMALL_MAPPING and selected_source and selected_source.options:
-        submitted = dict(zip_longest(values["map_source"], values["map_target"], fillvalue=""))
-        map_rows = [
-            {"source_value": option.value, "target_value": submitted.get(option.value, "")}
-            for option in selected_source.options
-        ]
-
-    return {
-        "targets": targets,
-        "selected_target": selected_target,
-        "sources": sources,
-        "selected_source": selected_source,
-        "source_is_integer": selected_source is not None and selected_source.effective_field_type == FieldType.INTEGER,
-        "target_locked": target_locked,
-        "preview_labels": preview_labels,
-        "mismatch_labels": mismatch_labels,
-        "map_rows": map_rows,
-        "fallback": DEFAULT_FALLBACK,
-        "method_options": [
-            {"value": method.value, "label": DERIVATION_TYPE_LABELS[method]} for method in DerivationType
-        ],
-        "method_help": {
-            DerivationType.AGE_BRACKET.value: _("From a date of birth or a year of birth"),
-            DerivationType.SMALL_MAPPING.value: _("Map each answer of an existing choice field to a target value"),
-            DerivationType.LARGE_MAPPING.value: _("Upload a CSV mapping, e.g. postcode to region"),
-        },
-    }
-
-
-# ---------------------------------------------------------------------------
 # Page and fragment rendering.
 # ---------------------------------------------------------------------------
 
@@ -755,40 +516,39 @@ def _fed_target_names(
     return names
 
 
-def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict[str, Any]:
-    """Everything view.html and _editor.html need to render the schema page.
+def _schema_page_context(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, with_hub: bool | None = None
+) -> dict[str, Any]:
+    """Everything view.html and _editor.html need, read through the route's open ``uow``.
+
+    Called after a route's writes, inside the same block, so the page it
+    describes is the one the request leaves behind.
 
     ``with_hub`` adds the registration hub that view.html paints, inert, behind
-    the step's takeover dialog; fragments leave it out.
+    the step's takeover dialog; fragments leave it out. Left unset, it follows
+    the request: a full page gets the hub, an HTMX fragment does not.
     """
-    uow = bootstrap.get_flask_uow()
+    if with_hub is None:
+        with_hub = not _is_htmx()
     gsheet = None
     csv_status = None
-    with uow:
-        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-        grouped = get_schema_grouped(uow, current_user.id, assembly_id)
-        category_names_by_id = {c.id: c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)}
+    assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+    grouped = get_schema_grouped(uow, current_user.id, assembly_id)
+    category_names_by_id = {c.id: c.name for c in uow.target_categories.get_by_assembly_id(assembly_id)}
 
-        # Reuse the assembly-tabs computed state so the tab bar renders correctly.
-        # Both lookups are optional — a fresh assembly has neither.
-        with contextlib.suppress(ServiceLayerError):
-            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-        with contextlib.suppress(ServiceLayerError):
-            csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
+    # Reuse the assembly-tabs computed state so the tab bar renders correctly.
+    # Both lookups are optional — a fresh assembly has neither.
+    with contextlib.suppress(ServiceLayerError):
+        gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+    with contextlib.suppress(ServiceLayerError):
+        csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
-        # Read in the same transaction as the schema above, so the page is one snapshot.
-        data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
-        all_fields = [f for group_fields in grouped.values() for f in group_fields]
-        large_mapping_fields = [
-            f for f in all_fields if f.is_derived and f.derivation_type == DerivationType.LARGE_MAPPING
-        ]
-        has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
-        mapping_row_counts = {
-            f.id: uow.respondent_field_mapping_entries.count_for_field(f.id) for f in large_mapping_fields
-        }
-        hub_context: dict[str, Any] = {}
-        if with_hub:
-            hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
+    data_source, _locked = determine_data_source(gsheet, csv_status, request.args.get("source", ""))
+    all_fields = [f for group_fields in grouped.values() for f in group_fields]
+    has_respondents = uow.respondents.count_by_assembly_id(assembly_id) > 0
+    hub_context: dict[str, Any] = {}
+    if with_hub:
+        hub_context = {**registration_hub_context(uow, assembly_id, data_source, gsheet), "page_takeover": True}
 
     # The DERIVED group is deliberately absent: derived fields are managed on
     # the target data sources step, not arranged on the registration page.
@@ -813,7 +573,6 @@ def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict
 
     return {
         **hub_context,
-        "mapping_row_counts": mapping_row_counts,
         "assembly": assembly,
         "sections": sections,
         "fed_target_names": fed_target_names,
@@ -833,51 +592,54 @@ def _schema_page_context(assembly_id: uuid.UUID, with_hub: bool = False) -> dict
     }
 
 
+# Each takes the page context its route built inside its ``with uow:`` block, and
+# renders outside it: a template is the slow part of a request, and a
+# transaction held open across it is how a connection pool runs dry.
+
+
 def _render_schema_page(
-    assembly_id: uuid.UUID, modal_ctx: dict[str, Any] | None = None, status: int = 200
+    page_ctx: dict[str, Any], modal_ctx: dict[str, Any] | None = None, status: int = 200
 ) -> ResponseReturnValue:
     """Render the full schema page, optionally with the field modal already open."""
-    return render_template(
-        "backoffice/respondent_field_schema/view.html",
-        modal_ctx=modal_ctx,
-        **_schema_page_context(assembly_id, with_hub=True),
-    ), status
+    return render_template("backoffice/respondent_field_schema/view.html", modal_ctx=modal_ctx, **page_ctx), status
 
 
-def _render_editor_fragment(assembly_id: uuid.UUID, oob: bool = False) -> ResponseReturnValue:
+def _render_editor_fragment(page_ctx: dict[str, Any], oob: bool = False) -> ResponseReturnValue:
     """Render just the #schema-editor fragment.
 
     With ``oob=True`` the fragment swaps out-of-band, so the (otherwise empty)
     response also clears #field-modal-container — closing the modal that
     triggered the mutation.
     """
-    return render_template(
-        "backoffice/respondent_field_schema/_editor.html",
-        oob=oob,
-        **_schema_page_context(assembly_id),
-    ), 200
+    return render_template("backoffice/respondent_field_schema/_editor.html", oob=oob, **page_ctx), 200
 
 
-def _render_modal_fragment(assembly_id: uuid.UUID, modal_ctx: dict[str, Any], status: int = 200) -> ResponseReturnValue:
-    return render_template(
-        "backoffice/respondent_field_schema/_field_modal.html",
-        modal_ctx=modal_ctx,
-        **_schema_page_context(assembly_id),
-    ), status
+def _render_modal(page_ctx: dict[str, Any], modal_ctx: dict[str, Any], status: int = 200) -> ResponseReturnValue:
+    """Render the dialog — HTMX gets the fragment, no-JS the full page with it open."""
+    if _is_htmx():
+        return render_template(
+            "backoffice/respondent_field_schema/_field_modal.html", modal_ctx=modal_ctx, **page_ctx
+        ), status
+    return _render_schema_page(page_ctx, modal_ctx=modal_ctx, status=status)
 
 
-def _load_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> RespondentFieldDefinition | None:
-    uow = bootstrap.get_flask_uow()
-    with uow:
-        field = uow.respondent_field_definitions.get(field_id)
-        if field is None or field.assembly_id != assembly_id:
-            return None
-        detached: RespondentFieldDefinition = field.create_detached_copy()
-        return detached
+def _load_field(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, field_id: uuid.UUID
+) -> RespondentFieldDefinition | None:
+    field = uow.respondent_field_definitions.get(field_id)
+    if field is None or field.assembly_id != assembly_id:
+        return None
+    detached: RespondentFieldDefinition = field.create_detached_copy()
+    return detached
 
 
 # ---------------------------------------------------------------------------
 # Routes.
+#
+# Each opens one ``with uow:`` block around everything it reads and writes,
+# including the page context its response is rendered from, and renders after
+# the block has closed. The one exception is a save that fails: its block has
+# rolled back, so the dialog it re-opens is read in a block of its own.
 # ---------------------------------------------------------------------------
 
 
@@ -886,7 +648,9 @@ def _load_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> RespondentFieldD
 def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Display the respondent field schema for an assembly."""
     try:
-        return _render_schema_page(assembly_id)
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            page_ctx = _schema_page_context(uow, assembly_id, with_hub=True)
     except NotFoundError as e:
         logger.warning(
             "Assembly not found for user", assembly_id=str(assembly_id), user_id=str(current_user.id), error=str(e)
@@ -897,6 +661,7 @@ def view_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
         logger.warning("Insufficient permissions for assembly", assembly_id=str(assembly_id), error=str(e))
         flash(_("You don't have permission to view this assembly"), "error")
         return redirect(url_for("backoffice.dashboard"))
+    return _render_schema_page(page_ctx)
 
 
 @respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema.json")
@@ -949,6 +714,7 @@ def initialise_schema(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
 @respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema/fields/new-modal")
 @login_required
+@_refusals_go_to_the_dashboard
 def new_field_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Serve the add-field modal.
 
@@ -964,50 +730,65 @@ def new_field_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
         values = _default_modal_values()
         if _parse_registration_group(request.args.get("group")) is not None:
             values["group"] = request.args["group"]
-    modal_ctx = _new_modal_ctx(assembly_id, values)
-    try:
-        if _is_htmx():
-            return _render_modal_fragment(assembly_id, modal_ctx)
-        return _render_schema_page(assembly_id, modal_ctx=modal_ctx)
-    except InsufficientPermissions:
-        flash(_("You don't have permission to edit the schema"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except NotFoundError:
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+    return _modal_response(assembly_id, lambda uow: _new_modal_ctx(uow, assembly_id, values))
 
 
 @respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/edit-modal")
 @login_required
+@_refusals_go_to_the_dashboard
 def edit_field_modal(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
     """Serve the edit-field modal (HTMX fragment / full-page fallback)."""
-    try:
-        field = _load_field(assembly_id, field_id)
-        if field is None:
-            flash(_("Field not found"), "error")
-            return redirect(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
-        values = (
-            _modal_values_from_request(request.args) if "modal" in request.args else _modal_values_from_field(field)
-        )
-        modal_ctx = _edit_modal_ctx(assembly_id, field, values)
-        if _is_htmx():
-            return _render_modal_fragment(assembly_id, modal_ctx)
-        return _render_schema_page(assembly_id, modal_ctx=modal_ctx)
-    except InsufficientPermissions:
-        flash(_("You don't have permission to edit the schema"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except NotFoundError:
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
+    modal_ctx: dict[str, Any] | None = None
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        page_ctx = _schema_page_context(uow, assembly_id)
+        field = _load_field(uow, assembly_id, field_id)
+        if field is not None and not field.is_derived:
+            values = (
+                _modal_values_from_request(request.args) if "modal" in request.args else _modal_values_from_field(field)
+            )
+            modal_ctx = _edit_modal_ctx(uow, assembly_id, field, values)
+    if field is None:
+        flash(_("Field not found"), "error")
+        return redirect(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
+    if modal_ctx is None:
+        return _target_sources_redirect(assembly_id)
+    return _render_modal(page_ctx, modal_ctx)
 
 
-def _modal_roundtrip_response(
-    assembly_id: uuid.UUID, modal_ctx: dict[str, Any], status: int = 200
-) -> ResponseReturnValue:
-    """Re-render the modal without saving — HTMX gets the fragment, no-JS the full page."""
+def _target_sources_redirect(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Send a request about a computed question to the step that manages it.
+
+    Over HTMX a plain redirect would load the whole page into the modal
+    container, so the browser is told to navigate instead.
+    """
+    flash(_("Computed questions are set up on the target data sources step"), "info")
+    target_url = url_for("target_sources.view_sources", assembly_id=assembly_id)
     if _is_htmx():
-        return _render_modal_fragment(assembly_id, modal_ctx, status=status)
-    return _render_schema_page(assembly_id, modal_ctx=modal_ctx, status=status)
+        response = make_response("", 200)
+        response.headers["HX-Redirect"] = target_url
+        return response
+    return redirect(target_url)
+
+
+def _modal_response(
+    assembly_id: uuid.UUID,
+    build_modal_ctx: Callable[[AbstractUnitOfWork], dict[str, Any] | None],
+    status: int = 200,
+) -> ResponseReturnValue:
+    """Read the page and the dialog over it in one block, then render the dialog.
+
+    ``build_modal_ctx`` answers None when the field the dialog is about has gone.
+    The page is read first, so whoever is asking is checked before the dialog is
+    built; a refusal is left to ``_refusals_go_to_the_dashboard``.
+    """
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        page_ctx = _schema_page_context(uow, assembly_id)
+        modal_ctx = build_modal_ctx(uow)
+    if modal_ctx is None:
+        return _field_missing_response(assembly_id, page_ctx, oob=True)
+    return _render_modal(page_ctx, modal_ctx, status)
 
 
 def _flash_failure_response(assembly_id: uuid.UUID, message: str) -> ResponseReturnValue:
@@ -1015,22 +796,17 @@ def _flash_failure_response(assembly_id: uuid.UUID, message: str) -> ResponseRet
     return _schema_page_redirect(assembly_id)
 
 
-def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: bool) -> str:
-    """Validate and save a new field; returns a user-facing error message, or "" on success."""
+def _new_field_kwargs(values: dict[str, Any], is_modal: bool) -> tuple[dict[str, Any], str]:
+    """The add_field kwargs the form describes, plus a validation error message ("" when valid)."""
     label = values["label"].strip()
     field_key = normalise_field_key(values["field_key"] or label or request.form.get("field_key", ""))
     if not field_key:
-        return _("A label or field key is required (letters, numbers and underscores)")
+        return {}, _("A label or field key is required (letters, numbers and underscores)")
     group = _parse_group(request.form.get("group")) or RespondentFieldGroup.OTHER
     if is_modal:
-        if values["type_choice"] == "derived":
-            # The derived panel posts to add-derived. Landing here means the
-            # type picker said Derived but the panel never rendered — with JS
-            # off, Save pressed before the refresh button. Falling through
-            # would quietly create a text field.
-            return _("Choose the target and method for a derived field")
-        if not values["type_choice"]:
-            return _("Choose a question type")
+        # An unrecognised type would otherwise fall through to a text question.
+        if values["type_choice"] not in _TYPE_CHOICES:
+            return {}, _("Choose a question type")
         field_type = _field_type_from_taxonomy(values)
     else:
         field_type = _parse_field_type(request.form.get("field_type")) or FieldType.TEXT
@@ -1040,32 +816,40 @@ def _try_add_field(assembly_id: uuid.UUID, values: dict[str, Any], is_modal: boo
 
     options = _submitted_options(values) if field_type in CHOICE_TYPES else None
     if field_type in CHOICE_TYPES and not options:
-        return _("A choice field needs at least one option")
+        return {}, _("A choice field needs at least one option")
     if options and (duplicate_error := _duplicate_option_error(options)):
-        return duplicate_error
+        return {}, duplicate_error
+    return {
+        "field_key": field_key,
+        "label": label or None,
+        "group": group,
+        "field_type": field_type,
+        "options": options,
+        "on_registration_page": on_registration_page,
+        "help_text": values["help_text"].strip(),
+    }, ""
 
+
+def _try_add_field(assembly_id: uuid.UUID, add_kwargs: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    """Save a new field and read the page it leaves behind, in one block.
+
+    Returns the page context - read only when the response is a fragment - and a
+    user-facing error message, "" on success.
+    """
+    page_ctx: dict[str, Any] = {}
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            add_field(
-                uow,
-                current_user.id,
-                assembly_id,
-                field_key,
-                label=label or None,
-                group=group,
-                field_type=field_type,
-                options=options,
-                on_registration_page=on_registration_page,
-                help_text=values["help_text"].strip(),
-            )
+            add_field(uow, current_user.id, assembly_id, **add_kwargs)
+            if _is_htmx():
+                page_ctx = _schema_page_context(uow, assembly_id)
     except FieldDefinitionConflictError as e:
-        return str(e)
+        return {}, e.user_msg()
     except InsufficientPermissions:
-        return _("You don't have permission to edit the schema")
+        return {}, _("You don't have permission to edit the schema")
     except NotFoundError:
-        return _("Assembly not found")
-    return ""
+        return {}, _("Assembly not found")
+    return page_ctx, ""
 
 
 @respondent_field_schema_bp.route(
@@ -1087,292 +871,45 @@ def add_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
     values = _modal_values_from_request(request.form)
 
     if is_modal and form_action != "save":
-        # An options-editor round-trip (add/remove/copy rows) or a no-JS type
+        # An options-editor round-trip (add/remove rows) or a no-JS type
         # refresh — re-render the form with the entered values, saving nothing.
-        if form_action == "copy_target_options":
-            values = _copy_target_options(assembly_id, values, _choice_candidate_key(values))
-        else:
-            values = _apply_option_action(values, form_action)
-        return _modal_roundtrip_response(assembly_id, _new_modal_ctx(assembly_id, values))
+        def roundtrip(uow: AbstractUnitOfWork) -> dict[str, Any]:
+            return _new_modal_ctx(uow, assembly_id, _apply_option_action(values, form_action))
 
-    error = _try_add_field(assembly_id, values, is_modal)
+        return _modal_response(assembly_id, roundtrip)
+
+    add_kwargs, error = _new_field_kwargs(values, is_modal)
+    page_ctx: dict[str, Any] = {}
+    if not error:
+        page_ctx, error = _try_add_field(assembly_id, add_kwargs)
     if error:
         if is_modal:
-            return _modal_roundtrip_response(assembly_id, _new_modal_ctx(assembly_id, values, error=error), status=422)
+            return _modal_response(
+                assembly_id, lambda uow: _new_modal_ctx(uow, assembly_id, values, error=error), status=422
+            )
         return _flash_failure_response(assembly_id, error)
 
     if _is_htmx():
-        return _render_editor_fragment(assembly_id, oob=True)
+        return _render_editor_fragment(page_ctx, oob=True)
     flash(_("Question added"), "success")
     return _schema_page_redirect(assembly_id)
 
 
-def _report_response(
-    assembly_id: uuid.UUID,
-    report: RecomputeReport,
-    title: str,
-    upload_report: MappingUploadReport | None = None,
-) -> ResponseReturnValue:
-    """Show the recompute report in the modal (Q11) and refresh the editor behind it."""
-    page_ctx = _schema_page_context(assembly_id, with_hub=not _is_htmx())
-    report_ctx = {"report": report, "title": title, "upload_report": upload_report}
-    if _is_htmx():
-        report_html = render_template(
-            "backoffice/respondent_field_schema/_derivation_report_modal.html", report_ctx=report_ctx, **page_ctx
-        )
-        editor_html = render_template("backoffice/respondent_field_schema/_editor.html", oob=True, **page_ctx)
-        return report_html + editor_html, 200
-    return render_template(
-        "backoffice/respondent_field_schema/view.html",
-        modal_ctx={"mode": "report", "report_ctx": report_ctx},
-        **page_ctx,
-    ), 200
+def _edit_dialog(
+    assembly_id: uuid.UUID, field_id: uuid.UUID, values: dict[str, Any], form_action: str, error: str = ""
+) -> Callable[[AbstractUnitOfWork], dict[str, Any] | None]:
+    """How to build the edit dialog for the submitted values, for ``_modal_response`` to call in its block."""
 
+    def build(uow: AbstractUnitOfWork) -> dict[str, Any] | None:
+        field = _load_field(uow, assembly_id, field_id)
+        if field is None:
+            return None
+        acted_on = values
+        if form_action != "save":
+            acted_on = _apply_option_action(values, form_action)
+        return _edit_modal_ctx(uow, assembly_id, field, acted_on, error=error)
 
-def _try_create_derived(assembly_id: uuid.UUID, values: dict[str, Any]) -> tuple[RecomputeReport | None, str]:
-    """Validate and create the derived field; returns (report, error-message)."""
-    target_name = values["target_name"].strip()
-    if not target_name:
-        return None, _("Choose the target this field feeds")
-    if not values["source_key"]:
-        return None, _("Choose the field to derive from")
-    try:
-        rule = parse_derivation_rule(values)
-    except ValueError as e:
-        return None, str(e)
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            categories = list(uow.target_categories.get_by_assembly_id(assembly_id))
-            target = next((c for c in categories if c.name.lower() == target_name.lower()), None)
-            if target is None:
-                return None, _("Choose the target this field feeds")
-            # The field key is the target's name verbatim: selection pairs a
-            # target category with a respondent column by exact string match,
-            # and the field-spec join is a case-insensitive name match.
-            field, report = create_derived_field(
-                uow,
-                current_user.id,
-                assembly_id,
-                field_key=target.name.strip(),
-                label=target.name.strip(),
-                source_field_key=values["source_key"],
-                rule=rule,
-                output_values=[v.value for v in target.values],
-            )
-            if values["help_text"].strip():
-                update_field(uow, current_user.id, assembly_id, field.id, help_text=values["help_text"].strip())
-    except FieldDefinitionConflictError as e:
-        return None, str(e)
-    except InsufficientPermissions:
-        return None, _("You don't have permission to edit the schema")
-    except NotFoundError:
-        return None, _("Assembly not found")
-    return report, ""
-
-
-@respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/add-derived",
-    methods=["POST"],
-)
-@login_required
-@_refusals_go_to_the_dashboard
-def add_derived_field_view(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Create a derived field from the modal's derived panel.
-
-    Success shows the recompute report in the modal (the save recomputes the
-    whole pool synchronously); failure re-renders the panel at 422.
-    """
-    form_action = request.form.get("form_action", "save")
-    values = _modal_values_from_request(request.form)
-    values["type_choice"] = "derived"
-
-    if form_action != "save":
-        return _modal_roundtrip_response(assembly_id, _new_modal_ctx(assembly_id, values))
-
-    report, error = _try_create_derived(assembly_id, values)
-    if error or report is None:
-        return _modal_roundtrip_response(assembly_id, _new_modal_ctx(assembly_id, values, error=error), status=422)
-    return _report_response(assembly_id, report, _("Derived field created"))
-
-
-def _try_update_derivation(
-    assembly_id: uuid.UUID, field: RespondentFieldDefinition, values: dict[str, Any]
-) -> tuple[RecomputeReport | None, str]:
-    """Validate and apply a derivation edit; returns (report, error-message)."""
-    try:
-        rule = parse_derivation_rule(values)
-    except ValueError as e:
-        return None, str(e)
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            categories = list(uow.target_categories.get_by_assembly_id(assembly_id))
-            target = next((c for c in categories if c.name.lower() == field.field_key.lower()), None)
-            output_values = [v.value for v in target.values] if target else None
-            _field, report = update_derivation(
-                uow, current_user.id, assembly_id, field.id, rule, output_values=output_values
-            )
-            update_field(
-                uow,
-                current_user.id,
-                assembly_id,
-                field.id,
-                label=values["label"].strip() or None,
-                help_text=values["help_text"].strip(),
-            )
-    except FieldDefinitionConflictError as e:
-        return None, str(e)
-    except FieldDefinitionNotFoundError:
-        return None, _("Field not found")
-    except InsufficientPermissions:
-        return None, _("You don't have permission to edit the schema")
-    except NotFoundError:
-        return None, _("Assembly not found")
-    return report, ""
-
-
-@respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/derivation",
-    methods=["POST"],
-)
-@login_required
-@_refusals_go_to_the_dashboard
-def update_derivation_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
-    """Edit a derived field's method config (and label/help text) from the modal.
-
-    The source and target cannot be changed here — delete and recreate instead
-    (the modal says so). Success shows the recompute report.
-    """
-    form_action = request.form.get("form_action", "save")
-    values = _modal_values_from_request(request.form)
-    values["type_choice"] = "derived"
-
-    field = _load_field(assembly_id, field_id)
-    if field is None or not field.is_derived:
-        return _field_missing_response(assembly_id, oob=True)
-
-    if form_action != "save":
-        return _modal_roundtrip_response(assembly_id, _edit_modal_ctx(assembly_id, field, values))
-
-    report, error = _try_update_derivation(assembly_id, field, values)
-    if error or report is None:
-        return _modal_roundtrip_response(
-            assembly_id, _edit_modal_ctx(assembly_id, field, values, error=error), status=422
-        )
-    return _report_response(assembly_id, report, _("Derivation updated"))
-
-
-def _render_mapping_modal(
-    assembly_id: uuid.UUID,
-    field: RespondentFieldDefinition,
-    error: str = "",
-    allow_new_outputs: bool = False,
-    status: int = 200,
-) -> ResponseReturnValue:
-    modal_ctx = {"mode": "mapping", "field": field, "error": error, "allow_new_outputs": allow_new_outputs}
-    if _is_htmx():
-        return render_template(
-            "backoffice/respondent_field_schema/_mapping_upload_modal.html",
-            modal_ctx=modal_ctx,
-            **_schema_page_context(assembly_id),
-        ), status
-    return _render_schema_page(assembly_id, modal_ctx=modal_ctx, status=status)
-
-
-def _load_large_mapping_field(assembly_id: uuid.UUID, field_id: uuid.UUID) -> RespondentFieldDefinition | None:
-    field = _load_field(assembly_id, field_id)
-    if field is None or not field.is_derived or field.derivation_type != DerivationType.LARGE_MAPPING:
-        return None
-    return field
-
-
-@respondent_field_schema_bp.route("/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/mapping-modal")
-@login_required
-def mapping_upload_modal(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
-    """Serve the lookup-table upload dialog (HTMX fragment / full-page fallback)."""
-    field = _load_large_mapping_field(assembly_id, field_id)
-    if field is None:
-        flash(_("Field not found"), "error")
-        return redirect(url_for("respondent_field_schema.view_schema", assembly_id=assembly_id))
-    try:
-        return _render_mapping_modal(assembly_id, field)
-    except InsufficientPermissions:
-        flash(_("You don't have permission to edit the schema"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    except NotFoundError:
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-
-
-@respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/mapping-upload",
-    methods=["POST"],
-)
-@login_required
-@_refusals_go_to_the_dashboard
-def mapping_upload_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
-    """Replace a lookup table from an uploaded CSV, recompute, and show the combined report.
-
-    The file is parsed in memory and never persisted — only the normalised
-    rows are stored (see upload_large_mapping).
-    """
-    field = _load_large_mapping_field(assembly_id, field_id)
-    if field is None:
-        return _field_missing_response(assembly_id, oob=True)
-    allow_new_outputs = request.form.get("allow_new_outputs") == "1"
-
-    def _fail(message: str) -> ResponseReturnValue:
-        return _render_mapping_modal(assembly_id, field, error=message, allow_new_outputs=allow_new_outputs, status=422)
-
-    upload = request.files.get("mapping_file")
-    if upload is None or not upload.filename:
-        return _fail(_("Choose a CSV file to upload."))
-    try:
-        csv_content = upload.read().decode("utf-8")
-    except UnicodeDecodeError:
-        return _fail(_("Could not read the file — it must be UTF-8 encoded CSV."))
-
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            upload_report = upload_large_mapping(
-                uow, current_user.id, assembly_id, field_id, csv_content, allow_new_outputs=allow_new_outputs
-            )
-            report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
-    except FieldDefinitionConflictError as e:
-        return _fail(str(e))
-    except FieldDefinitionNotFoundError:
-        return _fail(_("Field not found"))
-    except InsufficientPermissions:
-        return _fail(_("You don't have permission to edit the schema"))
-    except NotFoundError:
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    return _report_response(assembly_id, report, _("Lookup table uploaded"), upload_report=upload_report)
-
-
-@respondent_field_schema_bp.route(
-    "/assembly/<uuid:assembly_id>/respondent-schema/fields/<uuid:field_id>/recompute",
-    methods=["POST"],
-)
-@login_required
-def recompute_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseReturnValue:
-    """Recompute one derived field across the pool and show the report."""
-    try:
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            report = recompute_derived_field(uow, current_user.id, assembly_id, field_id)
-    except (FieldDefinitionConflictError, FieldDefinitionNotFoundError):
-        flash(_("Field not found"), "error")
-        return _schema_page_redirect(assembly_id)
-    except InsufficientPermissions:
-        flash(_("You don't have permission to edit the schema"), "error")
-        return _schema_page_redirect(assembly_id)
-    except NotFoundError:
-        flash(_("Assembly not found"), "error")
-        return redirect(url_for("backoffice.dashboard"))
-    return _report_response(assembly_id, report, _("Recompute complete"))
+    return build
 
 
 @respondent_field_schema_bp.route(
@@ -1392,52 +929,38 @@ def update_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
     is_modal = request.form.get("modal") == "1"
     values = _modal_values_from_request(request.form)
 
-    field = _load_field(assembly_id, field_id)
-    if field is None:
-        return _field_missing_response(assembly_id, oob=is_modal)
-
     if is_modal and form_action != "save":
-        if form_action == "copy_target_options":
-            values = _copy_target_options(assembly_id, values, _choice_candidate_key(values, field))
-        else:
-            values = _apply_option_action(values, form_action)
-        return _modal_roundtrip_response(assembly_id, _edit_modal_ctx(assembly_id, field, values))
+        return _modal_response(assembly_id, _edit_dialog(assembly_id, field_id, values, form_action))
 
-    if is_modal:
-        update_kwargs, error = _modal_update_kwargs(field, values)
-    else:
-        update_kwargs, error = _legacy_update_kwargs()
-        if not update_kwargs and not error:
-            return _nothing_submitted_response(assembly_id)
-
-    if not error:
-        error = _try_update_field(assembly_id, field_id, update_kwargs)
-
-    if error:
+    attempt = _try_update_field(assembly_id, field_id, values, is_modal)
+    if attempt.error:
         if is_modal:
-            return _modal_roundtrip_response(
-                assembly_id, _edit_modal_ctx(assembly_id, field, values, error=error), status=422
-            )
-        return _flash_failure_response(assembly_id, error)
+            dialog = _edit_dialog(assembly_id, field_id, values, form_action, error=attempt.error)
+            return _modal_response(assembly_id, dialog, status=422)
+        return _flash_failure_response(assembly_id, attempt.error)
+    if attempt.field_missing:
+        return _field_missing_response(assembly_id, attempt.page_ctx, oob=is_modal)
+    if attempt.nothing_submitted:
+        return _nothing_submitted_response(assembly_id, attempt.page_ctx)
 
     if _is_htmx():
         # A modal save clears the modal via the out-of-band swap; a plain HTMX
         # post targets #schema-editor directly, so no OOB there.
-        return _render_editor_fragment(assembly_id, oob=is_modal)
+        return _render_editor_fragment(attempt.page_ctx, oob=is_modal)
     flash(_("Question updated"), "success")
     return _schema_page_redirect(assembly_id)
 
 
-def _field_missing_response(assembly_id: uuid.UUID, oob: bool) -> ResponseReturnValue:
+def _field_missing_response(assembly_id: uuid.UUID, page_ctx: dict[str, Any], oob: bool) -> ResponseReturnValue:
     if _is_htmx():
-        return _render_editor_fragment(assembly_id, oob=oob)
+        return _render_editor_fragment(page_ctx, oob=oob)
     flash(_("Field not found"), "error")
     return _schema_page_redirect(assembly_id)
 
 
-def _nothing_submitted_response(assembly_id: uuid.UUID) -> ResponseReturnValue:
+def _nothing_submitted_response(assembly_id: uuid.UUID, page_ctx: dict[str, Any]) -> ResponseReturnValue:
     if _is_htmx():
-        return _render_editor_fragment(assembly_id)
+        return _render_editor_fragment(page_ctx)
     flash(_("No changes submitted"), "info")
     return _schema_page_redirect(assembly_id)
 
@@ -1488,26 +1011,50 @@ def _legacy_update_kwargs() -> tuple[dict[str, Any], str]:
     }, ""
 
 
-def _try_update_field(assembly_id: uuid.UUID, field_id: uuid.UUID, update_kwargs: dict[str, Any]) -> str:
-    """Run the update; returns a user-facing error message, or "" on success."""
+@dataclass
+class _UpdateAttempt:
+    """What one attempt to save an edited field came to."""
+
+    error: str = ""
+    field_missing: bool = False
+    nothing_submitted: bool = False
+    # Read only when the response is a fragment, and only when nothing went wrong.
+    page_ctx: dict[str, Any] = dataclass_field(default_factory=dict)
+
+
+def _try_update_field(
+    assembly_id: uuid.UUID, field_id: uuid.UUID, values: dict[str, Any], is_modal: bool
+) -> _UpdateAttempt:
+    """Load the field, save what the form asks of it and read the page that leaves behind, in one block."""
+    attempt = _UpdateAttempt()
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
-            update_field(uow, current_user.id, assembly_id, field_id, **update_kwargs)
+            field = _load_field(uow, assembly_id, field_id)
+            attempt.field_missing = field is None
+            if field is not None:
+                update_kwargs, attempt.error = (
+                    _modal_update_kwargs(field, values) if is_modal else _legacy_update_kwargs()
+                )
+                attempt.nothing_submitted = not update_kwargs and not attempt.error
+                if update_kwargs:
+                    update_field(uow, current_user.id, assembly_id, field_id, **update_kwargs)
+            if _is_htmx() and not attempt.error:
+                attempt.page_ctx = _schema_page_context(uow, assembly_id)
     except FieldDefinitionConflictError as e:
-        return str(e)
+        attempt.error = e.user_msg()
     except FieldDefinitionNotFoundError:
         # The message may carry internal detail — show a generic one.
-        return _("Field not found")
+        attempt.error = _("Field not found")
     except ValueError as e:
         # Domain validation (e.g. a choice type without options) — the message
         # is developer-written and safe to show.
-        return str(e)
+        attempt.error = str(e)
     except InsufficientPermissions:
-        return _("You don't have permission to edit the schema")
+        attempt.error = _("You don't have permission to edit the schema")
     except NotFoundError:
-        return _("Assembly not found")
-    return ""
+        attempt.error = _("Assembly not found")
+    return attempt
 
 
 @respondent_field_schema_bp.route(
@@ -1551,7 +1098,7 @@ def add_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRetu
             add_choice_option(uow, current_user.id, assembly_id, field_id, value, help_text)
         flash(_("Option added"), "success")
     except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
+        flash(e.user_msg(), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Field not found"), "error")
     except InsufficientPermissions:
@@ -1592,7 +1139,7 @@ def update_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
             )
         flash(_("Option updated"), "success")
     except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
+        flash(e.user_msg(), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Option not found"), "error")
     except InsufficientPermissions:
@@ -1620,7 +1167,7 @@ def remove_option_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseR
             remove_choice_option(uow, current_user.id, assembly_id, field_id, value)
         flash(_("Option removed"), "success")
     except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
+        flash(e.user_msg(), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Option not found"), "error")
     except InsufficientPermissions:
@@ -1693,7 +1240,7 @@ def delete_field_view(assembly_id: uuid.UUID, field_id: uuid.UUID) -> ResponseRe
             delete_field(uow, current_user.id, assembly_id, field_id)
         flash(_("Question removed"), "success")
     except FieldDefinitionConflictError as e:
-        flash(str(e), "error")
+        flash(e.user_msg(), "error")
     except FieldDefinitionNotFoundError:
         flash(_("Field not found"), "error")
     except InsufficientPermissions:

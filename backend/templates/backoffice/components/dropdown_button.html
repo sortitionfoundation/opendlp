@@ -22,9 +22,16 @@ ABOUTME: Composes .btn / .btn--{variant} + .menu / .menu-item atoms
         disabled: When true, renders the trigger disabled — menu cannot open.
 
     Accessibility:
+        - A WAI-ARIA menu button, driven by the menuButton Alpine component.
         - Trigger uses aria-haspopup="menu" and aria-expanded bound to open state.
-        - Dropdown uses role="menu" with role="menuitem" entries.
-        - Keyboard: Escape closes the menu; click outside closes it.
+        - Dropdown uses role="menu" with role="menuitem" entries, each tabindex="-1",
+          so the menu is one Tab stop.
+        - Keyboard: opening moves focus to the first item; Down/Up on the trigger
+          open onto the first/last item; the arrow keys, Home and End move between
+          items; Escape closes the menu and returns focus to the trigger; tabbing
+          out or clicking outside closes it.
+        - Escape is bound on this element, not window, so inside a fragment dialog
+          it closes only the menu and not the dialog around it.
 
     Usage:
         {{ dropdown_button(
@@ -44,12 +51,16 @@ ABOUTME: Composes .btn / .btn--{variant} + .menu / .menu-item atoms
     {# Map deprecated "outline" alias to secondary #}
     {% set _variant = "secondary" if variant == "outline" else variant %}
 
-    <div class="relative inline-flex" x-data="{ open: false }" @keydown.escape.window="open = false">
+    <div class="relative inline-flex"
+         x-data="menuButton"
+         @keydown.escape="closeOnEscape"
+         @focusout="closeOnFocusOut">
         {# Trigger #}
         <button type="button"
                 id="{{ toggle_id }}"
                 class="btn btn--{{ _variant }}"
-                {% if disabled %}disabled aria-disabled="true"{% else %}@click="open = !open" @click.outside="open = false"{% endif %}
+                x-ref="menuToggle"
+                {% if disabled %}disabled aria-disabled="true"{% else %}@click="toggleMenu()" @keydown="onToggleKeydown" @click.outside="closeMenu()"{% endif %}
                 aria-haspopup="menu"
                 x-bind:aria-expanded="open ? 'true' : 'false'"
                 aria-controls="{{ menu_id }}"
@@ -65,14 +76,17 @@ ABOUTME: Composes .btn / .btn--{variant} + .menu / .menu-item atoms
              x-cloak
              id="{{ menu_id }}"
              role="menu"
+             x-ref="menu"
+             @keydown="onMenuKeydown"
              aria-labelledby="{{ toggle_id }}"
              class="menu menu--left"
              style="min-width: max(100%, 20rem); max-width: 26rem;">
             {% for item in items %}
                 <button type="{{ item.type if item.type else 'submit' }}"
                         role="menuitem"
+                        tabindex="-1"
                         class="menu-item"
-                        @click="open = false"
+                        @click="closeMenu()"
                         {% if item.attrs %}{{ item.attrs | safe }}{% endif %}>
                     {% if item.description %}
                         <span class="flex items-center gap-2">

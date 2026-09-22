@@ -112,6 +112,14 @@ word for the wider idea — a derived field computed from a question, a column
 imported from CSV or Google Sheets, a field key. Say "question" only where the
 reader is thinking about what the page asks.
 
+**computed question** is a registration question nobody answers: its value is
+worked out from another question's answer — an age range from a date of birth, a
+region from a postcode. It is set up, and deleted, on the target data sources
+step. The code calls it a derived field (`is_derived`), and "derived" still
+appears in a few refusal messages that only a hand-made request can reach; the
+interface an organiser sees says "computed": "Computed from 'Postcode'", "Delete
+computed question".
+
 **built-in question** is a registration question every assembly has, such as
 email or consent, whose type can't be changed. The code calls these fixed fields
 (`is_fixed`); "fixed" never appears in the interface.
