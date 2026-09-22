@@ -13,6 +13,7 @@ from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
+from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.extensions import oauth
@@ -49,6 +50,10 @@ from opendlp.service_layer.password_reset_service import (
     validate_reset_token,
 )
 from opendlp.service_layer.security import password_validators_help_text_html
+from opendlp.service_layer.signup_rate_limit_service import (
+    check_signup_rate_limit,
+    record_signup,
+)
 from opendlp.service_layer.signup_survey_service import save_signup_survey
 from opendlp.service_layer.two_factor_service import TwoFactorVerificationError
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -334,6 +339,24 @@ def logout() -> ResponseReturnValue:
     return redirect(url_for("main.index"))
 
 
+def _complete_registration(user: User, token: EmailConfirmationToken | None) -> ResponseReturnValue:
+    """Finish a successful registration: log an OAuth user in, or send the confirmation email."""
+    if token is None:
+        login_user(user)
+        flash(_("Registration successful! Welcome to OpenDLP."), "success")
+        return redirect(url_for(default_dashboard_endpoint()))
+
+    email_adapter = get_email_adapter()
+    template_renderer = get_template_renderer(current_app)
+    url_generator = get_url_generator(current_app)
+    send_confirmation_email(email_adapter, template_renderer, url_generator, user, token.token)
+    flash(
+        _("Registration successful! Please check your email to confirm your account."),
+        "info",
+    )
+    return redirect(url_for("auth.login"))
+
+
 def _registration_role_args(invite_code: str | None) -> dict:
     """create_user() role arguments for a registration.
 
@@ -367,6 +390,14 @@ def register(invite_code: str = "") -> ResponseReturnValue:
 
     if form.validate_on_submit():
         try:
+            # An IP that keeps creating accounts is a bot, not a person; with
+            # open signup there is no invite gate left to stop it.
+            check_signup_rate_limit(
+                ip_address=request.remote_addr or "",
+                max_per_ip=current_app.config.get("SIGNUP_RATE_LIMIT_PER_IP", 10),
+                window_minutes=current_app.config.get("SIGNUP_RATE_LIMIT_WINDOW_MINUTES", 60),
+            )
+
             uow = bootstrap.get_flask_uow()
             with uow:
                 # After form validation, required fields are guaranteed to be non-None
@@ -383,24 +414,15 @@ def register(invite_code: str = "") -> ResponseReturnValue:
                 )
                 if show_questions:
                     save_signup_survey(uow, user.id, form.survey_answers())
-
-                # If OAuth user (token is None), auto-login as before
-                if token is None:
-                    login_user(user)
-                    flash(_("Registration successful! Welcome to OpenDLP."), "success")
-                    return redirect(url_for(default_dashboard_endpoint()))
-
-                # If password user, send confirmation email
-                email_adapter = get_email_adapter()
-                template_renderer = get_template_renderer(current_app)
-                url_generator = get_url_generator(current_app)
-                send_confirmation_email(email_adapter, template_renderer, url_generator, user, token.token)
-                flash(
-                    _("Registration successful! Please check your email to confirm your account."),
-                    "info",
+                record_signup(
+                    ip_address=request.remote_addr or "",
+                    window_minutes=current_app.config.get("SIGNUP_RATE_LIMIT_WINDOW_MINUTES", 60),
                 )
-                return redirect(url_for("auth.login"))
 
+                return _complete_registration(user, token)
+
+        except RateLimitExceeded as e:
+            flash(str(e), "error")
         except UserAlreadyExists as e:
             flash(str(e), "error")
         except InvalidInvite as e:

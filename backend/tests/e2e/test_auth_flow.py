@@ -217,6 +217,28 @@ class TestOpenSignup:
             assert user is not None
             assert get_signup_survey(uow, user.id, admin_user.id) is None
 
+    def test_registration_is_rate_limited_per_ip(self, client: FlaskClient, app, postgres_session_factory, open_signup):
+        """The limit counts account creations, so the excess signup is refused."""
+        original = app.config.get("SIGNUP_RATE_LIMIT_PER_IP")
+        app.config["SIGNUP_RATE_LIMIT_PER_IP"] = 2
+        try:
+            for i in range(2):
+                response = self._register(client, email=f"limited{i}@example.com")
+                assert response.status_code == 302
+
+            response = self._register(client, email="limited2@example.com")
+            assert response.status_code == 200
+            assert b"Rate limit exceeded" in response.data
+        finally:
+            if original is None:
+                app.config.pop("SIGNUP_RATE_LIMIT_PER_IP", None)
+            else:  # pragma: no cover
+                app.config["SIGNUP_RATE_LIMIT_PER_IP"] = original
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.users.get_by_email("limited1@example.com") is not None
+            assert uow.users.get_by_email("limited2@example.com") is None
+
     def test_register_with_invite_still_uses_invite_role(
         self, client: FlaskClient, postgres_session_factory, valid_invite: UserInvite, open_signup
     ):
