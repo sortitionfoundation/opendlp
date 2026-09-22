@@ -238,6 +238,8 @@
     </div>
     <!-- Back Button -->
     <div class="govuk-button-group govuk-!-margin-top-6">
+        <a href="{{ url_for('admin.export_users_csv') }}"
+           class="govuk-button govuk-button--secondary">{{ _("Export users as CSV") }}</a>
         <a href="{{ url_for('admin.index') }}"
            class="govuk-button govuk-button--secondary">{{ _("Back to Site Admin") }}</a>
     </div>
