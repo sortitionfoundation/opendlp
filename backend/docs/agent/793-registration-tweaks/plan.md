@@ -5,7 +5,7 @@ Plan for reworking the age-range (`DerivationType.AGE_BRACKET`) part of the
 questions** (`/backoffice/assembly/<id>/target-sources`). It also covers
 tighter validation of `FieldType.DATE` answers on registration pages.
 
-Status: **agreed, being implemented** — progress is marked in §7. Decisions from review are in §8.
+Status: **implemented** — see §7. Decisions from review are in §8.
 
 ---
 
@@ -424,7 +424,7 @@ TDD, in this order:
    `tests/e2e/test_backoffice_target_sources.py` for the new flow. Add one BDD
    scenario: a target of `16-29, 30-44, 45-59, 60+` auto-matches, and a
    respondent aged 70 lands in `60+`.
-9. `just translate-regen` / `just translate-check`, `just check`, `just test`.
+9. ✅ `just translate-regen` / `just translate-check`, `just check`, `just test`.
 
 Notes from implementation:
 
@@ -441,6 +441,8 @@ Notes from implementation:
   the domain validator can't format a date for the viewer's locale without
   Flask. It shares `birth_year_range()` with the year-of-birth check, whose
   message is "The year must be between 1906 and 2026".
+- A fieldset with a top border draws its legend inside the line, so each
+  divider is on a wrapping `<div>` and the fieldset inside it is plain.
 - The JS component is `age-bracket-setup.js` (`ageBracketSetup`). It owns the
   Edit and Change toggles as well as the "Ages" column, and takes its
   translated wording from `data-` attributes rendered with the same msgids the

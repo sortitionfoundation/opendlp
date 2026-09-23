@@ -905,7 +905,7 @@ class TestDialogGroups:
             headers=HTMX,
         ).get_data(as_text=True)
 
-        assert body.count("border-top: 1px solid var(--color-borders-dividers)") == sections
+        assert body.count('style="border-top: 1px solid var(--color-borders-dividers);"') == sections
         assert 'data-testid="ts-source-group"' in body
 
     def test_no_sections_until_a_method_is_chosen(self, logged_in_admin, existing_assembly, fake_store):
@@ -916,7 +916,7 @@ class TestDialogGroups:
             headers=HTMX,
         ).get_data(as_text=True)
 
-        assert "border-top: 1px solid var(--color-borders-dividers)" not in body
+        assert 'style="border-top: 1px solid var(--color-borders-dividers);"' not in body
 
 
 class TestConfigureLargeMapping:
