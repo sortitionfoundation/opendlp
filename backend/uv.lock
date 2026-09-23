@@ -12,9 +12,9 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
-sqlparse = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
-sortition-algorithms = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
 cryptography = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
+sortition-algorithms = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
+sqlparse = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
 
 [[package]]
 name = "alembic"
@@ -1617,7 +1617,7 @@ dev = [
     { name = "ruff", specifier = ">=0.16.2" },
     { name = "tenacity", specifier = ">=9.1.2" },
     { name = "time-machine", specifier = ">=2.19.0" },
-    { name = "types-authlib", specifier = ">=1.6.6.20251220" },
+    { name = "types-authlib", specifier = ">=1.8.0.20260911" },
     { name = "types-gunicorn", specifier = ">=23.0.0.20251001" },
     { name = "types-qrcode", specifier = ">=8.2.0.20250914" },
     { name = "types-wtforms", specifier = ">=3.2.1.20250809" },
@@ -2690,14 +2690,14 @@ wheels = [
 
 [[package]]
 name = "types-authlib"
-version = "1.7.2.20260827"
+version = "1.8.0.20260911"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6e/a9/47337e39d569933ec88297c0eba3480236f0b363534bef251987c0e033c7/types_authlib-1.7.2.20260827.tar.gz", hash = "sha256:e75a01ef3c26dae933696a3f79361756c37a3b7cd775553111fd41b297181064", size = 50614, upload-time = "2026-08-27T12:07:18.348Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9c/d8/e78ecbe9a5a077f5ccfec1f284ace4e8ae55ce204ec8bd1b00d86a83974a/types_authlib-1.8.0.20260911.tar.gz", hash = "sha256:cde5e55bca5e908438facc8fc701197bf540af880dff7b8ca8cf40a08258a62a", size = 51835, upload-time = "2026-09-11T06:45:26.216Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e6/e6/2a20465b6d17ee22ac4964d06f362c836778e81822211cd447209aa47878/types_authlib-1.7.2.20260827-py3-none-any.whl", hash = "sha256:688b537716a36a2dd99d44724a9934dd6f5fc1d05f9b65f33bd2b023454c6c10", size = 110319, upload-time = "2026-08-27T12:07:17.235Z" },
+    { url = "https://files.pythonhosted.org/packages/e2/65/d9206c38d65602867f15bda7836b1248295b31f3187a09cc1f6195539ebe/types_authlib-1.8.0.20260911-py3-none-any.whl", hash = "sha256:0617c4a2361a605144bae0850f70c18edd5265abec11af66235a02a1b415444e", size = 111525, upload-time = "2026-09-11T06:45:25.033Z" },
 ]
 
 [[package]]
