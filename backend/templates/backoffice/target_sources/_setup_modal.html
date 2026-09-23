@@ -11,7 +11,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
 {% set values = setup["values"] %}
 {% set target = setup["target"] %}
 {% set close_url = url_for('target_sources.view_sources', assembly_id=assembly.id) %}
-{% set divider_attrs = 'class="pt-4 mb-4" style="border-top: 1px solid var(--color-borders-dividers);"' %}
+{% set divider_style = "border-top: 1px solid var(--color-borders-dividers);" %}
 {% set refresh_attrs = 'hx-get="' ~ setup["refresh_url"] ~ '" hx-include="closest form" hx-params="not csrf_token" hx-target="#ts-modal-container" hx-swap="innerHTML" hx-trigger="change"' %}
 {# What was typed survives a stray Escape: the close links ask first once
    anything has changed. The dirty flag rides the hidden "dirty" input through
@@ -106,7 +106,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                         </div>
                     {% endset %}
                     {% if values["method"] %}
-                        <div {{ divider_attrs }} data-testid="ts-source-group">
+                        <div class="pt-4 mb-4" style="{{ divider_style }}" data-testid="ts-source-group">
                             {% if values["method"] == "small_mapping" and not setup["candidates"] %}
                         {# Nothing to reuse, and no name to assume: ask for the new question outright. #}
                                 {{ new_question_inputs }}
@@ -182,65 +182,67 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                              data-over-text="{{ _('%(age)s and over', age='{age}') }}"
                              data-younger-text="{{ _('Anyone younger than %(age)s counts as %(fallback)s.', age='{age}', fallback=setup['fallback']) }}"
                              @input="recalc()">
-                            <fieldset {{ divider_attrs }}>
-                                <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Age ranges") }}</legend>
-                                {% if ranges["matched"] %}
-                                    <div x-show="!editing" data-testid="ts-age-summary">
-                                        <div class="flex items-center justify-between gap-4 mb-2">
-                                            <p class="text-body-sm">{{ _("Each target value is matched to these ages:") }}</p>
-                                            {{ button(_("Edit") , variant="secondary", attrs='@click="startEditing()"', aria_label=_("Edit the age ranges")) }}
+                            <div class="pt-4 mb-4" style="{{ divider_style }}">
+                                <fieldset>
+                                    <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Age ranges") }}</legend>
+                                    {% if ranges["matched"] %}
+                                        <div x-show="!editing" data-testid="ts-age-summary">
+                                            <div class="flex items-center justify-between gap-4 mb-2">
+                                                <p class="text-body-sm">{{ _("Each target value is matched to these ages:") }}</p>
+                                                {{ button(_("Edit") , variant="secondary", attrs='@click="startEditing()"', aria_label=_("Edit the age ranges")) }}
+                                            </div>
+                                            <table class="mb-2">
+                                                <tbody>
+                                                    {% for row in ranges["rows"] %}
+                                                        <tr>
+                                                            <th scope="row" class="text-body-sm font-normal text-left pr-6 pb-1">{{ row["label"] }}</th>
+                                                            <td class="text-body-sm pb-1">{{ row["ages"] }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
                                         </div>
+                                    {% endif %}
+                                    <div x-show="editing" {% if ranges["matched"] %}x-cloak{% endif %} data-testid="ts-age-table">
+                                        {% if ranges["problem"] and ranges["problem"] != setup["error"] %}
+                                            <p class="text-body-sm mb-2" style="color: var(--color-error-text);">{{ ranges["problem"] }}</p>
+                                        {% endif %}
                                         <table class="mb-2">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col" class="text-label-md text-left pb-1 pr-4" style="color: var(--color-secondary-text);">{{ _("Target value") }}</th>
+                                                    <th scope="col" class="text-label-md text-left pb-1 pr-4" style="color: var(--color-secondary-text);">{{ _("From age") }}</th>
+                                                    <th scope="col" class="text-label-md text-left pb-1" style="color: var(--color-secondary-text);">{{ _("Ages") }}</th>
+                                                </tr>
+                                            </thead>
                                             <tbody>
                                                 {% for row in ranges["rows"] %}
-                                                    <tr>
-                                                        <th scope="row" class="text-body-sm font-normal text-left pr-6 pb-1">{{ row["label"] }}</th>
-                                                        <td class="text-body-sm pb-1">{{ row["ages"] }}</td>
+                                                    <tr data-age-row>
+                                                        <td class="text-body-sm pr-4 pb-2 align-middle">
+                                                            <input type="hidden" name="bracket_label" value="{{ row['label'] }}">
+                                                            {{ row["label"] }}
+                                                        </td>
+                                                        <td class="pr-4 pb-2 align-middle" style="width: 6rem;">
+                                                            {{ input("bracket_from",
+                                                            value=row["from_age"],
+                                                            aria_label=_("Age where %(value)s starts", value=row["label"]),
+                                                            id="ts-bracket-from-" ~ loop.index0,
+                                                            attrs='inputmode="numeric"') }}
+                                                        </td>
+                                                        <td class="text-body-sm pb-2 align-middle" data-ages>{{ row["ages"] }}</td>
                                                     </tr>
                                                 {% endfor %}
                                             </tbody>
                                         </table>
                                     </div>
-                                {% endif %}
-                                <div x-show="editing" {% if ranges["matched"] %}x-cloak{% endif %} data-testid="ts-age-table">
-                                    {% if ranges["problem"] and ranges["problem"] != setup["error"] %}
-                                        <p class="text-body-sm mb-2" style="color: var(--color-error-text);">{{ ranges["problem"] }}</p>
-                                    {% endif %}
-                                    <table class="mb-2">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col" class="text-label-md text-left pb-1 pr-4" style="color: var(--color-secondary-text);">{{ _("Target value") }}</th>
-                                                <th scope="col" class="text-label-md text-left pb-1 pr-4" style="color: var(--color-secondary-text);">{{ _("From age") }}</th>
-                                                <th scope="col" class="text-label-md text-left pb-1" style="color: var(--color-secondary-text);">{{ _("Ages") }}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for row in ranges["rows"] %}
-                                                <tr data-age-row>
-                                                    <td class="text-body-sm pr-4 pb-2 align-middle">
-                                                        <input type="hidden" name="bracket_label" value="{{ row['label'] }}">
-                                                        {{ row["label"] }}
-                                                    </td>
-                                                    <td class="pr-4 pb-2 align-middle" style="width: 6rem;">
-                                                        {{ input("bracket_from",
-                                                        value=row["from_age"],
-                                                        aria_label=_("Age where %(value)s starts", value=row["label"]),
-                                                        id="ts-bracket-from-" ~ loop.index0,
-                                                        attrs='inputmode="numeric"') }}
-                                                    </td>
-                                                    <td class="text-body-sm pb-2 align-middle" data-ages>{{ row["ages"] }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <p class="text-body-sm mb-2"
-                                   style="color: var(--color-secondary-text);"
-                                   x-show="youngerText"
-                                   x-text="youngerText"
-                                   {% if not ranges["younger_than"] %}x-cloak{% endif %}>{{ ranges["younger_than"] }}</p>
-                            </fieldset>
-                            <div {{ divider_attrs }}>
+                                    <p class="text-body-sm mb-2"
+                                       style="color: var(--color-secondary-text);"
+                                       x-show="youngerText"
+                                       x-text="youngerText"
+                                       {% if not ranges["younger_than"] %}x-cloak{% endif %}>{{ ranges["younger_than"] }}</p>
+                                </fieldset>
+                            </div>
+                            <div class="pt-4 mb-4" style="{{ divider_style }}">
                                 {% if setup["as_of_date"] %}
                                     <p class="text-body-sm flex flex-wrap items-center gap-2"
                                        x-show="!changingDate"
@@ -279,63 +281,65 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                         {% for target_value in target["values"] %}
                             {% set _appended = map_options.append({"value": target_value, "label": target_value}) %}
                         {% endfor %}
-                        <fieldset {{ divider_attrs }}>
-                            <legend class="text-label-lg mb-2" style="color: var(--color-headings);">
-                                {% if typing_answers %}
-                                    {{ _("Answers, and the target value each one counts as") }}
-                                {% else %}
-                                    {{ _("Map each answer to a target value") }}
-                                {% endif %}
-                            </legend>
-                            <table class="w-full mb-2">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="text-label-md text-left pb-1" style="color: var(--color-secondary-text);">{{ _("Answer") }}</th>
-                                        <th scope="col" class="text-label-md text-left pb-1" style="color: var(--color-secondary-text);">{{ _("Counts as") }}</th>
-                                        {% if typing_answers %}<th scope="col"><span class="sr-only">{{ _("Remove") }}</span></th>{% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for row in setup["map_rows"] %}
+                        <div class="pt-4 mb-4" style="{{ divider_style }}">
+                            <fieldset>
+                                <legend class="text-label-lg mb-2" style="color: var(--color-headings);">
+                                    {% if typing_answers %}
+                                        {{ _("Answers, and the target value each one counts as") }}
+                                    {% else %}
+                                        {{ _("Map each answer to a target value") }}
+                                    {% endif %}
+                                </legend>
+                                <table class="w-full mb-2">
+                                    <thead>
                                         <tr>
-                                            <td class="pr-2 pb-2 align-middle">
-                                                {% if typing_answers %}
-                                                    {{ input("map_source",
-                                                    value=row["source_value"],
-                                                    aria_label=_('Answer %(n)d', n=loop.index),
-                                                    id="ts-map-source-" ~ loop.index0) }}
-                                                {% else %}
-                                                    <input type="hidden" name="map_source" value="{{ row['source_value'] }}">
-                                                    <span class="text-body-sm">{{ row["source_value"] }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="pb-2 align-middle">
-                                                {{ select("map_target",
-                                                options=map_options,
-                                                value=row["target_value"],
-                                                id="ts-map-target-" ~ loop.index0,
-                                                attrs='aria-label="' ~ ((_('Target value for answer %(n)d', n=loop.index) if typing_answers else _('Target value for %(value)s', value=row['source_value'])) | e) ~ '"') }}
-                                            </td>
-                                            {% if typing_answers %}
-                                                <td class="pl-2 pb-2 align-middle">
-                                                    {{ button(_("Remove") , type="submit", variant="tertiary",
-                                                    attrs='name="form_action" value="remove_option_' ~ loop.index0 ~ '"',
-                                                    aria_label=_('Remove answer %(n)d', n=loop.index)) }}
-                                                </td>
-                                            {% endif %}
+                                            <th scope="col" class="text-label-md text-left pb-1" style="color: var(--color-secondary-text);">{{ _("Answer") }}</th>
+                                            <th scope="col" class="text-label-md text-left pb-1" style="color: var(--color-secondary-text);">{{ _("Counts as") }}</th>
+                                            {% if typing_answers %}<th scope="col"><span class="sr-only">{{ _("Remove") }}</span></th>{% endif %}
                                         </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                            {% if typing_answers %}
-                                {{ button(_("Add another answer") , type="submit", variant="secondary", attrs='name="form_action" value="add_option"') }}
-                            {% endif %}
-                            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
-                                {{ _("Answers left as 'fall back' don't count towards any target value.") }}
-                            </p>
-                        </fieldset>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in setup["map_rows"] %}
+                                            <tr>
+                                                <td class="pr-2 pb-2 align-middle">
+                                                    {% if typing_answers %}
+                                                        {{ input("map_source",
+                                                        value=row["source_value"],
+                                                        aria_label=_('Answer %(n)d', n=loop.index),
+                                                        id="ts-map-source-" ~ loop.index0) }}
+                                                    {% else %}
+                                                        <input type="hidden" name="map_source" value="{{ row['source_value'] }}">
+                                                        <span class="text-body-sm">{{ row["source_value"] }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="pb-2 align-middle">
+                                                    {{ select("map_target",
+                                                    options=map_options,
+                                                    value=row["target_value"],
+                                                    id="ts-map-target-" ~ loop.index0,
+                                                    attrs='aria-label="' ~ ((_('Target value for answer %(n)d', n=loop.index) if typing_answers else _('Target value for %(value)s', value=row['source_value'])) | e) ~ '"') }}
+                                                </td>
+                                                {% if typing_answers %}
+                                                    <td class="pl-2 pb-2 align-middle">
+                                                        {{ button(_("Remove") , type="submit", variant="tertiary",
+                                                        attrs='name="form_action" value="remove_option_' ~ loop.index0 ~ '"',
+                                                        aria_label=_('Remove answer %(n)d', n=loop.index)) }}
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% if typing_answers %}
+                                    {{ button(_("Add another answer") , type="submit", variant="secondary", attrs='name="form_action" value="add_option"') }}
+                                {% endif %}
+                                <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
+                                    {{ _("Answers left as 'fall back' don't count towards any target value.") }}
+                                </p>
+                            </fieldset>
+                        </div>
                     {% elif values["method"] == "large_mapping" %}
-                        <div {{ divider_attrs }}>
+                        <div class="pt-4 mb-4" style="{{ divider_style }}">
                             <p class="text-body-sm" style="color: var(--color-secondary-text);">
                                 {% if setup["mapping_row_count"] %}
                                     {{ _("Saving keeps the existing lookup table of %(count)s rows — replace it from this target's row if it needs to change.", count="{:,}".format(setup["mapping_row_count"])) }}
