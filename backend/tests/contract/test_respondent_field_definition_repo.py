@@ -292,7 +292,7 @@ class TestDerivationColumns:
 
     def test_round_trips_derivation_type_and_config(self, respondent_field_definition_backend: ContractBackend) -> None:
         assembly = respondent_field_definition_backend.make_assembly()
-        config = {"as_of_date": "2026-05-13", "min_age": 16, "boundaries": [22, 30, 55], "fallback": "UNKNOWN"}
+        config = {"as_of_date": "2026-05-13", "brackets": [{"from_age": 16, "label": "16+"}], "fallback": "UNKNOWN"}
         field = RespondentFieldDefinition(
             assembly_id=assembly.id,
             field_key="age_bracket",

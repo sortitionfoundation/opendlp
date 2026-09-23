@@ -239,6 +239,18 @@ def _require_mapping_outputs_are_target_values(rule: SmallMappingRule, category:
         raise FieldDefinitionConflictError(_l("'%(value)s' is not one of the target's values", value=stray))
 
 
+def _require_age_labels_are_target_values(rule: AgeBracketRule, category: TargetCategory) -> None:
+    """Refuse age ranges that aren't exactly the target's values: each value needs a range, and nothing else counts."""
+    target_values = _target_option_values(category)
+    labels = set(rule.labels())
+    missing = next((value for value in target_values if value not in labels), None)
+    if missing is not None:
+        raise FieldDefinitionConflictError(_l("Enter the age where '%(value)s' starts", value=missing))
+    stray = next((label for label in rule.labels() if label not in set(target_values)), None)
+    if stray is not None:
+        raise FieldDefinitionConflictError(_l("'%(value)s' is not one of the target's values", value=stray))
+
+
 def _relink(uow: AbstractUnitOfWork, category: TargetCategory, field: RespondentFieldDefinition) -> None:
     """Point the category's link at ``field``, clearing it from any other field."""
     for other in _fields_linked_to(uow, category):
@@ -363,10 +375,13 @@ def _configure_derivation(
     derivation_type = _DERIVATION_TYPE_FOR_RULE[type(rule)]
     if isinstance(rule, SmallMappingRule):
         _require_mapping_outputs_are_target_values(rule, category)
+    if isinstance(rule, AgeBracketRule):
+        _require_age_labels_are_target_values(rule, category)
     source = _resolve_source_field(uow, assembly_id, category, source_spec, derivation_type)
 
-    # An age rule's outputs are its bracket labels; mapping rules output the
-    # target's values (the fallback is appended by the derivation machinery).
+    # An age rule's outputs are its bracket labels, which are the target's
+    # values; mapping rules output the target's values (the fallback is
+    # appended by the derivation machinery).
     output_values = None if isinstance(rule, AgeBracketRule) else _target_option_values(category)
 
     existing = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, category.name)

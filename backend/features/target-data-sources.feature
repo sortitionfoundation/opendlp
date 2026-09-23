@@ -24,6 +24,17 @@ Feature: Target data sources
     Then I should see a warning toast saying "2 fell back to UNKNOWN"
     And the "age bracket" target row should say "Computed from"
 
+  Scenario: Age ranges are read from the target's own values
+    Given there is an assembly with respondents imported from CSV called "Age Match Demo"
+    And the assembly "Age Match Demo" has a "year_of_birth" number field
+    And the assembly "Age Match Demo" has a respondent aged 70 by year of birth
+    And the assembly "Age Match Demo" has an "Age" target with values "16-29, 30-44, 45-59, 60+"
+    And I am signed in as an admin user
+    When I open the target data sources for "Age Match Demo"
+    And I set up the "Age" target with age ranges from "year_of_birth"
+    Then the "Age" target row should say "Computed from"
+    And the respondent aged 70 in "Age Match Demo" should count towards "60+" of the "Age" target
+
   Scenario: Mapping from a question created with its answers in the set-up dialog
     Given there is an assembly with respondents imported from CSV called "Small Mapping Demo"
     And the assembly "Small Mapping Demo" has an "Age group" target with values "Younger, Older"

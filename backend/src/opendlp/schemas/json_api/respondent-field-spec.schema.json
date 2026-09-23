@@ -164,7 +164,7 @@
             "object",
             "null"
           ],
-          "description": "The derivation's parameters (as-of date, boundaries, mapping, fallback...). Shape depends on derivation_type. Null unless is_derived."
+          "description": "The derivation's parameters (as-of date, age brackets, mapping, fallback...). Shape depends on derivation_type. Null unless is_derived."
         },
         "field_type": {
           "type": "string",

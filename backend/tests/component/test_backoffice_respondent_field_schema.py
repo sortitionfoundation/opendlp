@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from opendlp.domain.respondent_derivation import AgeBracketRule, SmallMappingRule
+from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -1598,7 +1598,10 @@ class TestDerivedFieldsLiveOnTargetSources:
                 field_key="age bracket",
                 label="age bracket",
                 source_field_key="year_of_birth",
-                rule=AgeBracketRule(as_of_date=datetime.now(UTC).date(), min_age=16, max_age=60, boundaries=(25, 40)),
+                rule=AgeBracketRule(
+                    as_of_date=datetime.now(UTC).date(),
+                    brackets=(AgeBracket(16, "16-24"), AgeBracket(25, "25-39"), AgeBracket(40, "40+")),
+                ),
             )
         return derived
 

@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
-from opendlp.domain.respondent_derivation import AgeBracketRule, LargeMappingRule, SmallMappingRule
+from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule, LargeMappingRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -49,7 +49,10 @@ from opendlp.service_layer.respondent_field_schema_service import (
 from tests.fakes import FakeUnitOfWork
 
 AS_OF = date(2026, 5, 13)
-AGE_RULE = AgeBracketRule(as_of_date=AS_OF, min_age=16, max_age=100, boundaries=(22, 30, 55))
+AGE_RULE = AgeBracketRule(
+    as_of_date=AS_OF,
+    brackets=(AgeBracket(16, "16-21"), AgeBracket(22, "22-29"), AgeBracket(30, "30-54"), AgeBracket(55, "55+")),
+)
 
 
 def _seed(uow: FakeUnitOfWork) -> tuple[User, Assembly]:
@@ -107,15 +110,7 @@ class TestCreateDerivedField:
         assert field.derivation_config == AGE_RULE.to_config()
         assert field.group == RespondentFieldGroup.DERIVED
         assert field.field_type == FieldType.CHOICE_RADIO
-        assert [o.value for o in field.options] == [
-            "under-16",
-            "16-21",
-            "22-29",
-            "30-54",
-            "55-99",
-            "100+",
-            "UNKNOWN",
-        ]
+        assert [o.value for o in field.options] == ["16-21", "22-29", "30-54", "55+", "UNKNOWN"]
         assert field.on_registration_page == FieldOnRegistrationPage.NO
         assert report.total == 0
 
@@ -663,11 +658,11 @@ class TestUpdateDerivation:
             rule=AGE_RULE,
         )
 
-        new_rule = AgeBracketRule(as_of_date=AS_OF, min_age=18, max_age=80, boundaries=(40,))
+        new_rule = AgeBracketRule(as_of_date=AS_OF, brackets=(AgeBracket(18, "18-39"), AgeBracket(40, "40+")))
         updated, report = update_derivation(uow, user.id, assembly.id, field.id, rule=new_rule)
 
         assert updated.derivation_config == new_rule.to_config()
-        assert [o.value for o in updated.options] == ["under-18", "18-39", "40-79", "80+", "UNKNOWN"]
+        assert [o.value for o in updated.options] == ["18-39", "40+", "UNKNOWN"]
         r1 = uow.respondents.get_by_external_id(assembly.id, "R1")
         assert r1.attributes["age_bracket"] == "18-39"
         assert report.changed == 1

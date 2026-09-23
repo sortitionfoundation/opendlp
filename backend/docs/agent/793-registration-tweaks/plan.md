@@ -5,7 +5,7 @@ Plan for reworking the age-range (`DerivationType.AGE_BRACKET`) part of the
 questions** (`/backoffice/assembly/<id>/target-sources`). It also covers
 tighter validation of `FieldType.DATE` answers on registration pages.
 
-Status: **agreed, not yet implemented**. Decisions from review are in §8.
+Status: **agreed, being implemented** — progress is marked in §7. Decisions from review are in §8.
 
 ---
 
@@ -385,7 +385,7 @@ the field.
 
 TDD, in this order:
 
-1. **Domain:** `AgeBracket`, the reworked `AgeBracketRule` (validation,
+1. ✅ **Domain:** `AgeBracket`, the reworked `AgeBracketRule` (validation,
    derivation, `to_config` / `from_config`), and the label parser replacing
    `age_brackets_from_labels`, returning either the brackets or a failure
    reason (gap / overlap / generic). Delete `eligibility_sentence` and
@@ -399,30 +399,45 @@ TDD, in this order:
    attribute are gone, and that the source question and target category
    survive. Check what `tests/` already does for data migrations before
    choosing.
-3. **Form parser:** `parse_age_rule` reads a `bracket_label` list and a parallel
+3. ✅ **Form parser:** `parse_age_rule` reads a `bracket_label` list and a parallel
    `bracket_from` list, like `map_source` / `map_target`. Tests in
    `tests/unit/test_target_source_parsers.py`.
-4. **Blueprint:** `_setup_values_from_request`, `_seed_from_derivation`,
+4. ✅ **Blueprint:** `_setup_values_from_request`, `_seed_from_derivation`,
    `_apply_age_prefills` and `_setup_modal_ctx` produce bracket rows, the
    matched/editing flag, the failure reason and the as-of display flag. Drop
    `preview_labels` / `mismatch_labels`, and the `min_age` / `max_age` /
    `boundaries` keys.
-5. **Template:** the four groups for all methods, the summary/table toggle, the
+5. ✅ **Template:** the four groups for all methods, the summary/table toggle, the
    as-of text mode and the hint/icon split. Component tests in
    `tests/component/test_backoffice_target_sources.py` for: fieldsets present
    for each method, auto-matched summary, unmatched table with reason, text vs
    inputs for as-of, error re-render opening the inputs, and the year-of-birth
    caveat showing for a new year-of-birth question.
-6. **JS:** the rewritten preview component and its vitest tests.
+6. ✅ **JS:** the rewritten preview component and its vitest tests.
 7. **Registration validation:** the DATE message, and the year range check for
    age-rule sources. Tests in the validator unit tests and
    `test_registration_submission_service.py` (an INTEGER field feeding an age
    rule is range-checked; an unrelated INTEGER field isn't).
-8. **BDD / e2e:** update `tests/bdd/test_target_sources.py` and
+8. ✅ **BDD / e2e:** update `tests/bdd/test_target_sources.py` and
    `tests/e2e/test_backoffice_target_sources.py` for the new flow. Add one BDD
    scenario: a target of `16-29, 30-44, 45-59, 60+` auto-matches, and a
    respondent aged 70 lands in `60+`.
 9. `just translate-regen` / `just translate-check`, `just check`, `just test`.
+
+Notes from implementation:
+
+- The service also refuses an age rule whose labels aren't exactly the
+  target's values (`_require_age_labels_are_target_values`), as it already
+  does for a small mapping, so a hand-edited form can't store a rule that feeds
+  nothing.
+- Groups 1 and 2 keep the headings their controls already had (the method
+  select's label, the reuse/create fieldset's legend) rather than gaining a
+  second wrapping legend. The dividers separate every group. The two age groups
+  are fieldsets with legends.
+- The JS component is `age-bracket-setup.js` (`ageBracketSetup`). It owns the
+  Edit and Change toggles as well as the "Ages" column, and takes its
+  translated wording from `data-` attributes rendered with the same msgids the
+  server uses.
 
 ---
 

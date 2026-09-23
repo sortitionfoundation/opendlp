@@ -12,7 +12,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.domain.respondent_derivation import DEFAULT_FALLBACK, LargeMappingRule
+from opendlp.domain.respondent_derivation import DEFAULT_FALLBACK, AgeBracket, LargeMappingRule, match_age_brackets
 from opendlp.domain.respondent_field_schema import (
     DERIVATION_TYPE_LABELS,
     DerivationType,
@@ -24,9 +24,10 @@ from opendlp.domain.respondent_field_schema import (
     humanise_field_key,
 )
 from opendlp.entrypoints.derivation_form_parser import (
-    age_prefill_from_target,
+    parse_age_brackets,
     parse_age_rule,
     parse_answer_options,
+    parse_as_of_date,
     parse_small_mapping_rule,
 )
 from opendlp.entrypoints.registration_hub import registration_hub_context
@@ -135,11 +136,10 @@ def _setup_values_from_request(source: Any) -> dict[str, Any]:
             "as_of_day",
             "as_of_month",
             "as_of_year",
-            "min_age",
-            "max_age",
-            "boundaries",
         )
     }
+    values["bracket_label"] = source.getlist("bracket_label")
+    values["bracket_from"] = source.getlist("bracket_from")
     values["map_source"] = source.getlist("map_source")
     values["map_target"] = source.getlist("map_target")
     return values
@@ -196,9 +196,9 @@ def _seed_from_derivation(values: dict[str, Any], field: RespondentFieldDefiniti
         if len(as_of.split("-")) == 3:
             year, month, day = as_of.split("-")
             values.update({"as_of_year": year, "as_of_month": str(int(month)), "as_of_day": str(int(day))})
-        values["min_age"] = str(config.get("min_age", ""))
-        values["max_age"] = str(config.get("max_age", ""))
-        values["boundaries"] = ", ".join(str(b) for b in config.get("boundaries", []))
+        brackets = config.get("brackets", [])
+        values["bracket_label"] = [str(bracket.get("label", "")) for bracket in brackets]
+        values["bracket_from"] = [str(bracket.get("from_age", "")) for bracket in brackets]
     if field.derivation_type == DerivationType.SMALL_MAPPING:
         mapping = config.get("mapping", {})
         values["map_source"] = list(mapping.keys())
@@ -254,18 +254,73 @@ def _status_for(statuses: list[TargetSourceStatus], category_id: uuid.UUID) -> T
     return next((s for s in statuses if s.category.id == category_id), None)
 
 
-def _apply_age_prefills(values: dict[str, Any], target_values: list[str], first_date: Any) -> None:
-    """Pre-fill blank age inputs: the as-of date from the assembly, brackets from the target."""
+def _apply_as_of_prefill(values: dict[str, Any], first_date: Any) -> None:
+    """Pre-fill a blank as-of date with the first assembly date."""
     if not (values["as_of_day"] or values["as_of_month"] or values["as_of_year"]) and first_date is not None:
         values["as_of_day"] = str(first_date.day)
         values["as_of_month"] = str(first_date.month)
         values["as_of_year"] = str(first_date.year)
-    if not values["boundaries"]:
-        prefill = age_prefill_from_target(target_values)
-        if prefill:
-            values.update(prefill)
-    values["min_age"] = values["min_age"] or "16"
-    values["max_age"] = values["max_age"] or "100"
+
+
+def _ages_text(bracket: AgeBracket, next_from_age: int | None) -> str:
+    if next_from_age is None:
+        return _("%(age)s and over", age=bracket.from_age)
+    if next_from_age == bracket.from_age + 1:
+        return str(bracket.from_age)
+    return _("%(first)s to %(last)s", first=bracket.from_age, last=next_from_age - 1)
+
+
+def _age_ranges(values: dict[str, Any], target_values: list[str]) -> dict[str, Any]:
+    """One row per target value with the age it starts at, and whether they add up to a rule.
+
+    The ages typed so far win; with none typed they are worked out from the
+    target values. The rows always follow the target's current values, so a
+    renamed value shows up blank rather than lingering.
+    """
+    typed = {
+        label: from_age.strip()
+        for label, from_age in zip(values["bracket_label"], values["bracket_from"], strict=False)
+        if from_age.strip()
+    }
+    problem = ""
+    if not typed:
+        match = match_age_brackets(target_values)
+        typed = {label: str(from_age) for label, from_age in match.from_ages.items()}
+        problem = match.problem
+    values["bracket_label"] = list(target_values)
+    values["bracket_from"] = [typed.get(value, "") for value in target_values]
+
+    ages: dict[str, str] = {}
+    younger_than = ""
+    try:
+        brackets = sorted(parse_age_brackets(values), key=lambda bracket: bracket.from_age)
+    except ValueError as e:
+        problem = problem or str(e)
+    else:
+        next_starts = [bracket.from_age for bracket in brackets[1:]] + [None]
+        ages = {
+            bracket.label: _ages_text(bracket, next_from)
+            for bracket, next_from in zip(brackets, next_starts, strict=True)
+        }
+        if brackets[0].from_age > 0:
+            younger_than = _(
+                "Anyone younger than %(age)s counts as %(fallback)s.",
+                age=brackets[0].from_age,
+                fallback=DEFAULT_FALLBACK,
+            )
+    rows = [
+        {"label": label, "from_age": from_age, "ages": ages.get(label, "")}
+        for label, from_age in zip(values["bracket_label"], values["bracket_from"], strict=True)
+    ]
+    return {"rows": rows, "matched": not problem, "problem": problem, "younger_than": younger_than}
+
+
+def _as_of_iso(values: dict[str, Any]) -> str:
+    """The as-of date as ISO text when the inputs hold a valid one, otherwise blank."""
+    try:
+        return parse_as_of_date(values).isoformat()
+    except ValueError:
+        return ""
 
 
 def _resolve_source_selection(
@@ -310,6 +365,13 @@ def _map_rows(
     ]
 
 
+def _source_is_year(values: dict[str, Any], selected_source: RespondentFieldDefinition | None) -> bool:
+    """Whether the age source is a year of birth, whether reused or about to be created."""
+    if values["source_mode"] == "reuse":
+        return selected_source is not None and selected_source.effective_field_type == FieldType.INTEGER
+    return _SOURCE_TYPE_FOR_AGE.get(values["age_source_type"]) == FieldType.INTEGER
+
+
 def _setup_modal_ctx(
     uow: AbstractUnitOfWork,
     assembly_id: uuid.UUID,
@@ -335,14 +397,12 @@ def _setup_modal_ctx(
     if not values["new_field_key"]:
         values["new_field_key"] = _default_new_field_key(method, values["age_source_type"])
 
-    preview_labels: list[str] = []
-    mismatch_labels: list[str] = []
+    age_ranges: dict[str, Any] = {}
+    as_of_date = ""
     if method == DerivationType.AGE_BRACKET.value:
-        _apply_age_prefills(values, target["values"], first_date)
-        with contextlib.suppress(ValueError):  # incomplete config — no preview yet
-            rule = parse_age_rule(values)
-            preview_labels = [*rule.bracket_labels(), rule.fallback]
-            mismatch_labels = [label for label in rule.bracket_labels() if label not in set(target["values"])]
+        _apply_as_of_prefill(values, first_date)
+        age_ranges = _age_ranges(values, target["values"])
+        as_of_date = _as_of_iso(values)
 
     map_rows = _map_rows(values, method, selected_source, target["values"])
 
@@ -357,9 +417,9 @@ def _setup_modal_ctx(
         "method_help": _method_help(),
         "candidates": candidates,
         "selected_source": selected_source,
-        "source_is_integer": selected_source is not None and selected_source.effective_field_type == FieldType.INTEGER,
-        "preview_labels": preview_labels,
-        "mismatch_labels": mismatch_labels,
+        "source_is_year": _source_is_year(values, selected_source),
+        "age_ranges": age_ranges,
+        "as_of_date": as_of_date,
         "map_rows": map_rows,
         "fallback": DEFAULT_FALLBACK,
         "new_field_name": new_field_name,
