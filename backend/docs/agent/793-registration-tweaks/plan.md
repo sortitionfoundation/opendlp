@@ -416,7 +416,7 @@ TDD, in this order:
    inputs for as-of, error re-render opening the inputs, and the year-of-birth
    caveat showing for a new year-of-birth question.
 6. ✅ **JS:** the rewritten preview component and its vitest tests.
-7. **Registration validation:** the DATE message, and the year range check for
+7. ✅ **Registration validation:** the DATE message, and the year range check for
    age-rule sources. Tests in the validator unit tests and
    `test_registration_submission_service.py` (an INTEGER field feeding an age
    rule is range-checked; an unrelated INTEGER field isn't).
@@ -436,6 +436,11 @@ Notes from implementation:
   select's label, the reuse/create fieldset's legend) rather than gaining a
   second wrapping legend. The dividers separate every group. The two age groups
   are fieldsets with legends.
+- The DATE message names the earliest year ("The year must be 1906 or
+  later") rather than a formatted date. The limit is year-based anyway, and
+  the domain validator can't format a date for the viewer's locale without
+  Flask. It shares `birth_year_range()` with the year-of-birth check, whose
+  message is "The year must be between 1906 and 2026".
 - The JS component is `age-bracket-setup.js` (`ageBracketSetup`). It owns the
   Edit and Change toggles as well as the "Ages" column, and takes its
   translated wording from `data-` attributes rendered with the same msgids the

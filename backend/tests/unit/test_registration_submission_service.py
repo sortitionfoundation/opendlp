@@ -438,6 +438,72 @@ class TestDateFields:
         assert "date_of_birth" in result.field_errors
 
 
+class TestYearOfBirthFeedingAnAgeRange:
+    """A number an age range is worked out from is a year of birth, so a typo'd year is refused."""
+
+    def _age_from(self, uow, assembly, source_key: str) -> None:
+        uow.respondent_field_definitions.add(
+            RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="Age",
+                label="Age",
+                group=RespondentFieldGroup.DERIVED,
+                sort_order=10,
+                is_derived=True,
+                derived_from=[source_key],
+                derivation_type=DerivationType.AGE_BRACKET,
+                derivation_config={
+                    "as_of_date": "2026-05-13",
+                    "brackets": [{"from_age": 16, "label": "16+"}],
+                    "fallback": "UNKNOWN",
+                },
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="16+"), ChoiceOption(value="UNKNOWN")],
+            )
+        )
+
+    def test_a_typo_d_year_is_refused(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "year_of_birth", field_type=FieldType.INTEGER)
+        self._age_from(uow, assembly, "year_of_birth")
+
+        result = submit_registration_by_assembly_id(
+            uow, assembly_id=assembly.id, form_data={"year_of_birth": "1880"}, is_test=False
+        )
+
+        assert result.respondent is None
+        [error] = result.field_errors["year_of_birth"]
+        assert error.startswith("The year must be between")
+
+    def test_a_plausible_year_is_stored_and_derived(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "year_of_birth", field_type=FieldType.INTEGER)
+        self._age_from(uow, assembly, "year_of_birth")
+
+        result = submit_registration_by_assembly_id(
+            uow, assembly_id=assembly.id, form_data={"year_of_birth": "1980"}, is_test=False
+        )
+
+        assert result.field_errors == {}
+        assert result.respondent.attributes["Age"] == "16+"
+
+    def test_a_number_feeding_no_age_range_is_not_range_checked(self, uow):
+        uow, assembly = _uow_with_assembly(uow)
+        _add_field(uow, assembly, "household_size", field_type=FieldType.INTEGER)
+        _add_field(uow, assembly, "year_of_birth", field_type=FieldType.INTEGER)
+        self._age_from(uow, assembly, "year_of_birth")
+
+        result = submit_registration_by_assembly_id(
+            uow,
+            assembly_id=assembly.id,
+            form_data={"household_size": "3000", "year_of_birth": "1980"},
+            is_test=False,
+        )
+
+        assert result.field_errors == {}
+        assert result.respondent.attributes["household_size"] == 3000
+
+
 class TestDerivedFieldsOnSubmission:
     def test_submission_computes_derived_fields(self, uow):
         uow, assembly = _uow_with_assembly(uow)

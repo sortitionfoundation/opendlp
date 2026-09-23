@@ -240,6 +240,28 @@ def validate_date_field(str_value: str) -> tuple[str | None, str | None]:
     today = datetime.now(UTC).date()
     if parsed > today:
         return None, _("Date cannot be in the future")
-    if parsed.year < today.year - _MAX_DATE_FIELD_AGE_YEARS:
-        return None, _("Please check the year")
+    earliest, _latest = birth_year_range()
+    if parsed.year < earliest:
+        return None, _("The year must be %(year)s or later", year=earliest)
     return parsed.isoformat(), None
+
+
+def birth_year_range() -> tuple[int, int]:
+    """The earliest and latest years anyone registering could have been born in."""
+    this_year = datetime.now(UTC).date().year
+    return this_year - _MAX_DATE_FIELD_AGE_YEARS, this_year
+
+
+def validate_birth_year(str_value: str) -> tuple[int | None, str | None]:
+    """Validate a year of birth: a whole number no later than this year and at most 120 years ago.
+
+    A typo'd year (1880 for 1980) would otherwise be stored and quietly
+    counted as an unknown age.
+    """
+    value, error = validate_integer(str_value)
+    if value is None:
+        return None, error
+    earliest, latest = birth_year_range()
+    if not earliest <= value <= latest:
+        return None, _("The year must be between %(earliest)s and %(latest)s", earliest=earliest, latest=latest)
+    return value, None
