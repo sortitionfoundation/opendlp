@@ -350,6 +350,28 @@ class TestConfigureSmallMapping:
         assert report.total == 1
         assert respondent.attributes["Age group"] == "Younger"
 
+    def test_a_mapping_to_a_value_the_target_lacks_is_refused(self, uow):
+        """A stray output would be stored but never counted, so the save says which value is wrong."""
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Age group", ["Younger", "Older"])
+
+        with pytest.raises(FieldDefinitionConflictError, match="'Middle' is not one of the target's values"):
+            configure_target_source(
+                uow,
+                user.id,
+                assembly.id,
+                category.id,
+                SmallMappingSpec(
+                    rule=SmallMappingRule(mapping={"16-29": "Younger", "30-44": "Middle"}),
+                    source=SourceFieldSpec(
+                        field_key="age_band",
+                        field_type=FieldType.CHOICE_RADIO,
+                        options=(ChoiceOption(value="16-29"), ChoiceOption(value="30-44")),
+                    ),
+                ),
+            )
+        assert uow.respondent_field_definitions.get_by_assembly_and_key(assembly.id, "age_band") is None
+
 
 class TestConfigureLargeMapping:
     def test_creates_text_source_and_derived_field_with_target_outputs(self, uow):

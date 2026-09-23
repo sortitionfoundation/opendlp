@@ -1,8 +1,7 @@
-"""ABOUTME: Unit tests for the field modal's option-value checks in the schema blueprint
+"""ABOUTME: Unit tests for the option-value checks shared by the question and target set-up dialogs
 ABOUTME: Covers spotting a repeated option value, compared exactly as everywhere else"""
 
-from opendlp.domain.respondent_field_schema import ChoiceOption
-from opendlp.entrypoints.blueprints.respondent_field_schema import duplicate_option_value
+from opendlp.domain.respondent_field_schema import ChoiceOption, duplicate_option_value
 
 
 class TestDuplicateOptionValue:

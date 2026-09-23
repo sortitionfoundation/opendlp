@@ -171,6 +171,40 @@ def set_up_lookup_table(admin_logged_in_page: Page, target_name: str, source_key
         page.get_by_role("button", name="Save").click()
 
 
+@when(
+    parsers.parse(
+        'I set up the "{target_name}" target by creating "{field_key}" with answers "{answers}" mapped to "{targets}"'
+    )
+)
+def set_up_small_mapping_from_new_question(
+    admin_logged_in_page: Page, target_name: str, field_key: str, answers: str, targets: str
+) -> None:
+    """Walk the modal: Map more options to fewer → create a question → type each answer and its target → save."""
+    page = admin_logged_in_page
+    _row_for(page, target_name).get_by_role("button", name="Set up", exact=True).click()
+    expect(_setup_dialog(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    with page.expect_response(lambda r: "setup-modal" in r.url):
+        page.select_option('select[name="method"]', "small_mapping")
+    # With a choice question to reuse the dialog asks which; without one it goes straight to creating.
+    create_radio = page.locator('input[name="source_mode"][value="create"]')
+    if create_radio.count() and not create_radio.is_checked():
+        with page.expect_response(lambda r: "setup-modal" in r.url):
+            create_radio.check()
+    page.fill('input[name="new_field_key"]', field_key)
+    answer_list = [a.strip() for a in answers.split(",")]
+    target_list = [t.strip() for t in targets.split(",")]
+    # The table starts with one more blank row than the target has values; add rows for the rest.
+    while page.locator('input[name="map_source"]').count() < len(answer_list):
+        with page.expect_response(lambda r: "configure" in r.url):
+            page.get_by_role("button", name="Add another answer").click()
+    for index, (answer, target) in enumerate(zip(answer_list, target_list, strict=True)):
+        page.locator('input[name="map_source"]').nth(index).fill(answer)
+        page.locator('select[name="map_target"]').nth(index).select_option(target)
+    with page.expect_response(lambda r: "configure" in r.url):
+        page.get_by_role("button", name="Save").click()
+    expect(_setup_dialog(page)).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 @when(parsers.parse('I upload a lookup table mapping "{source_value}" to "{target_value}"'))
 def upload_lookup_table(admin_logged_in_page: Page, source_value: str, target_value: str) -> None:
     page = admin_logged_in_page

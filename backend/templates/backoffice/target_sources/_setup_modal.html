@@ -45,6 +45,14 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                        value="{{ '1' if request.values.get('dirty') == '1' else '' }}"
                        x-ref="dirtyInput">
                 <input type="hidden" name="modal" value="1">
+                {# Hidden default submitter: pressing Enter saves, rather than triggering
+                   whichever mapping-table button happens to come first in the form. #}
+                <button type="submit"
+                        name="form_action"
+                        value="save"
+                        style="display: none"
+                        aria-hidden="true"
+                        tabindex="-1"></button>
                 {% call dialog_body() %}
                     {% if setup["error"] %}
                         {{ alert(setup["error"], variant="error") }}
@@ -68,6 +76,22 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                             {{ _("Target values:") }} {{ target["values"] | join(", ") }}
                         </p>
                     {% endif %}
+                    {% set new_question_inputs %}
+                        <div class="flex gap-4 mb-4">
+                            <div class="flex-1">
+                                {{ input("new_field_key",
+                                label=_("New question name"),
+                                value=values["new_field_key"],
+                                id="ts-new-field-key") }}
+                            </div>
+                            <div class="flex-1">
+                                {{ input("new_field_label",
+                                label=_("Label on the registration page (optional)"),
+                                value=values["new_field_label"],
+                                id="ts-new-field-label") }}
+                            </div>
+                        </div>
+                    {% endset %}
                     {% set age_source_radio %}
                         <div class="mb-4">
                             {{ radio_group("age_source_type",
@@ -81,31 +105,14 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                             attrs=refresh_attrs) }}
                         </div>
                     {% endset %}
-                    {% if values["method"] == "small_mapping" %}
-                    {# The wider choice field must already exist — creating it with its
-                       full option list belongs in the registration questions step. #}
-                        <div class="mb-4">
-                            {% if setup["candidates"] %}
-                                {% set source_options = [{"value": "", "label": _("Choose one")}] %}
-                                {# The append's result goes to a throwaway name: `set _ = ...` would
-                                   shadow gettext's _. #}
-                                {% for candidate in setup["candidates"] %}
-                                    {% set _appended = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
-                                {% endfor %}
-                                <input type="hidden" name="source_mode" value="reuse">
-                                {{ select("reuse_field_id",
-                                label=_("Choice question to map from"),
-                                options=source_options,
-                                value=values["reuse_field_id"],
-                                id="ts-reuse-field",
-                                attrs=refresh_attrs) }}
-                            {% else %}
-                                <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Choice question to map from") }}</span>
-                                <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                                    {{ _("No choice question exists yet — add the more detailed question on the registration questions step first, then come back.") }}
-                                </p>
-                            {% endif %}
-                        </div>
+                    {% if values["method"] == "small_mapping" and not setup["candidates"] %}
+                    {# Nothing to reuse, and no name to assume: ask for the new question outright. #}
+                        {{ new_question_inputs }}
+                        {% if setup["new_field_name"] %}
+                            <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                                {{ _("This will add '%(name)s' to your registration page.", name=setup["new_field_name"]) }}
+                            </p>
+                        {% endif %}
                     {% elif values["method"] and not setup["candidates"] %}
                     {# Nothing to reuse, so there is no choice to offer: say what saving will create. #}
                         {% if values["method"] == "age_bracket" %}{{ age_source_radio }}{% endif %}
@@ -130,6 +137,8 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                         {% if values["source_mode"] == "reuse" %}
                             <div class="mb-4">
                                 {% set source_options = [{"value": "", "label": _("Choose one")}] %}
+                                {# The append's result goes to a throwaway name: `set _ = ...` would
+                                   shadow gettext's _. #}
                                 {% for candidate in setup["candidates"] %}
                                     {% set _appended = source_options.append({"value": candidate.id | string, "label": candidate.label ~ " (" ~ candidate.field_key ~ ")"}) %}
                                 {% endfor %}
@@ -145,20 +154,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                                 {{ _("This will add '%(name)s' to your registration page, with the target's values as the answers.", name=target["name"]) }}
                             </p>
                         {% else %}
-                            <div class="flex gap-4 mb-4">
-                                <div class="flex-1">
-                                    {{ input("new_field_key",
-                                    label=_("New question name"),
-                                    value=values["new_field_key"],
-                                    id="ts-new-field-key") }}
-                                </div>
-                                <div class="flex-1">
-                                    {{ input("new_field_label",
-                                    label=_("Label on the registration page (optional)"),
-                                    value=values["new_field_label"],
-                                    id="ts-new-field-label") }}
-                                </div>
-                            </div>
+                            {{ new_question_inputs }}
                             {% if values["method"] == "age_bracket" %}{{ age_source_radio }}{% endif %}
                             {% if setup["new_field_name"] %}
                                 <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
@@ -226,26 +222,68 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
                             </p>
                         </div>
                     {% elif values["method"] == "small_mapping" and setup["map_rows"] %}
+                        {# The answers to map. For a new question each answer is typed here and the
+                           rows are added and removed through the server, as the registration
+                           questions dialog does; for a reused one they are its options, fixed. #}
+                        {% set typing_answers = values["source_mode"] == "create" %}
+                        {% set map_options = [{"value": "", "label": _("(fall back to %(fallback)s)", fallback=setup["fallback"])}] %}
+                        {% for target_value in target["values"] %}
+                            {% set _appended = map_options.append({"value": target_value, "label": target_value}) %}
+                        {% endfor %}
                         <fieldset class="mb-4">
-                            <legend class="text-label-lg mb-2" style="color: var(--color-headings);">{{ _("Map each answer to a target value") }}</legend>
-                            {% for row in setup["map_rows"] %}
-                                <div class="flex gap-2 items-center mb-2">
-                                    <input type="hidden" name="map_source" value="{{ row['source_value'] }}">
-                                    <span class="text-body-sm" style="min-width: 12rem;">{{ row["source_value"] }}</span>
-                                    <span aria-hidden="true">→</span>
-                                    {% set map_options = [{"value": "", "label": _("(fall back to %(fallback)s)", fallback=setup["fallback"])}] %}
-                                    {% for target_value in target["values"] %}
-                                        {% set _appended = map_options.append({"value": target_value, "label": target_value}) %}
+                            <legend class="text-label-lg mb-2" style="color: var(--color-headings);">
+                                {% if typing_answers %}
+                                    {{ _("Answers, and the target value each one counts as") }}
+                                {% else %}
+                                    {{ _("Map each answer to a target value") }}
+                                {% endif %}
+                            </legend>
+                            <table class="w-full mb-2">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="text-label-md text-left pb-1" style="color: var(--color-secondary-text);">{{ _("Answer") }}</th>
+                                        <th scope="col" class="text-label-md text-left pb-1" style="color: var(--color-secondary-text);">{{ _("Counts as") }}</th>
+                                        {% if typing_answers %}<th scope="col"><span class="sr-only">{{ _("Remove") }}</span></th>{% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in setup["map_rows"] %}
+                                        <tr>
+                                            <td class="pr-2 pb-2 align-middle">
+                                                {% if typing_answers %}
+                                                    {{ input("map_source",
+                                                    value=row["source_value"],
+                                                    aria_label=_('Answer %(n)d', n=loop.index),
+                                                    id="ts-map-source-" ~ loop.index0) }}
+                                                {% else %}
+                                                    <input type="hidden" name="map_source" value="{{ row['source_value'] }}">
+                                                    <span class="text-body-sm">{{ row["source_value"] }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="pb-2 align-middle">
+                                                {{ select("map_target",
+                                                options=map_options,
+                                                value=row["target_value"],
+                                                id="ts-map-target-" ~ loop.index0,
+                                                attrs='aria-label="' ~ ((_('Target value for answer %(n)d', n=loop.index) if typing_answers else _('Target value for %(value)s', value=row['source_value'])) | e) ~ '"') }}
+                                            </td>
+                                            {% if typing_answers %}
+                                                <td class="pl-2 pb-2 align-middle">
+                                                    {{ button(_("Remove") , type="submit", variant="tertiary",
+                                                    attrs='name="form_action" value="remove_option_' ~ loop.index0 ~ '"',
+                                                    aria_label=_('Remove answer %(n)d', n=loop.index)) }}
+                                                </td>
+                                            {% endif %}
+                                        </tr>
                                     {% endfor %}
-                                    <div class="flex-1">
-                                        {{ select("map_target",
-                                        options=map_options,
-                                        value=row["target_value"],
-                                        id="ts-map-target-" ~ loop.index0,
-                                        attrs='aria-label="' ~ (_('Target value for %(value)s', value=row['source_value']) | e) ~ '"') }}
-                                    </div>
-                                </div>
-                            {% endfor %}
+                                </tbody>
+                            </table>
+                            {% if typing_answers %}
+                                {{ button(_("Add another answer") , type="submit", variant="secondary", attrs='name="form_action" value="add_option"') }}
+                            {% endif %}
+                            <p class="text-body-sm mt-2" style="color: var(--color-secondary-text);">
+                                {{ _("Answers left as 'fall back' don't count towards any target value.") }}
+                            </p>
                         </fieldset>
                     {% elif values["method"] == "large_mapping" %}
                         <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">

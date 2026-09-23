@@ -850,6 +850,244 @@ class TestConfigureSmallMapping:
         assert derived.derivation_type == DerivationType.SMALL_MAPPING
         assert derived.derivation_config["mapping"] == {"16-29": "Younger", "30-99": "Older"}
 
+    def _configure_url(self, assembly, category):
+        return f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/configure"
+
+    def _setup_url(self, assembly, category, query=""):
+        return f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/setup-modal{query}"
+
+    def _create_form(self, **overrides):
+        return {
+            "modal": "1",
+            "method": "small_mapping",
+            "source_mode": "create",
+            "new_field_key": "age_band",
+            "map_source": ["16-29", "30-44", ""],
+            "map_target": ["Younger", "Older", ""],
+            **overrides,
+        }
+
+    def test_with_no_choice_question_it_asks_for_the_new_one_and_its_answers(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """No "come back later": the question, its answers and the mapping are all typed here."""
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.get(
+            self._setup_url(existing_assembly, category, "?modal=1&method=small_mapping"), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "registration questions step first" not in body
+        assert 'name="new_field_key"' in body
+        assert "Answers, and the target value each one counts as" in body
+        # One more blank row than the target has values
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 3
+        assert len(re.findall(r'<select[^>]*name="map_target"', body)) == 3
+        assert "Add another answer" in body
+        assert 'value="remove_option_0"' in body
+        assert "don't count towards any target value" in body
+        # Nothing to reuse, so no mode to choose
+        assert 'name="source_mode"' not in body
+
+    def test_with_a_choice_question_it_offers_reuse_or_create(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "age_band",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="16-29"), ChoiceOption(value="30-99")],
+        )
+
+        response = logged_in_admin.get(
+            self._setup_url(existing_assembly, category, "?modal=1&method=small_mapping"), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Use an existing question" in body
+        assert "Create a new question" in body
+        assert 'name="reuse_field_id"' in body
+
+    def test_a_reused_question_keeps_its_answers_fixed(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+        source = _seed_field(
+            fake_store,
+            existing_assembly,
+            "age_band",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="16-29"), ChoiceOption(value="30-99")],
+        )
+
+        response = logged_in_admin.get(
+            self._setup_url(
+                existing_assembly,
+                category,
+                f"?modal=1&method=small_mapping&source_mode=reuse&reuse_field_id={source.id}",
+            ),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Map each answer to a target value" in body
+        assert re.search(r'<input type="hidden" name="map_source" value="16-29">', body)
+        assert "Add another answer" not in body
+        assert "remove_option_" not in body
+
+    def test_creating_the_question_saves_its_answers_the_computed_question_and_the_mapping(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category), data=self._create_form(), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert 'id="target-sources-list" hx-swap-oob="true"' in body
+        source = _field_by_key(fake_store, existing_assembly, "age_band")
+        assert source.field_type == FieldType.CHOICE_RADIO
+        assert [o.value for o in source.options] == ["16-29", "30-44"]
+        derived = _field_by_key(fake_store, existing_assembly, "Age group")
+        assert derived.derivation_type == DerivationType.SMALL_MAPPING
+        assert derived.derived_from == ["age_band"]
+        assert derived.derivation_config["mapping"] == {"16-29": "Younger", "30-44": "Older"}
+        assert derived.target_category_id == category.id
+
+    def test_many_answers_make_a_dropdown(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+        answers = [f"{10 * n}-{10 * n + 9}" for n in range(2, 9)]
+
+        logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(map_source=answers, map_target=["Younger"] * len(answers)),
+            headers=HTMX,
+        )
+
+        assert _field_by_key(fake_store, existing_assembly, "age_band").field_type == FieldType.CHOICE_DROPDOWN
+
+    def test_the_recompute_is_reported_in_a_toast(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+        _seed_respondents(fake_store, existing_assembly, [{"age_band": "16-29"}, {"age_band": "30-44"}])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category), data=self._create_form(), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Data source saved — Age group recomputed for every respondent" in body
+        assert "var(--color-success-100)" in body
+
+    def test_adding_a_row_keeps_what_was_typed_and_saves_nothing(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(map_source=["16-29"], map_target=["Younger"], form_action="add_option"),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 2
+        assert re.search(r'name="map_source"[^>]*value="16-29"', body)
+        assert re.search(r'<option value="Younger" selected>', body)
+        assert 'value="age_band"' in body
+        assert _field_by_key(fake_store, existing_assembly, "age_band") is None
+        assert _field_by_key(fake_store, existing_assembly, "Age group") is None
+
+    def test_removing_a_row_drops_that_row_only(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(
+                map_source=["16-29", "30-44", "45+"],
+                map_target=["Younger", "Older", "Older"],
+                form_action="remove_option_1",
+            ),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 2
+        assert 'value="16-29"' in body
+        assert 'value="45+"' in body
+        assert 'value="30-44"' not in body
+        assert _field_by_key(fake_store, existing_assembly, "age_band") is None
+
+    def test_a_bad_remove_index_changes_nothing(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(map_source=["16-29"], map_target=["Younger"], form_action="remove_option_x"),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 1
+
+    def test_a_row_round_trip_without_htmx_returns_the_page_with_the_dialog_open(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(map_source=["16-29"], map_target=["Younger"], form_action="add_option"),
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "target-sources-list" in body
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 2
+
+    def test_pressing_enter_saves_rather_than_removing_a_row(self, logged_in_admin, existing_assembly, fake_store):
+        """The first submit button in the form is a hidden Save, so Enter in an answer input saves."""
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.get(
+            self._setup_url(existing_assembly, category, "?modal=1&method=small_mapping"), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        first_submit = re.search(r'<button[^>]*type="submit"[^>]*>', body).group(0)
+        assert 'value="save"' in first_submit
+
+    @pytest.mark.parametrize(
+        ("overrides", "message"),
+        [
+            ({"new_field_key": ""}, "Enter a name for the new registration question"),
+            ({"map_source": ["", ""], "map_target": ["", ""]}, "Enter at least one answer"),
+            (
+                {"map_source": ["16-29", "16-29"], "map_target": ["Younger", "Older"]},
+                "Answer values must be different: &#39;16-29&#39; appears more than once",
+            ),
+            ({"map_target": ["", "", ""]}, "Map at least one answer to a target value"),
+            ({"map_target": ["Younger", "Middle", ""]}, "&#39;Middle&#39; is not one of the target&#39;s values"),
+        ],
+    )
+    def test_a_bad_form_rerenders_the_dialog_with_the_typed_rows(
+        self, logged_in_admin, existing_assembly, fake_store, overrides, message
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category), data=self._create_form(**overrides), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert message in body
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == len(overrides.get("map_source", [1, 2, 3]))
+        assert _field_by_key(fake_store, existing_assembly, "Age group") is None
+        assert _field_by_key(fake_store, existing_assembly, "age_band") is None
+
 
 class TestRowActions:
     def _linked_exact(self, fake_store, assembly, values_in_field=("Male", "Female")):

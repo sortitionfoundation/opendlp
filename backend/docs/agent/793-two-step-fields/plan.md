@@ -147,6 +147,9 @@ and status classification for each of the five states.
 > Implementation note: the small-mapping method reuses an existing choice
 > field only — creating the wider choice field (with its full option list)
 > happens on the registration fields step first. The modal says so.
+>
+> Superseded: the set-up modal now creates the choice question, its answers
+> and the mapping in one save — see `docs/agent/793-small-mapping-flow/plan.md`.
 
 Files: extend `entrypoints/blueprints/respondent_field_schema.py` (or a new
 `target_sources.py` blueprint — prefer new, the existing file is already

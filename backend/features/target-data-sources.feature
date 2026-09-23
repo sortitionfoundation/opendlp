@@ -24,6 +24,16 @@ Feature: Target data sources
     Then I should see a warning toast saying "2 fell back to UNKNOWN"
     And the "age bracket" target row should say "Computed from"
 
+  Scenario: Mapping from a question created with its answers in the set-up dialog
+    Given there is an assembly with respondents imported from CSV called "Small Mapping Demo"
+    And the assembly "Small Mapping Demo" has an "Age group" target with values "Younger, Older"
+    And I am signed in as an admin user
+    When I open the target data sources for "Small Mapping Demo"
+    And I set up the "Age group" target by creating "age_band" with answers "16-29, 30-44, 45+" mapped to "Younger, Older, Older"
+    Then the "Age group" target row should say "Computed from 'Age band'"
+    When I open the respondent field schema editor for "Small Mapping Demo"
+    Then the schema editor should list the "age_band" field
+
   Scenario: Renaming a linked target asks before unlinking its field
     Given there is an assembly with respondents imported from CSV called "Force Unlink Demo"
     And the assembly "Force Unlink Demo" has a "Regions" target with values "North, South"
