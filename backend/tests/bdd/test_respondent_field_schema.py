@@ -10,6 +10,7 @@ from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 from .config import PLAYWRIGHT_TIMEOUT, Urls
+from .helpers import assert_step_dialog_dimmed
 
 scenarios("../../features/respondent-field-schema.feature")
 
@@ -172,6 +173,11 @@ def edit_modal_open(admin_logged_in_page: Page, label: str) -> None:
     dialog = _field_dialog(admin_logged_in_page)
     expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     expect(dialog.locator('input[name="label"]')).to_have_value(label, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the question list behind the edit modal should be dimmed")
+def question_list_is_dimmed(admin_logged_in_page: Page) -> None:
+    assert_step_dialog_dimmed(admin_logged_in_page, "#field-modal-container")
 
 
 @then(parsers.parse('the "{field_key}" row should summarise its options as "{summary}"'))

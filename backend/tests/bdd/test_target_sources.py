@@ -15,6 +15,7 @@ from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 from .config import PLAYWRIGHT_TIMEOUT, Urls
+from .helpers import assert_step_dialog_dimmed
 
 scenarios("../../features/target-data-sources.feature")
 
@@ -371,6 +372,11 @@ def checklist_is_inert(admin_logged_in_page: Page) -> None:
     """Inert, so neither Tab nor a screen reader's browse mode reaches what the dialog covers."""
     step = admin_logged_in_page.locator('[role="dialog"][aria-labelledby="target-sources-title"]')
     expect(step).to_have_attribute("inert", "", timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the checklist behind the set-up dialog should be dimmed")
+def checklist_is_dimmed(admin_logged_in_page: Page) -> None:
+    assert_step_dialog_dimmed(admin_logged_in_page, "#ts-modal-container")
 
 
 @then(parsers.parse('keyboard focus should be on the set-up button for the "{target_name}" target'))
