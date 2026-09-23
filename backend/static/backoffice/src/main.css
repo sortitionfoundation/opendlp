@@ -1108,7 +1108,9 @@
          modal backdrop (.dialog-backdrop) .... 40
          floating flash alerts (#floating-alerts) 45  (above header/backdrop, below dialog)
          modal dialog (.dialog-positioner) .... 50
-         flash alerts over a takeover panel ... 55  (see .dialog-panel--takeover below)
+         backdrop of a dialog over a takeover . 51  (see .dialog-panel--takeover below)
+         dialog over a takeover panel ......... 52
+         flash alerts over a takeover panel ... 55
        ======================================== */
     #floating-alerts {
         z-index: 45;
@@ -1266,6 +1268,18 @@
 
     body:has(.dialog-panel--takeover) #floating-alerts {
         z-index: 55;
+    }
+
+    /* A fragment dialog opened from a takeover panel (a registration step's
+       set-up or edit modal) lifts above the panel, so its backdrop dims the
+       panel as well as the page - the panel is inert while it is open and
+       should look it. See the z-index stack above. */
+    body:has(.dialog-panel--takeover) [data-fragment-dialog-host] .dialog-backdrop {
+        z-index: 51;
+    }
+
+    body:has(.dialog-panel--takeover) [data-fragment-dialog-host] .dialog-positioner {
+        z-index: 52;
     }
 
     /* Alert-dialog text block — title + description stack (Figma: gap 8) */

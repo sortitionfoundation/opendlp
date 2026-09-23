@@ -33,6 +33,7 @@ Feature: Respondent field schema
     When I open the respondent field schema editor for "Schema Row Click Demo"
     And I click the "last_name" row
     Then the edit modal for "Last name" should be open
+    And the question list behind the edit modal should be dimmed
 
   Scenario: Organiser removes a question from its row menu
     Given there is an assembly with respondents imported from CSV called "Schema Remove Demo"

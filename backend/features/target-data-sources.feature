@@ -117,6 +117,7 @@ Feature: Target data sources
     And I focus the set-up button for the "Region" target and press "Enter"
     Then keyboard focus should be on the method chooser in the set-up dialog
     And the checklist behind the set-up dialog should be out of reach
+    And the checklist behind the set-up dialog should be dimmed
     When I choose the "exact" method from the keyboard
     Then keyboard focus should be on the method chooser in the set-up dialog
     When I press the "Save" button
