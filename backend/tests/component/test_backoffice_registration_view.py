@@ -580,6 +580,32 @@ class TestRegistrationListView:
         assert "data:image/png;base64," in body
         assert f"/backoffice/assembly/{assembly_id}/registration/climate-en/qr-code.png" in body
 
+    def test_each_row_has_an_edit_button_to_its_editor(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        edit_link = re.search(r'<a [^>]*aria-label="Edit Draft"[^>]*>', body)
+        assert edit_link is not None
+        assert f'href="/backoffice/assembly/{assembly_id}/registration/draft-slug"' in edit_link.group(0)
+
+    def test_menu_no_longer_offers_assembly_details_or_edit(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert "Actions for Live" in body
+        assert "See assembly details" not in body
+        assert "Edit registration" not in body
+
+    def test_row_with_no_menu_actions_has_no_menu(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.CLOSED, url_slug="closed-slug", name="Shut")
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert 'aria-label="Edit Shut"' in body
+        assert "Actions for Shut" not in body
+
 
 class TestRegistrationListDeleteAction:
     def test_delete_offered_for_a_never_published_page(self, logged_in_admin, fake_store, assembly_id):

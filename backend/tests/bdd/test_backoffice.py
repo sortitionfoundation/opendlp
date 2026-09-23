@@ -434,6 +434,12 @@ def open_first_registration_page(page: Page):
     page.get_by_role("link", name="Registration page", exact=True).first.click()
 
 
+@when("I choose to edit the first registration page from the list")
+def edit_first_registration_page(page: Page):
+    """Follow the first row's Edit button into that page's editor."""
+    page.get_by_role("button", name="Edit Registration page", exact=True).first.click()
+
+
 @when("I choose to delete the first registration page")
 def choose_delete_first_registration_page(page: Page):
     """Open the first row's actions menu and pick the (permanent) delete item."""
