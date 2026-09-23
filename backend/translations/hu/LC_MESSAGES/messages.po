@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-22 17:52+0000\n"
+"POT-Creation-Date: 2026-09-23 10:53+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1169,26 +1169,30 @@ msgstr "Minden célértéknek kell nevet adni"
 msgid "Every target needs a name"
 msgstr "Minden célszámnak kell nevet adni"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:112
-#: src/opendlp/entrypoints/blueprints/admin.py:140
-#: src/opendlp/entrypoints/blueprints/admin.py:220
-#: src/opendlp/entrypoints/blueprints/admin.py:429
+#: src/opendlp/entrypoints/blueprints/admin.py:115
+#: src/opendlp/entrypoints/blueprints/admin.py:171
+#: src/opendlp/entrypoints/blueprints/admin.py:251
 #: src/opendlp/entrypoints/blueprints/admin.py:460
-#: src/opendlp/entrypoints/blueprints/admin.py:565
+#: src/opendlp/entrypoints/blueprints/admin.py:491
+#: src/opendlp/entrypoints/blueprints/admin.py:596
 msgid "You don't have permission to view this page"
 msgstr "Nincs jogosultságod az oldal megtekintéséhez"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:116
+#: src/opendlp/entrypoints/blueprints/admin.py:119
 msgid "An error occurred while loading the user list"
 msgstr "Hiba történt a felhasználólista betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:136
-#: src/opendlp/entrypoints/blueprints/admin.py:190
-#: src/opendlp/entrypoints/blueprints/admin.py:216
-#: src/opendlp/entrypoints/blueprints/admin.py:272
-#: src/opendlp/entrypoints/blueprints/admin.py:337
-#: src/opendlp/entrypoints/blueprints/admin.py:377
-#: src/opendlp/entrypoints/blueprints/admin.py:425
+#: src/opendlp/entrypoints/blueprints/admin.py:134
+msgid "You don't have permission to export users"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/admin.py:167
+#: src/opendlp/entrypoints/blueprints/admin.py:221
+#: src/opendlp/entrypoints/blueprints/admin.py:247
+#: src/opendlp/entrypoints/blueprints/admin.py:303
+#: src/opendlp/entrypoints/blueprints/admin.py:368
+#: src/opendlp/entrypoints/blueprints/admin.py:408
+#: src/opendlp/entrypoints/blueprints/admin.py:456
 #: src/opendlp/service_layer/two_factor_service.py:48
 #: src/opendlp/service_layer/two_factor_service.py:95
 #: src/opendlp/service_layer/two_factor_service.py:153
@@ -1200,33 +1204,33 @@ msgstr "Hiba történt a felhasználólista betöltése közben"
 msgid "User not found"
 msgstr "A felhasználó nem található"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:146
+#: src/opendlp/entrypoints/blueprints/admin.py:177
 msgid "An error occurred while loading the user details"
 msgstr "Hiba történt a felhasználó adatainak betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:178
+#: src/opendlp/entrypoints/blueprints/admin.py:209
 #, python-format
 msgid "User '%(email)s' updated successfully"
 msgstr "'%(email)s' felhasználó sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:194
-#: src/opendlp/entrypoints/blueprints/admin.py:276
-#: src/opendlp/entrypoints/blueprints/admin.py:341
-#: src/opendlp/entrypoints/blueprints/admin.py:381
-#: src/opendlp/entrypoints/blueprints/admin.py:531
-#: src/opendlp/entrypoints/blueprints/admin.py:599
+#: src/opendlp/entrypoints/blueprints/admin.py:225
+#: src/opendlp/entrypoints/blueprints/admin.py:307
+#: src/opendlp/entrypoints/blueprints/admin.py:372
+#: src/opendlp/entrypoints/blueprints/admin.py:412
+#: src/opendlp/entrypoints/blueprints/admin.py:562
+#: src/opendlp/entrypoints/blueprints/admin.py:630
 msgid "You don't have permission to perform this action"
 msgstr "Nincs jogosultságod a művelet végrehajtásához"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:208
+#: src/opendlp/entrypoints/blueprints/admin.py:239
 msgid "An error occurred while updating the user"
 msgstr "Hiba történt a felhasználó frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:226
+#: src/opendlp/entrypoints/blueprints/admin.py:257
 msgid "An error occurred while loading the edit page"
 msgstr "Hiba történt a szerkesztőoldal betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:243
+#: src/opendlp/entrypoints/blueprints/admin.py:274
 #, python-format
 msgid ""
 "Account disabled for '%(email)s'. Every session has been ended. Their "
@@ -1237,7 +1241,7 @@ msgstr ""
 "fiókja továbbra is létezik – ha azon keresztül került veszélybe, azzal is"
 " foglalkozni kell."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:253
+#: src/opendlp/entrypoints/blueprints/admin.py:284
 #, python-format
 msgid ""
 "Account disabled for '%(email)s'. Every session has been ended and their "
@@ -1246,20 +1250,20 @@ msgstr ""
 "'%(email)s' fiókja letiltva. Minden munkamenete lezárult, és a jelszava "
 "véglegesen törlődött."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:282
+#: src/opendlp/entrypoints/blueprints/admin.py:313
 msgid "An error occurred while disabling the account"
 msgstr "Hiba történt a fiók letiltása közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:297
+#: src/opendlp/entrypoints/blueprints/admin.py:328
 #, python-format
 msgid "Account enabled for '%(email)s'"
 msgstr "'%(email)s' fiókja engedélyezve"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:307
+#: src/opendlp/entrypoints/blueprints/admin.py:338
 msgid "An email has been sent telling them their account is back"
 msgstr "E-mail ment neki arról, hogy a fiókja újra elérhető"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:311
+#: src/opendlp/entrypoints/blueprints/admin.py:342
 #, python-format
 msgid ""
 "An email has been sent telling them their account is back, and that they "
@@ -1268,7 +1272,7 @@ msgstr ""
 "E-mail ment neki arról, hogy a fiókja újra elérhető, és hogy a korábbi "
 "módon, %(provider)s fiókkal jelentkezhet be"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:319
+#: src/opendlp/entrypoints/blueprints/admin.py:350
 msgid ""
 "An email has been sent telling them to request a password reset — their "
 "old password is gone"
@@ -1276,7 +1280,7 @@ msgstr ""
 "E-mail ment neki azzal a kéréssel, hogy kérjen jelszó-visszaállítást – a "
 "régi jelszava megszűnt"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:324
+#: src/opendlp/entrypoints/blueprints/admin.py:355
 msgid ""
 "The account is enabled, but the email to the user could not be sent. "
 "Please contact them directly."
@@ -1284,85 +1288,85 @@ msgstr ""
 "A fiók engedélyezve van, de az e-mail nem ment ki a felhasználónak. Lépj "
 "vele közvetlenül kapcsolatba."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:347
+#: src/opendlp/entrypoints/blueprints/admin.py:378
 msgid "An error occurred while enabling the account"
 msgstr "Hiba történt a fiók engedélyezése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:361
+#: src/opendlp/entrypoints/blueprints/admin.py:392
 msgid "Two-factor authentication has been disabled for this user"
 msgstr "A kétlépcsős azonosítás letiltva ennél a felhasználónál"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:387
+#: src/opendlp/entrypoints/blueprints/admin.py:418
 msgid "An error occurred while disabling two-factor authentication"
 msgstr "Hiba történt a kétlépcsős azonosítás letiltása közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:438
+#: src/opendlp/entrypoints/blueprints/admin.py:469
 msgid "An error occurred while loading the audit log"
 msgstr "Hiba történt az eseménynapló betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:464
+#: src/opendlp/entrypoints/blueprints/admin.py:495
 msgid "An error occurred while loading the invite list"
 msgstr "Hiba történt a meghívók listájának betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:495
+#: src/opendlp/entrypoints/blueprints/admin.py:526
 #, python-format
 msgid "Invite created successfully. Code: %(code)s"
 msgstr "A meghívó sikeresen létrejött. Kód: %(code)s"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:509
+#: src/opendlp/entrypoints/blueprints/admin.py:540
 #, python-format
 msgid "Invitation email sent to %(email)s"
 msgstr "Meghívó e-mail elküldve a következő címre: %(email)s"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:514
+#: src/opendlp/entrypoints/blueprints/admin.py:545
 msgid "Failed to send invitation email. Please share the invite code manually."
 msgstr "A meghívó e-mail küldése sikertelen. Oszd meg a meghívókódot kézzel."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:520
+#: src/opendlp/entrypoints/blueprints/admin.py:551
 msgid "Error sending invitation email. Please share the invite code manually."
 msgstr "Hiba a meghívó e-mail küldésekor. Oszd meg a meghívókódot kézzel."
 
-#: src/opendlp/entrypoints/blueprints/admin.py:528
-#: src/opendlp/entrypoints/blueprints/admin.py:535
+#: src/opendlp/entrypoints/blueprints/admin.py:559
+#: src/opendlp/entrypoints/blueprints/admin.py:566
 msgid "An error occurred while creating the invite"
 msgstr "Hiba történt a meghívó létrehozása közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:541
+#: src/opendlp/entrypoints/blueprints/admin.py:572
 msgid "An error occurred while loading the page"
 msgstr "Hiba történt az oldal betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:561
-#: src/opendlp/entrypoints/blueprints/admin.py:595
+#: src/opendlp/entrypoints/blueprints/admin.py:592
+#: src/opendlp/entrypoints/blueprints/admin.py:626
 msgid "Invite not found"
 msgstr "A meghívó nem található"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:571
+#: src/opendlp/entrypoints/blueprints/admin.py:602
 msgid "An error occurred while loading the invite details"
 msgstr "Hiba történt a meghívó adatainak betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:585
+#: src/opendlp/entrypoints/blueprints/admin.py:616
 #, python-format
 msgid "Invite '%(code)s' has been revoked"
 msgstr "'%(code)s' meghívó visszavonva"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:603
+#: src/opendlp/entrypoints/blueprints/admin.py:634
 msgid "An error occurred while revoking the invite"
 msgstr "Hiba történt a meghívó visszavonása közben"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:618
+#: src/opendlp/entrypoints/blueprints/admin.py:649
 msgid "No expired invites to clean up"
 msgstr "Nincs törlendő lejárt meghívó"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:620
+#: src/opendlp/entrypoints/blueprints/admin.py:651
 msgid "Cleaned up 1 expired invite"
 msgstr "1 lejárt meghívó törölve"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:622
+#: src/opendlp/entrypoints/blueprints/admin.py:653
 #, python-format
 msgid "Cleaned up %(count)s expired invites"
 msgstr "%(count)s lejárt meghívó törölve"
 
-#: src/opendlp/entrypoints/blueprints/admin.py:628
+#: src/opendlp/entrypoints/blueprints/admin.py:659
 msgid "An error occurred while cleaning up invites"
 msgstr "Hiba történt a meghívók törlése közben"
 
@@ -4635,7 +4639,7 @@ msgstr "Visszavonás"
 msgid "No invites found. Create one to get started."
 msgstr "Nincs meghívó. Hozz létre egyet a kezdéshez."
 
-#: templates/admin/invites.html:131 templates/admin/users.html:242
+#: templates/admin/invites.html:131 templates/admin/users.html:244
 msgid "Back to Site Admin"
 msgstr "Vissza az oldal adminisztrációhoz"
 
@@ -4725,7 +4729,7 @@ msgid "Back to User Details"
 msgstr "Vissza a felhasználó adataihoz"
 
 #: templates/admin/user_edit.html:2 templates/admin/user_edit.html:41
-#: templates/admin/user_view.html:117
+#: templates/admin/user_view.html:145
 msgid "Edit User"
 msgstr "Felhasználó szerkesztése"
 
@@ -4843,7 +4847,19 @@ msgstr "Nincs elfogadva"
 msgid "Account Created"
 msgstr "Fiók létrehozva"
 
-#: templates/admin/user_view.html:122
+#: templates/admin/user_view.html:115
+msgid "Signup Survey"
+msgstr ""
+
+#: templates/admin/user_view.html:126
+msgid "Not answered"
+msgstr ""
+
+#: templates/admin/user_view.html:140
+msgid "No signup survey answers for this user."
+msgstr ""
+
+#: templates/admin/user_view.html:150
 msgid ""
 "Are you sure you want to disable two-factor authentication for this user?"
 " This will remove their TOTP secret and backup codes."
@@ -4851,11 +4867,11 @@ msgstr ""
 "Biztosan kikapcsolod a kétlépcsős azonosítást ennél a felhasználónál? "
 "Ezzel törlődik a TOTP-kulcsa és a tartalék kódjai."
 
-#: templates/admin/user_view.html:124
+#: templates/admin/user_view.html:152
 msgid "Disable 2FA"
 msgstr "Kétlépcsős azonosítás kikapcsolása"
 
-#: templates/admin/user_view.html:136
+#: templates/admin/user_view.html:164
 #, python-format
 msgid ""
 "Are you sure you want to disable this account? This ends every session "
@@ -4867,7 +4883,7 @@ msgstr ""
 "kikapcsol a kétlépcsős azonosítása. A fiók újbóli engedélyezése után "
 "továbbra is %(provider)s fiókkal fog bejelentkezni."
 
-#: templates/admin/user_view.html:136
+#: templates/admin/user_view.html:164
 msgid ""
 "Are you sure you want to disable this account? This ends every session "
 "they have signed in to, permanently removes their password, and switches "
@@ -4878,11 +4894,11 @@ msgstr ""
 "véglegesen törlődik a jelszava, és kikapcsol a kétlépcsős azonosítása. A "
 "fiók újbóli engedélyezése után új jelszót kell beállítania."
 
-#: templates/admin/user_view.html:137
+#: templates/admin/user_view.html:165
 msgid "Disable Account"
 msgstr "Fiók letiltása"
 
-#: templates/admin/user_view.html:148
+#: templates/admin/user_view.html:176
 #, python-format
 msgid ""
 "Are you sure you want to enable this account? The user will be emailed to"
@@ -4891,7 +4907,7 @@ msgstr ""
 "Biztosan engedélyezed ezt a fiókot? A felhasználó e-mailt kap erről, és a"
 " korábbi módon, %(provider)s fiókkal jelentkezik be."
 
-#: templates/admin/user_view.html:148
+#: templates/admin/user_view.html:176
 msgid ""
 "Are you sure you want to enable this account? The user will be emailed "
 "telling them to request a password reset — their old password no longer "
@@ -4901,11 +4917,11 @@ msgstr ""
 "kéréssel, hogy kérjen jelszó-visszaállítást – a régi jelszava már nem "
 "működik."
 
-#: templates/admin/user_view.html:149
+#: templates/admin/user_view.html:177
 msgid "Enable Account"
 msgstr "Fiók engedélyezése"
 
-#: templates/admin/user_view.html:155
+#: templates/admin/user_view.html:183
 msgid "Back to User List"
 msgstr "Vissza a felhasználók listájához"
 
@@ -5014,6 +5030,10 @@ msgstr "Felhasználó létrehozásához"
 #: templates/admin/users.html:236
 msgid "create/send them an invite code"
 msgstr "hozz létre és küldj neki egy meghívókódot"
+
+#: templates/admin/users.html:242
+msgid "Export users as CSV"
+msgstr ""
 
 #: templates/auth/confirm_email.html:5 templates/auth/confirm_email.html:10
 msgid "Confirm your email"
