@@ -393,12 +393,14 @@ TDD, in this order:
    dashes, `bis` / `év` suffixes, gaps, overlaps, 0-starting ranges, `>59`,
    ambiguous single-number pairs, and derivation at every boundary, including
    ages 0, over 120 and negative.
-2. **Data migration:** delete age-range derived fields and the respondent
+2. ✅ **Data migration:** delete age-range derived fields and the respondent
    attributes they wrote (§3). Test: a migration test, or a component test that
    runs the migration's SQL against a seeded assembly, checking the field and
    attribute are gone, and that the source question and target category
    survive. Check what `tests/` already does for data migrations before
-   choosing.
+   choosing. (Done as `tests/integration/test_delete_age_range_fields_migration.py`,
+   following `test_target_values_migration.py`: the migration exposes its SQL
+   as constants and the test runs them against a seeded database.)
 3. ✅ **Form parser:** `parse_age_rule` reads a `bracket_label` list and a parallel
    `bracket_from` list, like `map_source` / `map_target`. Tests in
    `tests/unit/test_target_source_parsers.py`.
