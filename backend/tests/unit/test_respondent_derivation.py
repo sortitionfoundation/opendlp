@@ -7,10 +7,11 @@ import pytest
 
 from opendlp.domain.respondent_derivation import (
     MAX_SANE_AGE,
+    AgeBracket,
     AgeBracketRule,
     LargeMappingRule,
     SmallMappingRule,
-    age_brackets_from_labels,
+    match_age_brackets,
     normalise_lookup_key,
     output_options,
     rule_from_field,
@@ -20,53 +21,56 @@ from opendlp.domain.respondent_field_schema import ChoiceOption, DerivationType
 AS_OF = date(2026, 5, 13)
 
 
+BRACKETS = (
+    AgeBracket(16, "16-21"),
+    AgeBracket(22, "22-29"),
+    AgeBracket(30, "30-54"),
+    AgeBracket(55, "55+"),
+)
+
+
 def _age_rule(**kwargs) -> AgeBracketRule:
-    defaults = {"as_of_date": AS_OF, "min_age": 16, "max_age": 100, "boundaries": (22, 30, 55)}
+    defaults = {"as_of_date": AS_OF, "brackets": BRACKETS}
     defaults.update(kwargs)
     return AgeBracketRule(**defaults)
 
 
 class TestAgeBracketRuleValidation:
-    def test_min_age_must_be_positive(self) -> None:
-        with pytest.raises(ValueError, match="minimum age must be greater than zero"):
-            _age_rule(min_age=0)
-        with pytest.raises(ValueError, match="minimum age must be greater than zero"):
-            _age_rule(min_age=-5)
+    def test_brackets_are_required(self) -> None:
+        with pytest.raises(ValueError, match="at least one age range"):
+            _age_rule(brackets=())
 
-    def test_max_age_must_exceed_min_age(self) -> None:
-        with pytest.raises(ValueError, match="maximum age must be greater than the minimum age"):
-            _age_rule(min_age=50, max_age=50)
+    def test_zero_is_a_valid_start(self) -> None:
+        rule = _age_rule(brackets=(AgeBracket(0, "0-15"), AgeBracket(16, "16+")))
+        assert rule.labels() == ["0-15", "16+"]
 
-    def test_boundaries_must_be_sorted(self) -> None:
-        with pytest.raises(ValueError, match="boundaries must be in ascending order"):
-            _age_rule(boundaries=(30, 22))
+    def test_negative_start_is_rejected(self) -> None:
+        with pytest.raises(ValueError, match="cannot start below zero"):
+            _age_rule(brackets=(AgeBracket(-1, "young"), AgeBracket(16, "16+")))
 
-    def test_boundaries_must_be_unique(self) -> None:
-        with pytest.raises(ValueError, match="boundaries must be in ascending order"):
-            _age_rule(boundaries=(22, 22, 30))
+    def test_two_brackets_cannot_share_a_start(self) -> None:
+        with pytest.raises(ValueError, match="cannot start at the same age"):
+            _age_rule(brackets=(AgeBracket(16, "a"), AgeBracket(16, "b")))
 
-    def test_boundaries_must_be_strictly_between_min_and_max(self) -> None:
-        with pytest.raises(ValueError, match="must be between the minimum and maximum age"):
-            _age_rule(boundaries=(16, 30))
-        with pytest.raises(ValueError, match="must be between the minimum and maximum age"):
-            _age_rule(boundaries=(30, 100))
+    def test_labels_must_be_unique(self) -> None:
+        with pytest.raises(ValueError, match="only be one age range"):
+            _age_rule(brackets=(AgeBracket(16, "a"), AgeBracket(30, "a")))
+
+    def test_labels_cannot_be_blank(self) -> None:
+        with pytest.raises(ValueError, match="needs a target value"):
+            _age_rule(brackets=(AgeBracket(16, " "),))
+
+    def test_a_label_cannot_be_the_fallback(self) -> None:
+        with pytest.raises(ValueError, match="cannot use the value 'UNKNOWN'"):
+            _age_rule(brackets=(AgeBracket(16, "16+"), AgeBracket(30, "UNKNOWN")))
 
     def test_fallback_cannot_be_blank(self) -> None:
         with pytest.raises(ValueError, match="fallback cannot be blank"):
             _age_rule(fallback="  ")
 
-    def test_no_boundaries_is_valid(self) -> None:
-        rule = _age_rule(boundaries=())
-        assert rule.bracket_labels() == ["under-16", "16-99", "100+"]
-
-
-class TestBracketLabels:
-    def test_worked_example_from_the_research(self) -> None:
-        assert _age_rule().bracket_labels() == ["under-16", "16-21", "22-29", "30-54", "55-99", "100+"]
-
-    def test_single_boundary(self) -> None:
-        rule = _age_rule(min_age=18, max_age=75, boundaries=(40,))
-        assert rule.bracket_labels() == ["under-18", "18-39", "40-74", "75+"]
+    def test_brackets_are_kept_youngest_first(self) -> None:
+        rule = _age_rule(brackets=(AgeBracket(60, "60+"), AgeBracket(16, "16-59")))
+        assert rule.labels() == ["16-59", "60+"]
 
 
 class TestDeriveFromDate:
@@ -77,12 +81,15 @@ class TestDeriveFromDate:
         # A day later: still 21.
         assert rule.derive_from_date(date(2004, 5, 14)) == "16-21"
 
-    def test_under_min_age_is_a_real_bracket(self) -> None:
-        assert _age_rule().derive_from_date(date(2015, 1, 1)) == "under-16"
+    def test_younger_than_the_lowest_bracket_takes_the_fallback(self) -> None:
+        assert _age_rule().derive_from_date(date(2015, 1, 1)) == "UNKNOWN"
 
-    def test_max_age_and_over_lands_in_the_top_bracket(self) -> None:
-        assert _age_rule().derive_from_date(date(1926, 5, 13)) == "100+"
-        assert _age_rule().derive_from_date(date(1920, 1, 1)) == "100+"
+    def test_a_bracket_from_zero_holds_the_young(self) -> None:
+        rule = _age_rule(brackets=(AgeBracket(0, "under 16"), *BRACKETS))
+        assert rule.derive_from_date(date(2015, 1, 1)) == "under 16"
+
+    def test_the_top_bracket_is_open_ended(self) -> None:
+        assert _age_rule().derive_from_date(date(1926, 5, 13)) == "55+"
 
     def test_birthday_not_yet_reached_this_year(self) -> None:
         rule = _age_rule()
@@ -104,12 +111,13 @@ class TestDeriveFromDate:
         """MAX_SANE_AGE is inclusive: 120 brackets, 121 is read as a typo."""
         rule = _age_rule()
         oldest = date(AS_OF.year - MAX_SANE_AGE, AS_OF.month, AS_OF.day)
-        assert rule.derive_from_date(oldest) == "100+"
+        assert rule.derive_from_date(oldest) == "55+"
         assert rule.derive_from_date(oldest.replace(year=oldest.year - 1)) == "UNKNOWN"
 
     def test_born_on_the_as_of_date_is_age_zero(self) -> None:
-        """Age 0 is a real age, not a data error - it lands in the under-N bracket."""
-        assert _age_rule().derive_from_date(AS_OF) == "under-16"
+        """Age 0 is a real age, not a data error - it lands in a bracket from 0."""
+        rule = _age_rule(brackets=(AgeBracket(0, "0-15"), AgeBracket(16, "16+")))
+        assert rule.derive_from_date(AS_OF) == "0-15"
 
 
 class TestDeriveFromYear:
@@ -117,7 +125,7 @@ class TestDeriveFromYear:
         rule = _age_rule()
         # Born December 2010 is actually 15 on 2026-05-13, but year arithmetic
         # treats everyone born in 2010 as already 16.
-        assert rule.derive_from_date(date(2010, 12, 1)) == "under-16"
+        assert rule.derive_from_date(date(2010, 12, 1)) == "UNKNOWN"
         assert rule.derive_from_year(2010) == "16-21"
 
     def test_matches_date_arithmetic_for_january_births(self) -> None:
@@ -134,33 +142,33 @@ class TestDeriveFromYear:
         assert rule.derive_from_year(1850) == "not-known"
 
 
-class TestEligibilitySentence:
-    def test_names_the_minimum_age_and_the_date(self) -> None:
-        sentence = _age_rule().eligibility_sentence()
-        assert "16" in sentence
-        assert "2026-05-13" in sentence
-
-
 class TestAgeBracketConfigRoundTrip:
     def test_to_config_and_back(self) -> None:
         rule = _age_rule()
         config = rule.to_config()
         assert config == {
             "as_of_date": "2026-05-13",
-            "min_age": 16,
-            "max_age": 100,
-            "boundaries": [22, 30, 55],
+            "brackets": [
+                {"from_age": 16, "label": "16-21"},
+                {"from_age": 22, "label": "22-29"},
+                {"from_age": 30, "label": "30-54"},
+                {"from_age": 55, "label": "55+"},
+            ],
             "fallback": "UNKNOWN",
         }
         assert AgeBracketRule.from_config(config) == rule
 
     def test_from_config_rejects_missing_as_of_date(self) -> None:
         with pytest.raises(ValueError, match="as_of_date"):
-            AgeBracketRule.from_config({"min_age": 16})
+            AgeBracketRule.from_config({"brackets": [{"from_age": 16, "label": "16+"}]})
+
+    def test_from_config_rejects_missing_brackets(self) -> None:
+        with pytest.raises(ValueError, match="brackets"):
+            AgeBracketRule.from_config({"as_of_date": "2026-05-13"})
 
     def test_from_config_rejects_bad_date(self) -> None:
         with pytest.raises(ValueError):
-            AgeBracketRule.from_config({"as_of_date": "not-a-date"})
+            AgeBracketRule.from_config({"as_of_date": "not-a-date", "brackets": [{"from_age": 16, "label": "16+"}]})
 
 
 class TestSmallMappingRule:
@@ -238,7 +246,9 @@ class TestNormaliseLookupKey:
 
 class TestRuleFromField:
     def test_builds_each_rule_type(self) -> None:
-        age = rule_from_field(DerivationType.AGE_BRACKET, {"as_of_date": "2026-05-13"})
+        age = rule_from_field(
+            DerivationType.AGE_BRACKET, {"as_of_date": "2026-05-13", "brackets": [{"from_age": 16, "label": "16+"}]}
+        )
         assert isinstance(age, AgeBracketRule)
         small = rule_from_field(DerivationType.SMALL_MAPPING, {"mapping": {"a": "b"}})
         assert isinstance(small, SmallMappingRule)
@@ -253,9 +263,9 @@ class TestRuleFromField:
 
 
 class TestOutputOptions:
-    def test_age_rule_generates_bracket_options_plus_fallback(self) -> None:
+    def test_age_rule_options_are_its_labels_plus_fallback(self) -> None:
         options = output_options(_age_rule())
-        assert [o.value for o in options] == ["under-16", "16-21", "22-29", "30-54", "55-99", "100+", "UNKNOWN"]
+        assert [o.value for o in options] == ["16-21", "22-29", "30-54", "55+", "UNKNOWN"]
         assert all(isinstance(o, ChoiceOption) for o in options)
 
     def test_small_mapping_uses_distinct_outputs_in_first_seen_order(self) -> None:
@@ -281,28 +291,97 @@ class TestOutputOptions:
         assert [o.value for o in options] == ["London", "UNKNOWN"]
 
 
-class TestAgeBracketsFromLabels:
-    """The inverse of AgeBracketRule.bracket_labels: a target named like brackets tells us its rule."""
+GENERIC_PROBLEM = "Could not work out age ranges"
 
-    @pytest.mark.parametrize(
-        ("min_age", "max_age", "boundaries"),
-        [(16, 100, ()), (16, 100, (25, 40, 60)), (18, 90, (30,)), (1, 2, ())],
-    )
-    def test_it_undoes_bracket_labels(self, min_age, max_age, boundaries):
-        rule = AgeBracketRule(as_of_date=date(2027, 6, 1), min_age=min_age, max_age=max_age, boundaries=boundaries)
 
-        assert age_brackets_from_labels(rule.bracket_labels()) == (min_age, max_age, boundaries)
-
-    def test_the_under_label_may_be_missing(self):
-        """A target usually has no quota for the ineligible; the lowest range gives the minimum age."""
-        assert age_brackets_from_labels(["16-24", "25-39", "40+"]) == (16, 40, (25,))
-
-    def test_the_order_of_the_labels_does_not_matter(self):
-        assert age_brackets_from_labels(["40+", "25-39", "16-24"]) == (16, 40, (25,))
+class TestMatchAgeBrackets:
+    """Target values name their own ages; the numbers in them give each one's start."""
 
     @pytest.mark.parametrize(
         "labels",
-        [["Young", "Old"], ["16-24", "25-39"], ["under-16", "60+"], [], ["16-24", "25-39", "40+", "Prefer not to say"]],
+        [
+            ["16-29", "30-44", "45-59", "60+"],
+            ["16 - 29", "30 - 44", "45 - 59", "60 or higher"],
+            ["16\u201329", "30\u201344", "45\u201359", ">59"],
+            ["16\u201429", "30\u201444", "45\u201459", "over 59"],
+            ["16 to 29", "30 to 44", "45 to 59", "60 and over"],
+            ["16 bis 29", "30 bis 44", "45 bis 59", "60+"],
+            ["16-29 \u00e9v", "30-44 \u00e9v", "45-59 \u00e9v", "60+ \u00e9v"],
+            ["Aged 16 to 29", "Aged 30 to 44", "Aged 45 to 59", "Aged 60 or over"],
+        ],
     )
-    def test_labels_that_are_not_a_complete_bracket_set_give_nothing(self, labels):
-        assert age_brackets_from_labels(labels) is None
+    def test_ranges_in_any_wording(self, labels) -> None:
+        match = match_age_brackets(labels)
+        assert match.problem == ""
+        assert list(match.from_ages.values()) == [16, 30, 45, 60]
+        assert set(match.from_ages) == set(labels)
+
+    @pytest.mark.parametrize("top", ["60-99", "60-100", "60-120"])
+    def test_the_highest_range_is_open_ended(self, top) -> None:
+        match = match_age_brackets(["16-29", "30-59", top])
+        assert match.problem == ""
+        assert match.from_ages[top] == 60
+
+    @pytest.mark.parametrize("bottom", ["under 16", "under-16", "<16", "15 and under", "Under 16s"])
+    def test_a_one_number_value_below_the_ranges_starts_at_zero(self, bottom) -> None:
+        match = match_age_brackets([bottom, "16-29", "30+"])
+        assert match.problem == ""
+        assert match.from_ages == {bottom: 0, "16-29": 16, "30+": 30}
+
+    def test_a_range_can_start_at_zero(self) -> None:
+        match = match_age_brackets(["0-15", "16-29", "30+"])
+        assert match.problem == ""
+        assert match.from_ages == {"0-15": 0, "16-29": 16, "30+": 30}
+
+    def test_the_order_of_the_values_does_not_matter(self) -> None:
+        match = match_age_brackets(["60+", "30-59", "16-29"])
+        assert match.problem == ""
+        assert match.from_ages == {"60+": 60, "30-59": 30, "16-29": 16}
+
+    def test_a_single_range_is_enough(self) -> None:
+        match = match_age_brackets(["16-99"])
+        assert match.from_ages == {"16-99": 16}
+        assert match.problem == ""
+
+    def test_a_one_year_gap_is_named(self) -> None:
+        match = match_age_brackets(["16-29", "31-44", "45+"])
+        assert match.problem == "The target values leave out age 30"
+        assert match.from_ages == {"16-29": 16, "31-44": 31, "45+": 45}
+
+    def test_a_longer_gap_is_named(self) -> None:
+        match = match_age_brackets(["16-29", "35-44", "45+"])
+        assert match.problem == "The target values leave out ages 30 to 34"
+
+    def test_an_overlap_is_named(self) -> None:
+        match = match_age_brackets(["16-30", "30-44", "45+"])
+        assert match.problem == "Age 30 is in more than one target value"
+
+    @pytest.mark.parametrize(
+        "labels",
+        [
+            ["Young", "Old"],
+            ["under 30", "30+"],
+            ["16-29", "30-44", "Prefer not to say"],
+            ["16-29", "30-44", "1 2 3"],
+            ["29-16", "30+"],
+            ["16-29", "30-44", "70+"],
+            [],
+        ],
+    )
+    def test_values_that_cannot_be_placed_give_the_general_problem(self, labels) -> None:
+        match = match_age_brackets(labels)
+        assert match.problem.startswith(GENERIC_PROBLEM)
+        assert "16-29, 30-44, 45-59, 60+" in match.problem
+
+    def test_what_could_be_placed_is_still_returned(self) -> None:
+        match = match_age_brackets(["16-29", "30-44", "Prefer not to say"])
+        assert match.from_ages == {"16-29": 16, "30-44": 30}
+
+    def test_a_full_match_builds_a_valid_rule(self) -> None:
+        match = match_age_brackets(["under 16", "16-29", "30-59", "60+"])
+        rule = AgeBracketRule(
+            as_of_date=AS_OF,
+            brackets=tuple(AgeBracket(from_age, label) for label, from_age in match.from_ages.items()),
+        )
+        assert rule.derive_from_year(AS_OF.year - 70) == "60+"
+        assert rule.derive_from_year(AS_OF.year - 5) == "under 16"

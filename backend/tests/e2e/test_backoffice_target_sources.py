@@ -66,9 +66,8 @@ class TestConfigureAgeBrackets:
                 "as_of_day": "1",
                 "as_of_month": "6",
                 "as_of_year": str(this_year),
-                "min_age": "16",
-                "max_age": "40",
-                "boundaries": "25",
+                "bracket_label": ["16-24", "25-39", "40+"],
+                "bracket_from": ["16", "25", "40"],
                 "csrf_token": get_csrf_token(logged_in_admin, base),
             },
             headers={"HX-Request": "true"},
@@ -80,7 +79,8 @@ class TestConfigureAgeBrackets:
         assert field.derived_from == ["year_of_birth"]
         assert field.target_category_id == category_id
         assert field.derivation_config["as_of_date"] == f"{this_year}-06-01"
-        assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40+", "UNKNOWN"]
+        assert [o.value for o in field.options] == ["16-24", "25-39", "40+", "UNKNOWN"]
+        assert field.derivation_config["brackets"][-1] == {"from_age": 40, "label": "40+"}
 
 
 class TestConfigureSmallMapping:

@@ -6,48 +6,59 @@ from itertools import zip_longest
 from typing import Any
 
 from opendlp.domain.respondent_derivation import (
+    AgeBracket,
     AgeBracketRule,
     SmallMappingRule,
-    age_brackets_from_labels,
+    check_age_brackets,
 )
 from opendlp.domain.respondent_field_schema import ChoiceOption, duplicate_option_value
 from opendlp.translations import gettext as _
 
 
-def parse_boundaries(raw: str) -> tuple[int, ...]:
-    """A comma-separated boundaries string as sorted unique ints. Raises ValueError."""
-    parts = [p.strip() for p in raw.replace(";", ",").split(",") if p.strip()]
-    try:
-        return tuple(sorted({int(p) for p in parts}))
-    except ValueError:
-        raise ValueError(_("Boundaries must be whole numbers separated by commas, e.g. 25, 40, 60")) from None
-
-
-def parse_age_rule(values: dict[str, Any]) -> AgeBracketRule:
-    """Build an AgeBracketRule from the modal's age-config values. Raises ValueError."""
+def parse_as_of_date(values: dict[str, Any]) -> date:
+    """The date respondent age is calculated on, from its day, month and year inputs. Raises ValueError."""
     try:
         as_of = date(int(values["as_of_year"]), int(values["as_of_month"]), int(values["as_of_day"]))
     except (TypeError, ValueError):
-        raise ValueError(_("Enter a valid as-of date (day, month and year)")) from None
+        raise ValueError(_("Enter a valid date to calculate respondent age on (day, month and year)")) from None
     # The as-of date is usually the first assembly date, so it is always near
     # today. A year outside this window is a typo, and a silent one: the
     # brackets it produces look plausible and put everyone in the fallback.
     this_year = datetime.now(UTC).date().year
     if not (this_year - 1 <= as_of.year <= this_year + 1):
         raise ValueError(
-            _("The as-of year must be between %(low)d and %(high)d", low=this_year - 1, high=this_year + 1)
+            _(
+                "The year to calculate respondent age on must be between %(low)d and %(high)d",
+                low=this_year - 1,
+                high=this_year + 1,
+            )
         )
-    try:
-        min_age = int(values["min_age"] or 16)
-        max_age = int(values["max_age"] or 100)
-    except ValueError:
-        raise ValueError(_("Minimum and maximum age must be whole numbers")) from None
-    return AgeBracketRule(
-        as_of_date=as_of,
-        min_age=min_age,
-        max_age=max_age,
-        boundaries=parse_boundaries(values["boundaries"]),
-    )
+    return as_of
+
+
+def parse_age_brackets(values: dict[str, Any]) -> tuple[AgeBracket, ...]:
+    """One bracket per target value, from the paired ``bracket_label`` / ``bracket_from`` lists. Raises ValueError.
+
+    Every target value needs the age it starts at: an age rule can only ever
+    produce the values it has a bracket for.
+    """
+    brackets = []
+    for label, raw_from in zip_longest(values["bracket_label"], values["bracket_from"], fillvalue=""):
+        if not raw_from.strip():
+            raise ValueError(_("Enter the age where '%(value)s' starts", value=label))
+        try:
+            from_age = int(raw_from.strip())
+        except ValueError:
+            raise ValueError(_("The age where '%(value)s' starts must be a whole number", value=label)) from None
+        brackets.append(AgeBracket(from_age=from_age, label=label))
+    check_age_brackets(brackets)
+    return tuple(brackets)
+
+
+def parse_age_rule(values: dict[str, Any]) -> AgeBracketRule:
+    """Build an AgeBracketRule from the modal's age-config values. Raises ValueError."""
+    brackets = parse_age_brackets(values)
+    return AgeBracketRule(as_of_date=parse_as_of_date(values), brackets=brackets)
 
 
 def parse_small_mapping_rule(values: dict[str, Any]) -> SmallMappingRule:
@@ -79,20 +90,3 @@ def parse_answer_options(values: dict[str, Any]) -> list[ChoiceOption]:
     if duplicate:
         raise ValueError(_("Answer values must be different: '%(value)s' appears more than once", value=duplicate))
     return options
-
-
-def age_prefill_from_target(target_values: list[str]) -> dict[str, str] | None:
-    """min/max/boundaries form values parsed from "16-24"-style target value names.
-
-    Returns None when the target's values don't look like a complete bracket
-    set — the caller leaves the inputs blank for the user to fill in (Q9).
-    """
-    brackets = age_brackets_from_labels(target_values)
-    if brackets is None:
-        return None
-    min_age, max_age, boundaries = brackets
-    return {
-        "min_age": str(min_age),
-        "max_age": str(max_age),
-        "boundaries": ", ".join(str(b) for b in boundaries),
-    }

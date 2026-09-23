@@ -4,6 +4,7 @@ ABOUTME: Drives the real target-sources routes + services against a seeded fake 
 import io
 import re
 import uuid
+from html.parser import HTMLParser
 
 import pytest
 
@@ -52,6 +53,44 @@ def _seed_respondents(fake_store, assembly, attributes_list):
     with FakeUnitOfWork(store=fake_store) as uow:
         for index, attributes in enumerate(attributes_list):
             uow.respondents.add(Respondent(assembly_id=assembly.id, external_id=f"R-{index}", attributes=attributes))
+
+
+_VOID_ELEMENTS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+
+class _TestIdText(HTMLParser):
+    """The text inside the element carrying a given data-testid, with whitespace collapsed."""
+
+    def __init__(self, testid: str) -> None:
+        super().__init__()
+        self.testid = testid
+        self.depth = 0
+        self.found = False
+        self.parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in _VOID_ELEMENTS:
+            return
+        if self.depth:
+            self.depth += 1
+        elif dict(attrs).get("data-testid") == self.testid:
+            self.depth = 1
+            self.found = True
+
+    def handle_endtag(self, tag: str) -> None:
+        if self.depth and tag not in _VOID_ELEMENTS:
+            self.depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if self.depth:
+            self.parts.append(data)
+
+    @classmethod
+    def of(cls, body: str, testid: str) -> str:
+        parser = cls(testid)
+        parser.feed(body)
+        assert parser.found, f"no {testid} in the page"
+        return re.sub(r"\s+", " ", " ".join(parser.parts)).strip()
 
 
 def _field_by_key(fake_store, assembly, field_key):
@@ -529,9 +568,8 @@ class TestConfigureAgeBrackets:
             "as_of_day": "1",
             "as_of_month": "6",
             "as_of_year": "2027",
-            "min_age": "16",
-            "max_age": "100",
-            "boundaries": "30",
+            "bracket_label": ["16-29", "30-99"],
+            "bracket_from": ["16", "30"],
             **overrides,
         }
 
@@ -621,9 +659,8 @@ class TestConfigureAgeBrackets:
                 "as_of_day": "1",
                 "as_of_month": "6",
                 "as_of_year": "2027",
-                "min_age": "16",
-                "max_age": "100",
-                "boundaries": "30",
+                "bracket_label": ["16-29", "30-99"],
+                "bracket_from": ["16", "30"],
             },
             headers=HTMX,
         )
@@ -638,52 +675,248 @@ class TestConfigureAgeBrackets:
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
-            data={
-                "modal": "1",
-                "method": "age_bracket",
-                "source_mode": "create",
-                "new_field_key": "date_of_birth",
-                "as_of_day": "",
-                "as_of_month": "",
-                "as_of_year": "",
-            },
+            data=self._age_form(as_of_day="", as_of_month="", as_of_year=""),
             headers=HTMX,
         )
 
         assert response.status_code == 422
-        assert b"as-of date" in response.data
+        assert b"Enter a valid date to calculate respondent age on" in response.data
 
     def test_a_rule_error_is_shown_in_the_organisers_words(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
-            data=self._age_form(min_age="50", max_age="40", boundaries=""),
+            data=self._age_form(bracket_from=["30", "30"]),
             headers=HTMX,
         )
         body = response.get_data(as_text=True)
 
         assert response.status_code == 422
-        assert "The maximum age must be greater than the minimum age" in body
-        assert "max_age must be greater than min_age" not in body
+        assert "Two age ranges cannot start at the same age" in body
+        assert _field_by_key(fake_store, existing_assembly, "Age bracket") is None
 
-    def test_brackets_prefill_from_the_target_and_the_date_from_the_assembly(
-        self, logged_in_admin, existing_assembly, fake_store
-    ):
-        """Choosing age ranges for a "16-24"-style target fills in min/max/boundaries and the as-of date."""
-        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-24", "25-39", "40-59", "60+"])
+    def test_a_target_value_left_without_an_age_is_refused(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
-        response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
-            query_string={"modal": "1", "method": "age_bracket", "source_mode": "create"},
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=self._age_form(bracket_from=["16", ""]),
             headers=HTMX,
         )
         body = response.get_data(as_text=True)
 
-        assert re.search(r'name="min_age"[^>]*value="16"', body)
-        assert re.search(r'name="max_age"[^>]*value="60"', body)
-        assert re.search(r'name="boundaries"[^>]*value="25, 40"', body)
-        assert re.search(rf'name="as_of_year"[^>]*value="{existing_assembly.first_assembly_date.year}"', body)
+        assert response.status_code == 422
+        assert "Enter the age where &#39;30-99&#39; starts" in body
+
+    def test_the_saved_rule_outputs_the_targets_own_values(self, logged_in_admin, existing_assembly, fake_store):
+        """A target spelt "60 or over" is fed "60 or over", so every respondent counts towards it."""
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16 to 59", "60 or over"])
+        _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1950"}])
+
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=self._age_form(bracket_label=["16 to 59", "60 or over"], bracket_from=["16", "60"]),
+            headers=HTMX,
+        )
+
+        derived = _field_by_key(fake_store, existing_assembly, "Age")
+        assert [option.value for option in derived.options] == ["16 to 59", "60 or over", "UNKNOWN"]
+        with FakeUnitOfWork(store=fake_store) as uow:
+            [respondent] = uow.respondents.get_by_assembly_id(existing_assembly.id)
+        assert respondent.attributes["Age"] == "60 or over"
+
+
+class TestAgeRangesDialog:
+    """What the set-up dialog shows for age ranges: matched ages, the table, and the age-calculation date."""
+
+    def _open(self, client, assembly, category, **params):
+        return client.get(
+            f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/setup-modal",
+            query_string={"modal": "1", "method": "age_bracket", "source_mode": "create", **params},
+            headers=HTMX,
+        ).get_data(as_text=True)
+
+    @staticmethod
+    def _section(body, testid):
+        return _TestIdText.of(body, testid)
+
+    def test_matched_target_values_are_summarised_with_an_edit_button(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30-44", "45-59", "60+"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+        summary = self._section(body, "ts-age-summary")
+
+        assert "16-29 16 to 29" in summary
+        assert "45-59 45 to 59" in summary
+        assert "60+ 60 and over" in summary
+        assert 'aria-label="Edit the age ranges"' in body
+        assert 'data-editing="false"' in body
+        assert "Anyone younger than 16 counts as UNKNOWN." in body
+
+    def test_the_table_carries_each_matched_start_to_the_form(self, logged_in_admin, existing_assembly, fake_store):
+        """The table stays in the form behind the summary, so Save sends the matched ages."""
+        category = _seed_category(fake_store, existing_assembly, "Age", ["under 16", "16 to 29", "30 or over"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        assert re.findall(r'name="bracket_label" value="([^"]*)"', body) == ["under 16", "16 to 29", "30 or over"]
+        assert re.findall(r'name="bracket_from"[^>]*value="(\d*)"', body) == ["0", "16", "30"]
+        assert "Anyone younger than" not in self._section(body, "ts-age-summary")
+
+    def test_values_that_leave_a_gap_open_the_table_and_say_where(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "35-44", "45+"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        assert 'data-testid="ts-age-summary"' not in body
+        assert 'data-editing="true"' in body
+        assert "The target values leave out ages 30 to 34" in body
+        assert re.findall(r'name="bracket_from"[^>]*value="(\d*)"', body) == ["16", "35", "45"]
+
+    def test_values_with_no_ages_in_them_ask_for_the_ages(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["Young", "Old"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        assert "Could not work out age ranges from the target values" in body
+        inputs = re.findall(r'<input[^>]*name="bracket_from"[^>]*>', body)
+        assert len(inputs) == 2
+        assert not any("value=" in tag for tag in inputs)
+        assert 'aria-label="Age where Young starts"' in body
+
+    def test_typed_ages_survive_a_re_render(self, logged_in_admin, existing_assembly, fake_store):
+        """Flipping a radio re-renders the dialog; the ages typed so far are kept, and summarised when complete."""
+        category = _seed_category(fake_store, existing_assembly, "Age", ["Young", "Old"])
+
+        body = self._open(
+            logged_in_admin,
+            existing_assembly,
+            category,
+            age_source_type="year",
+            bracket_label=["Young", "Old"],
+            bracket_from=["18", "40"],
+        )
+
+        assert "Young 18 to 39" in self._section(body, "ts-age-summary")
+        assert "Old 40 and over" in self._section(body, "ts-age-summary")
+
+    def test_editing_a_linked_target_shows_its_saved_ages(self, logged_in_admin, existing_assembly, fake_store):
+        category = TestRowActions()._linked_age_bracket(fake_store, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+        ).get_data(as_text=True)
+
+        assert "16-29 18 to 29" in self._section(body, "ts-age-summary")
+        assert "2027" in self._section(body, "ts-as-of-text")
+
+    def test_a_known_date_is_shown_as_text_with_a_change_button(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+        first_date = existing_assembly.first_assembly_date
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        as_of_text = self._section(body, "ts-as-of-text")
+        assert as_of_text.startswith("Respondent age calculated on")
+        assert str(first_date.year) in as_of_text
+        assert 'aria-label="Change the date respondent age is calculated on"' in body
+        assert 'data-changing-date="false"' in body
+        # The inputs still go with the form, hidden until Change is pressed.
+        assert re.search(rf'name="as_of_year"[^>]*value="{first_date.year}"', body)
+
+    def test_without_a_date_the_inputs_show_with_placeholders(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = self._open(
+            logged_in_admin, existing_assembly, category, as_of_day="31", as_of_month="2", as_of_year="2027"
+        )
+
+        assert 'data-testid="ts-as-of-text"' not in body
+        assert 'data-changing-date="true"' in body
+        assert 'placeholder="DD"' in body
+        assert 'placeholder="MM"' in body
+        assert 'placeholder="YYYY"' in body
+        assert "Usually the first assembly date." in self._section(body, "ts-as-of-inputs")
+
+    def test_a_failed_save_over_the_date_reopens_the_inputs(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=TestConfigureAgeBrackets()._age_form(as_of_year="1999"),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert "The year to calculate respondent age on must be between" in body
+        assert 'data-changing-date="true"' in body
+
+    def test_target_values_are_listed_once(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        assert body.count("Target values:") == 1
+        assert "The target expects" not in body
+
+    @pytest.mark.parametrize(
+        ("params", "shown"),
+        [({"age_source_type": "year"}, True), ({"age_source_type": "date"}, False)],
+    )
+    def test_the_year_of_birth_caveat_follows_a_new_question_too(
+        self, logged_in_admin, existing_assembly, fake_store, params, shown
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = self._open(logged_in_admin, existing_assembly, category, **params)
+
+        assert ("assume a 1 January birthday" in self._section(body, "ts-source-group")) is shown
+
+    def test_the_year_of_birth_caveat_shows_for_a_reused_year_question(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+        field = _seed_field(fake_store, existing_assembly, "year_of_birth", field_type=FieldType.INTEGER)
+
+        body = self._open(
+            logged_in_admin, existing_assembly, category, source_mode="reuse", reuse_field_id=str(field.id)
+        )
+
+        assert "assume a 1 January birthday" in self._section(body, "ts-source-group")
+
+
+class TestDialogGroups:
+    """Every method's dialog is split into sections by a divider line."""
+
+    @pytest.mark.parametrize(
+        ("method", "sections"),
+        [("exact", 1), ("age_bracket", 3), ("small_mapping", 2), ("large_mapping", 2)],
+    )
+    def test_each_method_divides_its_sections(self, logged_in_admin, existing_assembly, fake_store, method, sections):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            query_string={"modal": "1", "method": method, "source_mode": "create"},
+            headers=HTMX,
+        ).get_data(as_text=True)
+
+        assert body.count("border-top: 1px solid var(--color-borders-dividers)") == sections
+        assert 'data-testid="ts-source-group"' in body
+
+    def test_no_sections_until_a_method_is_chosen(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            headers=HTMX,
+        ).get_data(as_text=True)
+
+        assert "border-top: 1px solid var(--color-borders-dividers)" not in body
 
 
 class TestConfigureLargeMapping:
@@ -1191,9 +1424,7 @@ class TestRowActions:
             derivation_type=DerivationType.AGE_BRACKET,
             derivation_config={
                 "as_of_date": "2027-06-01",
-                "min_age": 16,
-                "max_age": 100,
-                "boundaries": [30],
+                "brackets": [{"from_age": 18, "label": "16-29"}, {"from_age": 30, "label": "30-99"}],
                 "fallback": "UNKNOWN",
             },
             field_type=FieldType.CHOICE_DROPDOWN,

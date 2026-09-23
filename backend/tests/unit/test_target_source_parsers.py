@@ -1,17 +1,17 @@
 """ABOUTME: Unit tests for the target data sources set-up form's config parsers
-ABOUTME: Covers boundaries/date/mapping parsing and the age-bracket pre-fill from a target's values"""
+ABOUTME: Covers age-range, as-of date and mapping parsing"""
 
 from datetime import UTC, datetime
 
 import pytest
 
-from opendlp.domain.respondent_derivation import AgeBracketRule, SmallMappingRule
+from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import ChoiceOption
 from opendlp.entrypoints.derivation_form_parser import (
-    age_prefill_from_target,
+    parse_age_brackets,
     parse_age_rule,
     parse_answer_options,
-    parse_boundaries,
+    parse_as_of_date,
     parse_small_mapping_rule,
 )
 
@@ -24,24 +24,78 @@ def _age_values(**overrides):
         "as_of_day": "13",
         "as_of_month": "5",
         "as_of_year": str(THIS_YEAR),
-        "min_age": "16",
-        "max_age": "100",
-        "boundaries": "25, 40, 60",
+        "bracket_label": ["16-29", "30-59", "60+"],
+        "bracket_from": ["16", "30", "60"],
     }
     values.update(overrides)
     return values
 
 
-class TestParseBoundaries:
-    def test_parses_comma_separated_ints_sorted_and_deduped(self):
-        assert parse_boundaries("60; 25, 40, 25") == (25, 40, 60)
+class TestParseAgeBrackets:
+    def test_pairs_each_target_value_with_its_start(self):
+        assert parse_age_brackets(_age_values()) == (
+            AgeBracket(16, "16-29"),
+            AgeBracket(30, "30-59"),
+            AgeBracket(60, "60+"),
+        )
 
-    def test_empty_string_is_no_boundaries(self):
-        assert parse_boundaries("") == ()
+    def test_surrounding_spaces_are_ignored(self):
+        brackets = parse_age_brackets(_age_values(bracket_label=["all"], bracket_from=[" 18 "]))
+        assert brackets == (AgeBracket(18, "all"),)
 
-    def test_non_numeric_input_raises_a_readable_error(self):
-        with pytest.raises(ValueError, match="whole numbers"):
-            parse_boundaries("25, forty")
+    def test_zero_is_accepted(self):
+        brackets = parse_age_brackets(_age_values(bracket_label=["0-15", "16+"], bracket_from=["0", "16"]))
+        assert brackets[0] == AgeBracket(0, "0-15")
+
+    def test_every_target_value_needs_a_start(self):
+        with pytest.raises(ValueError, match="Enter the age where '30-59' starts"):
+            parse_age_brackets(_age_values(bracket_from=["16", "", "60"]))
+
+    def test_a_missing_input_counts_as_blank(self):
+        with pytest.raises(ValueError, match="Enter the age where '60\\+' starts"):
+            parse_age_brackets(_age_values(bracket_from=["16", "30"]))
+
+    def test_a_start_must_be_a_whole_number(self):
+        with pytest.raises(ValueError, match="'30-59' starts must be a whole number"):
+            parse_age_brackets(_age_values(bracket_from=["16", "thirty", "60"]))
+
+    def test_a_negative_start_is_refused(self):
+        with pytest.raises(ValueError, match="cannot start below zero"):
+            parse_age_brackets(_age_values(bracket_from=["-1", "30", "60"]))
+
+    def test_two_values_cannot_start_at_the_same_age(self):
+        with pytest.raises(ValueError, match="cannot start at the same age"):
+            parse_age_brackets(_age_values(bracket_from=["16", "30", "30"]))
+
+
+class TestParseAsOfDate:
+    def test_reads_day_month_and_year(self):
+        assert parse_as_of_date(_age_values()).isoformat() == f"{THIS_YEAR}-05-13"
+
+    def test_invalid_date_raises_a_readable_error(self):
+        with pytest.raises(ValueError, match="valid date to calculate respondent age on"):
+            parse_as_of_date(_age_values(as_of_month="13"))
+
+    def test_missing_date_raises_a_readable_error(self):
+        with pytest.raises(ValueError, match="valid date to calculate respondent age on"):
+            parse_as_of_date(_age_values(as_of_year=""))
+
+    def test_a_two_digit_year_is_rejected(self):
+        with pytest.raises(ValueError, match="year to calculate respondent age on"):
+            parse_as_of_date(_age_values(as_of_year="99"))
+
+    def test_a_year_well_in_the_past_is_rejected(self):
+        with pytest.raises(ValueError, match="year to calculate respondent age on"):
+            parse_as_of_date(_age_values(as_of_year=str(THIS_YEAR - 2)))
+
+    def test_a_year_well_in_the_future_is_rejected(self):
+        with pytest.raises(ValueError, match="year to calculate respondent age on"):
+            parse_as_of_date(_age_values(as_of_year=str(THIS_YEAR + 2)))
+
+    def test_last_year_and_next_year_are_accepted(self):
+        """An assembly's first date can sit either side of the new year, so allow one year of slack."""
+        assert parse_as_of_date(_age_values(as_of_year=str(THIS_YEAR - 1))).year == THIS_YEAR - 1
+        assert parse_as_of_date(_age_values(as_of_year=str(THIS_YEAR + 1))).year == THIS_YEAR + 1
 
 
 class TestParseAgeRule:
@@ -49,42 +103,12 @@ class TestParseAgeRule:
         rule = parse_age_rule(_age_values())
         assert isinstance(rule, AgeBracketRule)
         assert rule.as_of_date.isoformat() == f"{THIS_YEAR}-05-13"
-        assert rule.boundaries == (25, 40, 60)
-        assert rule.bracket_labels() == ["under-16", "16-24", "25-39", "40-59", "60-99", "100+"]
+        assert rule.labels() == ["16-29", "30-59", "60+"]
 
-    def test_blank_min_and_max_fall_back_to_defaults(self):
-        rule = parse_age_rule(_age_values(min_age="", max_age=""))
-        assert rule.min_age == 16
-        assert rule.max_age == 100
-
-    def test_invalid_date_raises_a_readable_error(self):
-        with pytest.raises(ValueError, match="as-of date"):
-            parse_age_rule(_age_values(as_of_month="13"))
-
-    def test_missing_date_raises_a_readable_error(self):
-        with pytest.raises(ValueError, match="as-of date"):
-            parse_age_rule(_age_values(as_of_year=""))
-
-    def test_rule_validation_errors_propagate(self):
-        with pytest.raises(ValueError, match="bracket boundary must be between"):
-            parse_age_rule(_age_values(boundaries="10"))
-
-    def test_a_two_digit_year_is_rejected(self):
-        with pytest.raises(ValueError, match="as-of year"):
-            parse_age_rule(_age_values(as_of_year="99"))
-
-    def test_a_year_well_in_the_past_is_rejected(self):
-        with pytest.raises(ValueError, match="as-of year"):
-            parse_age_rule(_age_values(as_of_year=str(THIS_YEAR - 2)))
-
-    def test_a_year_well_in_the_future_is_rejected(self):
-        with pytest.raises(ValueError, match="as-of year"):
-            parse_age_rule(_age_values(as_of_year=str(THIS_YEAR + 2)))
-
-    def test_last_year_and_next_year_are_accepted(self):
-        """An assembly's first date can sit either side of the new year, so allow one year of slack."""
-        assert parse_age_rule(_age_values(as_of_year=str(THIS_YEAR - 1))).as_of_date.year == THIS_YEAR - 1
-        assert parse_age_rule(_age_values(as_of_year=str(THIS_YEAR + 1))).as_of_date.year == THIS_YEAR + 1
+    def test_bracket_errors_come_before_date_errors(self):
+        """The ranges sit above the date in the dialog, so their problem is reported first."""
+        with pytest.raises(ValueError, match="Enter the age"):
+            parse_age_rule(_age_values(bracket_from=["", "", ""], as_of_year=""))
 
 
 class TestParseSmallMappingRule:
@@ -122,19 +146,3 @@ class TestParseAnswerOptions:
     def test_a_repeated_answer_is_refused_by_name(self):
         with pytest.raises(ValueError, match="'16-29' appears more than once"):
             parse_answer_options({"map_source": ["16-29", "30-44", "16-29"], "map_target": []})
-
-
-class TestAgePrefillFromTarget:
-    def test_parses_a_complete_bracket_set(self):
-        prefill = age_prefill_from_target(["under-16", "16-24", "25-39", "40-59", "60+"])
-        assert prefill == {"min_age": "16", "max_age": "60", "boundaries": "25, 40"}
-
-    def test_min_age_defaults_to_the_lowest_range_start_without_an_under_value(self):
-        prefill = age_prefill_from_target(["16-24", "25-39", "60+"])
-        assert prefill == {"min_age": "16", "max_age": "60", "boundaries": "25"}
-
-    def test_unparsable_values_yield_no_prefill(self):
-        assert age_prefill_from_target(["Young", "Old"]) is None
-
-    def test_a_set_without_an_upper_bracket_yields_no_prefill(self):
-        assert age_prefill_from_target(["16-24", "25-39"]) is None

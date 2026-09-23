@@ -10,7 +10,7 @@ import msgspec
 from flask.testing import FlaskClient
 
 from opendlp.domain.assembly import Assembly
-from opendlp.domain.respondent_derivation import AgeBracketRule
+from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule
 from opendlp.domain.respondent_field_schema import FieldType
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import RespondentStatus
@@ -537,7 +537,10 @@ class TestBackofficeViewSingleRespondent:
                 field_key="age bracket",
                 label="Age bracket",
                 source_field_key="year_of_birth",
-                rule=AgeBracketRule(as_of_date=date(2026, 6, 1), min_age=16, max_age=100, boundaries=(30, 60)),
+                rule=AgeBracketRule(
+                    as_of_date=date(2026, 6, 1),
+                    brackets=(AgeBracket(16, "16-29"), AgeBracket(30, "30-59"), AgeBracket(60, "60+")),
+                ),
             )
             respondent = uow.respondents.get_by_assembly_id(existing_assembly.id)[0]
 
@@ -849,7 +852,10 @@ class TestEditRespondentPage:
                 field_key="age bracket",
                 label="Age bracket",
                 source_field_key="year_of_birth",
-                rule=AgeBracketRule(as_of_date=date(2026, 6, 1), min_age=16, max_age=100, boundaries=(30, 60)),
+                rule=AgeBracketRule(
+                    as_of_date=date(2026, 6, 1),
+                    brackets=(AgeBracket(16, "16-29"), AgeBracket(30, "30-59"), AgeBracket(60, "60+")),
+                ),
             )
             resp_id = uow.respondents.get_by_assembly_id(existing_assembly.id)[0].id
 

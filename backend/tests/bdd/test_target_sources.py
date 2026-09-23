@@ -9,6 +9,7 @@ from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.respondent_field_schema import FieldType
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.service_layer.respondent_field_schema_service import add_field
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
@@ -84,6 +85,19 @@ def assembly_has_target(title: str, name: str, values: str, test_database) -> No
         )
 
 
+@given(parsers.parse('the assembly "{title}" has a respondent aged {age:d} by year of birth'))
+def assembly_has_respondent_of_age(title: str, age: int, test_database) -> None:
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        uow.respondents.add(
+            Respondent(
+                assembly_id=uuid.UUID(_assembly_ids[title]),
+                external_id=f"AGED-{age}",
+                attributes={"year_of_birth": str(datetime.now(UTC).year - age)},
+            )
+        )
+
+
 # ---------------------------------------------------------------------------
 # When steps
 # ---------------------------------------------------------------------------
@@ -140,8 +154,12 @@ def set_up_age_ranges(admin_logged_in_page: Page, target_name: str, source_key: 
     assert option_value, f"No source option offering {source_key!r}"
     with page.expect_response(lambda r: "setup-modal" in r.url):
         reuse_select.select_option(option_value)
-    # Choosing the target's row pre-filled the brackets from its "16-24"-style values.
-    expect(page.locator('input[name="boundaries"]')).to_have_value("25", timeout=PLAYWRIGHT_TIMEOUT)
+    # The target's own values were matched to ages, so they are summarised rather than asked for.
+    expect(_setup_dialog(page).get_by_test_id("ts-age-summary")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # The first assembly date may already be filled in, behind a Change button.
+    change_date = page.get_by_role("button", name="Change the date respondent age is calculated on")
+    if change_date.is_visible():
+        change_date.click()
     page.fill('input[name="as_of_day"]', "1")
     page.fill('input[name="as_of_month"]', "6")
     # The as-of year must be within a year of today, so never hard-code it.
@@ -315,6 +333,15 @@ def open_schema_editor(admin_logged_in_page: Page, title: str) -> None:
 # ---------------------------------------------------------------------------
 # Then steps
 # ---------------------------------------------------------------------------
+
+
+@then(parsers.parse('the respondent aged {age:d} in "{title}" should count towards "{value}" of the "{name}" target'))
+def respondent_counts_towards(age: int, title: str, value: str, name: str, test_database) -> None:
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        respondents = uow.respondents.get_by_assembly_id(uuid.UUID(_assembly_ids[title]))
+        respondent = next(r for r in respondents if r.external_id == f"AGED-{age}")
+        assert respondent.attributes[name] == value
 
 
 @then(parsers.parse('the "{target_name}" target row should say "{text}"'))
