@@ -7,7 +7,7 @@ ABOUTME: Opens as a takeover dialog over the registration hub; set-up and upload
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
 {% from "backoffice/registration/_step_dialog.html" import step_dialog %}
-{% block title %}{{ _("Target data sources") }} - {{ assembly.title }}{% endblock %}
+{% block title %}{{ _("Link targets to questions") }} - {{ assembly.title }}{% endblock %}
 {% block page_header %}
     <div class="max-w-screen-2xl mx-auto px-6 pt-4 w-full">
         {{ page_header(
@@ -31,7 +31,7 @@ ABOUTME: Opens as a takeover dialog over the registration hub; set-up and upload
     {% include "backoffice/registration/_hub.html" %}
 {% endblock %}
 {% block page_overlay %}
-    {% call step_dialog("target-sources-title", _("Target data sources"), url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id)) %}
+    {% call step_dialog("target-sources-title", _("Link targets to questions"), url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id)) %}
         {% if data_source == "gsheet" and gsheet %}
             {% call info_card() %}
                 <p class="text-body-md" style="color: var(--color-body-text);">
@@ -40,7 +40,7 @@ ABOUTME: Opens as a takeover dialog over the registration hub; set-up and upload
             {% endcall %}
         {% else %}
             <section class="mb-6">
-                <h3 class="text-display-sm mb-2" style="color: var(--color-headings);">{{ _("Where does each target's data come from?") }}</h3>
+                <h3 class="text-display-sm mb-2" style="color: var(--color-headings);">{{ _("Which question answers each target?") }}</h3>
                 <p class="text-body-md mb-2" style="color: var(--color-secondary-text); max-width: 48rem;">
                     {{ _("Selection needs a column of data for every target. For each target below, choose how that data is collected: asked directly on the registration page, or computed from something simpler to ask — a date of birth, a postcode, or a more detailed question.") }}
                 </p>

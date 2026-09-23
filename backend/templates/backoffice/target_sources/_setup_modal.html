@@ -25,7 +25,7 @@ ABOUTME: Asks how the data is collected first; each answer re-renders the form o
          aria-modal="true"
          aria-labelledby="target-source-setup-title">
         <div class="dialog-panel dialog-panel--default">
-            {% set dialog_title %}{% if setup["is_linked"] %}{{ _("Edit data source for %(name)s", name=target["name"]) }}{% else %}{{ _("Set up data source for %(name)s", name=target["name"]) }}{% endif %}{% endset %}
+            {% set dialog_title %}{% if setup["is_linked"] %}{{ _("Edit the question for %(name)s", name=target["name"]) }}{% else %}{{ _("Set up the question for %(name)s", name=target["name"]) }}{% endif %}{% endset %}
             {% call dialog_header(dialog_title, title_id="target-source-setup-title") %}
                 <a href="{{ close_url }}"
                    @click="guardLeave($event)"

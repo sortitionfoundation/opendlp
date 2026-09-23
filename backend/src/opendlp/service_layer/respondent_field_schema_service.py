@@ -383,7 +383,7 @@ def update_field(
         raise FieldDefinitionConflictError(
             _l(
                 "You can't change the type or answer values of a field that feeds a target — "
-                "unlink it on the target data sources step first"
+                "unlink it on the 'Link targets to questions' step first"
             )
         ) from exc
     for old_value, new_value in renames.items():

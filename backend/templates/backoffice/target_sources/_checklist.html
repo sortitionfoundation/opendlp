@@ -41,7 +41,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                 {% elif status.state == TargetSourceState.IMPORT_COVERED %}
                                     {{ icon_check(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("Data comes from your imported respondents.") }}
                                 {% else %}
-                                    {{ icon_close(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("No data source yet.") }}
+                                    {{ icon_close(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("No question linked yet.") }}
                                 {% endif %}
                             </p>
                             {% if status.mapping_row_count == 0 %}

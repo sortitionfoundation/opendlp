@@ -86,7 +86,7 @@ class TestChecklistPage:
 
         assert response.status_code == 200
         assert b"Asked on the registration page" in response.data
-        assert b"No data source yet" in response.data
+        assert b"No question linked yet" in response.data
 
     def test_status_marks_and_close_buttons_are_icons_not_text_glyphs(
         self, logged_in_admin, existing_assembly, fake_store
@@ -291,7 +291,7 @@ class TestSetupModal:
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert "Set up data source for Gender" in body
+        assert "Set up the question for Gender" in body
         assert "How is the data collected?" in body
         assert re.search(r'<select\s+name="method"', body)
         assert re.search(r'<option value="" selected>\s*Choose one', body)
@@ -341,7 +341,7 @@ class TestSetupModal:
         response = logged_in_admin.get(self._setup_url(existing_assembly, category), headers=HTMX)
         body = response.get_data(as_text=True)
 
-        assert "Edit data source for Gender" in body
+        assert "Edit the question for Gender" in body
         assert re.search(r'<option value="exact" selected>', body)
         assert "Ask the question with exactly the target&#39;s values as the answers" in body
 
@@ -570,7 +570,7 @@ class TestConfigureAgeBrackets:
 
         assert response.status_code == 200
         assert re.search(r'id="floating-alerts"\s+hx-swap-oob="beforeend"', body)
-        assert "Data source saved — Age bracket recomputed for every respondent" in body
+        assert "Question linked to its target — Age bracket recomputed for every respondent" in body
         assert "var(--color-success-100)" in body
         assert "fell back" not in body
         # No report dialog: the toast replaces it
@@ -590,7 +590,7 @@ class TestConfigureAgeBrackets:
         )
         body = response.get_data(as_text=True)
 
-        assert "Data source saved — Age bracket recomputed for every respondent" in body
+        assert "Question linked to its target — Age bracket recomputed for every respondent" in body
         assert "1 fell back to UNKNOWN" in body
         assert "var(--color-warning-100)" in body
 
@@ -606,7 +606,7 @@ class TestConfigureAgeBrackets:
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert "Data source saved — Age bracket recomputed for every respondent" in body
+        assert "Question linked to its target — Age bracket recomputed for every respondent" in body
         assert "Respondents recomputed" not in body
 
     def test_creates_the_named_source_when_no_name_is_given(self, logged_in_admin, existing_assembly, fake_store):
@@ -977,7 +977,7 @@ class TestConfigureSmallMapping:
         )
         body = response.get_data(as_text=True)
 
-        assert "Data source saved — Age group recomputed for every respondent" in body
+        assert "Question linked to its target — Age group recomputed for every respondent" in body
         assert "var(--color-success-100)" in body
 
     def test_adding_a_row_keeps_what_was_typed_and_saves_nothing(self, logged_in_admin, existing_assembly, fake_store):
@@ -1163,7 +1163,7 @@ class TestRowActions:
 
         assert response.status_code == 302
         assert response.location.endswith("/target-sources")
-        assert _flashes(logged_in_admin) == ["This data source could not be re-synced — set it up again"]
+        assert _flashes(logged_in_admin) == ["This question could not be re-synced — set it up again"]
 
     def test_unlink_clears_the_link_but_keeps_the_field(self, logged_in_admin, existing_assembly, fake_store):
         category, _field = self._linked_exact(fake_store, existing_assembly)
@@ -1401,7 +1401,10 @@ class TestMappingUpload:
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert "Data source saved. Until the lookup table is uploaded, everyone&#39;s Region will be UNKNOWN." in body
+        assert (
+            "Question linked to its target. Until the lookup table is uploaded, everyone&#39;s Region will be UNKNOWN."
+            in body
+        )
         assert "var(--color-warning-100)" in body
         assert 'id="target-sources-list" hx-swap-oob="true"' in body
         assert self._row_count(fake_store, field) == 0

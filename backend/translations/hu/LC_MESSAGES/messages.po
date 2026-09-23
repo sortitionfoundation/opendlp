@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-23 10:53+0000\n"
+"POT-Creation-Date: 2026-09-23 12:59+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -2679,7 +2679,7 @@ msgid "Field not found"
 msgstr "A mező nem található"
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:750
-msgid "Computed questions are set up on the target data sources step"
+msgid "Computed questions are set up on the 'Link targets to questions' step"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:789
@@ -3026,7 +3026,7 @@ msgid "Target not found"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:661
-msgid "This data source could not be saved"
+msgid "The question for this target could not be saved"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:669
@@ -3036,16 +3036,13 @@ msgid "Question not found"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:689
-msgid "Data source saved"
+#: src/opendlp/entrypoints/blueprints/target_sources.py:716
+msgid "Question linked to its target"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:690
 #, python-format
-msgid "Data source saved — %(key)s recomputed for every respondent"
-msgstr ""
-
-#: src/opendlp/entrypoints/blueprints/target_sources.py:716
-msgid "Question linked to its target"
+msgid "Question linked to its target — %(key)s recomputed for every respondent"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:733
@@ -3057,7 +3054,7 @@ msgid "No question is linked to this target"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:737
-msgid "This data source could not be re-synced — set it up again"
+msgid "This question could not be re-synced — set it up again"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:747
@@ -3088,8 +3085,8 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/target_sources.py:866
 #, python-format
 msgid ""
-"Data source saved. Until the lookup table is uploaded, everyone's %(key)s"
-" will be %(fallback)s."
+"Question linked to its target. Until the lookup table is uploaded, "
+"everyone's %(key)s will be %(fallback)s."
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:883
@@ -3866,7 +3863,7 @@ msgstr ""
 #: src/opendlp/service_layer/respondent_field_schema_service.py:385
 msgid ""
 "You can't change the type or answer values of a field that feeds a target"
-" — unlink it on the target data sources step first"
+" — unlink it on the 'Link targets to questions' step first"
 msgstr ""
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:507
@@ -7062,11 +7059,13 @@ msgstr ""
 #: templates/backoffice/registration/_hub.html:23
 #: templates/backoffice/target_sources/view.html:10
 #: templates/backoffice/target_sources/view.html:34
-msgid "Target data sources"
+msgid "Link targets to questions"
 msgstr ""
 
 #: templates/backoffice/registration/_hub.html:24
-msgid "Define where each target's data comes from."
+msgid ""
+"Choose the registration question that answers each target: asked "
+"directly, or computed from something like a date of birth or postcode."
 msgstr ""
 
 #: templates/backoffice/registration/_hub.html:27
@@ -7075,7 +7074,7 @@ msgstr ""
 
 #: templates/backoffice/registration/_hub.html:29
 #, python-format
-msgid "%(covered)s of %(total)s targets have a data source"
+msgid "%(covered)s of %(total)s targets have a question"
 msgstr ""
 
 #: templates/backoffice/registration/_hub.html:31
@@ -7787,8 +7786,8 @@ msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:106
 msgid ""
-"Its answer values mirror the target's values — change those on the target"
-" data sources step, or unlink the question there."
+"Its answer values mirror the target's values — change those on the 'Link "
+"targets to questions' step, or unlink the question there."
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:119
@@ -8014,7 +8013,7 @@ msgid "Data comes from your imported respondents."
 msgstr ""
 
 #: templates/backoffice/target_sources/_checklist.html:44
-msgid "No data source yet."
+msgid "No question linked yet."
 msgstr ""
 
 #: templates/backoffice/target_sources/_checklist.html:49
@@ -8091,12 +8090,12 @@ msgstr ""
 
 #: templates/backoffice/target_sources/_setup_modal.html:28
 #, python-format
-msgid "Edit data source for %(name)s"
+msgid "Edit the question for %(name)s"
 msgstr ""
 
 #: templates/backoffice/target_sources/_setup_modal.html:28
 #, python-format
-msgid "Set up data source for %(name)s"
+msgid "Set up the question for %(name)s"
 msgstr ""
 
 #: templates/backoffice/target_sources/_setup_modal.html:63
@@ -8288,7 +8287,7 @@ msgid "Upload lookup table for %(label)s"
 msgstr ""
 
 #: templates/backoffice/target_sources/_upload_modal.html:46
-msgid "The data source is saved. Now upload the lookup table it reads from."
+msgid "The question is linked. Now upload the lookup table it reads from."
 msgstr ""
 
 #: templates/backoffice/target_sources/_upload_modal.html:49
@@ -8320,7 +8319,7 @@ msgid "Upload later"
 msgstr ""
 
 #: templates/backoffice/target_sources/view.html:43
-msgid "Where does each target's data come from?"
+msgid "Which question answers each target?"
 msgstr ""
 
 #: templates/backoffice/target_sources/view.html:45

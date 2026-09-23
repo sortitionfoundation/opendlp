@@ -658,7 +658,9 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
     except (FixedFieldError, DerivedFieldError, TargetLinkedFieldError):
         # Domain guards the form cannot trip; their messages are written for a developer.
         logger.exception("Target source set-up refused by a domain guard", assembly_id=str(assembly_id))
-        return _setup_error_response(assembly_id, category_id, values, _("This data source could not be saved"))
+        return _setup_error_response(
+            assembly_id, category_id, values, _("The question for this target could not be saved")
+        )
     except ValueError as e:
         # Raised by the form parsers and the rule constructors, each with a message written for the organiser.
         return _setup_error_response(assembly_id, category_id, values, str(e))
@@ -686,8 +688,10 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         assembly_id,
         page_ctx,
         report,
-        saved=_("Data source saved"),
-        recomputed=_("Data source saved — %(key)s recomputed for every respondent", key=fields[-1].field_key),
+        saved=_("Question linked to its target"),
+        recomputed=_(
+            "Question linked to its target — %(key)s recomputed for every respondent", key=fields[-1].field_key
+        ),
     )
 
 
@@ -734,7 +738,7 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         return redirect(_sources_url(assembly_id))
     except ValueError:
         # The linked field's stored derivation no longer parses, so there is no rule to re-sync.
-        flash(_("This data source could not be re-synced — set it up again"), "error")
+        flash(_("This question could not be re-synced — set it up again"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
@@ -863,7 +867,7 @@ def _defer_upload_response(assembly_id: uuid.UUID, category_id: uuid.UUID, setup
         return redirect(_sources_url(assembly_id))
     field = source_status.field
     message = _(
-        "Data source saved. Until the lookup table is uploaded, everyone's %(key)s will be %(fallback)s.",
+        "Question linked to its target. Until the lookup table is uploaded, everyone's %(key)s will be %(fallback)s.",
         key=field.field_key,
         fallback=LargeMappingRule.from_config(field.derivation_config or {}).fallback,
     )
