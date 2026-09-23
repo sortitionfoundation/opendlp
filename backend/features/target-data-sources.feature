@@ -44,7 +44,7 @@ Feature: Target data sources
     Then I should be asked to confirm unlinking
     When I confirm the unlinking
     And I open the target data sources for "Force Unlink Demo"
-    Then the "Areas" target row should say "No data source"
+    Then the "Areas" target row should say "No question linked"
 
   Scenario: Removing the computed question a target was set up with
     Given there is an assembly with respondents imported from CSV called "Remove Computed Demo"
@@ -55,7 +55,7 @@ Feature: Target data sources
     And I set up the "age bracket" target with age ranges from "year_of_birth"
     And I open the more actions menu for the "age bracket" target
     And I choose "Delete computed question" from the menu and confirm
-    Then the "age bracket" target row should say "No data source"
+    Then the "age bracket" target row should say "No question linked"
     When I open the respondent field schema editor for "Remove Computed Demo"
     Then the schema editor should list the "year_of_birth" field
 

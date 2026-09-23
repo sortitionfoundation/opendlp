@@ -382,7 +382,7 @@ def focus_on_set_up_button(admin_logged_in_page: Page, target_name: str) -> None
 def target_sources_still_open(admin_logged_in_page: Page) -> None:
     """Escape in the menu must not also close the step dialog around it."""
     page = admin_logged_in_page
-    expect(page.get_by_role("dialog", name="Target data sources")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.get_by_role("dialog", name="Link targets to questions")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     assert page.url.endswith("/target-sources")
 
 

@@ -114,11 +114,22 @@ reader is thinking about what the page asks.
 
 **computed question** is a registration question nobody answers: its value is
 worked out from another question's answer — an age range from a date of birth, a
-region from a postcode. It is set up, and deleted, on the target data sources
-step. The code calls it a derived field (`is_derived`), and "derived" still
+region from a postcode. It is set up, and deleted, on the "Link targets to
+questions" step. The code calls it a derived field (`is_derived`), and "derived" still
 appears in a few refusal messages that only a hand-made request can reach; the
 interface an organiser sees says "computed": "Computed from 'Postcode'", "Delete
 computed question".
+
+**Link targets to questions** is registration step 1, where each target gets
+the registration question that answers it, asked directly or computed. The code
+calls it target sources (`target_sources`). Do not call it a "data source" in
+the interface: organisers read that as where a target's population figures come
+from, such as the census.
+
+**data source** is where an assembly's respondents come from: Google Sheets or
+a CSV upload, as chosen on the Data tab. It never means the question behind a
+target. The Targets editor still labels a target's population-figures link
+"Data Source"; that is [still open](#still-open).
 
 **built-in question** is a registration question every assembly has, such as
 email or consent, whose type can't be changed. The code calls these fixed fields
@@ -329,3 +340,9 @@ before sweeping the source.
    reads as a term of art. _Recommend_ lowercase in running text, capitals in
    headings and the brand, but this touches how the Sortition Foundation writes
    about itself, so it wants a decision rather than a sweep.
+6. **The Targets editor's "Data Source" field.** Each target can carry a link to
+   where its population figures come from (`source_url`), labelled "Data
+   Source". It gives "data source" a second meaning beside the Data tab's
+   Google Sheets or CSV choice, and it is the reading that made organisers
+   misunderstand the step now called "Link targets to questions". Candidates are "Population data source" and "Population %
+   source"; the second needs its `%` outside the msgid.

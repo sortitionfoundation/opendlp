@@ -138,7 +138,7 @@ class TestPagesRender:
         assert page.status_code == 200
         assert b"Region" in page.data
         assert dialog.status_code == 200
-        assert b"Set up data source for Region" in dialog.data
+        assert b"Set up the question for Region" in dialog.data
 
 
 class TestExactCopyLifecycle:

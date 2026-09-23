@@ -747,7 +747,7 @@ def _target_sources_redirect(assembly_id: uuid.UUID) -> ResponseReturnValue:
     Over HTMX a plain redirect would load the whole page into the modal
     container, so the browser is told to navigate instead.
     """
-    flash(_("Computed questions are set up on the target data sources step"), "info")
+    flash(_("Computed questions are set up on the 'Link targets to questions' step"), "info")
     target_url = url_for("target_sources.view_sources", assembly_id=assembly_id)
     if _is_htmx():
         response = make_response("", 200)

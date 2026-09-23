@@ -766,8 +766,8 @@ class TestSetupTaskList:
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert "Target data sources" in body
-        assert "1 of 2 targets have a data source" in body
+        assert "Link targets to questions" in body
+        assert "1 of 2 targets have a question" in body
         assert "Registration questions" in body
         assert "1 question on the registration page" in body
         assert f"/assembly/{assembly_id}/target-sources" in body

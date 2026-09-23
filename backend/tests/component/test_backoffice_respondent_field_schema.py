@@ -1652,7 +1652,7 @@ class TestDerivedFieldsLiveOnTargetSources:
         assert response.location.endswith(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
 
         page = logged_in_admin.get(response.location).get_data(as_text=True)
-        assert "Computed questions are set up on the target data sources step" in page
+        assert "Computed questions are set up on the &#39;Link targets to questions&#39; step" in page
 
     def test_editing_a_derived_field_over_htmx_redirects_the_whole_page(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
