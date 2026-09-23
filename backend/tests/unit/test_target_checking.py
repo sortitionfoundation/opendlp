@@ -321,6 +321,37 @@ class TestCheckTargetsDetailed:
         assert not result.annotations
         assert not result.category_annotations
 
+    def test_success_when_the_assembly_has_no_saved_selection_settings(self, uow):
+        """A CSV assembly with no settings row must not fail on the address check."""
+        targets = [
+            TargetCategory(
+                assembly_id=uuid.uuid4(),
+                name="gender",
+                values=[
+                    TargetValue(value="male", min=3, max=7),
+                    TargetValue(value="female", min=3, max=7),
+                ],
+            ),
+        ]
+        respondents = [
+            Respondent(
+                assembly_id=uuid.uuid4(),
+                external_id=f"p{i}",
+                attributes={"gender": "male" if i % 2 == 0 else "female"},
+                selection_status=RespondentStatus.POOL,
+            )
+            for i in range(20)
+        ]
+        uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
+            uow, number_to_select=10, target_categories=targets, respondents=respondents
+        )
+        uow.assemblies.get(assembly_id).selection_settings = None
+
+        result = check_targets_detailed(uow, user_id, assembly_id)
+
+        assert result.success is True
+        assert not result.global_errors
+
     def test_no_targets_returns_global_error(self, uow):
         uow, user_id, assembly_id = _make_uow_with_targets_and_respondents(
             uow, number_to_select=10, target_categories=[], respondents=[]

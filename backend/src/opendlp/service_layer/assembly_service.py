@@ -515,7 +515,7 @@ def get_or_create_selection_settings(
         )
 
     if assembly.selection_settings is None:
-        assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
+        assembly.selection_settings = SelectionSettings.for_assembly(assembly)
         uow.commit()
 
     return cast("SelectionSettings", assembly.selection_settings).create_detached_copy()
@@ -546,7 +546,7 @@ def update_selection_settings(
         )
 
     if assembly.selection_settings is None:
-        assembly.selection_settings = SelectionSettings(assembly_id=assembly_id)
+        assembly.selection_settings = SelectionSettings.for_assembly(assembly)
 
     sel_settings = cast("SelectionSettings", assembly.selection_settings)
     for key, value in settings.items():

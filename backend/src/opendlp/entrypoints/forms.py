@@ -766,7 +766,7 @@ class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     check_same_address = BooleanField(
         _l("Check Same Address"),
-        default=True,
+        default=False,
         description=_l("Prevent selecting multiple respondents from the same address"),
     )
 

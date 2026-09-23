@@ -293,7 +293,7 @@ def check_targets_detailed(
     sel_settings = (
         assembly.selection_settings
         if assembly.selection_settings is not None
-        else SelectionSettings(assembly_id=assembly_id)
+        else SelectionSettings.for_assembly(assembly)
     )
 
     result = DetailedCheckResult(success=True, global_errors=[])
