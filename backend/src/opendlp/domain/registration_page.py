@@ -500,18 +500,18 @@ def _render_checkbox(field: RespondentFieldDefinition, required_attr: str) -> li
     return parts
 
 
-def _date_parts() -> list[tuple[str, str, str]]:
-    """The day, month and year inputs: name suffix, width, and escaped label.
+def _date_parts() -> list[tuple[str, str, str, str]]:
+    """The day, month and year inputs: name suffix, width, escaped label and escaped placeholder.
 
-    The labels are translated when the starter form is generated, into the
-    organiser's language - the same language as the question labels they sit
-    beside, which the organiser typed. The generated HTML is theirs to edit
-    from then on, so it carries the words, not a lookup.
+    The labels and placeholders are translated when the starter form is
+    generated, into the organiser's language - the same language as the
+    question labels they sit beside, which the organiser typed. The generated
+    HTML is theirs to edit from then on, so it carries the words, not a lookup.
     """
     return [
-        ("day", "2", html_lib.escape(_("Day"))),
-        ("month", "2", html_lib.escape(_("Month"))),
-        ("year", "4", html_lib.escape(_("Year"))),
+        ("day", "2", html_lib.escape(_("Day")), html_lib.escape(_("DD"), quote=True)),
+        ("month", "2", html_lib.escape(_("Month")), html_lib.escape(_("MM"), quote=True)),
+        ("year", "4", html_lib.escape(_("Year")), html_lib.escape(_("YYYY"), quote=True)),
     ]
 
 
@@ -528,12 +528,12 @@ def _render_date(field: RespondentFieldDefinition, required_attr: str) -> list[s
     if hint_html:
         parts.append(hint_html)
     parts.append('<div style="display: flex; gap: 0.5em;">')
-    for suffix, size, label in _date_parts():
+    for suffix, size, label, placeholder in _date_parts():
         value_expr = _jinja_call("value", f"{field.field_key}-{suffix}")
         parts.append(
             f"<label>{label} "
             f'<input type="text" inputmode="numeric" name="{key}-{suffix}" size="{size}" '
-            f'value="{value_expr}"{required_attr}></label>'
+            f'placeholder="{placeholder}" value="{value_expr}"{required_attr}></label>'
         )
     parts.append("</div>")
     parts.append(_jinja_call("field_errors", field.field_key))
@@ -630,7 +630,7 @@ def _render_date_govuk(field: RespondentFieldDefinition, required_attr: str) -> 
     if hint_html:
         parts.append(hint_html)
     parts.append(f'<div class="govuk-date-input" id="{key}">')
-    for suffix, width, label in _date_parts():
+    for suffix, width, label, placeholder in _date_parts():
         item_id = f"{key}-{suffix}"
         value_expr = _jinja_call("value", f"{field.field_key}-{suffix}")
         parts.append('<div class="govuk-date-input__item">')
@@ -639,7 +639,7 @@ def _render_date_govuk(field: RespondentFieldDefinition, required_attr: str) -> 
         parts.append(
             f'<input class="govuk-input govuk-date-input__input govuk-input--width-{width}" '
             f'type="text" inputmode="numeric" id="{item_id}" name="{item_id}" '
-            f'value="{value_expr}"{required_attr}>'
+            f'placeholder="{placeholder}" value="{value_expr}"{required_attr}>'
         )
         parts.append("</div>")
         parts.append("</div>")

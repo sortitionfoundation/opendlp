@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-23 13:18+0000\n"
+"POT-Creation-Date: 2026-09-23 13:41+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -92,16 +92,28 @@ msgstr "Eredmények"
 msgid "Day"
 msgstr ""
 
+#: src/opendlp/domain/registration_page.py:512
+msgid "DD"
+msgstr ""
+
 #: src/opendlp/domain/registration_page.py:513
 #: templates/backoffice/assembly_edit_respondent.html:131
 #: templates/backoffice/target_sources/_setup_modal.html:187
 msgid "Month"
 msgstr ""
 
+#: src/opendlp/domain/registration_page.py:513
+msgid "MM"
+msgstr ""
+
 #: src/opendlp/domain/registration_page.py:514
 #: templates/backoffice/assembly_edit_respondent.html:134
 #: templates/backoffice/target_sources/_setup_modal.html:190
 msgid "Year"
+msgstr ""
+
+#: src/opendlp/domain/registration_page.py:514
+msgid "YYYY"
 msgstr ""
 
 #: src/opendlp/domain/respondent_derivation.py:59
