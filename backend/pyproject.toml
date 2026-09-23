@@ -54,7 +54,7 @@ dev = [
   "gettext-auto@git+https://github.com/cartertemm/gettext-auto@0a4c870a263c8e7e7ba909f73f8acb1335d302e2",
   "jsonschema>=4.26.0",
   "mypy>=1.17.1",
-  "playwright>=1.54.0",
+  "playwright>=1.63.0",
   "pytest>=8.4.1",
   "pytest-bdd>=8.1.0",
   "pytest-cov>=6.2.1",
