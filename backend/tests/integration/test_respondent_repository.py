@@ -1,13 +1,17 @@
 """ABOUTME: Integration tests for SQL-specific RespondentRepository behaviour.
 ABOUTME: Tests cascade deletes, JSON serialization, nullable fields, and database constraints."""
 
+import json
+
 import pytest
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from opendlp.adapters.sql_repository import SqlAlchemyRespondentRepository
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondents import Respondent
+from opendlp.domain.value_objects import RespondentStatus
 
 
 @pytest.fixture
@@ -107,3 +111,95 @@ class TestRespondentRepository:
         # This should raise an integrity error
         with pytest.raises(IntegrityError):  # IntegrityError from database
             postgres_session.commit()
+
+
+class TestRewritingOneAttribute:
+    """remove_attribute and rename_attribute rewrite every respondent in one statement."""
+
+    def _add(self, repo, session, assembly, external_id, attributes, **kwargs) -> Respondent:
+        respondent = Respondent(assembly_id=assembly.id, external_id=external_id, attributes=attributes, **kwargs)
+        repo.add(respondent)
+        session.commit()
+        return respondent
+
+    def _stored(self, session: Session, respondent: Respondent) -> str:
+        """The attributes as the database holds them, key order included."""
+        session.expire_all()
+        return session.execute(
+            text("SELECT attributes::text FROM respondents WHERE id = :id"), {"id": respondent.id}
+        ).scalar_one()
+
+    def test_remove_keeps_every_other_key_in_its_place(self, respondent_repo, postgres_session, test_assembly):
+        respondent = self._add(
+            respondent_repo, postgres_session, test_assembly, "R1", {"zeta": "1", "region": "North", "alpha": "2"}
+        )
+
+        changed = respondent_repo.remove_attribute(test_assembly.id, "region")
+        postgres_session.commit()
+
+        assert changed == 1
+        stored = self._stored(postgres_session, respondent)
+        assert list(json.loads(stored)) == ["zeta", "alpha"]
+
+    def test_rename_keeps_the_key_in_its_place(self, respondent_repo, postgres_session, test_assembly):
+        respondent = self._add(
+            respondent_repo, postgres_session, test_assembly, "R1", {"zeta": "1", "region": "North", "alpha": "2"}
+        )
+
+        changed = respondent_repo.rename_attribute(test_assembly.id, "region", "Area")
+        postgres_session.commit()
+
+        assert changed == 1
+        assert list(json.loads(self._stored(postgres_session, respondent)).items()) == [
+            ("zeta", "1"),
+            ("Area", "North"),
+            ("alpha", "2"),
+        ]
+
+    def test_rename_replaces_a_stray_value_under_the_new_key(self, respondent_repo, postgres_session, test_assembly):
+        respondent = self._add(
+            respondent_repo, postgres_session, test_assembly, "R1", {"Area": "stale", "region": "North"}
+        )
+
+        respondent_repo.rename_attribute(test_assembly.id, "region", "Area")
+        postgres_session.commit()
+
+        assert json.loads(self._stored(postgres_session, respondent)) == {"Area": "North"}
+
+    def test_only_touches_live_respondents_of_this_assembly_that_have_the_key(
+        self, respondent_repo, postgres_session, test_assembly
+    ):
+        other = Assembly(title="Other", question="Q?")
+        postgres_session.add(other)
+        postgres_session.commit()
+        without = self._add(respondent_repo, postgres_session, test_assembly, "R1", {"gender": "F"})
+        deleted = self._add(
+            respondent_repo,
+            postgres_session,
+            test_assembly,
+            "R2",
+            {"region": "North"},
+            selection_status=RespondentStatus.DELETED,
+        )
+        elsewhere = self._add(respondent_repo, postgres_session, other, "R3", {"region": "North"})
+
+        changed = respondent_repo.remove_attribute(test_assembly.id, "region")
+        postgres_session.commit()
+
+        assert changed == 0
+        assert json.loads(self._stored(postgres_session, without)) == {"gender": "F"}
+        assert json.loads(self._stored(postgres_session, deleted)) == {"region": "North"}
+        assert json.loads(self._stored(postgres_session, elsewhere)) == {"region": "North"}
+
+    def test_a_loaded_respondent_sees_the_rewrite_and_its_pending_change_survives(
+        self, respondent_repo, postgres_session, test_assembly
+    ):
+        respondent = self._add(respondent_repo, postgres_session, test_assembly, "R1", {"region": "North"})
+        # Loaded and changed in this session, but not yet flushed.
+        respondent.attributes = {"region": "North", "gender": "F"}
+
+        respondent_repo.rename_attribute(test_assembly.id, "region", "Area")
+
+        assert respondent.attributes == {"Area": "North", "gender": "F"}
+        postgres_session.commit()
+        assert json.loads(self._stored(postgres_session, respondent)) == {"Area": "North", "gender": "F"}

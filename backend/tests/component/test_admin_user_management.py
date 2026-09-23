@@ -404,7 +404,7 @@ class TestAdminEnableAccount:
 
         response = logged_in_admin.post(f"/admin/users/{user.id}/enable", follow_redirects=True)
 
-        assert b"could not email the user" in response.data
+        assert b"the email to the user could not be sent" in response.data
 
     def test_a_regular_user_cannot_enable_anyone(self, logged_in_user: FlaskClient, fake_store: FakeStore) -> None:
         user = _seed_user(fake_store, "back@example.com", GlobalRole.USER, is_active=False)

@@ -12,7 +12,7 @@ The replacement selection flow:
 2. System validates the spreadsheet has required tabs including "Already Selected"
 3. System calculates min/max available replacements
 4. User enters number of replacements to select
-5. User clicks "Run Replacements" to execute selection
+5. User clicks "Run Replacement Selection" to execute selection
 6. Progress is shown via polling, results written to spreadsheet
 
 ---
@@ -82,7 +82,7 @@ Share with the service account email (Editor permission for write operations).
 1. Navigate directly to `/backoffice/assembly/<id>/replacement`
 
 **Expected Results:**
-- [ ] Warning alert: "Please use the Data tab to tell us about your data, before running a selection."
+- [ ] Warning alert: "Please use the Data tab to set up your data before running a selection."
 - [ ] "Configure Data Source" button visible
 - [ ] "Back to Selection" button visible
 - [ ] No replacement form visible
@@ -104,7 +104,7 @@ Share with the service account email (Editor permission for write operations).
 - [ ] Log messages appear showing validation progress
 - [ ] Task completes successfully
 - [ ] Page redirects to show form with min/max values
-- [ ] "Available replacements: X to Y participants" message displayed
+- [ ] "Replacements you can select: X to Y" message displayed
 
 ---
 
@@ -151,7 +151,7 @@ Share with the service account email (Editor permission for write operations).
 **Expected Results:**
 - [ ] Input field has min/max attributes matching calculated values
 - [ ] Input field shows default value (min_select)
-- [ ] "Run Replacements" button enabled
+- [ ] "Run Replacement Selection" button enabled
 - [ ] "Re-check Spreadsheet" button available
 
 ---
@@ -162,7 +162,7 @@ Share with the service account email (Editor permission for write operations).
 
 **Steps:**
 1. Enter 2 in "Number of people to select" field
-2. Click "Run Replacements"
+2. Click "Run Replacement Selection"
 
 **Expected Results:**
 - [ ] Browser validation prevents submission (HTML5 min attribute)
@@ -177,7 +177,7 @@ Share with the service account email (Editor permission for write operations).
 
 **Steps:**
 1. Enter 100 in "Number of people to select" field
-2. Click "Run Replacements"
+2. Click "Run Replacement Selection"
 
 **Expected Results:**
 - [ ] Browser validation prevents submission (HTML5 max attribute)
@@ -192,7 +192,7 @@ Share with the service account email (Editor permission for write operations).
 
 **Steps:**
 1. Enter 0 (or -5) in "Number of people to select" field
-2. Click "Run Replacements"
+2. Click "Run Replacement Selection"
 
 **Expected Results:**
 - [ ] Browser validation prevents submission
@@ -201,13 +201,13 @@ Share with the service account email (Editor permission for write operations).
 
 ---
 
-### TC-RS-10: Run Replacements - Happy Path
+### TC-RS-10: Run Replacement Selection - Happy Path
 
 **Precondition:** Check Spreadsheet completed, valid number entered
 
 **Steps:**
 1. Enter valid number (within min/max range)
-2. Click "Run Replacements" button
+2. Click "Run Replacement Selection" button
 3. Observe progress display
 
 **Expected Results:**
@@ -221,7 +221,7 @@ Share with the service account email (Editor permission for write operations).
 
 ---
 
-### TC-RS-11: Run Replacements - Cancel During Execution
+### TC-RS-11: Run Replacement Selection - Cancel During Execution
 
 **Precondition:** Replacement task started and running
 
@@ -288,14 +288,14 @@ Share with the service account email (Editor permission for write operations).
 
 ---
 
-### TC-RS-15: Run Replacements - Write Permission Error
+### TC-RS-15: Run Replacement Selection - Write Permission Error
 
 **Precondition:** Google Sheet shared with view-only access (not edit)
 
 **Steps:**
 1. Complete "Check Spreadsheet" successfully
 2. Enter valid number
-3. Click "Run Replacements"
+3. Click "Run Replacement Selection"
 
 **Expected Results:**
 - [ ] Task starts normally

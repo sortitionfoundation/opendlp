@@ -4,10 +4,23 @@ ABOUTME: Real Flask + PostgreSQL round trip for the export download"""
 import csv
 from io import StringIO
 
+import pytest
+
 from opendlp.domain.value_objects import GSheetExportKind
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.fakes import FakeGSheetExportTarget
+
+
+@pytest.fixture(autouse=True)
+def _service_account_configured(monkeypatch):
+    """The gsheet option is gated on a configured service account."""
+    for target in (
+        "opendlp.entrypoints.blueprints.respondents.get_service_account_email",
+        "opendlp.entrypoints.gsheet_export_flow.get_service_account_email",
+    ):
+        monkeypatch.setattr(target, lambda: "sheets-writer@example.iam.gserviceaccount.com")
+
 
 _CSV = "external_id,email,consent,eligible\nR001,alice@example.com,true,true\nR002,bob@example.com,true,true\n"
 

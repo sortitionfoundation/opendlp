@@ -4,9 +4,9 @@ ABOUTME: Provides concrete database operations using SQLAlchemy sessions"""
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import and_, delete, distinct, func, or_, select, update
+from sqlalchemy import and_, delete, distinct, func, insert, or_, select, text, update
 
 from opendlp.adapters import orm
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
@@ -21,6 +21,7 @@ from opendlp.domain.registration_page import RegistrationPage, RegistrationPageH
 from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
     RespondentFieldDefinition,
+    RespondentFieldMappingEntry,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
@@ -53,6 +54,7 @@ from opendlp.service_layer.repositories import (
     RegistrationPageRepository,
     RespondentEmailSendRecordRepository,
     RespondentFieldDefinitionRepository,
+    RespondentFieldMappingEntryRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
     TargetCategoryRepository,
@@ -69,6 +71,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from sqlalchemy.orm import Session
+    from sqlalchemy.sql.elements import TextClause
 
 
 class SqlAlchemyRepository:
@@ -1314,6 +1317,58 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
                 selection_run_id=selection_run_id,
             )
 
+    # Both rebuild the object from json_each's rows in their original order:
+    # jsonb operators would be shorter, but a jsonb round trip reorders keys,
+    # and selection takes its column order from the first respondent's.
+    _REMOVE_ATTRIBUTE = text(
+        """
+        UPDATE respondents SET attributes = (
+            SELECT coalesce(json_object_agg(e.key, e.value ORDER BY e.ord), '{}'::json)
+            FROM json_each(respondents.attributes) WITH ORDINALITY AS e(key, value, ord)
+            WHERE e.key <> :key
+        )
+        WHERE assembly_id = :assembly_id
+          AND selection_status <> :deleted
+          AND attributes::jsonb ? :key
+        """
+    )
+    _RENAME_ATTRIBUTE = text(
+        """
+        UPDATE respondents SET attributes = (
+            SELECT json_object_agg(
+                CASE WHEN e.key = :old_key THEN :new_key ELSE e.key END, e.value ORDER BY e.ord
+            )
+            FROM json_each(respondents.attributes) WITH ORDINALITY AS e(key, value, ord)
+            WHERE e.key <> :new_key
+        )
+        WHERE assembly_id = :assembly_id
+          AND selection_status <> :deleted
+          AND attributes::jsonb ? :old_key
+        """
+    )
+
+    def _rewrite_attributes(self, statement: TextClause, **params: Any) -> int:
+        """Run a set-based attributes rewrite, keeping loaded respondents in step with it.
+
+        Pending changes are flushed first so the statement sees them, and every
+        loaded respondent's attributes are expired after, so the next read comes
+        from the database rather than a copy the statement has made stale.
+        """
+        self.session.flush()
+        result = self.session.execute(statement, {**params, "deleted": RespondentStatus.DELETED.value})
+        for loaded in list(self.session.identity_map.values()):
+            if isinstance(loaded, Respondent):
+                self.session.expire(loaded, ["attributes"])
+        return result.rowcount  # type: ignore[attr-defined, no-any-return]
+
+    def remove_attribute(self, assembly_id: uuid.UUID, key: str) -> int:
+        return self._rewrite_attributes(self._REMOVE_ATTRIBUTE, assembly_id=assembly_id, key=key)
+
+    def rename_attribute(self, assembly_id: uuid.UUID, old_key: str, new_key: str) -> int:
+        return self._rewrite_attributes(
+            self._RENAME_ATTRIBUTE, assembly_id=assembly_id, old_key=old_key, new_key=new_key
+        )
+
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
         count: int = (
             self.session
@@ -1533,6 +1588,88 @@ class SqlAlchemyRespondentFieldDefinitionRepository(SqlAlchemyRepository, Respon
         result = self.session.execute(
             delete(orm.respondent_field_definitions).where(
                 orm.respondent_field_definitions.c.assembly_id == assembly_id
+            )
+        )
+        return result.rowcount  # type: ignore[attr-defined, no-any-return]
+
+
+# Rows per INSERT statement when loading a mapping table; keeps each statement's
+# parameter list a sane size without making a 220k-row upload thousands of round trips.
+_MAPPING_INSERT_CHUNK = 5_000
+
+
+class SqlAlchemyRespondentFieldMappingEntryRepository(SqlAlchemyRepository, RespondentFieldMappingEntryRepository):
+    """SQLAlchemy implementation of RespondentFieldMappingEntryRepository."""
+
+    def add(self, item: RespondentFieldMappingEntry) -> None:
+        self.session.add(item)
+
+    def bulk_add(self, items: list[RespondentFieldMappingEntry]) -> None:
+        # A lookup table can run to hundreds of thousands of rows, so this is a
+        # Core INSERT of plain dicts rather than add_all: nothing is tracked in
+        # the identity map and Postgres receives one multi-row statement per
+        # chunk. The entries are never read back through the session here.
+        if not items:
+            return
+        rows = [
+            {"id": item.id, "field_id": item.field_id, "lookup_key": item.lookup_key, "output_value": item.output_value}
+            for item in items
+        ]
+        for start in range(0, len(rows), _MAPPING_INSERT_CHUNK):
+            self.session.execute(
+                insert(orm.respondent_field_mapping_entries), rows[start : start + _MAPPING_INSERT_CHUNK]
+            )
+
+    def get(self, item_id: uuid.UUID) -> RespondentFieldMappingEntry | None:
+        return (
+            self.session
+            .query(RespondentFieldMappingEntry)
+            .filter(orm.respondent_field_mapping_entries.c.id == item_id)
+            .first()
+        )
+
+    def all(self) -> Iterable[RespondentFieldMappingEntry]:
+        return self.session.query(RespondentFieldMappingEntry).all()
+
+    def get_many(self, field_id: uuid.UUID, lookup_keys: list[str]) -> list[RespondentFieldMappingEntry]:
+        if not lookup_keys:
+            return []
+        return (
+            self.session
+            .query(RespondentFieldMappingEntry)
+            .filter(
+                and_(
+                    orm.respondent_field_mapping_entries.c.field_id == field_id,
+                    orm.respondent_field_mapping_entries.c.lookup_key.in_(lookup_keys),
+                )
+            )
+            .all()
+        )
+
+    def list_for_field(self, field_id: uuid.UUID, limit: int | None = None) -> list[RespondentFieldMappingEntry]:
+        query = (
+            self.session
+            .query(RespondentFieldMappingEntry)
+            .filter(orm.respondent_field_mapping_entries.c.field_id == field_id)
+            .order_by(orm.respondent_field_mapping_entries.c.lookup_key)
+        )
+        if limit is not None:
+            query = query.limit(limit)
+        return query.all()
+
+    def count_for_field(self, field_id: uuid.UUID) -> int:
+        return (
+            self.session
+            .query(RespondentFieldMappingEntry)
+            .filter(orm.respondent_field_mapping_entries.c.field_id == field_id)
+            .count()
+        )
+
+    def delete_all_for_field(self, field_id: uuid.UUID) -> int:
+        self.session.expire_all()
+        result = self.session.execute(
+            delete(orm.respondent_field_mapping_entries).where(
+                orm.respondent_field_mapping_entries.c.field_id == field_id
             )
         )
         return result.rowcount  # type: ignore[attr-defined, no-any-return]

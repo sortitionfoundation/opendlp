@@ -2,8 +2,10 @@
 ABOUTME: Provides CRUD, CSV import and percentage-driven min/max for assembly targets"""
 
 import uuid
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from enum import Enum
 from typing import Any, cast
 
 from sortition_algorithms.adapters import SelectionData
@@ -31,6 +33,7 @@ from .exceptions import (
     UserNotFoundError,
 )
 from .permissions import can_manage_assembly, can_view_assembly
+from .respondent_field_schema_service import delete_derived_field, rename_derived_field
 from .respondent_service import get_respondent_attribute_columns, get_respondent_attribute_value_counts
 from .unit_of_work import AbstractUnitOfWork
 
@@ -107,6 +110,135 @@ class TargetEditError:
     category_form_id: str = ""
     value_form_id: str = ""
     field: str = ""
+
+
+class LinkAction(Enum):
+    """What is happening to a target category that fields feed."""
+
+    RENAME = "rename"
+    DELETE = "delete"
+
+
+@dataclass(frozen=True)
+class LinkedFieldBlock:
+    """One category whose rename or delete is held up by the fields feeding it.
+
+    ``field_labels`` are questions that will be unlinked and stay behind;
+    ``deleted_labels`` are derived fields that go with the target, which only
+    happens when the target itself is deleted.
+    """
+
+    category_id: uuid.UUID
+    category_name: str
+    action: LinkAction
+    field_labels: list[str]
+    deleted_labels: list[str] = field(default_factory=list)
+
+
+class TargetLinkedError(ServiceLayerError):
+    """Renaming or deleting a target category that fields feed needs an explicit force-unlink.
+
+    A linked field's name and options mirror the category, so a silent rename
+    would break the pairing selection relies on. The route renders ``blocks``
+    as a confirmation naming the affected fields; retrying with
+    ``force_unlink=True`` unlinks them (leaving them behind as free editable
+    fields) and then proceeds.
+    """
+
+    def __init__(self, blocks: list[LinkedFieldBlock]) -> None:
+        super().__init__("target category has linked fields")
+        self.blocks = blocks
+
+
+def fields_linked_to_category(uow: AbstractUnitOfWork, category: TargetCategory) -> list[Any]:
+    """The respondent fields whose ``target_category_id`` names this category.
+
+    The reverse lookup behind the rename/delete guards — the mirror of
+    ``derivations_depending_on`` on the field side.
+    """
+    return [
+        field_def
+        for field_def in uow.respondent_field_definitions.list_by_assembly(category.assembly_id)
+        if field_def.target_category_id == category.id
+    ]
+
+
+def _break_links(uow: AbstractUnitOfWork, category: TargetCategory, new_name: str = "") -> None:
+    """Deal with the fields feeding a category that is being renamed or deleted.
+
+    A question someone answers is unlinked and stays behind, freely editable. A
+    derived field has no life of its own — no screen lists one — so it follows
+    its target: re-keyed when the target is renamed (``new_name``), deleted when
+    the target is. Left behind it would be invisible and unreachable, while
+    still filling a column of the respondent export.
+    """
+    now = datetime.now(UTC)
+    for field_def in fields_linked_to_category(uow, category):
+        if field_def.is_derived:
+            if new_name:
+                rename_derived_field(uow, category.assembly_id, field_def, new_name)
+            else:
+                delete_derived_field(uow, category.assembly_id, field_def)
+            continue
+        field_def.target_category_id = None
+        field_def.updated_at = now
+
+
+def release_links_before_deleting_all(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, surviving_names: Collection[str] = ()
+) -> dict[str, list[Any]]:
+    """Deal with every linked field of an assembly whose targets are all about to be deleted.
+
+    Deleting every category in one statement goes round the per-category guards,
+    and the database would answer by nulling each link - leaving a derived field
+    with no target, which no screen can reach. So the links are broken here
+    first, exactly as deleting each category would: questions are unlinked and
+    stay, derived fields go with their target.
+
+    ``surviving_names`` are the categories about to be recreated under the same
+    name, as a CSV re-import does. Their fields are left alone and returned by
+    category name, for ``relink_fields`` to point at the new category - a
+    re-import of the same targets should not throw away how they were set up.
+    """
+    held: dict[str, list[Any]] = {}
+    for category in uow.target_categories.get_by_assembly_id(assembly_id):
+        if category.name in surviving_names:
+            linked = fields_linked_to_category(uow, category)
+            if linked:
+                held[category.name] = linked
+        else:
+            _break_links(uow, category)
+    return held
+
+
+def relink_fields(held: dict[str, list[Any]], category: TargetCategory) -> None:
+    """Point the fields held back for a recreated category at its new id."""
+    now = datetime.now(UTC)
+    for field_def in held.get(category.name, []):
+        field_def.target_category_id = category.id
+        field_def.updated_at = now
+
+
+def _linked_block(category: TargetCategory, action: LinkAction, linked: list[Any]) -> LinkedFieldBlock:
+    return LinkedFieldBlock(
+        category_id=category.id,
+        category_name=category.name,
+        action=action,
+        field_labels=[field_def.label for field_def in linked if not field_def.is_derived],
+        deleted_labels=[field_def.label for field_def in linked if field_def.is_derived],
+    )
+
+
+def _needs_confirmation(action: LinkAction, linked: list[Any]) -> bool:
+    """Whether this rename or delete has a consequence worth stopping for.
+
+    A rename carries its derived fields along, so only the questions that would
+    be unlinked are worth asking about; a delete takes the derived fields with
+    it, which always is.
+    """
+    if action == LinkAction.DELETE:
+        return bool(linked)
+    return any(not field_def.is_derived for field_def in linked)
 
 
 class TargetsNotSaved(ServiceLayerError):
@@ -257,11 +389,16 @@ def update_target_category(
     name: str,
     comment: str = "",
     source_url: str = "",
+    force_unlink: bool = False,
 ) -> TargetCategory:
     """Update a target category's name, comment and source URL.
 
     An invalid `source_url` raises ValueError from the domain; the route turns
     that into a field error rather than a 500.
+
+    Renaming a category that fields feed raises :class:`TargetLinkedError`
+    unless ``force_unlink`` is passed, in which case the fields are unlinked
+    first and the rename proceeds.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -283,6 +420,13 @@ def update_target_category(
     if not category or category.assembly_id != assembly_id:
         raise NotFoundError(f"Target category {category_id} not found")
 
+    if name.strip() != category.name:
+        linked = fields_linked_to_category(uow, category)
+        if _needs_confirmation(LinkAction.RENAME, linked) and not force_unlink:
+            raise TargetLinkedError([_linked_block(category, LinkAction.RENAME, linked)])
+        if linked:
+            _break_links(uow, category, new_name=name.strip())
+
     category.name = name.strip()
     category.comment = validate_comment(comment)
     category.source_url = validate_source_url(source_url)
@@ -296,8 +440,13 @@ def delete_target_category(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     category_id: uuid.UUID,
+    force_unlink: bool = False,
 ) -> None:
     """Delete a target category.
+
+    Deleting a category that fields feed raises :class:`TargetLinkedError`
+    unless ``force_unlink`` is passed, in which case the fields are unlinked
+    first (they stay behind as free editable fields) and the delete proceeds.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -318,6 +467,12 @@ def delete_target_category(
     category = cast("TargetCategory | None", uow.target_categories.get(category_id))
     if not category or category.assembly_id != assembly_id:
         raise NotFoundError(f"Target category {category_id} not found")
+
+    linked = fields_linked_to_category(uow, category)
+    if linked and not force_unlink:
+        raise TargetLinkedError([_linked_block(category, LinkAction.DELETE, linked)])
+    if linked:
+        _break_links(uow, category)
 
     uow.target_categories.delete(category)
 
@@ -547,10 +702,13 @@ def delete_targets_for_assembly(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
+    force_unlink: bool = False,
 ) -> int:
     """Delete all target categories for an assembly.
 
-    Returns the number of categories deleted.
+    Returns the number of categories deleted. When any category has fields
+    feeding it, raises :class:`TargetLinkedError` naming them all, unless
+    ``force_unlink`` is passed - the same confirmation deleting one category asks for.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -568,6 +726,15 @@ def delete_targets_for_assembly(
             required_role="assembly-manager or admin",
         )
 
+    if not force_unlink:
+        blocks = [
+            _linked_block(category, LinkAction.DELETE, linked)
+            for category in uow.target_categories.get_by_assembly_id(assembly_id)
+            if (linked := fields_linked_to_category(uow, category))
+        ]
+        if blocks:
+            raise TargetLinkedError(blocks)
+    release_links_before_deleting_all(uow, assembly_id)
     return uow.target_categories.delete_all_for_assembly(assembly_id)
 
 
@@ -644,6 +811,7 @@ def save_all_targets(
     user_id: uuid.UUID,
     assembly_id: uuid.UUID,
     edits: list[TargetCategoryEdit],
+    force_unlink: bool = False,
 ) -> list[TargetCategory]:
     """Apply edits to many categories and values in one operation.
 
@@ -661,11 +829,17 @@ def save_all_targets(
     respondent column: the user is looking at the form where they would add them,
     and rows appearing under a name they had just typed would be a surprise.
 
+    Renaming or deleting a category that fields feed raises
+    :class:`TargetLinkedError` (listing every affected category at once)
+    unless ``force_unlink`` is passed, in which case those fields are
+    unlinked first and the save proceeds.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     assembly = _load_user_and_assembly(uow, user_id, assembly_id, "save targets")
     number_to_select = assembly.number_to_select
     naming = _CategoryNaming(uow, assembly_id, edits)
+    _guard_linked_categories(uow, assembly_id, edits, force_unlink)
 
     saved = []
     errors: list[TargetEditError] = []
@@ -683,6 +857,42 @@ def save_all_targets(
     if errors:
         raise TargetsNotSaved(errors)
     return saved
+
+
+def _guard_linked_categories(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    edits: list[TargetCategoryEdit],
+    force_unlink: bool,
+) -> None:
+    """Hold up (or force through) renames and deletes of categories with linked fields.
+
+    Collects every affected category before raising, so one confirmation can
+    cover the whole submission instead of one round trip per category.
+    """
+    blocks: list[LinkedFieldBlock] = []
+    # Each category paired with the name it is taking, or "" when it is going.
+    to_break: list[tuple[TargetCategory, str]] = []
+    for category_edit in edits:
+        if category_edit.category_id is None:
+            continue
+        category = _get_category(uow, assembly_id, category_edit.category_id)
+        if category_edit.deleted:
+            action = LinkAction.DELETE
+        elif category_edit.name.strip() != category.name:
+            action = LinkAction.RENAME
+        else:
+            continue
+        linked = fields_linked_to_category(uow, category)
+        if not linked:
+            continue
+        if _needs_confirmation(action, linked):
+            blocks.append(_linked_block(category, action, linked))
+        to_break.append((category, "" if action == LinkAction.DELETE else category_edit.name.strip()))
+    if blocks and not force_unlink:
+        raise TargetLinkedError(blocks)
+    for category, new_name in to_break:
+        _break_links(uow, category, new_name=new_name)
 
 
 def _save_one_category(
@@ -837,7 +1047,7 @@ def _duplicate_value_errors(category_edit: TargetCategoryEdit) -> list[TargetEdi
             continue
         errors.extend(
             TargetEditError(
-                _("Two values in this category are both called '%(name)s'", name=name),
+                _("Two values in this target are both called '%(name)s'", name=name),
                 category_edit.form_id,
                 value_edit.form_id,
                 "value",

@@ -9,6 +9,7 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
+    DerivationType,
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
@@ -70,6 +71,22 @@ class TestSpecEnvelope:
             "title": "Test Assembly",
             "number_to_select": 40,
         }
+
+    def test_spec_version_is_5(self):
+        """feeds_target on the field payload bumped the spec to version 5."""
+        assert SPEC_VERSION == 5
+
+    def test_field_payload_carries_help_text(self):
+        """A field's help_text is serialised; empty string when unset."""
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            _add_field(uow, assembly, "gender", help_text="As you describe yourself")
+            _add_field(uow, assembly, "postcode")
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        assert _field_by_key(spec, "gender")["help_text"] == "As you describe yourself"
+        assert _field_by_key(spec, "postcode")["help_text"] == ""
 
     def test_empty_schema_yields_no_fields_and_just_the_id_column(self):
         with FakeUnitOfWork() as uow:
@@ -133,7 +150,8 @@ class TestCsvColumns:
                 sort_order=20,
                 is_derived=True,
                 derived_from=["postcode"],
-                derivation_kind="postcode_lookup",
+                derivation_type=DerivationType.LARGE_MAPPING,
+                derivation_config={"fallback": "UNKNOWN"},
             )
 
             spec = build_field_spec(uow, user.id, assembly.id)
@@ -142,7 +160,8 @@ class TestCsvColumns:
         region = _field_by_key(spec, "region")
         assert region["is_derived"] is True
         assert region["derived_from"] == ["postcode"]
-        assert region["derivation_kind"] == "postcode_lookup"
+        assert region["derivation_type"] == "large_mapping"
+        assert region["derivation_config"] == {"fallback": "UNKNOWN"}
         # A derived field is never collected, so it is never on the form either.
         assert region["on_registration_page"] == FieldOnRegistrationPage.NO.value
 
@@ -362,6 +381,32 @@ class TestTargetJoin:
         category = spec["unmatched_target_categories"][0]
         assert category["comment"] == ""
         assert category["source_url"] == ""
+
+    def test_a_linked_field_reports_the_category_it_feeds(self):
+        """feeds_target carries the linked category's name; unlinked fields report null."""
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            category = _add_category(uow, assembly, "gender", ["Male", "Female"])
+            _add_field(uow, assembly, "gender", target_category_id=category.id)
+            _add_field(uow, assembly, "postcode", group=RespondentFieldGroup.ADDRESS)
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        assert _field_by_key(spec, "gender")["feeds_target"] == "gender"
+        assert _field_by_key(spec, "postcode")["feeds_target"] is None
+
+    def test_a_name_matched_but_unlinked_field_has_null_feeds_target(self):
+        """The legacy name-match still drives target_values, but feeds_target needs the explicit link."""
+        with FakeUnitOfWork() as uow:
+            user, assembly = _seed(uow)
+            _add_category(uow, assembly, "gender", ["Male", "Female"])
+            _add_field(uow, assembly, "gender")
+
+            spec = build_field_spec(uow, user.id, assembly.id)
+
+        gender = _field_by_key(spec, "gender")
+        assert gender["target_values"] is not None
+        assert gender["feeds_target"] is None
 
     def test_the_join_is_exact_because_selection_matches_exactly(self):
         """``Age Bracket`` and ``age_bracket`` normalise alike but select nothing.

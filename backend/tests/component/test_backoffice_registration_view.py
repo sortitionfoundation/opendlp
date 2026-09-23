@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the backoffice registration view's read-only / edit-mode toggle
 # ABOUTME: Drives the real Flask route + services over a FakeUnitOfWork via a logged-in client
 
+import re
 import uuid
 from unittest.mock import patch
 
@@ -12,6 +13,13 @@ from opendlp.domain.registration_page import (
     RegistrationPageNotReady,
     RegistrationPageStatus,
 )
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
+from opendlp.domain.targets import TargetCategory, TargetValue
 from tests.fakes import FakeUnitOfWork
 
 
@@ -506,6 +514,23 @@ class TestRegistrationListView:
         assert response.status_code == 200
         assert f"/backoffice/assembly/{assembly_id}/registration/create" in response.get_data(as_text=True)
 
+    def test_empty_assembly_shows_the_illustrated_empty_state(self, logged_in_admin, fake_store, assembly_id):
+        empty_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
+        populated_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        illustration = "/static/img/illustrations/no-registration-page.svg"
+        assert illustration in empty_body
+        assert "No registration page created yet" in empty_body
+        assert illustration not in populated_body
+        assert "No registration page created yet" not in populated_body
+
+    def test_empty_state_illustration_is_served(self, logged_in_admin):
+        response = logged_in_admin.get("/static/img/illustrations/no-registration-page.svg")
+
+        assert response.status_code == 200
+        assert response.mimetype == "image/svg+xml"
+
     def test_close_action_offered_only_for_published_pages(self, logged_in_admin, fake_store, assembly_id):
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
@@ -702,3 +727,103 @@ class TestEditorNameAndSlugEditing:
         assert 'name="short_url_slug"' in edit_body
         # The heading shows the page name in read-only mode
         assert "English" in read_body
+
+
+class TestSetupTaskList:
+    """The registration landing prepends the set-up task list (sources, fields, pages)."""
+
+    def test_task_list_summarises_sources_and_fields(
+        self, logged_in_admin, fake_store, assembly_id, admin_user, existing_assembly
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            category = TargetCategory(
+                assembly_id=assembly_id,
+                name="Gender",
+                values=[TargetValue(value="Male", min=1, max=5)],
+            )
+            uow.target_categories.add(category)
+            uow.target_categories.add(
+                TargetCategory(
+                    assembly_id=assembly_id,
+                    name="Region",
+                    values=[TargetValue(value="North", min=1, max=5)],
+                )
+            )
+            uow.respondent_field_definitions.add(
+                RespondentFieldDefinition(
+                    assembly_id=assembly_id,
+                    field_key="Gender",
+                    label="Gender",
+                    group=RespondentFieldGroup.ABOUT_YOU,
+                    sort_order=10,
+                    field_type=FieldType.CHOICE_RADIO,
+                    options=[ChoiceOption(value="Male")],
+                    target_category_id=category.id,
+                )
+            )
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "Target data sources" in body
+        assert "1 of 2 targets have a data source" in body
+        assert "Registration questions" in body
+        assert "1 question on the registration page" in body
+        assert f"/assembly/{assembly_id}/target-sources" in body
+        assert f"/assembly/{assembly_id}/respondent-schema" in body
+
+    def test_each_step_is_one_link_with_a_numbered_circle(self, logged_in_admin, assembly_id):
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        steps = re.findall(r'<a class="setup-step"\s+href="([^"]*)">(.*?)</a>', body, re.DOTALL)
+        assert [href for href, _ in steps] == [
+            f"/backoffice/assembly/{assembly_id}/target-sources",
+            f"/backoffice/assembly/{assembly_id}/respondent-schema",
+        ]
+        for index, (_, inner) in enumerate(steps, start=1):
+            assert re.search(rf'<span class="stepper-number" aria-hidden="true">\s*{index}\s*</span>', inner)
+
+    def test_the_page_authoring_step_is_not_listed(self, logged_in_admin, assembly_id):
+        body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
+
+        assert "Registration pages" not in body
+        assert "Author the page HTML below" not in body
+
+    def test_no_targets_yet_points_at_the_targets_tab(self, logged_in_admin, assembly_id):
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+        body = response.get_data(as_text=True)
+
+        assert "No targets yet" in body
+
+
+class TestFieldsChangedWarning:
+    """The form editor warns when the field schema changed after the HTML was last saved."""
+
+    def _seed_field(self, fake_store, assembly_id):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.respondent_field_definitions.add(
+                RespondentFieldDefinition(
+                    assembly_id=assembly_id,
+                    field_key="gender",
+                    label="Gender",
+                    group=RespondentFieldGroup.ABOUT_YOU,
+                    sort_order=10,
+                )
+            )
+
+    def test_warns_when_a_field_postdates_the_saved_html(self, logged_in_admin, fake_store, assembly_id):
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)
+        self._seed_field(fake_store, assembly_id)  # created after the page HTML
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
+
+        assert b"registration questions have changed" in response.data
+
+    def test_quiet_when_the_html_is_newer_than_every_field(self, logged_in_admin, fake_store, assembly_id):
+        self._seed_field(fake_store, assembly_id)
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST)  # HTML saved after the field
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration/my-slug")
+
+        assert b"registration questions have changed" not in response.data

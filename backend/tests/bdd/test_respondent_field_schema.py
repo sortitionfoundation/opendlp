@@ -3,7 +3,7 @@ ABOUTME: Exercises the full UI stack via Playwright for the happy paths covered 
 
 import uuid
 
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
@@ -98,15 +98,86 @@ def open_schema_editor(admin_logged_in_page: Page, title: str) -> None:
 def move_field_up(admin_logged_in_page: Page, field_key: str) -> None:
     row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
     expect(row).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    # Each row has two hidden-input move forms; the "up" one is the first.
-    move_button = row.locator("button", has_text="↑").first
-    move_button.click()
+    # Moving lives in the row's "more actions" menu.
+    row.get_by_role("button", name="More actions for").click()
+    row.get_by_role("menuitem", name="Move up").click()
     admin_logged_in_page.wait_for_load_state("networkidle")
+
+
+def _field_dialog(page: Page) -> Locator:
+    """The field modal - scoped to its container, as the step itself is a dialog too."""
+    return page.locator("#field-modal-container").get_by_role("dialog")
+
+
+@when("I open the add-field modal")
+def open_add_field_modal(admin_logged_in_page: Page) -> None:
+    # Every section has its own add button; use the catch-all section's.
+    admin_logged_in_page.get_by_role("button", name="Add a question to Other").click()
+    expect(_field_dialog(admin_logged_in_page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when(parsers.parse('I choose "{item}" from the "{field_key}" row menu and confirm'))
+def choose_row_menu_item_and_confirm(admin_logged_in_page: Page, item: str, field_key: str) -> None:
+    page = admin_logged_in_page
+    row = page.locator(f"tr:has(code:text-is('{field_key}'))")
+    row.get_by_role("button", name="More actions for").click()
+    page.once("dialog", lambda dialog: dialog.accept())
+    with page.expect_navigation():
+        row.get_by_role("menuitem", name=item).click()
+    page.wait_for_load_state("networkidle")
+
+
+@when(parsers.parse('I click the "{field_key}" row'))
+def click_field_row(admin_logged_in_page: Page, field_key: str) -> None:
+    """Click the row in its question type column - nowhere near its buttons - to exercise the whole-row link.
+
+    The click targets the row, not the cell: the stretched edit link covers the
+    cells, and Playwright refuses to click an element something else covers.
+    """
+    row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
+    row_box = row.bounding_box()
+    type_cell_box = row.locator("td").nth(1).bounding_box()
+    assert row_box is not None and type_cell_box is not None
+    row.click(position={"x": type_cell_box["x"] - row_box["x"] + 10, "y": row_box["height"] / 2})
+
+
+@when(parsers.parse('I save a new choice field labelled "{label}" with options "{first}" and "{second}"'))
+def save_choice_field_via_modal(admin_logged_in_page: Page, label: str, first: str, second: str) -> None:
+    """Fill the modal: label, radio choice type (HTMX re-render), two option rows, save."""
+    page = admin_logged_in_page
+    page.fill('input[name="label"]', label)
+    page.select_option('select[name="question_type"]', "choice_radio")
+    # The type change re-renders the form fragment; the options editor appears.
+    first_option = page.locator('input[name="option_value"]').first
+    expect(first_option).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # The re-render preserved the label; fill the first option, add a second row.
+    first_option.fill(first)
+    page.get_by_role("button", name="Add another option").click()
+    second_option = page.locator('input[name="option_value"]').nth(1)
+    expect(second_option).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.locator('input[name="option_value"]').first).to_have_value(first, timeout=PLAYWRIGHT_TIMEOUT)
+    second_option.fill(second)
+    page.get_by_role("button", name="Save").click()
+    # A successful save closes the modal via the out-of-band editor swap.
+    expect(_field_dialog(page)).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 # ---------------------------------------------------------------------------
 # Then steps
 # ---------------------------------------------------------------------------
+
+
+@then(parsers.parse('the edit modal for "{label}" should be open'))
+def edit_modal_open(admin_logged_in_page: Page, label: str) -> None:
+    dialog = _field_dialog(admin_logged_in_page)
+    expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(dialog.locator('input[name="label"]')).to_have_value(label, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the "{field_key}" row should summarise its options as "{summary}"'))
+def row_summarises_options(admin_logged_in_page: Page, field_key: str, summary: str) -> None:
+    row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
+    expect(row).to_contain_text(summary, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('I should see the "{heading}" group heading'))
@@ -122,6 +193,11 @@ def see_collapsible_block(admin_logged_in_page: Page, label: str) -> None:
 @then(parsers.parse('the schema editor should list the "{field_key}" field'))
 def schema_lists_field(admin_logged_in_page: Page, field_key: str) -> None:
     expect(admin_logged_in_page.locator(f"code:text-is('{field_key}')")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then(parsers.parse('the schema editor should not list the "{field_key}" field'))
+def schema_does_not_list_field(admin_logged_in_page: Page, field_key: str) -> None:
+    expect(admin_logged_in_page.locator(f"code:text-is('{field_key}')")).to_have_count(0, timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @then(parsers.parse('the "{earlier_key}" field should appear before the "{later_key}" field'))

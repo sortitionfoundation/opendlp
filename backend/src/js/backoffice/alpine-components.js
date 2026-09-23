@@ -1,12 +1,15 @@
 // ABOUTME: Entry point registering the Alpine components, magics and directives for the backoffice
 // ABOUTME: Registration and wiring only - the behaviour lives under components/ and init/
 
+import { ageBracketPreview } from "../components/age-bracket-preview.js";
 import { autocomplete } from "../components/autocomplete.js";
 import { autoDismissAlert } from "../components/auto-dismiss-alert.js";
 import { bulkTargetsCategory } from "../components/bulk-targets-category.js";
 import { bulkTargetsValueRow } from "../components/bulk-targets-value-row.js";
+import { dialogLeaveGuard } from "../components/dialog-leave-guard.js";
 import { modal } from "../components/modal.js";
 import { registrationPageRow } from "../components/registration-page-row.js";
+import { menuButton } from "../components/menu-button.js";
 import {
   buttonLoadingDemo,
   progressModalDemo,
@@ -25,14 +28,17 @@ document.addEventListener("alpine:init", function () {
   registerFocusMagic();
   registerFormConfirm();
 
+  Alpine.data("ageBracketPreview", ageBracketPreview);
   Alpine.data("autocomplete", autocomplete);
   Alpine.data("autoDismissAlert", autoDismissAlert);
   Alpine.data("bulkTargetsCategory", bulkTargetsCategory);
   Alpine.data("bulkTargetsValueRow", bulkTargetsValueRow);
   Alpine.data("buttonLoadingDemo", buttonLoadingDemo);
+  Alpine.data("dialogLeaveGuard", dialogLeaveGuard);
   Alpine.data("modal", modal);
   Alpine.data("progressModalDemo", progressModalDemo);
   Alpine.data("registrationPageRow", registrationPageRow);
+  Alpine.data("menuButton", menuButton);
   Alpine.data("showcaseNav", showcaseNav);
   Alpine.data("tabsKeyboard", tabsKeyboard);
   Alpine.data("targetsPage", targetsPage);

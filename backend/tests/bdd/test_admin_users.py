@@ -24,7 +24,7 @@ def _(page: Page):
     invite_links = page.get_by_text("Manage Invites")
     invite_links.last.click()
     page.get_by_text("Create New Invite").click()
-    page.get_by_label("Admin - Full system access including user management").check()
+    page.get_by_label("Admin — Full system access including user management").check()
     page.click('button[type="submit"]')
 
 
@@ -65,7 +65,7 @@ def _(admin_logged_in_page: Page, assembly: Assembly, normal_user: User):
     # Click on the matching user result
     admin_logged_in_page.get_by_role("button", name=re.compile(normal_user.email)).first.click()
     # Select the default role (Confirmation Caller)
-    admin_logged_in_page.get_by_label("Confirmation Caller - Can call confirmations for selected participants").check()
+    admin_logged_in_page.get_by_label("Confirmation Caller — Can call confirmations for selected participants").check()
     # Submit the form
     admin_logged_in_page.get_by_role("button", name="Add User to Assembly").click()
     # Wait for the success message

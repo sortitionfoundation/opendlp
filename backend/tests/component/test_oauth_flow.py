@@ -150,7 +150,7 @@ class TestOAuthRegistrationForms:
         assert response.status_code == 200
         assert b"Create an Account with Google" in response.data
         assert b"Invite Code" in response.data
-        assert b"invitation code to create an account" in response.data
+        assert b"invite code to create an account" in response.data
 
     def test_register_microsoft_requires_invite_code(self, client: FlaskClient):
         """Microsoft OAuth registration form requires invite code."""
@@ -158,7 +158,7 @@ class TestOAuthRegistrationForms:
         assert response.status_code == 200
         assert b"Create an Account with Microsoft" in response.data
         assert b"Invite Code" in response.data
-        assert b"invitation code to create an account" in response.data
+        assert b"invite code to create an account" in response.data
 
     def test_register_google_with_invalid_invite_fails(self, client: FlaskClient):
         """Invalid invite re-renders the form without reaching OAuth."""

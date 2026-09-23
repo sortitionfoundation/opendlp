@@ -1,6 +1,6 @@
-Feature: Backoffice Assembly Google Sheet Configuration
+Feature: Backoffice Assembly Google Sheets Configuration
   As an administrator
-  I want to configure Google Spreadsheet data sources for assemblies
+  I want to configure Google Sheets data sources for assemblies
   So that I can import targets and people data for selection.
 
   Scenario: User can navigate to data tab from assembly details
@@ -18,12 +18,12 @@ Feature: Backoffice Assembly Google Sheet Configuration
     Then I should see the data source selector
     And the data source selector should be enabled
 
-  Scenario: User can select Google Spreadsheet data source
+  Scenario: User can select Google Sheets data source
     Given I am logged in as an admin user
     And there is an assembly called "Data Test Assembly"
     When I visit the assembly data page for "Data Test Assembly"
-    And I select "Google Spreadsheet" from the data source selector
-    Then I should see "Google Spreadsheet Configuration"
+    And I select "Google Sheets" from the data source selector
+    Then I should see "Google Sheets Configuration"
     And I should see the gsheet URL input field
 
   Scenario: User can create new gsheet configuration
@@ -101,7 +101,7 @@ Feature: Backoffice Assembly Google Sheet Configuration
     And there is an assembly called "GSheet Delete Assembly"
     And the assembly "GSheet Delete Assembly" has a gsheet configuration
     When I visit the assembly data page for "GSheet Delete Assembly" with source "gsheet"
-    And I click the "Delete" button and confirm
+    And I click the "Remove" button and confirm
     Then I should see "removed successfully"
     And the data source selector should be enabled
 
@@ -110,6 +110,6 @@ Feature: Backoffice Assembly Google Sheet Configuration
     And there is an assembly called "GSheet Unlock Assembly"
     And the assembly "GSheet Unlock Assembly" has a gsheet configuration
     When I visit the assembly data page for "GSheet Unlock Assembly" with source "gsheet"
-    And I click the "Delete" button and confirm
+    And I click the "Remove" button and confirm
     Then the data source selector should be enabled
     And I should see "Select Data Source"

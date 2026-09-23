@@ -38,13 +38,11 @@ class TestProgressIndicatorMacro:
         assert 'role="progressbar"' not in html
 
     def test_determinate_bar_when_total_is_set(self):
-        html = _render_indicator(
-            ProgressInfo(label="Finding diverse committees (45 of 200 rounds)", current=45, total=200)
-        )
+        html = _render_indicator(ProgressInfo(label="Finding diverse panels (45 of 200 rounds)", current=45, total=200))
         assert "45" in html
         assert "200" in html
         assert 'role="progressbar"' in html
-        assert "Finding diverse committees" in html
+        assert "Finding diverse panels" in html
 
     def test_spinner_shows_label(self):
         html = _render_indicator(

@@ -426,7 +426,7 @@ After testing, clean up:
 1. Navigate to assembly Selection tab
 
 **Expected Results:**
-- [ ] Warning alert displayed: "Please use the Data tab to tell us about your data, before running a selection."
+- [ ] Warning alert displayed: "Please use the Data tab to set up your data before running a selection."
 - [ ] "Configure Data Source" button visible and links to Data tab
 - [ ] "Back to Dashboard" button visible
 - [ ] No selection cards visible (Initial Selection, Replacement, Manage Tabs)
@@ -447,8 +447,8 @@ After testing, clean up:
   - [ ] "Number to select: X" info box showing assembly's number_to_select value
   - [ ] "Check Spreadsheet", "Run Test Selection", "Run Selection" buttons (disabled in Phase 1)
 - [ ] "Replacement Selection" card visible with:
-  - [ ] Description text about replacement participants
-  - [ ] "Check Spreadsheet", "Run Replacements" buttons (disabled in Phase 1)
+  - [ ] Description text about replacements
+  - [ ] "Check Spreadsheet", "Run Replacement Selection" buttons (disabled in Phase 1)
 - [ ] "Manage Generated Tabs" card visible with:
   - [ ] Description text about cleaning up old tabs
   - [ ] "List Old Tabs" button (disabled in Phase 1)

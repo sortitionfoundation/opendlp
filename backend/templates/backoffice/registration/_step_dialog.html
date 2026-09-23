@@ -1,0 +1,42 @@
+{#
+ABOUTME: Takeover dialog shell for a registration set-up step, opened over the registration hub
+ABOUTME: Closing it - X, backdrop click or Escape - is a link back to the hub
+#}
+{% from "backoffice/components/modal.html" import dialog_body, dialog_close_icon, dialog_header %}
+{#
+    Render from a view's page_overlay block, with page_takeover=True so the hub
+    painted in page_content is inert behind it. Every change on a set-up step
+    saves as it is made, so unlike the page editor there is no unsaved work to
+    guard: the backdrop is a plain link home, which is also what
+    dialog-escape.js clicks on Escape. Fragment dialogs a step opens must come
+    after this one in the DOM, so Escape closes them first.
+
+    title_id: id for the heading, referenced by aria-labelledby
+    title: the step's name
+    close_url: the registration hub
+#}
+{% macro step_dialog(title_id, title, close_url) %}
+    <a href="{{ close_url }}"
+       class="dialog-backdrop dialog-backdrop--clickable block"
+       tabindex="-1"
+       aria-hidden="true"></a>
+    <div class="dialog-positioner"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="{{ title_id }}">
+        <div class="dialog-panel dialog-panel--takeover">
+            {# Captured here: inside the call blocks below, `caller` would be the block's own. #}
+            {% set step_content = caller() %}
+            {% call dialog_header(title, title_id=title_id) %}
+                <a href="{{ close_url }}"
+                   class="dialog-close-btn"
+                   aria-label="{{ _('Close and return to registration') }}">
+                    {{ dialog_close_icon() }}
+                </a>
+            {% endcall %}
+            {% call dialog_body() %}
+                {{ step_content }}
+            {% endcall %}
+        </div>
+    </div>
+{% endmacro %}

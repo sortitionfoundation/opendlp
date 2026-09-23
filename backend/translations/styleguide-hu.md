@@ -2,7 +2,8 @@
 
 The tone, vocabulary and formatting conventions for `hu/LC_MESSAGES/messages.po`.
 Read this before translating anything into Hungarian, whether you are a person or
-an agent — the `/translate hu` skill is told to.
+an agent — the `/translate hu` skill is told to. The English conventions it
+translates from are in [`docs/language.md`](../docs/language.md).
 
 ## Status: reviewed
 
@@ -12,7 +13,7 @@ September 2026. The questions put to them, and their reasoning, are in
 each decision here is tagged with the question it came from, like *(A1)*, so you
 can go and read why.
 
-Two things are still open and are listed under [Still open](#still-open) at the
+One thing is still open and is listed under [Still open](#still-open) at the
 foot of this file. Everything else is settled — follow it as written, and if you
 disagree, change this guide and the catalogue together rather than translating
 around it.
@@ -104,6 +105,40 @@ assembly is convened to decide, and Hungarian says that as a topic; *kérdése*
 reads as a query someone asked. No *fő*: the field is not one of several topics.
 The help text goes with it — "a fő téma, amellyel…", not "a fő kérdés". *(F28)*
 
+### Respondent fields
+
+These came in with derived fields, after the review, and no native speaker has
+checked them yet. Use them consistently until someone does.
+
+| English | Hungarian | |
+| --- | --- | --- |
+| derived field | számított mező |  |
+| derivation | számítás módja | |
+| source field | bemeneti mező | |
+| mapping (configuring one) | érték hozzárendelése | |
+| mapping (applying one) | érték cseréje | |
+| mapping file | hozzárendelési fájl | |
+| input / output value | bemeneti / kimeneti érték | |
+| options (of a choice field) | választható értékek | |
+
+**derived field** is *számított*, not *származtatott* — the existing `Derived`
+label has been updated to match, so both now read *Számított*.
+
+**mapping** splits in two, depending on which side of the feature a string is
+talking about. Setting one up — declaring or editing the rule that turns a
+source value into an output value, as in `A large mapping needs its output
+values declared…` or `The mapping file is empty` — is *érték hozzárendelése*
+(*hozzárendelés*), matching **mapping file** (*hozzárendelési fájl*), which is
+also about configuration. Running one — the moment a respondent's value is
+actually replaced by what the rule produces — is *érték cseréje*. Every string
+in the catalogue so far is about configuring a mapping, so *hozzárendelés* is
+what you will mostly reach for; reserve *érték cseréje* for a string that
+describes a value changing on a respondent's row, not the rule that will do
+it. **options** was already settled in the catalogue as *választható értékek*
+("Rögzített mező típusát vagy választható értékeit nem módosíthatod"); it is
+listed here so the derived-field strings do not drift to *opciók* or
+*lehetőségek*.
+
 ### Roles
 
 The global **Organiser** and the per-assembly **Assembly Manager** are different
@@ -131,6 +166,7 @@ roles and must not read as synonyms. *(C14)*
 | URL slug | URL-azonosító | |
 | 2FA / two-factor authentication | kétlépcsős azonosítás | |
 | backup code | tartalék kód | |
+| service account (Google) | szolgáltatásfiók | *(unreviewed)* |
 
 **cancel** as a button — backing out of a dialog or form without doing anything —
 is **Mégse**, the word every Hungarian UI uses for that button. Not
@@ -274,11 +310,12 @@ without checking it against the English.
 1. **Two English strings that are badly worded** — `Not in targets`, and the pair
    `Reset %(count)s respondents to Pool status` / `Reset all respondents to
    Pool`. Fix the English first, then both languages at once. *(F35)*
-2. **The English cannot decide what to call a Google Sheet** — the source says
-   `Google Spreadsheet` 38 times, `Google Sheets` 11, `Google Sheet` 7, plus two
-   lowercase variants, and once manages two of them in a single string: "A
-   Google Sheet URL is required to export to Google Sheets". The Hungarian is
-   settled (see **Interface** above) and is more consistent than its source,
-   which is the wrong way round. Pick one English form and reword the rest —
-   but note that rewording a msgid discards its translation in every language,
-   so this is worth doing as one deliberate pass, not incidentally. *(G36)*
+2. ~~**The English cannot decide what to call a Google Sheet**~~ — settled. The
+   English now says **Google Sheets** for the product and **spreadsheet** for the
+   file, per [`docs/language.md`](../docs/language.md). That is the same split
+   this guide already makes between *Google Táblázat* and a bare *munkalap*, so
+   the Hungarian convention above does not change. The reworded msgids arrived
+   `fuzzy`, carrying their old Hungarian as a suggestion; most of those
+   suggestions still fit, but a handful of the new run-history task labels were
+   matched against unrelated strings, so read each one before clearing it.
+   *(G36)*

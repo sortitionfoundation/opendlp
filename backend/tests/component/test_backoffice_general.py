@@ -113,6 +113,17 @@ class TestBackofficeDashboard:
         response = logged_in_user.get("/backoffice/dashboard")
         assert response.status_code == 200
 
+    def test_english_wording_is_unchanged(self, logged_in_admin: FlaskClient, existing_assembly) -> None:
+        """Wrapping the text for translation leaves the English exactly as it was."""
+        response = logged_in_admin.get("/backoffice/dashboard")
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert re.search(r"<title>\s*Dashboard\s*- OpenDLP</title>", body)
+        assert re.search(r"<h1[^>]*>Dashboard</h1>", body)
+        assert "Welcome back, Test Admin!" in body
+        assert "Created: " in body
+        assert "Starts: " in body
+
 
 class TestBackofficeShowcase:
     """Test backoffice showcase page."""
@@ -257,7 +268,7 @@ class TestBackofficeDataSourceLocking:
         # Selector should be disabled
         assert b"disabled" in response.data
         # Should show gsheet content (auto-selected)
-        assert b"Google Spreadsheet Configuration" in response.data
+        assert b"Google Sheets Configuration" in response.data
         # Should show locked message
         assert b"locked" in response.data.lower()
 
@@ -270,7 +281,7 @@ class TestBackofficeDataSourceLocking:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/data?source=csv")
         assert response.status_code == 200
         # Should show gsheet content, not csv
-        assert b"Google Spreadsheet Configuration" in response.data
+        assert b"Google Sheets Configuration" in response.data
         # Should NOT show csv content
         assert b"Upload a CSV file" not in response.data
 

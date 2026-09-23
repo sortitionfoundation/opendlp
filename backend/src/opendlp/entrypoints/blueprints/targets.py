@@ -24,6 +24,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
 from opendlp.service_layer.exceptions import (
+    FieldDefinitionConflictError,
     InsufficientPermissions,
     InvalidSelection,
     NotFoundError,
@@ -41,6 +42,7 @@ from opendlp.service_layer.target_respondent_helpers import (
 )
 from opendlp.service_layer.target_service import (
     TargetEditError,
+    TargetLinkedError,
     TargetsNotSaved,
     add_target_value,
     create_target_category,
@@ -197,7 +199,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         total_values = sum(len(c.values) for c in categories)
         flash(
             _(
-                "Successfully imported %(cats)s categories with %(vals)s values from %(file)s",
+                "Successfully imported %(cats)s targets with %(vals)s values from %(file)s",
                 cats=len(categories),
                 vals=total_values,
                 file=filename,
@@ -231,7 +233,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
 @targets_bp.route("/assembly/<uuid:assembly_id>/data/delete-targets", methods=["POST"])
 @login_required
 def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
-    """Delete all targets for an assembly."""
+    """Delete all targets for an assembly, asking first when questions are linked to them."""
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -239,13 +241,23 @@ def delete_targets(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 uow=uow,
                 user_id=current_user.id,
                 assembly_id=assembly_id,
+                force_unlink=request.form.get("force_unlink") == "1",
             )
 
-        flash(_("Targets deleted: %(count)d categories removed", count=count), "success")
+        flash(_("Targets deleted: %(count)d", count=count), "success")
         return redirect_preserving_scroll(
             url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv")
         )
 
+    except TargetLinkedError as e:
+        return _render_force_unlink_confirm(
+            assembly_id,
+            request.form,
+            e.blocks,
+            confirm_url=url_for("targets.delete_targets", assembly_id=assembly_id),
+            cancel_url=url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"),
+            deleting_all=True,
+        )
     except InsufficientPermissions as e:
         logger.warning(
             "Insufficient permissions to delete targets",
@@ -323,13 +335,13 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
                     continue
 
         if not created:
-            flash(_("No new categories were created"), "warning")
+            flash(_("No new targets were created"), "warning")
             return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
         if values_added_count > 0:
             flash(
                 _(
-                    "Created %(count)s categories with %(values)s values: %(names)s",
+                    "Created %(count)s targets with %(values)s values: %(names)s",
                     count=len(created),
                     values=values_added_count,
                     names=", ".join(created),
@@ -338,7 +350,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
             )
         else:
             flash(
-                _("Created %(count)s categories: %(names)s", count=len(created), names=", ".join(created)),
+                _("Created %(count)s targets: %(names)s", count=len(created), names=", ".join(created)),
                 "success",
             )
 
@@ -436,6 +448,36 @@ def _render_targets_edit_errors(
     ), 200
 
 
+def _render_force_unlink_confirm(
+    assembly_id: uuid.UUID,
+    form_data: Any,
+    blocks: list[Any],
+    confirm_url: str = "",
+    cancel_url: str = "",
+    deleting_all: bool = False,
+) -> ResponseReturnValue:
+    """Ask before a rename/delete unlinks the fields feeding those targets.
+
+    The whole submission is echoed back as hidden inputs so confirming
+    resubmits exactly what was typed, plus force_unlink=1. It goes back to the
+    save-all route unless ``confirm_url`` says otherwise.
+    """
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+    resubmit_fields = [(key, value) for key in form_data for value in form_data.getlist(key) if key != "csrf_token"]
+    return render_template(
+        "backoffice/targets_force_unlink_confirm.html",
+        assembly=assembly,
+        assembly_id=assembly_id,
+        blocks=blocks,
+        resubmit_fields=resubmit_fields,
+        confirm_url=confirm_url or url_for("targets.save_all", assembly_id=assembly_id),
+        cancel_url=cancel_url or url_for("targets.view_assembly_targets", assembly_id=assembly_id),
+        deleting_all=deleting_all,
+    ), 200
+
+
 @targets_bp.route("/assembly/<uuid:assembly_id>/targets/save-all", methods=["POST"])
 @login_required
 def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
@@ -452,15 +494,27 @@ def save_all(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
         uow = bootstrap.get_flask_uow()
         with uow:
-            save_all_targets(uow, current_user.id, assembly_id, edits)
+            save_all_targets(
+                uow,
+                current_user.id,
+                assembly_id,
+                edits,
+                force_unlink=request.form.get("force_unlink") == "1",
+            )
 
         flash(_("Targets saved"), "success")
         # The detailed check is the whole point of saving: land on the page that
         # runs it, so its annotations arrive without anyone asking for them.
         return redirect(url_for("targets.check_targets", assembly_id=assembly_id))
 
+    except TargetLinkedError as e:
+        return _render_force_unlink_confirm(assembly_id, request.form, e.blocks)
     except TargetsNotSaved as e:
         return _render_targets_edit_errors(assembly_id, request.form, e.errors)
+    except FieldDefinitionConflictError as e:
+        # Renaming a target re-keys its computed question, which can collide with an existing one.
+        flash(e.user_msg(), "error")
+        return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))
     except (ValueError, NotFoundError) as e:
         flash(_("Error: %(error)s", error=str(e)), "error")
         return redirect(url_for("targets.view_assembly_targets", assembly_id=assembly_id))

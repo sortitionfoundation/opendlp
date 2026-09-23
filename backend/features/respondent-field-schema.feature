@@ -26,3 +26,26 @@ Feature: Respondent field schema
     When I open the respondent field schema editor for "Schema Reorder Demo"
     And I move the "last_name" field up
     Then the "last_name" field should appear before the "first_name" field
+
+  Scenario: Organiser opens a question by clicking its row
+    Given there is an assembly with respondents imported from CSV called "Schema Row Click Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Row Click Demo"
+    And I click the "last_name" row
+    Then the edit modal for "Last name" should be open
+
+  Scenario: Organiser removes a question from its row menu
+    Given there is an assembly with respondents imported from CSV called "Schema Remove Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Remove Demo"
+    And I choose "Remove" from the "custom_notes" row menu and confirm
+    Then the schema editor should not list the "custom_notes" field
+
+  Scenario: Organiser adds a choice field through the modal
+    Given there is an assembly with respondents imported from CSV called "Schema Modal Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Modal Demo"
+    And I open the add-field modal
+    And I save a new choice field labelled "Preferred contact" with options "Phone" and "Email"
+    Then the schema editor should list the "preferred_contact" field
+    And the "preferred_contact" row should summarise its options as "Phone, Email"

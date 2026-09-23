@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 # Bumped when the shape changes in a way a consumer has to notice. Consumers are
 # outside this repo, so they cannot be updated in the same commit as the change.
-SPEC_VERSION = 2
+SPEC_VERSION = 5
 
 
 def _target_value_payload(value: TargetValue) -> dict[str, Any]:
@@ -48,12 +48,21 @@ def _target_category_payload(category: TargetCategory) -> dict[str, Any]:
     }
 
 
-def _field_payload(field: RespondentFieldDefinition, category: TargetCategory | None) -> dict[str, Any]:
+def _field_payload(
+    field: RespondentFieldDefinition,
+    category: TargetCategory | None,
+    linked_category: TargetCategory | None,
+) -> dict[str, Any]:
     """Serialise one schema field, with the target values that constrain it.
 
     ``field_type`` is the *effective* type: for a fixed field the stored type is
     unreachable (the domain refuses to change it) and FIXED_FIELD_TYPES wins, so
     reporting the stored one would describe a field the app does not have.
+
+    ``category`` is the name-matched category (drives ``target_values``);
+    ``linked_category`` is the one this field explicitly feeds via its
+    ``target_category_id`` link (drives ``feeds_target``). For a linked field
+    the two coincide; a legacy name-matched field has the former only.
     """
     return {
         "id": str(field.id),
@@ -64,10 +73,13 @@ def _field_payload(field: RespondentFieldDefinition, category: TargetCategory | 
         "is_fixed": field.is_fixed,
         "is_derived": field.is_derived,
         "derived_from": list(field.derived_from) if field.derived_from else None,
-        "derivation_kind": field.derivation_kind,
+        "derivation_type": field.derivation_type.value if field.derivation_type else None,
+        "derivation_config": dict(field.derivation_config) if field.derivation_config else None,
         "field_type": field.effective_field_type.value,
         "options": [option.to_dict() for option in field.options] if field.options else None,
         "on_registration_page": field.on_registration_page.value,
+        "help_text": field.help_text,
+        "feeds_target": linked_category.name if linked_category is not None else None,
         "target_values": [_target_value_payload(v) for v in category.values] if category is not None else None,
     }
 
@@ -97,6 +109,7 @@ def build_field_spec(
     # category that only matched loosely would find no column at selection time
     # either, and reporting it as matched here would hide that.
     categories_by_name = {category.name.lower(): category for category in categories}
+    categories_by_id = {category.id: category for category in categories}
     matched_names: set[str] = set()
 
     id_column = resolve_id_column_header(assembly)
@@ -107,7 +120,8 @@ def build_field_spec(
         category = categories_by_name.get(field.field_key.lower())
         if category is not None:
             matched_names.add(category.name)
-        field_payloads.append(_field_payload(field, category))
+        linked_category = categories_by_id.get(field.target_category_id) if field.target_category_id else None
+        field_payloads.append(_field_payload(field, category, linked_category))
         # Derived fields are computed rather than collected, and the id column is
         # already the first column, so neither is a column to write a value into.
         if not field.is_derived and field.field_key != id_column:

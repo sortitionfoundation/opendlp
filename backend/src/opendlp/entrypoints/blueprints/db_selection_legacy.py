@@ -443,7 +443,7 @@ def reset_respondents_for_selection(assembly_id: uuid.UUID) -> ResponseReturnVal
         uow = bootstrap.get_flask_uow()
         with uow:
             count = reset_selection_status(uow, current_user.id, assembly_id)
-        flash(_("Reset %(count)s respondents to Pool status", count=count), "success")
+        flash(_("Reset %(count)s respondents to the pool", count=count), "success")
         return redirect(url_for("db_selection_legacy.view_db_selection", assembly_id=assembly_id))
     except NotFoundError:
         flash(_("Assembly not found"), "error")

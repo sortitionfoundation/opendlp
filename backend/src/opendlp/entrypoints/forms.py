@@ -15,6 +15,7 @@ from wtforms import (
     IntegerField,
     PasswordField,
     RadioField,
+    SelectField,
     StringField,
     TextAreaField,
 )
@@ -25,15 +26,18 @@ from wtforms.validators import (
     Length,
     NumberRange,
     Optional,
+    StopValidation,
     ValidationError,
 )
 
 from opendlp.bootstrap import get_flask_uow
 from opendlp.domain.selection_settings import OTHER_TEAM
 from opendlp.domain.targets import MAX_COMMENT_LENGTH, MAX_SOURCE_URL_LENGTH, validate_source_url
+from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, SignupSurveyQuestion, SurveyFieldType
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.validators import validate_email as domain_validate_email
 from opendlp.domain.value_objects import AssemblyRole, GlobalRole, assembly_role_options, global_role_options
+from opendlp.feature_flags import has_feature
 from opendlp.translations import gettext as _
 from opendlp.translations import lazy_gettext as _l
 
@@ -137,26 +141,121 @@ class LoginForm(FlaskForm):  # type: ignore[no-any-unimported]
     remember_me = BooleanField(_l("Keep me signed in for 7 days (sets a cookie on this device)"))
 
 
-class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
+class InviteCodeRequiredUnlessOpenSignup:
+    """Require an invite code unless the open_signup feature flag is on.
+
+    Handles the empty field entirely by itself - a required-error when the
+    flag is off, a silent stop when it is on, so the Length check never sees
+    an empty value. Not composable with Optional(): that validator CLEARS the
+    field's accumulated errors before stopping the chain, which would wipe
+    the required-error this one just raised.
+    """
+
+    def __call__(self, form: Any, field: Any) -> None:
+        if field.data:
+            return
+        if not has_feature("open_signup"):
+            raise StopValidation(_("An invite code is required to register."))
+        raise StopValidation()
+
+
+def _validate_invite_code_field(invite_code: StringField) -> None:
+    """Check a submitted invite code exists and is valid.
+
+    Emptiness is InviteCodeRequiredUnlessOpenSignup's business; an empty field
+    never reaches this inline validator (Optional() stops the chain). The check
+    is only skipped if the database cannot be reached, in which case the
+    service layer repeats it and the user sees its message instead.
+    """
+    if not invite_code.data:
+        return
+    invite = None
+    checked = False
+    try:
+        with get_flask_uow() as uow:
+            invite = uow.user_invites.get_by_code(invite_code.data)
+        checked = True
+    except Exception:  # noqa: S110
+        # If we can't check (e.g., database error), allow form to continue
+        # The service layer will handle this case properly
+        pass
+    if checked and (not invite or not invite.is_valid()):
+        raise ValidationError(_("Invalid or expired invite code."))
+
+
+def _make_survey_field(question: SignupSurveyQuestion) -> Any:
+    """Build the WTForms field for one signup survey question.
+
+    Choice fields skip WTForms' own choice validation (an unanswered radio
+    group submits nothing, which it would reject); survey_answers() drops any
+    value that is not a known choice instead.
+    """
+    hint = question.hint
+    if question.field_type == SurveyFieldType.SELECT:
+        choices = [("", _l("Please select")), *question.choices.items()]
+        return SelectField(
+            question.label, choices=choices, validators=[Optional()], validate_choice=False, description=hint
+        )
+    if question.field_type == SurveyFieldType.RADIO:
+        return RadioField(
+            question.label,
+            choices=list(question.choices.items()),
+            validators=[Optional()],
+            validate_choice=False,
+            description=hint,
+        )
+    if question.field_type == SurveyFieldType.TEXTAREA:
+        return TextAreaField(question.label, validators=[Optional(), Length(max=2000)], description=hint)
+    return StringField(question.label, validators=[Optional(), Length(max=255)], description=hint)
+
+
+class SignupSurveyFormMixin:
+    """Optional signup survey fields, generated from SIGNUP_SURVEY_QUESTIONS.
+
+    The fields are added below with setattr, so a question added to the spec
+    appears on every registration form without touching this module.
+    """
+
+    def survey_fields(self) -> list[Any]:
+        """The bound survey fields, in the spec's display order."""
+        return [getattr(self, f"survey_{question.key}") for question in SIGNUP_SURVEY_QUESTIONS]
+
+    def survey_answers(self) -> dict[str, str]:
+        """The submitted answers keyed by question key, empty ones dropped."""
+        answers = {}
+        for question in SIGNUP_SURVEY_QUESTIONS:
+            value = (getattr(self, f"survey_{question.key}").data or "").strip()
+            if question.choices and value not in question.choices:
+                continue
+            if value:
+                answers[question.key] = value
+        return answers
+
+
+for _question in SIGNUP_SURVEY_QUESTIONS:
+    setattr(SignupSurveyFormMixin, f"survey_{_question.key}", _make_survey_field(_question))
+
+
+class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any-unimported]
     """Registration form with invite code, names, email and password."""
 
     invite_code = StringField(
         _l("Invite Code"),
-        validators=[DataRequired(), Length(min=5, max=50)],
-        description=_l("Enter your invitation code to register"),
+        validators=[InviteCodeRequiredUnlessOpenSignup(), Length(min=5, max=50)],
+        description=_l("Enter your invite code to register"),
     )
 
     first_name = StringField(
         _l("First Name"),
         validators=[Length(max=100)],
-        description=_l("Optional - your first name"),
+        description=_l("Optional — your first name"),
         render_kw={"autocomplete": "given-name"},
     )
 
     last_name = StringField(
         _l("Last Name"),
         validators=[Length(max=100)],
-        description=_l("Optional - your last name"),
+        description=_l("Optional — your last name"),
         render_kw={"autocomplete": "family-name"},
     )
 
@@ -183,18 +282,8 @@ class RegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
     )
 
     def validate_invite_code(self, invite_code: StringField) -> None:
-        """Validate that invite code exists and is valid."""
-        if not invite_code.data:
-            return
-        try:
-            with get_flask_uow() as uow:
-                invite = uow.user_invites.get_by_code(invite_code.data)
-                if not invite or not invite.is_valid():
-                    raise ValidationError(_("Invalid or expired invite code."))
-        except Exception:  # noqa: S110
-            # If we can't check (e.g., database error), allow form to continue
-            # The service layer will handle this case properly
-            pass
+        """Validate that invite code is present when needed, and valid when given."""
+        _validate_invite_code_field(invite_code)
 
 
 class PasswordResetRequestForm(FlaskForm):  # type: ignore[no-any-unimported]
@@ -245,14 +334,14 @@ class AssemblyForm(FlaskForm):  # type: ignore[no-any-unimported]
     question = TextAreaField(
         _l("Assembly Question"),
         validators=[Optional(), Length(max=1000)],
-        description=_l("Optional - the key question this assembly will address"),
+        description=_l("Optional — the key question this assembly will address"),
         render_kw={"rows": 3},
     )
 
     first_assembly_date = DateField(
         _l("First Assembly Date"),
         validators=[Optional()],
-        description=_l("Optional - when the first assembly meeting will take place"),
+        description=_l("Optional — when the first assembly meeting will take place"),
     )
 
     number_to_select = IntegerField(
@@ -275,9 +364,9 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Form for configuring Google Spreadsheet settings for an assembly."""
 
     url = StringField(
-        _l("Google Spreadsheet URL"),
+        _l("Google Sheets URL"),
         validators=[DataRequired(), GoogleSpreadsheetURLValidator()],
-        description=_l("Full URL of the Google Spreadsheet containing respondent data"),
+        description=_l("Full URL of the Google Sheets spreadsheet containing respondent data"),
         render_kw={"placeholder": "https://docs.google.com/spreadsheets/d/..."},
     )
 
@@ -309,7 +398,9 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Respondents Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing respondents data in the Google Spreadsheet - for initial Selection"),
+        description=_l(
+            "Name of the tab containing respondents data in the Google Sheets spreadsheet — for initial Selection"
+        ),
         default="Respondents",
     )
 
@@ -317,7 +408,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Targets Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing categories, category values and targets - for initial Selection"),
+        description=_l("Name of the tab containing categories, category values and targets — for initial Selection"),
         default="Categories",
     )
 
@@ -325,7 +416,9 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Respondents Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing respondents data in the Google Spreadsheet - for Replacements"),
+        description=_l(
+            "Name of the tab containing respondents data in the Google Sheets spreadsheet — for Replacements"
+        ),
         default="Remaining",
     )
 
@@ -333,7 +426,7 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
         # Note this name is a duplicate - fieldsets are used to distinguish the duplicates
         _l("Targets Tab Name"),
         validators=[DataRequired(), Length(min=1, max=100)],
-        description=_l("Name of the tab containing categories, category values and targets - for Replacements"),
+        description=_l("Name of the tab containing categories, category values and targets — for Replacements"),
         default="Replacement Categories",
     )
 
@@ -346,13 +439,13 @@ class AssemblyGSheetForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     check_same_address = BooleanField(
         _l("Check Same Address"),
-        description=_l("Enable checking for participants with the same address"),
+        description=_l("Enable checking for respondents with the same address"),
         default=True,
     )
 
     generate_remaining_tab = BooleanField(
         _l("Generate Remaining Tab"),
-        description=_l("Create a tab with remaining participants after selection"),
+        description=_l("Create a tab with the remaining respondents after selection"),
         default=True,
     )
 
@@ -448,14 +541,14 @@ class CreateInviteForm(FlaskForm):  # type: ignore[no-any-unimported]
     email = EmailField(
         _l("Email Address (Optional)"),
         validators=[Optional(), DomainEmailValidator(), EmailDoesNotExistValidator()],
-        description=_l("Optional - if provided, the invite will be emailed to this address"),
+        description=_l("Optional — if provided, the invite will be emailed to this address"),
         render_kw={"autocomplete": "email"},
     )
 
     expires_in_hours = IntegerField(
         _l("Expires In (Hours)"),
         validators=[Optional()],
-        description=_l("Optional - number of hours until the invite expires (default: 168 hours / 7 days)"),
+        description=_l("Optional — number of hours until the invite expires (default: 168 hours / 7 days)"),
         default=168,
     )
 
@@ -539,7 +632,7 @@ class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
     invite_code = StringField(
         _l("Invite Code"),
         validators=[DataRequired(), Length(min=5, max=50)],
-        description=_l("Enter your invitation code to register"),
+        description=_l("Enter your invite code to register"),
     )
 
     accept_data_agreement = BooleanField(
@@ -550,17 +643,7 @@ class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
 
     def validate_invite_code(self, invite_code: StringField) -> None:
         """Validate that invite code exists and is valid."""
-        if not invite_code.data:
-            return
-        try:
-            with get_flask_uow() as uow:
-                invite = uow.user_invites.get_by_code(invite_code.data)
-                if not invite or not invite.is_valid():
-                    raise ValidationError(_("Invalid or expired invite code."))
-        except Exception:  # noqa: S110
-            # If we can't check (e.g., database error), allow form to continue
-            # The service layer will handle this case properly
-            pass
+        _validate_invite_code_field(invite_code)
 
 
 class UploadTargetsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
@@ -572,7 +655,7 @@ class UploadTargetsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]
             FileRequired(message=_l("Please select a CSV file to upload")),
             FileAllowed(["csv"], message=_l("Only CSV files are allowed")),
         ],
-        description=_l("Select a CSV file containing target categories"),
+        description=_l("Select a CSV file containing targets"),
     )
 
 
@@ -597,13 +680,13 @@ class EditTargetCategoryForm(FlaskForm):  # type: ignore[no-any-unimported]
     comment = TextAreaField(
         _l("Notes"),
         validators=[Optional(), Length(max=MAX_COMMENT_LENGTH)],
-        description=_l("Optional - why these targets were chosen"),
+        description=_l("Optional — why these targets were chosen"),
     )
 
     source_url = StringField(
         _l("Data Source"),
         validators=[Optional(), Length(max=MAX_SOURCE_URL_LENGTH), SourceUrlValidator()],
-        description=_l("Optional - a link to where the percentages came from"),
+        description=_l("Optional — a link to where the percentages came from"),
     )
 
 
@@ -620,7 +703,7 @@ class TargetValueForm(FlaskForm):  # type: ignore[no-any-unimported]
         _l("Percentage"),
         validators=[Optional(), NumberRange(min=0, max=100)],
         places=1,
-        description=_l("Optional - min and max are calculated from this"),
+        description=_l("Optional — min and max are calculated from this"),
     )
 
     min_count = IntegerField(
@@ -636,7 +719,7 @@ class TargetValueForm(FlaskForm):  # type: ignore[no-any-unimported]
     comment = TextAreaField(
         _l("Notes"),
         validators=[Optional(), Length(max=MAX_COMMENT_LENGTH)],
-        description=_l("Optional - why min and max were set by hand"),
+        description=_l("Optional — why min and max were set by hand"),
     )
 
 
@@ -684,7 +767,7 @@ class DbSelectionSettingsForm(FlaskForm):  # type: ignore[no-any-unimported]
     check_same_address = BooleanField(
         _l("Check Same Address"),
         default=True,
-        description=_l("Prevent selecting multiple participants from the same address"),
+        description=_l("Prevent selecting multiple respondents from the same address"),
     )
 
     check_same_address_cols_string = StringField(

@@ -43,7 +43,7 @@ class TestProgressInfoProperty:
         info = record.progress_info
         assert "45" in info.label
         assert "200" in info.label
-        assert "Finding diverse committees" in info.label
+        assert "Finding diverse panels" in info.label
         assert info.current == 45
         assert info.total == 200
 

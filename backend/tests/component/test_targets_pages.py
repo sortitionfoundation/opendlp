@@ -8,6 +8,13 @@ import pytest
 
 from opendlp.adapters import database
 from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    DerivationType,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
+)
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.users import UserAssemblyRole
@@ -86,7 +93,7 @@ class TestViewTargetsPage:
     def test_get_targets_page_shows_empty_state(self, logged_in_admin, existing_assembly):
         response = logged_in_admin.get(_targets_url(existing_assembly.id))
         assert response.status_code == 200
-        assert b"No target categories defined yet" in response.data
+        assert b"No targets defined yet" in response.data
 
     def test_get_targets_page_requires_login(self, client, existing_assembly):
         response = client.get(_targets_url(existing_assembly.id))
@@ -176,7 +183,7 @@ class TestAddCategoriesFromColumns:
 
         with logged_in_admin.session_transaction() as session:
             flash_messages = [msg[1] for msg in session.get("_flashes", [])]
-            assert any("Created 1 categories" in msg for msg in flash_messages)
+            assert any("Created 1 targets" in msg for msg in flash_messages)
 
     def test_no_columns_selected_shows_warning(self, logged_in_admin, existing_assembly):
         """Posting with no columns selected shows a warning."""
@@ -1221,3 +1228,254 @@ class TestCategoryOrderControls:
         assert header.index("ml-auto") > last_field, "the controls are not pushed to the right edge"
         for marker in ('aria-label="Move down"', 'aria-label="Move up"', "Delete target"):
             assert header.index(marker) > last_field, marker
+
+
+class TestForceUnlinkConfirmation:
+    """Renaming or deleting a target that fields feed asks first, then force-unlinks on confirm."""
+
+    def _seed_linked(self, fake_store, admin_user, assembly):
+        category = _create_category(fake_store, admin_user, assembly.id, "Gender")
+        category = _add_value(fake_store, admin_user, assembly.id, category.id, "Male", 3, 7)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            field = RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="Gender",
+                label="Gender",
+                group=RespondentFieldGroup.ABOUT_YOU,
+                sort_order=10,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Male")],
+                target_category_id=category.id,
+            )
+            uow.respondent_field_definitions.add(field)
+        return category, field
+
+    def _rename_data(self, category, new_name):
+        prefix = f"cat[{category.id}]"
+        value = category.values[0]
+        return {
+            f"{prefix}[name]": new_name,
+            f"{prefix}[values][{value.value_id}][value]": value.value,
+            f"{prefix}[values][{value.value_id}][min]": str(value.min),
+            f"{prefix}[values][{value.value_id}][max]": str(value.max),
+        }
+
+    def test_rename_shows_the_confirmation_naming_the_field(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, _field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=self._rename_data(category, "Sex"),
+        )
+
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "registration questions linked" in html
+        assert "Renaming the target" in html
+        assert 'name="force_unlink" value="1"' in html
+        # Nothing saved yet.
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Gender"
+
+    def test_confirming_resubmits_with_force_and_unlinks(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        data = self._rename_data(category, "Sex")
+        data["force_unlink"] = "1"
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=data,
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Sex"
+            refreshed = uow.respondent_field_definitions.get(field.id)
+            assert refreshed.target_category_id is None
+
+    def _seed_computed(self, fake_store, admin_user, assembly):
+        """A target fed by a computed field, itself computed from a question."""
+        category = _create_category(fake_store, admin_user, assembly.id, "Region")
+        category = _add_value(fake_store, admin_user, assembly.id, category.id, "North", 3, 7)
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.respondent_field_definitions.add(
+                RespondentFieldDefinition(
+                    assembly_id=assembly.id,
+                    field_key="postcode",
+                    label="Postcode",
+                    group=RespondentFieldGroup.ADDRESS,
+                    sort_order=10,
+                    field_type=FieldType.TEXT,
+                )
+            )
+            derived = RespondentFieldDefinition(
+                assembly_id=assembly.id,
+                field_key="Region",
+                label="Region",
+                group=RespondentFieldGroup.DERIVED,
+                sort_order=20,
+                is_derived=True,
+                derived_from=["postcode"],
+                derivation_type=DerivationType.LARGE_MAPPING,
+                derivation_config={"fallback": "UNKNOWN"},
+                field_type=FieldType.CHOICE_DROPDOWN,
+                options=[ChoiceOption(value="North")],
+                target_category_id=category.id,
+            )
+            uow.respondent_field_definitions.add(derived)
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=assembly.id,
+                    external_id="r1",
+                    attributes={"postcode": "E1 6AN", "Region": "North"},
+                )
+            )
+        return category, derived
+
+    def test_renaming_a_target_carries_its_computed_field_without_asking(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """Selection pairs a target with its data by name, so the key follows the rename."""
+        category, derived = self._seed_computed(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=self._rename_data(category, "Area"),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Area"
+            refreshed = uow.respondent_field_definitions.get(derived.id)
+            assert refreshed.field_key == "Area"
+            assert refreshed.target_category_id == category.id
+            (respondent,) = uow.respondents.get_by_assembly_id(existing_assembly.id)
+            assert respondent.attributes == {"postcode": "E1 6AN", "Area": "North"}
+
+    def test_deleting_a_target_says_the_computed_field_goes_with_it(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, derived = self._seed_computed(fake_store, admin_user, existing_assembly)
+
+        data = {f"cat[{category.id}][deleted]": "1", f"cat[{category.id}][name]": "Region"}
+        html = logged_in_admin.post(_targets_url(existing_assembly.id, "/save-all"), data=data).data.decode()
+
+        assert "also deletes the computed question" in html
+
+        data["force_unlink"] = "1"
+        response = logged_in_admin.post(_targets_url(existing_assembly.id, "/save-all"), data=data)
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondent_field_definitions.get(derived.id) is None
+            (respondent,) = uow.respondents.get_by_assembly_id(existing_assembly.id)
+            assert respondent.attributes == {"postcode": "E1 6AN"}
+
+    def test_a_rename_that_collides_with_another_question_says_so(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The computed field is re-keyed to the target's new name, which another question may hold."""
+        category, derived = self._seed_computed(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=self._rename_data(category, "postcode"),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        with logged_in_admin.session_transaction() as session:
+            messages = [message for _category, message in session.get("_flashes", [])]
+        assert messages == ["A question named 'postcode' already exists — rename or delete it first"]
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Region"
+            assert uow.respondent_field_definitions.get(derived.id).field_key == "Region"
+
+    def test_value_only_edits_save_without_asking(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category, field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            _targets_url(existing_assembly.id, "/save-all"),
+            data=self._rename_data(category, "Gender"),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.respondent_field_definitions.get(field.id).target_category_id == category.id
+
+
+class TestLegacyPagesRefuseLinkedTargets:
+    """The legacy targets page cannot confirm an unlink, so it refuses and says why."""
+
+    def _legacy_url(self, assembly_id, category_id, suffix=""):
+        return f"/assemblies/{assembly_id}/targets/categories/{category_id}{suffix}"
+
+    def _seed_linked(self, fake_store, admin_user, assembly):
+        return TestForceUnlinkConfirmation()._seed_linked(fake_store, admin_user, assembly)
+
+    def _flashes(self, client):
+        with client.session_transaction() as session:
+            return [message for _category, message in session.get("_flashes", [])]
+
+    def test_renaming_a_linked_target_is_refused(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category, field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            self._legacy_url(existing_assembly.id, category.id), data={"name": "Sex"}, follow_redirects=False
+        )
+
+        assert response.status_code == 302
+        assert self._flashes(logged_in_admin) == [
+            "This target is linked to a registration question, so it cannot be renamed here"
+        ]
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id).name == "Gender"
+            assert uow.respondent_field_definitions.get(field.id).target_category_id == category.id
+
+    def test_renaming_a_linked_target_inline_puts_the_refusal_on_the_field(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, _field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            self._legacy_url(existing_assembly.id, category.id), data={"name": "Sex"}, headers={"HX-Request": "true"}
+        )
+
+        assert response.status_code == 422
+        assert "so it cannot be renamed here" in response.get_data(as_text=True)
+
+    def test_deleting_a_linked_target_is_refused(self, logged_in_admin, existing_assembly, admin_user, fake_store):
+        category, field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            self._legacy_url(existing_assembly.id, category.id, "/delete"), follow_redirects=False
+        )
+
+        assert response.status_code == 302
+        assert self._flashes(logged_in_admin) == [
+            "This target is linked to a registration question, so it cannot be deleted here"
+        ]
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id) is not None
+            assert uow.respondent_field_definitions.get(field.id).target_category_id == category.id
+
+    def test_deleting_a_linked_target_inline_reloads_the_page_rather_than_swapping_it_in(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category, _field = self._seed_linked(fake_store, admin_user, existing_assembly)
+
+        response = logged_in_admin.post(
+            self._legacy_url(existing_assembly.id, category.id, "/delete"), headers={"HX-Request": "true"}
+        )
+
+        assert response.status_code == 200
+        assert response.headers["HX-Redirect"] == f"/assemblies/{existing_assembly.id}/targets"
+        with FakeUnitOfWork(store=fake_store) as uow:
+            assert uow.target_categories.get(category.id) is not None

@@ -1,0 +1,29 @@
+{#
+ABOUTME: Tag component - a short coloured label for a status or a warning
+ABOUTME: Colours map onto the semantic background/text token pairs, as status_badge in modal.html does
+#}
+{% macro tag(text, colour="grey") %}
+    {#
+    A short label drawing the eye to a status or a warning. Inline, so it can sit
+    in a sentence or a definition list.
+
+    Args:
+        text: The label.
+        colour: "grey" | "blue" | "green" | "yellow" | "red" (default "grey").
+            Anything else is grey.
+
+    Usage:
+        {{ tag(_("Destructive action"), colour="red") }}
+    #}
+    {% set tag_styles = {
+    "grey": {"bg": "var(--color-subtle-background-panels)", "text": "var(--color-body-text)"},
+    "blue": {"bg": "var(--color-info-background)", "text": "var(--color-info-text)"},
+    "green": {"bg": "var(--color-success-background)", "text": "var(--color-success-text)"},
+    "yellow": {"bg": "var(--color-warning-background)", "text": "var(--color-warning-text)"},
+    "red": {"bg": "var(--color-error-background)", "text": "var(--color-error-text)"}
+    } %}
+    {% set style = tag_styles.get(colour, tag_styles["grey"]) %}
+    <strong class="inline-block text-label-md px-2 py-1 rounded"
+            style="background-color: {{ style.bg }};
+                   color: {{ style.text }}">{{ text }}</strong>
+{% endmacro %}

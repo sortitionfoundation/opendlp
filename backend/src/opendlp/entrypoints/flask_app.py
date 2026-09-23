@@ -16,6 +16,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 import opendlp.logging
 from opendlp import bootstrap, config
+from opendlp.domain.respondent_field_schema import DERIVATION_TYPE_LABELS, ON_REGISTRATION_PAGE_LABELS
 from opendlp.domain.value_objects import assembly_status_labels, global_role_labels
 from opendlp.entrypoints.context_processors import (
     inject_capabilities,
@@ -124,6 +125,8 @@ def register_context_processors(app: Flask) -> None:
     # Same reason: the role tag macro is imported, and needs the labels.
     app.jinja_env.globals["global_role_labels"] = global_role_labels
     app.jinja_env.globals["assembly_status_labels"] = assembly_status_labels
+    app.jinja_env.globals["derivation_type_labels"] = DERIVATION_TYPE_LABELS
+    app.jinja_env.globals["on_registration_page_labels"] = ON_REGISTRATION_PAGE_LABELS
     # A global, not a context processor: it reads the request, and the email
     # templates render without one. See the docstring on html_lang.
     app.jinja_env.globals["html_lang"] = html_lang
@@ -151,6 +154,7 @@ def register_blueprints(app: Flask) -> None:
     from .blueprints.respondent_field_schema import respondent_field_schema_bp  # noqa: PLC0415
     from .blueprints.respondents import respondents_bp  # noqa: PLC0415
     from .blueprints.respondents_legacy import respondents_legacy_bp  # noqa: PLC0415
+    from .blueprints.target_sources import target_sources_bp  # noqa: PLC0415
     from .blueprints.targets import targets_bp  # noqa: PLC0415
     from .blueprints.targets_legacy import targets_legacy_bp  # noqa: PLC0415
     from .blueprints.wellknown import wellknown_bp  # noqa: PLC0415
@@ -173,6 +177,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(targets_bp, url_prefix="/backoffice")
     app.register_blueprint(respondents_bp, url_prefix="/backoffice")
     app.register_blueprint(respondent_field_schema_bp, url_prefix="/backoffice")
+    app.register_blueprint(target_sources_bp, url_prefix="/backoffice")
     app.register_blueprint(targets_legacy_bp)
     app.register_blueprint(respondents_legacy_bp)
     app.register_blueprint(wellknown_bp)

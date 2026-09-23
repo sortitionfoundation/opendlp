@@ -42,7 +42,7 @@ an unmatched one, all in one response.
 
 ```jsonc
 {
-  "spec_version": 2,
+  "spec_version": 5,
   "assembly": {
     "id": "...", "title": "Existing Assembly", "number_to_select": 40
   },
@@ -64,6 +64,18 @@ reason it is there.
 
 Version 2 renamed `description` to `comment` on both a target value and a target
 category, and added `minmax_manual` to a value and `source_url` to a category.
+
+Version 3 replaced the never-populated `derivation_kind` string with
+`derivation_type` (`age_bracket`, `small_mapping`, `large_mapping` or `null`)
+and `derivation_config` (an object of derivation parameters, `null` unless
+`is_derived`), and added `derived` to the `group` values.
+
+Version 4 added `help_text` to each field: the organiser-written hint shown
+beneath the field on the registration form (empty string when none was written).
+
+Version 5 added `feeds_target` to each field: the name of the target category
+the field explicitly feeds (directly for an exact copy of the target's values,
+or via its derivation), `null` when the field is not linked to a target.
 
 ### `csv`
 
@@ -88,14 +100,18 @@ Every field in the schema, in the order the schema page and the CSV export use:
 | ---------------------- | --------------------------------------------------------------------------------------- |
 | `field_key`            | The CSV column header, and the `Respondent.attributes` key                                |
 | `label`                | Organiser-facing display label. Typed by an organiser, so not translated                  |
-| `group`                | One of `eligibility`, `name_and_contact`, `address`, `about_you`, `consent`, `other`      |
+| `group`                | One of `eligibility`, `name_and_contact`, `address`, `about_you`, `consent`, `other`, `derived` |
 | `sort_order`           | Position within the group                                                                 |
 | `is_fixed`             | A reserved top-level `Respondent` field; its type and options cannot be edited            |
 | `is_derived`           | Computed from other fields, never collected — **excluded from `csv.columns`**             |
 | `derived_from`         | Field keys it is computed from; `null` unless `is_derived`                                |
+| `derivation_type`      | `age_bracket`, `small_mapping` or `large_mapping`; `null` unless `is_derived`             |
+| `derivation_config`    | The derivation's parameters (shape depends on `derivation_type`); `null` unless `is_derived` |
 | `field_type`           | See the table below                                                                       |
 | `options`              | Permitted values for a choice field; `null` for every other type                          |
 | `on_registration_page` | `no`, `yes_optional` or `yes_required` — governs the public form, **not** CSV import      |
+| `help_text`            | Organiser-written hint shown beneath the field on the form; empty string when none        |
+| `feeds_target`         | Name of the target category the field explicitly feeds; `null` when not linked            |
 | `target_values`        | Quotas from the matching target category; `null` when none matches                        |
 
 `field_type` is the *effective* type. For a fixed field the hardcoded
@@ -113,6 +129,7 @@ describe a field the app does not have.
 | `choice_dropdown` | one of `options[].value`, matched exactly                      |
 | `integer`         | digits                                                         |
 | `email`           | an email address                                               |
+| `date`            | `yyyy-mm-dd` (ISO) or `dd/mm/yyyy`; stored as the ISO string   |
 
 **Booleans.** Only the five fixed fields (`eligible`, `can_attend`, `consent`,
 `stay_on_db`, plus `email` which is a string) are lifted out of the CSV row into

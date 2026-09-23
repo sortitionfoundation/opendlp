@@ -18,7 +18,7 @@ class TestCheckIdColumnInHeaders:
         with pytest.raises(InvalidSelection) as exc_info:
             check_id_column_in_headers("nationbuilder_id", ["id", "first_name"])
 
-        assert 'no column called "nationbuilder_id"' in str(exc_info.value)
+        assert "no column called 'nationbuilder_id'" in str(exc_info.value)
 
     def test_lists_the_columns_the_csv_does_have(self):
         """The whole point: the organiser can fix the field without opening the file."""
@@ -32,7 +32,7 @@ class TestCheckIdColumnInHeaders:
         with pytest.raises(InvalidSelection) as exc_info:
             check_id_column_in_headers("nationbuilder_id", ["person_ref", "first_name"])
 
-        assert 'clear it to use the first column ("person_ref")' in str(exc_info.value)
+        assert "clear it to use the first column ('person_ref')" in str(exc_info.value)
 
     def test_caps_the_listed_columns(self):
         """A respondent export can be dozens of columns wide; a flash message can't."""

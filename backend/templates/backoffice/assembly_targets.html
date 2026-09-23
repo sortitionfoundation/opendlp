@@ -3,7 +3,8 @@ ABOUTME: Backoffice assembly targets page with full editing capabilities
 ABOUTME: Displays target categories and values, with respondent counts and check annotations
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/icons.html" import icon_info, icon_plus %}
+{% from "backoffice/components/info_card.html" import info_card %}
+{% from "backoffice/components/icons.html" import icon_plus %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
@@ -16,7 +17,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to Your Assemblies")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(
@@ -35,40 +36,30 @@ ABOUTME: Displays target categories and values, with respondent counts and check
 {% block page_content %}
     {% if data_source == "gsheet" and gsheet %}
         {# Google Sheet source - show info about where targets are configured #}
-        <section class="mb-8">
-            <div class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                <div class="flex items-start gap-4">
-                    <div class="flex-shrink-0">
-                        {{ icon_info(classes="w-6 h-6", style="color: var(--color-primary-action);") }}
-                    </div>
-                    <div>
-                        <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Targets are configured in Google Sheets") }}</h2>
-                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                            {{ _("Selection targets (demographic categories and quotas) are defined in your Google Spreadsheet.") }}
-                        </p>
+        {% call info_card(title=_("Targets are configured in Google Sheets")) %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Selection targets are defined in your Google Sheets spreadsheet.") }}
+            </p>
 
-                        <dl class="flex flex-col gap-2">
-                            <div class="flex gap-2">
-                                <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Initial Selection Categories Tab:") }}</dt>
-                                <dd class="text-body-md" style="color: var(--color-body-text);">
-                                    <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.select_targets_tab or _("Not configured") }}</code>
-                                </dd>
-                            </div>
-                            <div class="flex gap-2">
-                                <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Replacement Categories Tab:") }}</dt>
-                                <dd class="text-body-md" style="color: var(--color-body-text);">
-                                    <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.replace_targets_tab or _("Not configured") }}</code>
-                                </dd>
-                            </div>
-                        </dl>
-
-                        <div class="mt-4">
-                            {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="secondary") }}
-                        </div>
-                    </div>
+            <dl class="flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Initial Selection Categories Tab:") }}</dt>
+                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                        <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.select_targets_tab or _("Not configured") }}</code>
+                    </dd>
                 </div>
+                <div class="flex gap-2">
+                    <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Replacement Categories Tab:") }}</dt>
+                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                        <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.replace_targets_tab or _("Not configured") }}</code>
+                    </dd>
+                </div>
+            </dl>
+
+            <div class="mt-4">
+                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="secondary") }}
             </div>
-        </section>
+        {% endcall %}
     {% else %}
         {# CSV source, no source yet, or targets exist - show full editor #}
 
@@ -98,7 +89,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                     </p>
                     {% if not target_categories %}
                         <p class="text-body-md" style="color: var(--color-secondary-text);">
-                            {{ _("No target categories defined yet.") }}
+                            {{ _("No targets defined yet.") }}
                         </p>
                     {% endif %}
                 </div>
@@ -129,7 +120,7 @@ ABOUTME: Displays target categories and values, with respondent counts and check
                 <section class="mb-6">
                     {% if check_result.success %}
                         {{ alert(
-                        _("All checks passed. Found %(num_features)s target categories and %(num_people)s eligible respondents. Targets are ready for selection.",
+                        _("All checks passed. Found %(num_features)s targets and %(num_people)s eligible respondents. Targets are ready for selection.",
                         num_features=check_result.num_features,
                         num_people=check_result.num_people),
                         variant="success"

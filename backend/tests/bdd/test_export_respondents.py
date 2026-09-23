@@ -10,7 +10,7 @@ from opendlp.service_layer.assembly_service import update_csv_config
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
-from .config import Urls
+from .config import PLAYWRIGHT_TIMEOUT, Urls
 
 scenarios("../../features/export-respondents.feature")
 
@@ -69,7 +69,42 @@ def dismiss_export_modal(admin_logged_in_page: Page) -> None:
     admin_logged_in_page.get_by_role("button", name="Cancel").click()
 
 
+@when("I press Escape")
+def press_escape(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.keyboard.press("Escape")
+
+
 @then("the export modal is no longer visible")
 def export_modal_hidden(admin_logged_in_page: Page) -> None:
     # close() flips isOpen to false, so the modal panel (and its status select) hides.
     expect(admin_logged_in_page.locator("#export-modal-container select#export-status")).not_to_be_visible()
+
+
+@then("keyboard focus should be inside the export modal")
+def focus_inside_export_modal(admin_logged_in_page: Page) -> None:
+    focused = admin_logged_in_page.locator("#export-modal-container [role='dialog'] :focus")
+    expect(focused).to_have_count(1, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("keyboard focus should be on the Export button")
+def focus_on_export_button(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.locator('[data-focus-id="respondents-export"]')).to_be_focused(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+def _inert_siblings(page: Page) -> int:
+    return page.evaluate(
+        "Array.from(document.getElementById('export-modal-container').parentElement.children)"
+        ".filter((el) => el.hasAttribute('data-inert-by-fragment-dialog')).length"
+    )
+
+
+@then("the page behind the export modal should be out of reach")
+def page_behind_is_inert(admin_logged_in_page: Page) -> None:
+    assert _inert_siblings(admin_logged_in_page) > 0
+
+
+@then("the page behind the export modal should be back in reach")
+def page_behind_is_back(admin_logged_in_page: Page) -> None:
+    assert _inert_siblings(admin_logged_in_page) == 0

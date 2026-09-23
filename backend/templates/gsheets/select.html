@@ -10,7 +10,7 @@
 {% block assembly_content %}
     <h2 class="govuk-heading-m">{{ _("Selection") }}</h2>
     <p class="govuk-body">
-        {{ _("Run the democratic lottery selection for this assembly using Google Spreadsheet data.") }}
+        {{ _("Run the democratic lottery selection for this assembly using Google Sheets data.") }}
     </p>
     <p class="govuk-body">
         {{ _('Selection will be for <b>%(number_to_select)s people</b>.', number_to_select=assembly.number_to_select) }}
@@ -48,11 +48,11 @@
         {% else %}
             <button class="govuk-button" disabled>
                 {% if run_record.task_type.value == "load_gsheet" %}
-                    {{ _("Checking Google Spreadsheet") }}
+                    {{ _("Checking Google Sheets") }}
                 {% elif run_record.task_type.value == "select_gsheet" %}
-                    {{ _("Running Selection with Google Spreadsheet") }}
+                    {{ _("Running Selection with Google Sheets") }}
                 {% elif run_record.task_type.value == "test_select_gsheet" %}
-                    {{ _("Running Test Selection with Google Spreadsheet") }}
+                    {{ _("Running Test Selection with Google Sheets") }}
                 {% else %}
                     {{ _("Task in Progress...") }}
                 {% endif %}

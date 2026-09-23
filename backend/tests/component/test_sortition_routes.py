@@ -724,8 +724,8 @@ class TestSelectionRunHistory:
         assert b"Showing 1 to 2 of 2 runs" in response.data
         assert b"Completed" in response.data
         assert b"Failed" in response.data
-        assert b"Select google spreadsheet" in response.data
-        assert b"Load google spreadsheet" in response.data
+        assert b"Select from Google Sheets" in response.data
+        assert b"Load from Google Sheets" in response.data
         assert b"Initial selection" in response.data
 
     def test_view_assembly_data_empty_history(self, logged_in_admin, assembly_with_gsheet):

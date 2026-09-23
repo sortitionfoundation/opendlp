@@ -237,6 +237,13 @@ def start_mappers() -> None:
             },
         )
 
+        # Map RespondentFieldMappingEntry independently — no ORM relationship;
+        # the derivation service resolves entries via field_id.
+        orm.mapper_registry.map_imperatively(
+            respondent_field_schema.RespondentFieldMappingEntry,
+            orm.respondent_field_mapping_entries,
+        )
+
         # Map RegistrationPage and RegistrationPageHtml domain objects. These are
         # mapped independently - the service layer resolves page <-> source via
         # source_type rather than an ORM relationship.

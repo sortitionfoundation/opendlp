@@ -7,10 +7,13 @@ from opendlp.domain.assembly import Assembly
 from opendlp.domain.respondent_field_schema import (
     IN_SCHEMA_FIXED_FIELDS,
     ChoiceOption,
+    DerivationType,
     FieldOnRegistrationPage,
     FieldType,
+    RespondentFieldDefinition,
     RespondentFieldGroup,
 )
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
@@ -631,6 +634,56 @@ class TestAddField:
 
         assert field.on_registration_page is FieldOnRegistrationPage.YES_REQUIRED
 
+    def test_add_field_stores_help_text(self, uow, admin_user, test_assembly):
+        """add_field persists help_text and it survives a fresh read of the schema."""
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+
+        field = respondent_field_schema_service.add_field(
+            uow,
+            admin_user.id,
+            test_assembly.id,
+            field_key="favourite_colour",
+            help_text="Pick the colour you like best",
+        )
+        assert field.help_text == "Pick the colour you like best"
+
+        schema = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
+        stored = next(f for f in schema if f.field_key == "favourite_colour")
+        assert stored.help_text == "Pick the colour you like best"
+
+    def test_add_field_help_text_defaults_to_empty(self, uow, admin_user, test_assembly):
+        """A field added without help_text has the empty string."""
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+
+        field = respondent_field_schema_service.add_field(
+            uow, admin_user.id, test_assembly.id, field_key="favourite_colour"
+        )
+        assert field.help_text == ""
+
+
+class TestUpdateFieldHelpText:
+    def test_update_field_sets_and_clears_help_text(self, uow, admin_user, test_assembly):
+        """update_field can set help_text, leaves it alone when omitted, and clears it with ''."""
+        respondent_field_schema_service.initialise_empty_schema(uow, admin_user.id, test_assembly.id)
+        field = respondent_field_schema_service.add_field(
+            uow, admin_user.id, test_assembly.id, field_key="favourite_colour"
+        )
+
+        updated = respondent_field_schema_service.update_field(
+            uow, admin_user.id, test_assembly.id, field.id, help_text="A hint"
+        )
+        assert updated.help_text == "A hint"
+
+        untouched = respondent_field_schema_service.update_field(
+            uow, admin_user.id, test_assembly.id, field.id, label="New label"
+        )
+        assert untouched.help_text == "A hint"
+
+        cleared = respondent_field_schema_service.update_field(
+            uow, admin_user.id, test_assembly.id, field.id, help_text=""
+        )
+        assert cleared.help_text == ""
+
 
 class TestOnRegistrationPageSeedAndUpdate:
     def test_initialise_seeds_fixed_field_registration_defaults(self, uow, admin_user, test_assembly):
@@ -893,7 +946,7 @@ class TestReconciliation:
             )
 
         message = str(exc_info.value)
-        assert 'no column called "nationbuilder_id"' in message
+        assert "no column called 'nationbuilder_id'" in message
         assert "person_ref, first_name" in message
         assert "pre-filled from your last upload" in message
 
@@ -911,7 +964,7 @@ class TestReconciliation:
                 explicit_id_column="typo_id",
             )
 
-        assert 'no column called "typo_id"' in str(exc_info.value)
+        assert "no column called 'typo_id'" in str(exc_info.value)
 
     def test_compute_diff_for_pending_csv_rejects_empty_csv(self, uow, admin_user, test_assembly):
         with pytest.raises(InvalidSelection):
@@ -942,3 +995,57 @@ class TestReconciliation:
         after = respondent_field_schema_service.get_schema(uow, admin_user.id, test_assembly.id)
         # city's schema row is preserved even though no respondent now has data for it.
         assert "city" in {f.field_key for f in after}
+
+
+class TestDerivedFieldValuesFollowTheField:
+    """Deleting or re-keying a derived field rewrites the values it wrote, and the rewrite reaches the database."""
+
+    def _seed(self, postgres_session_factory, assembly_id):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            field = RespondentFieldDefinition(
+                assembly_id=assembly_id,
+                field_key="Region",
+                label="Region",
+                group=RespondentFieldGroup.DERIVED,
+                sort_order=30,
+                is_derived=True,
+                derived_from=["postcode"],
+                derivation_type=DerivationType.LARGE_MAPPING,
+                derivation_config={"fallback": "UNKNOWN"},
+                field_type=FieldType.CHOICE_DROPDOWN,
+                options=[ChoiceOption(value="North")],
+            )
+            uow.respondent_field_definitions.add(field)
+            respondent = Respondent(
+                assembly_id=assembly_id, external_id="R1", attributes={"postcode": "E1 6AN", "Region": "North"}
+            )
+            uow.respondents.add(respondent)
+            ids = (field.id, respondent.id)
+            uow.commit()
+        return ids
+
+    def _attributes(self, postgres_session_factory, respondent_id):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            return uow.respondents.get(respondent_id).attributes
+
+    def test_deleting_the_field_removes_its_values(self, postgres_session_factory, test_assembly):
+        field_id, respondent_id = self._seed(postgres_session_factory, test_assembly.id)
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            field = uow.respondent_field_definitions.get(field_id)
+            respondent_field_schema_service.delete_derived_field(uow, test_assembly.id, field)
+            uow.commit()
+
+        assert self._attributes(postgres_session_factory, respondent_id) == {"postcode": "E1 6AN"}
+
+    def test_renaming_the_field_re_keys_its_values(self, postgres_session_factory, test_assembly):
+        field_id, respondent_id = self._seed(postgres_session_factory, test_assembly.id)
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            field = uow.respondent_field_definitions.get(field_id)
+            respondent_field_schema_service.rename_derived_field(uow, test_assembly.id, field, "Area")
+            uow.commit()
+
+        assert self._attributes(postgres_session_factory, respondent_id) == {"postcode": "E1 6AN", "Area": "North"}
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.respondent_field_definitions.get(field_id).field_key == "Area"

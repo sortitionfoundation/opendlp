@@ -123,6 +123,7 @@ The entry-point list lives in `esbuild.config.mjs`, keyed by output path:
 | `src/js/backoffice/alpine-components.js` | `static/backoffice/js/alpine-components.js` |
 | `src/js/backoffice/html-editor.js`     | `static/backoffice/js/dist/html-editor.js` |
 | `src/js/backoffice/patterns.js`        | `static/backoffice/js/patterns.js`         |
+| `src/js/backoffice/pie-chart.js`       | `static/backoffice/js/pie-chart.js`        |
 | `src/js/backoffice/registration-page.js` | `static/backoffice/js/registration-page.js` |
 | `src/js/backoffice/service-docs.js`    | `static/backoffice/js/service-docs.js`     |
 
@@ -130,7 +131,7 @@ To add a bundle: write the entry under `src/js/`, add a line to `ENTRY_POINTS` i
 `esbuild.config.mjs`, and load the built path in the template. Both `build:js` and `watch:js` read
 that one list, so there is no second place to update.
 
-The last three are **page-specific** entry points, loaded from their own page's `{% block head %}`
+The last four are **page-specific** entry points, loaded from their own page's `{% block head %}`
 rather than from the shared backoffice bundle, so their components do not ship to every backoffice
 page. Reach for one when a component belongs to a single page.
 

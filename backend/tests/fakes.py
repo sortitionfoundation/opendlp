@@ -20,6 +20,7 @@ from opendlp.domain.registration_page import RegistrationPage, RegistrationPageH
 from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
     RespondentFieldDefinition,
+    RespondentFieldMappingEntry,
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory
@@ -52,6 +53,7 @@ from opendlp.service_layer.repositories import (
     RegistrationPageRepository,
     RespondentEmailSendRecordRepository,
     RespondentFieldDefinitionRepository,
+    RespondentFieldMappingEntryRepository,
     RespondentRepository,
     SelectionRunRecordRepository,
     TargetCategoryRepository,
@@ -878,6 +880,25 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                     selection_run_id=selection_run_id,
                 )
 
+    def _with_attribute(self, assembly_id: uuid.UUID, key: str) -> list[Respondent]:
+        return [
+            r
+            for r in self._items
+            if r.assembly_id == assembly_id and r.selection_status != RespondentStatus.DELETED and key in r.attributes
+        ]
+
+    def remove_attribute(self, assembly_id: uuid.UUID, key: str) -> int:
+        changed = self._with_attribute(assembly_id, key)
+        for r in changed:
+            r.attributes = {k: v for k, v in r.attributes.items() if k != key}
+        return len(changed)
+
+    def rename_attribute(self, assembly_id: uuid.UUID, old_key: str, new_key: str) -> int:
+        changed = self._with_attribute(assembly_id, old_key)
+        for r in changed:
+            r.attributes = {(new_key if k == old_key else k): v for k, v in r.attributes.items() if k != new_key}
+        return len(changed)
+
     def reset_all_to_pool(self, assembly_id: uuid.UUID) -> int:
         count = 0
         for r in self._items:
@@ -994,6 +1015,32 @@ class FakeRespondentFieldDefinitionRepository(FakeRepository, RespondentFieldDef
         return before - len(self._items)
 
 
+class FakeRespondentFieldMappingEntryRepository(FakeRepository, RespondentFieldMappingEntryRepository):
+    """Fake in-memory RespondentFieldMappingEntryRepository."""
+
+    def bulk_add(self, items: list[RespondentFieldMappingEntry]) -> None:
+        self._items.extend(items)
+
+    def get_many(self, field_id: uuid.UUID, lookup_keys: list[str]) -> list[RespondentFieldMappingEntry]:
+        wanted = set(lookup_keys)
+        return [e for e in self._items if e.field_id == field_id and e.lookup_key in wanted]
+
+    def list_for_field(self, field_id: uuid.UUID, limit: int | None = None) -> list[RespondentFieldMappingEntry]:
+        entries = sorted(
+            (e for e in self._items if e.field_id == field_id),
+            key=lambda e: e.lookup_key,
+        )
+        return entries[:limit] if limit is not None else entries
+
+    def count_for_field(self, field_id: uuid.UUID) -> int:
+        return sum(1 for e in self._items if e.field_id == field_id)
+
+    def delete_all_for_field(self, field_id: uuid.UUID) -> int:
+        before = len(self._items)
+        self._items = [e for e in self._items if e.field_id != field_id]
+        return before - len(self._items)
+
+
 class FakeEmailTemplateRepository(FakeRepository, EmailTemplateRepository):
     """Fake implementation of EmailTemplateRepository."""
 
@@ -1031,6 +1078,7 @@ _REPO_NAMES = (
     "target_categories",
     "respondents",
     "respondent_field_definitions",
+    "respondent_field_mapping_entries",
     "registration_pages",
     "registration_page_html_sources",
     "registration_images",
@@ -1065,6 +1113,7 @@ class FakeStore:
         self.target_categories = FakeTargetCategoryRepository()
         self.respondents = FakeRespondentRepository()
         self.respondent_field_definitions = FakeRespondentFieldDefinitionRepository()
+        self.respondent_field_mapping_entries = FakeRespondentFieldMappingEntryRepository()
         self.registration_pages = FakeRegistrationPageRepository()
         self.registration_page_html_sources = FakeRegistrationPageHtmlRepository()
         self.registration_images = FakeRegistrationImageRepository()
@@ -1153,6 +1202,9 @@ class FakeUnitOfWork(AbstractUnitOfWork):
         data, so this just records the commit and continues.
         """
         self.commit()
+
+    def flush(self) -> None:
+        """Nothing to send anywhere: the fake store has no write ordering to get wrong."""
 
     def rollback(self) -> None:
         """Undo uncommitted changes.

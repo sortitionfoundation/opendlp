@@ -19,6 +19,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyRegistrationPageRepository,
     SqlAlchemyRespondentEmailSendRecordRepository,
     SqlAlchemyRespondentFieldDefinitionRepository,
+    SqlAlchemyRespondentFieldMappingEntryRepository,
     SqlAlchemyRespondentRepository,
     SqlAlchemySelectionRunRecordRepository,
     SqlAlchemyTargetCategoryRepository,
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
         RegistrationPageRepository,
         RespondentEmailSendRecordRepository,
         RespondentFieldDefinitionRepository,
+        RespondentFieldMappingEntryRepository,
         RespondentRepository,
         SelectionRunRecordRepository,
         TargetCategoryRepository,
@@ -78,6 +80,7 @@ class AbstractUnitOfWork(abc.ABC):
     target_categories: TargetCategoryRepository
     respondents: RespondentRepository
     respondent_field_definitions: RespondentFieldDefinitionRepository
+    respondent_field_mapping_entries: RespondentFieldMappingEntryRepository
     registration_pages: RegistrationPageRepository
     registration_page_html_sources: RegistrationPageHtmlRepository
     registration_images: RegistrationImageRepository
@@ -118,6 +121,16 @@ class AbstractUnitOfWork(abc.ABC):
     @abc.abstractmethod
     def rollback(self) -> None:
         """Rollback the current transaction."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def flush(self) -> None:
+        """Send pending changes to the database without committing.
+
+        Needed where one row must exist before another refers to it and no
+        relationship() tells the session which comes first - a foreign key held
+        as a plain UUID column gives it no ordering to work from.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -194,6 +207,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         self.target_categories = SqlAlchemyTargetCategoryRepository(self.session)
         self.respondents = SqlAlchemyRespondentRepository(self.session)
         self.respondent_field_definitions = SqlAlchemyRespondentFieldDefinitionRepository(self.session)
+        self.respondent_field_mapping_entries = SqlAlchemyRespondentFieldMappingEntryRepository(self.session)
         self.registration_pages = SqlAlchemyRegistrationPageRepository(self.session)
         self.registration_page_html_sources = SqlAlchemyRegistrationPageHtmlRepository(self.session)
         self.registration_images = SqlAlchemyRegistrationImageRepository(self.session)

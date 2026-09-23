@@ -27,7 +27,7 @@ class TestSortitionRoutes:
         response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet_select")
 
         assert response.status_code == 200
-        assert b"Google Spreadsheet Configuration" in response.data
+        assert b"Google Sheets Configuration" in response.data
         assert b"Check Spreadsheet" in response.data
 
     def test_progress_endpoint_returns_fragment_for_running_task(
@@ -330,8 +330,8 @@ class TestSelectionRunHistory:
         assert b"Completed" in response.data
         assert b"Failed" in response.data
         # Check task types (using task_type_verbose formatting)
-        assert b"Select google spreadsheet" in response.data
-        assert b"Load google spreadsheet" in response.data
+        assert b"Select from Google Sheets" in response.data
+        assert b"Load from Google Sheets" in response.data
         # Check comment appears
         assert b"Initial selection" in response.data
 

@@ -14,6 +14,7 @@ from opendlp.adapters.tabular_export import (
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet, default_worksheet_name
 from opendlp.domain.respondents import normalise_field_name
 from opendlp.domain.targets import percentage_of
+from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import (
     COUNTED_RESPONDENT_STATUSES,
     HEADLINE_RESPONDENT_STATUSES,
@@ -82,8 +83,12 @@ class CategoryValueRow:
     value: str
     target_min: int
     target_max: int
-    # TargetValue.percentage_target where it is set, else the share the band
-    # implies within its category.
+    # TargetValue.percentage_target as entered ("Population (%)" in the targets
+    # editor), or None when the organiser has not set one. Kept separate from
+    # ``target_pct``: the population share and the seat quota deliberately
+    # differ when a group is over-sampled, and blending them proved confusing.
+    population_pct: float | None
+    # The share the min/max band implies within its category (midpoint ratio).
     target_pct: float
     # COUNTED_RESPONDENT_STATUSES: pool, selected and confirmed.
     pool_count: int
@@ -208,6 +213,7 @@ def _value_row(
         value=target.value,
         target_min=target.min,
         target_max=target.max,
+        population_pct=target.percentage_target,
         target_pct=target_pct,
         pool_count=pool_count,
         available_count=available_count,
@@ -241,11 +247,11 @@ def _build_category(
     rows = [
         _value_row(
             target,
-            target.percentage_target if target.percentage_target is not None else fallback_pct,
+            band_pct,
             counts_by_value.get(target.value, {}),
             available_by_value.get(target.value, 0),
         )
-        for target, fallback_pct in zip(category.values, target_pcts, strict=True)
+        for target, band_pct in zip(category.values, target_pcts, strict=True)
     ]
 
     declared = {target.value for target in category.values}
@@ -310,7 +316,10 @@ def _export_row(category_name: str, row: CategoryValueRow, totals: tuple[int, in
     return [
         category_name,
         row.value,
-        _format_pct(row.target_pct),
+        # Blank rather than a fallback when no population share was entered:
+        # substituting the band-implied share is the conflation the dashboard
+        # split this column to remove.
+        _format_pct(row.population_pct) if row.population_pct is not None else "",
         str(row.target_min),
         str(row.target_max),
         str(row.pool_count),
@@ -345,9 +354,15 @@ def build_dashboard_table(report: DashboardReport) -> TabularData:
     category's declared values - the same denominator the pie charts use.
     """
     headers = [
-        _("Category"),
+        _("Target"),
         _("Value"),
-        _("Target %"),
+        # A trailing "%" inside the msgid is safe here, matching the sibling
+        # headers below ("Respondents %", …): babel does not flag it as a
+        # python-format string, and the Python-side gettext leaves the string
+        # unformatted when no parameters are passed. (A "%%" msgid would render
+        # literally from Python — that spelling only works in templates, where
+        # Jinja's newstyle gettext always runs printf formatting.)
+        _("Population %"),
         _("Target min"),
         _("Target max"),
         _("Respondents"),
@@ -419,6 +434,11 @@ def export_dashboard_report_to_gsheet(
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
+    # Validate the destination URL BEFORE writing: gspread's URL parsing is laxer
+    # than the domain validator, so validating only at config-save time (inside
+    # save_export_gsheet_config) would let the write clear a tab of a sheet whose
+    # URL is then rejected — a destructive write reported as a failure.
+    GoogleSpreadsheetURLValidator().validate_str(spreadsheet_url.strip())
     worksheet_name = worksheet_name.strip() or default_worksheet_name(EXPORT_KIND)
 
     # Write first so the target's result_title/result_url are populated; only

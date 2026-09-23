@@ -8,6 +8,7 @@ import pytest
 from jinja2 import UndefinedError
 from jinja2.exceptions import SecurityError
 
+from opendlp.domain import registration_page as registration_page_module
 from opendlp.domain.registration_page import (
     DEFAULT_THANK_YOU_HTML,
     REQUIRED_TOKENS,
@@ -47,6 +48,7 @@ def _field(
     options: list[ChoiceOption] | None = None,
     is_fixed: bool = False,
     on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_OPTIONAL,
+    help_text: str = "",
 ) -> RespondentFieldDefinition:
     return RespondentFieldDefinition(
         assembly_id=ASSEMBLY_ID,
@@ -58,6 +60,7 @@ def _field(
         field_type=field_type,
         options=options,
         on_registration_page=on_registration_page,
+        help_text=help_text,
     )
 
 
@@ -1306,6 +1309,146 @@ class TestGenerateStarterFormHtml:
         about_pos = html.find(str(GROUP_LABELS[RespondentFieldGroup.ABOUT_YOU]))
         assert eligibility_pos < contact_pos < about_pos
 
+    def test_help_text_renders_hint_paragraph_linked_by_aria_describedby(self):
+        """A text field's help_text becomes a hint paragraph the input points at."""
+        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0, help_text="As shown on your passport")]
+        html = generate_starter_form_html(fields)
+
+        assert '<p class="hint" id="first_name-hint">As shown on your passport</p>' in html
+        assert 'aria-describedby="first_name-hint"' in html
+
+    def test_help_text_is_escaped(self):
+        """Organiser-typed help text is HTML-escaped in the generated form."""
+        fields = [_field("nickname", RespondentFieldGroup.NAME_AND_CONTACT, 0, help_text="e.g. <b>Bob</b> & co")]
+        html = generate_starter_form_html(fields)
+
+        assert "e.g. &lt;b&gt;Bob&lt;/b&gt; &amp; co" in html
+        assert "<b>Bob</b>" not in html
+
+    def test_no_hint_markup_when_help_text_empty(self):
+        """Without help_text there is no hint element and no aria-describedby."""
+        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        html = generate_starter_form_html(fields)
+
+        assert "hint" not in html
+        assert "aria-describedby" not in html
+
+    def test_choice_radio_hint_sits_after_legend_and_describes_fieldset(self):
+        """A radio group's hint follows the legend and the fieldset points at it."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Female")],
+                help_text="As you describe yourself",
+            ),
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert '<fieldset aria-describedby="gender-hint">' in html
+        legend_pos = html.find("<legend>Gender</legend>")
+        hint_pos = html.find('<p class="hint" id="gender-hint">As you describe yourself</p>')
+        assert -1 < legend_pos < hint_pos
+
+    def test_checkbox_hint_follows_the_label(self):
+        """A checkbox's hint renders after its label with the input pointing at it."""
+        fields = [
+            _field(
+                "eligible",
+                RespondentFieldGroup.ELIGIBILITY,
+                0,
+                field_type=FieldType.BOOL,
+                help_text="You must live in the area",
+            ),
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert '<p class="hint" id="eligible-hint">You must live in the area</p>' in html
+        assert 'aria-describedby="eligible-hint"' in html
+
+    def test_choice_radio_option_help_text_renders_hints(self):
+        """A ChoiceOption's help_text becomes a hint paragraph its radio points at."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[
+                    ChoiceOption(value="Female", help_text="Includes trans women"),
+                    ChoiceOption(value="Male"),
+                ],
+            ),
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert '<p class="hint" id="gender-1-item-hint">Includes trans women</p>' in html
+        assert 'aria-describedby="gender-1-item-hint"' in html
+        assert "gender-2-item-hint" not in html
+
+    def test_date_field_renders_three_part_inputs_on_one_line(self):
+        """A DATE field becomes day/month/year inputs the submission service already accepts."""
+        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+        html = generate_starter_form_html(fields)
+
+        assert "<legend>Date of birth</legend>" in html
+        for part, size in (("day", "2"), ("month", "2"), ("year", "4")):
+            assert (
+                f'<input type="text" inputmode="numeric" name="date_of_birth-{part}" size="{size}" '
+                f"value=\"{{{{ value('date_of_birth-{part}') }}}}\">"
+            ) in html
+        # The parts sit in a flex row so they share a line even unstyled.
+        assert "display: flex" in html
+        assert "{{ field_errors('date_of_birth') }}" in html
+        # No single bare input remains for the field itself.
+        assert 'name="date_of_birth"' not in html
+
+    def test_required_date_field_marks_each_part_required(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html(fields)
+
+        for part in ("day", "month", "year"):
+            assert f"value=\"{{{{ value('date_of_birth-{part}') }}}}\" required>" in html
+
+    @pytest.mark.parametrize("generate", [generate_starter_form_html, generate_starter_form_html_govuk])
+    def test_date_part_labels_are_translated_and_escaped(self, generate, monkeypatch):
+        """They are words on the organiser's form, so they come in the organiser's language."""
+        translated = {"Day": "Nap", "Month": "Hónap", "Year": "<Év>"}
+        monkeypatch.setattr(registration_page_module, "_", lambda message: translated[message])
+        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+
+        html = generate(fields)
+
+        assert "Nap" in html
+        assert "Hónap" in html
+        assert "&lt;Év&gt;" in html
+        assert ">Day" not in html
+
+    def test_date_field_hint_describes_the_fieldset(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                help_text="For example, 27 3 1985",
+            )
+        ]
+        html = generate_starter_form_html(fields)
+
+        assert '<fieldset aria-describedby="date_of_birth-hint">' in html
+        assert '<p class="hint" id="date_of_birth-hint">For example, 27 3 1985</p>' in html
+
 
 class TestGenerateStarterFormHtmlGovuk:
     def test_empty_schema_minimal_form(self):
@@ -1589,3 +1732,183 @@ class TestGenerateStarterFormHtmlGovuk:
         html = RegistrationPageHtml(registration_page_id=uuid.uuid4(), form_html=starter)
 
         assert html.readiness_problems() == []
+
+    def test_help_text_renders_govuk_hint_linked_by_aria_describedby(self):
+        """A text field's help_text becomes a govuk-hint div the input points at."""
+        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0, help_text="As shown on your passport")]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<div class="govuk-hint" id="first_name-hint">As shown on your passport</div>' in html
+        assert 'aria-describedby="first_name-hint"' in html
+        label_pos = html.find('<label class="govuk-label" for="first_name">')
+        hint_pos = html.find('id="first_name-hint"')
+        input_pos = html.find('<input class="govuk-input"')
+        assert -1 < label_pos < hint_pos < input_pos
+
+    def test_no_hint_markup_when_help_text_empty(self):
+        """Without help_text there is no govuk-hint and no aria-describedby."""
+        fields = [_field("first_name", RespondentFieldGroup.NAME_AND_CONTACT, 0)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert "govuk-hint" not in html
+        assert "aria-describedby" not in html
+
+    def test_choice_radio_hint_describes_the_fieldset(self):
+        """A radio group's hint follows the legend and the fieldset points at it."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Female")],
+                help_text="As you describe yourself",
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<fieldset class="govuk-fieldset" role="group" aria-describedby="gender-hint">' in html
+        assert '<div class="govuk-hint" id="gender-hint">As you describe yourself</div>' in html
+
+    def test_checkbox_hint_uses_the_checkboxes_hint_class(self):
+        """A checkbox's hint renders inside the item with the govuk-checkboxes__hint class."""
+        fields = [
+            _field(
+                "eligible",
+                RespondentFieldGroup.ELIGIBILITY,
+                0,
+                field_type=FieldType.BOOL,
+                help_text="You must live in the area",
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<div class="govuk-hint govuk-checkboxes__hint" id="eligible-hint">You must live in the area</div>' in (
+            html
+        )
+        assert 'aria-describedby="eligible-hint"' in html
+
+    def test_dropdown_hint_sits_between_label_and_select(self):
+        """A dropdown's hint follows the label and the select points at it."""
+        fields = [
+            _field(
+                "region",
+                RespondentFieldGroup.ADDRESS,
+                0,
+                field_type=FieldType.CHOICE_DROPDOWN,
+                options=[ChoiceOption(value="North")],
+                help_text="The region you live in",
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<div class="govuk-hint" id="region-hint">The region you live in</div>' in html
+        hint_pos = html.find('id="region-hint"')
+        select_pos = html.find('<select class="govuk-select"')
+        assert -1 < hint_pos < select_pos
+        assert 'aria-describedby="region-hint"' in html
+
+    def test_choice_radio_option_help_text_renders_as_item_hints(self):
+        """A ChoiceOption's help_text becomes a govuk-radios__hint its radio points at."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[
+                    ChoiceOption(value="Female", help_text="Includes trans women"),
+                    ChoiceOption(value="Male"),
+                ],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert ('<div class="govuk-hint govuk-radios__hint" id="gender-item-hint">Includes trans women</div>') in html
+        assert 'aria-describedby="gender-item-hint"' in html
+        # The option without help text gets no hint element and no aria-describedby.
+        assert "gender-2-item-hint" not in html
+
+    def test_choice_radio_option_help_text_is_escaped(self):
+        """Organiser-typed option help text is HTML-escaped."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Other", help_text="e.g. <b>self-described</b> & more")],
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert "e.g. &lt;b&gt;self-described&lt;/b&gt; &amp; more" in html
+        assert "<b>self-described</b>" not in html
+
+    def test_option_and_field_hints_coexist_with_distinct_ids(self):
+        """A field-level hint and an option hint don't collide on ids."""
+        fields = [
+            _field(
+                "gender",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.CHOICE_RADIO,
+                options=[ChoiceOption(value="Female", help_text="option hint")],
+                help_text="field hint",
+            ),
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<div class="govuk-hint" id="gender-hint">field hint</div>' in html
+        assert '<div class="govuk-hint govuk-radios__hint" id="gender-item-hint">option hint</div>' in html
+
+    def test_date_field_renders_the_govuk_date_input_pattern(self):
+        """A DATE field renders the design-system date input: three labelled parts in a fieldset."""
+        fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<fieldset class="govuk-fieldset" role="group">' in html
+        assert ('<legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Date of birth</legend>') in html
+        assert '<div class="govuk-date-input" id="date_of_birth">' in html
+        for part, width, label in (("day", "2", "Day"), ("month", "2", "Month"), ("year", "4", "Year")):
+            assert (
+                f'<label class="govuk-label govuk-date-input__label" for="date_of_birth-{part}">{label}</label>'
+            ) in html
+            assert (
+                f'<input class="govuk-input govuk-date-input__input govuk-input--width-{width}" '
+                f'type="text" inputmode="numeric" id="date_of_birth-{part}" name="date_of_birth-{part}" '
+                f"value=\"{{{{ value('date_of_birth-{part}') }}}}\">"
+            ) in html
+        assert "{{ field_errors('date_of_birth') }}" in html
+        assert html.count("govuk-date-input__item") == 3
+        assert 'name="date_of_birth"' not in html
+
+    def test_required_date_field_marks_each_part_required(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
+            )
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        for part in ("day", "month", "year"):
+            assert f"value=\"{{{{ value('date_of_birth-{part}') }}}}\" required>" in html
+
+    def test_date_field_hint_describes_the_fieldset(self):
+        fields = [
+            _field(
+                "date_of_birth",
+                RespondentFieldGroup.ABOUT_YOU,
+                0,
+                field_type=FieldType.DATE,
+                help_text="For example, 27 3 1985",
+            )
+        ]
+        html = generate_starter_form_html_govuk(fields)
+
+        assert '<fieldset class="govuk-fieldset" role="group" aria-describedby="date_of_birth-hint">' in html
+        assert '<div class="govuk-hint" id="date_of_birth-hint">For example, 27 3 1985</div>' in html

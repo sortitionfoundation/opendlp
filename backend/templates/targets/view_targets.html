@@ -5,7 +5,7 @@
     {% if target_categories %}
         <p class="govuk-body">{{ _("%(count)s categories defined.", count=target_categories|length) }}</p>
     {% else %}
-        <p class="govuk-body">{{ _("No target categories defined yet.") }}</p>
+        <p class="govuk-body">{{ _("No targets defined yet.") }}</p>
     {% endif %}
     {# ── Check Targets Button ────────────────────────────── #}
     {% if target_categories %}
@@ -28,7 +28,7 @@
                 </div>
                 <div class="govuk-notification-banner__content">
                     <p class="govuk-body">
-                        {{ _("Found %(num_features)s target categories and %(num_people)s eligible respondents. Targets are ready for selection.",
+                        {{ _("Found %(num_features)s targets and %(num_people)s eligible respondents. Targets are ready for selection.",
                         num_features=check_result.num_features,
                         num_people=check_result.num_people) }}
                     </p>
@@ -115,7 +115,7 @@
                 {# ── Recommended columns (< 20 distinct values) ── #}
                 {% if recommended_columns %}
                     <p class="govuk-body">
-                        {{ _("These columns have few distinct values and are likely useful as target categories. Select the categories you want to use as targets.") }}
+                        {{ _("These columns have few distinct values and are likely useful as targets. Select the columns you want to use as targets.") }}
                     </p>
                     <div class="govuk-checkboxes govuk-checkboxes--small">
                         {% for col in recommended_columns %}
@@ -156,7 +156,7 @@
                         </summary>
                         <div class="govuk-details__text">
                             <p class="govuk-body">
-                                {{ _("These columns have many different values and probably aren't useful as target categories. Only the category will be created; values will not be added automatically.") }}
+                                {{ _("These columns have many different values and probably aren't useful as targets. Only the target will be created; values will not be added automatically.") }}
                             </p>
                             <div class="govuk-checkboxes govuk-checkboxes--small">
                                 {% for col in high_cardinality_columns %}
@@ -187,7 +187,7 @@
                 {% endif %}
                 <button type="submit"
                         class="govuk-button govuk-button--secondary govuk-!-margin-top-4"
-                        data-module="govuk-button">{{ _("Add selected categories") }}</button>
+                        data-module="govuk-button">{{ _("Add selected targets") }}</button>
             </form>
         {% endif %}
     {% endif %}

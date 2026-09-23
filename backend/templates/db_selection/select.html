@@ -59,10 +59,10 @@
             <ul class="govuk-list govuk-list--bullet">
                 <li>
                     <a href="{{ url_for('db_selection_legacy.view_db_replacement', assembly_id=assembly.id) }}" class="govuk-link">{{ _("Do replacements") }}</a>
-                    {{ _("— select replacement members from the remaining pool") }}
+                    {{ _("— select replacements from the remaining pool") }}
                 </li>
                 <li>
-                    {{ _("Reset all respondents to Pool status, then run a fresh selection") }}
+                    {{ _("Reset all respondents to the pool, then run a fresh selection") }}
                 </li>
             </ul>
             <form method="post"
@@ -70,8 +70,8 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="govuk-button govuk-button--warning govuk-!-margin-bottom-6"
                         data-module="govuk-button"
-                        data-confirm="{{ _('Are you sure? This will reset all respondents to Pool status.') }}">
-                    {{ _("Reset all respondents to Pool") }}
+                        data-confirm="{{ _('Are you sure? This will reset all respondents to the pool.') }}">
+                    {{ _("Reset all respondents to the pool") }}
                 </button>
             </form>
         {% endif %}
@@ -134,7 +134,7 @@
                 </div>
                 <div class="govuk-notification-banner__content">
                     <p class="govuk-body">
-                        {{ _("Found %(num_features)s target categories and %(num_people)s eligible respondents. Data is ready for selection.",
+                        {{ _("Found %(num_features)s targets and %(num_people)s eligible respondents. Data is ready for selection.",
                         num_features=check_result.num_features,
                         num_people=check_result.num_people) }}
                     </p>

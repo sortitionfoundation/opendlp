@@ -4,7 +4,7 @@ ABOUTME: Provides routes for assembly-level target category management with HTMX
 import uuid
 
 import structlog
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
@@ -13,7 +13,12 @@ from opendlp.service_layer.assembly_service import (
     get_assembly_with_permissions,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD
-from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
+from opendlp.service_layer.exceptions import (
+    FieldDefinitionConflictError,
+    InsufficientPermissions,
+    InvalidSelection,
+    NotFoundError,
+)
 from opendlp.service_layer.permissions import can_manage_assembly
 from opendlp.service_layer.respondent_service import get_respondent_attribute_value_counts
 from opendlp.service_layer.target_checking import check_targets_detailed
@@ -25,6 +30,7 @@ from opendlp.service_layer.target_respondent_helpers import (
     get_respondent_counts_for_category,
 )
 from opendlp.service_layer.target_service import (
+    TargetLinkedError,
     add_target_value,
     create_target_category,
     delete_target_category,
@@ -158,7 +164,7 @@ def upload_targets_csv(assembly_id: uuid.UUID) -> ResponseReturnValue:
         total_values = sum(len(c.values) for c in categories)
         flash(
             _(
-                "Successfully imported %(cats)s categories with %(vals)s values from %(file)s",
+                "Successfully imported %(cats)s targets with %(vals)s values from %(file)s",
                 cats=len(categories),
                 vals=total_values,
                 file=filename,
@@ -298,6 +304,24 @@ def edit_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRet
         flash(_("Category renamed to '%(name)s'", name=category.name), "success")
         return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
+    except (TargetLinkedError, FieldDefinitionConflictError) as e:
+        # This page has no way to confirm unlinking the questions a target feeds, so it refuses.
+        message = (
+            _("This target is linked to a registration question, so it cannot be renamed here")
+            if isinstance(e, TargetLinkedError)
+            else e.user_msg()
+        )
+        if _is_htmx():
+            form.name.errors.append(message)  # type: ignore[attr-defined]
+            return render_template(
+                "targets/components/category_name_edit.html",
+                assembly_id=assembly_id,
+                category_id=category_id,
+                edit_category_form=form,
+                editing=True,
+            ), 422
+        flash(message, "error")
+        return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
     except (ValueError, NotFoundError, InsufficientPermissions) as e:
         if _is_htmx():
             form.name.errors.append(str(e))  # type: ignore[attr-defined]
@@ -334,6 +358,16 @@ def remove_category(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseR
         flash(_("Category deleted"), "success")
         return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 
+    except TargetLinkedError:
+        # This page has no way to confirm unlinking the questions a target feeds, so it refuses.
+        flash(_("This target is linked to a registration question, so it cannot be deleted here"), "error")
+        targets_url = url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id)
+        if _is_htmx():
+            # A plain redirect would be followed and the whole page swapped into the category block.
+            response = current_app.make_response("")
+            response.headers["HX-Redirect"] = targets_url
+            return response
+        return redirect(targets_url)
     except (NotFoundError, InsufficientPermissions) as e:
         flash(str(e), "error")
         return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
@@ -681,7 +715,7 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
             if values_added_count > 0:
                 flash(
                     _(
-                        "Created %(count)s categories with %(values)s values: %(names)s",
+                        "Created %(count)s targets with %(values)s values: %(names)s",
                         count=len(created),
                         values=values_added_count,
                         names=", ".join(created),
@@ -690,11 +724,11 @@ def add_categories_from_columns(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 )
             else:
                 flash(
-                    _("Created %(count)s categories: %(names)s", count=len(created), names=", ".join(created)),
+                    _("Created %(count)s targets: %(names)s", count=len(created), names=", ".join(created)),
                     "success",
                 )
         else:
-            flash(_("No new categories were created"), "warning")
+            flash(_("No new targets were created"), "warning")
 
         return redirect(url_for("targets_legacy.view_assembly_targets", assembly_id=assembly_id))
 

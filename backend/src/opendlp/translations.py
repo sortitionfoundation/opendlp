@@ -9,6 +9,7 @@ from typing import Any
 from flask import current_app, has_app_context
 from flask_babel import LazyString
 from flask_babel import gettext as flask_gettext
+from flask_babel import ngettext as flask_ngettext
 
 from opendlp.config import get_config
 
@@ -48,6 +49,29 @@ def gettext(message: str, **kwargs: Any) -> str:
             pass
 
     return _get_text_fallback(message, **kwargs)
+
+
+def ngettext(singular: str, plural: str, num: int, **kwargs: Any) -> str:
+    """Get a translated string in the plural form ``num`` calls for.
+
+    ``num`` is available to the message as ``%(num)s``, as it is with
+    Flask-Babel. Works both in Flask context and standalone.
+    """
+    if has_app_context():
+        try:
+            # Check if babel extension is initialized
+            if hasattr(current_app, "extensions") and "babel" in current_app.extensions:
+                return str(flask_ngettext(singular, plural, num, **kwargs))
+        except (ImportError, KeyError):  # pragma: no cover
+            # Flask-Babel not available or not initialized
+            pass
+
+    locale = os.environ.get("OPENDLP_LOCALE", _default_locale)
+    if locale in _translations:
+        translated = _translations[locale].ngettext(singular, plural, num)
+    else:
+        translated = singular if num == 1 else plural
+    return translated % {"num": num, **kwargs}
 
 
 def lazy_gettext(message: str, **kwargs: Any) -> LazyString:  # type: ignore[no-any-unimported]

@@ -147,7 +147,7 @@ EXT001,Alice Smith,alice@example.com"""
             )
 
         message = str(exc_info.value)
-        assert 'no column called "participant_id"' in message
+        assert "no column called 'participant_id'" in message
         # The columns the file does have, so the organiser can fix it without opening it
         assert "external_id, name, email" in message
 

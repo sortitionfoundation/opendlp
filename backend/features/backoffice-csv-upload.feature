@@ -1,7 +1,7 @@
 Feature: Backoffice CSV Upload
   As an administrator
   I want to upload CSV files for assemblies
-  So that I can import targets and people data without using Google Spreadsheets.
+  So that I can import targets and people data without using Google Sheets.
 
   Scenario: Targets and Respondents tabs are always visible
     Given I am logged in as an admin user
@@ -112,5 +112,5 @@ Feature: Backoffice CSV Upload
     And I open the dialog to create targets from respondent data
     And I choose the respondent column "Gender"
     And I add the selected categories
-    Then I should see "Created 1 categories"
+    Then I should see "Created 1 targets"
     And I should see "Gender"

@@ -5,7 +5,7 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
 {% extends "backoffice/base_page.html" %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/assembly_tabs.html" import assembly_tabs %}
-{% from "backoffice/components/pie_chart_card.html" import pie_chart_card %}
+{% from "backoffice/components/pie_chart_card.html" import pie_chart_card, pie_chart_legend %}
 {% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell %}
 {% from "backoffice/components/icons.html" import icon_pie_chart %}
 {% from "backoffice/components/button.html" import button %}
@@ -17,7 +17,7 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to Your Assemblies")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(
@@ -70,11 +70,11 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
             </div>
             {% if dashboard_sections %}
                 {{ button(_("Export"), variant="primary",
-                attrs='hx-get="' ~ url_for('backoffice.dashboard_export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
+                attrs='data-focus-id="dashboard-export" hx-get="' ~ url_for('backoffice.dashboard_export_modal', assembly_id=assembly.id) ~ '" hx-target="#export-modal-container" hx-swap="innerHTML"') }}
             {% endif %}
         </div>
     </div>
-    <div id="export-modal-container"></div>
+    <div id="export-modal-container" data-fragment-dialog-host></div>
 
     {% if not dashboard_sections %}
         {# Empty state: no target categories, so there is nothing to chart or tabulate.
@@ -98,13 +98,16 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
         {% for tbl in dashboard_tables %}
             <section class="mb-10">
                 <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ tbl.name }}</h3>
-                {% call table() %}
+                {# table-fixed with a fixed-width first column: every category table
+                   shares the same column offsets, instead of each table auto-sizing
+                   its value column to its longest name. #}
+                {% call table(classes="table-fixed") %}
                     {# Percent headers concatenate " %" outside gettext: a lone "%" in a
                        msgid trips newstyle gettext's printf formatting ("incomplete format"). #}
                     {{ table_head([
-                    {"label": ""},
-                    {"label": _("Target") ~ " %"},
-                    {"label": _("Target")},
+                    {"label": "", "classes": "w-1/4"},
+                    {"label": _("Population") ~ " %"},
+                    {"label": _("Target (min/max)")},
                     {"label": _("Respondents") ~ " %"},
                     {"label": _("Respondents")},
                     {"label": _("Selected") ~ " %"},
@@ -116,7 +119,7 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
                         {% for r in tbl.rows %}
                             {% call table_row() %}
                                 {{ table_cell(r.value, bold=true) }}
-                                {{ table_cell(r.target_pct) }}
+                                {{ table_cell(r.population_pct) }}
                                 {{ table_cell(r.target_count) }}
                                 {{ table_cell(r.respondents_pct) }}
                                 {{ table_cell(r.respondents_count) }}
@@ -135,13 +138,24 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
         {% for section in dashboard_sections %}
             <section class="mb-10">
                 <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ section.name }}</h3>
+                {# minmax floor sized so five cards fit a row on a 13" MacBook
+                   viewport (~1380px of content width inside the page padding). #}
                 <div class="grid gap-4"
-                     style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+                     style="grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));">
                     {% for card in section.cards %}
-                        {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4") }}
+                        {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4", legend=false) }}
                     {% endfor %}
                 </div>
+                {# One legend under the whole row: every card in the section shares the
+                   same value labels, so the cards render legend-free and full-size. #}
+                {% set legend_card = section.cards | selectattr("segments") | first %}
+                {% if legend_card %}
+                    {{ pie_chart_legend(legend_card.segments) }}
+                {% endif %}
             </section>
         {% endfor %}
+        {# Draws every canvas the pie_chart_card macro rendered above. #}
+        <script nonce="{{ csp_nonce }}"
+                src="{{ url_for('static', filename='backoffice/js/pie-chart.js', v=static_hashes('backoffice/js/pie-chart.js')) }}"></script>
     {% endif %}
 {% endblock %}

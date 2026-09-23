@@ -127,7 +127,7 @@ class TestDashboardGating:
     def test_a_user_with_nothing_is_told_what_to_do(self, logged_in_user: FlaskClient) -> None:
         """The empty state must not tell someone to create an assembly they cannot create."""
         response = logged_in_user.get("/backoffice/dashboard")
-        assert b"ask an assembly manager to add you" in response.data
+        assert b"ask an Assembly Manager to add you" in response.data
 
     def test_legacy_dashboard_offers_create_to_an_organiser(self, logged_in_organiser: FlaskClient) -> None:
         response = logged_in_organiser.get("/dashboard")
@@ -291,7 +291,7 @@ class TestTheAssemblyKeepsAManager:
         )
 
         assert response.status_code == 200
-        assert b"must keep at least one assembly manager" in response.data
+        assert b"must keep at least one Assembly Manager" in response.data
         with FakeUnitOfWork(store=fake_store) as uow:
             assert uow.users.get(organiser_user.id).get_assembly_role(assembly.id) == AssemblyRole.ASSEMBLY_MANAGER
 

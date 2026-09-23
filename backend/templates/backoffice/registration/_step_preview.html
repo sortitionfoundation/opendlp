@@ -18,7 +18,7 @@ ABOUTME: Included by assembly_registration.html when ?section=preview
                             border: 1px solid var(--color-borders-dividers)">
                 <h2 class="text-heading-lg mb-2" style="color: var(--color-headings);">{{ _("Form preview") }}</h2>
                 <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-                    {{ _("This is the last saved version of your registration form, shown exactly as visitors will see it. You can try the fields and dropdowns, but the form cannot be submitted from here.") }}
+                    {{ _("This is the last saved version of your registration page, shown exactly as visitors will see it. You can try the fields and dropdowns, but the form cannot be submitted from here.") }}
                 </p>
                 {% if registration_page %}
                                     {# The preview is a same-origin iframe of a dedicated backoffice route that
@@ -26,7 +26,7 @@ ABOUTME: Included by assembly_registration.html when ?section=preview
                                        disabled. The iframe keeps the author's HTML/CSS fully isolated from the
                                        backoffice page. #}
                     <iframe src="{{ url_for('backoffice_registration.preview_registration_form', assembly_id=assembly.id, url_slug=registration_page.url_slug) }}"
-                            title="{{ _('Registration form preview') }}"
+                            title="{{ _('Registration page preview') }}"
                             class="w-full rounded-md"
                             style="height: 70vh;
                                    min-height: 480px;
@@ -47,7 +47,7 @@ ABOUTME: Included by assembly_registration.html when ?section=preview
                     <div class="space-y-6">
                                         {# Registration URL #}
                         {{ readonly_url_display(label=_("Registration URL"),
-                        hint=_("The URL for your registration form"),
+                        hint=_("The URL for your registration page"),
                         url=registration_url) }}
                                         {# Short URL — only if configured #}
                         {% if registration_page.short_url_slug %}

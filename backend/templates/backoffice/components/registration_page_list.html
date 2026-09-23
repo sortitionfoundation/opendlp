@@ -11,7 +11,7 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
            names what it makes; once the assembly has a page, "another" says that
            this adds to them rather than replacing what is there. #}
         <div class="flex items-center justify-between mb-6">
-            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration") }}</h2>
+            <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Registration page") }}</h2>
             <form method="post"
                   action="{{ url_for('backoffice_registration.create_assembly_registration_page', assembly_id=assembly.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -223,11 +223,16 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                 </table>
             </div>
         {% else %}
-            <div class="rounded-lg p-6"
-                 style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
-                <p class="text-body-md" style="color: var(--color-body-text);">
-                    {{ _("This assembly has no registration pages yet. Create one to start collecting registrations — you can add more pages later, for example for language variants or A/B tests.") }}
-                </p>
+            {# Decorative illustration: the text below says everything it does, so alt is empty. #}
+            <div class="flex flex-col items-center gap-4 py-6 text-center">
+                <img src="{{ url_for('static', filename='img/illustrations/no-registration-page.svg') }}"
+                     alt=""
+                     width="150"
+                     height="150" />
+                <div class="flex flex-col gap-1.5" style="color: var(--color-headings);">
+                    <p class="text-heading-lg">{{ _("No registration page created yet") }}</p>
+                    <p class="text-body-sm">{{ _("Use the button above to create one.") }}</p>
+                </div>
             </div>
         {% endif %}
     </div>

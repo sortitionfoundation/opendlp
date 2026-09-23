@@ -17,16 +17,22 @@ from opendlp.domain.respondent_field_schema import (
     GROUP_DISPLAY_ORDER,
     IN_SCHEMA_FIXED_FIELDS,
     ChoiceOption,
+    DerivationType,
+    DerivedFieldError,
     FieldOnRegistrationPage,
     FieldType,
     FixedFieldError,
     RespondentFieldDefinition,
     RespondentFieldGroup,
+    TargetLinkedFieldError,
     humanise_field_key,
 )
 from opendlp.service_layer.constants import MAX_DISTINCT_VALUES_FOR_AUTO_ADD, SORT_ORDER_STEP
+from opendlp.service_layer.derivation_service import derivations_depending_on
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
+    FieldDefinitionConflictError,
+    FieldDefinitionNotFoundError,
     InsufficientPermissions,
     InvalidSelection,
     UserNotFoundError,
@@ -46,14 +52,6 @@ _MAX_RADIO_OPTIONS = 6
 # not among them. Enough to recognise the file by, few enough to stay readable
 # in a flash message - respondent exports can run to dozens of columns.
 MAX_LISTED_HEADERS = 10
-
-
-class FieldDefinitionNotFoundError(Exception):
-    """Raised when a RespondentFieldDefinition cannot be found."""
-
-
-class FieldDefinitionConflictError(Exception):
-    """Raised when adding a field that already exists, or attempting a disallowed edit."""
 
 
 def _ensure_view_permission(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly_id: uuid.UUID) -> None:
@@ -231,6 +229,7 @@ def add_field(
     field_type: FieldType = FieldType.TEXT,
     options: list[ChoiceOption] | None = None,
     on_registration_page: FieldOnRegistrationPage = FieldOnRegistrationPage.YES_REQUIRED,
+    help_text: str = "",
 ) -> RespondentFieldDefinition:
     """Add a single field to an assembly's schema.
 
@@ -247,6 +246,7 @@ def add_field(
         group: Which section the field belongs to; defaults to GENERAL.
         field_type: The data type; defaults to TEXT.
         options: For choice fields, the list of options.
+        help_text: Optional hint shown beneath the field on forms.
 
     Returns:
         The newly created RespondentFieldDefinition.
@@ -284,9 +284,40 @@ def add_field(
         field_type=field_type,
         options=options,
         on_registration_page=on_registration_page,
+        help_text=help_text,
     )
     uow.respondent_field_definitions.add(field)
     return field.create_detached_copy()
+
+
+def _refuse_retyping_a_derivation_source(uow: AbstractUnitOfWork, assembly_id: uuid.UUID, field_key: str) -> None:
+    """Raise if any derived field is computed from ``field_key`` - its rule was built for the current type."""
+    dependents = derivations_depending_on(uow, assembly_id, field_key)
+    if dependents:
+        raise FieldDefinitionConflictError(
+            _l(
+                "You can't change the type of '%(key)s' — it is used to derive: %(deps)s",
+                key=field_key,
+                deps=", ".join(f.field_key for f in dependents),
+            )
+        )
+
+
+def _option_changes(
+    field: RespondentFieldDefinition,
+    options: list[ChoiceOption] | None,
+    option_renames: dict[str, str] | None,
+) -> tuple[dict[str, str], set[str]]:
+    """The real renames among ``option_renames``, and the values ``options`` removes outright."""
+    kept = {o.value for o in options or []}
+    current = {o.value for o in field.options or []}
+    renames = {
+        old: new
+        for old, new in (option_renames or {}).items()
+        if old in current and old not in kept and new in kept and new not in current
+    }
+    removed_values = {value for value in current if value not in kept and value not in renames}
+    return renames, removed_values
 
 
 def update_field(
@@ -300,11 +331,20 @@ def update_field(
     field_type: FieldType | None = None,
     options: list[ChoiceOption] | None = _UNSET_OPTIONS,
     on_registration_page: FieldOnRegistrationPage | None = None,
+    help_text: str | None = None,
+    option_renames: dict[str, str] | None = None,
 ) -> RespondentFieldDefinition:
-    """Update a field's label, group, sort_order, field_type, options, or
-    on_registration_page.
+    """Update a field's label, group, sort_order, field_type, options,
+    on_registration_page, or help_text.
 
     ``options`` uses a sentinel to distinguish "leave alone" from "set to None".
+
+    ``option_renames`` (old value -> new value) says which of the new ``options``
+    are existing ones under a new name. A list replaced wholesale otherwise
+    reads as one option removed and another added, and a small mapping keyed on
+    the old value would drop the row rather than follow the rename. A pair that
+    does not describe a real rename - the old value is not an option, or is
+    still one, or the new value is not among ``options`` - is ignored.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -312,6 +352,17 @@ def update_field(
     field = uow.respondent_field_definitions.get(field_id)
     if field is None or field.assembly_id != assembly_id:
         raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
+    if field.is_derived and group is not None and group != RespondentFieldGroup.DERIVED:
+        # Computed questions are managed on the target data sources step, and
+        # the registration questions editor hides the Derived section.
+        raise FieldDefinitionConflictError(_l("A computed question always stays in the Derived section"))
+    if field_type is not None and field_type != field.field_type:
+        _refuse_retyping_a_derivation_source(uow, assembly_id, field.field_key)
+    removed_values: set[str] = set()
+    renames: dict[str, str] = {}
+    if options is not _UNSET_OPTIONS:
+        renames, removed_values = _option_changes(field, options, option_renames)
+        _refuse_emptying_small_mappings(uow, assembly_id, field.field_key, removed_values)
     try:
         field.update(
             label=label,
@@ -320,9 +371,28 @@ def update_field(
             field_type=field_type,
             options=options,
             on_registration_page=on_registration_page,
+            help_text=help_text,
         )
     except FixedFieldError as exc:
         raise FieldDefinitionConflictError(_l("You can't change the type or options of a fixed field")) from exc
+    except DerivedFieldError as exc:
+        raise FieldDefinitionConflictError(
+            _l("You can't change the type or options of a derived field — they are owned by its derivation")
+        ) from exc
+    except TargetLinkedFieldError as exc:
+        raise FieldDefinitionConflictError(
+            _l(
+                "You can't change the type or answer values of a field that feeds a target — "
+                "unlink it on the target data sources step first"
+            )
+        ) from exc
+    for old_value, new_value in renames.items():
+        # The same cascade update_choice_option runs for a single rename.
+        _rename_small_mapping_keys(uow, assembly_id, field.field_key, old_value, new_value)
+    if removed_values:
+        # Options replaced wholesale drop mapping keys the same way removing
+        # them one at a time does; a key that can never match again is stale.
+        _drop_small_mapping_keys(uow, assembly_id, field.field_key, removed_values)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -478,8 +548,79 @@ def update_choice_option(
         ChoiceOption(value=new_value, help_text=new_help_text) if o.value == old_value else o for o in existing
     ]
     field.update(options=updated_options)
+    if new_value != old_value:
+        # A small mapping keyed on the old option value would go silently stale,
+        # producing wrong derived data with no visible symptom — rename in step.
+        _rename_small_mapping_keys(uow, assembly_id, field.field_key, old_value, new_value)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
+
+
+def _rename_small_mapping_keys(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    source_field_key: str,
+    old_value: str,
+    new_value: str,
+) -> None:
+    for dependent in derivations_depending_on(uow, assembly_id, source_field_key):
+        if dependent.derivation_type != DerivationType.SMALL_MAPPING or dependent.derivation_config is None:
+            continue
+        mapping = dict(dependent.derivation_config.get("mapping", {}))
+        if old_value not in mapping:
+            continue
+        mapping[new_value] = mapping.pop(old_value)
+        dependent.set_derivation(
+            derivation_type=dependent.derivation_type,
+            derivation_config={**dependent.derivation_config, "mapping": mapping},
+            options=list(dependent.options or []),
+        )
+
+
+def _refuse_emptying_small_mappings(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    source_field_key: str,
+    values_to_remove: set[str],
+) -> None:
+    """A small mapping cannot be left empty, so its last mapped source options stay put.
+
+    Mirrors the "keep at least one option" rule on the source itself: the
+    organiser changes the derivation first, then tidies the source.
+    """
+    for dependent in derivations_depending_on(uow, assembly_id, source_field_key):
+        if dependent.derivation_type != DerivationType.SMALL_MAPPING or dependent.derivation_config is None:
+            continue
+        mapping = dependent.derivation_config.get("mapping", {})
+        if mapping and set(mapping) <= values_to_remove:
+            raise FieldDefinitionConflictError(
+                _l(
+                    "'%(value)s' is the last option mapped by '%(key)s'. Change that derivation first.",
+                    value=", ".join(sorted(set(mapping))),
+                    key=dependent.field_key,
+                )
+            )
+
+
+def _drop_small_mapping_keys(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    source_field_key: str,
+    values: set[str],
+) -> None:
+    for dependent in derivations_depending_on(uow, assembly_id, source_field_key):
+        if dependent.derivation_type != DerivationType.SMALL_MAPPING or dependent.derivation_config is None:
+            continue
+        mapping = dict(dependent.derivation_config.get("mapping", {}))
+        if not values & set(mapping):
+            continue
+        for value in values:
+            mapping.pop(value, None)
+        dependent.set_derivation(
+            derivation_type=dependent.derivation_type,
+            derivation_config={**dependent.derivation_config, "mapping": mapping},
+            options=list(dependent.options or []),
+        )
 
 
 def remove_choice_option(
@@ -503,7 +644,11 @@ def remove_choice_option(
         raise FieldDefinitionNotFoundError(f"Option '{value}' not found on field {field_id}")
     if not remaining:
         raise FieldDefinitionConflictError(_l("A choice field must keep at least one option"))
+    _refuse_emptying_small_mappings(uow, assembly_id, field.field_key, {value})
     field.update(options=remaining)
+    # A mapping entry keyed on the removed option can never match again; drop
+    # it so the config mirrors the source's real option set.
+    _drop_small_mapping_keys(uow, assembly_id, field.field_key, {value})
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -536,6 +681,59 @@ def reorder_group(
         field.updated_at = now
 
 
+def delete_derived_field(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    field: RespondentFieldDefinition,
+) -> None:
+    """Delete a derived field, its lookup table and the values it wrote on respondents.
+
+    A derived field is the plumbing of the target it feeds: no screen lists one,
+    so a derived field with no target can never be reached again. Its values go
+    with it — left behind, they would keep filling a column of the respondent
+    export that no question on any page explains.
+
+    Permission is the caller's to check; this runs inside flows that already have.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    uow.respondent_field_mapping_entries.delete_all_for_field(field.id)
+    uow.respondents.remove_attribute(assembly_id, field.field_key)
+    uow.respondent_field_definitions.delete(field)
+
+
+def rename_derived_field(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    field: RespondentFieldDefinition,
+    new_field_key: str,
+) -> None:
+    """Re-key a derived field, and the values it wrote, so it still matches its target.
+
+    Selection pairs a target with respondent data by name, so a derived field's
+    key has to follow the target it feeds when that target is renamed. The label
+    follows too, unless someone has written one of their own.
+
+    Permission is the caller's to check; this runs inside flows that already have.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    new_field_key = new_field_key.strip()
+    old_field_key = field.field_key
+    if new_field_key == old_field_key:
+        return
+    clash = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, new_field_key)
+    if clash is not None and clash.id != field.id:
+        raise FieldDefinitionConflictError(
+            _l("A question named '%(key)s' already exists — rename or delete it first", key=new_field_key)
+        )
+    if field.label == humanise_field_key(old_field_key):
+        field.label = humanise_field_key(new_field_key)
+    field.field_key = new_field_key
+    field.updated_at = datetime.now(UTC)
+    uow.respondents.rename_attribute(assembly_id, old_field_key, new_field_key)
+
+
 def delete_field(
     uow: AbstractUnitOfWork,
     user_id: uuid.UUID,
@@ -556,6 +754,15 @@ def delete_field(
         raise FieldDefinitionNotFoundError(f"Field {field_id} not found in assembly {assembly_id}")
     if field.is_fixed:
         raise FieldDefinitionConflictError(_l("Fixed field '%(key)s' cannot be deleted", key=field.field_key))
+    dependents = derivations_depending_on(uow, assembly_id, field.field_key)
+    if dependents:
+        raise FieldDefinitionConflictError(
+            _l(
+                "'%(key)s' cannot be deleted — it is used to derive: %(deps)s",
+                key=field.field_key,
+                deps=", ".join(f.field_key for f in dependents),
+            )
+        )
     uow.respondent_field_definitions.delete(field)
 
 
@@ -750,8 +957,8 @@ def check_id_column_in_headers(
 
     message = str(
         _l(
-            'This CSV has no column called "%(id_column)s". Its columns are: %(columns)s. '
-            'Set the ID Column field to one of these, or clear it to use the first column ("%(first)s").',
+            "This CSV has no column called '%(id_column)s'. Its columns are: %(columns)s. "
+            "Set the ID Column field to one of these, or clear it to use the first column ('%(first)s').",
             id_column=id_column,
             columns=columns,
             first=headers[0],

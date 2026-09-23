@@ -50,6 +50,10 @@ the wrong thing:
   it is a duplicate definition, and the catalogue stops compiling altogether.
   This is not hypothetical: it is how the Hungarian catalogue accumulated 873 of
   them.
+- `pybabel update` without `--no-fuzzy-matching` pre-fills every new msgid with
+  the translation of a similar-looking one, flagged fuzzy. The guesses are
+  nearly always wrong ("Date" became the Hungarian for "Data"), and one that
+  names a placeholder its msgid lacks stops `pybabel compile` outright.
 - `pybabel extract` over `.` alone misses the ~100 msgids the
   `sortition-algorithms` library contributes, and walks `thirdparty/` and
   `.venv/`. `translate-regen` passes the installed library's path as a second

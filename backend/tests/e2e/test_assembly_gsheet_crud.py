@@ -267,5 +267,5 @@ class TestAssemblyGSheetWorkflowIntegration:
         # Step 4: Verify gsheet configuration is removed (form should show create again)
         verify_response = logged_in_admin.get(f"/assemblies/{assembly.id}/gsheet")
         assert verify_response.status_code == 200
-        assert b"Configure Google Spreadsheet" in verify_response.data  # Create form
-        assert b"Edit Google Spreadsheet Configuration" not in verify_response.data
+        assert b"Configure Google Sheets" in verify_response.data  # Create form
+        assert b"Edit Google Sheets Configuration" not in verify_response.data

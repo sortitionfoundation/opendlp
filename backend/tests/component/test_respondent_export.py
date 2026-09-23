@@ -4,6 +4,7 @@
 import csv
 from io import StringIO
 
+import pytest
 from flask.testing import FlaskClient
 
 from opendlp.adapters.tabular_export import ExportTargetError
@@ -12,6 +13,16 @@ from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import GSheetExportKind, RespondentStatus
 from tests.fakes import FakeGSheetExportTarget, FakeStore, FakeUnitOfWork
+
+
+@pytest.fixture(autouse=True)
+def _service_account_configured(monkeypatch):
+    """The gsheet option is gated on a configured service account."""
+    for target in (
+        "opendlp.entrypoints.blueprints.respondents.get_service_account_email",
+        "opendlp.entrypoints.gsheet_export_flow.get_service_account_email",
+    ):
+        monkeypatch.setattr(target, lambda: "sheets-writer@example.iam.gserviceaccount.com")
 
 
 def _add_respondent(fake_store: FakeStore, assembly_id, external_id: str, status: RespondentStatus) -> None:
@@ -171,7 +182,7 @@ class TestRespondentsPageGSheetLink:
 
         assert response.status_code == 200
         body = response.get_data(as_text=True)
-        assert "Exported to Google Spreadsheet" in body
+        assert "Exported to Google Sheets" in body
         assert self._WORKSHEET_URL in body
         assert "Assembly Data" in body
 
@@ -182,7 +193,7 @@ class TestRespondentsPageGSheetLink:
 
         response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents")
 
-        assert "Exported to Google Spreadsheet" not in response.get_data(as_text=True)
+        assert "Exported to Google Sheets" not in response.get_data(as_text=True)
 
 
 class TestRunExport:
@@ -295,7 +306,7 @@ class TestRunExport:
         )
 
         assert response.status_code == 200
-        assert "Could not write to the Google Sheet" in response.get_data(as_text=True)
+        assert "Could not write to the spreadsheet" in response.get_data(as_text=True)
         # The write failed before commit, so no config row should have been saved.
         with FakeUnitOfWork(store=fake_store) as uow:
             saved = uow.assembly_export_gsheets.get_by_assembly_and_kind(

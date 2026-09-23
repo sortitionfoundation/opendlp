@@ -41,7 +41,7 @@ def _(admin_logged_in_page: Page, assembly_to_select):
     admin_logged_in_page.goto(view_url)
 
     # Then check that the Start Selection link goes to the gsheet_select page
-    link = admin_logged_in_page.get_by_role("link", name="Configure Google Spreadsheet")
+    link = admin_logged_in_page.get_by_role("link", name="Configure Google Sheets")
     expect(link).to_be_visible()
     link.click()
     expect(admin_logged_in_page).to_have_url(Urls.for_assembly("gsheet_configure", assembly_to_select.id))
@@ -68,7 +68,7 @@ def _(page: Page):
 @then("I can specify the source of the respondents data")
 def _(page: Page):
     """I can specify the source of the respondents data in "manual gsheet setup"."""
-    url_field = page.get_by_label("Google Spreadsheet URL")
+    url_field = page.get_by_label("Google Sheets URL")
     expect(url_field).to_be_visible()
     url_field.fill(VALID_GSHEET_URL)
     # there are two fields named "Respondents Tab Name" - so select the one in the first fieldset (group)
@@ -140,7 +140,7 @@ def _(page: Page):
     """I am told the number of categories and category values."""
     expect(page.get_by_text("Full Run Report", exact=True).first).to_be_visible(timeout=30_000)
     page.get_by_text("Full Run Report", exact=True).first.click()
-    expect(page.get_by_text("Found 4 categories for targets with a total of 20 values")).to_be_visible(timeout=30_000)
+    expect(page.get_by_text("Found 4 targets with a total of 20 values")).to_be_visible(timeout=30_000)
 
 
 @then("I am told selection has completed")
@@ -217,8 +217,8 @@ def _(page: Page):
 @when("I start the replacements")
 def _(page: Page):
     """I start the replacements."""
-    # Click the "Run Replacements" button
-    button = page.get_by_role("button", name="Run Replacements")
+    # Click the "Run Replacement Selection" button
+    button = page.get_by_role("button", name="Run Replacement Selection")
     expect(button).to_be_visible()
     expect(button).to_be_enabled()
     button.click()

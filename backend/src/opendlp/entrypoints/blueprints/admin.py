@@ -4,12 +4,14 @@ ABOUTME: Handles admin-only features like viewing and editing users, requires ad
 import uuid
 
 import structlog
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
+from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
+from opendlp.domain.user_signup_surveys import SIGNUP_SURVEY_QUESTIONS, leftover_answer_keys
 from opendlp.entrypoints.decorators import require_admin
 from opendlp.entrypoints.forms import CreateInviteForm, EditUserForm
 from opendlp.service_layer import two_factor_service
@@ -27,6 +29,7 @@ from opendlp.service_layer.invite_service import (
     list_invites,
     revoke_invite,
 )
+from opendlp.service_layer.signup_survey_service import export_users, get_signup_survey
 from opendlp.service_layer.two_factor_service import TwoFactorSetupError
 from opendlp.service_layer.user_service import (
     disable_user,
@@ -117,6 +120,27 @@ def list_users() -> ResponseReturnValue:
         return render_template("errors/500.html"), 500
 
 
+@admin_bp.route("/users/export")
+@login_required
+@require_admin
+def export_users_csv() -> ResponseReturnValue:
+    """Download every user with their signup survey answers as a CSV file."""
+    try:
+        target = CsvExportTarget()
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            export_users(uow, current_user.id, target=target)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to export users"), "error")
+        return redirect(url_for("admin.list_users"))
+
+    return Response(
+        target.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="opendlp-users.csv"'},
+    )
+
+
 @admin_bp.route("/users/<uuid:user_id>")
 @login_required
 @require_admin
@@ -126,8 +150,15 @@ def view_user(user_id: uuid.UUID) -> ResponseReturnValue:
         uow = bootstrap.get_flask_uow()
         with uow:
             user = get_user_by_id(uow, user_id, current_user.id)
+            survey = get_signup_survey(uow, user_id, current_user.id)
 
-        return render_template("admin/user_view.html", user=user), 200
+        return render_template(
+            "admin/user_view.html",
+            user=user,
+            survey=survey,
+            survey_questions=SIGNUP_SURVEY_QUESTIONS,
+            leftover_answer_keys=leftover_answer_keys(survey.answers) if survey else [],
+        ), 200
 
     except UserNotFoundError as e:
         logger.warning(
@@ -241,7 +272,7 @@ def disable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
             flash(
                 _(
                     "Account disabled for '%(email)s'. Every session has been ended. Their %(provider)s "
-                    "account still exists - if that is how they were compromised, it needs attention too.",
+                    "account still exists — if that is how they were compromised, it needs attention too.",
                     email=user.email,
                     provider=user.oauth_provider.capitalize(),
                 ),
@@ -309,19 +340,20 @@ def enable_user_account(user_id: uuid.UUID) -> ResponseReturnValue:
             flash(
                 _(
                     "An email has been sent telling them their account is back, and that they sign in "
-                    "with %(provider)s as before.",
+                    "with %(provider)s as before",
                     provider=user.oauth_provider.capitalize(),
                 ),
                 "success",
             )
         elif email_sent:
             flash(
-                _("An email has been sent telling them to request a password reset - their old password is gone"),
+                _("An email has been sent telling them to request a password reset — their old password is gone"),
                 "success",
             )
         else:
             flash(
-                _("The account is enabled, but we could not email the user. Please contact them directly."), "warning"
+                _("The account is enabled, but the email to the user could not be sent. Please contact them directly."),
+                "warning",
             )
 
         return redirect(url_for("admin.view_user", user_id=user_id))

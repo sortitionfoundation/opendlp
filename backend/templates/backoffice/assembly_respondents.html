@@ -3,7 +3,7 @@ ABOUTME: Backoffice assembly respondents page
 ABOUTME: Displays respondent data configuration for assemblies
 #}
 {% extends "backoffice/base_page.html" %}
-{% from "backoffice/components/icons.html" import icon_info %}
+{% from "backoffice/components/info_card.html" import info_card %}
 {% from "backoffice/components/page_header.html" import page_header %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/alert.html" import alert %}
@@ -19,7 +19,7 @@ ABOUTME: Displays respondent data configuration for assemblies
         {{ page_header(
         title=assembly.title,
         back_href=url_for('backoffice.dashboard'),
-        back_label=_("Back to dashboard")
+        back_label=_("Back to Your Assemblies")
         ) }}
         <div class="mt-4">
             {{ assembly_tabs(
@@ -38,40 +38,30 @@ ABOUTME: Displays respondent data configuration for assemblies
 {% block page_content %}
     {% if data_source == "gsheet" and gsheet %}
         {# Google Sheet source - show info about where respondents are configured #}
-        <section class="mb-8">
-            <div class="rounded-lg p-6" style="background-color: var(--color-tables-cards); border: 1px solid var(--color-borders-dividers);">
-                <div class="flex items-start gap-4">
-                    <div class="flex-shrink-0">
-                        {{ icon_info(classes="w-6 h-6", style="color: var(--color-primary-action);") }}
-                    </div>
-                    <div>
-                        <h2 class="text-heading-md mb-2" style="color: var(--color-headings);">{{ _("Respondents are configured in Google Sheets") }}</h2>
-                        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                            {{ _("Respondent data (participant information) is stored in your Google Spreadsheet.") }}
-                        </p>
+        {% call info_card(title=_("Respondents are configured in Google Sheets")) %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("Respondent data is stored in your Google Sheets spreadsheet.") }}
+            </p>
 
-                        <dl class="flex flex-col gap-2">
-                            <div class="flex gap-2">
-                                <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Initial Selection Respondents Tab:") }}</dt>
-                                <dd class="text-body-md" style="color: var(--color-body-text);">
-                                    <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.select_registrants_tab or _("Not configured") }}</code>
-                                </dd>
-                            </div>
-                            <div class="flex gap-2">
-                                <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Replacement Respondents Tab:") }}</dt>
-                                <dd class="text-body-md" style="color: var(--color-body-text);">
-                                    <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.replace_registrants_tab or _("Not configured") }}</code>
-                                </dd>
-                            </div>
-                        </dl>
-
-                        <div class="mt-4">
-                            {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
-                        </div>
-                    </div>
+            <dl class="flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Initial Selection Respondents Tab:") }}</dt>
+                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                        <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.select_registrants_tab or _("Not configured") }}</code>
+                    </dd>
                 </div>
+                <div class="flex gap-2">
+                    <dt class="text-label-lg" style="color: var(--color-secondary-text);">{{ _("Replacement Respondents Tab:") }}</dt>
+                    <dd class="text-body-md" style="color: var(--color-body-text);">
+                        <code class="px-2 py-0.5 rounded" style="background-color: var(--color-page-background);">{{ gsheet.replace_registrants_tab or _("Not configured") }}</code>
+                    </dd>
+                </div>
+            </dl>
+
+            <div class="mt-4">
+                {{ button(_("View Data Configuration"), href=url_for('backoffice.view_assembly_data', assembly_id=assembly.id) ~ "?source=gsheet", variant="outline") }}
             </div>
-        </section>
+        {% endcall %}
     {% elif data_source == "csv" %}
         <div class="mb-8">
             {% call section() %}
@@ -80,14 +70,14 @@ ABOUTME: Displays respondent data configuration for assemblies
                         <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Respondents") }}</h2>
                         {% if respondent_gsheet and respondent_gsheet.worksheet_url %}
                             <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                                {{ _("Exported to Google Spreadsheet") }}
+                                {{ _("Exported to Google Sheets") }}
                                 <a href="{{ respondent_gsheet.worksheet_url }}" target="_blank" rel="noopener"
-                                   class="underline" style="color: var(--color-primary-action);">{{ respondent_gsheet.spreadsheet_title or _("Google Spreadsheet") }}</a>
+                                   class="underline" style="color: var(--color-primary-action);">{{ respondent_gsheet.spreadsheet_title or _("View spreadsheet") }}</a>
                             </p>
                         {% endif %}
                     </div>
                 </div>
-                <div id="export-modal-container"></div>
+                <div id="export-modal-container" data-fragment-dialog-host></div>
                 {# Filter controls - show when there are respondents or when filter is active #}
                 {% if total_count > 0 or status_filter %}
                     <div class="flex items-center justify-end gap-4 mb-4">
@@ -109,6 +99,7 @@ ABOUTME: Displays respondent data configuration for assemblies
                         </div>
                         {% if total_count > 0 %}
                             <button type="button"
+                                    data-focus-id="respondents-export"
                                     class="px-4 py-2 rounded-lg text-body-md"
                                     style="background-color: var(--color-primary-action); color: white;"
                                     hx-get="{{ url_for('respondents.export_modal', assembly_id=assembly.id) }}{% if status_filter %}?status={{ status_filter }}{% endif %}"

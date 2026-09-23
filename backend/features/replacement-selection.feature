@@ -1,6 +1,6 @@
 Feature: Replacement Selection
   As an Assembly Manager
-  I want to select replacement participants
+  I want to select replacements
   When original selections decline or cannot participate.
 
   Background:
@@ -35,7 +35,7 @@ Feature: Replacement Selection
     And the load task completes successfully
     Then the modal shows the available replacement count
     And the number input field is visible
-    And the Run Replacements button is visible
+    And the Run Replacement Selection button is visible
 
   Scenario: Load task shows selection range information
     Given an assembly with gsheet configured
@@ -53,7 +53,7 @@ Feature: Replacement Selection
     Given an assembly with gsheet configured
     And the replacement load task has completed
     When the user enters the number to select
-    And the user clicks Run Replacements
+    And the user clicks Run Replacement Selection
     Then the modal shows a loading spinner
     And the Cancel Task button is visible
 
@@ -61,7 +61,7 @@ Feature: Replacement Selection
     Given an assembly with gsheet configured
     And the replacement load task has completed
     When the user enters the number to select
-    And the user clicks Run Replacements
+    And the user clicks Run Replacement Selection
     And the replacement task completes
     Then the modal shows Completed status
     And the result message shows success
@@ -75,7 +75,7 @@ Feature: Replacement Selection
     Given an assembly with gsheet configured
     And the replacement load task has completed
     When the user enters the number to select
-    And the user clicks Run Replacements
+    And the user clicks Run Replacement Selection
     Then the Cancel Task button is visible
 
   # =============================================================================
@@ -94,7 +94,7 @@ Feature: Replacement Selection
     Given an assembly with gsheet configured
     And the replacement load task has completed
     When the user enters the number to select
-    And the user clicks Run Replacements
+    And the user clicks Run Replacement Selection
     Then the Close button is not visible
     And the modal cannot be closed by clicking backdrop
 

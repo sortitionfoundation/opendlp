@@ -10,6 +10,8 @@ from opendlp.domain.password_reset import PasswordResetToken
 from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
+from opendlp.feature_flags import reload_flags
+from opendlp.service_layer.signup_survey_service import get_signup_survey
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
@@ -132,6 +134,127 @@ class TestAuthenticationFlow:
         # Verify user is logged out
         with client.session_transaction() as sess:
             assert "_user_id" not in sess
+
+
+@pytest.fixture
+def open_signup(monkeypatch):
+    """Turn on FF_OPEN_SIGNUP for one test, restoring the flags afterwards."""
+    monkeypatch.setenv("FF_OPEN_SIGNUP", "true")
+    reload_flags()
+    yield
+    monkeypatch.delenv("FF_OPEN_SIGNUP", raising=False)
+    reload_flags()
+
+
+class TestOpenSignup:
+    """Registration without an invite code, gated by FF_OPEN_SIGNUP."""
+
+    def _register(self, client: FlaskClient, url: str = "/auth/register", **extra_data) -> object:
+        data = {
+            "invite_code": "",
+            "first_name": "Open",
+            "last_name": "Signup",
+            "email": "opensignup@example.com",
+            "password": "securepassword123",  # pragma: allowlist secret
+            "password_confirm": "securepassword123",  # pragma: allowlist secret
+            "accept_data_agreement": "y",
+            "csrf_token": get_csrf_token(client, url),
+        }
+        data.update(extra_data)
+        return client.post(url, data=data, follow_redirects=False)
+
+    def test_register_without_invite_creates_user_and_survey(
+        self, client: FlaskClient, postgres_session_factory, admin_user: User, open_signup
+    ):
+        response = client.get("/auth/register")
+        assert response.status_code == 200
+        assert b"Where are you in the world?" in response.data
+
+        response = self._register(
+            client,
+            survey_location="Budapest, Hungary",
+            survey_organisation_size="2_10",
+            survey_process_plan="within_year",
+            survey_comment="Looking forward to it",
+        )
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/auth/login"
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get_by_email("opensignup@example.com")
+            assert user is not None
+            assert user.global_role == GlobalRole.ORGANISER
+            survey = get_signup_survey(uow, user.id, admin_user.id)
+            assert survey is not None
+            assert survey.answers == {
+                "location": "Budapest, Hungary",
+                "organisation_size": "2_10",
+                "process_plan": "within_year",
+                "comment": "Looking forward to it",
+            }
+
+    def test_register_without_invite_refused_when_flag_off(self, client: FlaskClient, postgres_session_factory):
+        response = self._register(client)
+        assert response.status_code == 200
+        assert b"An invite code is required to register." in response.data
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.users.get_by_email("opensignup@example.com") is None
+
+    def test_skipq_hides_questions_and_saves_no_survey(
+        self, client: FlaskClient, postgres_session_factory, admin_user: User, open_signup
+    ):
+        response = client.get("/auth/register?skipq=1")
+        assert response.status_code == 200
+        assert b"Where are you in the world?" not in response.data
+
+        # Even a crafted POST with survey answers stores nothing when skipq is set
+        response = self._register(client, url="/auth/register?skipq=1", survey_location="Budapest")
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get_by_email("opensignup@example.com")
+            assert user is not None
+            assert get_signup_survey(uow, user.id, admin_user.id) is None
+
+    def test_registration_is_rate_limited_per_ip(self, client: FlaskClient, app, postgres_session_factory, open_signup):
+        """The limit counts account creations, so the excess signup is refused."""
+        original = app.config.get("SIGNUP_RATE_LIMIT_PER_IP")
+        app.config["SIGNUP_RATE_LIMIT_PER_IP"] = 2
+        try:
+            for i in range(2):
+                response = self._register(client, email=f"limited{i}@example.com")
+                assert response.status_code == 302
+
+            response = self._register(client, email="limited2@example.com")
+            assert response.status_code == 200
+            assert b"Rate limit exceeded" in response.data
+        finally:
+            if original is None:
+                app.config.pop("SIGNUP_RATE_LIMIT_PER_IP", None)
+            else:  # pragma: no cover
+                app.config["SIGNUP_RATE_LIMIT_PER_IP"] = original
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.users.get_by_email("limited1@example.com") is not None
+            assert uow.users.get_by_email("limited2@example.com") is None
+
+    def test_register_with_invite_still_uses_invite_role(
+        self, client: FlaskClient, postgres_session_factory, valid_invite: UserInvite, open_signup
+    ):
+        response = self._register(client, invite_code=valid_invite.code, survey_location="Budapest")
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get_by_email("opensignup@example.com")
+            assert user is not None
+            assert user.global_role == valid_invite.global_role
+            # The valid_invite fixture created this admin
+            admin = uow.users.get_by_email("admin@example.com")
+            assert admin is not None
+            survey = get_signup_survey(uow, user.id, admin.id)
+            assert survey is not None
+            assert survey.answers == {"location": "Budapest"}
 
 
 class TestAuthenticationEdgeCases:

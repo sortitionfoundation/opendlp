@@ -11,6 +11,7 @@ from flask.testing import FlaskClient
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import two_factor_service
+from opendlp.service_layer.signup_survey_service import save_signup_survey
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
@@ -162,6 +163,61 @@ class TestAdminUserView:
         assert response.status_code == 200
         assert regular_user.email.encode() in response.data
         assert regular_user.first_name.encode() in response.data if regular_user.first_name else True
+
+    def test_view_user_shows_signup_survey_answers(
+        self, client: FlaskClient, admin_user: User, regular_user: User, postgres_session_factory
+    ):
+        """The signup survey section shows the answers, with choice tokens as labels."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            save_signup_survey(uow, regular_user.id, {"location": "Budapest", "organisation_size": "2_10"})
+
+        login_as_admin(client, admin_user)
+        response = client.get(f"/admin/users/{regular_user.id}")
+        assert response.status_code == 200
+        assert b"Signup Survey" in response.data
+        assert b"Budapest" in response.data
+        assert b"2 to 10 people" in response.data
+
+    def test_view_user_without_survey_says_so(self, client: FlaskClient, admin_user: User, regular_user: User):
+        login_as_admin(client, admin_user)
+        response = client.get(f"/admin/users/{regular_user.id}")
+        assert response.status_code == 200
+        assert b"No signup survey answers for this user." in response.data
+
+
+class TestAdminUserExport:
+    """Test the users CSV export."""
+
+    def test_export_includes_users_and_survey_answers(
+        self, client: FlaskClient, admin_user: User, regular_user: User, postgres_session_factory
+    ):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            save_signup_survey(uow, regular_user.id, {"location": "Budapest"})
+
+        login_as_admin(client, admin_user)
+        response = client.get("/admin/users/export")
+        assert response.status_code == 200
+        assert response.mimetype == "text/csv"
+        assert "attachment" in response.headers["Content-Disposition"]
+
+        body = response.get_data(as_text=True)
+        headers = body.splitlines()[0].lstrip("﻿").split(",")
+        assert "email" in headers
+        assert "location" in headers
+        assert regular_user.email in body
+        assert "Budapest" in body
+
+    def test_export_refused_for_non_admin(self, client: FlaskClient, regular_user: User):
+        client.post(
+            "/auth/login",
+            data={
+                "email": regular_user.email,
+                "password": "userpass123",  # pragma: allowlist secret
+                "csrf_token": get_csrf_token(client, "/auth/login"),
+            },
+        )
+        response = client.get("/admin/users/export", follow_redirects=False)
+        assert response.status_code in (302, 403)
 
 
 class TestAdminUserEdit:

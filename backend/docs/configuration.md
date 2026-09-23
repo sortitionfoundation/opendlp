@@ -212,6 +212,22 @@ The form-timing check is additionally gated on the
 the test config). This is a config-class setting rather than an environment
 variable; see [docs/bot-protection.md](bot-protection.md).
 
+### Account Signup Rate Limiting
+
+The `/auth/register` account signup form has its own per-IP limit, separate
+from the registration-page bot protection above - it matters mainly with
+`FF_OPEN_SIGNUP` on, when no invite code gates account creation. Only
+successful account creations count towards the limit, so failed form
+submissions cannot lock a shared IP out of registering.
+
+```bash
+# Max account creations per source IP per window (default: 10)
+SIGNUP_RATE_LIMIT_PER_IP=10
+
+# Signup rate-limit window in minutes (default: 60)
+SIGNUP_RATE_LIMIT_WINDOW_MINUTES=60
+```
+
 ### Monitoring
 
 Enable end-to-end selection monitoring (issue #582) by pointing both
@@ -368,6 +384,7 @@ if has_feature("my_feature"):
 | ---------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `FF_REGISTRATION_PAGE` | `false`                             | Enables the public registration page routes (`/register/<slug>`, `/register/<slug>/thank-you`, `/r/<short_slug>`, `/registration-closed`). When unset or `false`, those routes return 404.                                                                                                                                          |
 | `FF_SHOWCASE`          | `false` in production, on elsewhere | Publishes the component showcase at `/backoffice/showcase`, which takes no login. Only consulted when `FLASK_ENV=production`: set it on a staging server so designers and reviewers can see the design system against a real build, and leave it off on a live install. See `showcase_enabled()` in `src/opendlp/feature_flags.py`. |
+| `FF_OPEN_SIGNUP`       | `false`                             | Lets people register at `/auth/register` without an invite code: a no-invite signup gets the `organiser` global role so they can create assemblies straight away, and the form asks the optional signup survey questions (an invite link can append `?skipq=1` to hide them). When unset or `false`, registration is invite-only and unchanged. |
 
 ## Environment Files
 

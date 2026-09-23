@@ -34,12 +34,12 @@ close_expr="close()") %}
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <div class="dialog-body">
         <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
-            {{ _("Each column you choose becomes a target category. Set its percentages, minimums and maximums on the Targets tab afterwards.") }}
+            {{ _("Each column you choose becomes a target. Set its percentages, minimums and maximums on the Targets tab afterwards.") }}
         </p>
         {# ── Recommended columns (< 20 distinct values) ── #}
         {% if recommended_columns %}
             <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-                {{ _("These columns have few distinct values and are likely useful as target categories. Select the categories you want to use as targets.") }}
+                {{ _("These columns have few distinct values and are likely useful as targets. Select the columns you want to use as targets.") }}
             </p>
             <div class="flex flex-col gap-2 mb-4">
                 {% for col in recommended_columns %}
@@ -66,7 +66,7 @@ close_expr="close()") %}
                 </summary>
                 <div class="mt-2">
                     <p class="text-body-md mb-4" style="color: var(--color-secondary-text);">
-                        {{ _("These columns have many different values and probably aren't useful as target categories. Only the category will be created; values will not be added automatically.") }}
+                        {{ _("These columns have many different values and probably aren't useful as targets. Only the target will be created; values will not be added automatically.") }}
                     </p>
                     <div class="flex flex-col gap-2">
                         {% for col in high_cardinality_columns %}
@@ -85,7 +85,7 @@ close_expr="close()") %}
     </div>
     <div class="dialog-footer">
         {{ button(_("Cancel"), variant="secondary", attrs='@click="close()"') }}
-        {{ button(_("Add selected categories"), variant="primary", type="submit") }}
+        {{ button(_("Add selected targets"), variant="primary", type="submit") }}
     </div>
 </form>
 {% endcall %}

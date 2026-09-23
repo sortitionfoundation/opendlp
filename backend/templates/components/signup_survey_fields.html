@@ -1,0 +1,51 @@
+{# Renders the optional signup survey fields of a form using SignupSurveyFormMixin.
+   The fields come from SIGNUP_SURVEY_QUESTIONS, so this macro switches on the
+   WTForms field type rather than naming any question. #}
+{% macro signup_survey_fields(form) %}
+    <h2 class="govuk-heading-m govuk-!-margin-top-6">{{ _("Tell us a little about yourself") }}</h2>
+    <p class="govuk-hint">{{ _("These questions are optional, but your answers help us help you.") }}</p>
+    {% for field in form.survey_fields() %}
+        <div class="govuk-form-group{% if field.errors %} govuk-form-group--error{% endif %}">
+            {% if field.type == "RadioField" %}
+                <fieldset class="govuk-fieldset"
+                          {% if field.description %}aria-describedby="{{ field.id }}-hint"{% endif %}>
+                    <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">{{ field.label.text }}</legend>
+                    {% if field.description %}
+                        <div id="{{ field.id }}-hint" class="govuk-hint">{{ field.description }}</div>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p id="{{ field.id }}-error" class="govuk-error-message">
+                            <span class="govuk-visually-hidden">{{ _("Error") }}:</span> {{ error }}
+                        </p>
+                    {% endfor %}
+                    <div class="govuk-radios" data-module="govuk-radios">
+                        {% for option in field %}
+                            <div class="govuk-radios__item">
+                                {{ option(class="govuk-radios__input") }}
+                                {{ option.label(class="govuk-label govuk-radios__label") }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+            {% else %}
+                {{ field.label(class="govuk-label govuk-label--s") }}
+                {% if field.description %}
+                    <div id="{{ field.id }}-hint" class="govuk-hint">{{ field.description }}</div>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p id="{{ field.id }}-error" class="govuk-error-message">
+                        <span class="govuk-visually-hidden">{{ _("Error") }}:</span> {{ error }}
+                    </p>
+                {% endfor %}
+                {% set describedby = (field.id + "-hint" if field.description else "") + (" " + field.id + "-error" if field.errors else "") %}
+                {% if field.type == "SelectField" %}
+                    {{ field(class="govuk-select" + (" govuk-select--error" if field.errors else ""), aria_describedby=describedby.strip()) }}
+                {% elif field.type == "TextAreaField" %}
+                    {{ field(class="govuk-textarea" + (" govuk-textarea--error" if field.errors else ""), rows="4", aria_describedby=describedby.strip()) }}
+                {% else %}
+                    {{ field(class="govuk-input" + (" govuk-input--error" if field.errors else ""), aria_describedby=describedby.strip()) }}
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endfor %}
+{% endmacro %}

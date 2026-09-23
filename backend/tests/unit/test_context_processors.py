@@ -272,7 +272,7 @@ class TestGetServiceAccountEmail:
         with patch("opendlp.entrypoints.context_processors.config.get_google_auth_json_path", return_value=auth_file):
             email = get_service_account_email()
 
-        assert email == "UNKNOWN"
+        assert email == ""
 
     @pytest.mark.parametrize(
         "contents",
@@ -291,7 +291,7 @@ class TestGetServiceAccountEmail:
         with patch("opendlp.entrypoints.context_processors.config.get_google_auth_json_path", return_value=auth_file):
             email = get_service_account_email()
 
-        assert email == "UNKNOWN"
+        assert email == ""
 
     def test_get_service_account_email_with_valid_auth_file(self, tmp_path):
         private_dir = tmp_path / "private"
