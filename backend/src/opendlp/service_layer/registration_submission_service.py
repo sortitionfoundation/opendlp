@@ -8,12 +8,19 @@ from typing import Any
 
 from opendlp.domain.registration_page import RegistrationPageStatus
 from opendlp.domain.respondent_field_schema import (
+    DerivationType,
     FieldOnRegistrationPage,
     FieldType,
     RespondentFieldDefinition,
 )
 from opendlp.domain.respondents import Respondent
-from opendlp.domain.validators import validate_choice, validate_date_field, validate_email_field, validate_integer
+from opendlp.domain.validators import (
+    validate_birth_year,
+    validate_choice,
+    validate_date_field,
+    validate_email_field,
+    validate_integer,
+)
 from opendlp.domain.value_objects import RespondentAction, RespondentSourceType, RespondentStatus
 from opendlp.service_layer.derivation_service import apply_derivations, load_mapping_lookups
 from opendlp.service_layer.registration_page_service import (
@@ -79,11 +86,14 @@ def _validate_field_value(
     value: Any,
     *,
     required: bool,
+    is_age_source: bool = False,
 ) -> tuple[Any, str | None]:
     """Validate a single field value. Returns (cleaned_value, error_message or None).
 
     A cleaned value of None means "nothing to store" (an optional field left
-    blank); the caller skips those. Required fields reject a blank value.
+    blank); the caller skips those. Required fields reject a blank value. A
+    number that an age range is worked out from is a year of birth, so it must
+    be a plausible one.
     """
     str_value = str(value).strip() if value is not None else ""
 
@@ -103,7 +113,7 @@ def _validate_field_value(
         return validate_choice(str_value, valid_values)
 
     if fd.effective_field_type == FieldType.INTEGER:
-        return validate_integer(str_value)
+        return validate_birth_year(str_value) if is_age_source else validate_integer(str_value)
 
     if fd.effective_field_type == FieldType.DATE:
         return validate_date_field(str_value)
@@ -142,6 +152,12 @@ def _validate_form_data(
     """
     cleaned: dict[str, Any] = {}
     errors: dict[str, list[str]] = {}
+    age_source_keys = {
+        key
+        for fd in field_definitions
+        if fd.derivation_type == DerivationType.AGE_BRACKET
+        for key in fd.derived_from or []
+    }
 
     for fd in field_definitions:
         if fd.on_registration_page == FieldOnRegistrationPage.NO:
@@ -153,7 +169,7 @@ def _validate_form_data(
         else:
             value = form_data.get(key, "")
 
-        cleaned_value, error = _validate_field_value(fd, value, required=required)
+        cleaned_value, error = _validate_field_value(fd, value, required=required, is_age_source=key in age_source_keys)
         if error:
             errors.setdefault(key, []).append(error)
         elif cleaned_value is not None:
