@@ -374,6 +374,39 @@ class TestCategorySourceAndComment:
         assert len(link_text) == MAX_URL_TEXT_LENGTH
         assert link_text.endswith("\u2026")
 
+    def test_the_view_names_the_link_as_the_source_of_the_percentages(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """'Data source' read as where the respondents come from, so the label says which numbers it backs."""
+        _import_targets(
+            fake_store,
+            admin_user,
+            existing_assembly.id,
+            "feature,value,min,max,source_url\nGender,Male,3,7,https://www.ons.gov.uk/dataset\n",
+        )
+
+        html_text = _read_only_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        assert "Source of population figures:" in html_text
+        assert "Data Source" not in html_text
+        assert 'title="A link to the report the percentages come from, such as census tables or a poll."' in html_text
+
+    def test_the_edit_form_describes_the_source_field_with_its_info_icon(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        category = _create_category(fake_store, admin_user, existing_assembly.id, "Gender")
+        _add_value(fake_store, admin_user, existing_assembly.id, category.id, "Male", 1, 2)
+
+        html_text = _edit_form_html(logged_in_admin.get(_targets_url(existing_assembly.id)).data.decode())
+
+        source_id = f"bulk-source-{category.id}"
+        assert re.search(rf'<label for="{source_id}"[^>]*>\s*Source of population figures\s*</label>', html_text)
+        assert f'aria-describedby="{source_id}-info"' in html_text
+        assert re.search(
+            rf'id="{source_id}-info">A link to the report the percentages come from, such as census tables or a poll\.',
+            html_text,
+        )
+
 
 # Nine values in the respondent data, one of them targeted, so the eight that
 # are missing are more than the summary lists in full.
