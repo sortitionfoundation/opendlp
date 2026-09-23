@@ -1419,24 +1419,24 @@ msgstr "%(count)s lejárt meghívó törölve"
 msgid "An error occurred while cleaning up invites"
 msgstr "Hiba történt a meghívók törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:78
+#: src/opendlp/entrypoints/blueprints/auth.py:79
 msgid "This account has been disabled. Please contact an administrator."
 msgstr "Ezt a fiókot letiltották. Lépj kapcsolatba egy adminisztrátorral."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:135
-#: src/opendlp/entrypoints/blueprints/auth.py:253
-#: src/opendlp/entrypoints/blueprints/auth.py:674
-#: src/opendlp/entrypoints/blueprints/auth.py:784
+#: src/opendlp/entrypoints/blueprints/auth.py:136
+#: src/opendlp/entrypoints/blueprints/auth.py:254
+#: src/opendlp/entrypoints/blueprints/auth.py:697
+#: src/opendlp/entrypoints/blueprints/auth.py:807
 msgid "Signed in successfully"
 msgstr "Sikeres bejelentkezés"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:142
-#: src/opendlp/entrypoints/blueprints/auth.py:149
+#: src/opendlp/entrypoints/blueprints/auth.py:143
+#: src/opendlp/entrypoints/blueprints/auth.py:150
 #: src/opendlp/service_layer/exceptions.py:127
 msgid "Invalid email or password"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:152
+#: src/opendlp/entrypoints/blueprints/auth.py:153
 msgid ""
 "Please confirm your email address before logging in. Check your inbox for"
 " the confirmation link."
@@ -1444,23 +1444,23 @@ msgstr ""
 "Bejelentkezés előtt erősítsd meg az e-mail címedet. Keresd a megerősítő "
 "linket a postaládádban."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:161
+#: src/opendlp/entrypoints/blueprints/auth.py:162
 msgid "An error occurred while signing in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:174
+#: src/opendlp/entrypoints/blueprints/auth.py:175
 msgid "No pending two-factor authentication. Please sign in first."
 msgstr "Nincs folyamatban lévő kétlépcsős azonosítás. Előbb jelentkezz be."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:187
+#: src/opendlp/entrypoints/blueprints/auth.py:188
 msgid "Two-factor authentication session expired. Please sign in again."
 msgstr "A kétlépcsős azonosítás munkamenete lejárt. Jelentkezz be újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:194
+#: src/opendlp/entrypoints/blueprints/auth.py:195
 msgid "Invalid session. Please sign in again."
 msgstr "Érvénytelen munkamenet. Jelentkezz be újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:247
+#: src/opendlp/entrypoints/blueprints/auth.py:248
 #, python-format
 msgid ""
 "Backup code used successfully. You have %(remaining)s backup codes "
@@ -1469,12 +1469,12 @@ msgstr ""
 "A tartalék kód sikeresen felhasználva. Még %(remaining)s tartalék kódod "
 "van."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:273
+#: src/opendlp/entrypoints/blueprints/auth.py:274
 msgid "Please enter a verification code"
 msgstr "Add meg az ellenőrző kódot"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:286
-#: src/opendlp/entrypoints/blueprints/auth.py:313
+#: src/opendlp/entrypoints/blueprints/auth.py:287
+#: src/opendlp/entrypoints/blueprints/auth.py:314
 msgid ""
 "Too many failed attempts. Please try again in 15 minutes or use a backup "
 "code."
@@ -1482,55 +1482,59 @@ msgstr ""
 "Túl sok sikertelen próbálkozás. Próbáld újra 15 perc múlva, vagy használj"
 " tartalék kódot."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:293
+#: src/opendlp/entrypoints/blueprints/auth.py:294
 msgid "Two-factor authentication is not enabled for this account"
 msgstr "Ehhez a fiókhoz nincs bekapcsolva a kétlépcsős azonosítás"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:306
+#: src/opendlp/entrypoints/blueprints/auth.py:307
 #, python-format
 msgid "Invalid verification code. %(attempts)s attempts remaining."
 msgstr "Érvénytelen ellenőrző kód. Még %(attempts)s próbálkozásod maradt."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:326
+#: src/opendlp/entrypoints/blueprints/auth.py:327
 msgid "An error occurred during verification. Please try again."
 msgstr "Hiba történt az ellenőrzés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:338
+#: src/opendlp/entrypoints/blueprints/auth.py:339
 msgid "You have been signed out"
 msgstr "Kijelentkeztél"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:346
+#: src/opendlp/entrypoints/blueprints/auth.py:347
 msgid "Registration successful! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:354
+#: src/opendlp/entrypoints/blueprints/auth.py:355
 msgid "Registration successful! Please check your email to confirm your account."
 msgstr "Sikeres regisztráció! Nézd meg az e-mailjeidet a fiókod megerősítéséhez."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:431
-#: src/opendlp/entrypoints/blueprints/auth.py:599
+#: src/opendlp/entrypoints/blueprints/auth.py:412
+msgid "We could not verify that you are human. Please try again."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:454
+#: src/opendlp/entrypoints/blueprints/auth.py:622
 #: src/opendlp/entrypoints/blueprints/profile.py:326
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:434
+#: src/opendlp/entrypoints/blueprints/auth.py:457
 msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a regisztráció során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:459
-#: src/opendlp/entrypoints/blueprints/auth.py:474
-#: src/opendlp/entrypoints/blueprints/auth.py:506
-#: src/opendlp/entrypoints/blueprints/auth.py:560
-#: src/opendlp/entrypoints/blueprints/auth.py:602
+#: src/opendlp/entrypoints/blueprints/auth.py:482
+#: src/opendlp/entrypoints/blueprints/auth.py:497
+#: src/opendlp/entrypoints/blueprints/auth.py:529
+#: src/opendlp/entrypoints/blueprints/auth.py:583
+#: src/opendlp/entrypoints/blueprints/auth.py:625
 msgid "An error occurred. Please try again."
 msgstr "Hiba történt. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:467
+#: src/opendlp/entrypoints/blueprints/auth.py:490
 msgid "Email confirmed successfully! You can now sign in."
 msgstr "Az e-mail cím megerősítése sikerült! Most már bejelentkezhetsz."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:497
+#: src/opendlp/entrypoints/blueprints/auth.py:520
 msgid ""
 "If that email is registered and unconfirmed, a confirmation link has been"
 " sent"
@@ -1538,36 +1542,36 @@ msgstr ""
 "Ha ez az e-mail cím regisztrálva van és még nincs megerősítve, a "
 "megerősítő link elment"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:551
+#: src/opendlp/entrypoints/blueprints/auth.py:574
 msgid "If an account exists with this email, a password reset link has been sent"
 msgstr "Ha létezik fiók ezzel az e-mail címmel, a jelszó-visszaállító link elment"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:592
+#: src/opendlp/entrypoints/blueprints/auth.py:615
 msgid "Your password has been reset successfully. You can now sign in."
 msgstr "A jelszavad visszaállítása sikerült. Most már bejelentkezhetsz."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:645
+#: src/opendlp/entrypoints/blueprints/auth.py:668
 #: src/opendlp/entrypoints/blueprints/profile.py:158
 msgid "Failed to get user information from Google"
 msgstr "Nem sikerült lekérni a felhasználói adatokat a Google-tól"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:672
-#: src/opendlp/entrypoints/blueprints/auth.py:782
+#: src/opendlp/entrypoints/blueprints/auth.py:695
+#: src/opendlp/entrypoints/blueprints/auth.py:805
 msgid "Account created successfully! Welcome to OpenDLP."
 msgstr "A fiók sikeresen létrejött! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:686
+#: src/opendlp/entrypoints/blueprints/auth.py:709
 msgid "An error occurred during Google sign in. Please try again."
 msgstr ""
 "Hiba történt a Google-fiókkal való bejelentkezés során. Kérjük, próbáld "
 "újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:755
+#: src/opendlp/entrypoints/blueprints/auth.py:778
 #: src/opendlp/entrypoints/blueprints/profile.py:222
 msgid "Failed to get user information from Microsoft"
 msgstr "Nem sikerült lekérni a felhasználói adatokat a Microsofttól"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:796
+#: src/opendlp/entrypoints/blueprints/auth.py:819
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr ""
 "Hiba történt a Microsoft-fiókkal való bejelentkezés során. Kérjük, "
@@ -4345,7 +4349,7 @@ msgstr "Kilépés"
 
 #: templates/auth/forgot_password.html:41 templates/auth/login.html:3
 #: templates/auth/login.html:7 templates/auth/login.html:31
-#: templates/auth/register.html:157 templates/auth/register_google.html:66
+#: templates/auth/register.html:164 templates/auth/register_google.html:66
 #: templates/auth/register_microsoft.html:66
 #: templates/auth/resend_confirmation.html:41 templates/base.html:99
 #: templates/errors/400.html:29 templates/errors/403.html:27
@@ -4354,7 +4358,7 @@ msgstr "Kilépés"
 msgid "Sign in"
 msgstr "Bejelentkezés"
 
-#: templates/auth/register.html:154 templates/base.html:102
+#: templates/auth/register.html:161 templates/base.html:102
 #: templates/main/index.html:31
 msgid "Create Account"
 msgstr "Fiók létrehozása"
@@ -5241,7 +5245,7 @@ msgstr "Adatkezelési megállapodás megtekintése"
 msgid "Error"
 msgstr "Hiba történt"
 
-#: templates/auth/register.html:157 templates/auth/register_google.html:66
+#: templates/auth/register.html:164 templates/auth/register_google.html:66
 #: templates/auth/register_microsoft.html:66
 msgid "Already have an account?"
 msgstr "Már van fiókod?"

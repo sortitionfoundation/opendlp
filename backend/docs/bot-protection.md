@@ -106,6 +106,39 @@ we need members of the public to complete. If you are considering that, read
 Note also that the rate-limit keys above contain **IP addresses and email addresses**, which
 are personal data. They are retained only for the counter's TTL.
 
+## The account signup form: Cloudflare Turnstile
+
+The **account signup form** (`/auth/register`) — a different audience from registrants:
+people choosing to run or help run an assembly — additionally carries a Cloudflare
+Turnstile widget (issue #890). With open signup enabled (`FF_OPEN_SIGNUP`) there is no
+invite gate, so the per-IP signup rate limit was the only defence against scripted account
+creation; Turnstile adds a challenge the rate limit cannot provide without locking out
+shared IPs.
+
+How it is wired:
+
+- **Off by default.** An empty `TURNSTILE_SITE_KEY` renders no widget, loads no
+  third-party script, and skips the server-side check entirely.
+- The widget (`managed` mode, action `signup`) is embedded in
+  `templates/auth/register.html`; the script and challenge iframe are allowed through the
+  CSP for `challenges.cloudflare.com` only.
+- The route gates on `verify_turnstile_token()` (`adapters/turnstile.py`), the canonical
+  server-side siteverify call. It requires `success`, the `signup` action, and a frontend
+  hostname listed in `TURNSTILE_HOSTNAMES` — and fails closed on any network error.
+  Tokens are single-use; a replayed token is rejected by Cloudflare.
+- The OAuth signup routes (`/auth/register/google`, `/auth/register/microsoft`) are not
+  gated — the OAuth provider is the bot check there.
+
+| Env var | Default | Description |
+| ------- | ------- | ----------- |
+| `TURNSTILE_SITE_KEY` | *(empty)* | Public widget sitekey; empty disables the feature |
+| `TURNSTILE_SECRET` | *(empty)* | Widget secret used for siteverify; keep out of git |
+| `TURNSTILE_HOSTNAMES` | *(empty)* | Comma-separated frontend hostnames accepted from siteverify. Production must never list `localhost` or `127.0.0.1` |
+
+The privacy position — why this widget is acceptable on the signup form and still not on
+registration pages, and why **pre-clearance mode must stay off** — is documented in
+[docs/personal-data.md](personal-data.md#third-party-scripts-the-turnstile-exception).
+
 ## Related documentation
 
 - [Personal Data](personal-data.md) — cookies, logging, and the right to erasure

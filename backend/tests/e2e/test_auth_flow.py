@@ -489,3 +489,85 @@ class TestPasswordReset:
             follow_redirects=False,
         )
         assert login.status_code == 302
+
+
+class TestSignupTurnstile:
+    """The Cloudflare Turnstile gate on the signup form (issue #890)."""
+
+    @pytest.fixture
+    def turnstile_enabled(self, client: FlaskClient, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setitem(client.application.config, "TURNSTILE_SITE_KEY", "0xTESTSITEKEY")
+        monkeypatch.setitem(client.application.config, "TURNSTILE_SECRET", "test-secret")  # pragma: allowlist secret
+        monkeypatch.setitem(client.application.config, "TURNSTILE_HOSTNAMES", "127.0.0.1,localhost")
+
+    def _registration_data(self, client: FlaskClient, invite: UserInvite) -> dict:
+        return {
+            "invite_code": invite.code,
+            "first_name": "New",
+            "last_name": "User",
+            "email": "turnstile-user@example.com",
+            "password": "securepassword123",  # pragma: allowlist secret
+            "password_confirm": "securepassword123",  # pragma: allowlist secret
+            "accept_data_agreement": "y",
+            "csrf_token": get_csrf_token(client, "/auth/register"),
+        }
+
+    def test_widget_absent_when_not_configured(self, client: FlaskClient):
+        response = client.get("/auth/register")
+        assert response.status_code == 200
+        assert b"cf-turnstile" not in response.data
+        assert b"challenges.cloudflare.com" not in response.data
+
+    def test_widget_rendered_when_configured(self, client: FlaskClient, turnstile_enabled: None):
+        response = client.get("/auth/register")
+        assert response.status_code == 200
+        assert b'class="cf-turnstile"' in response.data
+        assert b'data-sitekey="0xTESTSITEKEY"' in response.data
+        assert b'data-action="signup"' in response.data
+        assert b"https://challenges.cloudflare.com/turnstile/v0/api.js" in response.data
+
+    def test_registration_blocked_when_verification_fails(
+        self,
+        client: FlaskClient,
+        valid_invite: UserInvite,
+        turnstile_enabled: None,
+        monkeypatch: pytest.MonkeyPatch,
+        postgres_session_factory,
+    ):
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.auth.verify_turnstile_token", lambda **kwargs: False)
+
+        response = client.post(
+            "/auth/register",
+            data=self._registration_data(client, valid_invite),
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 200
+        assert b"could not verify that you are human" in response.data
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            assert uow.users.get_by_email("turnstile-user@example.com") is None
+
+    def test_registration_allowed_when_verification_passes(
+        self,
+        client: FlaskClient,
+        valid_invite: UserInvite,
+        turnstile_enabled: None,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        captured: dict = {}
+
+        def fake_verify(**kwargs) -> bool:
+            captured.update(kwargs)
+            return True
+
+        monkeypatch.setattr("opendlp.entrypoints.blueprints.auth.verify_turnstile_token", fake_verify)
+
+        data = self._registration_data(client, valid_invite)
+        data["cf-turnstile-response"] = "a-real-token"
+        response = client.post("/auth/register", data=data, follow_redirects=False)
+
+        assert response.status_code == 302
+        assert response.headers["Location"] == "/auth/login"
+        assert captured["token"] == "a-real-token"
+        assert captured["expected_action"] == "signup"
+        assert captured["expected_hostnames"] == {"127.0.0.1", "localhost"}
