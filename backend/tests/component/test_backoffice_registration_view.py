@@ -540,14 +540,14 @@ class TestRegistrationListView:
         assert f"/backoffice/assembly/{assembly_id}/registration/live-slug/save" in body
         assert f"/backoffice/assembly/{assembly_id}/registration/draft-slug/save" not in body
 
-    def test_create_button_label_reflects_whether_pages_exist(self, logged_in_admin, fake_store, assembly_id):
+    def test_create_button_label_is_the_same_whether_or_not_pages_exist(self, logged_in_admin, fake_store, assembly_id):
         empty_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
         _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="draft-slug", name="Draft")
         populated_body = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration").get_data(as_text=True)
 
         assert "Create registration page" in empty_body
-        assert "Create another registration page" not in empty_body
-        assert "Create another registration page" in populated_body
+        assert "Create registration page" in populated_body
+        assert "Create another registration page" not in populated_body
         assert "Create HTML page" not in populated_body
 
     def test_each_row_shows_the_full_and_short_urls(self, logged_in_admin, fake_store, assembly_id):

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-23 13:41+0000\n"
+"POT-Creation-Date: 2026-09-23 13:55+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1993,7 +1993,7 @@ msgstr "Hiba történt az automatikus válasz e-mail mentése közben"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:767
 #: templates/backoffice/assembly_registration.html:89
-#: templates/backoffice/components/registration_page_list.html:14
+#: templates/backoffice/components/registration_page_list.html:12
 msgid "Registration page"
 msgstr "Regisztrációs oldal"
 
@@ -4490,7 +4490,7 @@ msgstr "Szerepkör"
 #: templates/backoffice/assembly_respondents.html:116
 #: templates/backoffice/assembly_selection.html:172
 #: templates/backoffice/assembly_selection.html:345
-#: templates/backoffice/components/registration_page_list.html:34
+#: templates/backoffice/components/registration_page_list.html:28
 #: templates/backoffice/respondents/export_modal.html:48
 #: templates/main/view_assembly_data.html:54
 #: templates/main/view_assembly_details.html:13
@@ -4616,7 +4616,7 @@ msgstr "Lejárat"
 #: templates/backoffice/assembly_respondents.html:120
 #: templates/backoffice/assembly_selection.html:184
 #: templates/backoffice/assembly_selection.html:357
-#: templates/backoffice/components/registration_page_list.html:37
+#: templates/backoffice/components/registration_page_list.html:31
 #: templates/backoffice/respondent_field_schema/_editor.html:51
 #: templates/backoffice/targets/bulk_edit_form.html:280
 #: templates/main/view_assembly_data.html:60
@@ -4999,7 +4999,7 @@ msgstr "%(total)s felhasználóból %(start)s–%(end)s látható"
 
 #: templates/admin/users.html:115
 #: templates/backoffice/assembly_respondents.html:117
-#: templates/backoffice/components/registration_page_list.html:31
+#: templates/backoffice/components/registration_page_list.html:25
 msgid "Name"
 msgstr "Név"
 
@@ -5734,7 +5734,7 @@ msgid "The URL for this registration page"
 msgstr "Ennek a regisztrációs oldalnak az URL címe"
 
 #: templates/backoffice/assembly_details.html:129
-#: templates/backoffice/components/registration_page_list.html:67
+#: templates/backoffice/components/registration_page_list.html:61
 #: templates/backoffice/registration/_step_preview.html:54
 msgid "Short URL"
 msgstr "Rövid URL"
@@ -5910,7 +5910,7 @@ msgid "Visitors who follow the form URL are redirected to the closed page."
 msgstr "Az űrlap URL címét megnyitó látogatók a lezárt oldalra kerülnek át."
 
 #: templates/backoffice/assembly_registration.html:126
-#: templates/backoffice/components/registration_page_list.html:98
+#: templates/backoffice/components/registration_page_list.html:92
 msgid "Published"
 msgstr "Közzétéve"
 
@@ -6829,90 +6829,86 @@ msgstr "Üzenetek:"
 msgid "Showing %(start)s-%(end)s of %(total)s %(items)s"
 msgstr "%(total)s %(items)s közül %(start)s–%(end)s látható"
 
-#: templates/backoffice/components/registration_page_list.html:19
-msgid "Create another registration page"
-msgstr "Újabb regisztrációs oldal létrehozása"
-
-#: templates/backoffice/components/registration_page_list.html:21
+#: templates/backoffice/components/registration_page_list.html:16
 msgid "Create registration page"
 msgstr "Regisztrációs oldal létrehozása"
 
-#: templates/backoffice/components/registration_page_list.html:32
+#: templates/backoffice/components/registration_page_list.html:26
 msgid "Links"
 msgstr "Linkek"
 
-#: templates/backoffice/components/registration_page_list.html:33
+#: templates/backoffice/components/registration_page_list.html:27
 msgid "QR code"
 msgstr "QR-kód"
 
-#: templates/backoffice/components/registration_page_list.html:35
+#: templates/backoffice/components/registration_page_list.html:29
 msgid "Date of publish"
 msgstr "Közzététel dátuma"
 
-#: templates/backoffice/components/registration_page_list.html:63
+#: templates/backoffice/components/registration_page_list.html:57
 msgid "Full URL"
 msgstr "Teljes URL"
 
-#: templates/backoffice/components/registration_page_list.html:65
+#: templates/backoffice/components/registration_page_list.html:59
 #, python-format
 msgid "Copy the full URL for %(name)s"
 msgstr "%(name)s teljes URL címének másolása"
 
-#: templates/backoffice/components/registration_page_list.html:69
+#: templates/backoffice/components/registration_page_list.html:63
 #, python-format
 msgid "Copy the short URL for %(name)s"
 msgstr "%(name)s rövid URL címének másolása"
 
-#: templates/backoffice/components/registration_page_list.html:73
+#: templates/backoffice/components/registration_page_list.html:67
 msgid "No URL yet"
 msgstr "Még nincs URL"
 
-#: templates/backoffice/components/registration_page_list.html:84
+#: templates/backoffice/components/registration_page_list.html:78
 #, python-format
 msgid "Download the QR code for %(name)s"
 msgstr "%(name)s QR-kódjának letöltése"
 
-#: templates/backoffice/components/registration_page_list.html:86
+#: templates/backoffice/components/registration_page_list.html:80
 #, python-format
 msgid "QR code for %(name)s"
 msgstr "%(name)s QR-kódja"
 
-#: templates/backoffice/components/registration_page_list.html:104
+#: templates/backoffice/components/registration_page_list.html:98
 msgid "Closed"
 msgstr "Menü bezárása"
 
-#: templates/backoffice/components/registration_page_list.html:110
+#: templates/backoffice/components/registration_page_list.html:104
 msgid "Test"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/components/registration_page_list.html:140
+#: templates/backoffice/components/registration_page_list.html:134
 #, python-format
 msgid "Actions for %(name)s"
 msgstr "%(name)s műveletei"
 
-#: templates/backoffice/components/registration_page_list.html:153
+#: templates/backoffice/components/registration_page_list.html:147
 msgid "See assembly details"
 msgstr "Közösségi gyűlés részleteinek megtekintése"
 
-#: templates/backoffice/components/registration_page_list.html:163
+#: templates/backoffice/components/registration_page_list.html:157
 #: templates/backoffice/registration/_modals.html:231
 #: templates/backoffice/registration/_step_preview.html:122
 msgid "Close registration"
 msgstr "Regisztráció lezárása"
 
-#: templates/backoffice/components/registration_page_list.html:169
+#: templates/backoffice/components/registration_page_list.html:163
 msgid "Edit registration"
 msgstr "Regisztráció szerkesztése"
 
-#: templates/backoffice/components/registration_page_list.html:179
+#: templates/backoffice/components/registration_page_list.html:173
 msgid "Delete registration page"
 msgstr "Regisztrációs oldal törlése"
 
-#: templates/backoffice/components/registration_page_list.html:203
+#: templates/backoffice/components/registration_page_list.html:197
 msgid "Delete this registration page?"
 msgstr "Törlöd ezt a regisztrációs oldalt?"
 
-#: templates/backoffice/components/registration_page_list.html:205
+#: templates/backoffice/components/registration_page_list.html:199
 #, python-format
 msgid ""
 "'%(name)s' and the form you built on it will be deleted for good. There "
@@ -6921,19 +6917,19 @@ msgstr ""
 "'%(name)s' és a rá épített űrlap véglegesen törlődik. A művelet nem "
 "vonható vissza, és a fenti URL-ek megszűnnek működni."
 
-#: templates/backoffice/components/registration_page_list.html:210
+#: templates/backoffice/components/registration_page_list.html:204
 msgid "Delete page"
 msgstr "Oldal törlése"
 
-#: templates/backoffice/components/registration_page_list.html:212
+#: templates/backoffice/components/registration_page_list.html:206
 msgid "Keep it"
 msgstr "Maradjon meg"
 
-#: templates/backoffice/components/registration_page_list.html:233
+#: templates/backoffice/components/registration_page_list.html:227
 msgid "No registration page created yet"
 msgstr ""
 
-#: templates/backoffice/components/registration_page_list.html:234
+#: templates/backoffice/components/registration_page_list.html:228
 msgid "Use the button above to create one."
 msgstr ""
 
