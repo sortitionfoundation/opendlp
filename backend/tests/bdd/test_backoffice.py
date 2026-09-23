@@ -425,10 +425,7 @@ def visit_registration_tab(page: Page, title: str, test_database):
 def see_registration_page_list(page: Page):
     """The list shows the table headers and the create CTA."""
     expect(page.get_by_role("columnheader", name="Date of publish")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    # The assembly already has a page, so the CTA offers to add another
-    expect(page.get_by_role("button", name="Create another registration page")).to_be_visible(
-        timeout=PLAYWRIGHT_TIMEOUT
-    )
+    expect(page.get_by_role("button", name="Create registration page")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when("I open the first registration page from the list")
