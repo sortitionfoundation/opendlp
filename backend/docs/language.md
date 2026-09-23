@@ -128,8 +128,12 @@ from, such as the census.
 
 **data source** is where an assembly's respondents come from: Google Sheets or
 a CSV upload, as chosen on the Data tab. It never means the question behind a
-target. The Targets editor still labels a target's population-figures link
-"Data Source"; that is [still open](#still-open).
+target, nor where a target's percentages come from.
+
+**source of population figures** is the link a target can carry to the report
+its percentages come from: census tables from the ONS, or an opinion poll for an
+attitudinal target. The code calls it `source_url`. Not "data source", for the
+reasons above, and not "Population % source", which needs its `%` escaped.
 
 **built-in question** is a registration question every assembly has, such as
 email or consent, whose type can't be changed. The code calls these fixed fields
@@ -340,9 +344,3 @@ before sweeping the source.
    reads as a term of art. _Recommend_ lowercase in running text, capitals in
    headings and the brand, but this touches how the Sortition Foundation writes
    about itself, so it wants a decision rather than a sweep.
-6. **The Targets editor's "Data Source" field.** Each target can carry a link to
-   where its population figures come from (`source_url`), labelled "Data
-   Source". It gives "data source" a second meaning beside the Data tab's
-   Google Sheets or CSV choice, and it is the reading that made organisers
-   misunderstand the step now called "Link targets to questions". Candidates are "Population data source" and "Population %
-   source"; the second needs its `%` outside the msgid.

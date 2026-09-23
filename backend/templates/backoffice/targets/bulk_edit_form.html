@@ -217,7 +217,8 @@ ABOUTME: Field names are cat[<category_id>][values][<value_id>][<field>], parsed
                 {{ input(name=cat_prefix ~ "[source_url]",
                 id="bulk-source-" ~ cat_id|string,
                 error=errors.get(cat_prefix ~ "[source_url]", ""),
-                label=_("Data Source"),
+                label=_("Source of population figures"),
+                info=_("A link to the report the percentages come from, such as census tables or a poll."),
                 value=category.source_url if category else "",
                 placeholder="https://") }}
                 {{ input(name=cat_prefix ~ "[comment]",

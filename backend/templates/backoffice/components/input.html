@@ -23,7 +23,8 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
 
 {% from "backoffice/components/icons.html" import icon_check_12 %}
-{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="") %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
+{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="", info="") %}
     {#
     Text input component using semantic design tokens.
 
@@ -34,6 +35,8 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         value: Initial input value
         placeholder: Placeholder text
         hint: Help text displayed below the label
+        info: Help text shown as an info icon beside the label, for rows too
+              tight for a hint; the input is described by it
         error: Error message (displays input in error state)
         required: Boolean to mark field as required
         disabled: Boolean to disable the input
@@ -58,10 +61,14 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
     <div class="flex flex-col gap-1.5">
         {# Label #}
         {% if label %}
+            {# The info icon sits outside the label, so its sentence describes the
+               input rather than becoming part of its name. #}
+            {% if info %}<div class="flex items-center gap-1">{% endif %}
             <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
                 {{ label }}
                 {% if required and not readonly %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
             </label>
+            {% if info %}{{ info_icon(info, id=input_id ~ "-info") }}</div>{% endif %}
         {% endif %}
 
         {# Hint text #}
@@ -99,7 +106,9 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 {% if disabled %}disabled{% endif %}
                 {# The error is next to the input on screen; these are what say so
                    to anything that is not looking at the screen. #}
-                {% if has_error %}aria-invalid="true" aria-describedby="{{ input_id }}-error"{% endif %}
+                {% set described_by = ([input_id ~ "-info"] if info and label else []) + ([input_id ~ "-error"] if has_error else []) %}
+                {% if has_error %}aria-invalid="true"{% endif %}
+                {% if described_by %}aria-describedby="{{ described_by | join(' ') }}"{% endif %}
                 {# For inputs whose only visible label is a column heading, which
                    does not name a form control to a screen reader. #}
                 {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
