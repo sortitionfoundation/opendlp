@@ -560,7 +560,7 @@ Each chunk is a green `just check && just test-nobdd` and a commit.
    already-selected feed; unit + integration tests. — **Done**
 2. **Task + starter.** `targets_snapshot` through the task; `already_selected`
    wired; new task type; `start_db_replace_task`; unit + integration. — **Done**
-3. **Plan service.** `build_replacement_plan`, parse, validate; unit tests.
+3. **Plan service.** `build_replacement_plan`, parse, validate; unit tests. — **Done**
 4. **Dialog + routes.** Template, card, GET/POST wiring;
    component + e2e tests; translations regenerated.
 5. **BDD.** Feature file and steps; run `just test-bdd-headless` after
