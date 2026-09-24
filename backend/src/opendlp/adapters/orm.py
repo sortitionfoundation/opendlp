@@ -352,6 +352,23 @@ user_invites = Table(
     Column("email", String(255), nullable=True, default=""),
 )
 
+# Signup survey answers table - one optional record per user
+user_signup_surveys = Table(
+    "user_signup_surveys",
+    metadata,
+    Column("id", PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column(
+        "user_id",
+        PostgresUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        unique=True,
+    ),
+    Column("answers", JSON, nullable=False, default=dict),
+    Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
+)
+
 # Password reset tokens table
 password_reset_tokens = Table(
     "password_reset_tokens",

@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from opendlp.domain.two_factor_audit import TwoFactorAuditLog
     from opendlp.domain.user_backup_codes import UserBackupCode
     from opendlp.domain.user_invites import UserInvite
+    from opendlp.domain.user_signup_surveys import UserSignupSurvey
     from opendlp.domain.users import User, UserAssemblyRole
 
 
@@ -194,6 +195,15 @@ class UserInviteRepository(AbstractRepository):
     @abc.abstractmethod
     def delete(self, item: UserInvite) -> None:
         """Delete an invite from the repository."""
+        raise NotImplementedError
+
+
+class UserSignupSurveyRepository(AbstractRepository):
+    """Repository interface for UserSignupSurvey domain objects."""
+
+    @abc.abstractmethod
+    def get_by_user_id(self, user_id: uuid.UUID) -> UserSignupSurvey | None:
+        """Get the signup survey for a user, or None if they have none."""
         raise NotImplementedError
 
 

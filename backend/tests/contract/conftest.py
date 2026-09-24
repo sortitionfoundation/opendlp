@@ -33,6 +33,7 @@ from opendlp.adapters.sql_repository import (
     SqlAlchemyUserBackupCodeRepository,
     SqlAlchemyUserInviteRepository,
     SqlAlchemyUserRepository,
+    SqlAlchemyUserSignupSurveyRepository,
 )
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.email_send_record import EmailSendOutcome, RespondentEmailSendRecord
@@ -67,6 +68,7 @@ from tests.fakes import (
     FakeTwoFactorAuditLogRepository,
     FakeUserBackupCodeRepository,
     FakeUserInviteRepository,
+    FakeUserSignupSurveyRepository,
 )
 
 if TYPE_CHECKING:
@@ -381,6 +383,13 @@ def user_backup_code_backend(request, postgres_session) -> ContractBackend:
     if request.param == "fake":
         return FakeContractBackend(repo=FakeUserBackupCodeRepository(), commit=lambda: None)
     return SqlContractBackend(repo=SqlAlchemyUserBackupCodeRepository(postgres_session), session=postgres_session)
+
+
+@pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
+def user_signup_survey_backend(request, postgres_session) -> ContractBackend:
+    if request.param == "fake":
+        return FakeContractBackend(repo=FakeUserSignupSurveyRepository(), commit=lambda: None)
+    return SqlContractBackend(repo=SqlAlchemyUserSignupSurveyRepository(postgres_session), session=postgres_session)
 
 
 @pytest.fixture(params=["fake", "sql"], ids=["fake", "sql"])
