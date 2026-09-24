@@ -557,7 +557,7 @@ provides for the gsheet scenarios.
 Each chunk is a green `just check && just test-nobdd` and a commit.
 
 1. **Domain + adapter.** `replacement_min_max`; adapter override and
-   already-selected feed; unit + integration tests.
+   already-selected feed; unit + integration tests. — **Done**
 2. **Task + starter.** `targets_snapshot` through the task; `already_selected`
    wired; new task type; `start_db_replace_task`; unit + integration.
 3. **Plan service.** `build_replacement_plan`, parse, validate; unit tests.

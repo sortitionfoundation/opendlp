@@ -325,3 +325,30 @@ def target_categories_to_snapshot(categories: list[TargetCategory]) -> list[dict
         }
         for cat in categories
     ]
+
+
+@dataclass(frozen=True)
+class ReplacementMinMax:
+    """The seats still to fill for one target value in a replacement selection."""
+
+    min: int
+    max: int
+    min_flex: int
+    max_flex: int
+
+
+def replacement_min_max(value: TargetValue, held: int) -> ReplacementMinMax:
+    """The replacement targets for a value, given how many places it already holds.
+
+    ``held`` is the number of respondents with this value who are selected or
+    confirmed. Withdrawn people freed their place, so they are not held. Every
+    bound is floored at zero: a value already holding more than its maximum has
+    nothing left to fill. Flex bounds move by the same amount, clamped so the
+    invariants min_flex <= min and max_flex >= max still hold; an unset max_flex
+    stays unset so the library keeps choosing its own default.
+    """
+    new_min = max(0, value.min - held)
+    new_max = max(0, value.max - held)
+    new_min_flex = min(new_min, max(0, value.min_flex - held))
+    new_max_flex = MAX_FLEX_UNSET if value.max_flex == MAX_FLEX_UNSET else max(new_max, value.max_flex - held)
+    return ReplacementMinMax(min=new_min, max=new_max, min_flex=new_min_flex, max_flex=new_max_flex)
