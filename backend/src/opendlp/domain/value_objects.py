@@ -128,6 +128,7 @@ class SelectionTaskType(Enum):
     DELETE_OLD_TABS = "delete_old_tabs"
     SELECT_FROM_DB = "select_from_db"
     TEST_SELECT_FROM_DB = "test_select_from_db"
+    SELECT_REPLACEMENT_FROM_DB = "select_replacement_from_db"
 
 
 # Labels for the run history table and the "Task:" line of the progress modals.
@@ -142,7 +143,16 @@ selection_task_type_labels = {
     SelectionTaskType.DELETE_OLD_TABS: _l("Delete old tabs"),
     SelectionTaskType.SELECT_FROM_DB: _l("Select from database"),
     SelectionTaskType.TEST_SELECT_FROM_DB: _l("Test select from database"),
+    SelectionTaskType.SELECT_REPLACEMENT_FROM_DB: _l("Select replacements from database"),
 }
+
+# The task types that run the selection algorithm over the database, and so
+# produce selected_ids the DB download routes can turn into CSVs.
+DB_SELECTION_TASK_TYPES: frozenset[SelectionTaskType] = frozenset({
+    SelectionTaskType.SELECT_FROM_DB,
+    SelectionTaskType.TEST_SELECT_FROM_DB,
+    SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+})
 
 
 class GSheetExportKind(Enum):

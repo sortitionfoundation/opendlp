@@ -575,7 +575,14 @@ def _internal_load_db(
     settings: settings.Settings,
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
-) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
+    targets_snapshot: list[dict[str, Any]] | None = None,
+) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
+    """Load features, the pool, and the people already holding a place.
+
+    With ``targets_snapshot`` the features come from that snapshot rather than
+    the assembly's stored targets - a replacement selection runs on targets
+    derived from them. Returns (success, features, pool, already_selected, report).
+    """
     report = RunReport()
     _update_selection_record(
         task_id=task_id,
@@ -585,7 +592,7 @@ def _internal_load_db(
     )
     try:
         with bootstrap(session_factory=session_factory) as uow:
-            data_source = OpenDLPDataAdapter(uow, assembly_id)
+            data_source = OpenDLPDataAdapter(uow, assembly_id, targets_snapshot=targets_snapshot)
             select_data = adapters.SelectionData(data_source)
 
             features, f_report = select_data.load_features()
@@ -615,9 +622,15 @@ def _internal_load_db(
             loaded_people, p_report = select_data.load_people(settings, features)
             report.add_report(p_report)
 
+            already_selected, a_report = select_data.load_already_selected(settings)
+            report.add_report(a_report)
+
             _append_run_log(
                 task_id,
-                [_("Loaded %(count)s respondents.", count=loaded_people.count)],
+                [
+                    _("Loaded %(count)s respondents.", count=loaded_people.count),
+                    _("%(count)s people already hold a place.", count=already_selected.count),
+                ],
                 session_factory=session_factory,
             )
 
@@ -629,7 +642,7 @@ def _internal_load_db(
             run_report=report,
             session_factory=session_factory,
         )
-        return True, features, loaded_people, report
+        return True, features, loaded_people, already_selected, report
 
     except errors.SortitionBaseError as error:
         translated_msg = translate_sortition_error(error)
@@ -644,7 +657,7 @@ def _internal_load_db(
             run_report=report,
             session_factory=session_factory,
         )
-        return False, None, None, report
+        return False, None, None, None, report
 
     except Exception as err:
         error_msg = _("Failed to load data from database: %(error)s", error=str(err))
@@ -660,7 +673,7 @@ def _internal_load_db(
             run_report=report,
             session_factory=session_factory,
         )
-        return False, None, None, report
+        return False, None, None, None, report
 
 
 def _internal_write_db_results(
@@ -731,17 +744,19 @@ def run_select_from_db(
     settings: settings.Settings,
     test_selection: bool = False,
     session_factory: sessionmaker | None = None,
+    targets_snapshot: list[dict[str, Any]] | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
     reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     report = RunReport()
 
-    success, features, loaded_people, load_report = _internal_load_db(
+    success, features, loaded_people, already_selected, load_report = _internal_load_db(
         task_id=task_id,
         assembly_id=assembly_id,
         settings=settings,
         final_task=False,
         session_factory=session_factory,
+        targets_snapshot=targets_snapshot,
     )
     report.add_report(load_report)
     if not success:
@@ -756,7 +771,7 @@ def run_select_from_db(
         settings=settings,
         number_people_wanted=number_people_wanted,
         test_selection=test_selection,
-        already_selected=None,
+        already_selected=already_selected,
         final_task=False,
         session_factory=session_factory,
         progress_reporter=reporter,

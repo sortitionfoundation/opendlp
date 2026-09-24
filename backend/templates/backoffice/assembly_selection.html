@@ -219,7 +219,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                                        class="text-label-md hover:underline"
                                                        style="color: var(--color-primary-action)">{{ _("View") }}</a>
                                                     {# Download button for completed DB selections with results #}
-                                                    {% if run_record.task_type.value in ('select_from_db', 'test_select_from_db') and run_record.is_completed and run_record.selected_ids %}
+                                                    {% if run_record.task_type.value in ('select_from_db', 'test_select_from_db', 'select_replacement_from_db') and run_record.is_completed and run_record.selected_ids %}
                                                         {% set download_attrs %}
                                                             title="{{ _('Download selected CSV') }}"
                                                         {% endset %}

@@ -6,7 +6,7 @@
 {% set can_close = run_record.has_finished %}
 {% set htmx_poll_url = url_for('db_selection_backoffice.db_selection_progress_modal', assembly_id=assembly.id, run_id=current_selection) if not run_record.has_finished else "" %}
 {% set is_test_selection = run_record.task_type.value == 'test_select_from_db' %}
-{% set is_real_selection = run_record.task_type.value == 'select_from_db' %}
+{% set is_real_selection = run_record.task_type.value in ('select_from_db', 'select_replacement_from_db') %}
 {% call progress_modal(
 id="db-selection-progress-modal",
 title=_("Task Progress"),

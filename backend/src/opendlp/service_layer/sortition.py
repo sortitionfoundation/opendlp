@@ -543,6 +543,77 @@ def start_db_select_task(
     return task_id
 
 
+@require_assembly_permission(can_manage_assembly)
+def start_db_replace_task(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+    number_to_select: int,
+    targets_snapshot: list[dict[str, Any]],
+    replacement_info: dict[str, Any],
+) -> uuid.UUID:
+    """Start a replacement selection over the database.
+
+    ``targets_snapshot`` is the replacement targets the algorithm will run on,
+    in the shape target_categories_to_snapshot() produces, with the calculated
+    values alongside the used ones. ``replacement_info`` is the headline
+    arithmetic (places held, places to fill, the number used) and is stored
+    under settings_used["replacement"].
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    assembly = uow.assemblies.get(assembly_id)
+    if not assembly:
+        raise AssemblyNotFoundError(f"Assembly {assembly_id} not found")
+
+    if number_to_select < 1:
+        raise InvalidSelection(_("The number of replacements to select must be at least one"))
+
+    if get_active_initial_selection_run_id(uow, assembly_id) is not None:
+        raise InvalidSelection(_("A selection is already running for this assembly"))
+
+    sel_settings = _get_selection_settings(assembly)
+    try:
+        settings_obj = sel_settings.to_settings(id_column=DB_ID_COLUMN)
+    except SortitionBaseError as e:
+        raise InvalidSelection(str(e)) from e
+
+    task_id = uuid.uuid4()
+    record = SelectionRunRecord(
+        assembly_id=assembly_id,
+        task_id=task_id,
+        task_type=SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+        status=SelectionRunStatus.PENDING,
+        log_messages=[f"Task submitted for database replacement selection of {number_to_select} people"],
+        settings_used={
+            "id_column": settings_obj.id_column,
+            "selection_algorithm": settings_obj.selection_algorithm,
+            "check_same_address": settings_obj.check_same_address,
+            "check_same_address_columns": settings_obj.check_same_address_columns,
+            "columns_to_keep": settings_obj.columns_to_keep,
+            "replacement": replacement_info,
+        },
+        targets_used=targets_snapshot,
+        user_id=user_id,
+    )
+    uow.selection_run_records.add(record)
+    uow.commit()
+
+    result = tasks.run_select_from_db.delay(
+        task_id=task_id,
+        assembly_id=assembly_id,
+        number_people_wanted=number_to_select,
+        settings=settings_obj,
+        test_selection=False,
+        targets_snapshot=targets_snapshot,
+    )
+    record.celery_task_id = str(result.id)
+    uow.selection_run_records.add(record)
+    uow.commit()
+
+    return task_id
+
+
 DELETED_CSV_PLACEHOLDER = "DATA DELETED"
 
 
@@ -668,6 +739,7 @@ def _process_celery_final_result(celery_result: AsyncResult, run_record: Selecti
         SelectionTaskType.SELECT_REPLACEMENT_GSHEET,
         SelectionTaskType.SELECT_FROM_DB,
         SelectionTaskType.TEST_SELECT_FROM_DB,
+        SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
     ):
         success, selected_ids, run_report = final_result
         return SelectionRunResult(
@@ -812,13 +884,15 @@ def get_manage_old_tabs_status(result: RunResult) -> ManageOldTabsStatus:
 # Task types corresponding to the Initial Selection card's buttons on the selection page
 # (both GSheet and CSV branches). When a task of one of these types is pending/running for
 # an assembly, the card footer shows a single "View Running Selection" button instead of
-# the check/test/run buttons.
+# the check/test/run buttons. A database replacement run writes to the same respondent
+# rows, so it counts too: both cards wait for it.
 _INITIAL_SELECTION_TASK_TYPES = frozenset({
     SelectionTaskType.LOAD_GSHEET,
     SelectionTaskType.SELECT_GSHEET,
     SelectionTaskType.TEST_SELECT_GSHEET,
     SelectionTaskType.SELECT_FROM_DB,
     SelectionTaskType.TEST_SELECT_FROM_DB,
+    SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
 })
 
 

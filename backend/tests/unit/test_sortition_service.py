@@ -1249,3 +1249,99 @@ class TestStartDbSelectTask:
 
         with pytest.raises(AssemblyNotFoundError, match=f"Assembly {non_existent_id} not found"):
             sortition.start_db_select_task(uow, admin_user.id, non_existent_id)
+
+
+class TestStartDbReplaceTask:
+    """start_db_replace_task: the record it writes and what it refuses."""
+
+    def _setup(self, uow):
+        admin_user = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
+        uow.users.add(admin_user)
+        assembly = Assembly(title="Test Assembly", number_to_select=10)
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+        assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
+        uow.assemblies.add(assembly)
+        snapshot = [
+            {
+                "name": "Gender",
+                "sort_order": 0,
+                "comment": "",
+                "source_url": "",
+                "values": [
+                    {"value": "Male", "min": 2, "max": 3, "overall_min": 5, "overall_max": 6, "held": 3},
+                ],
+            }
+        ]
+        info = {"number_to_select_overall": 10, "held_total": 6, "calculated_number": 4, "number_to_select_used": 4}
+        return admin_user, assembly, snapshot, info
+
+    def test_creates_record_and_dispatches_task_with_snapshot(self, uow):
+        admin_user, assembly, snapshot, info = self._setup(uow)
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_celery:
+            mock_celery.return_value = Mock(id="celery-task-id")
+            task_id = sortition.start_db_replace_task(uow, admin_user.id, assembly.id, 4, snapshot, info)
+
+        record = uow.selection_run_records.get_by_task_id(task_id)
+        assert record is not None
+        assert record.task_type == SelectionTaskType.SELECT_REPLACEMENT_FROM_DB
+        assert record.status == SelectionRunStatus.PENDING
+        assert record.targets_used == snapshot
+        assert record.settings_used["replacement"] == info
+        assert record.settings_used["id_column"] == DB_ID_COLUMN
+        assert record.celery_task_id == "celery-task-id"
+        assert record.user_id == admin_user.id
+
+        kwargs = mock_celery.call_args.kwargs
+        assert kwargs["task_id"] == task_id
+        assert kwargs["number_people_wanted"] == 4
+        assert kwargs["targets_snapshot"] == snapshot
+        assert kwargs["test_selection"] is False
+        assert uow.committed
+
+    def test_refuses_fewer_than_one_replacement(self, uow):
+        admin_user, assembly, snapshot, info = self._setup(uow)
+        with pytest.raises(InvalidSelection):
+            sortition.start_db_replace_task(uow, admin_user.id, assembly.id, 0, snapshot, info)
+
+    def test_refuses_while_a_selection_is_running(self, uow):
+        admin_user, assembly, snapshot, info = self._setup(uow)
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=uuid.uuid4(),
+                task_type=SelectionTaskType.SELECT_FROM_DB,
+                status=SelectionRunStatus.RUNNING,
+            )
+        )
+        with pytest.raises(InvalidSelection):
+            sortition.start_db_replace_task(uow, admin_user.id, assembly.id, 4, snapshot, info)
+
+    def test_requires_assembly_management(self, uow):
+        _, assembly, snapshot, info = self._setup(uow)
+        viewer = User(email="viewer@example.com", global_role=GlobalRole.USER, password_hash="hash")
+        uow.users.add(viewer)
+        with pytest.raises(InsufficientPermissions):
+            sortition.start_db_replace_task(uow, viewer.id, assembly.id, 4, snapshot, info)
+
+    def test_assembly_not_found(self, uow):
+        admin_user, _, snapshot, info = self._setup(uow)
+        with pytest.raises(AssemblyNotFoundError):
+            sortition.start_db_replace_task(uow, admin_user.id, uuid.uuid4(), 4, snapshot, info)
+
+
+class TestActiveInitialSelectionIncludesDbReplacement:
+    def test_running_db_replacement_counts_as_active(self, uow):
+        """A replacement run writes the same rows as an initial run, so the cards wait for it."""
+        assembly = Assembly(title="Test Assembly")
+        uow.assemblies.add(assembly)
+        task_id = uuid.uuid4()
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=assembly.id,
+                task_id=task_id,
+                task_type=SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+                status=SelectionRunStatus.RUNNING,
+            )
+        )
+        assert sortition.get_active_initial_selection_run_id(uow, assembly.id) == task_id

@@ -116,7 +116,7 @@ class TestInternalLoadDb:
         assembly_id = assembly_with_data
         task_id = _make_run_record(assembly_id, postgres_session_factory)
 
-        success, features, loaded_people, _ = _internal_load_db(
+        success, features, loaded_people, _already_selected, _ = _internal_load_db(
             task_id=task_id,
             assembly_id=assembly_id,
             settings=test_settings,
@@ -149,7 +149,7 @@ class TestInternalWriteDbResults:
         task_id = _make_run_record(assembly_id, postgres_session_factory)
 
         # Load data
-        success, features, loaded_people, _ = _internal_load_db(
+        success, features, loaded_people, _already_selected, _ = _internal_load_db(
             task_id=task_id,
             assembly_id=assembly_id,
             settings=test_settings,
@@ -204,7 +204,7 @@ class TestGenerateSelectionCsvs:
         task_id = _make_run_record(assembly_id, postgres_session_factory)
 
         # Run full pipeline
-        success, features, loaded_people, _ = _internal_load_db(
+        success, features, loaded_people, _already_selected, _ = _internal_load_db(
             task_id=task_id,
             assembly_id=assembly_id,
             settings=test_settings,
@@ -263,7 +263,7 @@ class TestGenerateSelectionCsvs:
         assembly_id = assembly_with_data
         task_id = _make_run_record(assembly_id, postgres_session_factory)
 
-        success, features, loaded_people, _ = _internal_load_db(
+        success, features, loaded_people, _already_selected, _ = _internal_load_db(
             task_id=task_id,
             assembly_id=assembly_id,
             settings=test_settings,
@@ -419,3 +419,137 @@ class TestRunSelectFromDb:
             assert record.status == SelectionRunStatus.COMPLETED
             assert record.remaining_ids is not None
             assert len(record.remaining_ids) == 2
+
+
+class TestRunReplacementFromDb:
+    """run_select_from_db with a targets snapshot fills the places withdrawn people left."""
+
+    @pytest.fixture
+    def assembly_after_withdrawal(self, postgres_session_factory):
+        """Gender Male [2,2] / Female [2,2], number_to_select 4.
+
+        M1, F1 are SELECTED; M2 is CONFIRMED; F2 WITHDRAWN; the pool holds
+        M3, M4 (M4 shares M1's address), F3, F4 (F4 shares F2's address).
+        """
+        assembly_id = uuid.uuid4()
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Replacement Test", number_to_select=4))
+            cat = TargetCategory(assembly_id=assembly_id, name="Gender")
+            cat.add_value(TargetValue(value="Male", min=2, max=2))
+            cat.add_value(TargetValue(value="Female", min=2, max=2))
+            uow.target_categories.add(cat)
+            rows = [
+                ("M1", "Male", RespondentStatus.SELECTED, "1 High St"),
+                ("F1", "Female", RespondentStatus.SELECTED, "2 High St"),
+                ("M2", "Male", RespondentStatus.CONFIRMED, "3 High St"),
+                ("F2", "Female", RespondentStatus.WITHDRAWN, "4 High St"),
+                ("M3", "Male", RespondentStatus.POOL, "5 High St"),
+                ("M4", "Male", RespondentStatus.POOL, "1 High St"),
+                ("F3", "Female", RespondentStatus.POOL, "6 High St"),
+                ("F4", "Female", RespondentStatus.POOL, "4 High St"),
+            ]
+            for ext_id, gender, status, address in rows:
+                uow.respondents.add(
+                    Respondent(
+                        assembly_id=assembly_id,
+                        external_id=ext_id,
+                        attributes={"Gender": gender, "address": address},
+                        selection_status=status,
+                    )
+                )
+            uow.commit()
+        return assembly_id
+
+    def _replacement_snapshot(self):
+        return [
+            {
+                "name": "Gender",
+                "values": [
+                    {"value": "Male", "min": 0, "max": 0},
+                    {"value": "Female", "min": 1, "max": 1},
+                ],
+            }
+        ]
+
+    def test_fills_withdrawn_place_and_leaves_panel_alone(self, postgres_session_factory, assembly_after_withdrawal):
+        assembly_id = assembly_after_withdrawal
+        task_id = _make_run_record(assembly_id, postgres_session_factory)
+        settings = Settings(
+            id_column="external_id",
+            check_same_address=False,
+            columns_to_keep=[],
+            solver_backend=config.get_solver_backend(),
+        )
+
+        with patch.object(run_select_from_db, "update_state"):
+            success, panels, _ = run_select_from_db(
+                task_id=task_id,
+                assembly_id=assembly_id,
+                number_people_wanted=1,
+                settings=settings,
+                test_selection=False,
+                session_factory=postgres_session_factory,
+                targets_snapshot=self._replacement_snapshot(),
+            )
+
+        assert success is True
+        assert len(panels[0]) == 1
+        (new_id,) = panels[0]
+        assert new_id in {"F3", "F4"}
+
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            by_id = {r.external_id: r for r in uow.respondents.get_by_assembly_id(assembly_id)}
+            assert by_id["M1"].selection_status == RespondentStatus.SELECTED
+            assert by_id["M2"].selection_status == RespondentStatus.CONFIRMED
+            assert by_id["F2"].selection_status == RespondentStatus.WITHDRAWN
+            assert by_id[new_id].selection_status == RespondentStatus.SELECTED
+            assert by_id[new_id].selection_run_id == task_id
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.status == SelectionRunStatus.COMPLETED
+            assert set(record.remaining_ids or []) == {"M3", "M4", "F3", "F4"} - {new_id}
+
+    def test_household_rule_skips_selected_household_but_not_withdrawn_one(
+        self, postgres_session_factory, assembly_after_withdrawal
+    ):
+        """M4 shares M1's (selected) address; F4 shares F2's (withdrawn) address.
+
+        With F3 made ineligible, F4 is the only Female left, so the run can only
+        succeed if a withdrawn person's household is eligible again - and it must
+        never pick M4, whose housemate still holds a place.
+        """
+        assembly_id = assembly_after_withdrawal
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            f3 = next(r for r in uow.respondents.get_by_assembly_id(assembly_id) if r.external_id == "F3")
+            f3.eligible = False
+            uow.commit()
+        settings = Settings(
+            id_column="external_id",
+            check_same_address=True,
+            check_same_address_columns=["address"],
+            columns_to_keep=[],
+            solver_backend=config.get_solver_backend(),
+        )
+        snapshot = [
+            {
+                "name": "Gender",
+                "values": [
+                    {"value": "Male", "min": 1, "max": 1},
+                    {"value": "Female", "min": 1, "max": 1},
+                ],
+            }
+        ]
+        task_id = _make_run_record(assembly_id, postgres_session_factory)
+        with patch.object(run_select_from_db, "update_state"):
+            success, panels, report = run_select_from_db(
+                task_id=task_id,
+                assembly_id=assembly_id,
+                number_people_wanted=2,
+                settings=settings,
+                test_selection=False,
+                session_factory=postgres_session_factory,
+                targets_snapshot=snapshot,
+            )
+
+        assert success is True, report.as_text()
+        assert set(panels[0]) == {"M3", "F4"}
