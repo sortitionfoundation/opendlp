@@ -16,7 +16,7 @@ from opendlp.adapters import orm
 
 # revision identifiers, used by Alembic.
 revision: str = "ef642787cb4a"
-down_revision: str | Sequence[str] | None = "0ce1cabd7ebe"
+down_revision: str | Sequence[str] | None = "25c6dc66e011"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
