@@ -42,7 +42,11 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
     {% endif %}
     {# Replacement Selection Modal - shown when replacement_modal_open is true #}
     {% if replacement_modal_open %}
-        {% include "backoffice/components/replacement_modal.html" %}
+        {% if data_source == "csv" and replacement_plan %}
+            {% include "backoffice/components/db_replacement_modal.html" %}
+        {% elif data_source != "csv" %}
+            {% include "backoffice/components/replacement_modal.html" %}
+        {% endif %}
     {% endif %}
     {# Edit Number to Select Modal - shown when edit_number_modal_open is true #}
     {% if edit_number_modal_open %}
@@ -150,11 +154,19 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                         {{ _("Select replacements when original selections decline or cannot participate.") }}
                     </p>
                     <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                        {{ _("Replacement selection for CSV data will be available in a future update.") }}
+                        {% if replacement_enabled %}
+                            {{ _("Review the places still to fill, adjust the replacement targets if needed, then run the selection.") }}
+                        {% elif active_initial_selection_run_id %}
+                            {{ _("Wait for the running selection to finish before selecting replacements.") }}
+                        {% elif csv_selected_count|default(0) == 0 %}
+                            {{ _("Run the initial selection first. Replacements fill the places of people who withdraw afterwards.") }}
+                        {% else %}
+                            {{ _("Please review and save the selection settings before running selection.") }}
+                        {% endif %}
                     </p>
                 {% endcall %}
                 {% call card_footer() %}
-                    {{ button(_("Coming Soon") , variant="outline", disabled=true) }}
+                    {{ button(_("Go to Replacement Selection") , href=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, replacement_modal='open'), variant="primary", disabled=not replacement_enabled) }}
                 {% endcall %}
             {% endcall %}
         </div>

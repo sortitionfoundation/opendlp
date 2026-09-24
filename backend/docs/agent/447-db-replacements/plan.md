@@ -562,7 +562,7 @@ Each chunk is a green `just check && just test-nobdd` and a commit.
    wired; new task type; `start_db_replace_task`; unit + integration. — **Done**
 3. **Plan service.** `build_replacement_plan`, parse, validate; unit tests. — **Done**
 4. **Dialog + routes.** Template, card, GET/POST wiring;
-   component + e2e tests; translations regenerated.
+   component + e2e tests; translations regenerated. — **Done**
 5. **BDD.** Feature file and steps; run `just test-bdd-headless` after
    `just test-nobdd`, never concurrently.
 6. **Docs.** `background_tasks.md`, `testing.md`; move this plan to

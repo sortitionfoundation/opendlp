@@ -10,6 +10,7 @@ from flask_login import current_user, login_required
 
 from opendlp import bootstrap
 from opendlp.bootstrap import get_url_generator
+from opendlp.entrypoints.blueprints.gsheets import render_selection_page
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.entrypoints.forms import DbSelectionSettingsForm
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
@@ -22,6 +23,7 @@ from opendlp.service_layer.assembly_service import (
     update_selection_settings,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
+from opendlp.service_layer.replacement_targets import build_replacement_plan, validate_replacement_form
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns, reset_selection_status
 from opendlp.service_layer.selection_report import (
@@ -35,6 +37,7 @@ from opendlp.service_layer.sortition import (
     check_db_selection_data,
     generate_selection_csvs,
     get_selection_run_status,
+    start_db_replace_task,
     start_db_select_task,
 )
 from opendlp.translations import gettext as _
@@ -126,6 +129,62 @@ def start_db_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     except Exception as e:
         logger.exception("Error starting DB selection", assembly_id=str(assembly_id), error=str(e))
         flash(_("An unexpected error occurred while starting the selection task"), "error")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
+
+
+@db_selection_backoffice_bp.route("/assembly/<uuid:assembly_id>/selection/db/replacement/run", methods=["POST"])
+@login_required
+@require_assembly_management
+def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Start a database replacement selection from the reviewed targets.
+
+    A rejected submission re-renders the selection page with the dialog open,
+    the organiser's numbers kept and the errors beside the cells they concern.
+    """
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            csv_config = get_or_create_csv_config(uow, current_user.id, assembly_id)
+            if not csv_config.settings_confirmed:
+                flash(_("Please review and save the selection settings before running selection"), "warning")
+                return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
+
+            plan = build_replacement_plan(uow, current_user.id, assembly_id)
+            validation = validate_replacement_form(uow, assembly_id, plan, request.form)
+
+        if not validation.ok:
+            return render_selection_page(assembly_id, replacement_form=request.form, replacement_validation=validation)
+
+        with uow:
+            task_id = start_db_replace_task(
+                uow,
+                current_user.id,
+                assembly_id,
+                validation.number_to_select,
+                validation.targets_snapshot,
+                plan.replacement_info(validation.number_to_select, validation.edited),
+            )
+
+        return redirect(
+            url_for(
+                "gsheets.view_assembly_selection",
+                assembly_id=assembly_id,
+                current_selection=task_id,
+            )
+        )
+
+    except InvalidSelection as e:
+        flash(_("Could not start replacement selection: %(error)s", error=str(e)), "error")
+        return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id, replacement_modal="open"))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to manage this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        logger.exception("Error starting DB replacement selection", assembly_id=str(assembly_id), error=str(e))
+        flash(_("An unexpected error occurred while starting the replacement selection"), "error")
         return redirect(url_for("gsheets.view_assembly_selection", assembly_id=assembly_id))
 
 

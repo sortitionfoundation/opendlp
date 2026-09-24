@@ -8,10 +8,11 @@ from unittest.mock import patch
 import pytest
 
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import RespondentStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import respondent_service, target_csv_import
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.exceptions import InvalidSelection
+from opendlp.service_layer.replacement_targets import build_replacement_plan
 from opendlp.service_layer.sortition import CheckDataResult
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
@@ -433,3 +434,57 @@ class TestSaveCsvSettings:
 
         assert response.status_code == 200
         assert b"Selection settings saved successfully" in response.data
+
+
+class TestCsvReplacementSelection:
+    """PG smokes for the database replacement dialog: the review page and the dispatch seam."""
+
+    @pytest.fixture
+    def assembly_after_withdrawal(self, postgres_session_factory, assembly_with_csv_config):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            for respondent in uow.respondents.get_by_assembly_id(assembly_with_csv_config.id):
+                if respondent.external_id in {"1", "3", "4", "5"}:
+                    respondent.selection_status = RespondentStatus.SELECTED
+                elif respondent.external_id == "2":
+                    respondent.selection_status = RespondentStatus.WITHDRAWN
+            uow.commit()
+        return assembly_with_csv_config
+
+    def test_review_dialog_renders_from_postgres(self, logged_in_admin, assembly_after_withdrawal):
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+        )
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "db-replacement-modal" in html
+        assert "4 people are selected or confirmed" in html
+        assert "6 places are to be filled" in html
+
+    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_replace_task")
+    def test_start_replacement_dispatches_and_redirects(
+        self, mock_start, logged_in_admin, assembly_after_withdrawal, postgres_session_factory, admin_user
+    ):
+        task_id = uuid.uuid4()
+        mock_start.return_value = task_id
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            plan = build_replacement_plan(uow, admin_user.id, assembly_after_withdrawal.id)
+        form = {"number_to_select": str(plan.default_number)}
+        for category in plan.categories:
+            for row in category.rows:
+                form[row.min_field] = str(row.calculated.min)
+                form[row.max_field] = str(row.calculated.max)
+                if category.name == "Age" and row.value == "31-50":
+                    form[row.min_field] = "1"
+        form["csrf_token"] = get_csrf_token(
+            logged_in_admin, f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection"
+        )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+        )
+
+        assert response.status_code == 302
+        assert f"current_selection={task_id}" in response.headers["Location"]
+        kwargs = mock_start.call_args
+        assert kwargs.args[3] == 6
+        assert kwargs.args[5]["held_total"] == 4

@@ -3,6 +3,7 @@ ABOUTME: Provides /backoffice/assembly/*/gsheet/*, selection/*, replacement/*, a
 
 import contextlib
 import uuid
+from collections.abc import Mapping
 
 import structlog
 from flask import Blueprint, flash, redirect, render_template, request, url_for
@@ -29,6 +30,7 @@ from opendlp.service_layer.assembly_service import (
     update_assembly_gsheet,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
+from opendlp.service_layer.replacement_targets import ReplacementValidation, build_replacement_plan
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_service import count_non_pool_respondents
 from opendlp.service_layer.sortition import (
@@ -169,143 +171,176 @@ def _get_replacement_modal_context(
 # --- Selection views ---
 
 
+def render_selection_page(
+    assembly_id: uuid.UUID,
+    *,
+    replacement_form: Mapping[str, str] | None = None,
+    replacement_validation: ReplacementValidation | None = None,
+) -> ResponseReturnValue:
+    """Render the selection page for the current user.
+
+    The database replacement dialog re-renders this page after a rejected
+    submission: ``replacement_form`` carries the numbers the organiser typed and
+    ``replacement_validation`` the errors to show beside them. Either forces the
+    dialog open. Service-layer exceptions propagate to the caller.
+    """
+    page = request.args.get("page", 1, type=int)
+    per_page = 15
+
+    current_selection: uuid.UUID | None = None
+    run_record = None
+    log_messages: list = []
+    translated_report_html = ""
+
+    # Manage tabs variables (extracted to helper for complexity)
+    current_manage_tabs_param = request.args.get("current_manage_tabs")
+
+    uow = bootstrap.get_flask_uow()
+    with uow:
+        assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
+
+        # Get selection modal context
+        current_selection, run_record, log_messages, translated_report_html = _get_selection_modal_context(
+            uow, assembly_id, request.args.get("current_selection")
+        )
+
+        # Get replacement modal context
+        (
+            current_replacement,
+            replacement_run_record,
+            replacement_log_messages,
+            replacement_translated_report_html,
+            replacement_min_select,
+            replacement_max_select,
+            replacement_features_pending,
+        ) = _get_replacement_modal_context(
+            uow,
+            assembly_id,
+            request.args.get("current_replacement"),
+            request.args.get("min_select", type=int),
+            request.args.get("max_select", type=int),
+        )
+
+        # Handle current_manage_tabs parameter for showing manage tabs modal
+        current_manage_tabs, manage_tabs_run_record, manage_tabs_tab_names, manage_tabs_status = (
+            _get_manage_tabs_context(uow, assembly_id, current_manage_tabs_param)
+        )
+
+        # If the latest selection run is an unfinished initial-selection task, expose its id
+        # so the Initial Selection card can offer "View Running Selection" instead of the
+        # check/test/run buttons.
+        active_initial_selection_run_id = get_active_initial_selection_run_id(uow, assembly_id)
+
+    # Reuse the same UnitOfWork for the remaining sequential reads.
+    # Check if gsheet is configured
+    gsheet = None
+    with uow:
+        try:
+            gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
+        except ServiceLayerError as gsheet_error:
+            logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
+
+    # Fetch paginated selection history
+    with uow:
+        run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(assembly_id, page, per_page)
+        total_pages = (total_count + per_page - 1) // per_page
+
+    replacement_modal_open = (
+        request.args.get("replacement_modal") == "open"
+        or current_replacement is not None
+        or replacement_validation is not None
+    )
+    edit_number_modal_open = request.args.get("edit_number") == "1"
+
+    # Get CSV status for tab enabled states
+    csv_status = None
+    # No CSV data is expected for new assemblies.
+    with uow, contextlib.suppress(ServiceLayerError):
+        csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
+
+    # Determine data source and tab enabled states
+    csv_selected_count = 0
+    csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
+    replacement_plan = None
+    if gsheet:
+        data_source = "gsheet"
+        targets_enabled = True
+        respondents_enabled = True
+        selection_enabled = True
+    elif csv_status and csv_status.has_data:
+        data_source = "csv"
+        targets_enabled = csv_status.has_targets
+        respondents_enabled = csv_status.has_respondents
+        selection_enabled = csv_status.selection_enabled
+        csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
+        # Get count of respondents that have been selected (not in Pool status)
+        try:
+            with uow:
+                csv_selected_count = count_non_pool_respondents(uow, assembly_id)
+        except ServiceLayerError as count_error:
+            logger.error("Error counting non-pool respondents", error=str(count_error))
+        if replacement_modal_open:
+            with uow:
+                replacement_plan = build_replacement_plan(uow, current_user.id, assembly_id)
+    else:
+        data_source = ""
+        targets_enabled = False
+        respondents_enabled = False
+        selection_enabled = False
+
+    replacement_enabled = (
+        data_source == "csv"
+        and csv_settings_confirmed
+        and csv_selected_count > 0
+        and active_initial_selection_run_id is None
+    )
+
+    return render_template(
+        "backoffice/assembly_selection.html",
+        assembly=assembly,
+        gsheet=gsheet,
+        run_history=run_history,
+        page=page,
+        per_page=per_page,
+        total_count=total_count,
+        total_pages=total_pages,
+        current_selection=current_selection,
+        run_record=run_record,
+        log_messages=log_messages,
+        translated_report_html=translated_report_html,
+        current_manage_tabs=current_manage_tabs,
+        manage_tabs_run_record=manage_tabs_run_record,
+        manage_tabs_tab_names=manage_tabs_tab_names,
+        manage_tabs_status=manage_tabs_status,
+        replacement_modal_open=replacement_modal_open,
+        current_replacement=current_replacement,
+        replacement_run_record=replacement_run_record,
+        replacement_log_messages=replacement_log_messages,
+        replacement_translated_report_html=replacement_translated_report_html,
+        replacement_min_select=replacement_min_select,
+        replacement_max_select=replacement_max_select,
+        replacement_features_pending=replacement_features_pending,
+        replacement_plan=replacement_plan,
+        replacement_form=replacement_form or {},
+        replacement_validation=replacement_validation,
+        replacement_enabled=replacement_enabled,
+        edit_number_modal_open=edit_number_modal_open,
+        data_source=data_source,
+        targets_enabled=targets_enabled,
+        respondents_enabled=respondents_enabled,
+        selection_enabled=selection_enabled,
+        csv_selected_count=csv_selected_count,
+        csv_settings_confirmed=csv_settings_confirmed,
+        active_initial_selection_run_id=active_initial_selection_run_id,
+    ), 200
+
+
 @gsheets_bp.route("/assembly/<uuid:assembly_id>/selection")
 @login_required
 def view_assembly_selection(assembly_id: uuid.UUID) -> ResponseReturnValue:
     """Backoffice assembly selection page."""
     try:
-        page = request.args.get("page", 1, type=int)
-        per_page = 15
-
-        current_selection: uuid.UUID | None = None
-        run_record = None
-        log_messages: list = []
-        translated_report_html = ""
-
-        # Manage tabs variables (extracted to helper for complexity)
-        current_manage_tabs_param = request.args.get("current_manage_tabs")
-
-        uow = bootstrap.get_flask_uow()
-        with uow:
-            assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
-
-            # Get selection modal context
-            current_selection, run_record, log_messages, translated_report_html = _get_selection_modal_context(
-                uow, assembly_id, request.args.get("current_selection")
-            )
-
-            # Get replacement modal context
-            (
-                current_replacement,
-                replacement_run_record,
-                replacement_log_messages,
-                replacement_translated_report_html,
-                replacement_min_select,
-                replacement_max_select,
-                replacement_features_pending,
-            ) = _get_replacement_modal_context(
-                uow,
-                assembly_id,
-                request.args.get("current_replacement"),
-                request.args.get("min_select", type=int),
-                request.args.get("max_select", type=int),
-            )
-
-            # Handle current_manage_tabs parameter for showing manage tabs modal
-            current_manage_tabs, manage_tabs_run_record, manage_tabs_tab_names, manage_tabs_status = (
-                _get_manage_tabs_context(uow, assembly_id, current_manage_tabs_param)
-            )
-
-            # If the latest selection run is an unfinished initial-selection task, expose its id
-            # so the Initial Selection card can offer "View Running Selection" instead of the
-            # check/test/run buttons.
-            active_initial_selection_run_id = get_active_initial_selection_run_id(uow, assembly_id)
-
-        # Reuse the same UnitOfWork for the remaining sequential reads.
-        # Check if gsheet is configured
-        gsheet = None
-        with uow:
-            try:
-                gsheet = get_assembly_gsheet(uow, assembly_id, current_user.id)
-            except ServiceLayerError as gsheet_error:
-                logger.error("Error loading gsheet config for selection", error=str(gsheet_error))
-
-        # Fetch paginated selection history
-        with uow:
-            run_history, total_count = uow.selection_run_records.get_by_assembly_id_paginated(
-                assembly_id, page, per_page
-            )
-            total_pages = (total_count + per_page - 1) // per_page
-
-        replacement_modal_open = request.args.get("replacement_modal") == "open" or current_replacement is not None
-        edit_number_modal_open = request.args.get("edit_number") == "1"
-
-        # Get CSV status for tab enabled states
-        csv_status = None
-        # No CSV data is expected for new assemblies.
-        with uow, contextlib.suppress(ServiceLayerError):
-            csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
-
-        # Determine data source and tab enabled states
-        csv_selected_count = 0
-        csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
-        if gsheet:
-            data_source = "gsheet"
-            targets_enabled = True
-            respondents_enabled = True
-            selection_enabled = True
-        elif csv_status and csv_status.has_data:
-            data_source = "csv"
-            targets_enabled = csv_status.has_targets
-            respondents_enabled = csv_status.has_respondents
-            selection_enabled = csv_status.selection_enabled
-            csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
-            # Get count of respondents that have been selected (not in Pool status)
-            try:
-                with uow:
-                    csv_selected_count = count_non_pool_respondents(uow, assembly_id)
-            except ServiceLayerError as count_error:
-                logger.error("Error counting non-pool respondents", error=str(count_error))
-        else:
-            data_source = ""
-            targets_enabled = False
-            respondents_enabled = False
-            selection_enabled = False
-
-        return render_template(
-            "backoffice/assembly_selection.html",
-            assembly=assembly,
-            gsheet=gsheet,
-            run_history=run_history,
-            page=page,
-            per_page=per_page,
-            total_count=total_count,
-            total_pages=total_pages,
-            current_selection=current_selection,
-            run_record=run_record,
-            log_messages=log_messages,
-            translated_report_html=translated_report_html,
-            current_manage_tabs=current_manage_tabs,
-            manage_tabs_run_record=manage_tabs_run_record,
-            manage_tabs_tab_names=manage_tabs_tab_names,
-            manage_tabs_status=manage_tabs_status,
-            replacement_modal_open=replacement_modal_open,
-            current_replacement=current_replacement,
-            replacement_run_record=replacement_run_record,
-            replacement_log_messages=replacement_log_messages,
-            replacement_translated_report_html=replacement_translated_report_html,
-            replacement_min_select=replacement_min_select,
-            replacement_max_select=replacement_max_select,
-            replacement_features_pending=replacement_features_pending,
-            edit_number_modal_open=edit_number_modal_open,
-            data_source=data_source,
-            targets_enabled=targets_enabled,
-            respondents_enabled=respondents_enabled,
-            selection_enabled=selection_enabled,
-            csv_selected_count=csv_selected_count,
-            csv_settings_confirmed=csv_settings_confirmed,
-            active_initial_selection_run_id=active_initial_selection_run_id,
-        ), 200
+        return render_selection_page(assembly_id)
     except NotFoundError as e:
         logger.warning("Assembly not found for selection page", assembly_id=str(assembly_id), error=str(e))
         flash(_("Assembly not found"), "error")
