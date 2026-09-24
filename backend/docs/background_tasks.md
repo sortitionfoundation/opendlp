@@ -57,6 +57,31 @@ Runs stratified selection algorithm on loaded data.
 
 **Status tracking:** Creates `SelectionRunRecord` with progress updates
 
+#### run_select_from_db
+
+Runs stratified selection against the respondents held in the database, for
+both an initial selection and a replacement selection.
+
+**Parameters:**
+- `assembly_id` - The assembly whose respondents and targets to use
+- `number_people_wanted` - How many to select
+- `settings` - `sortition_algorithms` settings, keyed on `external_id`
+- `test_selection` - Skip the fair algorithm (initial selection only)
+- `targets_snapshot` - Optional. When set, this is a **replacement selection**:
+  the features come from the snapshot (the targets still to fill, as reviewed
+  in the dialog) instead of the stored target categories, and the respondents
+  already selected or confirmed are handed to the algorithm so nobody from
+  their households is picked.
+
+**Status tracking:** `SelectionRunRecord` with task type `select_from_db`,
+`test_select_from_db` or `select_replacement_from_db`. A replacement run keeps
+the reviewed targets in `targets_used` (each value carrying the calculated
+`calculated_min`/`calculated_max` next to the used `min`/`max`, the overall
+targets and how many places were `held`) and the headline arithmetic under
+`settings_used["replacement"]`. Selected respondents get the run's task id as
+their `selection_run_id`, which is how a later replacement round is told apart
+from the initial selection.
+
 #### manage_old_tabs
 
 Archives or deletes old Google Sheets tabs.

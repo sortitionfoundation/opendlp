@@ -254,7 +254,8 @@ Target management used to live here too. It now has its own module.
 `sortition.py` orchestrates Celery work for two workflows.
 
 - **Google Sheets:** `start_gsheet_load_task`, `start_gsheet_select_task`, `start_gsheet_replace_load_task`, `start_gsheet_replace_task`, `start_gsheet_manage_tabs_task`
-- **Database selection:** `start_db_select_task`, `check_db_selection_data`, `generate_selection_csvs`
+- **Database selection:** `start_db_select_task`, `start_db_replace_task`, `check_db_selection_data`, `generate_selection_csvs`
+- **Replacement targets** (in `replacement_targets.py`): `build_replacement_plan` derives the seats still to fill from the stored targets and who already holds a place; `validate_replacement_form` checks the organiser's edits through the library's own rules before a run starts
 - **Status / control:** `get_selection_run_status`, `get_manage_old_tabs_status`, `cancel_task`, `check_and_update_task_health`, `get_latest_run_for_assembly`
 
 Each start function creates a `SelectionRunRecord` and dispatches a Celery task; see [Background Tasks](#background-tasks).
@@ -321,7 +322,7 @@ Task functions registered on the Celery app:
 
 - `load_gsheet` — fetches respondent data from a Google Sheet into the run record.
 - `run_select` — runs stratified selection against gsheet-sourced data (used for both selection and replacement).
-- `run_select_from_db` — runs stratified selection directly against database respondents.
+- `run_select_from_db` — runs stratified selection directly against database respondents. With a `targets_snapshot` it is a replacement selection: the features come from the snapshot rather than the stored targets, and the people already holding a place are handed to the algorithm so it keeps away from their households.
 - `manage_old_tabs` — bulk tab management on a Google Sheet after a selection.
 - `cleanup_old_password_reset_tokens` — periodic housekeeping.
 - `cleanup_orphaned_tasks` — periodic safety net that marks PENDING/RUNNING rows whose Celery task has died as FAILED.

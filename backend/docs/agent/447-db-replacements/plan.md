@@ -1,7 +1,8 @@
 # Replacement selection from the database — implementation plan
 
-**Status:** Reviewed 2026-09-24 — all nine questions answered by Doctor Chewie;
-decisions are marked **D1**…**D9** inline and collected in §9. Not yet implemented.
+**Status:** Implemented — all six chunks landed on `447-db-replacements`
+(2026-09-24). Decisions are marked **D1**…**D9** inline and collected in §9.
+Move this document to `docs/agent/history/` once the branch is merged.
 **Date:** 2026-09-24
 **Branch:** `447-db-replacements` (off `main`)
 **Story:** 447 — enable replacements when the respondents live in the database
@@ -487,7 +488,7 @@ tab) → top-level error "targets changed, review again" and re-render.
 | `templates/backoffice/assembly_selection.html` | live Replacement card for csv; include the new modal |
 | `templates/backoffice/components/db_replacement_modal.html` | **new** |
 | `tests/fakes.py` | nothing expected — the fake respondent repo already has both count queries |
-| `docs/background_tasks.md` / `docs/testing.md` | note the new task type |
+| `docs/background_tasks.md` / `docs/architecture.md` | describe the replacement run and the new service |
 | translations | `just translate-regen` after the strings land |
 
 No Alembic migration (D4).
@@ -565,7 +566,9 @@ Each chunk is a green `just check && just test-nobdd` and a commit.
    component + e2e tests; translations regenerated. — **Done**
 5. **BDD.** Feature file and steps; run `just test-bdd-headless` after
    `just test-nobdd`, never concurrently. — **Done**
-6. **Docs.** `background_tasks.md`, `testing.md`; move this plan to
+6. **Docs.** `background_tasks.md` and `architecture.md` describe the
+   replacement run; `testing.md` needed nothing (the new BDD feature follows
+   its existing instructions). — **Done**; move this plan to
    `docs/agent/history/` when merged.
 
 Estimated size: chunks 1–3 are mostly service code with clear tests; chunk 4
