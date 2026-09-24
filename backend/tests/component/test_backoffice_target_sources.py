@@ -156,7 +156,69 @@ class TestChecklistPage:
 
         assert b"The target's values have changed" in response.data
 
-    def test_each_row_opens_its_set_up_dialog_from_anywhere_on_the_card(
+    def test_rows_are_marked_unlinked_needing_attention_or_done(self, logged_in_admin, existing_assembly, fake_store):
+        """The card's left border colour - the sentence in the row says the same in words."""
+        linked = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Gender",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            target_category_id=linked.id,
+        )
+        stale = _seed_category(fake_store, existing_assembly, "Housing", ["Own", "Rent", "Other"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Housing",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Own"), ChoiceOption(value="Rent")],
+            target_category_id=stale.id,
+        )
+        unset = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        row_status = {
+            category_id: status
+            for status, category_id in re.findall(
+                r'<li class="target-source-row target-source-row--(\w+)[^"]*" data-focus-row="ts-([^"]+)"', body
+            )
+        }
+        assert row_status == {str(linked.id): "done", str(stale.id): "attention", str(unset.id): "unlinked"}
+
+    def test_an_unlinked_rows_sentence_is_emphasised(self, logged_in_admin, existing_assembly, fake_store):
+        _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        assert re.search(
+            r'<span class="target-source-row__unlinked">\s*<svg[^>]*>.*?</svg>\s*No question linked yet\.</span>',
+            body,
+            re.DOTALL,
+        )
+
+    def test_the_edit_button_has_an_edit_icon(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Gender",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            target_category_id=category.id,
+        )
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        edit = re.search(r'<a href="[^"]*/setup-modal"\s+role="button"[^>]*>(.*?)</a>', body, re.DOTALL)
+        assert edit is not None
+        assert re.fullmatch(
+            r'<span class="btn-icon">\s*<svg.*</svg>\s*</span><span>Edit</span>', edit.group(1).strip(), re.DOTALL
+        )
+
+    def test_each_row_has_one_set_up_link_and_the_card_itself_is_not_a_link(
         self, logged_in_admin, existing_assembly, fake_store
     ):
         linked = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
@@ -176,8 +238,9 @@ class TestChecklistPage:
         rows = re.findall(r'<li class="target-source-row[^"]*"[^>]*>(.*?)</li>', body, re.DOTALL)
         assert len(rows) == 2
         for row, category in zip(rows, (linked, unset), strict=True):
-            # Exactly one link stretches over the card, and it opens that row's set-up dialog
-            open_links = re.findall(r'<a href="([^"]*)"\s+role="button"\s+class="[^"]*\brow-link\b', row)
+            # Only the button opens the set-up dialog: nothing stretches a link over the card
+            assert "row-link" not in row
+            open_links = re.findall(r'<a href="([^"]*/setup-modal)"\s+role="button"', row)
             assert open_links == [
                 f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal"
             ]

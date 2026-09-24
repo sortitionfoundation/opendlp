@@ -116,10 +116,10 @@ def open_target_sources(admin_logged_in_page: Page, title: str) -> None:
 
 @when(parsers.parse('I set up the "{target_name}" target as an exact copy'))
 def set_up_exact_copy(admin_logged_in_page: Page, target_name: str) -> None:
-    """Open the set-up modal by clicking the row itself, choose Exact copy, and save."""
+    """Open the set-up modal from the row's set-up button, choose Exact copy, and save."""
     page = admin_logged_in_page
-    # The centre of the card is clear of its buttons, so this exercises the whole-row link.
-    _row_for(page, target_name).click()
+    # "Set up", or "Set up differently" when a question already shares the target's name.
+    _row_for(page, target_name).get_by_role("button", name=re.compile(r"^Set up")).click()
     expect(_setup_dialog(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     # Choosing a method round-trips through the server and swaps the modal back in.
     with page.expect_response(lambda r: "setup-modal" in r.url):

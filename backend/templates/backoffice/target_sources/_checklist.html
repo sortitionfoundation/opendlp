@@ -3,7 +3,7 @@ ABOUTME: The per-target checklist fragment — one row per target category with 
 ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors the database
 #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/icons.html" import icon_check, icon_close, icon_more_vert %}
+{% from "backoffice/components/icons.html" import icon_check, icon_close, icon_edit, icon_more_vert %}
 {# oob=true marks the fragment for an out-of-band swap: HTMX replaces #target-sources-list
    in place while the (otherwise empty) response body clears #ts-modal-container,
    closing whichever modal triggered the mutation. #}
@@ -20,9 +20,18 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
             {% for status in statuses %}
                 {% set category = status.category %}
                 {% set setup_url = url_for('target_sources.setup_modal', assembly_id=assembly.id, category_id=category.id) %}
-                {# The row's set-up link stretches over the whole card, so a click
-                   anywhere on it opens the set-up dialog; the other buttons sit above it. #}
-                <li class="target-source-row row-link-host rounded-lg p-4" data-focus-row="ts-{{ category.id }}">
+                {# The row's left border says whether the target still needs a question
+                   (unlinked), has one that needs attention, or is done. The sentence
+                   below says the same in words. Each class is spelt out in full so
+                   Tailwind's scan of the templates keeps it in the built CSS. #}
+                {% if status.state in (TargetSourceState.NONE, TargetSourceState.MATCHED_NOT_LINKED) %}
+                    {% set row_status_class = "target-source-row--unlinked" %}
+                {% elif status.stale or status.mapping_row_count == 0 %}
+                    {% set row_status_class = "target-source-row--attention" %}
+                {% else %}
+                    {% set row_status_class = "target-source-row--done" %}
+                {% endif %}
+                <li class="target-source-row {{ row_status_class }} rounded-lg p-4" data-focus-row="ts-{{ category.id }}">
                     <div class="flex items-start justify-between gap-4 flex-wrap">
                         <div>
                             <h3 class="text-heading-md mb-1" style="color: var(--color-headings);">{{ category.name }}</h3>
@@ -41,7 +50,7 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                 {% elif status.state == TargetSourceState.IMPORT_COVERED %}
                                     {{ icon_check(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("Data comes from your imported respondents.") }}
                                 {% else %}
-                                    {{ icon_close(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("No question linked yet.") }}
+                                    <span class="target-source-row__unlinked">{{ icon_close(classes="w-4 h-4 inline-block align-text-bottom") }} {{ _("No question linked yet.") }}</span>
                                 {% endif %}
                             </p>
                             {% if status.mapping_row_count == 0 %}
@@ -60,7 +69,8 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                 {% set is_large_mapping = status.field.derivation_type is not none and status.field.derivation_type.value == "large_mapping" %}
                                 {% set upload_url = url_for('target_sources.upload_modal', assembly_id=assembly.id, category_id=category.id) %}
                                 {% set upload_attrs = 'hx-get="' ~ upload_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"' %}
-                                {{ button(_("Edit") , variant="secondary", href=setup_url, classes="row-link",
+                                {% set edit_icon %}{{ icon_edit(classes="w-4 h-4") }}{% endset %}
+                                {{ button(_("Edit") , variant="secondary", href=setup_url, leading_icon=edit_icon,
                                 attrs='data-focus-id="ts-row-' ~ category.id ~ '" hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                                 {# Until its lookup table is uploaded a postcode mapping cannot work, so the
                                    first upload stays in view; replacing the table goes in the menu. #}
@@ -85,9 +95,8 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                    only the menu and not the step dialog around it. Item text is bare (no
                                    inner span); data-confirm does not depend on that, as it looks up from
                                    the click target to the enclosing button. #}
-                                <div class="row-link-menu inline-flex"
+                                <div class="relative inline-flex"
                                      x-data="menuButton"
-                                     x-bind:class="open ? 'is-open' : ''"
                                      @keydown.escape="closeOnEscape"
                                      @focusout="closeOnFocusOut">
                                     {{ button(variant="icon",
@@ -164,13 +173,13 @@ ABOUTME: Swapped wholesale (oob) after modal saves so the list always mirrors th
                                     <input type="hidden" name="field_id" value="{{ status.field.id }}">
                                     {{ button(_("Link it") , type="submit", variant="primary") }}
                                 </form>
-                                {{ button(_("Set up differently") , variant="secondary", href=setup_url, classes="row-link",
+                                {{ button(_("Set up differently") , variant="secondary", href=setup_url,
                                 attrs='data-focus-id="ts-row-' ~ category.id ~ '" hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                             {% elif status.state == TargetSourceState.IMPORT_COVERED %}
-                                {{ button(_("Set up") , variant="secondary", href=setup_url, classes="row-link",
+                                {{ button(_("Set up") , variant="secondary", href=setup_url,
                                 attrs='data-focus-id="ts-row-' ~ category.id ~ '" hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                             {% else %}
-                                {{ button(_("Set up") , variant="primary", href=setup_url, classes="row-link",
+                                {{ button(_("Set up") , variant="primary", href=setup_url,
                                 attrs='data-focus-id="ts-row-' ~ category.id ~ '" hx-get="' ~ setup_url ~ '" hx-target="#ts-modal-container" hx-swap="innerHTML"') }}
                             {% endif %}
                         </div>

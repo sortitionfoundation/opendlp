@@ -962,14 +962,35 @@
         z-index: 2;
     }
 
-    /* Target data sources checklist row: a card that opens its set-up dialog */
+    /* Target data sources checklist row: a card whose thick left border says
+       whether the target still needs a question (unlinked), has one that
+       needs attention (stale values, lookup table not uploaded), or is done.
+       The row's text says the same in words - colour is not the only cue. */
     .target-source-row {
         background-color: var(--color-tables-cards);
         border: 1px solid var(--color-borders-dividers);
+        border-left-width: 4px;
     }
 
-    .target-source-row:has(.row-link:hover) {
-        border-color: var(--color-primary-action);
+    .target-source-row--unlinked {
+        border-left-color: var(--color-error-400);
+    }
+
+    .target-source-row--attention {
+        border-left-color: var(--color-warning-400);
+    }
+
+    .target-source-row--done {
+        border-left-color: var(--color-success-400);
+    }
+
+    .target-source-row__unlinked {
+        font-weight: 600;
+        color: var(--color-headings);
+    }
+
+    .target-source-row__unlinked svg {
+        color: var(--color-error-400);
     }
 
     /* ========================================
