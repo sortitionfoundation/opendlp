@@ -932,36 +932,6 @@
         background-color: var(--color-primary-action);
     }
 
-    /* ========================================
-       ROW LINK
-       A card or table row that opens with a click anywhere on it. Mark the
-       card or row .row-link-host and its main link .row-link: the link's
-       ::after stretches over the host, and every other control in the host
-       is lifted above that overlay so it keeps its own clicks. A "more
-       actions" menu wrapper is .row-link-menu; add .is-open while its menu
-       shows, so the menu paints over the rows after it, whose controls are
-       lifted too. Hover styling belongs to the host's own component.
-       ======================================== */
-    .row-link-host {
-        position: relative;
-    }
-
-    .row-link::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-    }
-
-    .row-link-host :is(a, button):not(.row-link),
-    .row-link-menu {
-        position: relative;
-        z-index: 1;
-    }
-
-    .row-link-menu.is-open {
-        z-index: 2;
-    }
-
     /* Target data sources checklist row: a card whose thick left border says
        whether the target still needs a question (unlinked), has one that
        needs attention (stale values, lookup table not uploaded), or is done.
@@ -996,8 +966,7 @@
     /* ========================================
        REGISTRATION QUESTIONS LIST
        A card per section, holding a table with a row per question
-       (Figma: Registration fields, node 5357:15299). Rows open their edit
-       modal from anywhere - see ROW LINK above.
+       (Figma: Registration fields, node 5357:15299).
        ======================================== */
     .question-section {
         display: flex;
@@ -1045,21 +1014,6 @@
 
     .question-table tbody tr:nth-child(odd) > :is(td, th) {
         background-color: var(--color-table-row-alt);
-    }
-
-    /* Hovering a row outlines it, as the set-up step cards do; the zebra
-       background stays so the row doesn't blend into its neighbours. A table
-       row takes no border of its own, so the cells draw the outline. */
-    .question-row:has(.row-link:hover) > :is(td, th) {
-        box-shadow: inset 0 1px 0 var(--color-primary-action), inset 0 -1px 0 var(--color-primary-action);
-    }
-
-    .question-row:has(.row-link:hover) > :first-child {
-        box-shadow: inset 1px 1px 0 var(--color-primary-action), inset 0 -1px 0 var(--color-primary-action);
-    }
-
-    .question-row:has(.row-link:hover) > :last-child {
-        box-shadow: inset -1px 1px 0 var(--color-primary-action), inset 0 -1px 0 var(--color-primary-action);
     }
 
     .question-row__actions {

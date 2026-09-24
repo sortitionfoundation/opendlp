@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-23 18:54+0000\n"
+"POT-Creation-Date: 2026-09-24 10:33+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -88,7 +88,7 @@ msgstr "Eredmények"
 
 #: src/opendlp/domain/registration_page.py:512
 #: templates/backoffice/assembly_edit_respondent.html:128
-#: templates/backoffice/target_sources/_setup_modal.html:261
+#: templates/backoffice/target_sources/_setup_modal.html:263
 msgid "Day"
 msgstr ""
 
@@ -98,7 +98,7 @@ msgstr ""
 
 #: src/opendlp/domain/registration_page.py:513
 #: templates/backoffice/assembly_edit_respondent.html:131
-#: templates/backoffice/target_sources/_setup_modal.html:264
+#: templates/backoffice/target_sources/_setup_modal.html:266
 msgid "Month"
 msgstr ""
 
@@ -108,7 +108,7 @@ msgstr ""
 
 #: src/opendlp/domain/registration_page.py:514
 #: templates/backoffice/assembly_edit_respondent.html:134
-#: templates/backoffice/target_sources/_setup_modal.html:267
+#: templates/backoffice/target_sources/_setup_modal.html:269
 msgid "Year"
 msgstr ""
 
@@ -164,7 +164,7 @@ msgid ""
 msgstr ""
 
 #: src/opendlp/domain/respondent_field_schema.py:74
-#: templates/backoffice/target_sources/_setup_modal.html:186
+#: templates/backoffice/target_sources/_setup_modal.html:187
 msgid "Age ranges"
 msgstr ""
 
@@ -4488,7 +4488,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/respondent_field_schema/_field_modal.html:201
 #: templates/backoffice/respondents/confirm_upload_diff.html:99
 #: templates/backoffice/respondents/export_modal.html:68
-#: templates/backoffice/target_sources/_setup_modal.html:350
+#: templates/backoffice/target_sources/_setup_modal.html:354
 #: templates/backoffice/target_sources/_upload_modal.html:84
 #: templates/backoffice/targets/add_target_modal.html:29
 #: templates/backoffice/targets/create_from_columns_modal.html:87
@@ -4808,8 +4808,9 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/components/registration_page_list.html:123
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:74
-#: templates/backoffice/target_sources/_checklist.html:63
-#: templates/backoffice/target_sources/_setup_modal.html:191
+#: templates/backoffice/respondent_field_schema/_editor.html:92
+#: templates/backoffice/target_sources/_checklist.html:72
+#: templates/backoffice/target_sources/_setup_modal.html:192
 #: templates/main/edit_assembly.html:3
 #: templates/targets/components/category_block.html:102
 msgid "Edit"
@@ -5436,10 +5437,10 @@ msgstr ""
 
 #: templates/backoffice/assembly_data.html:78
 #: templates/backoffice/assembly_members.html:83
-#: templates/backoffice/respondent_field_schema/_editor.html:151
+#: templates/backoffice/respondent_field_schema/_editor.html:149
 #: templates/backoffice/respondent_field_schema/_field_modal.html:155
-#: templates/backoffice/target_sources/_setup_modal.html:295
-#: templates/backoffice/target_sources/_setup_modal.html:321
+#: templates/backoffice/target_sources/_setup_modal.html:298
+#: templates/backoffice/target_sources/_setup_modal.html:324
 #: templates/main/view_assembly_members.html:31 templates/profile/view.html:61
 msgid "Remove"
 msgstr "Eltávolítás"
@@ -6372,7 +6373,7 @@ msgstr "Módosítások elvetése"
 #: templates/backoffice/registration/_step_email.html:93
 #: templates/backoffice/registration/_step_form.html:23
 #: templates/backoffice/respondent_field_schema/_field_modal.html:202
-#: templates/backoffice/target_sources/_setup_modal.html:351
+#: templates/backoffice/target_sources/_setup_modal.html:355
 #: templates/targets/components/category_block.html:42
 #: templates/targets/components/category_block.html:168
 #: templates/targets/components/category_name_edit.html:22
@@ -7769,54 +7770,46 @@ msgstr ""
 msgid "Tags"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:74
+#: templates/backoffice/respondent_field_schema/_editor.html:72
 #, python-format
 msgid "… and %(count)d more"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:86
+#: templates/backoffice/respondent_field_schema/_editor.html:84
 #: templates/backoffice/respondent_field_schema/_field_modal.html:102
 #, python-format
 msgid "Feeds target: %(name)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:97
+#: templates/backoffice/respondent_field_schema/_editor.html:96
 #, python-format
 msgid "Edit %(question)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:101
+#: templates/backoffice/respondent_field_schema/_editor.html:100
 #: templates/backoffice/targets/bulk_edit_form.html:243
 msgid "Move up"
 msgstr "Mozgatás felfelé"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:101
+#: templates/backoffice/respondent_field_schema/_editor.html:100
 #: templates/backoffice/targets/bulk_edit_form.html:239
 msgid "Move down"
 msgstr "Mozgatás lefelé"
 
-#: templates/backoffice/respondent_field_schema/_editor.html:117
-#: templates/backoffice/target_sources/_checklist.html:96
+#: templates/backoffice/respondent_field_schema/_editor.html:115
+#: templates/backoffice/target_sources/_checklist.html:104
 #, python-format
 msgid "More actions for %(name)s"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:149
+#: templates/backoffice/respondent_field_schema/_editor.html:147
 msgid ""
 "Remove this question? Respondent data keeps its values; they just stop "
 "being rendered."
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_editor.html:163
+#: templates/backoffice/respondent_field_schema/_editor.html:161
 msgid "No questions in this section yet."
-msgstr ""
-
-#: templates/backoffice/respondent_field_schema/_editor.html:172
-msgid "Next: build your registration page"
-msgstr ""
-
-#: templates/backoffice/respondent_field_schema/_editor.html:176
-msgid "Generate the form skeleton from these questions in the page editor."
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:17
@@ -8048,65 +8041,65 @@ msgstr ""
 msgid "Go to Targets"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:32
+#: templates/backoffice/target_sources/_checklist.html:40
 #, python-format
 msgid "Asked on the registration page as '%(label)s'"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:34
+#: templates/backoffice/target_sources/_checklist.html:42
 #, python-format
 msgid "Computed from '%(source)s'"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:37
+#: templates/backoffice/target_sources/_checklist.html:45
 #, python-format
 msgid "%(count)s lookup row"
 msgid_plural "%(count)s lookup rows"
 msgstr[0] ""
 
-#: templates/backoffice/target_sources/_checklist.html:40
+#: templates/backoffice/target_sources/_checklist.html:48
 #, python-format
 msgid ""
 "The existing question \"%(label)s\" shares this target's name but isn't "
 "linked to it yet."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:42
+#: templates/backoffice/target_sources/_checklist.html:50
 msgid "Data comes from your imported respondents."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:44
+#: templates/backoffice/target_sources/_checklist.html:52
 msgid "No question linked yet."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:49
+#: templates/backoffice/target_sources/_checklist.html:57
 #, python-format
 msgid "Until the lookup table is uploaded, everyone's %(key)s is %(fallback)s."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:54
+#: templates/backoffice/target_sources/_checklist.html:62
 msgid ""
 "The target's values have changed since this question was set up — its "
 "answers no longer match."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:68
+#: templates/backoffice/target_sources/_checklist.html:77
 msgid "Upload table"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:77
+#: templates/backoffice/target_sources/_checklist.html:86
 msgid "Re-sync from target"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:113
+#: templates/backoffice/target_sources/_checklist.html:121
 msgid "Re-upload table"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:125
+#: templates/backoffice/target_sources/_checklist.html:133
 msgid "Recompute"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:133
+#: templates/backoffice/target_sources/_checklist.html:141
 #, python-format
 msgid ""
 "Delete the computed question '%(name)s'? Its answers and its lookup table"
@@ -8114,7 +8107,7 @@ msgid ""
 "again. The question it is computed from stays."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:135
+#: templates/backoffice/target_sources/_checklist.html:143
 #, python-format
 msgid ""
 "Delete the computed question '%(name)s'? Its answers are deleted. The "
@@ -8122,32 +8115,32 @@ msgid ""
 "from it."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:138
+#: templates/backoffice/target_sources/_checklist.html:146
 msgid ""
 "Unlink this question from its target? The question stays on the "
 "registration page, but edits to it will no longer be checked against the "
 "target."
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:152
+#: templates/backoffice/target_sources/_checklist.html:160
 msgid "Delete computed question"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:152
+#: templates/backoffice/target_sources/_checklist.html:160
 #: templates/profile/view.html:95 templates/profile/view.html:146
 msgid "Unlink"
 msgstr "Leválasztás"
 
-#: templates/backoffice/target_sources/_checklist.html:165
+#: templates/backoffice/target_sources/_checklist.html:173
 msgid "Link it"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:167
+#: templates/backoffice/target_sources/_checklist.html:175
 msgid "Set up differently"
 msgstr ""
 
-#: templates/backoffice/target_sources/_checklist.html:170
-#: templates/backoffice/target_sources/_checklist.html:173
+#: templates/backoffice/target_sources/_checklist.html:178
+#: templates/backoffice/target_sources/_checklist.html:181
 msgid "Set up"
 msgstr ""
 
@@ -8242,105 +8235,105 @@ msgid ""
 " they don't change while registration is open."
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:190
+#: templates/backoffice/target_sources/_setup_modal.html:191
 msgid "Each target value is matched to these ages:"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:191
+#: templates/backoffice/target_sources/_setup_modal.html:192
 msgid "Edit the age ranges"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:212
+#: templates/backoffice/target_sources/_setup_modal.html:213
 msgid "Target value"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:213
+#: templates/backoffice/target_sources/_setup_modal.html:214
 msgid "From age"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:214
+#: templates/backoffice/target_sources/_setup_modal.html:215
 msgid "Ages"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:227
+#: templates/backoffice/target_sources/_setup_modal.html:228
 #, python-format
 msgid "Age where %(value)s starts"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:248
+#: templates/backoffice/target_sources/_setup_modal.html:250
 #, python-format
 msgid "Respondent age calculated on %(date)s"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:250
+#: templates/backoffice/target_sources/_setup_modal.html:252
 msgid "Change"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:250
+#: templates/backoffice/target_sources/_setup_modal.html:252
 msgid "Change the date respondent age is calculated on"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:257
+#: templates/backoffice/target_sources/_setup_modal.html:259
 msgid "Respondent age calculated on"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:278
+#: templates/backoffice/target_sources/_setup_modal.html:280
 #, python-format
 msgid "(fall back to %(fallback)s)"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:285
+#: templates/backoffice/target_sources/_setup_modal.html:288
 msgid "Answers, and the target value each one counts as"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:287
+#: templates/backoffice/target_sources/_setup_modal.html:290
 msgid "Map each answer to a target value"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:293
+#: templates/backoffice/target_sources/_setup_modal.html:296
 msgid "Answer"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:294
+#: templates/backoffice/target_sources/_setup_modal.html:297
 msgid "Counts as"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:305
+#: templates/backoffice/target_sources/_setup_modal.html:308
 #, python-format
 msgid "Answer %(n)d"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:317
+#: templates/backoffice/target_sources/_setup_modal.html:320
 #, python-format
 msgid "Target value for answer %(n)d"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:317
+#: templates/backoffice/target_sources/_setup_modal.html:320
 #, python-format
 msgid "Target value for %(value)s"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:323
+#: templates/backoffice/target_sources/_setup_modal.html:326
 #, python-format
 msgid "Remove answer %(n)d"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:331
+#: templates/backoffice/target_sources/_setup_modal.html:334
 msgid "Add another answer"
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:334
+#: templates/backoffice/target_sources/_setup_modal.html:337
 msgid "Answers left as 'fall back' don't count towards any target value."
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:341
+#: templates/backoffice/target_sources/_setup_modal.html:345
 #, python-format
 msgid ""
 "Saving keeps the existing lookup table of %(count)s rows — replace it "
 "from this target's row if it needs to change."
 msgstr ""
 
-#: templates/backoffice/target_sources/_setup_modal.html:343
+#: templates/backoffice/target_sources/_setup_modal.html:347
 #, python-format
 msgid ""
 "After saving you'll upload the lookup table: a CSV pairing each answer "

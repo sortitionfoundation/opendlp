@@ -27,11 +27,11 @@ Feature: Respondent field schema
     And I move the "last_name" field up
     Then the "last_name" field should appear before the "first_name" field
 
-  Scenario: Organiser opens a question by clicking its row
-    Given there is an assembly with respondents imported from CSV called "Schema Row Click Demo"
+  Scenario: Organiser opens a question from its Edit button
+    Given there is an assembly with respondents imported from CSV called "Schema Edit Button Demo"
     And I am signed in as an admin user
-    When I open the respondent field schema editor for "Schema Row Click Demo"
-    And I click the "last_name" row
+    When I open the respondent field schema editor for "Schema Edit Button Demo"
+    And I click the Edit button on the "last_name" row
     Then the edit modal for "Last name" should be open
     And the question list behind the edit modal should be dimmed
 

@@ -97,7 +97,7 @@ class TestBuiltInQuestions:
 
 
 class TestQuestionsList:
-    """A card per section and a row per question that opens its edit modal from anywhere."""
+    """A card per section and a row per question, each with its own Edit button."""
 
     def _page(self, logged_in_admin, assembly):
         return logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/respondent-schema").get_data(as_text=True)
@@ -108,7 +108,7 @@ class TestQuestionsList:
             for row in re.findall(r'<tr class="question-row[^"]*">(.*?)</tr>', body, re.DOTALL)
         }
 
-    def test_each_row_is_opened_by_one_stretched_edit_link(
+    def test_each_row_has_one_edit_link_and_the_row_itself_is_not_a_link(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
@@ -119,10 +119,37 @@ class TestQuestionsList:
         assert rows
         for field_key, row in rows.items():
             field = next(f for f in schema if f.field_key == field_key)
-            links = re.findall(r'<a href="([^"]*)"\s+role="button"\s+class="[^"]*\brow-link\b', row)
+            # Only the button opens the edit modal: nothing stretches a link over the row
+            assert "row-link" not in row
+            links = re.findall(r'<a href="([^"]*/edit-modal)"\s+role="button"', row)
             assert links == [
                 f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{field.id}/edit-modal"
             ]
+
+    def test_each_rows_edit_button_is_labelled_with_an_icon(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        rows = self._rows(self._page(logged_in_admin, existing_assembly))
+
+        assert rows
+        for row in rows.values():
+            edit = re.search(r'<a href="[^"]*/edit-modal"\s+role="button"[^>]*>(.*?)</a>', row, re.DOTALL)
+            assert edit is not None
+            assert re.fullmatch(
+                r'<span class="btn-icon">\s*<svg.*</svg>\s*</span><span>Edit</span>', edit.group(1).strip(), re.DOTALL
+            )
+
+    def test_has_no_next_step_button_to_the_registration_pages(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The page is a step dialog over the registration hub, so closing it already goes there."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = self._page(logged_in_admin, existing_assembly)
+
+        assert "Next: build your registration page" not in body
 
     def test_each_rows_question_is_its_row_header(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         """A screen reader names the question when reading any other cell in its row."""

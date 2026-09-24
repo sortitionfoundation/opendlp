@@ -1,5 +1,5 @@
 {#
-ABOUTME: Registration questions list — a card per section, a row per question that opens its edit modal
+ABOUTME: Registration questions list — a card per section, a row per question with its edit and move actions
 ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
 #}
 {% from "backoffice/components/button.html" import button %}
@@ -40,7 +40,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                     <col style="width: 30%;" />
                     <col style="width: 30%;" />
                     <col />
-                    <col style="width: 8.5rem;" />
+                    <col style="width: 10rem;" />
                 </colgroup>
                 <thead>
                     <tr>
@@ -55,9 +55,7 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                 <tbody>
                     {% for field in section.fields %}
                         {% set edit_url = url_for('respondent_field_schema.edit_field_modal', assembly_id=assembly.id, field_id=field.id) %}
-                        {# The row's edit link stretches over the whole row, so a click anywhere
-                           on it opens the edit modal; the row's other controls sit above it. #}
-                        <tr class="question-row row-link-host">
+                        <tr class="question-row">
                             <th scope="row">
                                 <div class="text-body-md" style="color: var(--color-headings);">{{ field.label }}</div>
                                 <code class="text-body-sm" style="color: var(--color-body-text);">{{ field.field_key }}</code>
@@ -90,25 +88,25 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
                             </td>
                             <td>
                                 <div class="question-row__actions">
-                                    {{ button(variant="icon",
-                                    icon=icon_edit(classes="w-4 h-4"),
+                                    {% set edit_icon %}{{ icon_edit(classes="w-4 h-4") }}{% endset %}
+                                    {{ button(_("Edit"),
+                                    variant="tertiary",
                                     href=edit_url,
-                                    classes="row-link",
+                                    leading_icon=edit_icon,
                                     aria_label=_("Edit %(question)s", question=field.label),
                                     attrs='data-focus-id="question-' ~ field.id ~ '" hx-get="' ~ edit_url ~ '" hx-target="#field-modal-container" hx-swap="innerHTML"') }}
                                     {# No "up" for a section's first question, no "down" for its last. Built
                                        without `set _ = list.append(...)`, which would shadow gettext here. #}
                                     {% set move_directions = ([("up", _("Move up"))] if not loop.first else []) + ([("down", _("Move down"))] if not loop.last else []) %}
-                                    {# Less common actions behind a "more" menu - see the ROW LINK notes in
-                                       main.css. menuButton makes it a WAI-ARIA menu button: arrow keys move
-                                       between the items, which are tabindex="-1" so the menu is one Tab stop.
+                                    {# Less common actions behind a "more" menu. menuButton makes it a
+                                       WAI-ARIA menu button: arrow keys move between the items, which are
+                                       tabindex="-1" so the menu is one Tab stop.
                                        Escape is bound on this element, not window, so it closes
                                        only the menu and not the step dialog around it. A built-in question
                                        alone in its section has nothing to put there: no menu. #}
                                     {% if move_directions or not field.is_fixed %}
-                                        <div class="row-link-menu inline-flex"
+                                        <div class="relative inline-flex"
                                              x-data="menuButton"
-                                             x-bind:class="open ? 'is-open' : ''"
                                              @keydown.escape="closeOnEscape"
                                              @focusout="closeOnFocusOut">
                                             {{ button(variant="icon",
@@ -168,12 +166,4 @@ ABOUTME: Swapped wholesale over HTMX after modal saves; included by view.html
             </table>
         </section>
     {% endfor %}
-    <section class="mb-8 flex items-center gap-4 flex-wrap">
-        {{ button(_("Next: build your registration page") ,
-        variant="secondary",
-        href=url_for('backoffice_registration.view_assembly_registration', assembly_id=assembly.id)) }}
-        <span class="text-body-sm" style="color: var(--color-secondary-text);">
-            {{ _("Generate the form skeleton from these questions in the page editor.") }}
-        </span>
-    </section>
 </div>

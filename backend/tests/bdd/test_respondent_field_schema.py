@@ -128,18 +128,10 @@ def choose_row_menu_item_and_confirm(admin_logged_in_page: Page, item: str, fiel
     page.wait_for_load_state("networkidle")
 
 
-@when(parsers.parse('I click the "{field_key}" row'))
-def click_field_row(admin_logged_in_page: Page, field_key: str) -> None:
-    """Click the row in its question type column - nowhere near its buttons - to exercise the whole-row link.
-
-    The click targets the row, not the cell: the stretched edit link covers the
-    cells, and Playwright refuses to click an element something else covers.
-    """
+@when(parsers.parse('I click the Edit button on the "{field_key}" row'))
+def click_field_row_edit(admin_logged_in_page: Page, field_key: str) -> None:
     row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
-    row_box = row.bounding_box()
-    type_cell_box = row.locator("td").nth(1).bounding_box()
-    assert row_box is not None and type_cell_box is not None
-    row.click(position={"x": type_cell_box["x"] - row_box["x"] + 10, "y": row_box["height"] / 2})
+    row.get_by_role("button", name="Edit").click()
 
 
 @when(parsers.parse('I save a new choice field labelled "{label}" with options "{first}" and "{second}"'))
