@@ -349,6 +349,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Background Tasks](docs/background_tasks.md) - Task system architecture and monitoring
 - [Monitoring](docs/monitoring.md) - Health endpoints and end-to-end monitor selection feature
 - [Respondent Field Spec](docs/respondent_field_spec.md) - Hidden JSON endpoint describing an assembly's respondent columns and their valid values
+- [Targets and Registration Questions](docs/targets-and-registration-questions.md) - How targets get their data from registration questions, and the invariants that keep selection pairing them
 - [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
 - [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup
 - [Language](docs/language.md) - The words the interface uses for things, and the conventions for writing its English text
