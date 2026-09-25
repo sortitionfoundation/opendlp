@@ -57,14 +57,24 @@ class ReplacementValueRow:
     percentage_target: float | None = None
     comment: str = ""
     minmax_manual: bool = False
+    submitted: tuple[int, int] | None = None
+
+    @property
+    def current_min(self) -> int:
+        """The minimum the dialog is showing: the organiser's number if they submitted one, else the calculated one."""
+        return self.calculated.min if self.submitted is None else self.submitted[0]
+
+    @property
+    def current_max(self) -> int:
+        return self.calculated.max if self.submitted is None else self.submitted[1]
 
     @property
     def shortfall(self) -> int:
-        return max(0, self.calculated.min - self.available)
+        return max(0, self.current_min - self.available)
 
     @property
     def spare(self) -> int:
-        return self.available - self.calculated.min
+        return self.available - self.current_min
 
     @property
     def over_held(self) -> bool:
@@ -77,7 +87,7 @@ class ReplacementValueRow:
 
     @property
     def is_tight(self) -> bool:
-        return not self.is_short and self.calculated.min > 0 and self.spare <= SPARE_WARNING_THRESHOLD
+        return not self.is_short and self.current_min > 0 and self.spare <= SPARE_WARNING_THRESHOLD
 
     @property
     def min_field(self) -> str:
@@ -104,11 +114,11 @@ class ReplacementCategory:
 
     @property
     def calculated_min_sum(self) -> int:
-        return sum(r.calculated.min for r in self.rows)
+        return sum(r.current_min for r in self.rows)
 
     @property
     def calculated_max_sum(self) -> int:
-        return sum(r.calculated.max for r in self.rows)
+        return sum(r.current_max for r in self.rows)
 
 
 @dataclass
@@ -160,6 +170,13 @@ class ReplacementPlan:
                 if row.value_id == value_id:
                     return row
         return None
+
+    def apply_submitted(self, submitted: Mapping[uuid.UUID, tuple[int, int]]) -> None:
+        """Show the organiser's numbers, so every note and sum derived from a row follows what they typed."""
+        for category in self.categories:
+            for row in category.rows:
+                if row.value_id in submitted:
+                    row.submitted = submitted[row.value_id]
 
     def replacement_info(self, number_used: int, edited: bool) -> dict[str, Any]:
         """The headline arithmetic, stored under settings_used["replacement"] on the run record."""
@@ -286,6 +303,7 @@ class ReplacementValidation:
     edited: bool = False
     errors: list[str] = field(default_factory=list)
     value_errors: dict[uuid.UUID, list[str]] = field(default_factory=dict)
+    submitted: dict[uuid.UUID, tuple[int, int]] = field(default_factory=dict)
     targets_snapshot: list[dict[str, Any]] = field(default_factory=list)
     feasibility: FeasibilityResult | None = None
 
@@ -442,6 +460,7 @@ def validate_replacement_form(
         result.number_to_select = number
 
     submitted = _parse_cells(plan, form, result)
+    result.submitted = submitted
     if not result.ok:
         return result
 

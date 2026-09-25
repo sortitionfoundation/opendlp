@@ -292,6 +292,8 @@ def render_selection_page(
                 replacement_plan = build_replacement_plan(uow, current_user.id, assembly_id)
                 if replacement_validation is None and not replacement_plan.nothing_to_fill:
                     replacement_feasibility = check_replacement_plan(uow, assembly_id, replacement_plan).feasibility
+                elif replacement_validation is not None:
+                    replacement_plan.apply_submitted(replacement_validation.submitted)
     else:
         data_source = ""
         targets_enabled = False

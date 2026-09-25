@@ -229,6 +229,39 @@ class TestBuildReplacementPlan:
             build_replacement_plan(uow, admin.id, uuid.uuid4())
 
 
+class TestApplySubmitted:
+    def test_notes_and_sums_follow_the_submitted_numbers(self, uow):
+        """Male edited to 0-0: the row is no longer short or tight, and the category sums move with it."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        rows = _rows(plan)
+        male = rows[("Gender", "Male")]
+        assert male.is_tight
+        plan.apply_submitted({male.value_id: (0, 0)})
+        assert male.current_min == 0 and male.current_max == 0
+        assert not male.is_short and not male.is_tight
+        gender = next(c for c in plan.categories if c.name == "Gender")
+        assert (gender.calculated_min_sum, gender.calculated_max_sum) == (2, 2)
+        assert not gender.has_problem
+
+    def test_rows_not_submitted_keep_the_calculated_numbers(self, uow):
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        rows = _rows(plan)
+        plan.apply_submitted({})
+        female = rows[("Gender", "Female")]
+        assert (female.current_min, female.current_max) == (female.calculated.min, female.calculated.max)
+
+    def test_validation_carries_the_submitted_numbers(self, uow):
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        form = _form_from_plan(plan)
+        male = _rows(plan)[("Gender", "Male")]
+        form[male.min_field] = "0"
+        result = validate_replacement_form(uow, assembly.id, plan, form)
+        assert result.submitted[male.value_id] == (0, male.calculated.max)
+
+
 class TestValidateReplacementForm:
     def test_calculated_numbers_pass_and_build_the_snapshot(self, uow):
         admin, assembly, _, _ = _seed(uow)

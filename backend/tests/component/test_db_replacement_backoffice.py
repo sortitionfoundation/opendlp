@@ -379,6 +379,27 @@ class TestFeasibilityInDialog:
         assert "Suggested minimum: 1 (currently 2)" in html
         assert "feasibility-ok" not in html
 
+    def test_recheck_notes_follow_the_amended_targets(
+        self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user
+    ):
+        """Lowering the short 31-50 minimum to 1 and rechecking: no shortfall note, no category problem, feasible."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.assemblies.get(assembly_after_withdrawal.id).number_to_select = 9
+            uow.commit()
+        form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id, **{"min__Age__31-50": "1"})
+        form["action"] = "recheck"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+        )
+
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "short by" not in html
+        assert "a value cannot be filled from the pool" not in html
+        assert "no spare people in the pool" in html
+        assert "feasibility-ok" in html
+
     def test_opening_with_too_few_people_says_so(self, logged_in_admin, assembly_after_withdrawal):
         """Six to fill from five in the pool: no committee exists, so the dialog says the pool is too small."""
         response = logged_in_admin.get(
