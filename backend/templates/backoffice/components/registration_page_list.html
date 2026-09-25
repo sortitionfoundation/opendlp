@@ -32,6 +32,7 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                             <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Links") }}</th>
                             <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("QR code") }}</th>
                             <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Status") }}</th>
+                            <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Registrations") }}</th>
                             <th scope="col" class="px-3 py-2 text-left text-label-md" style="color: var(--color-headings);">{{ _("Date of publish") }}</th>
                             <th scope="col" class="px-3 py-2 text-right">
                                 <span class="sr-only">{{ _("Actions") }}</span>
@@ -111,6 +112,12 @@ ABOUTME: Rendered by the list page, and again behind the editor's takeover modal
                                         </span>
                                     {% endif %}
                                 </td>
+                                {# How many people signed up through this page, so uptake is
+                                   visible without leaving the list. Fuller analytics (page
+                                   loads, graphs over time) is story 796. #}
+                                <td class="px-3 py-3"
+                                    data-cell="registration-count"
+                                    style="color: var(--color-body-text);">{{ row.registration_count }}</td>
                                 <td class="px-3 py-3"
                                     data-cell="published-at"
                                     style="color: var(--color-body-text);">
