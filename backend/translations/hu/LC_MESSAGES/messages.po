@@ -15,7 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: Babel 2.18.0\n"
 
 #: src/opendlp/domain/assembly.py:328
@@ -222,7 +222,7 @@ msgstr "Egyéb"
 
 #: src/opendlp/domain/respondent_field_schema.py:115
 msgid "Derived"
-msgstr "Származtatott"
+msgstr "Számított"
 
 #: src/opendlp/domain/respondent_field_schema.py:145
 #, fuzzy
@@ -3186,6 +3186,11 @@ msgstr[0] ""
 "Ennek a közösségi gyűlésnek %(num)s befejezett kiválasztása van. Az "
 "újraszámítás megváltoztatja az alapjául szolgáló jelentkezői adatokat – a "
 "számok, amelyekből a kiválasztás készült, már nem egyeznek a tárolt "
+"adatokkal."
+msgstr[1] ""
+"Ennek a közösségi gyűlésnek %(num)s befejezett kiválasztása van. Az "
+"újraszámítás megváltoztatja az alapjukul szolgáló jelentkezői adatokat – a "
+"számok, amelyekből a kiválasztások készültek, már nem egyeznek a tárolt "
 "adatokkal."
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:563
@@ -7403,6 +7408,7 @@ msgstr "A regisztrációs oldal kérdéseinek beállítása."
 msgid "%(num)s question on the registration page"
 msgid_plural "%(num)s questions on the registration page"
 msgstr[0] "%(num)s kérdés a regisztrációs oldalon"
+msgstr[1] "%(num)s kérdés a regisztrációs oldalon"
 
 #: templates/backoffice/registration/_modals.html:10
 msgid "Form Skeleton"
@@ -8348,6 +8354,7 @@ msgstr "Számítva ebből: \"%(source)s\""
 msgid "%(count)s lookup row"
 msgid_plural "%(count)s lookup rows"
 msgstr[0] "%(count)s hozzárendelési sor"
+msgstr[1] "%(count)s hozzárendelési sor"
 
 #: templates/backoffice/target_sources/_checklist.html:48
 #, python-format, fuzzy
@@ -9034,6 +9041,7 @@ msgstr "Kijelölt kiválasztási szempontok hozzáadása"
 msgid "and %(num)s other"
 msgid_plural "and %(num)s others"
 msgstr[0] "és még %(num)s"
+msgstr[1] "és még %(num)s"
 
 #: templates/components/signup_survey_fields.html:5
 #, fuzzy
@@ -10517,18 +10525,21 @@ msgstr "%(username)s felhasználónévvel már létezik felhasználó"
 msgid "%(num)s row"
 msgid_plural "%(num)s rows"
 msgstr[0] "%(num)s sor"
+msgstr[1] "%(num)s sor"
 
 #: tests/unit/test_translations.py:51
 #, python-format, fuzzy
 msgid "%(count)s row in %(name)s"
 msgid_plural "%(count)s rows in %(name)s"
 msgstr[0] "%(name)s: %(count)s sor"
+msgstr[1] "%(name)s: %(count)s sor"
 
 #: tests/unit/test_translations.py:61
 #, python-format, fuzzy
 msgid "%(count)s row"
 msgid_plural "%(count)s rows"
 msgstr[0] "%(count)s sor"
+msgstr[1] "%(count)s sor"
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:33
 #, python-format
