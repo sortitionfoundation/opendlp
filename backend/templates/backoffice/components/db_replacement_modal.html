@@ -30,31 +30,9 @@
                         </ul>
                     {% endcall %}
                 {% endif %}
-                {% if feasibility and feasibility.suggestions %}
-                    {% call alert(variant="error", use_caller=true, id="feasibility-suggestions") %}
-                        <p class="mb-2">{{ _("The targets cannot all be met from the pool at once. The algorithm suggests these changes:") }}</p>
-                        <div data-suggestions-list="true">
-                            <ul class="list-disc pl-5 mb-2">
-                                {% for suggestion in feasibility.suggestions %}
-                                    <li class="mb-1"
-                                        data-suggestion-for="{{ suggestion.input_id }}"
-                                        data-suggestion-value="{{ suggestion.suggested }}">
-                                        {% if suggestion.field == "min" %}
-                                            {{ _("%(category)s: %(value)s, minimum %(current)s to %(suggested)s", category=suggestion.category, value=suggestion.value, current=suggestion.current, suggested=suggestion.suggested) }}
-                                        {% else %}
-                                            {{ _("%(category)s: %(value)s, maximum %(current)s to %(suggested)s", category=suggestion.category, value=suggestion.value, current=suggestion.current, suggested=suggestion.suggested) }}
-                                        {% endif %}
-                                        {{ button(_("Accept"), variant="secondary", classes="ml-2", attrs='@click="accept($el)" data-suggestion-for="' ~ suggestion.input_id ~ '" data-suggestion-value="' ~ suggestion.suggested ~ '"') }}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                            {{ button(_("Accept all"), variant="primary", attrs='@click="acceptAll()"') }}
-                        </div>
-                        <p data-suggestions-accepted="true" hidden>{{ _("Every suggestion has been applied. Recheck feasibility to confirm, or run the selection.") }}</p>
-                    {% endcall %}
-                {% elif feasibility and not feasibility.feasible %}
+                {% if feasibility and not feasibility.feasible and not feasibility.suggestions %}
                     {{ alert(feasibility.message, variant="error", id="feasibility-message") }}
-                {% elif feasibility %}
+                {% elif feasibility and feasibility.feasible %}
                     {{ alert(_("These targets can be met from the pool."), variant="success", id="feasibility-ok") }}
                 {% endif %}
                 {% if plan.targets_conflict %}
@@ -91,6 +69,35 @@
                     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
                         {{ _("The places still to fill are calculated from the targets and who already holds a place. Edit the minimum and maximum if you need to. Targets with a value the pool cannot fill are shown open.") }}
                     </p>
+                    {% if feasibility and feasibility.suggestions %}
+                        <div class="rounded-lg p-3 mb-4 text-body-sm"
+                             id="feasibility-suggestions"
+                             role="region"
+                             aria-label="{{ _("Suggested changes") }}"
+                             style="background-color: var(--color-error-background);
+                                    border: 1px solid var(--color-error-text);
+                                    color: var(--color-body-text);">
+                            <div data-suggestions-list="true">
+                                <p class="mb-2">{{ _("The targets cannot all be met from the pool at once. The algorithm suggests these changes:") }}</p>
+                                <ul class="list-disc pl-5 mb-2">
+                                    {% for suggestion in feasibility.suggestions %}
+                                        <li class="mb-1"
+                                            data-suggestion-for="{{ suggestion.input_id }}"
+                                            data-suggestion-value="{{ suggestion.suggested }}">
+                                            {% if suggestion.field == "min" %}
+                                                {{ _("%(category)s: %(value)s, minimum %(current)s to %(suggested)s", category=suggestion.category, value=suggestion.value, current=suggestion.current, suggested=suggestion.suggested) }}
+                                            {% else %}
+                                                {{ _("%(category)s: %(value)s, maximum %(current)s to %(suggested)s", category=suggestion.category, value=suggestion.value, current=suggestion.current, suggested=suggestion.suggested) }}
+                                            {% endif %}
+                                            {{ button(_("Accept"), variant="tertiary", classes="ml-2", attrs='@click="accept($el)" data-suggestion-for="' ~ suggestion.input_id ~ '" data-suggestion-value="' ~ suggestion.suggested ~ '"') }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                {{ button(_("Accept all"), variant="secondary", attrs='@click="acceptAll()"') }}
+                            </div>
+                            <p data-suggestions-accepted="true" hidden>{{ _("Every suggestion has been applied. Recheck feasibility to confirm, or run the selection.") }}</p>
+                        </div>
+                    {% endif %}
                     {% for category in plan.categories %}
                         {% set category_has_errors = [] %}
                         {% for row in category.rows %}

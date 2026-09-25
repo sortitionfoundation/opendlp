@@ -420,6 +420,7 @@ class TestFeasibilityInDialog:
         assert "Suggested maximum: 3 (currently 1)" in html
         assert 'value="1"' in html
         assert "feasibility-ok" not in html
+        assert html.index("Replacement targets</h3>") < html.index("feasibility-suggestions") < html.index("<details")
 
     def test_recheck_keeps_the_edited_numbers_and_number_to_select(
         self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
