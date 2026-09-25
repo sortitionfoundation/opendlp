@@ -22,7 +22,12 @@ def editor_url(assembly_id: uuid.UUID, url_slug: str, **kwargs: Any) -> str:
     )
 
 
-def _page_row(page: RegistrationPage, assembly_id: uuid.UUID, deletable_ids: set[uuid.UUID]) -> dict[str, Any]:
+def _page_row(
+    page: RegistrationPage,
+    assembly_id: uuid.UUID,
+    deletable_ids: set[uuid.UUID],
+    registration_counts: dict[uuid.UUID, int],
+) -> dict[str, Any]:
     """One row of the registration pages list.
 
     A page created outside the backoffice can lack a slug; it has no public URL
@@ -59,14 +64,18 @@ def _page_row(page: RegistrationPage, assembly_id: uuid.UUID, deletable_ids: set
         if page_short_url and page.url_slug
         else "",
         "published_at": page.last_published_at(),
+        "registration_count": registration_counts.get(page.id, 0),
     }
 
 
 def registration_page_rows(
-    pages: list[RegistrationPage], assembly_id: uuid.UUID, deletable_ids: set[uuid.UUID]
+    pages: list[RegistrationPage],
+    assembly_id: uuid.UUID,
+    deletable_ids: set[uuid.UUID],
+    registration_counts: dict[uuid.UUID, int],
 ) -> list[dict[str, Any]]:
     """Rows for the registration pages list — also rendered behind the editor's modal."""
-    return [_page_row(page, assembly_id, deletable_ids) for page in pages]
+    return [_page_row(page, assembly_id, deletable_ids, registration_counts) for page in pages]
 
 
 def _setup_summary(
@@ -99,7 +108,8 @@ def registration_hub_context(
     """
     pages = list_registration_pages(uow, current_user.id, assembly_id)
     deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
+    registration_counts = uow.respondents.count_by_registration_page(assembly_id)
     return {
-        "page_rows": registration_page_rows(pages, assembly_id, deletable_ids),
+        "page_rows": registration_page_rows(pages, assembly_id, deletable_ids, registration_counts),
         "setup_summary": _setup_summary(uow, assembly_id, data_source, gsheet),
     }
