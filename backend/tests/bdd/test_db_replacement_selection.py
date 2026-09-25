@@ -24,6 +24,36 @@ STATUSES = {
     "M2": RespondentStatus.WITHDRAWN,
 }
 
+# Five to select. M1 (Young) and F1 (Old) hold places, M2 withdrew, so three
+# places are to be filled: Male 1-2, Female 2-2, Young 2-2, Old 1-1. Every value
+# has enough people on its own, but the only Young people left are men, so the
+# Young minimum forces two men and leaves no room for two women. The cheapest
+# relaxation is to lower the Female minimum to 1.
+INFEASIBLE_TARGETS_CSV = "feature,value,min,max\nGender,Male,2,3\nGender,Female,3,3\nAge,Young,3,3\nAge,Old,2,2"
+INFEASIBLE_RESPONDENTS_CSV = (
+    "external_id,Gender,Age\nM1,Male,Young\nM2,Male,Old\nM3,Male,Young\nM4,Male,Young\n"
+    "F1,Female,Old\nF2,Female,Old\nF3,Female,Old\nF4,Female,Old\n"
+)
+
+
+def _seed_assembly(assembly_creator, admin_user, test_database, *, number_to_select, targets_csv, respondents_csv):
+    assembly = assembly_creator("DB Replacement Assembly", number_to_select=number_to_select)
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        update_selection_settings(uow, admin_user.id, assembly.id, check_same_address=False)
+    with uow:
+        update_csv_config(uow, admin_user.id, assembly.id, csv_id_column="external_id", settings_confirmed=True)
+    with uow:
+        target_csv_import.import_targets_from_csv(uow, admin_user.id, assembly.id, targets_csv)
+    with uow:
+        import_respondents_from_csv(uow, admin_user.id, assembly.id, respondents_csv, replace_existing=True)
+    with uow:
+        for respondent in uow.respondents.get_by_assembly_id(assembly.id):
+            if respondent.external_id in STATUSES:
+                respondent.selection_status = STATUSES[respondent.external_id]
+        uow.commit()
+    return assembly
+
 
 @given("a user is logged in as an admin")
 def user_logged_in_as_admin(admin_logged_in_page):
@@ -32,22 +62,29 @@ def user_logged_in_as_admin(admin_logged_in_page):
 
 @given("a database assembly where one selected person has withdrawn", target_fixture="test_assembly")
 def assembly_after_withdrawal(assembly_creator, admin_user, test_database):
-    assembly = assembly_creator("DB Replacement Assembly", number_to_select=4)
-    uow = SqlAlchemyUnitOfWork(test_database)
-    with uow:
-        update_selection_settings(uow, admin_user.id, assembly.id, check_same_address=False)
-    with uow:
-        update_csv_config(uow, admin_user.id, assembly.id, csv_id_column="external_id", settings_confirmed=True)
-    with uow:
-        target_csv_import.import_targets_from_csv(uow, admin_user.id, assembly.id, TARGETS_CSV)
-    with uow:
-        import_respondents_from_csv(uow, admin_user.id, assembly.id, RESPONDENTS_CSV, replace_existing=True)
-    with uow:
-        for respondent in uow.respondents.get_by_assembly_id(assembly.id):
-            if respondent.external_id in STATUSES:
-                respondent.selection_status = STATUSES[respondent.external_id]
-        uow.commit()
-    return assembly
+    return _seed_assembly(
+        assembly_creator,
+        admin_user,
+        test_database,
+        number_to_select=4,
+        targets_csv=TARGETS_CSV,
+        respondents_csv=RESPONDENTS_CSV,
+    )
+
+
+@given(
+    "a database assembly whose replacement targets cannot all be met from the pool",
+    target_fixture="test_assembly",
+)
+def assembly_with_infeasible_targets(assembly_creator, admin_user, test_database):
+    return _seed_assembly(
+        assembly_creator,
+        admin_user,
+        test_database,
+        number_to_select=5,
+        targets_csv=INFEASIBLE_TARGETS_CSV,
+        respondents_csv=INFEASIBLE_RESPONDENTS_CSV,
+    )
 
 
 @when("the user visits the selection page")
@@ -66,6 +103,39 @@ def user_opens_dialog(admin_logged_in_page: Page):
 @when("the user clicks Run Replacement Selection")
 def user_clicks_run(admin_logged_in_page: Page):
     admin_logged_in_page.get_by_role("button", name="Run Replacement Selection").click()
+
+
+@when("the user accepts all the suggestions")
+def user_accepts_all(admin_logged_in_page: Page):
+    admin_logged_in_page.locator("#feasibility-suggestions").get_by_role("button", name="Accept all").click()
+
+
+@when("the user clicks Recheck feasibility")
+def user_clicks_recheck(admin_logged_in_page: Page):
+    admin_logged_in_page.get_by_role("button", name="Recheck feasibility").click()
+    admin_logged_in_page.wait_for_load_state()
+
+
+@then("the dialog lists the suggested changes to the targets")
+def dialog_lists_suggestions(admin_logged_in_page: Page):
+    suggestions = admin_logged_in_page.locator("#feasibility-suggestions")
+    expect(suggestions).to_be_visible()
+    expect(suggestions.get_by_text("Gender: Female, minimum 2 to 1")).to_be_visible()
+    expect(admin_logged_in_page.get_by_label("Minimum still needed for Gender: Female")).to_have_value("2")
+
+
+@then("the suggested minimum is in its target cell and the suggestions are gone")
+def suggestion_applied(admin_logged_in_page: Page):
+    expect(admin_logged_in_page.get_by_label("Minimum still needed for Gender: Female")).to_have_value("1")
+    suggestions = admin_logged_in_page.locator("#feasibility-suggestions")
+    expect(suggestions.get_by_text("Gender: Female, minimum 2 to 1")).to_be_hidden()
+    expect(suggestions.get_by_text("Every suggestion has been applied")).to_be_visible()
+
+
+@then("the dialog says the targets can be met")
+def dialog_says_feasible(admin_logged_in_page: Page):
+    expect(admin_logged_in_page.locator("#feasibility-ok")).to_be_visible()
+    expect(admin_logged_in_page.get_by_label("Minimum still needed for Gender: Female")).to_have_value("1")
 
 
 @then("the dialog shows how many places are to be filled")
