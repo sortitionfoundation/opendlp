@@ -178,21 +178,6 @@
                                                         <span id="{{ row.min_field }}-error">
                                                             {% for message in row_errors %}{{ message }}{% if not loop.last %}<br>{% endif %}{% endfor %}
                                                         </span>
-                                                    {% elif row_suggestions %}
-                                                        {% for suggestion in row_suggestions %}
-                                                            <span class="inline-flex items-center gap-2 mb-1"
-                                                                  style="color: var(--color-info-600);"
-                                                                  data-suggestion-for="{{ suggestion.input_id }}"
-                                                                  data-suggestion-value="{{ suggestion.suggested }}">
-                                                                {% if suggestion.field == "min" %}
-                                                                    {{ _("Suggested minimum: %(value)s (currently %(current)s)", value=suggestion.suggested, current=suggestion.current) }}
-                                                                {% else %}
-                                                                    {{ _("Suggested maximum: %(value)s (currently %(current)s)", value=suggestion.suggested, current=suggestion.current) }}
-                                                                {% endif %}
-                                                                {{ button(_("Accept"), variant="secondary", attrs='@click="accept($el)" data-suggestion-for="' ~ suggestion.input_id ~ '" data-suggestion-value="' ~ suggestion.suggested ~ '"') }}
-                                                            </span>
-                                                            {% if not loop.last %}<br>{% endif %}
-                                                        {% endfor %}
                                                     {% elif row.is_short %}
                                                         {{ _("short by %(count)s", count=row.shortfall) }}
                                                     {% elif row.over_held %}
@@ -200,6 +185,20 @@
                                                     {% elif row.is_tight %}
                                                         {{ _("no spare people in the pool") if row.spare == 0 else _("%(count)s spare in the pool", count=row.spare) }}
                                                     {% endif %}
+                                                    {% for suggestion in row_suggestions %}
+                                                        {% if not loop.first or row_errors or row.is_short or row.over_held or row.is_tight %}<br>{% endif %}
+                                                        <span class="inline-flex items-center gap-2 mb-1"
+                                                              style="color: var(--color-info-600);"
+                                                              data-suggestion-for="{{ suggestion.input_id }}"
+                                                              data-suggestion-value="{{ suggestion.suggested }}">
+                                                            {% if suggestion.field == "min" %}
+                                                                {{ _("Suggested minimum: %(value)s (currently %(current)s)", value=suggestion.suggested, current=suggestion.current) }}
+                                                            {% else %}
+                                                                {{ _("Suggested maximum: %(value)s (currently %(current)s)", value=suggestion.suggested, current=suggestion.current) }}
+                                                            {% endif %}
+                                                            {{ button(_("Accept"), variant="secondary", attrs='@click="accept($el)" data-suggestion-for="' ~ suggestion.input_id ~ '" data-suggestion-value="' ~ suggestion.suggested ~ '"') }}
+                                                        </span>
+                                                    {% endfor %}
                                                 </td>
                                             </tr>
                                         {% endfor %}

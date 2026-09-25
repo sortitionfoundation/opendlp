@@ -654,8 +654,12 @@ and buttons to accept them.
   form the dialog would submit unedited (calculated min/max, default number)
   and runs `validate_replacement_form` with the check on. This is what the GET
   path calls (D13) so open and recheck share one code path.
-- Any error the existing validation raises still blocks the feasibility check
-  from running, because the library would refuse the same data.
+- A per-value pool shortfall does not stop the solver: the relaxation is how
+  to get past it, so the cell error and the suggestion show together, as on
+  the Targets page. Only errors the library itself refuses (bad cells, a
+  cross-category conflict) stop it. A pool smaller than the number to select
+  gets a plain message instead of the library's flex text, since no committee
+  exists whatever the targets.
 
 ### 10.3 Blueprint
 

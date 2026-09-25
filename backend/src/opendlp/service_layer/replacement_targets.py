@@ -424,7 +424,9 @@ def validate_replacement_form(
     Every one of these would fail the task moments later, so they all block.
 
     With ``check_feasibility`` the solver then tries the targets together over
-    the pool the run will see, and reports the relaxations it suggests. That
+    the pool the run will see, and reports the relaxations it suggests. It runs
+    even when a value falls short of the pool, since the suggestion is how to
+    get past that; only errors the library itself would refuse stop it. That
     outcome informs rather than blocks: the organiser may still run.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
@@ -487,7 +489,7 @@ def validate_replacement_form(
         else:
             result.add_value_error(row.value_id, message)
 
-    if result.feasibility is not None and result.ok:
+    if result.feasibility is not None and not result.errors:
         result.feasibility = _check_feasibility(plan, features, people, result.number_to_select, settings_obj)
     return result
 
@@ -515,6 +517,13 @@ def _check_feasibility(
     settings_obj: Settings,
 ) -> FeasibilityResult:
     result = FeasibilityResult(checked=True)
+    if people.count < number_to_select:
+        result.message = _(
+            "Only %(count)s eligible people are in the pool, fewer than the %(number)s to select",
+            count=people.count,
+            number=number_to_select,
+        )
+        return result
     try:
         setup_committee_generation(
             features=features,

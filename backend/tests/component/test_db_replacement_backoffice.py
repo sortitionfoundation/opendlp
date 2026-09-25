@@ -338,15 +338,48 @@ class TestFeasibilityInDialog:
         assert "feasibility-suggestions" not in html
         assert "Recheck feasibility" in html
 
-    def test_opening_with_a_shortfall_shows_no_feasibility_verdict(self, logged_in_admin, assembly_after_withdrawal):
-        """A value the pool cannot fill stops the solver, and the dialog keeps its shortfall note instead."""
+    def test_opening_with_a_shortfall_shows_the_note_and_a_suggestion(
+        self, logged_in_admin, assembly_after_withdrawal, fake_store
+    ):
+        """Nine to select leaves five to fill from the five in the pool; Age 31-50 needs 2 but has 1, so lower it."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.assemblies.get(assembly_after_withdrawal.id).number_to_select = 9
+            uow.commit()
         response = logged_in_admin.get(
             f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
         assert "short by 1" in html
+        assert "feasibility-suggestions" in html
+        assert "Age: 31-50, minimum 2 to 1" in html
+        assert "Suggested minimum: 1 (currently 2)" in html
         assert "feasibility-ok" not in html
+
+    def test_opening_with_too_few_people_says_so(self, logged_in_admin, assembly_after_withdrawal):
+        """Six to fill from five in the pool: no committee exists, so the dialog says the pool is too small."""
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+        )
+        html = response.data.decode()
+        assert "short by 1" in html
+        assert "Only 5 eligible people are in the pool, fewer than the 6 to select" in html
         assert "feasibility-suggestions" not in html
+
+    def test_shortfall_on_recheck_shows_the_cell_error_and_the_suggestion_together(
+        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
+    ):
+        """Raising the 31-50 minimum to 2 with one in the pool: the cell error and the solver's suggestion sit together."""
+        form = _plan_form(fake_store, admin_user, assembly_with_feasible_gaps.id, **{"min__Age__31-50": "2"})
+        form["action"] = "recheck"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+        )
+
+        html = response.data.decode()
+        assert "only 1 eligible people" in html
+        assert "Suggested minimum: 1 (currently 2)" in html
+        assert "Age: 31-50, minimum 2 to 1" in html
 
     def test_recheck_shows_suggestions_at_the_top_and_beside_the_cell(
         self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user

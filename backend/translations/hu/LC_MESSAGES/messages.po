@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-25 10:34+0000\n"
+"POT-Creation-Date: 2026-09-25 11:04+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -3959,15 +3959,22 @@ msgid ""
 "%(number)s to select"
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:438
+#: src/opendlp/service_layer/replacement_targets.py:440
 msgid "Enter a whole number of replacements to select, one or more"
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:481
+#: src/opendlp/service_layer/replacement_targets.py:483
 #, python-format
 msgid ""
 "Needs at least %(min)s but only %(count)s eligible people with this value"
 " remain in the pool"
+msgstr ""
+
+#: src/opendlp/service_layer/replacement_targets.py:522
+#, python-format
+msgid ""
+"Only %(count)s eligible people are in the pool, fewer than the %(number)s"
+" to select"
 msgstr ""
 
 #: src/opendlp/service_layer/respondent_export_service.py:50
@@ -4192,13 +4199,13 @@ msgid "Need minimum %(min)s but only %(count)s respondents match"
 msgstr "Legalább %(min)s szükséges, de csak %(count)s jelentkező felel meg"
 
 #: src/opendlp/service_layer/target_checking.py:208
-#: templates/backoffice/components/db_replacement_modal.html:188
+#: templates/backoffice/components/db_replacement_modal.html:195
 #, python-format
 msgid "Suggested minimum: %(value)s (currently %(current)s)"
 msgstr "Javasolt minimum: %(value)s (jelenleg %(current)s)"
 
 #: src/opendlp/service_layer/target_checking.py:224
-#: templates/backoffice/components/db_replacement_modal.html:190
+#: templates/backoffice/components/db_replacement_modal.html:197
 #, python-format
 msgid "Suggested maximum: %(value)s (currently %(current)s)"
 msgstr "Javasolt maximum: %(value)s (jelenleg %(current)s)"
@@ -4557,7 +4564,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/assembly_edit_respondent.html:160
 #: templates/backoffice/assembly_form.html:96
 #: templates/backoffice/assembly_view_respondent.html:302
-#: templates/backoffice/components/db_replacement_modal.html:220
+#: templates/backoffice/components/db_replacement_modal.html:219
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:88
 #: templates/backoffice/dashboard_export_modal.html:62
@@ -6788,7 +6795,7 @@ msgid "%(category)s: %(value)s, maximum %(current)s to %(suggested)s"
 msgstr ""
 
 #: templates/backoffice/components/db_replacement_modal.html:47
-#: templates/backoffice/components/db_replacement_modal.html:192
+#: templates/backoffice/components/db_replacement_modal.html:199
 msgid "Accept"
 msgstr ""
 
@@ -6881,25 +6888,25 @@ msgstr ""
 msgid "Maximum still needed for %(category)s: %(value)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:197
+#: templates/backoffice/components/db_replacement_modal.html:182
 #, python-format
 msgid "short by %(count)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:199
+#: templates/backoffice/components/db_replacement_modal.html:184
 msgid "more places held than the target allows"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:201
+#: templates/backoffice/components/db_replacement_modal.html:186
 msgid "no spare people in the pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:201
+#: templates/backoffice/components/db_replacement_modal.html:186
 #, python-format
 msgid "%(count)s spare in the pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:218
+#: templates/backoffice/components/db_replacement_modal.html:217
 #: templates/backoffice/components/db_selection_progress_modal.html:117
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
 #: templates/backoffice/components/modal.html:115
@@ -6914,11 +6921,11 @@ msgstr ""
 msgid "Close"
 msgstr "Bezárás"
 
-#: templates/backoffice/components/db_replacement_modal.html:221
+#: templates/backoffice/components/db_replacement_modal.html:220
 msgid "Recheck feasibility"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:222
+#: templates/backoffice/components/db_replacement_modal.html:221
 #: templates/backoffice/components/replacement_modal.html:88
 #: templates/gsheets/replace.html:58 templates/gsheets/replace.html:80
 msgid "Run Replacement Selection"

@@ -414,6 +414,56 @@ class TestFeasibilityCheck:
         assert result.feasibility is not None
         assert result.feasibility.feasible
 
+    def test_pool_shortfall_still_gets_a_suggestion(self, uow):
+        """Male edited to need 2 with one man in the pool: the cell error stands, and the solver says how to get past it."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        form = _form_from_plan(plan)
+        rows = _rows(plan)
+        form[rows[("Gender", "Male")].min_field] = "2"
+        form[rows[("Gender", "Male")].max_field] = "2"
+        form[rows[("Gender", "Female")].min_field] = "1"
+        form[rows[("Gender", "Female")].max_field] = "1"
+        result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        assert not result.ok
+        assert list(result.value_errors) == [rows[("Gender", "Male")].value_id]
+        assert result.feasibility is not None
+        assert result.feasibility.checked
+        assert not result.feasibility.feasible
+        fields = {(s.value, s.field, s.suggested) for s in result.feasibility.suggestions}
+        assert ("Male", "min", 1) in fields
+
+    def test_cross_category_conflict_stops_the_check(self, uow):
+        """Targets the library refuses to load never reach the solver."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        form = _form_from_plan(plan)
+        rows = _rows(plan)
+        form[rows[("Gender", "Female")].min_field] = "3"
+        form[rows[("Gender", "Female")].max_field] = "3"
+        result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        assert result.errors
+        assert result.feasibility is not None
+        assert not result.feasibility.checked
+
+    def test_pool_smaller_than_the_number_gives_a_plain_message(self, uow):
+        """Five to select from four eligible people: no committee exists, and the dialog says why in plain words."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        form = _form_from_plan(plan, number=5)
+        rows = _rows(plan)
+        form[rows[("Gender", "Male")].max_field] = "2"
+        form[rows[("Gender", "Female")].max_field] = "3"
+        form[rows[("Age", "18-30")].max_field] = "3"
+        form[rows[("Age", "31+")].max_field] = "3"
+        result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        assert result.ok
+        assert result.feasibility is not None
+        assert result.feasibility.checked
+        assert not result.feasibility.feasible
+        assert result.feasibility.suggestions == []
+        assert result.feasibility.message == "Only 4 eligible people are in the pool, fewer than the 5 to select"
+
     def test_structural_errors_stop_the_check(self, uow):
         """A bad cell means the solver never runs, and the result says so."""
         admin, assembly, _, _ = _seed(uow)
