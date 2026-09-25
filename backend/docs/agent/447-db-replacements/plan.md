@@ -581,7 +581,7 @@ is where the review effort goes (accessibility, copy, translations).
 - Showing replacement targets on the Targets tab.
 - Editing the overall targets from this dialog.
 - A test-mode replacement run.
-- "Accept all suggestions" from the algorithm.
+- ~~"Accept all suggestions" from the algorithm.~~ Now in scope: see §10.
 - Any history/detail view of past replacement rounds beyond what the run
   history table and selection report already show (the data is recorded, §2.6).
 
@@ -603,3 +603,116 @@ point it applies.
 | D7 | Wording follows `docs/language.md`: "Go to Replacement Selection" on the card, "Run Replacement Selection" in the dialog |
 | D8 | Default number is `calculated_number`; if it falls outside the allowed range, show a prominent warning and pre-fill the nearest bound |
 | D9 | Pool shortfall, cross-category conflict and out-of-range number all block the POST |
+
+---
+
+## 10. Feasibility check and suggestions in the dialog
+
+Added 2026-09-25. The pool can have enough people for every value on its own
+and the targets still be impossible to meet together. The selection algorithm
+detects this and proposes a minimal relaxation, which the Targets page already
+shows via `check_targets_detailed()` and `_run_feasibility_check()` in
+`service_layer/target_checking.py`. This round brings the same check into the
+replacement dialog, with the suggestions placed next to the cells they concern
+and buttons to accept them.
+
+### 10.1 Decisions
+
+| # | Decision |
+|---|---|
+| D10 | The check sees the pool the run will see: people sharing an address with someone SELECTED/CONFIRMED are dropped first, via the library's `exclude_matching_selected_addresses` and the adapter's already-selected feed |
+| D11 | Two buttons in the footer: "Recheck feasibility" and "Run Replacement Selection". Running does **not** block on infeasibility; some people need to see the run fail to believe it. Revisit after user testing |
+| D12 | The check runs synchronously in the request, as the Targets page does. No HTMX deferral |
+| D13 | On opening the dialog, the check uses the calculated targets and the default number. On recheck it uses the numbers in the form, including the edited number to select |
+| D14 | Flex is only settable by CSV upload today, so `InfeasibleQuotasCantRelaxError` is caught and shown as a plain message with no suggestions. Revisit once flex has a UI |
+| D15 | Accepting a suggestion writes it into the input client-side; the suggestion hides once the input matches it. Nothing is re-checked until the organiser presses recheck or run |
+| D16 | A list of every suggestion, with "Accept all", sits in the alert at the top of the dialog, above the category tables |
+
+### 10.2 Service: `service_layer/replacement_targets.py`
+
+- New dataclass `ReplacementSuggestion(value_id, field, current, suggested)`
+  where `field` is `"min"` or `"max"`. Its `input_id` property returns the
+  matching cell id (`min-<value_id>` / `max-<value_id>`) so the template and the
+  accept buttons share one name for the input.
+- New dataclass `FeasibilityResult(checked: bool, feasible: bool, message: str,
+  suggestions: list[ReplacementSuggestion])`. `checked` is false when a
+  structural error stopped the check before the solver ran. `message` carries
+  the translated library error when no relaxation exists (D14), or the
+  library's other failure text.
+- `ReplacementValidation` gains `feasibility: FeasibilityResult | None`.
+- `validate_replacement_form(...)` gains a keyword `check_feasibility: bool`.
+  After the existing structured checks pass, it loads the already-selected
+  people through the adapter, drops their housemates from the pool with
+  `exclude_matching_selected_addresses`, and calls
+  `setup_committee_generation` with the submitted number (D13). It maps
+  `InfeasibleQuotasError.features` to suggestions by comparing against the
+  loaded features, the same comparison `_annotations_from_infeasible_quotas`
+  makes, but keyed by value id through `_row_by_name`. It reuses
+  `setup_committee_generation` directly rather than `_run_feasibility_check`
+  because that helper writes into the Targets page's annotation shape.
+- New `check_replacement_plan(uow, user_id, assembly_id, plan)` builds the
+  form the dialog would submit unedited (calculated min/max, default number)
+  and runs `validate_replacement_form` with the check on. This is what the GET
+  path calls (D13) so open and recheck share one code path.
+- Any error the existing validation raises still blocks the feasibility check
+  from running, because the library would refuse the same data.
+
+### 10.3 Blueprint
+
+- `gsheets.render_selection_page` runs `check_replacement_plan` when it opens
+  the dialog with no submitted form, and passes the result as
+  `replacement_validation` so the template has one place to look.
+- `db_selection_backoffice.start_db_replacement` reads a `action` form field.
+  `recheck` re-renders the page with the form kept and
+  `check_feasibility=True`; anything else keeps today's behaviour (validate
+  without the solver, then start the task). Two submit buttons on one form,
+  each with `name="action"`, is the plain HTML way to do this; no JS.
+- The recheck response is a normal 200 render, the same as a rejected run.
+
+### 10.4 Template: `components/db_replacement_modal.html`
+
+- Top alert (D16): when `feasibility.suggestions` is non-empty, an error alert
+  reads "The targets cannot all be met from the pool. The algorithm suggests
+  these changes:" followed by one line per suggestion ("<category>: <value>,
+  minimum 3 → 2") each with its own "Accept" button, and an "Accept all"
+  button under the list. When the check ran and passed, a short success line
+  ("These targets can be met from the pool.") so the organiser knows it
+  happened. When `message` is set, an error alert with that text.
+- Beside the cell: the row's notes column shows the suggestion with an
+  "Accept" button, using the same colour treatment the Targets page gives
+  suggestions. The category `<details>` opens when it holds a suggestion.
+- Footer: "Recheck feasibility" (secondary, `name="action" value="recheck"`)
+  and "Run Replacement Selection" (primary, `value="run"`).
+- Alpine: a registered `replacementSuggestions` component on the form. Each
+  accept button carries `data-input` and `data-value`; the click handler reads
+  `$el.dataset`, sets the input's value and dispatches `input` so Alpine state
+  follows. "Accept all" iterates every `[data-input]` button. Each suggestion
+  element is `x-show`n while the input's value differs from the suggested one
+  (D15), tracked in a flat object keyed by input id to stay CSP-safe. Follows
+  the patterns in `templates/backoffice/patterns.html`.
+
+### 10.5 Tests
+
+- Unit (`tests/unit/test_replacement_targets.py`): feasible pool → checked,
+  feasible, no suggestions; infeasible pool → suggestions keyed to the right
+  value ids and fields with the relaxed numbers; housemate of a selected person
+  is excluded before the check (a pool that is feasible only if the housemate
+  counts must come back infeasible); no relaxation within flex → message and
+  no suggestions; structural error → `checked` false.
+- Component (`tests/component/test_db_replacement_backoffice.py`): opening the
+  dialog shows the suggestion list and per-cell suggestions on an infeasible
+  fixture; recheck keeps edited numbers and re-runs; run with `action=run` on
+  infeasible targets still starts the task (D11).
+- JS (`vitest`): the accept and accept-all handlers set the inputs and the
+  hidden state, per `docs/agent/frontend_js_testing.md`.
+- BDD (`features/db-replacement-selection.feature`): one scenario opening the
+  dialog on an infeasible pool, accepting all, rechecking, and seeing the
+  success line.
+
+### 10.6 Sequencing
+
+1. Service: suggestion dataclasses, feasibility in the validator, plan check.
+   Unit tests.
+2. Blueprint and template, without the accept buttons. Component tests.
+3. Accept / accept all in Alpine, with JS tests. BDD scenario.
+4. Docs and translations.
