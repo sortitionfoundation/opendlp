@@ -228,6 +228,25 @@ SIGNUP_RATE_LIMIT_PER_IP=10
 SIGNUP_RATE_LIMIT_WINDOW_MINUTES=60
 ```
 
+### Account Signup Bot Check (Cloudflare Turnstile)
+
+The signup form can additionally require a Cloudflare Turnstile check (issue
+#890). Off unless `TURNSTILE_SITE_KEY` is set - see
+[docs/bot-protection.md](bot-protection.md#the-account-signup-form-cloudflare-turnstile)
+for how it is wired and the privacy constraints (non-pre-clearance mode only).
+
+```bash
+# Public widget sitekey; empty (default) disables the widget and the check
+TURNSTILE_SITE_KEY=
+
+# Widget secret for server-side siteverify; keep out of git
+TURNSTILE_SECRET=
+
+# Comma-separated frontend hostnames accepted from siteverify for THIS
+# deployment. Production must never list localhost or 127.0.0.1.
+TURNSTILE_HOSTNAMES=
+```
+
 ### Monitoring
 
 Enable end-to-end selection monitoring (issue #582) by pointing both
