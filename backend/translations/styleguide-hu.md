@@ -319,11 +319,10 @@ without checking it against the English.
    suggestions still fit, but a handful of the new run-history task labels were
    matched against unrelated strings, so read each one before clearing it.
    *(G36)*
-3. **Terms coined for the target-sources and registration-question strings**
-   (September 2026, no native speaker has checked them yet). The `/translate hu`
-   run that added them made one decision per term and used it throughout, so a
-   reviewer can change any of them with a single search-and-replace. Questions
-   for the reviewer, with the choice made:
+3. ~~**Terms coined for the target-sources and registration-question strings**~~
+   — settled. Krisztina Kocsis reviewed the questions below on 25 September
+   2026 and accepted every choice as made, so these terms are now house style.
+   The list is kept as a record of the alternatives that were considered:
    - **age range / age bracket → korcsoport.** *kortartomány* is more literal
      but reads as a maths term; *korcsoport* is what an organiser would say.
      Used for both English words, since they name the same thing (a band like
@@ -343,12 +342,11 @@ without checking it against the English.
      mapping form is "(tartalék: %(fallback)s)". The report line is "Tartalék
      értéket (%(fallback)s) kapott:". The catalogue already had "tartaléknak"
      for the email greeting fallback.
-   - **computed question / derived → számított**, per the glossary above. But
-     the standalone `Derived` label in the catalogue still reads
-     *Származtatott*, contrary to what the "Respondent fields" section claims;
-     it is a non-fuzzy entry so the run did not touch it. Someone should change
-     it by hand so the section heading and the new "A számított kérdés mindig a
-     Számított szakaszban marad" agree.
+   - **computed question / derived → számított**, per the glossary above. The
+     standalone `Derived` label, which still read *Származtatott* (a non-fuzzy
+     entry the run did not touch), has since been changed by hand to
+     *Számított*, so the catalogue and the "Respondent fields" section now
+     agree.
    - **The 'Link targets to questions' step → „Kiválasztási szempontok és
      kérdések összekapcsolása”.** The step name is quoted inside four other
      messages, so it must stay identical everywhere; change all five together.
@@ -376,9 +374,12 @@ without checking it against the English.
      Hungarian, the example must follow it.
    - **Ordinal counters: "Option %(n)d" → "%(n)d. választható érték", "Answer
      %(n)d" → "%(n)d. válasz"**, per the ordinal rule above (D22).
-   - **Plural forms.** This guide says `nplurals=2`, but the catalogue header
-     says `nplurals=1; plural=0;`, and `msgfmt` checks against the header. The
-     run therefore wrote one `msgstr[0]` per plural entry, phrased so it reads
-     correctly for any count ("%(count)s hozzárendelési sor"). One of the two
-     should change; if the header moves to `nplurals=2`, every plural entry
-     needs a second form.
+   - **Plural forms — resolved in favour of this guide.** The catalogue header
+     now says `nplurals=2; plural=(n != 1);`, the CLDR rule for Hungarian and
+     what Babel ships, so a later `pybabel init`/`update` will not quietly
+     revert it. Every plural entry carries both forms. Where the count sits
+     right before the noun the two forms are identical — "%(count)s
+     hozzárendelési sor" reads correctly for any count — and they diverge only
+     where the sentence refers back to the counted thing away from the number,
+     as in the recompute warning ("amelyekből a kiválasztás készült" /
+     "amelyekből a kiválasztások készültek").
