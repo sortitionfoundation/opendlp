@@ -63,6 +63,38 @@ the wrong thing:
 creates a fresh catalogue from the POT and takes no flags we care about. From
 then on the new language is picked up by `translate-regen` like any other.
 
+### Fuzzy entries, and accepting them
+
+A fuzzy entry is one msgfmt leaves out of the `.mo`, so the string shows in
+English until a human clears the flag. The `/translate` skill marks everything
+it writes fuzzy on purpose - see `.gettext-auto.toml` - so nothing an agent
+wrote reaches a user unreviewed. Once a reviewer has been through a batch:
+
+```bash
+just translate-accept-fuzzy
+```
+
+That clears every fuzzy flag in every catalogue and nothing else. It is the
+recipe, not `msgattrib --clear-fuzzy`, because msgattrib rewrites the whole
+file in gettext's own wrapping (see below). To accept some entries and not
+others, edit the `.po` file and delete the `#, fuzzy` lines by hand.
+
+### One wrapping for the catalogues
+
+Three tools write our `.po` files - `pybabel update` in `translate-regen`, the
+`/translate` skill through polib, and gettext's own `msgattrib` and `msgcat` -
+and each wraps long lines its own way (76, 78 and 79 columns, with the break
+placed differently). Whichever ran last used to rewrap the whole catalogue,
+and a one-string change came with a two-thousand-line diff.
+
+A pre-commit hook (`normalise-po`, backed by `scripts/normalise_po.py`) now
+rewrites every staged catalogue through Babel's writer, the one `pybabel
+update` uses, so a catalogue diff is only ever the entries that changed.
+Nothing an entry carries is lost on the way: the fuzzy flag, plural forms,
+format flags and the `#. AUTOTRANS-ERROR:` comments the `/translate` skill
+leaves all survive. If the hook rewrites a file it fails the commit and asks
+for it to be staged again, like ruff format does.
+
 ## Translation Workflow
 
 ### Adding New Translatable Strings

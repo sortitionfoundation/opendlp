@@ -275,6 +275,14 @@ translate-regen:
   @# and trim the extra blank line we always get
   prek run end-of-file-fixer
 
+# accept every fuzzy entry in every catalogue, once a reviewer has been through
+# them. msgfmt leaves fuzzy entries out of the .mo, so until this runs nothing
+# the /translate skill wrote reaches a user. Written through the same Babel
+# writer the normalise-po hook uses rather than msgattrib, which would rewrap
+# the whole file on the way.
+translate-accept-fuzzy:
+  uv run python scripts/normalise_po.py --accept-fuzzy translations/*/LC_MESSAGES/messages.po
+
 # compile translations from .po files so flask can use them
 #
 # A dependency of every test recipe and of `run`, because the .mo files are
