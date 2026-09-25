@@ -92,6 +92,20 @@ repos:
         files: ^backend/templates/.*\.html$
         entry: '\.strftime\s*\('
 
+  # Gettext catalogues are written by more than one tool - pybabel update in
+  # `just translate-regen`, msgattrib/msgcat by hand, polib from the /translate
+  # skill - and each wraps lines its own way, so whichever ran last rewraps the
+  # whole file. Rewriting through Babel's writer (the one regen uses) before
+  # commit keeps the diff down to the entries that actually changed.
+  - repo: local
+    hooks:
+      - id: normalise-po
+        name: Normalise gettext catalogues (Babel wrapping)
+        language: system
+        files: ^backend/translations/.*\.pot?$
+        require_serial: true
+        entry: uv run --project backend python backend/scripts/normalise_po.py --fail-if-changed
+
   # JavaScript linting and formatting. These run the npm scripts rather than
   # installing their own copies, so the eslint/prettier versions are the ones
   # pinned in backend/package.json - node_modules/ is already present from
