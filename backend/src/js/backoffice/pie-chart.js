@@ -35,7 +35,7 @@ function buildChart(canvas) {
           ),
           // With gaps, a thin card-coloured border reads as a divider between slices.
           borderColor: cardColor,
-          borderWidth: config.gaps ? 2 : 0,
+          borderWidth: config.gaps ? 1 : 0,
         },
       ],
     },
