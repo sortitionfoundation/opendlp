@@ -16,13 +16,26 @@
    that opens this dialog. #}
 <div x-data="modal({ initialOpen: true, closeUrl: '{{ close_url }}' })">
     {% call modal(id="db-replacement-modal", title=_("Replacement Selection"), classes="max-w-4xl") %}
-        <p class="text-body-md mb-4" style="color: var(--color-body-text);">
-            {{ _("%(held)s people are selected or confirmed. The assembly needs %(total)s, so %(to_fill)s places are to be filled.", held=plan.held_total, total=plan.number_to_select, to_fill=plan.calculated_number) }}
-        </p>
         {% if plan.nothing_to_fill %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ _("%(held)s people are selected or confirmed. The assembly needs %(total)s, so %(to_fill)s places are to be filled.", held=plan.held_total, total=plan.number_to_select, to_fill=plan.calculated_number) }}
+            </p>
             {{ alert(_("Every place is filled. Replacements are only needed once someone selected or confirmed has withdrawn."), variant="info") }}
         {% else %}
-            <div x-data="replacementSuggestions" @input="refresh()">
+            {% set number_editing = (number_value|string != plan.default_number|string) or not plan.number_in_range %}
+            <div x-data="replacementSuggestions"
+                 @input="refresh()"
+                 data-number-editing="{{ 'true' if number_editing else 'false' }}">
+                <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                    {{ _("%(held)s people are selected or confirmed. The assembly needs %(total)s, so %(to_fill)s.", held=plan.held_total, total=plan.number_to_select, to_fill='<strong>'|safe ~ _("%(count)s places are to be filled", count=plan.calculated_number) ~ '</strong>'|safe) }}
+                    <button type="button"
+                            class="text-label-md hover:underline ml-1"
+                            style="color: var(--color-primary-action)"
+                            x-show="!numberEditing"
+                            @click="editNumber()"
+                            aria-controls="number_to_select-section"
+                            :aria-expanded="numberEditing">{{ _("change") }}</button>
+                </p>
                 {% if validation and validation.errors %}
                     {% call alert(variant="error", use_caller=true) %}
                         <ul class="list-disc pl-5">
@@ -44,7 +57,7 @@
                       action="{{ url_for('db_selection_backoffice.start_db_replacement', assembly_id=assembly.id) }}"
                       id="db-replacement-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-6">
+                    <div class="mb-6" id="number_to_select-section" x-show="numberEditing" x-cloak>
                         <label class="text-label-lg mb-2 block"
                                style="color: var(--color-headings)"
                                for="number_to_select">{{ _("Number of replacements to select") }}</label>

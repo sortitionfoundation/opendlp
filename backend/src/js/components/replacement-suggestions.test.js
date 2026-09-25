@@ -98,6 +98,33 @@ describe("replacementSuggestions", () => {
     expect(hidden("list")).toBe(false);
   });
 
+  it("starts with the number hidden unless the page says it is being edited", () => {
+    const state = build();
+    expect(state.numberEditing).toBe(false);
+
+    document.getElementById("root").dataset.numberEditing = "true";
+    const edited = replacementSuggestions();
+    edited.$root = document.getElementById("root");
+    edited.init();
+    expect(edited.numberEditing).toBe(true);
+  });
+
+  it("editNumber shows the number field and focuses its input", () => {
+    const state = build();
+    document
+      .getElementById("root")
+      .insertAdjacentHTML(
+        "beforeend",
+        '<input id="number_to_select" value="6">',
+      );
+    state.$nextTick = (callback) => callback();
+
+    state.editNumber();
+
+    expect(state.numberEditing).toBe(true);
+    expect(document.activeElement.id).toBe("number_to_select");
+  });
+
   it("ignores a suggestion whose input is missing", () => {
     document.body.innerHTML = `
       <div id="root">

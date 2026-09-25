@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-25 13:11+0000\n"
+"POT-Creation-Date: 2026-09-25 13:14+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1055,7 +1055,7 @@ msgid "e.g. Gender, Age, Ethnicity"
 msgstr "például: nem, életkor, etnikai hovatartozás"
 
 #: src/opendlp/entrypoints/forms.py:681 src/opendlp/entrypoints/forms.py:720
-#: templates/backoffice/components/db_replacement_modal.html:141
+#: templates/backoffice/components/db_replacement_modal.html:154
 msgid "Notes"
 msgstr "Megjegyzések"
 
@@ -1074,7 +1074,7 @@ msgstr "Nem kötelező – link arra, hogy honnan származnak a százalékos ar�
 
 #: src/opendlp/entrypoints/forms.py:697
 #: src/opendlp/service_layer/dashboard_stats.py:344
-#: templates/backoffice/components/db_replacement_modal.html:129
+#: templates/backoffice/components/db_replacement_modal.html:142
 #: templates/backoffice/targets/bulk_edit_form.html:252
 #: templates/backoffice/targets/category_block.html:120
 #: templates/targets/components/category_block.html:69
@@ -1755,7 +1755,7 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/backoffice.py:262
 #: src/opendlp/service_layer/dashboard_stats.py:343
 #: src/opendlp/service_layer/selection_report.py:206
-#: templates/backoffice/components/db_replacement_modal.html:131
+#: templates/backoffice/components/db_replacement_modal.html:144
 msgid "Target"
 msgstr "Kezdés dátuma"
 
@@ -4199,13 +4199,13 @@ msgid "Need minimum %(min)s but only %(count)s respondents match"
 msgstr "Legalább %(min)s szükséges, de csak %(count)s jelentkező felel meg"
 
 #: src/opendlp/service_layer/target_checking.py:208
-#: templates/backoffice/components/db_replacement_modal.html:201
+#: templates/backoffice/components/db_replacement_modal.html:214
 #, python-format
 msgid "Suggested minimum: %(value)s (currently %(current)s)"
 msgstr "Javasolt minimum: %(value)s (jelenleg %(current)s)"
 
 #: src/opendlp/service_layer/target_checking.py:224
-#: templates/backoffice/components/db_replacement_modal.html:203
+#: templates/backoffice/components/db_replacement_modal.html:216
 #, python-format
 msgid "Suggested maximum: %(value)s (currently %(current)s)"
 msgstr "Javasolt maximum: %(value)s (jelenleg %(current)s)"
@@ -4564,7 +4564,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/assembly_edit_respondent.html:160
 #: templates/backoffice/assembly_form.html:96
 #: templates/backoffice/assembly_view_respondent.html:302
-#: templates/backoffice/components/db_replacement_modal.html:225
+#: templates/backoffice/components/db_replacement_modal.html:238
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:88
 #: templates/backoffice/dashboard_export_modal.html:62
@@ -6765,7 +6765,7 @@ msgstr "A közösségi gyűlés szakaszai"
 msgid "Breadcrumb"
 msgstr "Morzsamenü"
 
-#: templates/backoffice/components/db_replacement_modal.html:20
+#: templates/backoffice/components/db_replacement_modal.html:21
 #, python-format
 msgid ""
 "%(held)s people are selected or confirmed. The assembly needs %(total)s, "
@@ -6778,11 +6778,27 @@ msgid ""
 " or confirmed has withdrawn."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:36
+#: templates/backoffice/components/db_replacement_modal.html:30
+#, python-format
+msgid ""
+"%(held)s people are selected or confirmed. The assembly needs %(total)s, "
+"so %(to_fill)s."
+msgstr ""
+
+#: templates/backoffice/components/db_replacement_modal.html:30
+#, python-format
+msgid "%(count)s places are to be filled"
+msgstr ""
+
+#: templates/backoffice/components/db_replacement_modal.html:37
+msgid "change"
+msgstr ""
+
+#: templates/backoffice/components/db_replacement_modal.html:49
 msgid "These targets can be met from the pool."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:39
+#: templates/backoffice/components/db_replacement_modal.html:52
 #, python-format
 msgid ""
 "The calculated replacement targets cannot all be met at once: one target "
@@ -6790,7 +6806,7 @@ msgid ""
 " Edit the targets below until the two agree."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:41
+#: templates/backoffice/components/db_replacement_modal.html:54
 #, python-format
 msgid ""
 "Warning: %(to_fill)s places are to be filled, but the replacement targets"
@@ -6799,118 +6815,118 @@ msgid ""
 "needs."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:50
+#: templates/backoffice/components/db_replacement_modal.html:63
 msgid "Number of replacements to select"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:54
+#: templates/backoffice/components/db_replacement_modal.html:67
 #, python-format
 msgid "The replacement targets allow between %(min)s and %(max)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:68
+#: templates/backoffice/components/db_replacement_modal.html:81
 msgid "Replacement targets"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:70
+#: templates/backoffice/components/db_replacement_modal.html:83
 msgid ""
 "The places still to fill are calculated from the targets and who already "
 "holds a place. Edit the minimum and maximum if you need to. Targets with "
 "a value the pool cannot fill are shown open."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:76
+#: templates/backoffice/components/db_replacement_modal.html:89
 msgid "Suggested changes"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:81
+#: templates/backoffice/components/db_replacement_modal.html:94
 msgid ""
 "The targets cannot all be met from the pool at once. The algorithm "
 "suggests these changes:"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:88
+#: templates/backoffice/components/db_replacement_modal.html:101
 #, python-format
 msgid "%(category)s: %(value)s, minimum %(current)s to %(suggested)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:90
+#: templates/backoffice/components/db_replacement_modal.html:103
 #, python-format
 msgid "%(category)s: %(value)s, maximum %(current)s to %(suggested)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:92
-#: templates/backoffice/components/db_replacement_modal.html:205
+#: templates/backoffice/components/db_replacement_modal.html:105
+#: templates/backoffice/components/db_replacement_modal.html:218
 msgid "Accept"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:96
+#: templates/backoffice/components/db_replacement_modal.html:109
 msgid "Accept all"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:98
+#: templates/backoffice/components/db_replacement_modal.html:111
 msgid ""
 "Every suggestion has been applied. Recheck feasibility to confirm, or run"
 " the selection."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:115
+#: templates/backoffice/components/db_replacement_modal.html:128
 msgid "no matching respondent column, so nothing counts as held"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:118
+#: templates/backoffice/components/db_replacement_modal.html:131
 msgid "a value cannot be filled from the pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:121
+#: templates/backoffice/components/db_replacement_modal.html:134
 msgid "every value can be filled"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:133
+#: templates/backoffice/components/db_replacement_modal.html:146
 msgid "Currently selected"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:135
+#: templates/backoffice/components/db_replacement_modal.html:148
 msgid "Still needed (min)"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:137
+#: templates/backoffice/components/db_replacement_modal.html:150
 msgid "Still needed (max)"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:139
+#: templates/backoffice/components/db_replacement_modal.html:152
 msgid "In pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:155
+#: templates/backoffice/components/db_replacement_modal.html:168
 #, python-format
 msgid "Minimum still needed for %(category)s: %(value)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:169
+#: templates/backoffice/components/db_replacement_modal.html:182
 #, python-format
 msgid "Maximum still needed for %(category)s: %(value)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:189
+#: templates/backoffice/components/db_replacement_modal.html:202
 #, python-format
 msgid "short by %(count)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:191
+#: templates/backoffice/components/db_replacement_modal.html:204
 msgid "more places held than the target allows"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:193
+#: templates/backoffice/components/db_replacement_modal.html:206
 msgid "no spare people in the pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:193
+#: templates/backoffice/components/db_replacement_modal.html:206
 #, python-format
 msgid "%(count)s spare in the pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:223
+#: templates/backoffice/components/db_replacement_modal.html:236
 #: templates/backoffice/components/db_selection_progress_modal.html:117
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
 #: templates/backoffice/components/modal.html:115
@@ -6925,11 +6941,11 @@ msgstr ""
 msgid "Close"
 msgstr "Bezárás"
 
-#: templates/backoffice/components/db_replacement_modal.html:226
+#: templates/backoffice/components/db_replacement_modal.html:239
 msgid "Recheck feasibility"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:227
+#: templates/backoffice/components/db_replacement_modal.html:240
 #: templates/backoffice/components/replacement_modal.html:88
 #: templates/gsheets/replace.html:58 templates/gsheets/replace.html:80
 msgid "Run Replacement Selection"

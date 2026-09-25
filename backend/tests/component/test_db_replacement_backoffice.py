@@ -171,6 +171,30 @@ class TestReplacementDialog:
         assert "short by 1" in html
         assert "Run Replacement Selection" in html
 
+    def test_number_to_select_is_hidden_until_changed(self, logged_in_admin, assembly_after_withdrawal):
+        """The places to fill are bold with a change link, and the number field starts collapsed."""
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+        )
+        html = response.data.decode()
+        assert "<strong>6 places are to be filled</strong>" in html
+        assert 'data-number-editing="false"' in html
+        assert 'aria-controls="number_to_select-section"' in html
+        assert 'id="number_to_select-section" x-show="numberEditing"' in html
+
+    def test_number_to_select_starts_open_when_it_differs_from_the_default(
+        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
+    ):
+        form = _plan_form(fake_store, admin_user, assembly_with_feasible_gaps.id)
+        form["number_to_select"] = "5"
+        form["action"] = "recheck"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+        )
+
+        assert 'data-number-editing="true"' in response.data.decode()
+
     def test_short_category_is_open_and_fine_one_is_closed(self, logged_in_admin, assembly_after_withdrawal):
         response = logged_in_admin.get(
             f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"

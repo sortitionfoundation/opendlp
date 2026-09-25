@@ -7,8 +7,12 @@
  * the same two attributes and call accept($el); the CSP Alpine build cannot
  * pass literal arguments, so the data attributes are how the values arrive.
  *
+ * The number to select is hidden until the organiser asks to change it, or
+ * until the page renders with a number that differs from the default
+ * (data-number-editing="true" on the root).
+ *
  * Usage:
- *   <div x-data="replacementSuggestions" @input="refresh()">
+ *   <div x-data="replacementSuggestions" @input="refresh()" data-number-editing="false">
  *     <span data-suggestion-for="max-123" data-suggestion-value="3">...</span>
  *     <button @click="accept($el)" data-suggestion-for="max-123" data-suggestion-value="3">Accept</button>
  *     <button @click="acceptAll()">Accept all</button>
@@ -17,8 +21,21 @@
  */
 export function replacementSuggestions() {
   return {
+    numberEditing: false,
+
     init: function () {
+      this.numberEditing = this.$root.dataset.numberEditing === "true";
       this.refresh();
+    },
+
+    editNumber: function () {
+      this.numberEditing = true;
+      var input = this.$root.querySelector("#number_to_select");
+      if (input) {
+        this.$nextTick(function () {
+          input.focus();
+        });
+      }
     },
 
     accept: function ($el) {
