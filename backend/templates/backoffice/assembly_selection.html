@@ -90,7 +90,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                     border: 1px solid var(--color-warning-text)">
                             <p class="text-label-lg mb-2"
                                style="color: var(--color-warning-text)">
-                                {{ _("%(count)s respondents have been selected", count=csv_selected_count) }}
+                                {{ _("%(count)s respondents are currently selected", count=csv_held_count|default(0)) }}
                             </p>
                             <p class="text-body-sm" style="color: var(--color-body-text);">
                                 {{ _("A selection has already been run. To run a new initial selection, you must first reset all respondents to the pool.") }}

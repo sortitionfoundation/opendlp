@@ -376,6 +376,26 @@ class TestCountNonPoolRespondents:
 
         assert count == 0
 
+    def test_count_held_counts_selected_and_confirmed_only(self, uow, admin_user: User, test_assembly: Assembly):
+        """Held respondents are those selected or confirmed; withdrawn and pool respondents are not counted."""
+        for external_id, status in [
+            ("H001", RespondentStatus.SELECTED),
+            ("H002", RespondentStatus.CONFIRMED),
+            ("H003", RespondentStatus.WITHDRAWN),
+            ("H004", RespondentStatus.POOL),
+        ]:
+            respondent_service.create_respondent(
+                uow,
+                admin_user.id,
+                test_assembly.id,
+                external_id=external_id,
+                attributes={},
+                selection_status=status,
+            )
+
+        assert respondent_service.count_held_respondents(uow, test_assembly.id) == 2
+        assert respondent_service.count_non_pool_respondents(uow, test_assembly.id) == 3
+
 
 class TestGetRespondentsForAssembly:
     def test_get_empty_respondents(self, uow, admin_user: User, test_assembly: Assembly):

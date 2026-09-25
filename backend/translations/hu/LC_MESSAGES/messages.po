@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-24 11:40+0000\n"
+"POT-Creation-Date: 2026-09-25 09:47+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1609,9 +1609,9 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:164
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:361
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:434
-#: src/opendlp/entrypoints/blueprints/gsheets.py:350
-#: src/opendlp/entrypoints/blueprints/gsheets.py:758
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1041
+#: src/opendlp/entrypoints/blueprints/gsheets.py:353
+#: src/opendlp/entrypoints/blueprints/gsheets.py:761
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1044
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:182
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:268
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:332
@@ -1674,9 +1674,9 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:410
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:431
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:449
-#: src/opendlp/entrypoints/blueprints/gsheets.py:346
-#: src/opendlp/entrypoints/blueprints/gsheets.py:754
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1035
+#: src/opendlp/entrypoints/blueprints/gsheets.py:349
+#: src/opendlp/entrypoints/blueprints/gsheets.py:757
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1038
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:173
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:259
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:323
@@ -2190,8 +2190,8 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:455
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:197
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:413
-#: src/opendlp/entrypoints/blueprints/gsheets.py:822
-#: src/opendlp/entrypoints/blueprints/gsheets.py:881
+#: src/opendlp/entrypoints/blueprints/gsheets.py:825
+#: src/opendlp/entrypoints/blueprints/gsheets.py:884
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:465
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:517
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:872
@@ -2217,23 +2217,23 @@ msgid "An unexpected error occurred while starting the replacement selection"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:248
-#: src/opendlp/entrypoints/blueprints/gsheets.py:546
-#: src/opendlp/entrypoints/blueprints/gsheets.py:691
+#: src/opendlp/entrypoints/blueprints/gsheets.py:549
+#: src/opendlp/entrypoints/blueprints/gsheets.py:694
 msgid "Task cancelled"
 msgstr "A feladat megszakítva"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:258
-#: src/opendlp/entrypoints/blueprints/gsheets.py:556
-#: src/opendlp/entrypoints/blueprints/gsheets.py:701
+#: src/opendlp/entrypoints/blueprints/gsheets.py:559
+#: src/opendlp/entrypoints/blueprints/gsheets.py:704
 #, python-format
 msgid "Cannot cancel task: %(error)s"
 msgstr "A feladat nem szakítható meg: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:262
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:257
-#: src/opendlp/entrypoints/blueprints/gsheets.py:560
-#: src/opendlp/entrypoints/blueprints/gsheets.py:705
-#: src/opendlp/entrypoints/blueprints/gsheets.py:906
+#: src/opendlp/entrypoints/blueprints/gsheets.py:563
+#: src/opendlp/entrypoints/blueprints/gsheets.py:708
+#: src/opendlp/entrypoints/blueprints/gsheets.py:909
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:552
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:975
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1325
@@ -2243,9 +2243,9 @@ msgstr "A feladat nem található"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:266
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:265
-#: src/opendlp/entrypoints/blueprints/gsheets.py:564
-#: src/opendlp/entrypoints/blueprints/gsheets.py:709
-#: src/opendlp/entrypoints/blueprints/gsheets.py:921
+#: src/opendlp/entrypoints/blueprints/gsheets.py:567
+#: src/opendlp/entrypoints/blueprints/gsheets.py:712
+#: src/opendlp/entrypoints/blueprints/gsheets.py:924
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:573
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:996
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1346
@@ -2253,9 +2253,9 @@ msgid "You don't have permission to cancel this task"
 msgstr "Nincs jogosultságod a feladat megszakításához"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:270
-#: src/opendlp/entrypoints/blueprints/gsheets.py:568
-#: src/opendlp/entrypoints/blueprints/gsheets.py:713
-#: src/opendlp/entrypoints/blueprints/gsheets.py:926
+#: src/opendlp/entrypoints/blueprints/gsheets.py:571
+#: src/opendlp/entrypoints/blueprints/gsheets.py:716
+#: src/opendlp/entrypoints/blueprints/gsheets.py:929
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:582
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1005
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1355
@@ -2324,7 +2324,7 @@ msgstr ""
 "beállításokat."
 
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:252
-#: src/opendlp/entrypoints/blueprints/gsheets.py:899
+#: src/opendlp/entrypoints/blueprints/gsheets.py:902
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:540
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:963
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1313
@@ -2342,111 +2342,111 @@ msgstr "A kiválasztási beállítások mentve"
 msgid "An unexpected error occurred"
 msgstr "Váratlan hiba történt"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:354
+#: src/opendlp/entrypoints/blueprints/gsheets.py:357
 msgid "An error occurred while loading the selection page"
 msgstr "Hiba történt a kiválasztási oldal betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:490
-#: src/opendlp/entrypoints/blueprints/gsheets.py:524
-#: src/opendlp/entrypoints/blueprints/gsheets.py:590
-#: src/opendlp/entrypoints/blueprints/gsheets.py:617
+#: src/opendlp/entrypoints/blueprints/gsheets.py:493
+#: src/opendlp/entrypoints/blueprints/gsheets.py:527
+#: src/opendlp/entrypoints/blueprints/gsheets.py:593
+#: src/opendlp/entrypoints/blueprints/gsheets.py:620
 msgid "Please configure Google Sheets first"
 msgstr "Előbb állítsd be a Google Táblázatot"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:494
-#: src/opendlp/entrypoints/blueprints/gsheets.py:528
+#: src/opendlp/entrypoints/blueprints/gsheets.py:497
+#: src/opendlp/entrypoints/blueprints/gsheets.py:531
 msgid "You don't have permission to run selection"
 msgstr "Nincs jogosultságod a kiválasztás futtatásához"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:498
+#: src/opendlp/entrypoints/blueprints/gsheets.py:501
 msgid "An error occurred while starting the validation task"
 msgstr "Hiba történt az ellenőrzési feladat indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:532
+#: src/opendlp/entrypoints/blueprints/gsheets.py:535
 msgid "An error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztási feladat indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:594
-#: src/opendlp/entrypoints/blueprints/gsheets.py:621
+#: src/opendlp/entrypoints/blueprints/gsheets.py:597
+#: src/opendlp/entrypoints/blueprints/gsheets.py:624
 msgid "You don't have permission to manage tabs"
 msgstr "Nincs jogosultságod a munkalapok kezeléséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:598
+#: src/opendlp/entrypoints/blueprints/gsheets.py:601
 msgid "An error occurred while starting the list tabs task"
 msgstr "Hiba történt a munkalapok listázási feladatának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:625
+#: src/opendlp/entrypoints/blueprints/gsheets.py:628
 msgid "An error occurred while starting the delete tabs task"
 msgstr "Hiba történt a munkalapok törlési feladatának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:737
+#: src/opendlp/entrypoints/blueprints/gsheets.py:740
 msgid "Selection run not found"
 msgstr "A kiválasztási futtatás nem található"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:742
+#: src/opendlp/entrypoints/blueprints/gsheets.py:745
 msgid "Selection run does not belong to this assembly"
 msgstr "A kiválasztási futtatás nem ehhez a közösségi gyűléshez tartozik"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:762
+#: src/opendlp/entrypoints/blueprints/gsheets.py:765
 msgid "An error occurred while loading the run details"
 msgstr "Hiba történt a futtatás részleteinek betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:807
+#: src/opendlp/entrypoints/blueprints/gsheets.py:810
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:853
 #, python-format
 msgid "Could not start task to read the spreadsheet: %(error)s"
 msgstr "Nem sikerült elindítani a Google Táblázat beolvasási feladatát: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:812
+#: src/opendlp/entrypoints/blueprints/gsheets.py:815
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:507
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:862
 #, python-format
 msgid "Failed to start loading task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:827
+#: src/opendlp/entrypoints/blueprints/gsheets.py:830
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:526
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:881
 msgid "An unexpected error occurred while starting the loading task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:842
+#: src/opendlp/entrypoints/blueprints/gsheets.py:845
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:897
 msgid "Number of people to select is required"
 msgstr "A kiválasztandó emberek számát meg kell adni"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:848
+#: src/opendlp/entrypoints/blueprints/gsheets.py:851
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:903
 msgid "Number of people to select must be greater than zero"
 msgstr "A kiválasztandó emberek számának nullánál nagyobbnak kell lennie"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:851
+#: src/opendlp/entrypoints/blueprints/gsheets.py:854
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:906
 msgid "Number of people to select must be a valid integer"
 msgstr "A kiválasztandó emberek számának érvényes egész számnak kell lennie"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:871
+#: src/opendlp/entrypoints/blueprints/gsheets.py:874
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:930
 #, python-format
 msgid "Failed to start replacement task: %(error)s"
 msgstr "A pótlási feladat indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:886
+#: src/opendlp/entrypoints/blueprints/gsheets.py:889
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:949
 msgid "An unexpected error occurred while starting the replacement task"
 msgstr "Váratlan hiba történt a pótlási feladat indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:963
+#: src/opendlp/entrypoints/blueprints/gsheets.py:966
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:118
 msgid "Google Sheets configuration updated successfully"
 msgstr "Google Táblázat beállításai sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:966
+#: src/opendlp/entrypoints/blueprints/gsheets.py:969
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:100
 msgid "Google Sheets configuration created successfully"
 msgstr "Google Táblázat beállításai sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:976
+#: src/opendlp/entrypoints/blueprints/gsheets.py:979
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:128
 msgid ""
 "Warning: No columns to keep specified. This means the output will only "
@@ -2457,8 +2457,8 @@ msgstr ""
 "kimenet csak a célszámokhoz és a címellenőrzéshez használt jelentkezői "
 "adatoszlopokat fogja tartalmazni. Ez szándékos?"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1003
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1069
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1006
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1072
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:144
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:220
 msgid "You don't have permission to manage Google Sheets for this assembly"
@@ -2466,28 +2466,28 @@ msgstr ""
 "Nincs jogosultságod a közösségi gyűléshez tartozó Google Táblázat "
 "kezeléséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1007
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1010
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:154
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizd a beírt adatokat, és próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1010
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1045
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1013
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1048
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:163
 msgid "An error occurred while saving the Google Sheets configuration"
 msgstr "Hiba történt a Google Táblázat beállításainak mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1057
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1060
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:203
 msgid "Google Sheets configuration removed successfully"
 msgstr "Google Táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1063
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1066
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:211
 msgid "Google Sheets configuration not found"
 msgstr "Google Táblázat beállításai nem találhatóak"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1073
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1076
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:229
 msgid "An error occurred while removing the Google Sheets configuration"
 msgstr "Hiba történt a Google Táblázat beállításainak eltávolításakor"
@@ -4060,7 +4060,7 @@ msgstr ""
 msgid "The ID Column field was pre-filled from your last upload."
 msgstr "Az ID oszlop mező az előző feltöltésed alapján előre ki van töltve."
 
-#: src/opendlp/service_layer/respondent_service.py:232
+#: src/opendlp/service_layer/respondent_service.py:233
 #, python-format
 msgid "Row %(row)s: supplied '%(key)s' was replaced by its computed value"
 msgstr ""
@@ -6164,8 +6164,8 @@ msgstr ""
 
 #: templates/backoffice/assembly_selection.html:93
 #, python-format
-msgid "%(count)s respondents have been selected"
-msgstr "%(count)s jelentkező kiválasztva"
+msgid "%(count)s respondents are currently selected"
+msgstr ""
 
 #: templates/backoffice/assembly_selection.html:96
 msgid ""
@@ -6819,7 +6819,7 @@ msgid "every value can be filled"
 msgstr ""
 
 #: templates/backoffice/components/db_replacement_modal.html:95
-msgid "Holding a place"
+msgid "Currently selected"
 msgstr ""
 
 #: templates/backoffice/components/db_replacement_modal.html:97

@@ -32,7 +32,7 @@ from opendlp.service_layer.assembly_service import (
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
 from opendlp.service_layer.replacement_targets import ReplacementValidation, build_replacement_plan
 from opendlp.service_layer.report_translation import translate_run_report_to_html
-from opendlp.service_layer.respondent_service import count_non_pool_respondents
+from opendlp.service_layer.respondent_service import count_held_respondents, count_non_pool_respondents
 from opendlp.service_layer.sortition import (
     InvalidSelection,
     LoadRunResult,
@@ -260,6 +260,7 @@ def render_selection_page(
 
     # Determine data source and tab enabled states
     csv_selected_count = 0
+    csv_held_count = 0
     csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
     replacement_plan = None
     if gsheet:
@@ -277,6 +278,7 @@ def render_selection_page(
         try:
             with uow:
                 csv_selected_count = count_non_pool_respondents(uow, assembly_id)
+                csv_held_count = count_held_respondents(uow, assembly_id)
         except ServiceLayerError as count_error:
             logger.error("Error counting non-pool respondents", error=str(count_error))
         if replacement_modal_open:
@@ -330,6 +332,7 @@ def render_selection_page(
         respondents_enabled=respondents_enabled,
         selection_enabled=selection_enabled,
         csv_selected_count=csv_selected_count,
+        csv_held_count=csv_held_count,
         csv_settings_confirmed=csv_settings_confirmed,
         active_initial_selection_run_id=active_initial_selection_run_id,
     ), 200
