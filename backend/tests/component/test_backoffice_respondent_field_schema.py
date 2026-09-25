@@ -1019,6 +1019,16 @@ class TestFieldModal:
         assert re.search(r'<label[^>]*for="field-modal-label"[^>]*>\s*Question\b', body)
         assert not re.search(r'<label[^>]*for="field-modal-label"[^>]*>\s*Label\b', body)
 
+    def test_the_required_and_feeds_target_column_is_headed_notes(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(self._base(existing_assembly)).get_data(as_text=True)
+
+        assert re.search(r'<th scope="col">\s*Notes\s*</th>', body)
+        assert not re.search(r'<th scope="col">\s*Tags\s*</th>', body)
+
     def test_new_modal_defaults_to_the_other_section(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
