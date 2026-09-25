@@ -1029,6 +1029,31 @@ class TestFieldModal:
         assert re.search(r'<th scope="col">\s*Notes\s*</th>', body)
         assert not re.search(r'<th scope="col">\s*Tags\s*</th>', body)
 
+    def test_the_field_key_sits_behind_an_advanced_section_on_both_forms(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        new_body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+        edit_body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        for body in (new_body, edit_body):
+            details = re.search(
+                r"<details[^>]*>\s*<summary[^>]*>\s*Advanced\s*</summary>.*?</details>", body, re.DOTALL
+            )
+            assert details is not None, "no Advanced section"
+            assert "Field key" in details.group(0)
+            assert "Change the field key" not in body
+        assert 'id="field-modal-key"' in new_body
+        assert "<code>custom_notes</code>" in edit_body
+
     def test_new_modal_defaults_to_the_other_section(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
 

@@ -179,23 +179,22 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                         value=values["group"],
                         id="field-modal-group") }}
                     </div>
-                    {% if modal_ctx["mode"] == "new" %}
-                        <details class="mb-4">
-                            <summary class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Change the field key") }}</summary>
-                            <div class="mt-2">
+                {# Most users never need the field key, so it sits behind "Advanced". #}
+                    <details class="mb-4">
+                        <summary class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("Advanced") }}</summary>
+                        <div class="mt-2">
+                            {% if modal_ctx["mode"] == "new" %}
                                 {{ input("field_key",
                                 label=_("Field key"),
-                                hint=_("Left blank, it is generated from the label — lowercase letters, numbers and underscores."),
+                                hint=_("Left blank, it is generated from the question — lowercase letters, numbers and underscores."),
                                 value=values["field_key"],
                                 id="field-modal-key") }}
-                            </div>
-                        </details>
-                    {% elif modal_ctx["mode"] == "edit" %}
-                        <div class="mb-4">
-                            <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Field key") }}</span>
-                            <code>{{ modal_ctx["field"].field_key }}</code>
+                            {% else %}
+                                <span class="text-label-lg" style="color: var(--color-headings);">{{ _("Field key") }}</span>
+                                <code>{{ modal_ctx["field"].field_key }}</code>
+                            {% endif %}
                         </div>
-                    {% endif %}
+                    </details>
                 {% endcall %}
                 {% call dialog_footer() %}
                     {{ button(_("Cancel") , variant="secondary", href=close_url, attrs='@click="guardLeave($event)"') }}
