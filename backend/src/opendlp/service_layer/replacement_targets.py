@@ -7,13 +7,15 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from sortition_algorithms import adapters
-from sortition_algorithms.errors import SortitionBaseError
+from sortition_algorithms.committee_generation.common import setup_committee_generation
+from sortition_algorithms.errors import InfeasibleQuotasError, SortitionBaseError
 from sortition_algorithms.features import (
     MAX_FLEX_UNSET,
+    iterate_feature_collection,
     report_min_max_against_number_to_select_structured,
     report_min_max_error_details_structured,
 )
-from sortition_algorithms.people import check_people_per_feature_value
+from sortition_algorithms.people import check_people_per_feature_value, exclude_matching_selected_addresses
 
 from opendlp.adapters.sortition_data_adapter import DB_ID_COLUMN, OpenDLPDataAdapter
 from opendlp.domain.respondents import matching_attribute_column
@@ -28,6 +30,10 @@ from opendlp.translations import gettext as _
 if TYPE_CHECKING:
     import uuid
     from collections.abc import Mapping
+
+    from sortition_algorithms.features import FeatureCollection
+    from sortition_algorithms.people import People
+    from sortition_algorithms.settings import Settings
 
     from opendlp.domain.targets import TargetCategory, TargetValue
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
@@ -232,6 +238,40 @@ def build_replacement_plan(uow: AbstractUnitOfWork, user_id: uuid.UUID, assembly
     )
 
 
+@dataclass(frozen=True)
+class ReplacementSuggestion:
+    """One relaxation the algorithm proposes: a minimum lowered or a maximum raised."""
+
+    value_id: uuid.UUID
+    category: str
+    value: str
+    field: str
+    current: int
+    suggested: int
+
+    @property
+    def input_id(self) -> str:
+        return f"{self.field}-{self.value_id}"
+
+
+@dataclass
+class FeasibilityResult:
+    """Whether the algorithm can meet the targets from the pool, and what it suggests if not.
+
+    ``checked`` is false when an earlier error stopped the solver from running.
+    ``message`` carries the library's own text when it found no relaxation,
+    or failed for another reason.
+    """
+
+    checked: bool = False
+    feasible: bool = False
+    message: str = ""
+    suggestions: list[ReplacementSuggestion] = field(default_factory=list)
+
+    def suggestions_for(self, value_id: uuid.UUID) -> list[ReplacementSuggestion]:
+        return [s for s in self.suggestions if s.value_id == value_id]
+
+
 @dataclass
 class ReplacementValidation:
     """The outcome of checking the organiser's submitted numbers.
@@ -239,6 +279,7 @@ class ReplacementValidation:
     ``errors`` are for the top of the dialog; ``value_errors`` sit beside the
     cell they concern, keyed by the value id. ``targets_snapshot`` is what the
     task runs on when there are no errors, in the shape the run record stores.
+    ``feasibility`` is set only when the caller asked for the solver check.
     """
 
     number_to_select: int = 0
@@ -246,6 +287,7 @@ class ReplacementValidation:
     errors: list[str] = field(default_factory=list)
     value_errors: dict[uuid.UUID, list[str]] = field(default_factory=dict)
     targets_snapshot: list[dict[str, Any]] = field(default_factory=list)
+    feasibility: FeasibilityResult | None = None
 
     @property
     def ok(self) -> bool:
@@ -370,6 +412,8 @@ def validate_replacement_form(
     assembly_id: uuid.UUID,
     plan: ReplacementPlan,
     form: Mapping[str, str],
+    *,
+    check_feasibility: bool = False,
 ) -> ReplacementValidation:
     """Check the submitted replacement targets and number the way the algorithm will.
 
@@ -379,9 +423,15 @@ def validate_replacement_form(
     conflict, a number outside their range, and values the pool cannot fill.
     Every one of these would fail the task moments later, so they all block.
 
+    With ``check_feasibility`` the solver then tries the targets together over
+    the pool the run will see, and reports the relaxations it suggests. That
+    outcome informs rather than blocks: the organiser may still run.
+
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     result = ReplacementValidation()
+    if check_feasibility:
+        result.feasibility = FeasibilityResult()
 
     number = _parse_int(form.get("number_to_select"))
     if number is None or number < 1:
@@ -419,9 +469,11 @@ def validate_replacement_form(
 
     try:
         people, _p_report = select_data.load_people(settings_obj, features)
+        already_selected, _a_report = select_data.load_already_selected(settings_obj)
     except SortitionBaseError as e:
         result.errors.append(translate_sortition_error(e))
         return result
+    people = exclude_matching_selected_addresses(people, already_selected, settings_obj)
 
     for issue in check_people_per_feature_value(features, people):
         row = _row_by_name(plan, issue.feature_name, issue.value_name)
@@ -435,7 +487,73 @@ def validate_replacement_form(
         else:
             result.add_value_error(row.value_id, message)
 
+    if result.feasibility is not None and result.ok:
+        result.feasibility = _check_feasibility(plan, features, people, result.number_to_select, settings_obj)
     return result
+
+
+def check_replacement_plan(
+    uow: AbstractUnitOfWork, assembly_id: uuid.UUID, plan: ReplacementPlan
+) -> ReplacementValidation:
+    """Validate the dialog as it opens: the calculated targets, the default number, and the solver check.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    form = {"number_to_select": str(plan.default_number)}
+    for category in plan.categories:
+        for row in category.rows:
+            form[row.min_field] = str(row.calculated.min)
+            form[row.max_field] = str(row.calculated.max)
+    return validate_replacement_form(uow, assembly_id, plan, form, check_feasibility=True)
+
+
+def _check_feasibility(
+    plan: ReplacementPlan,
+    features: FeatureCollection,
+    people: People,
+    number_to_select: int,
+    settings_obj: Settings,
+) -> FeasibilityResult:
+    result = FeasibilityResult(checked=True)
+    try:
+        setup_committee_generation(
+            features=features,
+            people=people,
+            number_people_wanted=number_to_select,
+            check_same_address_columns=settings_obj.check_same_address_columns
+            if settings_obj.check_same_address
+            else [],
+            solver_backend=settings_obj.solver_backend,
+        )
+    except InfeasibleQuotasError as e:
+        result.suggestions = _suggestions(plan, features, e.features)
+        if not result.suggestions:
+            result.message = translate_sortition_error(e)
+    except SortitionBaseError as e:
+        result.message = translate_sortition_error(e)
+    else:
+        result.feasible = True
+    return result
+
+
+def _suggestions(
+    plan: ReplacementPlan, original: FeatureCollection, relaxed: FeatureCollection
+) -> list[ReplacementSuggestion]:
+    suggestions: list[ReplacementSuggestion] = []
+    for category_name, value_name, original_fv in iterate_feature_collection(original):
+        row = _row_by_name(plan, category_name, value_name)
+        if row is None or category_name not in relaxed or value_name not in relaxed[category_name]:
+            continue
+        relaxed_fv = relaxed[category_name][value_name]
+        if relaxed_fv.min < original_fv.min:
+            suggestions.append(
+                ReplacementSuggestion(row.value_id, category_name, value_name, "min", original_fv.min, relaxed_fv.min)
+            )
+        if relaxed_fv.max > original_fv.max:
+            suggestions.append(
+                ReplacementSuggestion(row.value_id, category_name, value_name, "max", original_fv.max, relaxed_fv.max)
+            )
+    return suggestions
 
 
 def _row_by_name(plan: ReplacementPlan, category_name: str, value_name: str) -> ReplacementValueRow | None:

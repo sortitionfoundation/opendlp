@@ -712,7 +712,7 @@ and buttons to accept them.
 ### 10.6 Sequencing
 
 1. Service: suggestion dataclasses, feasibility in the validator, plan check.
-   Unit tests.
+   Unit tests. **Done.**
 2. Blueprint and template, without the accept buttons. Component tests.
 3. Accept / accept all in Alpine, with JS tests. BDD scenario.
 4. Docs and translations.

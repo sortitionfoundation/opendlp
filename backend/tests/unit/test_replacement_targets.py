@@ -1,9 +1,10 @@
 """ABOUTME: Unit tests for the replacement targets service over a FakeUnitOfWork
-ABOUTME: Covers the review plan's arithmetic, the form parsing and the pre-run validation"""
+ABOUTME: Covers the review plan's arithmetic, the form parsing, the pre-run validation and the feasibility check"""
 
 import uuid
 
 import pytest
+from sortition_algorithms.errors import InfeasibleQuotasCantRelaxError
 from sortition_algorithms.features import MAX_FLEX_UNSET
 
 from opendlp.domain.assembly import Assembly
@@ -12,15 +13,17 @@ from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole, RespondentStatus
+from opendlp.service_layer import replacement_targets
 from opendlp.service_layer.exceptions import AssemblyNotFoundError, InsufficientPermissions
 from opendlp.service_layer.replacement_targets import (
     ReplacementPlan,
     build_replacement_plan,
+    check_replacement_plan,
     validate_replacement_form,
 )
 
 
-def _seed(uow, *, number_to_select: int = 6):
+def _seed(uow, *, number_to_select: int = 6, addresses: dict[str, str] | None = None):
     """Gender Male [3,3] / Female [3,3]; Age 18-30 [2,4] / 31+ [2,4].
 
     The category is "Age" over an "age" column: the library matches names
@@ -32,7 +35,11 @@ def _seed(uow, *, number_to_select: int = 6):
     admin = User(email="admin@example.com", global_role=GlobalRole.ADMIN, password_hash="hash")
     uow.users.add(admin)
     assembly = Assembly(title="Test Assembly", number_to_select=number_to_select)
-    assembly.selection_settings = SelectionSettings(assembly_id=assembly.id, check_same_address=False)
+    assembly.selection_settings = SelectionSettings(
+        assembly_id=assembly.id,
+        check_same_address=addresses is not None,
+        check_same_address_cols=["address"] if addresses else [],
+    )
     uow.assemblies.add(assembly)
 
     gender = TargetCategory(assembly_id=assembly.id, name="Gender", sort_order=0)
@@ -56,11 +63,14 @@ def _seed(uow, *, number_to_select: int = 6):
         ("F5", "Female", "31+", RespondentStatus.POOL, True),
     ]
     for ext_id, g, a, status, can_attend in rows:
+        attributes = {"gender": g, "age": a}
+        if addresses is not None:
+            attributes["address"] = addresses.get(ext_id, f"{ext_id} street")
         uow.respondents.add(
             Respondent(
                 assembly_id=assembly.id,
                 external_id=ext_id,
-                attributes={"gender": g, "age": a},
+                attributes=attributes,
                 selection_status=status,
                 can_attend=can_attend,
             )
@@ -325,3 +335,128 @@ class TestValidateReplacementForm:
         assert not result.ok
         assert list(result.value_errors) == [rows[("Gender", "Male")].value_id]
         assert "only 1" in result.value_errors[rows[("Gender", "Male")].value_id][0]
+
+
+def _infeasible_form(plan: ReplacementPlan) -> dict[str, str]:
+    """Every value can be filled on its own, but not all together.
+
+    Male needs 1 and the only eligible man, M3, is 18-30, yet 18-30 is capped
+    at 0. The cheapest relaxation is to raise the 18-30 maximum to 1.
+    """
+    form = _form_from_plan(plan, number=3)
+    rows = _rows(plan)
+    form[rows[("Age", "18-30")].min_field] = "0"
+    form[rows[("Age", "18-30")].max_field] = "0"
+    form[rows[("Age", "31+")].min_field] = "2"
+    form[rows[("Age", "31+")].max_field] = "3"
+    return form
+
+
+class TestFeasibilityCheck:
+    def test_not_run_unless_asked(self, uow):
+        """The plain validation leaves feasibility unset, so the run path never pays for the solver."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        result = validate_replacement_form(uow, assembly.id, plan, _form_from_plan(plan))
+        assert result.ok
+        assert result.feasibility is None
+
+    def test_feasible_targets_report_no_suggestions(self, uow):
+        """M3, F4 and F5 fill the calculated targets, so the check passes with nothing to suggest."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        result = check_replacement_plan(uow, assembly.id, plan)
+        assert result.ok
+        assert result.feasibility is not None
+        assert result.feasibility.checked
+        assert result.feasibility.feasible
+        assert result.feasibility.suggestions == []
+        assert result.feasibility.message == ""
+
+    def test_check_uses_the_calculated_targets_and_default_number(self, uow):
+        """The dialog check runs on the unedited form: the snapshot carries the calculated numbers."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        result = check_replacement_plan(uow, assembly.id, plan)
+        assert result.number_to_select == plan.default_number
+        assert not result.edited
+
+    def test_infeasible_targets_come_back_with_suggestions(self, uow):
+        """Targets each fillable alone but impossible together yield the algorithm's relaxation per cell."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        rows = _rows(plan)
+        result = validate_replacement_form(uow, assembly.id, plan, _infeasible_form(plan), check_feasibility=True)
+        assert result.ok
+        assert result.feasibility is not None
+        assert result.feasibility.checked
+        assert not result.feasibility.feasible
+        assert result.feasibility.message == ""
+        [suggestion] = result.feasibility.suggestions
+        assert suggestion.value_id == rows[("Age", "18-30")].value_id
+        assert suggestion.category == "Age"
+        assert suggestion.value == "18-30"
+        assert suggestion.field == "max"
+        assert suggestion.current == 0
+        assert suggestion.suggested == 1
+        assert suggestion.input_id == rows[("Age", "18-30")].max_field
+        assert result.feasibility.suggestions_for(rows[("Age", "18-30")].value_id) == [suggestion]
+        assert result.feasibility.suggestions_for(rows[("Gender", "Male")].value_id) == []
+
+    def test_accepting_the_suggestion_makes_the_targets_feasible(self, uow):
+        """Applying the suggested maximum and rechecking with the form values passes."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        form = _infeasible_form(plan)
+        form[_rows(plan)[("Age", "18-30")].max_field] = "1"
+        result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        assert result.ok
+        assert result.feasibility is not None
+        assert result.feasibility.feasible
+
+    def test_structural_errors_stop_the_check(self, uow):
+        """A bad cell means the solver never runs, and the result says so."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        form = _form_from_plan(plan)
+        form[_rows(plan)[("Gender", "Male")].min_field] = "lots"
+        result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        assert not result.ok
+        assert result.feasibility is not None
+        assert not result.feasibility.checked
+
+    def test_housemate_of_a_selected_person_is_not_in_the_pool(self, uow):
+        """M3 shares M1's address, so with the address check on the pool has no eligible man."""
+        admin, assembly, _, _ = _seed(uow, addresses={"M3": "1 Shared Road", "M1": "1 Shared Road"})
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        rows = _rows(plan)
+        result = check_replacement_plan(uow, assembly.id, plan)
+        assert not result.ok
+        assert list(result.value_errors) == [rows[("Gender", "Male")].value_id]
+        assert "only 0" in result.value_errors[rows[("Gender", "Male")].value_id][0]
+
+    def test_withdrawn_housemate_stays_in_the_pool(self, uow):
+        """F3 shares F2's address, but F2 withdrew, so F3 is eligible and the targets are feasible."""
+        admin, assembly, _, _ = _seed(uow, addresses={"F3": "2 Shared Road", "F2": "2 Shared Road"})
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        result = check_replacement_plan(uow, assembly.id, plan)
+        assert result.ok
+        assert result.feasibility is not None
+        assert result.feasibility.feasible
+
+    def test_no_relaxation_within_flex_gives_a_message(self, uow, monkeypatch):
+        """When the library cannot relax the targets within their flex, the dialog gets its message and no suggestions."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+
+        def cannot_relax(**kwargs):
+            raise InfeasibleQuotasCantRelaxError("No feasible committees found, even with relaxing the quotas.")
+
+        monkeypatch.setattr(replacement_targets, "setup_committee_generation", cannot_relax)
+        result = check_replacement_plan(uow, assembly.id, plan)
+        assert result.ok
+        assert result.feasibility is not None
+        assert result.feasibility.checked
+        assert not result.feasibility.feasible
+        assert result.feasibility.suggestions == []
+        assert "relaxing" in result.feasibility.message
