@@ -5,6 +5,7 @@ import uuid
 
 import pytest
 
+from opendlp.domain.respondents import matching_attribute_column
 from opendlp.domain.targets import TargetCategory, TargetValue, percentages_from_minmax
 from opendlp.domain.value_objects import RespondentStatus
 from opendlp.service_layer.dashboard_stats import (
@@ -12,7 +13,6 @@ from opendlp.service_layer.dashboard_stats import (
     DashboardCategory,
     DashboardReport,
     _build_category,
-    _matching_attribute,
     _value_row,
     build_dashboard_table,
 )
@@ -43,17 +43,17 @@ def _category(*values: TargetValue) -> TargetCategory:
 
 class TestMatchingAnAttributeColumn:
     def test_matches_an_exact_name(self):
-        assert _matching_attribute("Gender", ["age", "Gender"]) == "Gender"
+        assert matching_attribute_column("Gender", ["age", "Gender"]) == "Gender"
 
     def test_matches_loosely_across_case_and_punctuation(self):
-        assert _matching_attribute("Age Range", ["age_range"]) == "age_range"
-        assert _matching_attribute("age-range", ["AgeRange"]) == "AgeRange"
+        assert matching_attribute_column("Age Range", ["age_range"]) == "age_range"
+        assert matching_attribute_column("age-range", ["AgeRange"]) == "AgeRange"
 
     def test_returns_empty_when_nothing_matches(self):
-        assert _matching_attribute("Gender", ["age", "postcode"]) == ""
+        assert matching_attribute_column("Gender", ["age", "postcode"]) == ""
 
     def test_returns_empty_when_there_are_no_columns(self):
-        assert _matching_attribute("Gender", []) == ""
+        assert matching_attribute_column("Gender", []) == ""
 
 
 class TestTheValueRow:

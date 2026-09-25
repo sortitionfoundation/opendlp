@@ -12,6 +12,7 @@ from opendlp.domain.targets import (
     TargetCategory,
     TargetValue,
     min_max_for_percentage,
+    replacement_min_max,
     target_categories_to_snapshot,
     validate_source_url,
 )
@@ -464,3 +465,43 @@ class TestDetachedCopyCarriesNewFields:
         assert value.percentage_target == 50.0
         assert value.comment == "boosted"
         assert value.minmax_manual is True
+
+
+class TestReplacementMinMax:
+    """replacement_min_max: the seats still to fill once some places are held."""
+
+    def test_subtracts_held_from_both_bounds(self):
+        result = replacement_min_max(TargetValue(value="Male", min=10, max=15), held=6)
+        assert (result.min, result.max) == (4, 9)
+
+    def test_nothing_held_leaves_targets_unchanged(self):
+        result = replacement_min_max(TargetValue(value="Male", min=10, max=15), held=0)
+        assert (result.min, result.max) == (10, 15)
+
+    def test_held_beyond_min_floors_min_at_zero(self):
+        result = replacement_min_max(TargetValue(value="Male", min=10, max=15), held=12)
+        assert (result.min, result.max) == (0, 3)
+
+    def test_held_beyond_max_floors_both_at_zero(self):
+        result = replacement_min_max(TargetValue(value="Male", min=10, max=15), held=20)
+        assert (result.min, result.max) == (0, 0)
+
+    def test_unset_max_flex_stays_unset(self):
+        result = replacement_min_max(TargetValue(value="Male", min=10, max=15), held=6)
+        assert result.min_flex == 0
+        assert result.max_flex == MAX_FLEX_UNSET
+
+    def test_flex_bounds_move_with_held(self):
+        value = TargetValue(value="Male", min=10, max=15, min_flex=8, max_flex=18)
+        result = replacement_min_max(value, held=6)
+        assert (result.min_flex, result.max_flex) == (2, 12)
+
+    def test_flex_bounds_keep_their_invariants(self):
+        """min_flex never exceeds min, max_flex never drops below max, even after flooring."""
+        value = TargetValue(value="Male", min=10, max=15, min_flex=8, max_flex=16)
+        result = replacement_min_max(value, held=14)
+        assert (result.min, result.max) == (0, 1)
+        assert result.min_flex == 0
+        assert result.max_flex == 2
+        assert result.min_flex <= result.min
+        assert result.max_flex >= result.max

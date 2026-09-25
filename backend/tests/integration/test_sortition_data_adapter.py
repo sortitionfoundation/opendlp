@@ -480,3 +480,107 @@ class TestOpenDLPDataAdapter:
             people, _ = select_data.load_people(settings, features)
 
             assert set(people) == {"NB-ALIVE"}
+
+
+class TestTargetsSnapshotOverride:
+    """A targets snapshot replaces the stored target categories as the feature feed."""
+
+    def test_snapshot_rows_are_used_instead_of_stored_targets(self, postgres_session_factory, test_assembly):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        cat = TargetCategory(assembly_id=test_assembly.id, name="Gender")
+        cat.add_value(TargetValue(value="Male", min=10, max=15))
+        cat.add_value(TargetValue(value="Female", min=10, max=15))
+        with uow:
+            uow.target_categories.add(cat)
+            uow.commit()
+
+        snapshot = [
+            {
+                "name": "Gender",
+                "values": [
+                    {"value": "Male", "min": 4, "max": 9},
+                    {"value": "Female", "min": 3, "max": 8},
+                ],
+            }
+        ]
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id, targets_snapshot=snapshot)
+            features, _ = SelectionData(adapter).load_features()
+
+        assert features["Gender"]["Male"].min == 4
+        assert features["Gender"]["Male"].max == 9
+        assert features["Gender"]["Female"].min == 3
+        assert features["Gender"]["Female"].max == 8
+
+    def test_snapshot_flex_columns_emitted_only_when_all_set(self, postgres_session_factory, test_assembly):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        snapshot = [
+            {
+                "name": "Gender",
+                "values": [
+                    {"value": "Male", "min": 4, "max": 9, "min_flex": 2, "max_flex": 12},
+                    {"value": "Female", "min": 3, "max": 8, "min_flex": 1, "max_flex": 11},
+                ],
+            }
+        ]
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id, targets_snapshot=snapshot)
+            features, _ = SelectionData(adapter).load_features()
+
+        assert features["Gender"]["Male"].min_flex == 2
+        assert features["Gender"]["Male"].max_flex == 12
+
+
+class TestAlreadySelectedFeed:
+    """The already-selected feed carries selected and confirmed people, never withdrawn."""
+
+    def _add_respondents(self, uow, assembly_id):
+        rows = [
+            ("S1", RespondentStatus.SELECTED, "1 High St"),
+            ("C1", RespondentStatus.CONFIRMED, "2 High St"),
+            ("W1", RespondentStatus.WITHDRAWN, "3 High St"),
+            ("P1", RespondentStatus.POOL, "4 High St"),
+        ]
+        with uow:
+            for ext_id, status, address in rows:
+                uow.respondents.add(
+                    Respondent(
+                        assembly_id=assembly_id,
+                        external_id=ext_id,
+                        selection_status=status,
+                        attributes={"Gender": "Male", "address": address},
+                    )
+                )
+            uow.commit()
+
+    def test_feed_contains_selected_and_confirmed_only(self, postgres_session_factory, test_assembly):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        self._add_respondents(uow, test_assembly.id)
+        settings = Settings(
+            id_column="external_id",
+            columns_to_keep=[],
+            check_same_address=True,
+            check_same_address_columns=["address"],
+        )
+
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id)
+            already_selected, _ = SelectionData(adapter).load_already_selected(settings)
+
+        assert set(already_selected) == {"S1", "C1"}
+        assert already_selected.get_address("S1", ["address"]) == ("1 high st",)
+
+    def test_feed_is_empty_when_nobody_holds_a_place(self, postgres_session_factory, test_assembly):
+        uow = SqlAlchemyUnitOfWork(postgres_session_factory)
+        with uow:
+            uow.respondents.add(
+                Respondent(assembly_id=test_assembly.id, external_id="P1", attributes={"Gender": "Male"})
+            )
+            uow.commit()
+        settings = Settings(id_column="external_id", columns_to_keep=[])
+
+        with uow:
+            adapter = OpenDLPDataAdapter(uow, test_assembly.id)
+            already_selected, _ = SelectionData(adapter).load_already_selected(settings)
+
+        assert already_selected.count == 0
