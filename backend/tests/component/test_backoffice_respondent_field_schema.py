@@ -1007,6 +1007,18 @@ class TestFieldModal:
         selected = re.search(r'<option value="([^"]*)" selected>', select.group(0))
         return selected.group(1) if selected else ""
 
+    def test_the_form_asks_for_the_question_not_a_label(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        assert re.search(r'<label[^>]*for="field-modal-label"[^>]*>\s*Question\b', body)
+        assert not re.search(r'<label[^>]*for="field-modal-label"[^>]*>\s*Label\b', body)
+
     def test_new_modal_defaults_to_the_other_section(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
 
