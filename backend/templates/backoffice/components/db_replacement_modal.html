@@ -8,6 +8,8 @@
 {% set form = replacement_form|default({}) %}
 {% set validation = replacement_validation|default(none) %}
 {% set value_errors = validation.value_errors if validation else {} %}
+{% set feasibility = validation.feasibility if validation and validation.feasibility else replacement_feasibility|default(none) %}
+{% set feasibility = feasibility if feasibility and feasibility.checked else none %}
 {% set number_value = form.get('number_to_select', plan.default_number) %}
 {# Modal state comes from the registered modal() Alpine component: closing
    navigates back to the selection view, which clears the ?replacement_modal=open
@@ -26,6 +28,26 @@
                         {% for message in validation.errors %}<li>{{ message }}</li>{% endfor %}
                     </ul>
                 {% endcall %}
+            {% endif %}
+            {% if feasibility and feasibility.suggestions %}
+                {% call alert(variant="error", use_caller=true, id="feasibility-suggestions") %}
+                    <p class="mb-2">{{ _("The targets cannot all be met from the pool at once. The algorithm suggests these changes:") }}</p>
+                    <ul class="list-disc pl-5">
+                        {% for suggestion in feasibility.suggestions %}
+                            <li>
+                                {% if suggestion.field == "min" %}
+                                    {{ _("%(category)s: %(value)s, minimum %(current)s to %(suggested)s", category=suggestion.category, value=suggestion.value, current=suggestion.current, suggested=suggestion.suggested) }}
+                                {% else %}
+                                    {{ _("%(category)s: %(value)s, maximum %(current)s to %(suggested)s", category=suggestion.category, value=suggestion.value, current=suggestion.current, suggested=suggestion.suggested) }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endcall %}
+            {% elif feasibility and not feasibility.feasible %}
+                {{ alert(feasibility.message, variant="error", id="feasibility-message") }}
+            {% elif feasibility %}
+                {{ alert(_("These targets can be met from the pool."), variant="success", id="feasibility-ok") }}
             {% endif %}
             {% if plan.targets_conflict %}
                 {{ alert(_("The calculated replacement targets cannot all be met at once: one target needs at least %(min)s replacements while another allows at most %(max)s. Edit the targets below until the two agree.", min=plan.min_select, max=plan.max_select), variant="error") }}
@@ -65,6 +87,7 @@
                     {% set category_has_errors = [] %}
                     {% for row in category.rows %}
                         {% if row.value_id in value_errors and category_has_errors.append(1) %}{% endif %}
+                        {% if feasibility and feasibility.suggestions_for(row.value_id) and category_has_errors.append(1) %}{% endif %}
                     {% endfor %}
                     <details class="mb-4 rounded-lg"
                              style="border: 1px solid var(--color-borders-dividers);"
@@ -106,6 +129,7 @@
                                 <tbody>
                                     {% for row in category.rows %}
                                         {% set row_errors = value_errors.get(row.value_id, []) %}
+                                        {% set row_suggestions = feasibility.suggestions_for(row.value_id) if feasibility else [] %}
                                         {% set row_colour = 'var(--color-error-text)' if row.is_short or row_errors else ('var(--color-warning-text)' if row.is_tight or row.over_held else 'var(--color-body-text)') %}
                                         <tr style="border-bottom: 1px solid var(--color-borders-dividers);"
                                             data-replacement-row="{{ row.value_id }}">
@@ -146,6 +170,17 @@
                                                     <span id="{{ row.min_field }}-error">
                                                         {% for message in row_errors %}{{ message }}{% if not loop.last %}<br>{% endif %}{% endfor %}
                                                     </span>
+                                                {% elif row_suggestions %}
+                                                    {% for suggestion in row_suggestions %}
+                                                        <span style="color: var(--color-info-600);">
+                                                            {% if suggestion.field == "min" %}
+                                                                {{ _("Suggested minimum: %(value)s (currently %(current)s)", value=suggestion.suggested, current=suggestion.current) }}
+                                                            {% else %}
+                                                                {{ _("Suggested maximum: %(value)s (currently %(current)s)", value=suggestion.suggested, current=suggestion.current) }}
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if not loop.last %}<br>{% endif %}
+                                                    {% endfor %}
                                                 {% elif row.is_short %}
                                                     {{ _("short by %(count)s", count=row.shortfall) }}
                                                 {% elif row.over_held %}
@@ -170,7 +205,8 @@
                 {{ button(_("Close"), href=close_url, variant="primary") }}
             {% else %}
                 {{ button(_("Cancel"), href=close_url, variant="outline") }}
-                {{ button(_("Run Replacement Selection"), type="submit", variant="primary", attrs='form="db-replacement-form"') }}
+                {{ button(_("Recheck feasibility"), type="submit", variant="secondary", attrs='form="db-replacement-form" name="action" value="recheck"') }}
+                {{ button(_("Run Replacement Selection"), type="submit", variant="primary", attrs='form="db-replacement-form" name="action" value="run"') }}
             {% endif %}
         </div>
     {% endcall %}

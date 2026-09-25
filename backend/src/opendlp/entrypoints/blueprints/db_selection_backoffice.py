@@ -140,7 +140,10 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     A rejected submission re-renders the selection page with the dialog open,
     the organiser's numbers kept and the errors beside the cells they concern.
+    The "recheck" action does the same but also runs the feasibility check,
+    and always re-renders: it never starts the run.
     """
+    recheck = request.form.get("action") == "recheck"
     try:
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -150,9 +153,9 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
                 return redirect(url_for("backoffice.view_assembly_data", assembly_id=assembly_id, source="csv"))
 
             plan = build_replacement_plan(uow, current_user.id, assembly_id)
-            validation = validate_replacement_form(uow, assembly_id, plan, request.form)
+            validation = validate_replacement_form(uow, assembly_id, plan, request.form, check_feasibility=recheck)
 
-        if not validation.ok:
+        if recheck or not validation.ok:
             return render_selection_page(assembly_id, replacement_form=request.form, replacement_validation=validation)
 
         with uow:

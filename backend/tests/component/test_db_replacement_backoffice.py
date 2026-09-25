@@ -92,6 +92,25 @@ def assembly_after_withdrawal(fake_store, assembly):
     return assembly
 
 
+@pytest.fixture
+def assembly_with_feasible_gaps(fake_store, assembly):
+    """1 confirmed, 2/3/5 selected: four places held, six to fill, and the six left in the pool fit the targets.
+
+    Calculated: Male 1-3, Female 3-5; 18-30 2-4, 31-50 1-3, 51+ 1-3. Pool: 4, 6, 7, 8, 9, 10.
+    """
+    _set_statuses(
+        fake_store,
+        assembly.id,
+        {
+            "1": RespondentStatus.CONFIRMED,
+            "2": RespondentStatus.SELECTED,
+            "3": RespondentStatus.SELECTED,
+            "5": RespondentStatus.SELECTED,
+        },
+    )
+    return assembly
+
+
 def _plan_form(fake_store, admin_user, assembly_id, **overrides: str) -> dict[str, str]:
     """A form carrying the calculated numbers, with named (category, value, field) cells overridden."""
     with FakeUnitOfWork(store=fake_store) as uow:
@@ -305,3 +324,102 @@ class TestStartReplacement:
         )
         assert response.status_code in (302, 403)
         assert b"db-replacement-modal" not in response.data
+
+
+class TestFeasibilityInDialog:
+    def test_opening_the_dialog_runs_the_check_and_reports_success(self, logged_in_admin, assembly_with_feasible_gaps):
+        """The calculated targets fit the pool, so the dialog says so and offers no suggestions."""
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection?replacement_modal=open"
+        )
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "These targets can be met from the pool." in html
+        assert "feasibility-suggestions" not in html
+        assert "Recheck feasibility" in html
+
+    def test_opening_with_a_shortfall_shows_no_feasibility_verdict(self, logged_in_admin, assembly_after_withdrawal):
+        """A value the pool cannot fill stops the solver, and the dialog keeps its shortfall note instead."""
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+        )
+        html = response.data.decode()
+        assert "short by 1" in html
+        assert "feasibility-ok" not in html
+        assert "feasibility-suggestions" not in html
+
+    def test_recheck_shows_suggestions_at_the_top_and_beside_the_cell(
+        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
+    ):
+        """Capping 18-30 at 1 leaves only four people outside it, so six cannot be chosen; the algorithm suggests raising it."""
+        form = _plan_form(
+            fake_store, admin_user, assembly_with_feasible_gaps.id, **{"min__Age__18-30": "1", "max__Age__18-30": "1"}
+        )
+        form["action"] = "recheck"
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+            )
+
+        assert response.status_code == 200
+        mock_delay.assert_not_called()
+        html = response.data.decode()
+        assert "feasibility-suggestions" in html
+        assert "Age: 18-30, maximum 1 to 3" in html
+        assert "Suggested maximum: 3 (currently 1)" in html
+        assert 'value="1"' in html
+        assert "feasibility-ok" not in html
+
+    def test_recheck_keeps_the_edited_numbers_and_number_to_select(
+        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
+    ):
+        """Rechecking uses what is in the form: five to select with the edited cells passes and is echoed back."""
+        form = _plan_form(fake_store, admin_user, assembly_with_feasible_gaps.id, min__Gender__Female="2")
+        form["number_to_select"] = "5"
+        form["action"] = "recheck"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+        )
+
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "These targets can be met from the pool." in html
+        assert 'name="number_to_select"' in html
+        assert 'value="5"' in html
+
+    def test_recheck_with_a_bad_cell_shows_the_error_and_no_verdict(
+        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
+    ):
+        form = _plan_form(fake_store, admin_user, assembly_with_feasible_gaps.id, min__Gender__Male="many")
+        form["action"] = "recheck"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+        )
+
+        html = response.data.decode()
+        assert response.status_code == 200
+        assert "Enter whole numbers of zero or more" in html
+        assert "feasibility-ok" not in html
+        assert "feasibility-suggestions" not in html
+
+    def test_run_does_not_block_on_infeasible_targets(
+        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
+    ):
+        """Running skips the solver check, so targets that cannot be met still start the task."""
+        form = _plan_form(
+            fake_store, admin_user, assembly_with_feasible_gaps.id, **{"min__Age__18-30": "1", "max__Age__18-30": "1"}
+        )
+        form["action"] = "run"
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
+            mock_delay.return_value = Mock(id="celery-id")
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+            )
+
+        assert response.status_code == 302
+        assert "current_selection=" in response.headers["Location"]
+        mock_delay.assert_called_once()
