@@ -187,8 +187,7 @@
                                                     {% endif %}
                                                     {% for suggestion in row_suggestions %}
                                                         {% if not loop.first or row_errors or row.is_short or row.over_held or row.is_tight %}<br>{% endif %}
-                                                        <span class="inline-flex items-center gap-2 mb-1"
-                                                              style="color: var(--color-info-600);"
+                                                        <span style="color: var(--color-info-600);"
                                                               data-suggestion-for="{{ suggestion.input_id }}"
                                                               data-suggestion-value="{{ suggestion.suggested }}">
                                                             {% if suggestion.field == "min" %}
@@ -196,7 +195,7 @@
                                                             {% else %}
                                                                 {{ _("Suggested maximum: %(value)s (currently %(current)s)", value=suggestion.suggested, current=suggestion.current) }}
                                                             {% endif %}
-                                                            {{ button(_("Accept"), variant="secondary", attrs='@click="accept($el)" data-suggestion-for="' ~ suggestion.input_id ~ '" data-suggestion-value="' ~ suggestion.suggested ~ '"') }}
+                                                            {{ button(_("Accept"), variant="tertiary", classes="ml-2", attrs='@click="accept($el)" data-suggestion-for="' ~ suggestion.input_id ~ '" data-suggestion-value="' ~ suggestion.suggested ~ '"') }}
                                                         </span>
                                                     {% endfor %}
                                                 </td>

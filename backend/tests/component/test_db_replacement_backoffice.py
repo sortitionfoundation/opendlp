@@ -381,6 +381,23 @@ class TestFeasibilityInDialog:
         assert "Suggested minimum: 1 (currently 2)" in html
         assert "Age: 31-50, minimum 2 to 1" in html
 
+    def test_row_suggestion_wrapper_has_no_display_class(
+        self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
+    ):
+        """The hidden attribute only works on an element without a display utility class, so the wrapper carries none."""
+        form = _plan_form(fake_store, admin_user, assembly_with_feasible_gaps.id, **{"min__Age__31-50": "2"})
+        form["action"] = "recheck"
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_with_feasible_gaps.id}/selection/db/replacement/run", data=form
+        )
+
+        html = response.data.decode()
+        row_start = html.index("Suggested minimum: 1 (currently 2)")
+        wrapper = html[html.rindex("<span", 0, row_start) : row_start]
+        assert "data-suggestion-for" in wrapper
+        assert "class=" not in wrapper
+
     def test_recheck_shows_suggestions_at_the_top_and_beside_the_cell(
         self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
     ):
