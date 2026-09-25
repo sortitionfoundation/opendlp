@@ -255,7 +255,7 @@ Target management used to live here too. It now has its own module.
 
 - **Google Sheets:** `start_gsheet_load_task`, `start_gsheet_select_task`, `start_gsheet_replace_load_task`, `start_gsheet_replace_task`, `start_gsheet_manage_tabs_task`
 - **Database selection:** `start_db_select_task`, `start_db_replace_task`, `check_db_selection_data`, `generate_selection_csvs`
-- **Replacement targets** (in `replacement_targets.py`): `build_replacement_plan` derives the seats still to fill from the stored targets and who already holds a place; `validate_replacement_form` checks the organiser's edits through the library's own rules before a run starts
+- **Replacement targets** (in `replacement_targets.py`): `build_replacement_plan` derives the seats still to fill from the stored targets and who already holds a place; `validate_replacement_form` checks the organiser's edits through the library's own rules before a run starts. With `check_feasibility` it also asks the solver whether the targets can be met together from the pool, with the households of people already selected removed, and collects the relaxations it suggests; `check_replacement_plan` does that for the dialog as it opens. The verdict informs rather than blocks: the dialog's "Recheck feasibility" button re-runs it over the edited numbers, and "Run Replacement Selection" starts the task regardless
 - **Status / control:** `get_selection_run_status`, `get_manage_old_tabs_status`, `cancel_task`, `check_and_update_task_health`, `get_latest_run_for_assembly`
 
 Each start function creates a `SelectionRunRecord` and dispatches a Celery task; see [Background Tasks](#background-tasks).

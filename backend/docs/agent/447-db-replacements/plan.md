@@ -715,4 +715,4 @@ and buttons to accept them.
    Unit tests. **Done.**
 2. Blueprint and template, without the accept buttons. Component tests. **Done.**
 3. Accept / accept all in Alpine, with JS tests. BDD scenario. **Done.**
-4. Docs and translations.
+4. Docs and translations. **Done.**
