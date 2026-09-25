@@ -163,11 +163,14 @@ ABOUTME: Real form + hx-post enhancement; type changes and option rows round-tri
                     {% endif %}
                 {# Required or optional only: "Not on registration page" belongs to derived fields,
                    which get it implicitly. The label says what an answer to this type of
-                   question has to be, so it follows the question type. #}
+                   question has to be, so it follows the question type - and the switch,
+                   so that turning it off reads as "Optional: ..." rather than as a
+                   negated "Required". #}
                     <div class="mb-4">
                         <input type="hidden" name="required_switch" value="1">
                         {{ switch("required",
-                        label=modal_ctx["required_label"],
+                        label=modal_ctx["required_labels"][0],
+                        label_off=modal_ctx["required_labels"][1],
                         checked=values["on_registration_page"] == "yes_required",
                         id="field-modal-required",
                         attrs='value="1"') }}

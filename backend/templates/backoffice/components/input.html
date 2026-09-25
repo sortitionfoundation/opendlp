@@ -549,13 +549,16 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro switch(name, label="", checked=false, hint="", error="", disabled=false, readonly=false, id="", attrs="") %}
+{% macro switch(name, label="", checked=false, hint="", error="", disabled=false, readonly=false, id="", attrs="", label_off="") %}
     {#
     Switch (toggle) component based on Figma OpenDLP UI specification.
 
     Args:
         name: Switch name attribute (required)
         label: Label text displayed next to the switch
+        label_off: Label text shown instead of `label` while the switch is off. When
+            given, the label follows the switch as it is toggled (Alpine); without
+            JS the label for the initial state is shown.
         checked: Boolean for on/off state
         hint: Help text displayed below the label
         error: Error message (displays in error state)
@@ -567,6 +570,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
     Usage:
         {{ switch("notifications", label="Enable notifications", checked=true) }}
         {{ switch("dark_mode", label="Dark mode", hint="Toggle dark theme") }}
+        {{ switch("required", label="Required", label_off="Optional") }}
     #}
     {% set input_id = id if id else name %}
     {% set has_error = error | length > 0 %}
@@ -585,7 +589,11 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {% endif %}
         {% else %}
             {# Editable switch with custom styling #}
-            <label class="switch-container{% if disabled %} switch-disabled{% endif %}">
+            {# With label_off, a tiny Alpine scope mirrors the checkbox into `on` so the
+               label can follow it. x-cloak hides the label for the other state until
+               Alpine takes over, so a no-JS page shows only the initial state's label. #}
+            <label class="switch-container{% if disabled %} switch-disabled{% endif %}"
+                   {% if label_off %}x-data="{ on: {{ 'true' if checked else 'false' }} }"{% endif %}>
                 {# Hidden native checkbox with switch role for accessibility. No aria-checked:
                    the native checked state already conveys it, and a static attribute would
                    go stale as soon as the switch is toggled. #}
@@ -596,6 +604,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                     id="{{ input_id }}"
                     {% if checked %}checked{% endif %}
                     {% if disabled %}disabled{% endif %}
+                    {% if label_off %}x-model="on"{% endif %}
                     {% if attrs %}{{ attrs | safe }}{% endif %}
                     class="switch-input"
                 />
@@ -604,7 +613,10 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                     <span class="switch-thumb"></span>
                 </span>
                 {# Label text #}
-                {% if label %}
+                {% if label_off %}
+                    <span class="switch-label" x-show="on" {% if not checked %}x-cloak{% endif %}>{{ label }}</span>
+                    <span class="switch-label" x-show="!on" {% if checked %}x-cloak{% endif %}>{{ label_off }}</span>
+                {% elif label %}
                     <span class="switch-label">{{ label }}</span>
                 {% endif %}
             </label>

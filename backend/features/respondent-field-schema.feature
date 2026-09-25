@@ -50,3 +50,13 @@ Feature: Respondent field schema
     And I save a new choice field labelled "Preferred contact" with options "Phone" and "Email"
     Then the schema editor should list the "preferred_contact" field
     And the "preferred_contact" row should summarise its options as "Phone, Email"
+
+  Scenario: The required switch says what turning it off means
+    Given there is an assembly with respondents imported from CSV called "Schema Required Switch Demo"
+    And I am signed in as an admin user
+    When I open the respondent field schema editor for "Schema Required Switch Demo"
+    And I open the add-field modal
+    And I choose the "bool" question type
+    Then the required switch should read "Required: Checkbox must be checked"
+    When I turn the required switch off
+    Then the required switch should read "Optional: Checkbox can be left unchecked"

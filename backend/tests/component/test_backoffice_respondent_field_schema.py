@@ -906,7 +906,7 @@ class TestFieldModal:
         assert re.search(r'<option value="bool_or_none" selected>\s*Checkbox \(can be left unanswered\)', type_select)
 
     def _required_switch(self, body):
-        match = re.search(r'<label class="switch-container">.*?</label>', body, re.DOTALL)
+        match = re.search(r'<label class="switch-container"[^>]*>.*?</label>', body, re.DOTALL)
         assert match is not None, "no required switch"
         return match.group(0)
 
@@ -925,29 +925,63 @@ class TestFieldModal:
         assert 'name="on_registration_page"' not in body
         assert "Not on registration page" not in body
 
+    def _switch_labels(self, switch):
+        """The (on, off) label texts of a switch that carries a label for each state."""
+        on = re.search(r'<span class="switch-label" x-show="on"[^>]*>([^<]*)</span>', switch)
+        off = re.search(r'<span class="switch-label" x-show="!on"[^>]*>([^<]*)</span>', switch)
+        assert on is not None and off is not None, "switch lacks a label for each state"
+        return on.group(1), off.group(1)
+
     def test_the_required_switch_says_what_each_type_of_question_needs(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
         expected = {
-            "": "Required",
-            "bool": "Checkbox must be checked",
-            "bool_or_none": "Checkbox must be checked",
-            "text": "Text must be entered",
-            "email": "Text must be entered",
-            "integer": "Text must be entered",
-            "choice_radio": "An option must be chosen",
-            "choice_dropdown": "An option must be chosen",
-            "date": "Full date must be entered",
+            "": ("Required", "Optional"),
+            "bool": ("Required: Checkbox must be checked", "Optional: Checkbox can be left unchecked"),
+            "bool_or_none": ("Required: Checkbox must be checked", "Optional: Checkbox can be left unchecked"),
+            "text": ("Required: Text must be entered", "Optional: Text box can be left empty"),
+            "email": ("Required: Text must be entered", "Optional: Text box can be left empty"),
+            "integer": ("Required: Text must be entered", "Optional: Text box can be left empty"),
+            "choice_radio": ("Required: An option must be chosen", "Optional: No option needs to be chosen"),
+            "choice_dropdown": ("Required: An option must be chosen", "Optional: No option needs to be chosen"),
+            "date": ("Required: Full date must be entered", "Optional: Date can be left empty"),
         }
 
-        for question_type, label in expected.items():
+        for question_type, labels in expected.items():
             body = logged_in_admin.get(
                 f"{self._base(existing_assembly)}/fields/new-modal",
                 query_string={"modal": "1", "question_type": question_type, "label": "Q"},
                 headers={"HX-Request": "true"},
             ).get_data(as_text=True)
-            assert f'<span class="switch-label">{label}</span>' in self._required_switch(body), question_type
+            assert self._switch_labels(self._required_switch(body)) == labels, question_type
+
+    def test_the_required_switch_label_follows_the_switch(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The label for the other state is rendered but cloaked, so JS can swap them as the switch is toggled."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        for state, on in (
+            (FieldOnRegistrationPage.YES_REQUIRED, True),
+            (FieldOnRegistrationPage.YES_OPTIONAL, False),
+        ):
+            with FakeUnitOfWork(store=fake_store) as uow:
+                respondent_field_schema_service.update_field(
+                    uow, admin_user.id, existing_assembly.id, custom.id, on_registration_page=state
+                )
+            body = logged_in_admin.get(
+                f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+            ).get_data(as_text=True)
+            switch = self._required_switch(body)
+            assert f'x-data="{{ on: {str(on).lower()} }}"' in switch, state
+            assert 'x-model="on"' in switch, state
+            cloaked_on = 'x-show="on" x-cloak' in switch
+            cloaked_off = 'x-show="!on" x-cloak' in switch
+            assert (cloaked_on, cloaked_off) == (not on, on), state
 
     def test_the_required_switch_saves_required_or_optional(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

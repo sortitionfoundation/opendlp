@@ -155,6 +155,22 @@ def save_choice_field_via_modal(admin_logged_in_page: Page, label: str, first: s
     expect(_field_dialog(page)).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when(parsers.parse('I choose the "{question_type}" question type'))
+def choose_question_type(admin_logged_in_page: Page, question_type: str) -> None:
+    """Pick a type from the dropdown; the change re-renders the form fragment."""
+    dialog = _field_dialog(admin_logged_in_page)
+    dialog.locator('select[name="question_type"]').select_option(question_type)
+    expect(dialog.locator('select[name="question_type"]')).to_have_value(question_type, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I turn the required switch off")
+def turn_required_switch_off(admin_logged_in_page: Page) -> None:
+    """Found by name, not accessible name: the label - and so the name - changes with the switch."""
+    switch = _field_dialog(admin_logged_in_page).locator('input[name="required"]')
+    switch.uncheck(force=True)
+    expect(switch).not_to_be_checked(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 # ---------------------------------------------------------------------------
 # Then steps
 # ---------------------------------------------------------------------------
@@ -216,3 +232,10 @@ def field_order(admin_logged_in_page: Page, earlier_key: str, later_key: str) ->
         f"Expected {earlier_key!r} to appear before {later_key!r} on the page, "
         f"but earlier.y={earlier_box['y']} is not less than later.y={later_box['y']}"
     )
+
+
+@then(parsers.parse('the required switch should read "{text}"'))
+def required_switch_reads(admin_logged_in_page: Page, text: str) -> None:
+    """Only the label for the switch's current state is visible, so inner text is the one that shows."""
+    switch_label = _field_dialog(admin_logged_in_page).locator("label.switch-container")
+    expect(switch_label).to_have_text(text, use_inner_text=True, timeout=PLAYWRIGHT_TIMEOUT)
