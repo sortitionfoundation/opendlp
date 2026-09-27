@@ -6,6 +6,31 @@ Line numbers prefixed `~` are approximate.
 Each item has an ID and a decision. Work that belongs on another branch is
 written up in [guard-initial-selection-plan.md](guard-initial-selection-plan.md).
 
+## Status
+
+Fixed on this branch: G3, G5, B1 to B4, L1 to L5, L7 to L12, L17, L18, T1, T2,
+T4, T6, T7, T9, and the parts of T3 and T5 their decision names.
+
+Still open:
+
+- **G1, G2, G4, T8** - on a new branch, per the plan.
+- **L14, L15, L16** - Hamish is looking into them.
+- **L13** - the Hungarian catalogue, brought up to date later.
+- **I1, I2, I3** - issues to raise.
+
+Three things changed in ways the items did not spell out:
+
+- **L1.** The dialog now shows its whole validation as it opens. A value the
+  pool falls short of therefore opens with the cell error ("Needs at least 2
+  but only 1 eligible person...") where it used to open with the gentler
+  "short by 1" note. The error is the more accurate of the two: it counts the
+  pool after the households of people holding a place are taken out.
+- **L3.** A solver failure shows "The feasibility check could not be
+  completed. The selection can still be run." in the dialog, and is logged.
+- **L17.** The table macro's headers now carry `scope="col"`, which reaches
+  every table built from it. The dialog's table takes the macro's card styling
+  and padding; the browser tests pass, but nobody has looked at it by eye.
+
 ## Part 1: What guards an initial or test selection
 
 The rule: an initial or test selection over database respondents may only run
