@@ -230,6 +230,31 @@ class TestBuildReplacementPlan:
             build_replacement_plan(uow, admin.id, uuid.uuid4())
 
 
+class TestTargetsConflict:
+    def test_calculated_targets_that_agree_do_not_conflict(self, uow):
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        assert not plan.targets_conflict
+
+    def test_one_target_needing_more_than_another_allows_is_a_conflict(self, uow):
+        """Gender needs 3, and Age is edited to allow 2 at most."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        rows = _rows(plan)
+        plan.apply_submitted({
+            rows[("Age", "18-30")].value_id: (1, 1),
+            rows[("Age", "31+")].value_id: (0, 1),
+        })
+        assert (plan.min_select, plan.max_select) == (3, 2)
+        assert plan.targets_conflict
+        assert not plan.number_in_range
+
+    def test_plan_with_no_targets_allows_nothing(self):
+        plan = ReplacementPlan(number_to_select=4, held_total=1, categories=[])
+        assert (plan.min_select, plan.max_select) == (0, 0)
+        assert not plan.targets_conflict
+
+
 class TestApplySubmitted:
     def test_notes_and_sums_follow_the_submitted_numbers(self, uow):
         """Male edited to 0-0: the row is no longer short or tight, and the category sums move with it."""
@@ -298,14 +323,49 @@ class TestValidateReplacementForm:
         age = next(c for c in result.targets_snapshot if c["name"] == "Age")
         assert next(v for v in age["values"] if v["value"] == "31+")["max"] == 3
 
-    def test_missing_number_is_an_error(self, uow):
+    @pytest.mark.parametrize("typed", [None, "", "abc", "2.5", "0", "-1"])
+    def test_number_that_is_not_a_whole_number_of_one_or_more_is_an_error(self, uow, typed):
         admin, assembly, _, _ = _seed(uow)
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         form = _form_from_plan(plan)
-        form["number_to_select"] = "0"
+        if typed is None:
+            del form["number_to_select"]
+        else:
+            form["number_to_select"] = typed
         result = validate_replacement_form(uow, assembly.id, plan, form)
         assert not result.ok
-        assert len(result.errors) == 1
+        assert result.errors == ["Enter a whole number of replacements to select, one or more"]
+        assert result.value_errors == {}
+
+    def test_negative_cell_is_a_cell_error(self, uow):
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        form = _form_from_plan(plan)
+        male = _rows(plan)[("Gender", "Male")]
+        form[male.min_field] = "-1"
+        result = validate_replacement_form(uow, assembly.id, plan, form)
+        assert result.value_errors == {male.value_id: ["Enter whole numbers of zero or more"]}
+
+    def test_edited_numbers_pull_the_flex_bounds_with_them(self, uow):
+        """Flex must stay outside min and max, so an edit past a flex bound moves the bound."""
+        admin, assembly, _, age = _seed(uow)
+        young = next(v for v in age.values if v.value == "18-30")
+        young.min_flex, young.max_flex = 2, 5
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        row = _rows(plan)[("Age", "18-30")]
+        assert (row.calculated.min_flex, row.calculated.max_flex) == (1, 4)
+        form = _form_from_plan(plan)
+        form[row.min_field] = "0"
+        form[row.max_field] = "5"
+
+        result = validate_replacement_form(uow, assembly.id, plan, form)
+
+        assert result.ok, (result.errors, result.value_errors)
+        snapshot = next(c for c in result.targets_snapshot if c["name"] == "Age")
+        value = next(v for v in snapshot["values"] if v["value"] == "18-30")
+        assert (value["min"], value["min_flex"]) == (0, 0)
+        assert (value["max"], value["max_flex"]) == (5, 5)
+        assert (value["calculated_min_flex"], value["calculated_max_flex"]) == (1, 4)
 
     def test_non_integer_cell_is_a_cell_error(self, uow):
         admin, assembly, _, _ = _seed(uow)
@@ -353,7 +413,14 @@ class TestValidateReplacementForm:
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         result = validate_replacement_form(uow, assembly.id, plan, _form_from_plan(plan, number=5))
         assert not result.ok
-        assert any("5" in e for e in result.errors)
+        assert result.errors == ["Gender allows at most 3 replacements, fewer than the 5 to select"]
+
+    def test_number_below_what_a_target_needs_blocks(self, uow):
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        result = validate_replacement_form(uow, assembly.id, plan, _form_from_plan(plan, number=1))
+        assert not result.ok
+        assert result.errors == ["Gender needs at least 3 replacements, more than the 1 to select"]
 
     def test_pool_shortfall_is_a_cell_error(self, uow):
         """Male edited to need 2, but only M3 is eligible."""

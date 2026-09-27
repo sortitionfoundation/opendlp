@@ -1345,3 +1345,42 @@ class TestActiveInitialSelectionIncludesDbReplacement:
             )
         )
         assert sortition.get_active_initial_selection_run_id(uow, assembly.id) == task_id
+
+
+class _FinishedCeleryResult:
+    """Stands in for a Celery AsyncResult whose value is already in the result backend."""
+
+    def __init__(self, value):
+        self.value = value
+
+    def get(self, timeout=None):
+        return self.value
+
+
+class TestProcessCeleryFinalResult:
+    @pytest.mark.parametrize(
+        "task_type",
+        [
+            SelectionTaskType.SELECT_FROM_DB,
+            SelectionTaskType.TEST_SELECT_FROM_DB,
+            SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+        ],
+    )
+    def test_database_selection_tasks_give_a_selection_result(self, task_type):
+        record = SelectionRunRecord(
+            assembly_id=uuid.uuid4(),
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.COMPLETED,
+            task_type=task_type,
+            log_messages=["Done"],
+        )
+        run_report = RunReport()
+        selected = [frozenset({"F3"})]
+
+        result = sortition._process_celery_final_result(_FinishedCeleryResult((True, selected, run_report)), record)
+
+        assert isinstance(result, sortition.SelectionRunResult)
+        assert result.success is True
+        assert result.selected_ids == selected
+        assert result.run_report is run_report
+        assert result.log_messages == ["Done"]
