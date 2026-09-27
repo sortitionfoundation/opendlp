@@ -9,10 +9,11 @@ import pytest
 
 from opendlp.adapters import database
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import RespondentStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import AssemblyRole, RespondentStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import respondent_service, target_csv_import
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.replacement_targets import build_replacement_plan
+from opendlp.service_layer.user_service import grant_user_assembly_role
 from tests.fakes import FakeUnitOfWork
 
 
@@ -519,3 +520,29 @@ class TestFeasibilityInDialog:
         assert response.status_code == 302
         assert "current_selection=" in response.headers["Location"]
         mock_delay.assert_called_once()
+
+
+class TestViewerWithoutManagement:
+    """Someone who may view the assembly but not manage it still gets the selection page."""
+
+    @pytest.fixture
+    def logged_in_reader(self, logged_in_user, regular_user, admin_user, assembly_after_withdrawal, fake_store):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            grant_user_assembly_role(
+                uow=uow,
+                user_id=regular_user.id,
+                assembly_id=assembly_after_withdrawal.id,
+                role=AssemblyRole.READ_ONLY,
+                current_user=admin_user,
+            )
+        return logged_in_user
+
+    def test_link_to_the_open_dialog_renders_the_page_with_it_closed(self, logged_in_reader, assembly_after_withdrawal):
+        response = logged_in_reader.get(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+        )
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Replacement Selection" in html
+        assert "db-replacement-modal" not in html

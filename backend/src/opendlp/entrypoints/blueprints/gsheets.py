@@ -31,6 +31,7 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
 from opendlp.service_layer.replacement_targets import (
+    ReplacementPlan,
     ReplacementValidation,
     build_replacement_plan,
     check_replacement_plan,
@@ -176,6 +177,31 @@ def _get_replacement_modal_context(
 # --- Selection views ---
 
 
+def _get_db_replacement_dialog_context(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    validation: ReplacementValidation | None,
+) -> tuple[ReplacementPlan | None, ReplacementValidation | None]:
+    """The plan and validation the database replacement dialog shows.
+
+    Returns (None, None) for a user who may view the assembly but not manage
+    it: the page renders for them with the dialog closed.
+    """
+    try:
+        with uow:
+            plan = build_replacement_plan(uow, current_user.id, assembly_id)
+            if validation is not None:
+                plan.apply_submitted(validation.submitted)
+            elif not plan.nothing_to_fill:
+                validation = check_replacement_plan(uow, assembly_id, plan)
+    except InsufficientPermissions:
+        return None, None
+    # The solver is the slow part, so it runs once the transaction has closed.
+    if validation is not None:
+        run_feasibility_check(validation)
+    return plan, validation
+
+
 def render_selection_page(
     assembly_id: uuid.UUID,
     *,
@@ -289,15 +315,10 @@ def render_selection_page(
         except ServiceLayerError as count_error:
             logger.error("Error counting non-pool respondents", error=str(count_error))
         if replacement_modal_open:
-            with uow:
-                replacement_plan = build_replacement_plan(uow, current_user.id, assembly_id)
-                if replacement_validation is not None:
-                    replacement_plan.apply_submitted(replacement_validation.submitted)
-                elif not replacement_plan.nothing_to_fill:
-                    replacement_validation = check_replacement_plan(uow, assembly_id, replacement_plan)
-            # The solver is the slow part, so it runs once the transaction has closed.
-            if replacement_validation is not None:
-                run_feasibility_check(replacement_validation)
+            replacement_plan, replacement_validation = _get_db_replacement_dialog_context(
+                uow, assembly_id, replacement_validation
+            )
+            replacement_modal_open = replacement_plan is not None
     else:
         data_source = ""
         targets_enabled = False
