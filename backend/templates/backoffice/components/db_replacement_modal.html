@@ -1,8 +1,10 @@
 {# ABOUTME: Review dialog for a replacement selection over the database #}
 {# ABOUTME: Shows the calculated replacement targets, lets the organiser edit them, and starts the run #}
 {% from "backoffice/components/button.html" import button %}
-{% from "backoffice/components/modal.html" import modal %}
+{% from "backoffice/components/modal.html" import modal, modal_footer_start, modal_footer_end %}
 {% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/input.html" import input %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom %}
 {% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
 {% set plan = replacement_plan %}
 {% set form = replacement_form|default({}) %}
@@ -59,25 +61,7 @@
                       id="db-replacement-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-6" id="number_to_select-section" x-show="numberEditing" x-cloak>
-                        <label class="text-label-lg mb-2 block"
-                               style="color: var(--color-headings)"
-                               for="number_to_select">{{ _("Number of replacements to select") }}</label>
-                        <div class="text-body-sm mb-2"
-                             id="number_to_select-hint"
-                             style="color: var(--color-secondary-text);">
-                            {{ _("The replacement targets allow between %(min)s and %(max)s", min=plan.min_select, max=plan.max_select) }}
-                        </div>
-                        <input class="px-4 py-2 rounded-lg w-full md:w-1/3"
-                               style="border: 1px solid var(--color-borders-dividers);
-                                      background-color: white;
-                                      color: var(--color-body-text)"
-                               id="number_to_select"
-                               name="number_to_select"
-                               type="number"
-                               min="1"
-                               value="{{ number_value }}"
-                               aria-describedby="number_to_select-hint"
-                               required>
+                        {{ input("number_to_select", label=_("Number of replacements to select"), type="number", value=number_value, hint=_("The replacement targets allow between %(min)s and %(max)s", min=plan.min_select, max=plan.max_select), required=true, classes="md:w-1/3", attrs='min="1"') }}
                     </div>
                     <h3 class="text-heading-md mb-1" style="color: var(--color-headings);">{{ _("Replacement targets") }}</h3>
                     <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
@@ -139,41 +123,31 @@
                                           style="color: var(--color-secondary-text);">{{ _("every value can be filled") }}</span>
                                 {% endif %}
                             </summary>
-                            <div class="px-4 pb-4 overflow-x-auto">
-                                <table class="w-full text-body-md" style="border-collapse: collapse;">
-                                    <thead>
-                                        <tr style="border-bottom: 2px solid var(--color-borders-dividers);">
-                                            <th class="py-2 pr-4 text-left text-label-md"
-                                                style="color: var(--color-headings)">{{ _("Value") }}</th>
-                                            <th class="py-2 px-4 text-right text-label-md"
-                                                style="color: var(--color-headings)">{{ _("Target") }}</th>
-                                            <th class="py-2 px-4 text-right text-label-md"
-                                                style="color: var(--color-headings)">{{ _("Currently selected") }}</th>
-                                            <th class="py-2 px-4 text-right text-label-md"
-                                                style="color: var(--color-headings)">{{ _("Still needed (min)") }}</th>
-                                            <th class="py-2 px-4 text-right text-label-md"
-                                                style="color: var(--color-headings)">{{ _("Still needed (max)") }}</th>
-                                            <th class="py-2 px-4 text-right text-label-md"
-                                                style="color: var(--color-headings)">{{ _("In pool") }}</th>
-                                            <th class="py-2 pl-4 text-left text-label-md"
-                                                style="color: var(--color-headings)"><span class="sr-only">{{ _("Notes") }}</span></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                            <div class="px-4 pb-4">
+                                {% call table() %}
+                                    {{ table_head([
+                                    {"label": _("Value")},
+                                    {"label": _("Target"), "align": "right"},
+                                    {"label": _("Currently selected"), "align": "right"},
+                                    {"label": _("Still needed (min)"), "align": "right"},
+                                    {"label": _("Still needed (max)"), "align": "right"},
+                                    {"label": _("In pool"), "align": "right"},
+                                    {"label": '<span class="sr-only">'|safe ~ _("Notes") ~ '</span>'|safe},
+                                    ]) }}
+                                    {% call table_body() %}
                                         {% for row in category.rows %}
                                             {% set row_errors = value_errors.get(row.value_id, []) %}
                                             {% set row_suggestions = feasibility.suggestions_for(row.value_id) if feasibility else [] %}
                                             {% set row_colour = 'var(--color-error-text)' if row.is_short or row_errors else ('var(--color-warning-text)' if row.is_tight or row.over_held else 'var(--color-body-text)') %}
-                                            <tr style="border-bottom: 1px solid var(--color-borders-dividers);"
-                                                data-replacement-row="{{ row.value_id }}">
-                                                <td class="py-2 pr-4" style="color: var(--color-body-text)">{{ row.value }}</td>
-                                                <td class="py-2 px-4 text-right" style="color: var(--color-body-text)">{{ row.overall_min }}–{{ row.overall_max }}</td>
-                                                <td class="py-2 px-4 text-right" style="color: var(--color-body-text)">{{ row.held }}</td>
-                                                <td class="py-2 px-4 text-right">
+                                            {% call table_row() %}
+                                                {{ table_cell(row.value) }}
+                                                {{ table_cell(row.overall_min ~ "–" ~ row.overall_max, align="right") }}
+                                                {{ table_cell(row.held, align="right") }}
+                                                {% call table_cell_custom(align="right") %}
                                                     <label class="sr-only" for="{{ row.min_field }}">{{ _("Minimum still needed for %(target)s: %(value)s", target=category.name, value=row.value) }}</label>
                                                     <input class="px-2 py-1 rounded-lg w-20 text-right"
                                                            style="border: 1px solid {{ 'var(--color-error-text)' if row_errors else 'var(--color-borders-dividers)' }};
-                                                                  background-color: white;
+                                                                  background-color: var(--color-page-background);
                                                                   color: var(--color-body-text)"
                                                            id="{{ row.min_field }}"
                                                            name="{{ row.min_field }}"
@@ -182,12 +156,12 @@
                                                            value="{{ form.get(row.min_field, row.calculated.min) }}"
                                                            {% if row_errors %}aria-invalid="true" aria-describedby="{{ row.min_field }}-error"{% endif %}
                                                            required>
-                                                </td>
-                                                <td class="py-2 px-4 text-right">
+                                                {% endcall %}
+                                                {% call table_cell_custom(align="right") %}
                                                     <label class="sr-only" for="{{ row.max_field }}">{{ _("Maximum still needed for %(target)s: %(value)s", target=category.name, value=row.value) }}</label>
                                                     <input class="px-2 py-1 rounded-lg w-20 text-right"
                                                            style="border: 1px solid {{ 'var(--color-error-text)' if row_errors else 'var(--color-borders-dividers)' }};
-                                                                  background-color: white;
+                                                                  background-color: var(--color-page-background);
                                                                   color: var(--color-body-text)"
                                                            id="{{ row.max_field }}"
                                                            name="{{ row.max_field }}"
@@ -196,20 +170,24 @@
                                                            value="{{ form.get(row.max_field, row.calculated.max) }}"
                                                            {% if row_errors %}aria-invalid="true" aria-describedby="{{ row.min_field }}-error"{% endif %}
                                                            required>
-                                                </td>
-                                                <td class="py-2 px-4 text-right" style="color: {{ row_colour }}">{{ row.available }}</td>
-                                                <td class="py-2 pl-4 text-body-sm" style="color: {{ row_colour }}">
-                                                    {% if row_errors %}
-                                                        <span id="{{ row.min_field }}-error">
-                                                            {% for message in row_errors %}{{ message }}{% if not loop.last %}<br>{% endif %}{% endfor %}
-                                                        </span>
-                                                    {% elif row.is_short %}
-                                                        {{ _("short by %(count)s", count=row.shortfall) }}
-                                                    {% elif row.over_held %}
-                                                        {{ _("more places held than the target allows") }}
-                                                    {% elif row.is_tight %}
-                                                        {{ _("no spare people in the pool") if row.spare == 0 else _("%(count)s spare in the pool", count=row.spare) }}
-                                                    {% endif %}
+                                                {% endcall %}
+                                                {% call table_cell_custom(align="right") %}
+                                                    <span style="color: {{ row_colour }}">{{ row.available }}</span>
+                                                {% endcall %}
+                                                {% call table_cell_custom(nowrap=false) %}
+                                                    <span style="color: {{ row_colour }}">
+                                                        {% if row_errors %}
+                                                            <span id="{{ row.min_field }}-error">
+                                                                {% for message in row_errors %}{{ message }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+                                                            </span>
+                                                        {% elif row.is_short %}
+                                                            {{ _("short by %(count)s", count=row.shortfall) }}
+                                                        {% elif row.over_held %}
+                                                            {{ _("more places held than the target allows") }}
+                                                        {% elif row.is_tight %}
+                                                            {{ _("no spare people in the pool") if row.spare == 0 else _("%(count)s spare in the pool", count=row.spare) }}
+                                                        {% endif %}
+                                                    </span>
                                                     {% for suggestion in row_suggestions %}
                                                         {% if not loop.first or row_errors or row.is_short or row.over_held or row.is_tight %}<br>{% endif %}
                                                         <span style="color: var(--color-info-600);"
@@ -223,11 +201,11 @@
                                                             {{ button(_("Accept"), variant="tertiary", classes="ml-2", attrs='@click="accept($el)" data-suggestion-for="' ~ suggestion.input_id ~ '" data-suggestion-value="' ~ suggestion.suggested ~ '"') }}
                                                         </span>
                                                     {% endfor %}
-                                                </td>
-                                            </tr>
+                                                {% endcall %}
+                                            {% endcall %}
                                         {% endfor %}
-                                    </tbody>
-                                </table>
+                                    {% endcall %}
+                                {% endcall %}
                             </div>
                         </details>
                     {% endfor %}
@@ -235,15 +213,14 @@
             </div>
         {% endif %}
         {# Footer with action buttons #}
-        <div class="flex gap-2 justify-end pt-4 mt-4"
-             style="border-top: 1px solid var(--color-borders-dividers);">
-            {% if plan.nothing_to_fill %}
-                {{ button(_("Close"), href=close_url, variant="primary") }}
-            {% else %}
-                {{ button(_("Cancel"), href=close_url, variant="outline") }}
-                {{ button(_("Recheck feasibility"), type="submit", variant="secondary", attrs='form="db-replacement-form" name="action" value="recheck"') }}
-                {{ button(_("Run Replacement Selection"), type="submit", variant="primary", attrs='form="db-replacement-form" name="action" value="run"') }}
-            {% endif %}
-        </div>
+        {{ modal_footer_start() }}
+        {% if plan.nothing_to_fill %}
+            {{ button(_("Close"), href=close_url, variant="primary") }}
+        {% else %}
+            {{ button(_("Cancel"), href=close_url, variant="outline") }}
+            {{ button(_("Recheck feasibility"), type="submit", variant="secondary", attrs='form="db-replacement-form" name="action" value="recheck"') }}
+            {{ button(_("Run Replacement Selection"), type="submit", variant="primary", attrs='form="db-replacement-form" name="action" value="run"') }}
+        {% endif %}
+        {{ modal_footer_end() }}
     {% endcall %}
 </div>
