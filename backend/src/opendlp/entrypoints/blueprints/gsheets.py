@@ -186,19 +186,18 @@ def _get_db_replacement_dialog_context(
 
     Returns (None, None) for a user who may view the assembly but not manage
     it: the page renders for them with the dialog closed.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`), and
+    to call run_feasibility_check() on the validation once it has closed.
     """
     try:
-        with uow:
-            plan = build_replacement_plan(uow, current_user.id, assembly_id)
-            if validation is not None:
-                plan.apply_submitted(validation.submitted)
-            elif not plan.nothing_to_fill:
-                validation = check_replacement_plan(uow, assembly_id, plan)
+        plan = build_replacement_plan(uow, current_user.id, assembly_id)
     except InsufficientPermissions:
         return None, None
-    # The solver is the slow part, so it runs once the transaction has closed.
     if validation is not None:
-        run_feasibility_check(validation)
+        plan.apply_submitted(validation.submitted)
+    elif not plan.nothing_to_fill:
+        validation = check_replacement_plan(uow, assembly_id, plan)
     return plan, validation
 
 
@@ -315,10 +314,14 @@ def render_selection_page(
         except ServiceLayerError as count_error:
             logger.error("Error counting non-pool respondents", error=str(count_error))
         if replacement_modal_open:
-            replacement_plan, replacement_validation = _get_db_replacement_dialog_context(
-                uow, assembly_id, replacement_validation
-            )
+            with uow:
+                replacement_plan, replacement_validation = _get_db_replacement_dialog_context(
+                    uow, assembly_id, replacement_validation
+                )
             replacement_modal_open = replacement_plan is not None
+            # The solver is the slow part, so it runs once the transaction has closed.
+            if replacement_validation is not None:
+                run_feasibility_check(replacement_validation)
     else:
         data_source = ""
         targets_enabled = False
