@@ -31,10 +31,10 @@ from opendlp.service_layer.assembly_service import (
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, NotFoundError, ServiceLayerError
 from opendlp.service_layer.replacement_targets import (
-    FeasibilityResult,
     ReplacementValidation,
     build_replacement_plan,
     check_replacement_plan,
+    run_feasibility_check,
 )
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_service import count_held_respondents, count_non_pool_respondents
@@ -187,7 +187,9 @@ def render_selection_page(
     The database replacement dialog re-renders this page after a rejected
     submission: ``replacement_form`` carries the numbers the organiser typed and
     ``replacement_validation`` the errors to show beside them. Either forces the
-    dialog open. Service-layer exceptions propagate to the caller.
+    dialog open. When the dialog opens without a submission, the calculated
+    targets are validated here, so it shows their errors from the start.
+    Service-layer exceptions propagate to the caller.
     """
     page = request.args.get("page", 1, type=int)
     per_page = 15
@@ -268,7 +270,6 @@ def render_selection_page(
     csv_held_count = 0
     csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
     replacement_plan = None
-    replacement_feasibility: FeasibilityResult | None = None
     if gsheet:
         data_source = "gsheet"
         targets_enabled = True
@@ -290,10 +291,13 @@ def render_selection_page(
         if replacement_modal_open:
             with uow:
                 replacement_plan = build_replacement_plan(uow, current_user.id, assembly_id)
-                if replacement_validation is None and not replacement_plan.nothing_to_fill:
-                    replacement_feasibility = check_replacement_plan(uow, assembly_id, replacement_plan).feasibility
-                elif replacement_validation is not None:
+                if replacement_validation is not None:
                     replacement_plan.apply_submitted(replacement_validation.submitted)
+                elif not replacement_plan.nothing_to_fill:
+                    replacement_validation = check_replacement_plan(uow, assembly_id, replacement_plan)
+            # The solver is the slow part, so it runs once the transaction has closed.
+            if replacement_validation is not None:
+                run_feasibility_check(replacement_validation)
     else:
         data_source = ""
         targets_enabled = False
@@ -335,7 +339,6 @@ def render_selection_page(
         replacement_plan=replacement_plan,
         replacement_form=replacement_form or {},
         replacement_validation=replacement_validation,
-        replacement_feasibility=replacement_feasibility,
         replacement_enabled=replacement_enabled,
         edit_number_modal_open=edit_number_modal_open,
         data_source=data_source,

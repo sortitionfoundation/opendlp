@@ -8,8 +8,7 @@
 {% set form = replacement_form|default({}) %}
 {% set validation = replacement_validation|default(none) %}
 {% set value_errors = validation.value_errors if validation else {} %}
-{% set feasibility = validation.feasibility if validation and validation.feasibility else replacement_feasibility|default(none) %}
-{% set feasibility = feasibility if feasibility and feasibility.checked else none %}
+{% set feasibility = validation.feasibility if validation and validation.feasibility and validation.feasibility.checked else none %}
 {% set number_value = form.get('number_to_select', plan.default_number) %}
 {# Modal state comes from the registered modal() Alpine component: closing
    navigates back to the selection view, which clears the ?replacement_modal=open

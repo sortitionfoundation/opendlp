@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+import structlog
 from sortition_algorithms import adapters
 from sortition_algorithms.committee_generation.common import setup_committee_generation
 from sortition_algorithms.errors import InfeasibleQuotasError, SortitionBaseError
@@ -37,6 +38,8 @@ if TYPE_CHECKING:
 
     from opendlp.domain.targets import TargetCategory, TargetValue
     from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
+
+logger = structlog.get_logger(__name__)
 
 # A pool with this many spare people or fewer for a value is close enough to
 # its minimum that the dialog draws attention to it.
@@ -289,6 +292,17 @@ class FeasibilityResult:
         return [s for s in self.suggestions if s.value_id == value_id]
 
 
+@dataclass(frozen=True)
+class FeasibilityInputs:
+    """What the solver check runs over, loaded while the unit of work was open."""
+
+    plan: ReplacementPlan
+    features: FeatureCollection
+    people: People
+    number_to_select: int
+    settings: Settings
+
+
 @dataclass
 class ReplacementValidation:
     """The outcome of checking the organiser's submitted numbers.
@@ -296,7 +310,9 @@ class ReplacementValidation:
     ``errors`` are for the top of the dialog; ``value_errors`` sit beside the
     cell they concern, keyed by the value id. ``targets_snapshot`` is what the
     task runs on when there are no errors, in the shape the run record stores.
-    ``feasibility`` is set only when the caller asked for the solver check.
+    ``feasibility`` is set only when the caller asked for the solver check. It
+    stays unchecked until run_feasibility_check() has run the solver over
+    ``feasibility_inputs``.
     """
 
     number_to_select: int = 0
@@ -306,6 +322,7 @@ class ReplacementValidation:
     submitted: dict[uuid.UUID, tuple[int, int]] = field(default_factory=dict)
     targets_snapshot: list[dict[str, Any]] = field(default_factory=list)
     feasibility: FeasibilityResult | None = None
+    feasibility_inputs: FeasibilityInputs | None = field(default=None, repr=False)
 
     @property
     def ok(self) -> bool:
@@ -441,11 +458,13 @@ def validate_replacement_form(
     conflict, a number outside their range, and values the pool cannot fill.
     Every one of these would fail the task moments later, so they all block.
 
-    With ``check_feasibility`` the solver then tries the targets together over
-    the pool the run will see, and reports the relaxations it suggests. It runs
-    even when a value falls short of the pool, since the suggestion is how to
-    get past that; only errors the library itself would refuse stop it. That
-    outcome informs rather than blocks: the organiser may still run.
+    With ``check_feasibility`` the result also carries what the solver needs to
+    try the targets together over the pool the run will see. The solver itself
+    is slow, so it does not run here, inside the caller's unit of work: the
+    caller passes the result to run_feasibility_check() once the block has
+    closed. The inputs are kept even when a value falls short of the pool,
+    since the solver's suggestion is how to get past that; only errors the
+    library itself would refuse leave them out.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -509,14 +528,44 @@ def validate_replacement_form(
             result.add_value_error(row.value_id, message)
 
     if result.feasibility is not None and not result.errors:
-        result.feasibility = _check_feasibility(plan, features, people, result.number_to_select, settings_obj)
+        result.feasibility_inputs = FeasibilityInputs(plan, features, people, result.number_to_select, settings_obj)
     return result
+
+
+def run_feasibility_check(validation: ReplacementValidation) -> None:
+    """Ask the solver whether the validated targets can be met together, and what to relax if not.
+
+    Sets ``validation.feasibility``. Does nothing when the validation did not
+    ask for the check, or stopped at an error before the solver could run. The
+    outcome informs rather than blocks: the organiser may still run.
+
+    Takes no unit of work, and is meant to be called once the caller's
+    `with uow:` block has closed, so that no transaction is held open while
+    the solver runs.
+    """
+    inputs = validation.feasibility_inputs
+    if inputs is None:
+        return
+    try:
+        validation.feasibility = _check_feasibility(
+            inputs.plan, inputs.features, inputs.people, inputs.number_to_select, inputs.settings
+        )
+    except Exception as e:
+        # The check only informs, so a solver failure must not cost the organiser the dialog.
+        logger.exception("Replacement feasibility check failed", error=str(e))
+        validation.feasibility = FeasibilityResult(
+            checked=True,
+            message=_("The feasibility check could not be completed. The selection can still be run."),
+        )
 
 
 def check_replacement_plan(
     uow: AbstractUnitOfWork, assembly_id: uuid.UUID, plan: ReplacementPlan
 ) -> ReplacementValidation:
-    """Validate the dialog as it opens: the calculated targets, the default number, and the solver check.
+    """Validate the dialog as it opens: the calculated targets and the default number.
+
+    The result is ready for run_feasibility_check(), which the caller runs
+    after its `with uow:` block has closed.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """

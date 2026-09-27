@@ -168,7 +168,7 @@ class TestReplacementDialog:
         assert "between 4 and 8" in html
         assert 'name="number_to_select"' in html
         assert 'value="6"' in html
-        assert "short by 1" in html
+        assert "Needs at least 2 but only 1 eligible" in html
         assert "Run Replacement Selection" in html
 
     def test_number_to_select_is_hidden_until_changed(self, logged_in_admin, assembly_after_withdrawal):
@@ -373,7 +373,7 @@ class TestFeasibilityInDialog:
             f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
-        assert "short by 1" in html
+        assert "Needs at least 2 but only 1 eligible" in html
         assert "feasibility-suggestions" in html
         assert "Age: 31-50, minimum 2 to 1" in html
         assert "Suggested minimum: 1 (currently 2)" in html
@@ -406,7 +406,7 @@ class TestFeasibilityInDialog:
             f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
         )
         html = response.data.decode()
-        assert "short by 1" in html
+        assert "Needs at least 2 but only 1 eligible" in html
         assert "Only 5 eligible people are in the pool, fewer than the 6 to select" in html
         assert "feasibility-suggestions" not in html
 

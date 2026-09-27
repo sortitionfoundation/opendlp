@@ -19,6 +19,7 @@ from opendlp.service_layer.replacement_targets import (
     ReplacementPlan,
     build_replacement_plan,
     check_replacement_plan,
+    run_feasibility_check,
     validate_replacement_form,
 )
 
@@ -399,6 +400,7 @@ class TestFeasibilityCheck:
         admin, assembly, _, _ = _seed(uow)
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         result = check_replacement_plan(uow, assembly.id, plan)
+        run_feasibility_check(result)
         assert result.ok
         assert result.feasibility is not None
         assert result.feasibility.checked
@@ -411,6 +413,7 @@ class TestFeasibilityCheck:
         admin, assembly, _, _ = _seed(uow)
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         result = check_replacement_plan(uow, assembly.id, plan)
+        run_feasibility_check(result)
         assert result.number_to_select == plan.default_number
         assert not result.edited
 
@@ -420,6 +423,7 @@ class TestFeasibilityCheck:
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         rows = _rows(plan)
         result = validate_replacement_form(uow, assembly.id, plan, _infeasible_form(plan), check_feasibility=True)
+        run_feasibility_check(result)
         assert result.ok
         assert result.feasibility is not None
         assert result.feasibility.checked
@@ -443,6 +447,7 @@ class TestFeasibilityCheck:
         form = _infeasible_form(plan)
         form[_rows(plan)[("Age", "18-30")].max_field] = "1"
         result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        run_feasibility_check(result)
         assert result.ok
         assert result.feasibility is not None
         assert result.feasibility.feasible
@@ -458,6 +463,7 @@ class TestFeasibilityCheck:
         form[rows[("Gender", "Female")].min_field] = "1"
         form[rows[("Gender", "Female")].max_field] = "1"
         result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        run_feasibility_check(result)
         assert not result.ok
         assert list(result.value_errors) == [rows[("Gender", "Male")].value_id]
         assert result.feasibility is not None
@@ -475,6 +481,7 @@ class TestFeasibilityCheck:
         form[rows[("Gender", "Female")].min_field] = "3"
         form[rows[("Gender", "Female")].max_field] = "3"
         result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        run_feasibility_check(result)
         assert result.errors
         assert result.feasibility is not None
         assert not result.feasibility.checked
@@ -490,6 +497,7 @@ class TestFeasibilityCheck:
         form[rows[("Age", "18-30")].max_field] = "3"
         form[rows[("Age", "31+")].max_field] = "3"
         result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        run_feasibility_check(result)
         assert result.ok
         assert result.feasibility is not None
         assert result.feasibility.checked
@@ -504,6 +512,7 @@ class TestFeasibilityCheck:
         form = _form_from_plan(plan)
         form[_rows(plan)[("Gender", "Male")].min_field] = "lots"
         result = validate_replacement_form(uow, assembly.id, plan, form, check_feasibility=True)
+        run_feasibility_check(result)
         assert not result.ok
         assert result.feasibility is not None
         assert not result.feasibility.checked
@@ -514,6 +523,7 @@ class TestFeasibilityCheck:
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         rows = _rows(plan)
         result = check_replacement_plan(uow, assembly.id, plan)
+        run_feasibility_check(result)
         assert not result.ok
         assert list(result.value_errors) == [rows[("Gender", "Male")].value_id]
         assert "only 0" in result.value_errors[rows[("Gender", "Male")].value_id][0]
@@ -523,6 +533,7 @@ class TestFeasibilityCheck:
         admin, assembly, _, _ = _seed(uow, addresses={"F3": "2 Shared Road", "F2": "2 Shared Road"})
         plan = build_replacement_plan(uow, admin.id, assembly.id)
         result = check_replacement_plan(uow, assembly.id, plan)
+        run_feasibility_check(result)
         assert result.ok
         assert result.feasibility is not None
         assert result.feasibility.feasible
@@ -537,9 +548,46 @@ class TestFeasibilityCheck:
 
         monkeypatch.setattr(replacement_targets, "setup_committee_generation", cannot_relax)
         result = check_replacement_plan(uow, assembly.id, plan)
+        run_feasibility_check(result)
         assert result.ok
         assert result.feasibility is not None
         assert result.feasibility.checked
         assert not result.feasibility.feasible
         assert result.feasibility.suggestions == []
         assert "relaxing" in result.feasibility.message
+
+    def test_nothing_runs_the_solver_until_the_check_is_asked_for(self, uow, monkeypatch):
+        """Validation only loads what the solver needs, so the caller can close its transaction first."""
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+        calls = []
+        monkeypatch.setattr(replacement_targets, "setup_committee_generation", lambda **kwargs: calls.append(kwargs))
+
+        result = check_replacement_plan(uow, assembly.id, plan)
+
+        assert calls == []
+        assert result.feasibility is not None
+        assert not result.feasibility.checked
+        run_feasibility_check(result)
+        assert len(calls) == 1
+        assert result.feasibility.checked
+
+    def test_a_solver_crash_is_reported_without_losing_the_dialog(self, uow, monkeypatch, caplog):
+        admin, assembly, _, _ = _seed(uow)
+        plan = build_replacement_plan(uow, admin.id, assembly.id)
+
+        def explode(**kwargs):
+            raise RuntimeError("solver fell over")
+
+        monkeypatch.setattr(replacement_targets, "setup_committee_generation", explode)
+        result = check_replacement_plan(uow, assembly.id, plan)
+
+        with caplog.at_level("ERROR"):
+            run_feasibility_check(result)
+
+        assert result.feasibility is not None
+        assert result.feasibility.checked
+        assert not result.feasibility.feasible
+        assert "could not be completed" in result.feasibility.message
+        assert "solver fell over" not in result.feasibility.message
+        assert "Replacement feasibility check failed" in caplog.text

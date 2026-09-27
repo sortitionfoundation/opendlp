@@ -23,7 +23,11 @@ from opendlp.service_layer.assembly_service import (
     update_selection_settings,
 )
 from opendlp.service_layer.exceptions import InsufficientPermissions, InvalidSelection, NotFoundError
-from opendlp.service_layer.replacement_targets import build_replacement_plan, validate_replacement_form
+from opendlp.service_layer.replacement_targets import (
+    build_replacement_plan,
+    run_feasibility_check,
+    validate_replacement_form,
+)
 from opendlp.service_layer.report_translation import translate_run_report_to_html
 from opendlp.service_layer.respondent_service import get_respondent_attribute_columns, reset_selection_status
 from opendlp.service_layer.selection_report import (
@@ -155,6 +159,7 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
             plan = build_replacement_plan(uow, current_user.id, assembly_id)
             validation = validate_replacement_form(uow, assembly_id, plan, request.form, check_feasibility=recheck)
 
+        run_feasibility_check(validation)
         if recheck or not validation.ok:
             return render_selection_page(assembly_id, replacement_form=request.form, replacement_validation=validation)
 
