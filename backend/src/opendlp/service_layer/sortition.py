@@ -576,7 +576,7 @@ def start_db_replace_task(
     try:
         settings_obj = sel_settings.to_settings(id_column=DB_ID_COLUMN)
     except SortitionBaseError as e:
-        raise InvalidSelection(str(e)) from e
+        raise InvalidSelection(translate_sortition_error(e)) from e
 
     task_id = uuid.uuid4()
     record = SelectionRunRecord(

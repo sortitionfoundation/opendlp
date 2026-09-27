@@ -159,19 +159,21 @@ def start_db_replacement(assembly_id: uuid.UUID) -> ResponseReturnValue:
             plan = build_replacement_plan(uow, current_user.id, assembly_id)
             validation = validate_replacement_form(uow, assembly_id, plan, request.form, check_feasibility=recheck)
 
-        run_feasibility_check(validation)
-        if recheck or not validation.ok:
-            return render_selection_page(assembly_id, replacement_form=request.form, replacement_validation=validation)
+            # Validated and started in one unit of work, so the run starts on what was checked.
+            task_id = None
+            if not recheck and validation.ok:
+                task_id = start_db_replace_task(
+                    uow,
+                    current_user.id,
+                    assembly_id,
+                    validation.number_to_select,
+                    validation.targets_snapshot,
+                    plan.replacement_info(validation.number_to_select, validation.edited),
+                )
 
-        with uow:
-            task_id = start_db_replace_task(
-                uow,
-                current_user.id,
-                assembly_id,
-                validation.number_to_select,
-                validation.targets_snapshot,
-                plan.replacement_info(validation.number_to_select, validation.edited),
-            )
+        if task_id is None:
+            run_feasibility_check(validation)
+            return render_selection_page(assembly_id, replacement_form=request.form, replacement_validation=validation)
 
         return redirect(
             url_for(
