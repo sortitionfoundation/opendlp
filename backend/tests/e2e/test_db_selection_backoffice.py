@@ -460,12 +460,12 @@ class TestCsvReplacementSelection:
         assert "4 people are selected or confirmed" in html
         assert "6 places are to be filled" in html
 
-    @patch("opendlp.entrypoints.blueprints.db_selection_backoffice.start_db_replace_task")
-    def test_start_replacement_dispatches_and_redirects(
-        self, mock_start, logged_in_admin, assembly_after_withdrawal, postgres_session_factory, admin_user
+    @patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay")
+    def test_start_replacement_records_the_run_and_dispatches(
+        self, mock_delay, logged_in_admin, assembly_after_withdrawal, postgres_session_factory, admin_user
     ):
-        task_id = uuid.uuid4()
-        mock_start.return_value = task_id
+        """Only the Celery dispatch is patched, so the run record makes the round trip through Postgres."""
+        mock_delay.return_value.id = "celery-task-id"
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             plan = build_replacement_plan(uow, admin_user.id, assembly_after_withdrawal.id)
         form = {"number_to_select": str(plan.default_number)}
@@ -484,7 +484,29 @@ class TestCsvReplacementSelection:
         )
 
         assert response.status_code == 302
+        mock_delay.assert_called_once()
+        dispatched = mock_delay.call_args.kwargs
+        task_id = dispatched["task_id"]
         assert f"current_selection={task_id}" in response.headers["Location"]
-        kwargs = mock_start.call_args
-        assert kwargs.args[3] == 6
-        assert kwargs.args[5]["held_total"] == 4
+        assert dispatched["number_people_wanted"] == 6
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.task_type == SelectionTaskType.SELECT_REPLACEMENT_FROM_DB
+            assert record.status == SelectionRunStatus.PENDING
+            assert record.celery_task_id == "celery-task-id"
+            assert record.user_id == admin_user.id
+            assert record.settings_used["replacement"] == {
+                "number_to_select_overall": 10,
+                "held_total": 4,
+                "calculated_number": 6,
+                "number_to_select_used": 6,
+                "edited": True,
+            }
+            assert record.targets_used == dispatched["targets_snapshot"]
+            age = next(c for c in record.targets_used if c["name"] == "Age")
+            edited_value = next(v for v in age["values"] if v["value"] == "31-50")
+            assert edited_value["min"] == 1
+            assert edited_value["calculated_min"] == 2
+            assert {"overall_min", "overall_max", "held"} <= edited_value.keys()

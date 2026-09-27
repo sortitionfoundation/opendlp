@@ -1,6 +1,7 @@
 # ABOUTME: Component tests for the database replacement selection dialog and its POST route
 # ABOUTME: Drives the real selection page and start_db_replacement over a FakeUnitOfWork
 
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
@@ -9,6 +10,7 @@ import pytest
 
 from opendlp.adapters import database
 from opendlp.domain.assembly import SelectionRunRecord
+from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.value_objects import AssemblyRole, RespondentStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import respondent_service, target_csv_import
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
@@ -128,6 +130,20 @@ def _plan_form(fake_store, admin_user, assembly_id, **overrides: str) -> dict[st
     return form
 
 
+def _input_value(html: str, name: str) -> str:
+    """The value the input with this name was rendered with."""
+    tag = re.search(rf'<input[^>]*\bname="{re.escape(name)}"[^>]*>', html, re.DOTALL)
+    assert tag is not None, f"no input named {name}"
+    value = re.search(r'\bvalue="([^"]*)"', tag.group(0))
+    return value.group(1) if value else ""
+
+
+def _run_records(fake_store, assembly_id) -> list[SelectionRunRecord]:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        records, _total = uow.selection_run_records.get_by_assembly_id_paginated(assembly_id, 1, 50)
+    return list(records)
+
+
 class TestReplacementCard:
     def test_card_is_disabled_before_any_selection(self, logged_in_admin, assembly):
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
@@ -167,8 +183,7 @@ class TestReplacementDialog:
         assert "4 people are selected or confirmed" in html
         assert "6 places are to be filled" in html
         assert "between 4 and 8" in html
-        assert 'name="number_to_select"' in html
-        assert 'value="6"' in html
+        assert _input_value(html, "number_to_select") == "6"
         assert "Needs at least 2 but only 1 eligible" in html
         assert "Run Replacement Selection" in html
 
@@ -320,7 +335,9 @@ class TestStartReplacement:
         assert response.status_code == 200
         html = response.data.decode()
         assert "Inconsistent numbers" in html
-        assert "Gender" in html and "Age" in html
+        assert "The smallest maximum is 3 for feature &#39;Age&#39;" in html
+        assert "The largest minimum is 4 for feature &#39;Gender&#39;" in html
+        assert "one target needs at least 4 replacements while another allows at most 3" in html
 
     def test_requires_confirmed_settings(self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user):
         with FakeUnitOfWork(store=fake_store) as uow:
@@ -342,13 +359,46 @@ class TestStartReplacement:
         assert response.status_code == 302
         assert "/auth/login" in response.headers["Location"]
 
-    def test_requires_assembly_management(self, logged_in_user, assembly_after_withdrawal):
-        response = logged_in_user.post(
-            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run",
-            data={"number_to_select": "6"},
-        )
-        assert response.status_code in (302, 403)
-        assert b"db-replacement-modal" not in response.data
+    def test_requires_assembly_management(self, logged_in_user, assembly_after_withdrawal, fake_store, admin_user):
+        """A form that would start a run for a manager starts nothing for anyone else."""
+        form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id, **{"min__Age__31-50": "1"})
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
+            response = logged_in_user.post(
+                f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+            )
+
+        assert response.status_code == 403
+        mock_delay.assert_not_called()
+        assert _run_records(fake_store, assembly_after_withdrawal.id) == []
+
+    def test_refuses_while_another_selection_is_running(
+        self, logged_in_admin, assembly_after_withdrawal, fake_store, admin_user
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_after_withdrawal.id,
+                    task_id=uuid.uuid4(),
+                    task_type=SelectionTaskType.SELECT_FROM_DB,
+                    status=SelectionRunStatus.RUNNING,
+                    log_messages=[],
+                    user_id=admin_user.id,
+                )
+            )
+            uow.commit()
+        form = _plan_form(fake_store, admin_user, assembly_after_withdrawal.id, **{"min__Age__31-50": "1"})
+
+        with patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay") as mock_delay:
+            response = logged_in_admin.post(
+                f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run",
+                data=form,
+                follow_redirects=True,
+            )
+
+        mock_delay.assert_not_called()
+        assert len(_run_records(fake_store, assembly_after_withdrawal.id)) == 1
+        assert "A selection is already running for this assembly" in response.data.decode()
 
 
 class TestFeasibilityInDialog:
@@ -464,7 +514,9 @@ class TestFeasibilityInDialog:
         assert "feasibility-suggestions" in html
         assert "Age: 18-30, maximum 1 to 3" in html
         assert "Suggested maximum: 3 (currently 1)" in html
-        assert 'value="1"' in html
+        for name, typed in form.items():
+            if name != "action":
+                assert _input_value(html, name) == typed
         assert "feasibility-ok" not in html
         assert html.index("Replacement targets</h3>") < html.index("feasibility-suggestions") < html.index("<details")
 
@@ -483,8 +535,10 @@ class TestFeasibilityInDialog:
         html = response.data.decode()
         assert response.status_code == 200
         assert "These targets can be met from the pool." in html
-        assert 'name="number_to_select"' in html
-        assert 'value="5"' in html
+        for name, typed in form.items():
+            if name != "action":
+                assert _input_value(html, name) == typed
+        assert _input_value(html, "number_to_select") == "5"
 
     def test_recheck_with_a_bad_cell_shows_the_error_and_no_verdict(
         self, logged_in_admin, assembly_with_feasible_gaps, fake_store, admin_user
@@ -546,3 +600,40 @@ class TestViewerWithoutManagement:
         html = response.data.decode()
         assert "Replacement Selection" in html
         assert "db-replacement-modal" not in html
+
+
+class TestDialogNotes:
+    """The notes the dialog puts beside a target or a value when something about it is unusual."""
+
+    def test_value_holding_more_than_its_target_allows_is_noted(
+        self, logged_in_admin, assembly_after_withdrawal, fake_store
+    ):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            for category in uow.target_categories.get_by_assembly_id(assembly_after_withdrawal.id):
+                for value in category.values:
+                    if value.value == "18-30":
+                        value.min, value.max = 0, 0
+            uow.commit()
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+        )
+
+        assert response.status_code == 200
+        assert "more places held than the target allows" in response.data.decode()
+
+    def test_target_with_no_respondent_field_says_so(self, logged_in_admin, assembly_after_withdrawal, fake_store):
+        with FakeUnitOfWork(store=fake_store) as uow:
+            region = TargetCategory(assembly_id=assembly_after_withdrawal.id, name="Region")
+            region.add_value(TargetValue(value="North", min=0, max=10))
+            uow.target_categories.add(region)
+            uow.commit()
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+        )
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "db-replacement-modal" in html
+        assert "no matching respondent field, so nobody counts as currently selected" in html
