@@ -146,8 +146,7 @@ selection_task_type_labels = {
     SelectionTaskType.SELECT_REPLACEMENT_FROM_DB: _l("Select replacements from database"),
 }
 
-# The task types that run the selection algorithm over the database, and so
-# produce selected_ids the DB download routes can turn into CSVs.
+# The task types that run the selection algorithm over the database.
 DB_SELECTION_TASK_TYPES: frozenset[SelectionTaskType] = frozenset({
     SelectionTaskType.SELECT_FROM_DB,
     SelectionTaskType.TEST_SELECT_FROM_DB,

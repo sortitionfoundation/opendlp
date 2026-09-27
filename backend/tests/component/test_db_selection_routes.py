@@ -376,7 +376,17 @@ class TestDbSelectionRoutes:
         assert response.status_code == 200
         assert b"coming soon" in response.data
 
-    def test_view_gsheet_run_routes_db_selection_tasks(self, logged_in_admin, assembly_for_db_selection, fake_store):
+    @pytest.mark.parametrize(
+        "task_type",
+        [
+            SelectionTaskType.SELECT_FROM_DB,
+            SelectionTaskType.TEST_SELECT_FROM_DB,
+            SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+        ],
+    )
+    def test_view_gsheet_run_routes_db_selection_tasks(
+        self, logged_in_admin, assembly_for_db_selection, fake_store, task_type
+    ):
         assembly = assembly_for_db_selection
         task_id = uuid.uuid4()
 
@@ -385,7 +395,7 @@ class TestDbSelectionRoutes:
                 assembly_id=assembly.id,
                 task_id=task_id,
                 status=SelectionRunStatus.COMPLETED,
-                task_type=SelectionTaskType.SELECT_FROM_DB,
+                task_type=task_type,
                 log_messages=["Done"],
             )
             uow.selection_run_records.add(record)

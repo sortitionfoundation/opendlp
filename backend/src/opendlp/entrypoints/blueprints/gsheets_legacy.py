@@ -10,7 +10,12 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
-from opendlp.domain.value_objects import ManageOldTabsState, ManageOldTabsStatus, SelectionTaskType
+from opendlp.domain.value_objects import (
+    DB_SELECTION_TASK_TYPES,
+    ManageOldTabsState,
+    ManageOldTabsStatus,
+    SelectionTaskType,
+)
 from opendlp.entrypoints.decorators import require_assembly_management
 from opendlp.service_layer.assembly_service import (
     add_assembly_gsheet,
@@ -1411,7 +1416,7 @@ def view_gsheet_run(assembly_id: uuid.UUID, run_id: uuid.UUID) -> ResponseReturn
             return redirect(
                 url_for("gsheets_legacy.manage_assembly_gsheet_tabs_with_run", assembly_id=assembly_id, run_id=run_id)
             )
-        if task_type in (SelectionTaskType.SELECT_FROM_DB, SelectionTaskType.TEST_SELECT_FROM_DB):
+        if task_type in DB_SELECTION_TASK_TYPES:
             return redirect(
                 url_for("db_selection_legacy.view_db_selection_with_run", assembly_id=assembly_id, run_id=run_id)
             )
