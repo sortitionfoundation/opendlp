@@ -264,7 +264,7 @@ def render_selection_page(
         csv_status = get_csv_upload_status(uow, current_user.id, assembly_id)
 
     # Determine data source and tab enabled states
-    csv_selected_count = 0
+    non_pool_count = 0
     csv_held_count = 0
     csv_settings_confirmed = True  # Default to True (not applicable for gsheet)
     replacement_plan = None
@@ -280,10 +280,10 @@ def render_selection_page(
         respondents_enabled = csv_status.has_respondents
         selection_enabled = csv_status.selection_enabled
         csv_settings_confirmed = csv_status.csv_config.settings_confirmed if csv_status.csv_config else False
-        # Get count of respondents that have been selected (not in Pool status)
+        # Count the respondents outside the pool, and those of them holding a place
         try:
             with uow:
-                csv_selected_count = count_non_pool_respondents(uow, assembly_id)
+                non_pool_count = count_non_pool_respondents(uow, assembly_id)
                 csv_held_count = count_held_respondents(uow, assembly_id)
         except ServiceLayerError as count_error:
             logger.error("Error counting non-pool respondents", error=str(count_error))
@@ -303,7 +303,7 @@ def render_selection_page(
     replacement_enabled = (
         data_source == "csv"
         and csv_settings_confirmed
-        and csv_selected_count > 0
+        and non_pool_count > 0
         and active_initial_selection_run_id is None
     )
 
@@ -342,7 +342,7 @@ def render_selection_page(
         targets_enabled=targets_enabled,
         respondents_enabled=respondents_enabled,
         selection_enabled=selection_enabled,
-        csv_selected_count=csv_selected_count,
+        non_pool_count=non_pool_count,
         csv_held_count=csv_held_count,
         csv_settings_confirmed=csv_settings_confirmed,
         active_initial_selection_run_id=active_initial_selection_run_id,

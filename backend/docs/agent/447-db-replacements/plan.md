@@ -325,7 +325,7 @@ One new route, `@login_required` + `@require_assembly_management`; the rest is r
 > dedicated GET route in the table above is therefore **not** built.
 
 `view_assembly_selection` also gains `replacement_enabled` for the card:
-`data_source == "csv" and csv_selected_count > 0 and not
+`data_source == "csv" and non_pool_count > 0 and not
 active_initial_selection_run_id`.
 
 ### 2.8 Form parsing

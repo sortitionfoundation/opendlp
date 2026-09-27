@@ -83,7 +83,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                                style="color: var(--color-primary-action)">{{ _("Edit") }}</a>
                         </div>
                     </div>
-                    {% if csv_selected_count|default(0) > 0 %}
+                    {% if non_pool_count|default(0) > 0 %}
                         {# Show selection status when respondents have been selected #}
                         <div class="rounded-lg p-4 mb-4"
                              style="background-color: var(--color-warning-background);
@@ -108,7 +108,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                         {{ button(_("View Running Selection") ,
                         href=url_for('gsheets.view_assembly_selection', assembly_id=assembly.id, current_selection=active_initial_selection_run_id),
                         variant="primary") }}
-                    {% elif csv_selected_count|default(0) > 0 %}
+                    {% elif non_pool_count|default(0) > 0 %}
                         {# Show reset button when respondents have been selected #}
                         {# TODO: Replace browser confirm with proper JS confirmation dialog #}
                         <form method="post"
@@ -158,7 +158,7 @@ ABOUTME: Displays selection operations: initial selection, replacement, and tab 
                             {{ _("Review the places still to fill, adjust the replacement targets if needed, then run the selection.") }}
                         {% elif active_initial_selection_run_id %}
                             {{ _("Wait for the running selection to finish before selecting replacements.") }}
-                        {% elif csv_selected_count|default(0) == 0 %}
+                        {% elif non_pool_count|default(0) == 0 %}
                             {{ _("Run the initial selection first. Replacements fill the places of people who withdraw afterwards.") }}
                         {% else %}
                             {{ _("Please review and save the selection settings before running selection.") }}
