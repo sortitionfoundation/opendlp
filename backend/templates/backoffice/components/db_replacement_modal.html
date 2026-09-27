@@ -107,7 +107,11 @@
                                 </ul>
                                 {{ button(_("Accept all"), variant="secondary", attrs='@click="acceptAll()"') }}
                             </div>
-                            <p data-suggestions-accepted="true" hidden>{{ _("Every suggestion has been applied. Recheck feasibility to confirm, or run the selection.") }}</p>
+                            <div role="status">
+                                <p data-suggestions-accepted="true" tabindex="-1" hidden>
+                                    {{ _("Every suggestion has been applied. Recheck feasibility to confirm, or run the selection.") }}
+                                </p>
+                            </div>
                         </div>
                     {% endif %}
                     {% for category in plan.categories %}

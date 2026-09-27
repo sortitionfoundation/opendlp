@@ -1,5 +1,5 @@
 // ABOUTME: Unit tests for the replacementSuggestions Alpine component
-// ABOUTME: Covers accepting one suggestion, accepting all, and hiding suggestions the inputs already match
+// ABOUTME: Covers accepting one suggestion, accepting all, hiding matched suggestions, and where focus goes
 
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -11,7 +11,9 @@ const MAX = "max-22222222-2222-2222-2222-222222222222";
 function build() {
   document.body.innerHTML = `
     <div id="root">
-      <p id="accepted" data-suggestions-accepted="true" hidden>All applied</p>
+      <div role="status">
+        <p id="accepted" data-suggestions-accepted="true" tabindex="-1" hidden>All applied</p>
+      </div>
       <div id="list" data-suggestions-list="true">
         <span id="list-min" data-suggestion-for="${MIN}" data-suggestion-value="1">min 2 to 1</span>
         <button id="accept-min" data-suggestion-for="${MIN}" data-suggestion-value="1">Accept</button>
@@ -74,6 +76,45 @@ describe("replacementSuggestions", () => {
     expect(hidden("list-max")).toBe(true);
     expect(hidden("list")).toBe(true);
     expect(hidden("accepted")).toBe(false);
+  });
+
+  it("accepting moves focus from the button it hides to the input it filled", () => {
+    const state = build();
+    const button = document.getElementById("accept-min");
+    button.focus();
+
+    state.accept(button);
+
+    expect(button.hidden).toBe(true);
+    expect(document.activeElement.id).toBe(MIN);
+  });
+
+  it("accepting all moves focus to the accepted note", () => {
+    const state = build();
+
+    state.acceptAll();
+
+    expect(document.activeElement.id).toBe("accepted");
+    expect(
+      document.getElementById("accepted").closest("[role=status]"),
+    ).not.toBe(null);
+  });
+
+  it("accepting all leaves focus alone while a suggestion cannot be applied", () => {
+    const state = build();
+    document
+      .getElementById("root")
+      .insertAdjacentHTML(
+        "beforeend",
+        '<span data-suggestion-for="min-gone" data-suggestion-value="1"></span>',
+      );
+    const input = document.getElementById(MAX);
+    input.focus();
+
+    state.acceptAll();
+
+    expect(hidden("accepted")).toBe(true);
+    expect(document.activeElement).toBe(input);
   });
 
   it("typing the suggested value by hand hides the suggestion on refresh", () => {
