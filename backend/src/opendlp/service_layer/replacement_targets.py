@@ -27,6 +27,7 @@ from opendlp.service_layer.error_translation import translate_sortition_error
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
 from opendlp.service_layer.permissions import can_manage_assembly, require_assembly_permission
 from opendlp.translations import gettext as _
+from opendlp.translations import ngettext
 
 if TYPE_CHECKING:
     import uuid
@@ -404,19 +405,19 @@ def _cross_category_messages(issues: list[Any]) -> list[str]:
         if issue.issue_type == "inconsistent_min_max":
             messages.append(
                 _(
-                    "The targets cannot all be met at once: %(needs)s needs at least %(min)s "
-                    "but %(allows)s allows at most %(max)s",
-                    needs=issue.largest_minimum_feature,
+                    "The targets cannot all be met at once: %(target_needing)s needs at least %(min)s "
+                    "but %(target_allowing)s allows at most %(max)s",
+                    target_needing=issue.largest_minimum_feature,
                     min=issue.largest_minimum_value,
-                    allows=issue.smallest_maximum_feature,
+                    target_allowing=issue.smallest_maximum_feature,
                     max=issue.smallest_maximum_value,
                 )
             )
         elif issue.issue_type == "min_exceeds_number_to_select":
             messages.append(
                 _(
-                    "%(category)s needs at least %(sum)s replacements, more than the %(number)s to select",
-                    category=issue.feature_name,
+                    "%(target)s needs at least %(sum)s replacements, more than the %(number)s to select",
+                    target=issue.feature_name,
                     sum=issue.feature_sum,
                     number=issue.limit,
                 )
@@ -424,8 +425,8 @@ def _cross_category_messages(issues: list[Any]) -> list[str]:
         elif issue.issue_type == "max_below_number_to_select":
             messages.append(
                 _(
-                    "%(category)s allows at most %(sum)s replacements, fewer than the %(number)s to select",
-                    category=issue.feature_name,
+                    "%(target)s allows at most %(sum)s replacements, fewer than the %(number)s to select",
+                    target=issue.feature_name,
                     sum=issue.feature_sum,
                     number=issue.limit,
                 )
@@ -517,10 +518,11 @@ def validate_replacement_form(
 
     for issue in check_people_per_feature_value(features, people):
         row = _row_by_name(plan, issue.feature_name, issue.value_name)
-        message = _(
-            "Needs at least %(min)s but only %(count)s eligible people with this value remain in the pool",
+        message = ngettext(
+            "Needs at least %(min)s but only %(num)s eligible person with this value remains in the pool",
+            "Needs at least %(min)s but only %(num)s eligible people with this value remain in the pool",
+            issue.actual_count,
             min=issue.min_required,
-            count=issue.actual_count,
         )
         if row is None:
             result.errors.append(message)
@@ -586,9 +588,10 @@ def _check_feasibility(
 ) -> FeasibilityResult:
     result = FeasibilityResult(checked=True)
     if people.count < number_to_select:
-        result.message = _(
-            "Only %(count)s eligible people are in the pool, fewer than the %(number)s to select",
-            count=people.count,
+        result.message = ngettext(
+            "Only %(num)s eligible person is in the pool, fewer than the %(number)s to select",
+            "Only %(num)s eligible people are in the pool, fewer than the %(number)s to select",
+            people.count,
             number=number_to_select,
         )
         return result

@@ -35,6 +35,7 @@ from opendlp.service_layer import password_reset_service
 from opendlp.service_layer.error_translation import translate_sortition_error, translate_sortition_error_to_html
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.translations import gettext as _
+from opendlp.translations import ngettext
 
 logger = logging.getLogger()
 
@@ -633,7 +634,13 @@ def _internal_load_db(
             if targets_snapshot is not None:
                 already_selected, a_report = select_data.load_already_selected(settings)
                 report.add_report(a_report)
-                load_log.append(_("%(count)s people already hold a place.", count=already_selected.count))
+                load_log.append(
+                    ngettext(
+                        "%(num)s person already holds a place.",
+                        "%(num)s people already hold a place.",
+                        already_selected.count,
+                    )
+                )
 
             _append_run_log(task_id, load_log, session_factory=session_factory)
 
