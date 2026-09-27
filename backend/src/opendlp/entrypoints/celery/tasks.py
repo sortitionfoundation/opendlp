@@ -581,7 +581,12 @@ def _internal_load_db(
 
     With ``targets_snapshot`` the features come from that snapshot rather than
     the assembly's stored targets - a replacement selection runs on targets
-    derived from them. Returns (success, features, pool, already_selected, report).
+    derived from them. Only then are the people already holding a place
+    loaded, for the algorithm to keep their households out of the pool: an
+    initial or test selection starts with nobody holding a place, so its
+    already_selected is None.
+
+    Returns (success, features, pool, already_selected, report).
     """
     report = RunReport()
     _update_selection_record(
@@ -622,17 +627,15 @@ def _internal_load_db(
             loaded_people, p_report = select_data.load_people(settings, features)
             report.add_report(p_report)
 
-            already_selected, a_report = select_data.load_already_selected(settings)
-            report.add_report(a_report)
+            load_log = [_("Loaded %(count)s respondents.", count=loaded_people.count)]
 
-            _append_run_log(
-                task_id,
-                [
-                    _("Loaded %(count)s respondents.", count=loaded_people.count),
-                    _("%(count)s people already hold a place.", count=already_selected.count),
-                ],
-                session_factory=session_factory,
-            )
+            already_selected: people.People | None = None
+            if targets_snapshot is not None:
+                already_selected, a_report = select_data.load_already_selected(settings)
+                report.add_report(a_report)
+                load_log.append(_("%(count)s people already hold a place.", count=already_selected.count))
+
+            _append_run_log(task_id, load_log, session_factory=session_factory)
 
         _update_selection_record(
             task_id=task_id,

@@ -553,3 +553,50 @@ class TestRunReplacementFromDb:
 
         assert success is True, report.as_text()
         assert set(panels[0]) == {"M3", "F4"}
+
+    def test_load_with_a_snapshot_returns_the_people_holding_a_place(
+        self, postgres_session_factory, assembly_after_withdrawal, test_settings
+    ):
+        assembly_id = assembly_after_withdrawal
+        task_id = _make_run_record(assembly_id, postgres_session_factory)
+
+        success, _features, _pool, already_selected, _ = _internal_load_db(
+            task_id=task_id,
+            assembly_id=assembly_id,
+            settings=test_settings,
+            final_task=False,
+            session_factory=postgres_session_factory,
+            targets_snapshot=self._replacement_snapshot(),
+        )
+
+        assert success is True
+        assert already_selected is not None
+        assert set(already_selected) == {"M1", "F1", "M2"}
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert any("3 people already hold a place" in msg for msg in record.log_messages)
+
+    def test_load_without_a_snapshot_passes_nobody_as_already_selected(
+        self, postgres_session_factory, assembly_after_withdrawal, test_settings
+    ):
+        """An initial or test selection does not feed held people to the algorithm."""
+        assembly_id = assembly_after_withdrawal
+        task_id = _make_run_record(assembly_id, postgres_session_factory)
+
+        success, _features, pool, already_selected, _ = _internal_load_db(
+            task_id=task_id,
+            assembly_id=assembly_id,
+            settings=test_settings,
+            final_task=False,
+            session_factory=postgres_session_factory,
+        )
+
+        assert success is True
+        assert already_selected is None
+        assert pool is not None
+        assert set(pool) == {"M3", "M4", "F3", "F4"}
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert not any("already hold a place" in msg for msg in record.log_messages)
