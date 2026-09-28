@@ -142,29 +142,42 @@ class TestOAuthLoginForDisabledAccounts:
 
 
 class TestOAuthRegistrationForms:
-    """OAuth registration GET forms and invalid-invite validation."""
+    """The unified registration page's OAuth buttons and invalid-invite validation."""
 
-    def test_register_google_requires_invite_code(self, client: FlaskClient):
-        """OAuth registration form requires invite code."""
-        response = client.get("/auth/register/google")
+    def test_register_page_offers_google_and_invite_code(self, client: FlaskClient):
+        """The registration page offers a Google button and needs an invite code."""
+        response = client.get("/auth/register")
         assert response.status_code == 200
         assert b"Create an Account with Google" in response.data
         assert b"Invite Code" in response.data
         assert b"invite code to create an account" in response.data
 
-    def test_register_microsoft_requires_invite_code(self, client: FlaskClient):
-        """Microsoft OAuth registration form requires invite code."""
-        response = client.get("/auth/register/microsoft")
+    def test_register_page_offers_microsoft(self, client: FlaskClient):
+        """The registration page offers a Microsoft button."""
+        response = client.get("/auth/register")
         assert response.status_code == 200
         assert b"Create an Account with Microsoft" in response.data
         assert b"Invite Code" in response.data
         assert b"invite code to create an account" in response.data
 
+    def test_register_page_orders_sso_between_shared_and_email_fields(self, client: FlaskClient):
+        """SSO buttons sit below the shared fields and above the email/password cluster."""
+        body = client.get("/auth/register").data
+        invite_pos = body.find(b'name="invite_code"')
+        google_pos = body.find(b'value="google"')
+        email_pos = body.find(b'name="email"')
+        password_pos = body.find(b'name="password"')
+        email_button_pos = body.find(b'value="email"')
+
+        assert -1 not in (invite_pos, google_pos, email_pos, password_pos, email_button_pos)
+        # Shared invite field first, then the SSO buttons, then the email cluster.
+        assert invite_pos < google_pos < email_pos < password_pos < email_button_pos
+
     def test_register_google_with_invalid_invite_fails(self, client: FlaskClient):
         """Invalid invite re-renders the form without reaching OAuth."""
         response = client.post(
-            "/auth/register/google",
-            data={"invite_code": "INVALID_CODE", "accept_data_agreement": "y"},
+            "/auth/register",
+            data={"action": "google", "invite_code": "INVALID_CODE", "accept_data_agreement": "y"},
             follow_redirects=False,
         )
 

@@ -122,13 +122,14 @@ class TestOAuthRegistration:
         self, client: FlaskClient, postgres_session_factory, valid_invite: UserInvite, mock_oauth_token
     ):
         """Test successful OAuth registration with valid invite."""
-        # Step 1: Submit invite code
+        # Step 1: Submit the registration form via the Google button
         response = client.post(
-            "/auth/register/google",
+            "/auth/register",
             data={
+                "action": "google",
                 "invite_code": valid_invite.code,
                 "accept_data_agreement": "y",
-                "csrf_token": get_csrf_token(client, "/auth/register/google"),
+                "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
         )
@@ -361,13 +362,14 @@ class TestMicrosoftOAuthRegistration:
         self, client: FlaskClient, valid_invite, postgres_session_factory, mock_microsoft_oauth_token
     ):
         """Test successful Microsoft OAuth registration with valid invite."""
-        # Step 1: Submit invite code form
+        # Step 1: Submit the registration form via the Microsoft button
         response = client.post(
-            "/auth/register/microsoft",
+            "/auth/register",
             data={
+                "action": "microsoft",
                 "invite_code": valid_invite.code,
                 "accept_data_agreement": "y",
-                "csrf_token": get_csrf_token(client, "/auth/register/microsoft"),
+                "csrf_token": get_csrf_token(client, "/auth/register"),
             },
             follow_redirects=False,
         )

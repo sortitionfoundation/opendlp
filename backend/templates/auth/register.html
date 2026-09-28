@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "components/brand_marks.html" import brand_google, brand_microsoft %}
 {% from "components/signup_survey_fields.html" import signup_survey_fields %}
+{% from "components/govuk_password_input.html" import govuk_password_input %}
 {% block title %}{{ _("Create an Account") }} - OpenDLP{% endblock %}
 {% block content %}
     <div class="govuk-grid-row">
@@ -11,54 +12,11 @@
                     {{ _("You need an invite code to create an account. If you do not have one, please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>.", email=support_email_address) }}
                 </div>
             {% endif %}
-            {% if config.OAUTH_GOOGLE_CLIENT_ID or config.OAUTH_MICROSOFT_CLIENT_ID %}
-                <div class="govuk-!-margin-top-6">
-                    <h2 class="govuk-heading-m">
-                        {{ _("You can create an OpenDLP account with an external account and an invite code") }}
-                    </h2>
-                    {% if config.OAUTH_GOOGLE_CLIENT_ID %}
-                        <form style="display: inline"
-                              action="{% if form.invite_code.data %}{{ url_for('auth.register_google', invite_code=form.invite_code.data) }}{% else %}{{ url_for("auth.register_google") }}{% endif %}"
-                              method="get">
-                            <div class="govuk-!-margin-top-6">
-                                <button class="gsi-material-button">
-                                    <div class="gsi-material-button-state"></div>
-                                    <div class="gsi-material-button-content-wrapper">
-                                        <div class="gsi-material-button-icon">
-                                            {{ brand_google() }}
-                                        </div>
-                                        <span class="gsi-material-button-contents">{{ _("Create an Account with Google") }}</span>
-                                        <span style="display: none;">{{ _("Create an Account with Google") }}</span>
-                                    </div>
-                                </button>
-                            </div>
-                        </form>
-                    {% endif %}
-                    {% if config.OAUTH_MICROSOFT_CLIENT_ID %}
-                        <form style="display: inline"
-                              action="{% if form.invite_code.data %}{{ url_for('auth.register_microsoft', invite_code=form.invite_code.data) }}{% else %}{{ url_for("auth.register_microsoft") }}{% endif %}"
-                              method="get">
-                            <div class="govuk-!-margin-top-2">
-                                <button class="gsi-material-button">
-                                    <div class="gsi-material-button-state"></div>
-                                    <div class="gsi-material-button-content-wrapper">
-                                        <div class="gsi-material-button-icon">
-                                            {{ brand_microsoft() }}
-                                        </div>
-                                        <span class="gsi-material-button-contents">{{ _("Create an Account with Microsoft") }}</span>
-                                        <span style="display: none;">{{ _("Create an Account with Microsoft") }}</span>
-                                    </div>
-                                </button>
-                            </div>
-                        </form>
-                    {% endif %}
-                    <h2 class="govuk-heading-m govuk-!-margin-top-6">
-                        {{ _("Or you can create an account with an email and password") }}
-                    </h2>
-                </div>
-            {% endif %}
+            {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
+            {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
             <form method="POST" class="govuk-!-margin-top-6" novalidate>
                 {{ form.hidden_tag() }}
+                {# Shared fields — used whichever way the account is created. #}
                 <div class="govuk-form-group{% if form.invite_code.errors %} govuk-form-group--error{% endif %}">
                     {{ form.invite_code.label(class="govuk-label govuk-label--m") }}
                     {% if feature('open_signup') %}
@@ -78,6 +36,72 @@
                     {{ form.invite_code(class="govuk-input" + (" govuk-input--error" if form.invite_code.errors else "") ,
                     aria_describedby=("invite-hint" if form.invite_code.description else "") + (" invite-error" if form.invite_code.errors else "")) }}
                 </div>
+                {% if show_questions %}{{ signup_survey_fields(form) }}{% endif %}
+                <div class="govuk-form-group{% if form.accept_data_agreement.errors %} govuk-form-group--error{% endif %}">
+                    <fieldset class="govuk-fieldset"
+                              aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">
+                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{ _("Data Agreement") }}</legend>
+                        <div id="data-agreement-hint" class="govuk-hint">
+                            {{ _("Please read and accept our data agreement to proceed.") }}
+                            <a href="{{ help_site_data_agreement }}"
+                               class="govuk-link"
+                               target="_blank"
+                               rel="noopener noreferrer">{{ _("View data agreement") }}</a>
+                        </div>
+                        {% if form.accept_data_agreement.errors %}
+                            {% for error in form.accept_data_agreement.errors %}
+                                <p id="data-agreement-error" class="govuk-error-message">
+                                    <span class="govuk-visually-hidden">{{ _("Error") }}:</span> {{ error }}
+                                </p>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+                            <div class="govuk-checkboxes__item">
+                                {{ form.accept_data_agreement(class="govuk-checkboxes__input") }}
+                                {{ form.accept_data_agreement.label(class="govuk-label govuk-checkboxes__label") }}
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                {# Sign up with an external account. These buttons submit the shared
+                   fields above; the provider supplies the email and name. #}
+                {% if google_enabled or microsoft_enabled %}
+                    <h2 class="govuk-heading-m govuk-!-margin-top-6">
+                        {{ _("Create your account with an external account") }}
+                    </h2>
+                    {% if google_enabled %}
+                        <div class="govuk-!-margin-top-4">
+                            <button type="submit" name="action" value="google" class="gsi-material-button">
+                                <div class="gsi-material-button-state"></div>
+                                <div class="gsi-material-button-content-wrapper">
+                                    <div class="gsi-material-button-icon">
+                                        {{ brand_google() }}
+                                    </div>
+                                    <span class="gsi-material-button-contents">{{ _("Create an Account with Google") }}</span>
+                                    <span style="display: none;">{{ _("Create an Account with Google") }}</span>
+                                </div>
+                            </button>
+                        </div>
+                    {% endif %}
+                    {% if microsoft_enabled %}
+                        <div class="govuk-!-margin-top-2">
+                            <button type="submit" name="action" value="microsoft" class="gsi-material-button">
+                                <div class="gsi-material-button-state"></div>
+                                <div class="gsi-material-button-content-wrapper">
+                                    <div class="gsi-material-button-icon">
+                                        {{ brand_microsoft() }}
+                                    </div>
+                                    <span class="gsi-material-button-contents">{{ _("Create an Account with Microsoft") }}</span>
+                                    <span style="display: none;">{{ _("Create an Account with Microsoft") }}</span>
+                                </div>
+                            </button>
+                        </div>
+                    {% endif %}
+                    <h2 class="govuk-heading-m govuk-!-margin-top-6">
+                        {{ _("Or create an account with an email and password") }}
+                    </h2>
+                {% endif %}
+                {# Email sign up — the name, email and password apply only here. #}
                 <div class="govuk-form-group{% if form.first_name.errors %} govuk-form-group--error{% endif %}">
                     {{ form.first_name.label(class="govuk-label govuk-label--m") }}
                     {% if form.first_name.description %}
@@ -89,7 +113,6 @@
                                 <span class="govuk-visually-hidden">Error:</span> {{ error }}
                             </p>
                         {% endfor %}
-                        {{ password_help }}
                     {% endif %}
                     {{ form.first_name(class="govuk-input" + (" govuk-input--error" if form.first_name.errors else "") ,
                     aria_describedby=("first-name-hint" if form.first_name.description else "") + (" first-name-error" if form.first_name.errors else "")) }}
@@ -121,36 +144,9 @@
                     {{ form.email(class="govuk-input" + (" govuk-input--error" if form.email.errors else "") ,
                     aria_describedby=("email-error" if form.email.errors else "")) }}
                 </div>
-                {% from "components/govuk_password_input.html" import govuk_password_input %}
+                {% if password_help %}{{ password_help|safe }}{% endif %}
                 {{ govuk_password_input(form.password, autocomplete="new-password") }}
                 {{ govuk_password_input(form.password_confirm, autocomplete="new-password") }}
-                {% if show_questions %}{{ signup_survey_fields(form) }}{% endif %}
-                <div class="govuk-form-group{% if form.accept_data_agreement.errors %} govuk-form-group--error{% endif %}">
-                    <fieldset class="govuk-fieldset"
-                              aria-describedby="data-agreement-hint{% if form.accept_data_agreement.errors %} data-agreement-error{% endif %}">
-                        <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">{{ _("Data Agreement") }}</legend>
-                        <div id="data-agreement-hint" class="govuk-hint">
-                            {{ _("Please read and accept our data agreement to proceed.") }}
-                            <a href="{{ help_site_data_agreement }}"
-                               class="govuk-link"
-                               target="_blank"
-                               rel="noopener noreferrer">{{ _("View data agreement") }}</a>
-                        </div>
-                        {% if form.accept_data_agreement.errors %}
-                            {% for error in form.accept_data_agreement.errors %}
-                                <p id="data-agreement-error" class="govuk-error-message">
-                                    <span class="govuk-visually-hidden">{{ _("Error") }}:</span> {{ error }}
-                                </p>
-                            {% endfor %}
-                        {% endif %}
-                        <div class="govuk-checkboxes" data-module="govuk-checkboxes">
-                            <div class="govuk-checkboxes__item">
-                                {{ form.accept_data_agreement(class="govuk-checkboxes__input") }}
-                                {{ form.accept_data_agreement.label(class="govuk-label govuk-checkboxes__label") }}
-                            </div>
-                        </div>
-                    </fieldset>
-                </div>
                 {% if config.TURNSTILE_SITE_KEY %}
                     <div class="govuk-form-group">
                         <div class="cf-turnstile"
@@ -158,7 +154,7 @@
                              data-action="signup"></div>
                     </div>
                 {% endif %}
-                <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Create Account") }}</button>
+                <button type="submit" name="action" value="email" class="govuk-button" data-module="govuk-button">{{ _("Create Account with email") }}</button>
             </form>
             <p class="govuk-body govuk-!-margin-top-6">
                 {{ _("Already have an account?") }} <a href="{{ url_for('auth.login') }}" class="govuk-link">{{ _("Sign in") }}</a>

@@ -336,6 +336,7 @@ def find_or_create_oauth_user(
     last_name: str = "",
     invite_code: str | None = None,
     accept_data_agreement: bool = False,
+    open_signup: bool = False,
 ) -> tuple[User, bool]:
     """
     Find existing OAuth user or create new one.
@@ -343,7 +344,7 @@ def find_or_create_oauth_user(
     This function handles three scenarios:
     1. OAuth user exists -> return existing user
     2. Email matches existing user -> link OAuth to that account
-    3. New user -> create with invite code required
+    3. New user -> create with an invite code, or without one when open_signup is on
 
     Args:
         uow: Unit of Work for database operations
@@ -352,8 +353,10 @@ def find_or_create_oauth_user(
         email: User's email from OAuth
         first_name: User's first name from OAuth
         last_name: User's last name from OAuth
-        invite_code: Required for new user creation
+        invite_code: Required for new user creation unless open_signup is True
         accept_data_agreement: whether user has accepted data agreement
+        open_signup: when True, a new user may be created without an invite code
+            (and is given the organiser role, mirroring email open signup)
 
     Returns:
         Tuple of (User, created_flag) where created_flag is True if user was created
@@ -379,10 +382,13 @@ def find_or_create_oauth_user(
         uow.commit()
         return detached_user, False
 
-    # Create new user - invite code required
-    if not invite_code:
+    # Create new user. An invite code is required unless open signup is on, in
+    # which case the account gets the organiser role - the same rule the email
+    # registration path applies (see _registration_role_args in the auth blueprint).
+    if not invite_code and not open_signup:
         raise InvalidInvite(reason="Invite code required for new user registration")
 
+    role_kwargs = {"invite_code": invite_code} if invite_code else {"global_role": GlobalRole.ORGANISER}
     user, _token = create_user(
         uow=uow,
         email=email,
@@ -390,8 +396,8 @@ def find_or_create_oauth_user(
         last_name=last_name,
         oauth_provider=provider,
         oauth_id=oauth_id,
-        invite_code=invite_code,
         accept_data_agreement=accept_data_agreement,
+        **role_kwargs,
     )
     # Token will be None for OAuth users (they're auto-confirmed)
     return user, True
