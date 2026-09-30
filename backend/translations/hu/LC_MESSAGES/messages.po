@@ -10970,4 +10970,3 @@ msgid ""
 msgstr ""
 "FIGYELEM: A beállítási fájl szerint NEM ellenőrizzük, hogy a jelentkezők "
 "azonos címen laknak-e."
-
