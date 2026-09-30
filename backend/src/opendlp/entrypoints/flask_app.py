@@ -264,13 +264,18 @@ def get_secure_headers(config: Config) -> Secure:
             "'nonce-NONCE_PLACEHOLDER'",
             "'strict-dynamic'",
             "https://cdn.jsdelivr.net",
+            # Cloudflare Turnstile bot check on the signup form (no cookies in
+            # non-pre-clearance mode) - see docs/bot-protection.md.
+            "https://challenges.cloudflare.com",
         )
         .style_src("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com")
         .font_src("'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com")
         .img_src("'self'", "data:")
-        # Only YouTube's privacy-enhanced domain: it sets no cookies until playback,
-        # which keeps us within the no-consent-banner position in docs/personal-data.md.
-        .frame_src("'self'", "https://www.youtube-nocookie.com")
+        # frame-src allows exactly two third-party hosts. YouTube's privacy-enhanced
+        # domain sets no cookies until playback, which keeps us within the
+        # no-consent-banner position in docs/personal-data.md. Turnstile renders its
+        # challenge in an iframe and sets no cookies without pre-clearance.
+        .frame_src("'self'", "https://www.youtube-nocookie.com", "https://challenges.cloudflare.com")
         .frame_ancestors("'none'")
         .form_action("'self'", "https://accounts.google.com", "https://login.microsoftonline.com")
         .base_uri("'self'")

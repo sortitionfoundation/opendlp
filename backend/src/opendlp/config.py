@@ -539,6 +539,16 @@ class FlaskBaseConfig:
         )
         self.REGISTRATION_MIN_FILL_SECONDS: int = int(os.environ.get("REGISTRATION_MIN_FILL_SECONDS", "3"))
 
+        # Cloudflare Turnstile bot check on the account signup form. An empty
+        # site key disables both the widget and the server-side check, so the
+        # feature is opt-in per deployment. See docs/bot-protection.md for the
+        # privacy decision this rests on.
+        self.TURNSTILE_SITE_KEY: str = os.environ.get("TURNSTILE_SITE_KEY", "")
+        self.TURNSTILE_SECRET: str = os.environ.get("TURNSTILE_SECRET", "")
+        # Comma-separated frontend hostnames this deployment accepts from
+        # siteverify. Production must never list localhost or 127.0.0.1.
+        self.TURNSTILE_HOSTNAMES: str = os.environ.get("TURNSTILE_HOSTNAMES", "")
+
         # File upload limit — the maximum across all per-upload-type limits so
         # the WSGI layer rejects obviously oversized requests before allocating
         # memory. Each route still enforces its own tighter limit.
@@ -605,6 +615,14 @@ class FlaskTestConfig(FlaskBaseConfig):
             self.SQLALCHEMY_DATABASE_URI = postgres_cfg.to_url()
         self.SECRET_KEY = "test-secret-key-aockgn298zx081238"  # noqa: S105  # pragma: allowlist secret
         self.FLASK_ENV = "testing"
+
+        # The session-scoped e2e app is built before the per-test env scrub
+        # runs, so a developer's .env would otherwise switch Turnstile on and
+        # make registration tests contact Cloudflare. Force it off; Turnstile
+        # tests re-enable it via app config and stub the verification call.
+        self.TURNSTILE_SITE_KEY = ""
+        self.TURNSTILE_SECRET = ""
+        self.TURNSTILE_HOSTNAMES = ""
 
         # Use filesystem for session cache for testing
         # Namespace by xdist worker to avoid collisions during parallel runs

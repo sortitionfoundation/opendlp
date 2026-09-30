@@ -27,8 +27,12 @@ These are standing constraints, not defaults. Changing one is a decision, not a 
 - **No analytics that sets a cookie or reads the device.** If analytics is added it must be
   cookieless and self-hosted. See [docs/analytics.md](analytics.md).
 - **No third-party cookies. No cross-site or cross-device tracking.**
-- **Bot protection stays server-side** — no Turnstile, reCAPTCHA or hCaptcha. See
-  [docs/bot-protection.md](bot-protection.md).
+- **Bot protection on registrant-facing pages stays server-side** — no Turnstile,
+  reCAPTCHA or hCaptcha on registration pages. The **account signup form**
+  (`/auth/register`) is the one sanctioned exception: Cloudflare Turnstile in
+  non-pre-clearance mode, which sets no cookies — see
+  [Third-party scripts: the Turnstile exception](#third-party-scripts-the-turnstile-exception)
+  and [docs/bot-protection.md](bot-protection.md).
 - **Never log raw PII.**
 - **No long-term copies of personal data that cannot be found and blanked.**
 
@@ -192,11 +196,32 @@ The reasoning:
   reaches Google at that point, as it would if they followed a link.
 - Plain `www.youtube.com` embeds set tracking cookies on page load and are **deliberately
   not allowed** — organisers must use YouTube's "privacy-enhanced mode" embed code, and the
-  CSP blocks anything else. A test (`test_csp_allows_youtube_nocookie_frames_only`) pins
-  this.
+  CSP blocks anything else. A test (`test_csp_allows_only_sanctioned_third_party_frames`)
+  pins this.
 
 Widening this to plain YouTube, or adding any other embed host, reopens the consent-banner
 question below.
+
+## Third-party scripts: the Turnstile exception
+
+The **account signup form** (`/auth/register`, issue #890) embeds a Cloudflare Turnstile
+widget: a script from `challenges.cloudflare.com` plus a challenge iframe, both allowed
+through the CSP. It is enabled per deployment by setting `TURNSTILE_SITE_KEY` and is
+otherwise absent from the page.
+
+The reasoning:
+
+- The widget runs in **non-pre-clearance** mode, in which Cloudflare states Turnstile
+  **sets no cookies** and touches no `localStorage`/`sessionStorage` on our origin. The
+  no-new-cookie premise of the consent-banner position holds.
+- Signup is a deliberate act requesting a protected service (account creation), the
+  strongest footing the strictly-necessary ePrivacy exception offers; the widget loads
+  only on that form, not sitewide.
+- The widget must stay in this mode. Enabling **pre-clearance** adds a `cf_clearance`
+  cookie and immediately reopens the consent-banner question.
+- **Registrant-facing registration pages keep the server-side layers only** — registrants
+  are invitees of a public process, not people who chose this software, so the signup
+  reasoning does not transfer to them.
 
 ## What would change the answer
 
@@ -204,13 +229,16 @@ question below.
 [issue #656](agent/656-cookies/research.md) before shipping.**
 
 - Adding **any analytics**, or any third-party script or embed — including a font, a map, a
-  video player, or an error reporter such as Sentry. The single existing exception is
-  documented in [Third-party embeds: the YouTube exception](#third-party-embeds-the-youtube-exception).
+  video player, or an error reporter such as Sentry. The two existing exceptions are
+  documented in [Third-party embeds: the YouTube exception](#third-party-embeds-the-youtube-exception)
+  and [Third-party scripts: the Turnstile exception](#third-party-scripts-the-turnstile-exception).
 - Adding **any new cookie**, or any use of `localStorage`, `sessionStorage` or `document.cookie`.
 - Making an existing cookie **persistent**, or lengthening its lifetime.
 - Using an existing cookie for a **new purpose**. Every purpose must independently qualify for
   an exception — a cookie that is exempt for CSRF is not automatically exempt for anything else.
-- Replacing the honeypot bot protection with **Turnstile, reCAPTCHA or hCaptcha**.
+- Replacing the honeypot bot protection on **registration pages** with **Turnstile,
+  reCAPTCHA or hCaptcha**, or switching the signup form's Turnstile widget to
+  **pre-clearance mode** (it sets a `cf_clearance` cookie).
 - Adding a **dedicated language cookie**, or otherwise changing how the language preference
   persists.
 - Writing a `flash()` or a CSRF token into **the front page** (`main.index`). It currently sets

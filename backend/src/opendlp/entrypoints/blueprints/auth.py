@@ -12,6 +12,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.wrappers import Response
 
 from opendlp import bootstrap
+from opendlp.adapters.turnstile import verify_turnstile_token
 from opendlp.bootstrap import get_email_adapter, get_template_renderer, get_url_generator
 from opendlp.domain.email_confirmation import EmailConfirmationToken
 from opendlp.domain.users import User
@@ -370,6 +371,24 @@ def _registration_role_args(invite_code: str | None) -> dict:
     return {"global_role": GlobalRole.ORGANISER}
 
 
+def _signup_turnstile_passed() -> bool:
+    """Cloudflare Turnstile gate for the signup form.
+
+    Always passes when TURNSTILE_SITE_KEY is unset - the widget is not
+    rendered then, so local dev and tests run without contacting Cloudflare.
+    """
+    if not current_app.config.get("TURNSTILE_SITE_KEY"):
+        return True
+    hostnames = {h.strip() for h in current_app.config.get("TURNSTILE_HOSTNAMES", "").split(",") if h.strip()}
+    return verify_turnstile_token(
+        secret=current_app.config.get("TURNSTILE_SECRET", ""),
+        token=request.form.get("cf-turnstile-response", ""),
+        expected_action="signup",
+        expected_hostnames=hostnames,
+        remote_ip=request.remote_addr or "",
+    )
+
+
 @auth_bp.route("/register", methods=["GET", "POST"])
 @auth_bp.route("/register/<invite_code>", methods=["GET", "POST"])
 def register(invite_code: str = "") -> ResponseReturnValue:
@@ -389,6 +408,14 @@ def register(invite_code: str = "") -> ResponseReturnValue:
     show_questions = has_feature("open_signup") and request.args.get("skipq") != "1"
 
     if form.validate_on_submit():
+        if not _signup_turnstile_passed():
+            flash(_("We could not verify that you are human. Please try again."), "error")
+            return render_template(
+                "auth/register.html",
+                form=form,
+                password_help=password_validators_help_text_html(),
+                show_questions=show_questions,
+            )
         try:
             # An IP that keeps creating accounts is a bot, not a person; with
             # open signup there is no invite gate left to stop it.
@@ -421,11 +448,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
 
                 return _complete_registration(user, token)
 
-        except RateLimitExceeded as e:
-            flash(str(e), "error")
-        except UserAlreadyExists as e:
-            flash(str(e), "error")
-        except InvalidInvite as e:
+        except (RateLimitExceeded, UserAlreadyExists, InvalidInvite) as e:
             flash(str(e), "error")
         except PasswordTooWeak as e:
             flash(_("Password is too weak: %(error)s", error=str(e)), "error")
