@@ -1,8 +1,10 @@
 # 1029 — Auto-export respondents to Google Sheets
 
-Status: **plan agreed, ready to implement**. Nothing is implemented yet.
-Doctor Chewie's answers from the review rounds are folded into the design below
-and recorded in [Decisions](#decisions).
+Status: **implemented on branch `1029-auto-export`** (2026-09-30). Every step in
+[Order of work](#11-order-of-work) is done and committed. Doctor Chewie's
+answers from the review rounds are folded into the design below and recorded in
+[Decisions](#decisions). Departures from the plan are listed in
+[As built](#as-built).
 
 ## Goal
 
@@ -269,17 +271,45 @@ Log assertions capture the expected warnings so test output stays pristine.
 
 Branch `1029-auto-export` from `main` (D7).
 
-1. Domain fields, ORM column, migration, contract test.
-2. `GSheetExportTarget` write-then-trim; adapter unit tests.
-3. `save_export_gsheet_config` + `export_respondents_to_gsheet` accept the flag and filter token; `disable_auto_export`; unit tests.
-4. Modal checkbox, route, stop route and button, page link text; e2e tests.
-5. `run_auto_export` service + Celery task with retries and lock; unit + integration tests.
-6. `request_auto_export` with debounce; unit tests.
-7. Wire the trigger sites one at a time, each with its test.
-8. BDD, docs, translations, `just check`, `just test`.
+1. [x] Domain fields, ORM column, migration, contract test.
+2. [x] `GSheetExportTarget` write-then-trim; adapter unit tests.
+3. [x] `save_export_gsheet_config` + `export_respondents_to_gsheet` accept the flag and filter token; `disable_auto_export`; unit tests.
+4. [x] Modal checkbox, route, stop route and button, page link text; component + e2e tests.
+5. [x] `run_auto_export` service + Celery task with retries and lock; unit + integration tests.
+6. [x] `request_auto_export` with debounce; unit tests (same commit as 5).
+7. [x] Wire the trigger sites, with a test per site.
+8. [x] BDD, docs, translations, `just check`, `just test`.
 
 Each step is a commit that leaves the suite green. Steps 1–4 give a checkbox
 that records intent but does nothing, so they should not be deployed alone.
+
+## As built
+
+Where the code differs from the design above:
+
+- **Ungated write helper.** `respondent_export_service.write_respondent_export()`
+  is the permission-free core that both `export_respondents` (manage-gated) and
+  `run_auto_export` call, instead of `run_auto_export` reaching for the private
+  `_write_export`.
+- **Unticking the box switches auto-export off.** `export_respondents_to_gsheet`
+  saves the flag as given on every Google Sheets export, so the checkbox is the
+  truth each time. A CSV download does not touch it.
+- **Trigger inventory.** Derived-field create/update/recompute all pass through
+  `derivation_service._recompute`, so one call there covers them. In
+  `target_source_service`, the derivation path triggers via `_recompute` and
+  `unlink` via `delete_derived_field`; only the exact-copy path needed its own
+  call. Choice-option changes (add/update/remove) all trigger.
+- **BDD.** The BDD server is a separate process, so the Google write cannot be
+  faked there. The scenario seeds an auto-exporting assembly directly and drives
+  the status line and the stop button; the enable path is covered by component
+  and e2e tests over the fake target.
+- **Retry logging.** The task catches `ExportTargetError`, logs (warning per
+  attempt, error on the last), and re-raises for Celery's `autoretry_for`; the
+  last attempt returns `False` rather than raising, so the task result is clean.
+- **Trim ranges.** `_stale_ranges()` clears the rows below the data at full
+  width and the columns to its right at data height, using
+  `gspread.utils.rowcol_to_a1`; nothing is cleared when the data reaches the
+  grid's edge.
 
 ## Decisions
 

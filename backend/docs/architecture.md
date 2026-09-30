@@ -191,6 +191,20 @@ which is what the pattern is for.
   logical unit of work. It commits everything pending, including the caller's,
   so reach for it deliberately rather than to make a test pass.
 
+### After-commit side effects: the case for domain events
+
+Some work must happen *after* the entrypoint's block commits, not inside it.
+The first example is the automatic respondent export:
+`respondent_auto_export.request_auto_export(uow, assembly_id)` is called by
+every service that changes respondents or their schema, and queues a Celery
+task with a countdown so the task reads committed data. Today that is a direct
+call in a dozen services, each marked as a candidate for a `RespondentsChanged`
+event. The book's answer is domain events collected on the aggregate or the
+UnitOfWork and dispatched by a message bus once the commit has happened, which
+also removes the reliance on the countdown for ordering. When a second
+after-commit side effect arrives, build that, and replace the direct calls with
+one handler.
+
 ---
 
 ## Service Layer Overview

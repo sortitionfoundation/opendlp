@@ -153,6 +153,13 @@ of uploaded or generated files (CSV, Excel) in the database or on disk. Such fil
 in memory, written into a data attribute of an HTML page sent to the user, placed in a download
 directory that is regularly swept, or cached in Redis.
 
+A Google Sheet that respondents have been exported to is a copy of personal data outside our
+database, whether the organiser exported by hand or ticked "Automatically export". We cannot
+blank it on request the way we blank a row. Automatic export helps rather than hurts here:
+deleting a respondent rewrites the sheet without them within about a minute, where a manual
+export leaves the old copy until someone remembers to export again. The Redis keys the
+automatic export uses hold an assembly UUID and nothing else.
+
 When adding a table that holds personal data, add a corresponding `DELETE` to
 `_delete_all_test_data()` in `tests/conftest.py` and to `delete_all_except_standard_users()` in
 `tests/bdd/conftest.py`, respecting foreign-key ordering.
