@@ -55,9 +55,6 @@ def config_loggers(*args: Any, **kwargs: Any) -> None:
     logger = logging.getLogger()
 
 
-struct_logger = structlog.get_logger(__name__)
-
-
 class SelectionRunRecordHandler(logging.Handler):
     """
     A logger that sends the log messages through Celery to the AsyncResult
@@ -82,9 +79,6 @@ def _set_up_celery_logging(task_id: uuid.UUID, session_factory: sessionmaker | N
     handler.setLevel(logging.DEBUG)
     override_logging_handlers([handler], [handler])
     logger = logging.getLogger()
-
-
-struct_logger = structlog.get_logger(__name__)
 
 
 def _on_task_failure(self: Task | None, exc: Exception, task_id: str, args: tuple, kwargs: dict, einfo: Any) -> None:
@@ -914,7 +908,7 @@ def auto_export_respondents(
     rather than being lost. Returns whether a write happened.
     """
     r = redis_client or RedisCfg.from_env().create_client()
-    lock = r.lock(respondent_auto_export.lock_key(assembly_id), timeout=respondent_auto_export._LOCK_TIMEOUT_SECONDS)
+    lock = r.lock(respondent_auto_export.lock_key(assembly_id), timeout=respondent_auto_export.LOCK_TIMEOUT_SECONDS)
     if not lock.acquire(blocking=False):
         r.delete(respondent_auto_export.pending_key(assembly_id))
         with bootstrap(session_factory=session_factory) as uow:

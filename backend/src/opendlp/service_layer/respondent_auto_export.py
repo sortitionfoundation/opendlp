@@ -39,7 +39,7 @@ _PENDING_TTL_SECONDS = AUTO_EXPORT_DELAY_SECONDS * 4
 _LOCK_KEY_PREFIX = "auto_export_lock:"
 # Held while one export writes, so two exports of the same assembly cannot
 # interleave. Generous: it only matters if a worker dies mid-export.
-_LOCK_TIMEOUT_SECONDS = 300
+LOCK_TIMEOUT_SECONDS = 300
 
 
 def _get_redis() -> Redis:
