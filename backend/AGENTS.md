@@ -231,9 +231,15 @@ A third construct is worse, because it produces no msgid at all:
 After adding or changing translatable strings, regenerate and check:
 
 ```bash
-just translate-regen   # extract + update every catalogue
-just translate-check   # msgfmt --check and pybabel compile; also run by `just check`
+just translate-regen         # extract + update every catalogue
+just translate-check         # msgfmt --check and pybabel compile; also run by `just check`
+just translate-accept-fuzzy  # clear every fuzzy flag once a reviewer has been through them
 ```
+
+Never rewrite a catalogue with `msgattrib` or `msgcat` by hand: they wrap lines
+differently from pybabel, and the whole file rewraps. A pre-commit hook
+normalises staged catalogues to pybabel's wrapping - see
+[docs/translations.md](docs/translations.md#one-wrapping-for-the-catalogues).
 
 `translate-check` is not optional politeness. `pybabel compile` accepts a
 catalogue with duplicate msgids without a murmur and emits a `.mo` missing
