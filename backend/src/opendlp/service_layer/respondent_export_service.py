@@ -165,6 +165,31 @@ def _write_export(
     target.write_sheet(sheet_title, table)
 
 
+def write_respondent_export(
+    uow: AbstractUnitOfWork,
+    assembly_id: uuid.UUID,
+    *,
+    status_filter: list[RespondentStatus] | None,
+    target: AbstractTabularExportTarget,
+    sheet_title: str = "",
+) -> None:
+    """Export an assembly's respondents to the given target, with no permission check.
+
+    ``status_filter`` of ``None`` exports every non-DELETED respondent; a list
+    of statuses exports just those (fetched in a single query). Routes must go
+    through ``export_respondents``, which gates on manage permission; this is
+    for callers with no acting user, such as the automatic export task.
+
+    An empty ``sheet_title`` means the default for this export kind, resolved
+    here rather than as a default argument so it lands in the caller's language.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    sheet_title = sheet_title or default_worksheet_name(EXPORT_KIND)
+    assembly = _load_assembly(uow, assembly_id)
+    _write_export(uow, assembly_id, assembly, status_filter, target, sheet_title)
+
+
 @require_assembly_permission(can_manage_assembly)
 def export_respondents(
     uow: AbstractUnitOfWork,
@@ -181,13 +206,8 @@ def export_respondents(
     of statuses exports just those (fetched in a single query). Requires manage
     permission on the assembly. The caller is expected to manage the ``uow``
     context (``with uow: ...``).
-
-    An empty ``sheet_title`` means the default for this export kind, resolved
-    here rather than as a default argument so it lands in the caller's language.
     """
-    sheet_title = sheet_title or default_worksheet_name(EXPORT_KIND)
-    assembly = _load_assembly(uow, assembly_id)
-    _write_export(uow, assembly_id, assembly, status_filter, target, sheet_title)
+    write_respondent_export(uow, assembly_id, status_filter=status_filter, target=target, sheet_title=sheet_title)
 
 
 @require_assembly_permission(can_manage_assembly)
