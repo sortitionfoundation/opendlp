@@ -9,6 +9,7 @@ from flask_login import current_user
 
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage
+from opendlp.domain.value_objects import HEADLINE_RESPONDENT_STATUSES
 from opendlp.entrypoints.blueprints.registration import registration_url, short_url
 from opendlp.service_layer.qr_codes import generate_qr_code_base64
 from opendlp.service_layer.registration_page_service import deletable_registration_page_ids, list_registration_pages
@@ -111,5 +112,19 @@ def registration_hub_context(
     registration_counts = uow.respondents.count_by_registration_page(assembly_id)
     return {
         "page_rows": registration_page_rows(pages, assembly_id, deletable_ids, registration_counts),
+        "total_registration_count": _total_registration_count(uow, assembly_id),
         "setup_summary": _setup_summary(uow, assembly_id, data_source, gsheet),
     }
+
+
+def _total_registration_count(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> int:
+    """How many people have registered for this assembly — the tab's headline number.
+
+    Counts the same statuses as the dashboard's "Number of registrations", so the
+    two tabs agree: everyone who became a respondent, withdrawals included, but
+    not test submissions (never real) or deleted respondents (details gone). This
+    is deliberately wider than the per-page counts, which tally rows against each
+    page regardless of status.
+    """
+    status_counts = uow.respondents.count_by_status(assembly_id)
+    return sum(status_counts.get(status, 0) for status in HEADLINE_RESPONDENT_STATUSES)

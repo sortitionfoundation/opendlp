@@ -21,6 +21,7 @@ from opendlp.domain.respondent_field_schema import (
 )
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.domain.value_objects import RespondentStatus
 from tests.fakes import FakeUnitOfWork
 
 
@@ -530,6 +531,45 @@ class TestRegistrationListView:
 
         assert count_cell("Busy").endswith(">2")
         assert count_cell("Quiet").endswith(">0")
+
+    def test_shows_the_total_registration_count_near_the_top(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            for i, status in enumerate([RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.WITHDRAWN]):
+                uow.respondents.add(
+                    Respondent(
+                        assembly_id=assembly_id,
+                        external_id=f"real-{i}",
+                        selection_status=status,
+                        registration_page_id=page.id,
+                    )
+                )
+            # Test submissions and deleted respondents are not real registrations,
+            # so the headline total leaves them out (matching the dashboard).
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=assembly_id,
+                    external_id="tester",
+                    selection_status=RespondentStatus.TEST_SUBMISSION,
+                    registration_page_id=page.id,
+                )
+            )
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=assembly_id,
+                    external_id="gone",
+                    selection_status=RespondentStatus.DELETED,
+                    registration_page_id=page.id,
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        total_block = body.split("Number of registrations:", 1)[1].split("</div>", 1)[0]
+        assert ">3<" in total_block
 
     def test_empty_assembly_offers_page_creation(self, logged_in_admin, fake_store, assembly_id):
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
