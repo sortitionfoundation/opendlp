@@ -26,6 +26,7 @@ from opendlp.domain import (
     two_factor_audit,
     user_backup_codes,
     user_invites,
+    user_signup_surveys,
     users,
 )
 
@@ -160,6 +161,9 @@ def start_mappers() -> None:
 
         # Map UserInvite domain object to user_invites table
         orm.mapper_registry.map_imperatively(user_invites.UserInvite, orm.user_invites)
+
+        # Map UserSignupSurvey domain object to user_signup_surveys table
+        orm.mapper_registry.map_imperatively(user_signup_surveys.UserSignupSurvey, orm.user_signup_surveys)
 
         # Map PasswordResetToken domain object to password_reset_tokens table
         orm.mapper_registry.map_imperatively(password_reset.PasswordResetToken, orm.password_reset_tokens)

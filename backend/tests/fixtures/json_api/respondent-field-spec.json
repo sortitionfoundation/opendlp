@@ -222,12 +222,17 @@
     {
       "derivation_config": {
         "as_of_date": "2026-05-13",
-        "boundaries": [
-          30
+        "brackets": [
+          {
+            "from_age": 16,
+            "label": "16-29"
+          },
+          {
+            "from_age": 30,
+            "label": "30+"
+          }
         ],
-        "fallback": "UNKNOWN",
-        "max_age": 100,
-        "min_age": 16
+        "fallback": "UNKNOWN"
       },
       "derivation_type": "age_bracket",
       "derived_from": [
@@ -246,19 +251,11 @@
       "options": [
         {
           "help_text": "",
-          "value": "under-16"
-        },
-        {
-          "help_text": "",
           "value": "16-29"
         },
         {
           "help_text": "",
-          "value": "30-99"
-        },
-        {
-          "help_text": "",
-          "value": "100+"
+          "value": "30+"
         },
         {
           "help_text": "",

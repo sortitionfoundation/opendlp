@@ -702,7 +702,7 @@ def render_assembly_data_page(
         # Create form with current values from SelectionSettings
         csv_settings_form = DbSelectionSettingsForm(
             data={
-                "check_same_address": sel_settings.check_same_address if sel_settings else True,
+                "check_same_address": sel_settings.check_same_address if sel_settings else False,
                 "check_same_address_cols_string": sel_settings.check_same_address_cols_string if sel_settings else "",
                 "columns_to_keep_string": sel_settings.columns_to_keep_string if sel_settings else "",
             },

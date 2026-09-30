@@ -100,3 +100,43 @@ uncurated and must not have its message shown.
 It changes behaviour on every blueprint in the application, and that branch is
 already a 9.4k-line diff. Landed on its own it is a twenty-line commit that
 `git bisect` can point at if a public 404 starts redirecting somewhere odd.
+
+## Make `info_icon` readable without a mouse
+
+### Problem
+
+`templates/backoffice/components/info_icon.html` carries its explanation in two
+places: a `title` attribute (a hover tooltip) and `sr-only` text for screen
+readers. The span isn't focusable and has no toggle. So a sighted user on a
+keyboard, or on a phone or tablet, has no way to read the text. The icon tells
+them something is explained, then doesn't let them read it.
+
+It's used in the target tables (`targets/category_block.html`,
+`targets/bulk_edit_form.html`) and by the `info` argument of
+`components/input.html`, and `793-registration-tweaks` adds another use.
+
+### Proposal
+
+Turn it into a **toggletip**: a real `<button type="button">` holding the icon,
+with an accessible name ("More about <thing>"). Activating it shows the text in
+a live region next to it, and Escape or a click elsewhere hides it. Heydon
+Pickering's toggletip in *Inclusive Components* is the usual reference. The
+WAI-ARIA APG tooltip pattern alone isn't enough, since a tooltip only appears on
+hover or focus, and touch has neither.
+
+It needs a small CSP-safe Alpine component (see `templates/backoffice/patterns.html`)
+plus a no-JS fallback. Drop the `title` so desktop users don't see the text
+twice.
+
+### Open questions
+
+- Should the `input.html` `info` argument keep using the icon, or become a normal
+  hint below the label? A hint is simpler and always visible. The icon earns
+  its place only where space is tight, like table headings.
+
+### Tests
+
+- Component: the macro renders a button with an accessible name, and the text
+  is referenced by `aria-describedby` or sits in a live region.
+- JS (vitest): open/close on click, close on Escape and on an outside click.
+- e2e: tab to the icon, press Enter, see the text.

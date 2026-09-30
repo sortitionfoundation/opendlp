@@ -29,6 +29,7 @@ from opendlp.domain.totp_attempts import TotpVerificationAttempt
 from opendlp.domain.two_factor_audit import TwoFactorAuditLog
 from opendlp.domain.user_backup_codes import UserBackupCode
 from opendlp.domain.user_invites import UserInvite
+from opendlp.domain.user_signup_surveys import UserSignupSurvey
 from opendlp.domain.users import User, UserAssemblyRole
 from opendlp.domain.value_objects import (
     COUNTED_RESPONDENT_STATUSES,
@@ -64,6 +65,7 @@ from opendlp.service_layer.repositories import (
     UserBackupCodeRepository,
     UserInviteRepository,
     UserRepository,
+    UserSignupSurveyRepository,
 )
 
 if TYPE_CHECKING:
@@ -398,6 +400,26 @@ class SqlAlchemyUserInviteRepository(SqlAlchemyRepository, UserInviteRepository)
             self.session.delete(invite)
 
         return count
+
+
+class SqlAlchemyUserSignupSurveyRepository(SqlAlchemyRepository, UserSignupSurveyRepository):
+    """SQLAlchemy implementation of UserSignupSurveyRepository."""
+
+    def add(self, item: UserSignupSurvey) -> None:
+        """Add a signup survey to the repository."""
+        self.session.add(item)
+
+    def get(self, item_id: uuid.UUID) -> UserSignupSurvey | None:
+        """Get a signup survey by its ID."""
+        return self.session.query(UserSignupSurvey).filter_by(id=item_id).first()
+
+    def all(self) -> Iterable[UserSignupSurvey]:
+        """Get all signup surveys."""
+        return self.session.query(UserSignupSurvey).order_by(orm.user_signup_surveys.c.created_at.desc()).all()
+
+    def get_by_user_id(self, user_id: uuid.UUID) -> UserSignupSurvey | None:
+        """Get the signup survey for a user, or None if they have none."""
+        return self.session.query(UserSignupSurvey).filter_by(user_id=user_id).first()
 
 
 class SqlAlchemyUserAssemblyRoleRepository(SqlAlchemyRepository, UserAssemblyRoleRepository):

@@ -43,7 +43,7 @@ ABOUTME: Two-column CSV replaces the whole table; upload then recompute, combine
                     {{ alert(modal_ctx["error"], variant="error") }}
                 {% endif %}
                 {% if setup_step %}
-                    <p class="text-body-sm mb-4">{{ _("The data source is saved. Now upload the lookup table it reads from.") }}</p>
+                    <p class="text-body-sm mb-4">{{ _("The question is linked. Now upload the lookup table it reads from.") }}</p>
                 {% endif %}
                 <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
                     {{ _("A CSV with two columns: the %(source)s value, then the %(derived)s value. Uploading replaces the whole table. The file itself is not stored — only the rows.", source=(modal_ctx["field"].derived_from or [""])[0], derived=modal_ctx["field"].field_key) }}

@@ -23,7 +23,8 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 
 
 {% from "backoffice/components/icons.html" import icon_check_12 %}
-{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="") %}
+{% from "backoffice/components/info_icon.html" import info_icon %}
+{% macro input(name, label="", type="text", value="", placeholder="", hint="", error="", required=false, disabled=false, readonly=false, id="", classes="", attrs="", link_url="", link_text="", dim=true, aria_label="", info="") %}
     {#
     Text input component using semantic design tokens.
 
@@ -34,6 +35,8 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
         value: Initial input value
         placeholder: Placeholder text
         hint: Help text displayed below the label
+        info: Help text shown as an info icon beside the label, for rows too
+              tight for a hint; the input is described by it
         error: Error message (displays input in error state)
         required: Boolean to mark field as required
         disabled: Boolean to disable the input
@@ -58,10 +61,14 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
     <div class="flex flex-col gap-1.5">
         {# Label #}
         {% if label %}
+            {# The info icon sits outside the label, so its sentence describes the
+               input rather than becoming part of its name. #}
+            {% if info %}<div class="flex items-center gap-1">{% endif %}
             <label for="{{ input_id }}" class="text-label-lg" style="color: var(--color-headings);">
                 {{ label }}
                 {% if required and not readonly %}<span style="color: var(--color-primary-action);">*</span>{% endif %}
             </label>
+            {% if info %}{{ info_icon(info, id=input_id ~ "-info") }}</div>{% endif %}
         {% endif %}
 
         {# Hint text #}
@@ -99,7 +106,9 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                 {% if disabled %}disabled{% endif %}
                 {# The error is next to the input on screen; these are what say so
                    to anything that is not looking at the screen. #}
-                {% if has_error %}aria-invalid="true" aria-describedby="{{ input_id }}-error"{% endif %}
+                {% set described_by = ([input_id ~ "-info"] if info and label else []) + ([input_id ~ "-error"] if has_error else []) %}
+                {% if has_error %}aria-invalid="true"{% endif %}
+                {% if described_by %}aria-describedby="{{ described_by | join(' ') }}"{% endif %}
                 {# For inputs whose only visible label is a column heading, which
                    does not name a form control to a screen reader. #}
                 {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
@@ -540,13 +549,16 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
 {% endmacro %}
 
 
-{% macro switch(name, label="", checked=false, hint="", error="", disabled=false, readonly=false, id="", attrs="") %}
+{% macro switch(name, label="", checked=false, hint="", error="", disabled=false, readonly=false, id="", attrs="", label_off="") %}
     {#
     Switch (toggle) component based on Figma OpenDLP UI specification.
 
     Args:
         name: Switch name attribute (required)
         label: Label text displayed next to the switch
+        label_off: Label text shown instead of `label` while the switch is off. When
+            given, the label follows the switch as it is toggled (Alpine); without
+            JS the label for the initial state is shown.
         checked: Boolean for on/off state
         hint: Help text displayed below the label
         error: Error message (displays in error state)
@@ -558,6 +570,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
     Usage:
         {{ switch("notifications", label="Enable notifications", checked=true) }}
         {{ switch("dark_mode", label="Dark mode", hint="Toggle dark theme") }}
+        {{ switch("required", label="Required", label_off="Optional") }}
     #}
     {% set input_id = id if id else name %}
     {% set has_error = error | length > 0 %}
@@ -576,7 +589,11 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
             {% endif %}
         {% else %}
             {# Editable switch with custom styling #}
-            <label class="switch-container{% if disabled %} switch-disabled{% endif %}">
+            {# With label_off, a tiny Alpine scope mirrors the checkbox into `on` so the
+               label can follow it. x-cloak hides the label for the other state until
+               Alpine takes over, so a no-JS page shows only the initial state's label. #}
+            <label class="switch-container{% if disabled %} switch-disabled{% endif %}"
+                   {% if label_off %}x-data="{ on: {{ 'true' if checked else 'false' }} }"{% endif %}>
                 {# Hidden native checkbox with switch role for accessibility. No aria-checked:
                    the native checked state already conveys it, and a static attribute would
                    go stale as soon as the switch is toggled. #}
@@ -587,6 +604,7 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                     id="{{ input_id }}"
                     {% if checked %}checked{% endif %}
                     {% if disabled %}disabled{% endif %}
+                    {% if label_off %}x-model="on"{% endif %}
                     {% if attrs %}{{ attrs | safe }}{% endif %}
                     class="switch-input"
                 />
@@ -595,7 +613,10 @@ ABOUTME: Supports text, email, password, number, textarea, select, checkbox, rad
                     <span class="switch-thumb"></span>
                 </span>
                 {# Label text #}
-                {% if label %}
+                {% if label_off %}
+                    <span class="switch-label" x-show="on" {% if not checked %}x-cloak{% endif %}>{{ label }}</span>
+                    <span class="switch-label" x-show="!on" {% if checked %}x-cloak{% endif %}>{{ label_off }}</span>
+                {% elif label %}
                     <span class="switch-label">{{ label }}</span>
                 {% endif %}
             </label>

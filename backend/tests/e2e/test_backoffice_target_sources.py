@@ -66,9 +66,8 @@ class TestConfigureAgeBrackets:
                 "as_of_day": "1",
                 "as_of_month": "6",
                 "as_of_year": str(this_year),
-                "min_age": "16",
-                "max_age": "40",
-                "boundaries": "25",
+                "bracket_label": ["16-24", "25-39", "40+"],
+                "bracket_from": ["16", "25", "40"],
                 "csrf_token": get_csrf_token(logged_in_admin, base),
             },
             headers={"HX-Request": "true"},
@@ -80,7 +79,44 @@ class TestConfigureAgeBrackets:
         assert field.derived_from == ["year_of_birth"]
         assert field.target_category_id == category_id
         assert field.derivation_config["as_of_date"] == f"{this_year}-06-01"
-        assert [o.value for o in field.options] == ["under-16", "16-24", "25-39", "40+", "UNKNOWN"]
+        assert [o.value for o in field.options] == ["16-24", "25-39", "40+", "UNKNOWN"]
+        assert field.derivation_config["brackets"][-1] == {"from_age": 40, "label": "40+"}
+
+
+class TestConfigureSmallMapping:
+    def test_create_the_question_and_map_its_answers_round_trip(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Type the new question's answers and their mapping in the set-up dialog, then read both fields back."""
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            _seed_schema(uow, admin_user, existing_assembly)
+            category_id = _add_target(uow, existing_assembly, "Age group", ["Younger", "Older"])
+
+        base = f"/backoffice/assembly/{existing_assembly.id}/target-sources"
+        response = logged_in_admin.post(
+            f"{base}/{category_id}/configure",
+            data={
+                "modal": "1",
+                "method": "small_mapping",
+                "source_mode": "create",
+                "new_field_key": "age_band",
+                "new_field_label": "Which age group are you in?",
+                "map_source": ["16-29", "30-44", ""],
+                "map_target": ["Younger", "Older", ""],
+                "csrf_token": get_csrf_token(logged_in_admin, base),
+            },
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+
+        source = _field(postgres_session_factory, admin_user, existing_assembly, "age_band")
+        assert source.label == "Which age group are you in?"
+        assert source.field_type == FieldType.CHOICE_RADIO
+        assert [o.value for o in source.options] == ["16-29", "30-44"]
+        derived = _field(postgres_session_factory, admin_user, existing_assembly, "Age group")
+        assert derived.derived_from == ["age_band"]
+        assert derived.target_category_id == category_id
+        assert derived.derivation_config["mapping"] == {"16-29": "Younger", "30-44": "Older"}
 
 
 def _csrf(client, assembly):
@@ -102,7 +138,7 @@ class TestPagesRender:
         assert page.status_code == 200
         assert b"Region" in page.data
         assert dialog.status_code == 200
-        assert b"Set up data source for Region" in dialog.data
+        assert b"Set up the question for Region" in dialog.data
 
 
 class TestExactCopyLifecycle:

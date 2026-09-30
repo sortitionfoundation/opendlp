@@ -62,7 +62,7 @@ def _get_selection_settings(assembly: Assembly) -> SelectionSettings:
     """Get selection settings from assembly, falling back to defaults."""
     if assembly.selection_settings is not None:
         return assembly.selection_settings
-    return SelectionSettings(assembly_id=assembly.id)
+    return SelectionSettings.for_assembly(assembly)
 
 
 @require_assembly_permission(can_manage_assembly)

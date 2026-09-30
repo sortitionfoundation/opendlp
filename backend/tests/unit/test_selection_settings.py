@@ -5,7 +5,11 @@ import uuid
 
 from sortition_algorithms.settings import Settings
 
+from opendlp.domain.assembly import Assembly, AssemblyGSheet
+from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.selection_settings import SelectionSettings
+
+VALID_GSHEET_URL = "https://docs.google.com/spreadsheets/d/1abc123def456/edit"
 
 
 class TestSelectionSettings:
@@ -23,6 +27,31 @@ class TestSelectionSettings:
         assert sel_settings.check_same_address_cols == []
         assert sel_settings.columns_to_keep == []
         assert sel_settings.selection_algorithm == "maximin"
+
+    def test_for_assembly_with_a_gsheet_checks_addresses(self):
+        assembly = Assembly(title="Sheet Assembly")
+        assembly.gsheet = AssemblyGSheet(assembly_id=assembly.id, url=VALID_GSHEET_URL)
+
+        sel_settings = SelectionSettings.for_assembly(assembly)
+
+        assert sel_settings.assembly_id == assembly.id
+        assert sel_settings.check_same_address is True
+
+    def test_for_assembly_with_a_csv_does_not_check_addresses(self):
+        """A CSV assembly has no address columns yet, so the check cannot run."""
+        assembly = Assembly(title="CSV Assembly")
+        assembly.csv = AssemblyCSV(assembly_id=assembly.id)
+
+        sel_settings = SelectionSettings.for_assembly(assembly)
+
+        assert sel_settings.assembly_id == assembly.id
+        assert sel_settings.check_same_address is False
+        assert sel_settings.check_same_address_cols == []
+
+    def test_for_assembly_with_no_source_does_not_check_addresses(self):
+        assembly = Assembly(title="Fresh Assembly")
+
+        assert SelectionSettings.for_assembly(assembly).check_same_address is False
 
     def test_create_with_custom_values(self):
         """Test creating SelectionSettings with custom values"""

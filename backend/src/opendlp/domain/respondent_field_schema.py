@@ -489,6 +489,22 @@ def normalise_field_key(raw: str) -> str:
     return collapsed.strip("_")
 
 
+def duplicate_option_value(options: list[ChoiceOption]) -> str:
+    """The first option value that appears twice, or "" when they are all distinct.
+
+    Exact-match comparison, because every other place an option value is
+    matched is exact: add_choice_option rejects a repeat with ``==``, and
+    SmallMappingRule.derive looks the source value up in a plain dict. Two
+    values differing only in case are therefore two real values, not a typo.
+    """
+    seen: set[str] = set()
+    for option in options:
+        if option.value in seen:
+            return option.value
+        seen.add(option.value)
+    return ""
+
+
 def humanise_field_key(field_key: str) -> str:
     """Default display label: underscores/hyphens to spaces, sentence case.
 

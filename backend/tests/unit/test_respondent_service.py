@@ -572,9 +572,12 @@ class TestDerivationOnWritePaths:
                 derivation_type=DerivationType.AGE_BRACKET,
                 derivation_config={
                     "as_of_date": "2026-05-13",
-                    "min_age": 16,
-                    "max_age": 100,
-                    "boundaries": [22, 30, 55],
+                    "brackets": [
+                        {"from_age": 16, "label": "16-21"},
+                        {"from_age": 22, "label": "22-29"},
+                        {"from_age": 30, "label": "30-54"},
+                        {"from_age": 55, "label": "55+"},
+                    ],
                     "fallback": "UNKNOWN",
                 },
                 field_type=FieldType.CHOICE_RADIO,

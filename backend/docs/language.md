@@ -114,11 +114,26 @@ reader is thinking about what the page asks.
 
 **computed question** is a registration question nobody answers: its value is
 worked out from another question's answer — an age range from a date of birth, a
-region from a postcode. It is set up, and deleted, on the target data sources
-step. The code calls it a derived field (`is_derived`), and "derived" still
+region from a postcode. It is set up, and deleted, on the "Link targets to
+questions" step. The code calls it a derived field (`is_derived`), and "derived" still
 appears in a few refusal messages that only a hand-made request can reach; the
 interface an organiser sees says "computed": "Computed from 'Postcode'", "Delete
 computed question".
+
+**Link targets to questions** is registration step 1, where each target gets
+the registration question that answers it, asked directly or computed. The code
+calls it target sources (`target_sources`). Do not call it a "data source" in
+the interface: organisers read that as where a target's population figures come
+from, such as the census.
+
+**data source** is where an assembly's respondents come from: Google Sheets or
+a CSV upload, as chosen on the Data tab. It never means the question behind a
+target, nor where a target's percentages come from.
+
+**source of population figures** is the link a target can carry to the report
+its percentages come from: census tables from the ONS, or an opinion poll for an
+attitudinal target. The code calls it `source_url`. Not "data source", for the
+reasons above, and not "Population % source", which needs its `%` escaped.
 
 **built-in question** is a registration question every assembly has, such as
 email or consent, whose type can't be changed. The code calls these fixed fields

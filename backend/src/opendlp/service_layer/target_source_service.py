@@ -209,7 +209,7 @@ def _fields_linked_to(uow: AbstractUnitOfWork, category: TargetCategory) -> list
     ]
 
 
-def _choice_type_for(n_options: int) -> FieldType:
+def choice_type_for(n_options: int) -> FieldType:
     return FieldType.CHOICE_RADIO if n_options <= _MAX_RADIO_OPTIONS else FieldType.CHOICE_DROPDOWN
 
 
@@ -229,6 +229,26 @@ def _require_target_values_covered(field: RespondentFieldDefinition, category: T
                 values=", ".join(missing),
             )
         )
+
+
+def _require_mapping_outputs_are_target_values(rule: SmallMappingRule, category: TargetCategory) -> None:
+    """Refuse a mapping to a value the target does not have: nothing would count it."""
+    target_values = set(_target_option_values(category))
+    stray = next((value for value in rule.mapping.values() if value not in target_values), None)
+    if stray is not None:
+        raise FieldDefinitionConflictError(_l("'%(value)s' is not one of the target's values", value=stray))
+
+
+def _require_age_labels_are_target_values(rule: AgeBracketRule, category: TargetCategory) -> None:
+    """Refuse age ranges that aren't exactly the target's values: each value needs a range, and nothing else counts."""
+    target_values = _target_option_values(category)
+    labels = set(rule.labels())
+    missing = next((value for value in target_values if value not in labels), None)
+    if missing is not None:
+        raise FieldDefinitionConflictError(_l("Enter the age where '%(value)s' starts", value=missing))
+    stray = next((label for label in rule.labels() if label not in set(target_values)), None)
+    if stray is not None:
+        raise FieldDefinitionConflictError(_l("'%(value)s' is not one of the target's values", value=stray))
 
 
 def _relink(uow: AbstractUnitOfWork, category: TargetCategory, field: RespondentFieldDefinition) -> None:
@@ -335,7 +355,7 @@ def _configure_exact_copy(
         label=spec.source.label.strip() or humanise_field_key(category.name),
         group=group,
         sort_order=_next_sort_order_in_group(existing, group),
-        field_type=_choice_type_for(len(target_values)),
+        field_type=choice_type_for(len(target_values)),
         options=[ChoiceOption(value=value) for value in target_values],
         on_registration_page=FieldOnRegistrationPage.YES_REQUIRED,
         help_text=spec.source.help_text,
@@ -353,10 +373,15 @@ def _configure_derivation(
     source_spec: SourceFieldSpec,
 ) -> tuple[RespondentFieldDefinition, RecomputeReport]:
     derivation_type = _DERIVATION_TYPE_FOR_RULE[type(rule)]
+    if isinstance(rule, SmallMappingRule):
+        _require_mapping_outputs_are_target_values(rule, category)
+    if isinstance(rule, AgeBracketRule):
+        _require_age_labels_are_target_values(rule, category)
     source = _resolve_source_field(uow, assembly_id, category, source_spec, derivation_type)
 
-    # An age rule's outputs are its bracket labels; mapping rules output the
-    # target's values (the fallback is appended by the derivation machinery).
+    # An age rule's outputs are its bracket labels, which are the target's
+    # values; mapping rules output the target's values (the fallback is
+    # appended by the derivation machinery).
     output_values = None if isinstance(rule, AgeBracketRule) else _target_option_values(category)
 
     existing = uow.respondent_field_definitions.get_by_assembly_and_key(assembly_id, category.name)

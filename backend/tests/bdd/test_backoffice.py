@@ -425,16 +425,19 @@ def visit_registration_tab(page: Page, title: str, test_database):
 def see_registration_page_list(page: Page):
     """The list shows the table headers and the create CTA."""
     expect(page.get_by_role("columnheader", name="Date of publish")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
-    # The assembly already has a page, so the CTA offers to add another
-    expect(page.get_by_role("button", name="Create another registration page")).to_be_visible(
-        timeout=PLAYWRIGHT_TIMEOUT
-    )
+    expect(page.get_by_role("button", name="Create registration page")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
 @when("I open the first registration page from the list")
 def open_first_registration_page(page: Page):
     """Follow the first page-name link into that page's editor."""
     page.get_by_role("link", name="Registration page", exact=True).first.click()
+
+
+@when("I choose to edit the first registration page from the list")
+def edit_first_registration_page(page: Page):
+    """Follow the first row's Edit button into that page's editor."""
+    page.get_by_role("button", name="Edit Registration page", exact=True).first.click()
 
 
 @when("I choose to delete the first registration page")

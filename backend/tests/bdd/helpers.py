@@ -32,3 +32,33 @@ def check_follow_link(page: Page, link_name: str, link_url: str) -> None:
     # we manually navigate the original page to that URL, so that
     # we are ready for the "then" step to check the contents of the page
     page.goto(link_url)
+
+
+def assert_step_dialog_dimmed(page: Page, host_selector: str) -> None:
+    """
+    A fragment dialog opened over a registration step's takeover dialog must grey
+    the step out, so it reads as out of reach. Checks that, at a point on the step's
+    panel clear of the fragment dialog, the topmost element is the fragment
+    dialog's backdrop - not the step's own panel.
+    """
+    expect(page.locator(f"{host_selector} [role='dialog']")).to_be_visible()
+    step_panel = page.locator(".dialog-panel--takeover").bounding_box()
+    assert step_panel is not None
+    # The top-left corner of the step's panel: its header, well clear of the
+    # narrower fragment dialog centred over it.
+    x, y = step_panel["x"] + 10, step_panel["y"] + 10
+    # The step dialog is inert while the fragment dialog is open, and hit testing
+    # passes straight through inert elements - so lift it for the probe, or the
+    # backdrop would be found even when painted underneath the step's panel.
+    covered_by_host_backdrop = page.evaluate(
+        """([x, y, hostSelector]) => {
+            const step = document.querySelector(".dialog-positioner:has(.dialog-panel--takeover)");
+            const wasInert = step.inert;
+            step.inert = false;
+            const top = document.elementFromPoint(x, y);
+            step.inert = wasInert;
+            return !!top && top.matches(".dialog-backdrop") && !!top.closest(hostSelector);
+        }""",
+        [x, y, host_selector],
+    )
+    assert covered_by_host_backdrop, "the step dialog behind the fragment dialog is not dimmed"

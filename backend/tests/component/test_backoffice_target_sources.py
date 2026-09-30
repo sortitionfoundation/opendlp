@@ -4,6 +4,7 @@ ABOUTME: Drives the real target-sources routes + services against a seeded fake 
 import io
 import re
 import uuid
+from html.parser import HTMLParser
 
 import pytest
 
@@ -54,6 +55,44 @@ def _seed_respondents(fake_store, assembly, attributes_list):
             uow.respondents.add(Respondent(assembly_id=assembly.id, external_id=f"R-{index}", attributes=attributes))
 
 
+_VOID_ELEMENTS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+
+class _TestIdText(HTMLParser):
+    """The text inside the element carrying a given data-testid, with whitespace collapsed."""
+
+    def __init__(self, testid: str) -> None:
+        super().__init__()
+        self.testid = testid
+        self.depth = 0
+        self.found = False
+        self.parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in _VOID_ELEMENTS:
+            return
+        if self.depth:
+            self.depth += 1
+        elif dict(attrs).get("data-testid") == self.testid:
+            self.depth = 1
+            self.found = True
+
+    def handle_endtag(self, tag: str) -> None:
+        if self.depth and tag not in _VOID_ELEMENTS:
+            self.depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if self.depth:
+            self.parts.append(data)
+
+    @classmethod
+    def of(cls, body: str, testid: str) -> str:
+        parser = cls(testid)
+        parser.feed(body)
+        assert parser.found, f"no {testid} in the page"
+        return re.sub(r"\s+", " ", " ".join(parser.parts)).strip()
+
+
 def _field_by_key(fake_store, assembly, field_key):
     with FakeUnitOfWork(store=fake_store) as uow:
         return uow.respondent_field_definitions.get_by_assembly_and_key(assembly.id, field_key)
@@ -86,7 +125,7 @@ class TestChecklistPage:
 
         assert response.status_code == 200
         assert b"Asked on the registration page" in response.data
-        assert b"No data source yet" in response.data
+        assert b"No question linked yet" in response.data
 
     def test_status_marks_and_close_buttons_are_icons_not_text_glyphs(
         self, logged_in_admin, existing_assembly, fake_store
@@ -117,7 +156,69 @@ class TestChecklistPage:
 
         assert b"The target's values have changed" in response.data
 
-    def test_each_row_opens_its_set_up_dialog_from_anywhere_on_the_card(
+    def test_rows_are_marked_unlinked_needing_attention_or_done(self, logged_in_admin, existing_assembly, fake_store):
+        """The card's left border colour - the sentence in the row says the same in words."""
+        linked = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Gender",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            target_category_id=linked.id,
+        )
+        stale = _seed_category(fake_store, existing_assembly, "Housing", ["Own", "Rent", "Other"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Housing",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Own"), ChoiceOption(value="Rent")],
+            target_category_id=stale.id,
+        )
+        unset = _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        row_status = {
+            category_id: status
+            for status, category_id in re.findall(
+                r'<li class="target-source-row target-source-row--(\w+)[^"]*" data-focus-row="ts-([^"]+)"', body
+            )
+        }
+        assert row_status == {str(linked.id): "done", str(stale.id): "attention", str(unset.id): "unlinked"}
+
+    def test_an_unlinked_rows_sentence_is_emphasised(self, logged_in_admin, existing_assembly, fake_store):
+        _seed_category(fake_store, existing_assembly, "Region", ["North", "South"])
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        assert re.search(
+            r'<span class="target-source-row__unlinked">\s*<svg[^>]*>.*?</svg>\s*No question linked yet\.</span>',
+            body,
+            re.DOTALL,
+        )
+
+    def test_the_edit_button_has_an_edit_icon(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "Gender",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="Male"), ChoiceOption(value="Female")],
+            target_category_id=category.id,
+        )
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/target-sources").get_data(as_text=True)
+
+        edit = re.search(r'<a href="[^"]*/setup-modal"\s+role="button"[^>]*>(.*?)</a>', body, re.DOTALL)
+        assert edit is not None
+        assert re.fullmatch(
+            r'<span class="btn-icon">\s*<svg.*</svg>\s*</span><span>Edit</span>', edit.group(1).strip(), re.DOTALL
+        )
+
+    def test_each_row_has_one_set_up_link_and_the_card_itself_is_not_a_link(
         self, logged_in_admin, existing_assembly, fake_store
     ):
         linked = _seed_category(fake_store, existing_assembly, "Gender", ["Male", "Female"])
@@ -137,8 +238,9 @@ class TestChecklistPage:
         rows = re.findall(r'<li class="target-source-row[^"]*"[^>]*>(.*?)</li>', body, re.DOTALL)
         assert len(rows) == 2
         for row, category in zip(rows, (linked, unset), strict=True):
-            # Exactly one link stretches over the card, and it opens that row's set-up dialog
-            open_links = re.findall(r'<a href="([^"]*)"\s+role="button"\s+class="[^"]*\brow-link\b', row)
+            # Only the button opens the set-up dialog: nothing stretches a link over the card
+            assert "row-link" not in row
+            open_links = re.findall(r'<a href="([^"]*/setup-modal)"\s+role="button"', row)
             assert open_links == [
                 f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal"
             ]
@@ -291,7 +393,7 @@ class TestSetupModal:
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert "Set up data source for Gender" in body
+        assert "Set up the question for Gender" in body
         assert "How is the data collected?" in body
         assert re.search(r'<select\s+name="method"', body)
         assert re.search(r'<option value="" selected>\s*Choose one', body)
@@ -341,7 +443,7 @@ class TestSetupModal:
         response = logged_in_admin.get(self._setup_url(existing_assembly, category), headers=HTMX)
         body = response.get_data(as_text=True)
 
-        assert "Edit data source for Gender" in body
+        assert "Edit the question for Gender" in body
         assert re.search(r'<option value="exact" selected>', body)
         assert "Ask the question with exactly the target&#39;s values as the answers" in body
 
@@ -529,9 +631,8 @@ class TestConfigureAgeBrackets:
             "as_of_day": "1",
             "as_of_month": "6",
             "as_of_year": "2027",
-            "min_age": "16",
-            "max_age": "100",
-            "boundaries": "30",
+            "bracket_label": ["16-29", "30-99"],
+            "bracket_from": ["16", "30"],
             **overrides,
         }
 
@@ -570,7 +671,7 @@ class TestConfigureAgeBrackets:
 
         assert response.status_code == 200
         assert re.search(r'id="floating-alerts"\s+hx-swap-oob="beforeend"', body)
-        assert "Data source saved — Age bracket recomputed for every respondent" in body
+        assert "Question linked to its target — Age bracket recomputed for every respondent" in body
         assert "var(--color-success-100)" in body
         assert "fell back" not in body
         # No report dialog: the toast replaces it
@@ -590,7 +691,7 @@ class TestConfigureAgeBrackets:
         )
         body = response.get_data(as_text=True)
 
-        assert "Data source saved — Age bracket recomputed for every respondent" in body
+        assert "Question linked to its target — Age bracket recomputed for every respondent" in body
         assert "1 fell back to UNKNOWN" in body
         assert "var(--color-warning-100)" in body
 
@@ -606,7 +707,7 @@ class TestConfigureAgeBrackets:
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert "Data source saved — Age bracket recomputed for every respondent" in body
+        assert "Question linked to its target — Age bracket recomputed for every respondent" in body
         assert "Respondents recomputed" not in body
 
     def test_creates_the_named_source_when_no_name_is_given(self, logged_in_admin, existing_assembly, fake_store):
@@ -621,9 +722,8 @@ class TestConfigureAgeBrackets:
                 "as_of_day": "1",
                 "as_of_month": "6",
                 "as_of_year": "2027",
-                "min_age": "16",
-                "max_age": "100",
-                "boundaries": "30",
+                "bracket_label": ["16-29", "30-99"],
+                "bracket_from": ["16", "30"],
             },
             headers=HTMX,
         )
@@ -638,52 +738,248 @@ class TestConfigureAgeBrackets:
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
-            data={
-                "modal": "1",
-                "method": "age_bracket",
-                "source_mode": "create",
-                "new_field_key": "date_of_birth",
-                "as_of_day": "",
-                "as_of_month": "",
-                "as_of_year": "",
-            },
+            data=self._age_form(as_of_day="", as_of_month="", as_of_year=""),
             headers=HTMX,
         )
 
         assert response.status_code == 422
-        assert b"as-of date" in response.data
+        assert b"Enter a valid date to calculate respondent age on" in response.data
 
     def test_a_rule_error_is_shown_in_the_organisers_words(self, logged_in_admin, existing_assembly, fake_store):
         category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
         response = logged_in_admin.post(
             f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
-            data=self._age_form(min_age="50", max_age="40", boundaries=""),
+            data=self._age_form(bracket_from=["30", "30"]),
             headers=HTMX,
         )
         body = response.get_data(as_text=True)
 
         assert response.status_code == 422
-        assert "The maximum age must be greater than the minimum age" in body
-        assert "max_age must be greater than min_age" not in body
+        assert "Two age ranges cannot start at the same age" in body
+        assert _field_by_key(fake_store, existing_assembly, "Age bracket") is None
 
-    def test_brackets_prefill_from_the_target_and_the_date_from_the_assembly(
-        self, logged_in_admin, existing_assembly, fake_store
-    ):
-        """Choosing age ranges for a "16-24"-style target fills in min/max/boundaries and the as-of date."""
-        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-24", "25-39", "40-59", "60+"])
+    def test_a_target_value_left_without_an_age_is_refused(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
 
-        response = logged_in_admin.get(
-            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
-            query_string={"modal": "1", "method": "age_bracket", "source_mode": "create"},
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=self._age_form(bracket_from=["16", ""]),
             headers=HTMX,
         )
         body = response.get_data(as_text=True)
 
-        assert re.search(r'name="min_age"[^>]*value="16"', body)
-        assert re.search(r'name="max_age"[^>]*value="60"', body)
-        assert re.search(r'name="boundaries"[^>]*value="25, 40"', body)
-        assert re.search(rf'name="as_of_year"[^>]*value="{existing_assembly.first_assembly_date.year}"', body)
+        assert response.status_code == 422
+        assert "Enter the age where &#39;30-99&#39; starts" in body
+
+    def test_the_saved_rule_outputs_the_targets_own_values(self, logged_in_admin, existing_assembly, fake_store):
+        """A target spelt "60 or over" is fed "60 or over", so every respondent counts towards it."""
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16 to 59", "60 or over"])
+        _seed_respondents(fake_store, existing_assembly, [{"year_of_birth": "1950"}])
+
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=self._age_form(bracket_label=["16 to 59", "60 or over"], bracket_from=["16", "60"]),
+            headers=HTMX,
+        )
+
+        derived = _field_by_key(fake_store, existing_assembly, "Age")
+        assert [option.value for option in derived.options] == ["16 to 59", "60 or over", "UNKNOWN"]
+        with FakeUnitOfWork(store=fake_store) as uow:
+            [respondent] = uow.respondents.get_by_assembly_id(existing_assembly.id)
+        assert respondent.attributes["Age"] == "60 or over"
+
+
+class TestAgeRangesDialog:
+    """What the set-up dialog shows for age ranges: matched ages, the table, and the age-calculation date."""
+
+    def _open(self, client, assembly, category, **params):
+        return client.get(
+            f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/setup-modal",
+            query_string={"modal": "1", "method": "age_bracket", "source_mode": "create", **params},
+            headers=HTMX,
+        ).get_data(as_text=True)
+
+    @staticmethod
+    def _section(body, testid):
+        return _TestIdText.of(body, testid)
+
+    def test_matched_target_values_are_summarised_with_an_edit_button(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30-44", "45-59", "60+"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+        summary = self._section(body, "ts-age-summary")
+
+        assert "16-29 16 to 29" in summary
+        assert "45-59 45 to 59" in summary
+        assert "60+ 60 and over" in summary
+        assert 'aria-label="Edit the age ranges"' in body
+        assert 'data-editing="false"' in body
+        assert "Anyone younger than 16 counts as UNKNOWN." in body
+
+    def test_the_table_carries_each_matched_start_to_the_form(self, logged_in_admin, existing_assembly, fake_store):
+        """The table stays in the form behind the summary, so Save sends the matched ages."""
+        category = _seed_category(fake_store, existing_assembly, "Age", ["under 16", "16 to 29", "30 or over"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        assert re.findall(r'name="bracket_label" value="([^"]*)"', body) == ["under 16", "16 to 29", "30 or over"]
+        assert re.findall(r'name="bracket_from"[^>]*value="(\d*)"', body) == ["0", "16", "30"]
+        assert "Anyone younger than" not in self._section(body, "ts-age-summary")
+
+    def test_values_that_leave_a_gap_open_the_table_and_say_where(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "35-44", "45+"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        assert 'data-testid="ts-age-summary"' not in body
+        assert 'data-editing="true"' in body
+        assert "The target values leave out ages 30 to 34" in body
+        assert re.findall(r'name="bracket_from"[^>]*value="(\d*)"', body) == ["16", "35", "45"]
+
+    def test_values_with_no_ages_in_them_ask_for_the_ages(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["Young", "Old"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        assert "Could not work out age ranges from the target values" in body
+        inputs = re.findall(r'<input[^>]*name="bracket_from"[^>]*>', body)
+        assert len(inputs) == 2
+        assert not any("value=" in tag for tag in inputs)
+        assert 'aria-label="Age where Young starts"' in body
+
+    def test_typed_ages_survive_a_re_render(self, logged_in_admin, existing_assembly, fake_store):
+        """Flipping a radio re-renders the dialog; the ages typed so far are kept, and summarised when complete."""
+        category = _seed_category(fake_store, existing_assembly, "Age", ["Young", "Old"])
+
+        body = self._open(
+            logged_in_admin,
+            existing_assembly,
+            category,
+            age_source_type="year",
+            bracket_label=["Young", "Old"],
+            bracket_from=["18", "40"],
+        )
+
+        assert "Young 18 to 39" in self._section(body, "ts-age-summary")
+        assert "Old 40 and over" in self._section(body, "ts-age-summary")
+
+    def test_editing_a_linked_target_shows_its_saved_ages(self, logged_in_admin, existing_assembly, fake_store):
+        category = TestRowActions()._linked_age_bracket(fake_store, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal", headers=HTMX
+        ).get_data(as_text=True)
+
+        assert "16-29 18 to 29" in self._section(body, "ts-age-summary")
+        assert "2027" in self._section(body, "ts-as-of-text")
+
+    def test_a_known_date_is_shown_as_text_with_a_change_button(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+        first_date = existing_assembly.first_assembly_date
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        as_of_text = self._section(body, "ts-as-of-text")
+        assert as_of_text.startswith("Respondent age calculated on")
+        assert str(first_date.year) in as_of_text
+        assert 'aria-label="Change the date respondent age is calculated on"' in body
+        assert 'data-changing-date="false"' in body
+        # The inputs still go with the form, hidden until Change is pressed.
+        assert re.search(rf'name="as_of_year"[^>]*value="{first_date.year}"', body)
+
+    def test_without_a_date_the_inputs_show_with_placeholders(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = self._open(
+            logged_in_admin, existing_assembly, category, as_of_day="31", as_of_month="2", as_of_year="2027"
+        )
+
+        assert 'data-testid="ts-as-of-text"' not in body
+        assert 'data-changing-date="true"' in body
+        assert 'placeholder="DD"' in body
+        assert 'placeholder="MM"' in body
+        assert 'placeholder="YYYY"' in body
+        assert "Usually the first assembly date." in self._section(body, "ts-as-of-inputs")
+
+    def test_a_failed_save_over_the_date_reopens_the_inputs(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age bracket", ["16-29", "30-99"])
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/configure",
+            data=TestConfigureAgeBrackets()._age_form(as_of_year="1999"),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert "The year to calculate respondent age on must be between" in body
+        assert 'data-changing-date="true"' in body
+
+    def test_target_values_are_listed_once(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = self._open(logged_in_admin, existing_assembly, category)
+
+        assert body.count("Target values:") == 1
+        assert "The target expects" not in body
+
+    @pytest.mark.parametrize(
+        ("params", "shown"),
+        [({"age_source_type": "year"}, True), ({"age_source_type": "date"}, False)],
+    )
+    def test_the_year_of_birth_caveat_follows_a_new_question_too(
+        self, logged_in_admin, existing_assembly, fake_store, params, shown
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = self._open(logged_in_admin, existing_assembly, category, **params)
+
+        assert ("assume a 1 January birthday" in self._section(body, "ts-source-group")) is shown
+
+    def test_the_year_of_birth_caveat_shows_for_a_reused_year_question(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+        field = _seed_field(fake_store, existing_assembly, "year_of_birth", field_type=FieldType.INTEGER)
+
+        body = self._open(
+            logged_in_admin, existing_assembly, category, source_mode="reuse", reuse_field_id=str(field.id)
+        )
+
+        assert "assume a 1 January birthday" in self._section(body, "ts-source-group")
+
+
+class TestDialogGroups:
+    """Every method's dialog is split into sections by a divider line."""
+
+    @pytest.mark.parametrize(
+        ("method", "sections"),
+        [("exact", 1), ("age_bracket", 3), ("small_mapping", 2), ("large_mapping", 2)],
+    )
+    def test_each_method_divides_its_sections(self, logged_in_admin, existing_assembly, fake_store, method, sections):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            query_string={"modal": "1", "method": method, "source_mode": "create"},
+            headers=HTMX,
+        ).get_data(as_text=True)
+
+        assert body.count('style="border-top: 1px solid var(--color-borders-dividers);"') == sections
+        assert 'data-testid="ts-source-group"' in body
+
+    def test_no_sections_until_a_method_is_chosen(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age", ["16-29", "30+"])
+
+        body = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/target-sources/{category.id}/setup-modal",
+            headers=HTMX,
+        ).get_data(as_text=True)
+
+        assert 'style="border-top: 1px solid var(--color-borders-dividers);"' not in body
 
 
 class TestConfigureLargeMapping:
@@ -850,6 +1146,244 @@ class TestConfigureSmallMapping:
         assert derived.derivation_type == DerivationType.SMALL_MAPPING
         assert derived.derivation_config["mapping"] == {"16-29": "Younger", "30-99": "Older"}
 
+    def _configure_url(self, assembly, category):
+        return f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/configure"
+
+    def _setup_url(self, assembly, category, query=""):
+        return f"/backoffice/assembly/{assembly.id}/target-sources/{category.id}/setup-modal{query}"
+
+    def _create_form(self, **overrides):
+        return {
+            "modal": "1",
+            "method": "small_mapping",
+            "source_mode": "create",
+            "new_field_key": "age_band",
+            "map_source": ["16-29", "30-44", ""],
+            "map_target": ["Younger", "Older", ""],
+            **overrides,
+        }
+
+    def test_with_no_choice_question_it_asks_for_the_new_one_and_its_answers(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        """No "come back later": the question, its answers and the mapping are all typed here."""
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.get(
+            self._setup_url(existing_assembly, category, "?modal=1&method=small_mapping"), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "registration questions step first" not in body
+        assert 'name="new_field_key"' in body
+        assert "Answers, and the target value each one counts as" in body
+        # One more blank row than the target has values
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 3
+        assert len(re.findall(r'<select[^>]*name="map_target"', body)) == 3
+        assert "Add another answer" in body
+        assert 'value="remove_option_0"' in body
+        assert "don't count towards any target value" in body
+        # Nothing to reuse, so no mode to choose
+        assert 'name="source_mode"' not in body
+
+    def test_with_a_choice_question_it_offers_reuse_or_create(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+        _seed_field(
+            fake_store,
+            existing_assembly,
+            "age_band",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="16-29"), ChoiceOption(value="30-99")],
+        )
+
+        response = logged_in_admin.get(
+            self._setup_url(existing_assembly, category, "?modal=1&method=small_mapping"), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Use an existing question" in body
+        assert "Create a new question" in body
+        assert 'name="reuse_field_id"' in body
+
+    def test_a_reused_question_keeps_its_answers_fixed(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+        source = _seed_field(
+            fake_store,
+            existing_assembly,
+            "age_band",
+            field_type=FieldType.CHOICE_RADIO,
+            options=[ChoiceOption(value="16-29"), ChoiceOption(value="30-99")],
+        )
+
+        response = logged_in_admin.get(
+            self._setup_url(
+                existing_assembly,
+                category,
+                f"?modal=1&method=small_mapping&source_mode=reuse&reuse_field_id={source.id}",
+            ),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Map each answer to a target value" in body
+        assert re.search(r'<input type="hidden" name="map_source" value="16-29">', body)
+        assert "Add another answer" not in body
+        assert "remove_option_" not in body
+
+    def test_creating_the_question_saves_its_answers_the_computed_question_and_the_mapping(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category), data=self._create_form(), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert 'id="target-sources-list" hx-swap-oob="true"' in body
+        source = _field_by_key(fake_store, existing_assembly, "age_band")
+        assert source.field_type == FieldType.CHOICE_RADIO
+        assert [o.value for o in source.options] == ["16-29", "30-44"]
+        derived = _field_by_key(fake_store, existing_assembly, "Age group")
+        assert derived.derivation_type == DerivationType.SMALL_MAPPING
+        assert derived.derived_from == ["age_band"]
+        assert derived.derivation_config["mapping"] == {"16-29": "Younger", "30-44": "Older"}
+        assert derived.target_category_id == category.id
+
+    def test_many_answers_make_a_dropdown(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+        answers = [f"{10 * n}-{10 * n + 9}" for n in range(2, 9)]
+
+        logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(map_source=answers, map_target=["Younger"] * len(answers)),
+            headers=HTMX,
+        )
+
+        assert _field_by_key(fake_store, existing_assembly, "age_band").field_type == FieldType.CHOICE_DROPDOWN
+
+    def test_the_recompute_is_reported_in_a_toast(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+        _seed_respondents(fake_store, existing_assembly, [{"age_band": "16-29"}, {"age_band": "30-44"}])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category), data=self._create_form(), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert "Question linked to its target — Age group recomputed for every respondent" in body
+        assert "var(--color-success-100)" in body
+
+    def test_adding_a_row_keeps_what_was_typed_and_saves_nothing(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(map_source=["16-29"], map_target=["Younger"], form_action="add_option"),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 2
+        assert re.search(r'name="map_source"[^>]*value="16-29"', body)
+        assert re.search(r'<option value="Younger" selected>', body)
+        assert 'value="age_band"' in body
+        assert _field_by_key(fake_store, existing_assembly, "age_band") is None
+        assert _field_by_key(fake_store, existing_assembly, "Age group") is None
+
+    def test_removing_a_row_drops_that_row_only(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(
+                map_source=["16-29", "30-44", "45+"],
+                map_target=["Younger", "Older", "Older"],
+                form_action="remove_option_1",
+            ),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 2
+        assert 'value="16-29"' in body
+        assert 'value="45+"' in body
+        assert 'value="30-44"' not in body
+        assert _field_by_key(fake_store, existing_assembly, "age_band") is None
+
+    def test_a_bad_remove_index_changes_nothing(self, logged_in_admin, existing_assembly, fake_store):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(map_source=["16-29"], map_target=["Younger"], form_action="remove_option_x"),
+            headers=HTMX,
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 1
+
+    def test_a_row_round_trip_without_htmx_returns_the_page_with_the_dialog_open(
+        self, logged_in_admin, existing_assembly, fake_store
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category),
+            data=self._create_form(map_source=["16-29"], map_target=["Younger"], form_action="add_option"),
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 200
+        assert "target-sources-list" in body
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == 2
+
+    def test_pressing_enter_saves_rather_than_removing_a_row(self, logged_in_admin, existing_assembly, fake_store):
+        """The first submit button in the form is a hidden Save, so Enter in an answer input saves."""
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.get(
+            self._setup_url(existing_assembly, category, "?modal=1&method=small_mapping"), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        first_submit = re.search(r'<button[^>]*type="submit"[^>]*>', body).group(0)
+        assert 'value="save"' in first_submit
+
+    @pytest.mark.parametrize(
+        ("overrides", "message"),
+        [
+            ({"new_field_key": ""}, "Enter a name for the new registration question"),
+            ({"map_source": ["", ""], "map_target": ["", ""]}, "Enter at least one answer"),
+            (
+                {"map_source": ["16-29", "16-29"], "map_target": ["Younger", "Older"]},
+                "Answer values must be different: &#39;16-29&#39; appears more than once",
+            ),
+            ({"map_target": ["", "", ""]}, "Map at least one answer to a target value"),
+            ({"map_target": ["Younger", "Middle", ""]}, "&#39;Middle&#39; is not one of the target&#39;s values"),
+        ],
+    )
+    def test_a_bad_form_rerenders_the_dialog_with_the_typed_rows(
+        self, logged_in_admin, existing_assembly, fake_store, overrides, message
+    ):
+        category = _seed_category(fake_store, existing_assembly, "Age group", ["Younger", "Older"])
+
+        response = logged_in_admin.post(
+            self._configure_url(existing_assembly, category), data=self._create_form(**overrides), headers=HTMX
+        )
+        body = response.get_data(as_text=True)
+
+        assert response.status_code == 422
+        assert message in body
+        assert len(re.findall(r'<input[^>]*name="map_source"', body)) == len(overrides.get("map_source", [1, 2, 3]))
+        assert _field_by_key(fake_store, existing_assembly, "Age group") is None
+        assert _field_by_key(fake_store, existing_assembly, "age_band") is None
+
 
 class TestRowActions:
     def _linked_exact(self, fake_store, assembly, values_in_field=("Male", "Female")):
@@ -925,7 +1459,7 @@ class TestRowActions:
 
         assert response.status_code == 302
         assert response.location.endswith("/target-sources")
-        assert _flashes(logged_in_admin) == ["This data source could not be re-synced — set it up again"]
+        assert _flashes(logged_in_admin) == ["This question could not be re-synced — set it up again"]
 
     def test_unlink_clears_the_link_but_keeps_the_field(self, logged_in_admin, existing_assembly, fake_store):
         category, _field = self._linked_exact(fake_store, existing_assembly)
@@ -953,9 +1487,7 @@ class TestRowActions:
             derivation_type=DerivationType.AGE_BRACKET,
             derivation_config={
                 "as_of_date": "2027-06-01",
-                "min_age": 16,
-                "max_age": 100,
-                "boundaries": [30],
+                "brackets": [{"from_age": 18, "label": "16-29"}, {"from_age": 30, "label": "30-99"}],
                 "fallback": "UNKNOWN",
             },
             field_type=FieldType.CHOICE_DROPDOWN,
@@ -1163,7 +1695,10 @@ class TestMappingUpload:
         body = response.get_data(as_text=True)
 
         assert response.status_code == 200
-        assert "Data source saved. Until the lookup table is uploaded, everyone&#39;s Region will be UNKNOWN." in body
+        assert (
+            "Question linked to its target. Until the lookup table is uploaded, everyone&#39;s Region will be UNKNOWN."
+            in body
+        )
         assert "var(--color-warning-100)" in body
         assert 'id="target-sources-list" hx-swap-oob="true"' in body
         assert self._row_count(fake_store, field) == 0

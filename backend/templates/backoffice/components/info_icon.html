@@ -4,7 +4,7 @@ ABOUTME: Used in table headings whose column needs a sentence of explanation
 #}
 
 {% from "backoffice/components/icons.html" import icon_info %}
-{% macro info_icon(text) %}
+{% macro info_icon(text, id="") %}
     {#
     An explanation attached to a label, shown on hover and read out by a screen
     reader. A glyph on its own says nothing, so the wording is both the `title`
@@ -12,6 +12,8 @@ ABOUTME: Used in table headings whose column needs a sentence of explanation
 
     Args:
         text: The sentence explaining whatever the icon sits beside.
+        id: Optional id for the read-out text, so a control can point
+            aria-describedby at it.
 
     Usage:
         {{ info_icon(_("Withdrawn people are not counted.")) }}
@@ -20,6 +22,6 @@ ABOUTME: Used in table headings whose column needs a sentence of explanation
           title="{{ text }}"
           style="color: var(--color-secondary-text)">
         {{ icon_info() }}
-        <span class="sr-only">{{ text }}</span>
+        <span class="sr-only"{% if id %} id="{{ id }}"{% endif %}>{{ text }}</span>
     </span>
 {% endmacro %}

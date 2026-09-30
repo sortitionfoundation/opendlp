@@ -51,12 +51,13 @@ ABOUTME: Read-only view of one category - every change is made through "Edit tar
          style="border-bottom: 1px solid var(--color-borders-dividers)">
         <h3 class="text-heading-lg" style="color: var(--color-headings);">{{ category.name }}</h3>
     </div>
-    {# ── Data Source and Comment ───────────────────────────── #}
+    {# ── Source of Population Figures and Comment ──────────── #}
     {% if category.source_url or category.comment %}
         <div class="px-6 pt-4">
             {% if category.source_url %}
                 <p class="text-body-sm mb-1" style="color: var(--color-secondary-text);">
-                    {{ _("Data Source:") }}
+                    {{ _("Source of population figures:") }}
+                    {{ info_icon(_("A link to the report the percentages come from, such as census tables or a poll.")) }}
                     <a href="{{ category.source_url }}"
                        class="underline"
                        style="color: var(--color-links)"

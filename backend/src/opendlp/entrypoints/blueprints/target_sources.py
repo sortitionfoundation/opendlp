@@ -3,6 +3,7 @@ ABOUTME: One row per target; a set-up modal wires each to its field via the four
 
 import contextlib
 import uuid
+from itertools import zip_longest
 from typing import Any
 
 import structlog
@@ -11,7 +12,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from opendlp import bootstrap
-from opendlp.domain.respondent_derivation import DEFAULT_FALLBACK, LargeMappingRule
+from opendlp.domain.respondent_derivation import DEFAULT_FALLBACK, AgeBracket, LargeMappingRule, match_age_brackets
 from opendlp.domain.respondent_field_schema import (
     DERIVATION_TYPE_LABELS,
     DerivationType,
@@ -23,8 +24,10 @@ from opendlp.domain.respondent_field_schema import (
     humanise_field_key,
 )
 from opendlp.entrypoints.derivation_form_parser import (
-    age_prefill_from_target,
+    parse_age_brackets,
     parse_age_rule,
+    parse_answer_options,
+    parse_as_of_date,
     parse_small_mapping_rule,
 )
 from opendlp.entrypoints.registration_hub import registration_hub_context
@@ -60,6 +63,7 @@ from opendlp.service_layer.target_source_service import (
     TargetSourceState,
     TargetSourceStatus,
     adopt_field,
+    choice_type_for,
     configure_target_source,
     resync_from_target,
     reusable_source_fields,
@@ -132,13 +136,29 @@ def _setup_values_from_request(source: Any) -> dict[str, Any]:
             "as_of_day",
             "as_of_month",
             "as_of_year",
-            "min_age",
-            "max_age",
-            "boundaries",
         )
     }
+    values["bracket_label"] = source.getlist("bracket_label")
+    values["bracket_from"] = source.getlist("bracket_from")
     values["map_source"] = source.getlist("map_source")
     values["map_target"] = source.getlist("map_target")
+    return values
+
+
+def _apply_row_action(values: dict[str, Any], form_action: str) -> dict[str, Any]:
+    """Apply a mapping-table round trip (add or remove an answer row) to the form state."""
+    if form_action == "add_option":
+        values["map_source"].append("")
+        values["map_target"].append("")
+    elif form_action.startswith("remove_option_"):
+        try:
+            index = int(form_action.removeprefix("remove_option_"))
+        except ValueError:
+            return values
+        if 0 <= index < len(values["map_source"]):
+            values["map_source"].pop(index)
+            if index < len(values["map_target"]):
+                values["map_target"].pop(index)
     return values
 
 
@@ -176,9 +196,9 @@ def _seed_from_derivation(values: dict[str, Any], field: RespondentFieldDefiniti
         if len(as_of.split("-")) == 3:
             year, month, day = as_of.split("-")
             values.update({"as_of_year": year, "as_of_month": str(int(month)), "as_of_day": str(int(day))})
-        values["min_age"] = str(config.get("min_age", ""))
-        values["max_age"] = str(config.get("max_age", ""))
-        values["boundaries"] = ", ".join(str(b) for b in config.get("boundaries", []))
+        brackets = config.get("brackets", [])
+        values["bracket_label"] = [str(bracket.get("label", "")) for bracket in brackets]
+        values["bracket_from"] = [str(bracket.get("from_age", "")) for bracket in brackets]
     if field.derivation_type == DerivationType.SMALL_MAPPING:
         mapping = config.get("mapping", {})
         values["map_source"] = list(mapping.keys())
@@ -234,18 +254,73 @@ def _status_for(statuses: list[TargetSourceStatus], category_id: uuid.UUID) -> T
     return next((s for s in statuses if s.category.id == category_id), None)
 
 
-def _apply_age_prefills(values: dict[str, Any], target_values: list[str], first_date: Any) -> None:
-    """Pre-fill blank age inputs: the as-of date from the assembly, brackets from the target."""
+def _apply_as_of_prefill(values: dict[str, Any], first_date: Any) -> None:
+    """Pre-fill a blank as-of date with the first assembly date."""
     if not (values["as_of_day"] or values["as_of_month"] or values["as_of_year"]) and first_date is not None:
         values["as_of_day"] = str(first_date.day)
         values["as_of_month"] = str(first_date.month)
         values["as_of_year"] = str(first_date.year)
-    if not values["boundaries"]:
-        prefill = age_prefill_from_target(target_values)
-        if prefill:
-            values.update(prefill)
-    values["min_age"] = values["min_age"] or "16"
-    values["max_age"] = values["max_age"] or "100"
+
+
+def _ages_text(bracket: AgeBracket, next_from_age: int | None) -> str:
+    if next_from_age is None:
+        return _("%(age)s and over", age=bracket.from_age)
+    if next_from_age == bracket.from_age + 1:
+        return str(bracket.from_age)
+    return _("%(first)s to %(last)s", first=bracket.from_age, last=next_from_age - 1)
+
+
+def _age_ranges(values: dict[str, Any], target_values: list[str]) -> dict[str, Any]:
+    """One row per target value with the age it starts at, and whether they add up to a rule.
+
+    The ages typed so far win; with none typed they are worked out from the
+    target values. The rows always follow the target's current values, so a
+    renamed value shows up blank rather than lingering.
+    """
+    typed = {
+        label: from_age.strip()
+        for label, from_age in zip(values["bracket_label"], values["bracket_from"], strict=False)
+        if from_age.strip()
+    }
+    problem = ""
+    if not typed:
+        match = match_age_brackets(target_values)
+        typed = {label: str(from_age) for label, from_age in match.from_ages.items()}
+        problem = match.problem
+    values["bracket_label"] = list(target_values)
+    values["bracket_from"] = [typed.get(value, "") for value in target_values]
+
+    ages: dict[str, str] = {}
+    younger_than = ""
+    try:
+        brackets = sorted(parse_age_brackets(values), key=lambda bracket: bracket.from_age)
+    except ValueError as e:
+        problem = problem or str(e)
+    else:
+        next_starts = [bracket.from_age for bracket in brackets[1:]] + [None]
+        ages = {
+            bracket.label: _ages_text(bracket, next_from)
+            for bracket, next_from in zip(brackets, next_starts, strict=True)
+        }
+        if brackets[0].from_age > 0:
+            younger_than = _(
+                "Anyone younger than %(age)s counts as %(fallback)s.",
+                age=brackets[0].from_age,
+                fallback=DEFAULT_FALLBACK,
+            )
+    rows = [
+        {"label": label, "from_age": from_age, "ages": ages.get(label, "")}
+        for label, from_age in zip(values["bracket_label"], values["bracket_from"], strict=True)
+    ]
+    return {"rows": rows, "matched": not problem, "problem": problem, "younger_than": younger_than}
+
+
+def _as_of_iso(values: dict[str, Any]) -> str:
+    """The as-of date as ISO text when the inputs hold a valid one, otherwise blank."""
+    try:
+        return parse_as_of_date(values).isoformat()
+    except ValueError:
+        return ""
 
 
 def _resolve_source_selection(
@@ -259,6 +334,42 @@ def _resolve_source_selection(
         if name_match is not None:
             values["reuse_field_id"] = str(name_match.id)
     return next((f for f in candidates if str(f.id) == values["reuse_field_id"]), None)
+
+
+def _map_rows(
+    values: dict[str, Any],
+    method: str,
+    selected_source: RespondentFieldDefinition | None,
+    target_values: list[str],
+) -> list[dict[str, str]]:
+    """The mapping table's rows: one per option of the reused question, or the answers typed so far.
+
+    A new question starts with one more blank row than the target has values,
+    since mapping from more options means at least that many.
+    """
+    if method != DerivationType.SMALL_MAPPING.value:
+        return []
+    if values["source_mode"] == "create":
+        if not values["map_source"]:
+            return [{"source_value": "", "target_value": ""} for _unused in range(len(target_values) + 1)]
+        return [
+            {"source_value": source, "target_value": target}
+            for source, target in zip_longest(values["map_source"], values["map_target"], fillvalue="")
+        ]
+    if selected_source is None or not selected_source.options:
+        return []
+    submitted = dict(zip(values["map_source"], values["map_target"], strict=False))
+    return [
+        {"source_value": option.value, "target_value": submitted.get(option.value, "")}
+        for option in selected_source.options
+    ]
+
+
+def _source_is_year(values: dict[str, Any], selected_source: RespondentFieldDefinition | None) -> bool:
+    """Whether the age source is a year of birth, whether reused or about to be created."""
+    if values["source_mode"] == "reuse":
+        return selected_source is not None and selected_source.effective_field_type == FieldType.INTEGER
+    return _SOURCE_TYPE_FOR_AGE.get(values["age_source_type"]) == FieldType.INTEGER
 
 
 def _setup_modal_ctx(
@@ -286,22 +397,14 @@ def _setup_modal_ctx(
     if not values["new_field_key"]:
         values["new_field_key"] = _default_new_field_key(method, values["age_source_type"])
 
-    preview_labels: list[str] = []
-    mismatch_labels: list[str] = []
+    age_ranges: dict[str, Any] = {}
+    as_of_date = ""
     if method == DerivationType.AGE_BRACKET.value:
-        _apply_age_prefills(values, target["values"], first_date)
-        with contextlib.suppress(ValueError):  # incomplete config — no preview yet
-            rule = parse_age_rule(values)
-            preview_labels = [*rule.bracket_labels(), rule.fallback]
-            mismatch_labels = [label for label in rule.bracket_labels() if label not in set(target["values"])]
+        _apply_as_of_prefill(values, first_date)
+        age_ranges = _age_ranges(values, target["values"])
+        as_of_date = _as_of_iso(values)
 
-    map_rows: list[dict[str, str]] = []
-    if method == DerivationType.SMALL_MAPPING.value and selected_source is not None and selected_source.options:
-        submitted = dict(zip(values["map_source"], values["map_target"], strict=False))
-        map_rows = [
-            {"source_value": option.value, "target_value": submitted.get(option.value, "")}
-            for option in selected_source.options
-        ]
+    map_rows = _map_rows(values, method, selected_source, target["values"])
 
     new_field_name = target["name"] if method == _METHOD_EXACT else values["new_field_key"]
     return {
@@ -314,9 +417,9 @@ def _setup_modal_ctx(
         "method_help": _method_help(),
         "candidates": candidates,
         "selected_source": selected_source,
-        "source_is_integer": selected_source is not None and selected_source.effective_field_type == FieldType.INTEGER,
-        "preview_labels": preview_labels,
-        "mismatch_labels": mismatch_labels,
+        "source_is_year": _source_is_year(values, selected_source),
+        "age_ranges": age_ranges,
+        "as_of_date": as_of_date,
         "map_rows": map_rows,
         "fallback": DEFAULT_FALLBACK,
         "new_field_name": new_field_name,
@@ -469,14 +572,19 @@ def _parse_source_spec(values: dict[str, Any], method: str) -> SourceFieldSpec:
     field_key = values["new_field_key"].strip() or _default_new_field_key(method, values["age_source_type"])
     if not field_key:
         raise ValueError(_("Enter a name for the new registration question"))
+    options = None
     if method == DerivationType.AGE_BRACKET.value:
         field_type = _SOURCE_TYPE_FOR_AGE.get(values["age_source_type"], FieldType.DATE)
+    elif method == DerivationType.SMALL_MAPPING.value:
+        options = tuple(parse_answer_options(values))
+        field_type = choice_type_for(len(options))
     else:
         field_type = FieldType.TEXT
     return SourceFieldSpec(
         field_key=field_key,
         label=values["new_field_label"].strip() or humanise_field_key(field_key),
         field_type=field_type,
+        options=options,
     )
 
 
@@ -491,10 +599,6 @@ def _parse_setup_spec(values: dict[str, Any]) -> TargetSourceSpec:
     if method == DerivationType.AGE_BRACKET.value:
         return AgeBracketSpec(rule=parse_age_rule(values), source=source)
     if method == DerivationType.SMALL_MAPPING.value:
-        if values["source_mode"] != "reuse":
-            raise ValueError(
-                _("Choose the choice question to map from — add it on the registration questions step first")
-            )
         return SmallMappingSpec(rule=parse_small_mapping_rule(values), source=source)
     return LargeMappingSpec(rule=LargeMappingRule(), source=source)
 
@@ -563,14 +667,15 @@ def setup_modal(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
     return _render_setup_modal(page_ctx, modal_ctx)
 
 
-def _setup_error_response(
-    assembly_id: uuid.UUID, category_id: uuid.UUID, values: dict[str, Any], error: str
+def _setup_modal_response(
+    assembly_id: uuid.UUID, category_id: uuid.UUID, values: dict[str, Any], error: str = "", status: int = 200
 ) -> ResponseReturnValue:
-    """Re-open the set-up modal with an error, after a save that did not happen.
+    """Re-open the set-up modal with the submitted values, when nothing was saved.
 
-    The save's block has rolled back, so the dialog is read in a fresh one.
-    Building it loads the assembly and the target, so it can fail in its own
-    right — the form is parsed before anything checks who is asking.
+    Either the save's block has rolled back, or there was no save (a mapping
+    table round trip), so the dialog is read in a block of its own. Building it
+    loads the assembly and the target, so it can fail in its own right — the
+    form is parsed before anything checks who is asking.
     """
     try:
         uow = bootstrap.get_flask_uow()
@@ -581,14 +686,29 @@ def _setup_error_response(
         return _dashboard_redirect(_("Assembly not found"))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to view this assembly"))
-    return _render_setup_modal(page_ctx, modal_ctx, 422)
+    return _render_setup_modal(page_ctx, modal_ctx, status)
+
+
+def _setup_error_response(
+    assembly_id: uuid.UUID, category_id: uuid.UUID, values: dict[str, Any], error: str
+) -> ResponseReturnValue:
+    """Re-open the set-up modal with an error, after a save that did not happen."""
+    return _setup_modal_response(assembly_id, category_id, values, error=error, status=422)
 
 
 @target_sources_bp.route("/assembly/<uuid:assembly_id>/target-sources/<uuid:category_id>/configure", methods=["POST"])
 @login_required
 def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseReturnValue:
-    """Save the set-up modal: wire the target to its source in one transaction."""
+    """Save the set-up modal: wire the target to its source in one transaction.
+
+    A ``form_action`` other than save is a mapping-table round trip (add or
+    remove an answer row): the dialog is re-rendered with the typed values and
+    nothing is saved.
+    """
     values = _setup_values_from_request(request.form)
+    form_action = request.form.get("form_action", "save")
+    if form_action != "save":
+        return _setup_modal_response(assembly_id, category_id, _apply_row_action(values, form_action))
     try:
         spec = _parse_setup_spec(values)
         uow = bootstrap.get_flask_uow()
@@ -598,7 +718,9 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
     except (FixedFieldError, DerivedFieldError, TargetLinkedFieldError):
         # Domain guards the form cannot trip; their messages are written for a developer.
         logger.exception("Target source set-up refused by a domain guard", assembly_id=str(assembly_id))
-        return _setup_error_response(assembly_id, category_id, values, _("This data source could not be saved"))
+        return _setup_error_response(
+            assembly_id, category_id, values, _("The question for this target could not be saved")
+        )
     except ValueError as e:
         # Raised by the form parsers and the rule constructors, each with a message written for the organiser.
         return _setup_error_response(assembly_id, category_id, values, str(e))
@@ -626,8 +748,10 @@ def configure_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRe
         assembly_id,
         page_ctx,
         report,
-        saved=_("Data source saved"),
-        recomputed=_("Data source saved — %(key)s recomputed for every respondent", key=fields[-1].field_key),
+        saved=_("Question linked to its target"),
+        recomputed=_(
+            "Question linked to its target — %(key)s recomputed for every respondent", key=fields[-1].field_key
+        ),
     )
 
 
@@ -674,7 +798,7 @@ def resync_view(assembly_id: uuid.UUID, category_id: uuid.UUID) -> ResponseRetur
         return redirect(_sources_url(assembly_id))
     except ValueError:
         # The linked field's stored derivation no longer parses, so there is no rule to re-sync.
-        flash(_("This data source could not be re-synced — set it up again"), "error")
+        flash(_("This question could not be re-synced — set it up again"), "error")
         return redirect(_sources_url(assembly_id))
     except InsufficientPermissions:
         return _dashboard_redirect(_("You don't have permission to edit this assembly"))
@@ -803,7 +927,7 @@ def _defer_upload_response(assembly_id: uuid.UUID, category_id: uuid.UUID, setup
         return redirect(_sources_url(assembly_id))
     field = source_status.field
     message = _(
-        "Data source saved. Until the lookup table is uploaded, everyone's %(key)s will be %(fallback)s.",
+        "Question linked to its target. Until the lookup table is uploaded, everyone's %(key)s will be %(fallback)s.",
         key=field.field_key,
         fallback=LargeMappingRule.from_config(field.derivation_config or {}).fallback,
     )

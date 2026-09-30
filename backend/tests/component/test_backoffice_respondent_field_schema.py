@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from opendlp.domain.respondent_derivation import AgeBracketRule, SmallMappingRule
+from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -97,7 +97,7 @@ class TestBuiltInQuestions:
 
 
 class TestQuestionsList:
-    """A card per section and a row per question that opens its edit modal from anywhere."""
+    """A card per section and a row per question, each with its own Edit button."""
 
     def _page(self, logged_in_admin, assembly):
         return logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/respondent-schema").get_data(as_text=True)
@@ -108,7 +108,7 @@ class TestQuestionsList:
             for row in re.findall(r'<tr class="question-row[^"]*">(.*?)</tr>', body, re.DOTALL)
         }
 
-    def test_each_row_is_opened_by_one_stretched_edit_link(
+    def test_each_row_has_one_edit_link_and_the_row_itself_is_not_a_link(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
@@ -119,10 +119,37 @@ class TestQuestionsList:
         assert rows
         for field_key, row in rows.items():
             field = next(f for f in schema if f.field_key == field_key)
-            links = re.findall(r'<a href="([^"]*)"\s+role="button"\s+class="[^"]*\brow-link\b', row)
+            # Only the button opens the edit modal: nothing stretches a link over the row
+            assert "row-link" not in row
+            links = re.findall(r'<a href="([^"]*/edit-modal)"\s+role="button"', row)
             assert links == [
                 f"/backoffice/assembly/{existing_assembly.id}/respondent-schema/fields/{field.id}/edit-modal"
             ]
+
+    def test_each_rows_edit_button_is_labelled_with_an_icon(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        rows = self._rows(self._page(logged_in_admin, existing_assembly))
+
+        assert rows
+        for row in rows.values():
+            edit = re.search(r'<a href="[^"]*/edit-modal"\s+role="button"[^>]*>(.*?)</a>', row, re.DOTALL)
+            assert edit is not None
+            assert re.fullmatch(
+                r'<span class="btn-icon">\s*<svg.*</svg>\s*</span><span>Edit</span>', edit.group(1).strip(), re.DOTALL
+            )
+
+    def test_has_no_next_step_button_to_the_registration_pages(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The page is a step dialog over the registration hub, so closing it already goes there."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = self._page(logged_in_admin, existing_assembly)
+
+        assert "Next: build your registration page" not in body
 
     def test_each_rows_question_is_its_row_header(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         """A screen reader names the question when reading any other cell in its row."""
@@ -879,7 +906,7 @@ class TestFieldModal:
         assert re.search(r'<option value="bool_or_none" selected>\s*Checkbox \(can be left unanswered\)', type_select)
 
     def _required_switch(self, body):
-        match = re.search(r'<label class="switch-container">.*?</label>', body, re.DOTALL)
+        match = re.search(r'<label class="switch-container"[^>]*>.*?</label>', body, re.DOTALL)
         assert match is not None, "no required switch"
         return match.group(0)
 
@@ -898,29 +925,63 @@ class TestFieldModal:
         assert 'name="on_registration_page"' not in body
         assert "Not on registration page" not in body
 
+    def _switch_labels(self, switch):
+        """The (on, off) label texts of a switch that carries a label for each state."""
+        on = re.search(r'<span class="switch-label" x-show="on"[^>]*>([^<]*)</span>', switch)
+        off = re.search(r'<span class="switch-label" x-show="!on"[^>]*>([^<]*)</span>', switch)
+        assert on is not None and off is not None, "switch lacks a label for each state"
+        return on.group(1), off.group(1)
+
     def test_the_required_switch_says_what_each_type_of_question_needs(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
     ):
         _seed_schema(fake_store, admin_user, existing_assembly)
         expected = {
-            "": "Required",
-            "bool": "Checkbox must be checked",
-            "bool_or_none": "Checkbox must be checked",
-            "text": "Text must be entered",
-            "email": "Text must be entered",
-            "integer": "Text must be entered",
-            "choice_radio": "An option must be chosen",
-            "choice_dropdown": "An option must be chosen",
-            "date": "Full date must be entered",
+            "": ("Required", "Optional"),
+            "bool": ("Required: Checkbox must be checked", "Optional: Checkbox can be left unchecked"),
+            "bool_or_none": ("Required: Checkbox must be checked", "Optional: Checkbox can be left unchecked"),
+            "text": ("Required: Text must be entered", "Optional: Text box can be left empty"),
+            "email": ("Required: Text must be entered", "Optional: Text box can be left empty"),
+            "integer": ("Required: Text must be entered", "Optional: Text box can be left empty"),
+            "choice_radio": ("Required: An option must be chosen", "Optional: No option needs to be chosen"),
+            "choice_dropdown": ("Required: An option must be chosen", "Optional: No option needs to be chosen"),
+            "date": ("Required: Full date must be entered", "Optional: Date can be left empty"),
         }
 
-        for question_type, label in expected.items():
+        for question_type, labels in expected.items():
             body = logged_in_admin.get(
                 f"{self._base(existing_assembly)}/fields/new-modal",
                 query_string={"modal": "1", "question_type": question_type, "label": "Q"},
                 headers={"HX-Request": "true"},
             ).get_data(as_text=True)
-            assert f'<span class="switch-label">{label}</span>' in self._required_switch(body), question_type
+            assert self._switch_labels(self._required_switch(body)) == labels, question_type
+
+    def test_the_required_switch_label_follows_the_switch(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        """The label for the other state is rendered but cloaked, so JS can swap them as the switch is toggled."""
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        for state, on in (
+            (FieldOnRegistrationPage.YES_REQUIRED, True),
+            (FieldOnRegistrationPage.YES_OPTIONAL, False),
+        ):
+            with FakeUnitOfWork(store=fake_store) as uow:
+                respondent_field_schema_service.update_field(
+                    uow, admin_user.id, existing_assembly.id, custom.id, on_registration_page=state
+                )
+            body = logged_in_admin.get(
+                f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+            ).get_data(as_text=True)
+            switch = self._required_switch(body)
+            assert f'x-data="{{ on: {str(on).lower()} }}"' in switch, state
+            assert 'x-model="on"' in switch, state
+            cloaked_on = 'x-show="on" x-cloak' in switch
+            cloaked_off = 'x-show="!on" x-cloak' in switch
+            assert (cloaked_on, cloaked_off) == (not on, on), state
 
     def test_the_required_switch_saves_required_or_optional(
         self, logged_in_admin, existing_assembly, admin_user, fake_store
@@ -979,6 +1040,53 @@ class TestFieldModal:
         assert select is not None, "no section select"
         selected = re.search(r'<option value="([^"]*)" selected>', select.group(0))
         return selected.group(1) if selected else ""
+
+    def test_the_form_asks_for_the_question_not_a_label(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        assert re.search(r'<label[^>]*for="field-modal-label"[^>]*>\s*Question\b', body)
+        assert not re.search(r'<label[^>]*for="field-modal-label"[^>]*>\s*Label\b', body)
+
+    def test_the_required_and_feeds_target_column_is_headed_notes(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+
+        body = logged_in_admin.get(self._base(existing_assembly)).get_data(as_text=True)
+
+        assert re.search(r'<th scope="col">\s*Notes\s*</th>', body)
+        assert not re.search(r'<th scope="col">\s*Tags\s*</th>', body)
+
+    def test_the_field_key_sits_behind_an_advanced_section_on_both_forms(
+        self, logged_in_admin, existing_assembly, admin_user, fake_store
+    ):
+        _seed_schema(fake_store, admin_user, existing_assembly)
+        custom = next(
+            f for f in _get_schema(fake_store, admin_user, existing_assembly) if f.field_key == "custom_notes"
+        )
+
+        new_body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/new-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+        edit_body = logged_in_admin.get(
+            f"{self._base(existing_assembly)}/fields/{custom.id}/edit-modal", headers={"HX-Request": "true"}
+        ).get_data(as_text=True)
+
+        for body in (new_body, edit_body):
+            details = re.search(
+                r"<details[^>]*>\s*<summary[^>]*>\s*Advanced\s*</summary>.*?</details>", body, re.DOTALL
+            )
+            assert details is not None, "no Advanced section"
+            assert "Field key" in details.group(0)
+            assert "Change the field key" not in body
+        assert 'id="field-modal-key"' in new_body
+        assert "<code>custom_notes</code>" in edit_body
 
     def test_new_modal_defaults_to_the_other_section(self, logged_in_admin, existing_assembly, admin_user, fake_store):
         _seed_schema(fake_store, admin_user, existing_assembly)
@@ -1598,7 +1706,10 @@ class TestDerivedFieldsLiveOnTargetSources:
                 field_key="age bracket",
                 label="age bracket",
                 source_field_key="year_of_birth",
-                rule=AgeBracketRule(as_of_date=datetime.now(UTC).date(), min_age=16, max_age=60, boundaries=(25, 40)),
+                rule=AgeBracketRule(
+                    as_of_date=datetime.now(UTC).date(),
+                    brackets=(AgeBracket(16, "16-24"), AgeBracket(25, "25-39"), AgeBracket(40, "40+")),
+                ),
             )
         return derived
 
@@ -1652,7 +1763,7 @@ class TestDerivedFieldsLiveOnTargetSources:
         assert response.location.endswith(f"/backoffice/assembly/{existing_assembly.id}/target-sources")
 
         page = logged_in_admin.get(response.location).get_data(as_text=True)
-        assert "Computed questions are set up on the target data sources step" in page
+        assert "Computed questions are set up on the &#39;Link targets to questions&#39; step" in page
 
     def test_editing_a_derived_field_over_htmx_redirects_the_whole_page(
         self, logged_in_admin, existing_assembly, admin_user, fake_store

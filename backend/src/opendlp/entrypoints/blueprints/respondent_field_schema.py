@@ -27,6 +27,7 @@ from opendlp.domain.respondent_field_schema import (
     FieldType,
     RespondentFieldDefinition,
     RespondentFieldGroup,
+    duplicate_option_value,
     normalise_field_key,
 )
 from opendlp.entrypoints.registration_hub import registration_hub_context
@@ -236,20 +237,24 @@ def _question_type_help() -> dict[str, str]:
     }
 
 
-def _required_switch_label(values: dict[str, Any]) -> str:
-    """The Required switch's label, saying what an answer to this type of question has to be."""
+def _required_switch_labels(values: dict[str, Any]) -> tuple[str, str]:
+    """The Required switch's labels for on and off, saying what an answer to this type of question has to be.
+
+    Both start with the word users reach for - "Required" or "Optional" - as the
+    switch alone confused people in user testing.
+    """
     if not values["type_choice"]:
-        return _("Required")
+        return _("Required"), _("Optional")
     field_type = _field_type_from_taxonomy(values)
     if field_type in BOOL_TYPES:
-        return _("Checkbox must be checked")
+        return _("Required: Checkbox must be checked"), _("Optional: Checkbox can be left unchecked")
     if field_type in CHOICE_TYPES:
-        return _("An option must be chosen")
+        return _("Required: An option must be chosen"), _("Optional: No option needs to be chosen")
     if field_type == FieldType.DATE:
-        return _("Full date must be entered")
+        return _("Required: Full date must be entered"), _("Optional: Date can be left empty")
     if field_type in (FieldType.TEXT, FieldType.EMAIL, FieldType.INTEGER, FieldType.LONGTEXT):
-        return _("Text must be entered")
-    return _("Required")
+        return _("Required: Text must be entered"), _("Optional: Text box can be left empty")
+    return _("Required"), _("Optional")
 
 
 def _question_type_value(values: dict[str, Any]) -> str:
@@ -380,7 +385,7 @@ def _new_modal_ctx(
         "question_type_choices": _question_type_choices(),
         "question_type": _question_type_value(values),
         "question_type_help": _question_type_help(),
-        "required_label": _required_switch_label(values),
+        "required_labels": _required_switch_labels(values),
         "type_locked": False,
         "target_locked": False,
         "linked_target_name": "",
@@ -405,7 +410,7 @@ def _edit_modal_ctx(
         "question_type_choices": _choice_style_choices() if target_locked else _question_type_choices(field),
         "question_type": _question_type_value(values),
         "question_type_help": _question_type_help(),
-        "required_label": _required_switch_label(values),
+        "required_labels": _required_switch_labels(values),
         "type_locked": field.is_fixed,
         "target_locked": target_locked,
         "linked_target_name": _linked_target_name(uow, field),
@@ -460,22 +465,6 @@ def _submitted_option_renames(values: dict[str, Any]) -> dict[str, str]:
         for row in values["options"]
         if row["original"] and row["value"].strip() and row["original"] != row["value"].strip()
     }
-
-
-def duplicate_option_value(options: list[ChoiceOption]) -> str:
-    """The first option value that appears twice, or "" when they are all distinct.
-
-    Exact-match comparison, because every other place an option value is
-    matched is exact: add_choice_option rejects a repeat with ``==``, and
-    SmallMappingRule.derive looks the source value up in a plain dict. Two
-    values differing only in case are therefore two real values, not a typo.
-    """
-    seen: set[str] = set()
-    for option in options:
-        if option.value in seen:
-            return option.value
-        seen.add(option.value)
-    return ""
 
 
 def _duplicate_option_error(options: list[ChoiceOption]) -> str:
@@ -762,7 +751,7 @@ def _target_sources_redirect(assembly_id: uuid.UUID) -> ResponseReturnValue:
     Over HTMX a plain redirect would load the whole page into the modal
     container, so the browser is told to navigate instead.
     """
-    flash(_("Computed questions are set up on the target data sources step"), "info")
+    flash(_("Computed questions are set up on the 'Link targets to questions' step"), "info")
     target_url = url_for("target_sources.view_sources", assembly_id=assembly_id)
     if _is_htmx():
         response = make_response("", 200)

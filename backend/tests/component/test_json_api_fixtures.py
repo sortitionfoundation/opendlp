@@ -7,7 +7,7 @@ from io import BytesIO
 import pytest
 from PIL import Image
 
-from opendlp.domain.respondent_derivation import AgeBracketRule
+from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule
 from opendlp.domain.respondent_field_schema import ChoiceOption, FieldType
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.service_layer import respondent_field_schema_service
@@ -228,7 +228,9 @@ class TestRespondentFieldSpecFixtures:
                 field_key="age_bracket",
                 label="Age bracket",
                 source_field_key="date_of_birth",
-                rule=AgeBracketRule(as_of_date=date(2026, 5, 13), min_age=16, max_age=100, boundaries=(30,)),
+                rule=AgeBracketRule(
+                    as_of_date=date(2026, 5, 13), brackets=(AgeBracket(16, "16-29"), AgeBracket(30, "30+"))
+                ),
             )
             uow.target_categories.add(
                 TargetCategory(

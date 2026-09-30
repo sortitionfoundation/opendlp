@@ -319,3 +319,67 @@ without checking it against the English.
    suggestions still fit, but a handful of the new run-history task labels were
    matched against unrelated strings, so read each one before clearing it.
    *(G36)*
+3. ~~**Terms coined for the target-sources and registration-question strings**~~
+   — settled. Krisztina Kocsis reviewed the questions below on 25 September
+   2026 and accepted every choice as made, so these terms are now house style.
+   The list is kept as a record of the alternatives that were considered:
+   - **age range / age bracket → korcsoport.** *kortartomány* is more literal
+     but reads as a maths term; *korcsoport* is what an organiser would say.
+     Used for both English words, since they name the same thing (a band like
+     16–29). Is *korcsoport* right, or should it be *korosztály*?
+   - **target value → célérték.** Already in the catalogue ("Minden célértéknek
+     kell nevet adni"), so the new strings follow it: *Célérték*, *Célértékek:*,
+     *%(n)d. válasz célértéke*. Note that this sits beside *célszám* (the target
+     number) and *kiválasztási szempont* (the category); three words for the
+     three parts of one target. Is that clear, or should the value be
+     *a szempont értéke*?
+   - **lookup table → hozzárendelési tábla; lookup row → hozzárendelési sor.**
+     Chosen to sit in the same family as *hozzárendelési fájl* (mapping file),
+     and to avoid *táblázat*, which this catalogue reserves for a Google Sheet.
+     *keresőtábla* was the alternative.
+   - **fallback (the value a respondent gets when nothing matches) → tartalék.**
+     "fall back to X" is rendered as "X értéket kap", and the label in the
+     mapping form is "(tartalék: %(fallback)s)". The report line is "Tartalék
+     értéket (%(fallback)s) kapott:". The catalogue already had "tartaléknak"
+     for the email greeting fallback.
+   - **computed question / derived → számított**, per the glossary above. The
+     standalone `Derived` label, which still read *Származtatott* (a non-fuzzy
+     entry the run did not touch), has since been changed by hand to
+     *Számított*, so the catalogue and the "Respondent fields" section now
+     agree.
+   - **The 'Link targets to questions' step → „Kiválasztási szempontok és
+     kérdések összekapcsolása”.** The step name is quoted inside four other
+     messages, so it must stay identical everywhere; change all five together.
+     Its verbs: link → *összekapcsol*, unlink → *leválaszt*, re-sync →
+     *újraszinkronizál*, recompute → *újraszámít*, "feeds a target" →
+     *kiválasztási szempontot táplál*.
+   - **Tags → Jelölők**, not *Címkék*, because *Címke* is already `Label` and the
+     two appear as neighbouring column headings in the question editor. If a
+     reviewer prefers *Címkék* the clash needs another answer for `Label`.
+   - **Radio → Választógomb, Dropdown → Legördülő lista, Choice → Választás,
+     Checkbox → Jelölőnégyzet, Exact copy → Pontos másolat.**
+   - **Guess question types → Kérdéstípusok becslése**, not *kitalálása*.
+   - **Signup survey (the optional questions organisers answer when they create
+     an account) → Regisztrációs kérdőív.** Informal register, since the
+     audience is staff: "Mesélj egy kicsit magadról", "Hol élsz a világban?".
+     Organisation sizes use *fő*: "2–10 fő". Is *deliberatív folyamat* the term
+     the team uses for "deliberative process"?
+   - **`Please select` (the blank first option of a dropdown) → "Kérjük,
+     válassz".** It comes from a backoffice form class, so informal, but the
+     same form class could one day back a public page.
+   - **Date input labels: Day/DD → Nap/NN, Month/MM → Hónap/HH, Year/YYYY →
+     Év/ÉÉÉÉ**, and the example "For example, 27 3 1985" was kept in
+     day-month-year order because that is the order of the three input boxes.
+     Hungarian writes dates year-first; if the form is ever reordered for
+     Hungarian, the example must follow it.
+   - **Ordinal counters: "Option %(n)d" → "%(n)d. választható érték", "Answer
+     %(n)d" → "%(n)d. válasz"**, per the ordinal rule above (D22).
+   - **Plural forms — resolved in favour of this guide.** The catalogue header
+     now says `nplurals=2; plural=(n != 1);`, the CLDR rule for Hungarian and
+     what Babel ships, so a later `pybabel init`/`update` will not quietly
+     revert it. Every plural entry carries both forms. Where the count sits
+     right before the noun the two forms are identical — "%(count)s
+     hozzárendelési sor" reads correctly for any count — and they diverge only
+     where the sentence refers back to the counted thing away from the number,
+     as in the recompute warning ("amelyekből a kiválasztás készült" /
+     "amelyekből a kiválasztások készültek").
