@@ -14,9 +14,21 @@ from opendlp.domain.user_invites import UserInvite
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.entrypoints.flask_app import create_app
+from opendlp.feature_flags import reload_flags
+from opendlp.service_layer.signup_survey_service import get_signup_survey
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from opendlp.service_layer.user_service import create_user
 from tests.e2e.helpers import get_csrf_token
+
+
+@pytest.fixture
+def open_signup(monkeypatch):
+    """Turn on FF_OPEN_SIGNUP for one test, restoring the flags afterwards."""
+    monkeypatch.setenv("FF_OPEN_SIGNUP", "true")
+    reload_flags()
+    yield
+    monkeypatch.delenv("FF_OPEN_SIGNUP", raising=False)
+    reload_flags()
 
 
 @pytest.fixture
@@ -157,6 +169,39 @@ class TestOAuthRegistration:
             assert user.oauth_provider == "google"
             assert user.oauth_id == "google-oauth-id-12345"
             assert user.password_hash is None  # No password for OAuth-only user
+
+    def test_register_google_saves_survey_answers(
+        self, client: FlaskClient, postgres_session_factory, admin_user: User, mock_oauth_token, open_signup
+    ):
+        """Survey answers entered on the form are carried across the redirect and saved."""
+        # Open signup shows the survey and makes the invite optional.
+        response = client.post(
+            "/auth/register",
+            data={
+                "action": "google",
+                "invite_code": "",
+                "accept_data_agreement": "y",
+                "survey_location": "Berlin, Germany",
+                "survey_process_plan": "within_year",
+                "csrf_token": get_csrf_token(client, "/auth/register"),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with patch("opendlp.entrypoints.blueprints.auth.oauth.google") as mock_google:
+            mock_google.authorize_access_token.return_value = mock_oauth_token
+            response = client.get("/auth/login/google/callback", follow_redirects=False)
+            assert response.status_code == 302
+            assert response.headers["Location"] == "/dashboard"
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get_by_email("oauthuser@example.com")
+            assert user is not None
+            assert user.global_role == GlobalRole.ORGANISER  # invite-less open signup
+            survey = get_signup_survey(uow, user.id, admin_user.id)
+            assert survey is not None
+            assert survey.answers == {"location": "Berlin, Germany", "process_plan": "within_year"}
 
     def test_register_google_without_invite_fails(self, client: FlaskClient, mock_oauth_token):
         """Test that OAuth registration fails without invite code in session."""
@@ -398,6 +443,36 @@ class TestMicrosoftOAuthRegistration:
             assert user.oauth_provider == "microsoft"
             assert user.oauth_id == "microsoft-oauth-id-67890"
             assert user.password_hash is None  # No password for OAuth-only user
+
+    def test_register_microsoft_saves_survey_answers(
+        self, client: FlaskClient, postgres_session_factory, admin_user: User, mock_microsoft_oauth_token, open_signup
+    ):
+        """Survey answers are carried across the Microsoft redirect and saved."""
+        response = client.post(
+            "/auth/register",
+            data={
+                "action": "microsoft",
+                "invite_code": "",
+                "accept_data_agreement": "y",
+                "survey_location": "Vienna, Austria",
+                "csrf_token": get_csrf_token(client, "/auth/register"),
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+        with patch("opendlp.entrypoints.blueprints.auth.oauth.microsoft") as mock_microsoft:
+            mock_microsoft.authorize_access_token.return_value = mock_microsoft_oauth_token
+            response = client.get("/auth/login/microsoft/callback", follow_redirects=False)
+            assert response.status_code == 302
+            assert response.headers["Location"] == "/dashboard"
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            user = uow.users.get_by_email("msuser@example.com")
+            assert user is not None
+            survey = get_signup_survey(uow, user.id, admin_user.id)
+            assert survey is not None
+            assert survey.answers == {"location": "Vienna, Austria"}
 
     def test_register_microsoft_without_invite_fails(self, client: FlaskClient, mock_microsoft_oauth_token):
         """Test that Microsoft OAuth registration fails without invite code in session."""

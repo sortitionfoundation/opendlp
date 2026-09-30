@@ -737,6 +737,10 @@ def google_callback() -> ResponseReturnValue:
             # across the OAuth redirect; save them for a freshly created account.
             survey_answers = session.get("oauth_survey_answers")
             if created and survey_answers:
+                # The new user is added but not yet flushed, and the survey's
+                # user_id is a plain-UUID foreign key with no relationship() to
+                # order the inserts - so the user row must be flushed first.
+                uow.flush()
                 save_signup_survey(uow, user.id, survey_answers)
 
         # Clear OAuth session data
@@ -826,6 +830,10 @@ def microsoft_callback() -> ResponseReturnValue:
             # across the OAuth redirect; save them for a freshly created account.
             survey_answers = session.get("oauth_survey_answers")
             if created and survey_answers:
+                # The new user is added but not yet flushed, and the survey's
+                # user_id is a plain-UUID foreign key with no relationship() to
+                # order the inserts - so the user row must be flushed first.
+                uow.flush()
                 save_signup_survey(uow, user.id, survey_answers)
 
         # Clear OAuth session data
