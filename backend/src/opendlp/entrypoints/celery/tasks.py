@@ -39,7 +39,7 @@ from opendlp.config import RedisCfg
 from opendlp.domain.value_objects import SelectionRunStatus
 from opendlp.entrypoints.celery.app import app
 from opendlp.entrypoints.context_processors import get_service_account_email
-from opendlp.service_layer import password_reset_service, respondent_auto_export
+from opendlp.service_layer import password_reset_service
 from opendlp.service_layer.error_translation import translate_sortition_error, translate_sortition_error_to_html
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.translations import gettext as _
@@ -679,6 +679,9 @@ def _internal_write_db_results(
     selected_panels: list[frozenset[str]],
     session_factory: sessionmaker | None = None,
 ) -> RunReport:
+    # Imported here because respondent_auto_export dispatches this module's tasks.
+    from opendlp.service_layer.respondent_auto_export import request_auto_export  # noqa: PLC0415
+
     report = RunReport()
     _append_run_log(
         task_id,
@@ -698,7 +701,7 @@ def _internal_write_db_results(
                 raise SelectionRunRecordNotFoundError(f"Selection run {task_id} not found or has no user_id")
             uow.respondents.bulk_mark_as_selected(assembly_id, selected_ext_ids, task_id, run_record.user_id)
             uow.commit()
-            respondent_auto_export.request_auto_export(uow, assembly_id)
+            request_auto_export(uow, assembly_id)
 
         _update_selection_record(
             task_id=task_id,
@@ -907,6 +910,9 @@ def auto_export_respondents(
     key before reading, so a change that lands mid-export schedules a follow-up
     rather than being lost. Returns whether a write happened.
     """
+    # Imported here because respondent_auto_export dispatches this task.
+    from opendlp.service_layer import respondent_auto_export  # noqa: PLC0415
+
     r = redis_client or RedisCfg.from_env().create_client()
     lock = r.lock(respondent_auto_export.lock_key(assembly_id), timeout=respondent_auto_export.LOCK_TIMEOUT_SECONDS)
     if not lock.acquire(blocking=False):
