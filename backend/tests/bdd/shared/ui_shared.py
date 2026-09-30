@@ -68,7 +68,9 @@ def _(page: Page, user_invite: str):
 @when("the user finishes registration")
 def _(page: Page):
     """the user finishes registration."""
-    page.click('button[type="submit"]')
+    # The registration form also carries Google/Microsoft submit buttons, so
+    # target the email button by name rather than the first submit button.
+    page.get_by_role("button", name="Create Account with email").click()
 
 
 @when("the user signs out")
