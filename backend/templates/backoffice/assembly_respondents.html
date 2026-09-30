@@ -70,10 +70,20 @@ ABOUTME: Displays respondent data configuration for assemblies
                         <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Respondents") }}</h2>
                         {% if respondent_gsheet and respondent_gsheet.worksheet_url %}
                             <p class="text-body-sm" style="color: var(--color-secondary-text);">
-                                {{ _("Exported to Google Sheets") }}
+                                {% if respondent_gsheet.auto_export %}
+                                    {{ _("Automatically exported to Google Sheets") }}
+                                {% else %}
+                                    {{ _("Exported to Google Sheets") }}
+                                {% endif %}
                                 <a href="{{ respondent_gsheet.worksheet_url }}" target="_blank" rel="noopener"
                                    class="underline" style="color: var(--color-primary-action);">{{ respondent_gsheet.spreadsheet_title or _("View spreadsheet") }}</a>
                             </p>
+                            {% if respondent_gsheet.auto_export %}
+                                <form method="post" action="{{ url_for('respondents.stop_auto_export', assembly_id=assembly.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    {{ button(_("Stop automatic export"), type="submit", variant="secondary") }}
+                                </form>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>

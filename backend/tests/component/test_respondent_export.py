@@ -313,3 +313,188 @@ class TestRunExport:
                 existing_assembly.id, GSheetExportKind.RESPONDENTS
             )
         assert saved is None
+
+
+def _save_config(fake_store: FakeStore, assembly_id, **kwargs) -> None:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        uow.assembly_export_gsheets.add(
+            AssemblyExportGSheet(
+                assembly_id=assembly_id,
+                export_kind=GSheetExportKind.RESPONDENTS,
+                url=_SHEET_URL,
+                worksheet_name="Export tab",
+                spreadsheet_title="Assembly Data",
+                worksheet_url=_SHEET_URL + "#gid=7",
+                **kwargs,
+            )
+        )
+        uow.commit()
+
+
+def _saved_config(fake_store: FakeStore, assembly_id) -> AssemblyExportGSheet | None:
+    with FakeUnitOfWork(store=fake_store) as uow:
+        return uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, GSheetExportKind.RESPONDENTS)
+
+
+class TestAutoExportInModal:
+    def test_modal_offers_the_checkbox_unticked_by_default(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal")
+
+        body = response.get_data(as_text=True)
+        assert 'name="auto_export"' in body
+        assert "checked" not in body.split('name="auto_export"')[1].split("/>")[0]
+
+    def test_modal_preticks_the_checkbox_when_saved_on(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _save_config(fake_store, existing_assembly.id, auto_export=True, auto_export_status_filter="")
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal")
+
+        checkbox = response.get_data(as_text=True).split('name="auto_export"')[1].split("/>")[0]
+        assert "checked" in checkbox
+
+
+class TestRunExportWithAutoExport:
+    def test_ticked_box_saves_the_flag_and_filter(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        """A successful export with the box ticked switches auto-export on for the chosen status."""
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = lambda url: FakeGSheetExportTarget()
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            data={
+                "destination": "gsheet",
+                "status": "selected_or_confirmed",
+                "spreadsheet_url": _SHEET_URL,
+                "worksheet_name": "Export tab",
+                "auto_export": "1",
+            },
+            follow_redirects=True,
+        )
+
+        assert "The sheet will now update automatically" in response.get_data(as_text=True)
+        config = _saved_config(fake_store, existing_assembly.id)
+        assert config is not None
+        assert config.auto_export is True
+        assert config.auto_export_status_filter == "selected_or_confirmed"
+
+    def test_failed_write_leaves_auto_export_off(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        """The initial export must succeed before auto-export is switched on."""
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = lambda url: FakeGSheetExportTarget(
+            error=ExportTargetError("no access")
+        )
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
+
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            data={
+                "destination": "gsheet",
+                "status": "",
+                "spreadsheet_url": _SHEET_URL,
+                "worksheet_name": "Export tab",
+                "auto_export": "1",
+            },
+        )
+
+        assert _saved_config(fake_store, existing_assembly.id) is None
+
+    def test_unticked_box_switches_auto_export_off(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = lambda url: FakeGSheetExportTarget()
+        _save_config(fake_store, existing_assembly.id, auto_export=True, auto_export_status_filter="POOL")
+
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            data={
+                "destination": "gsheet",
+                "status": "",
+                "spreadsheet_url": _SHEET_URL,
+                "worksheet_name": "Export tab",
+            },
+        )
+
+        config = _saved_config(fake_store, existing_assembly.id)
+        assert config is not None
+        assert config.auto_export is False
+
+    def test_csv_download_leaves_auto_export_alone(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _save_config(fake_store, existing_assembly.id, auto_export=True, auto_export_status_filter="POOL")
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            data={"destination": "csv", "status": ""},
+        )
+
+        assert response.mimetype == "text/csv"
+        config = _saved_config(fake_store, existing_assembly.id)
+        assert config is not None
+        assert config.auto_export is True
+        assert config.auto_export_status_filter == "POOL"
+
+
+class TestStopAutoExport:
+    def test_page_shows_status_and_stop_button_when_on(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
+        _save_config(fake_store, existing_assembly.id, auto_export=True)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+
+        assert "Automatically exported to Google Sheets" in body
+        assert "Stop automatic export" in body
+
+    def test_page_hides_stop_button_when_off(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
+        _save_config(fake_store, existing_assembly.id)
+
+        body = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents").get_data(as_text=True)
+
+        assert "Automatically exported" not in body
+        assert "Stop automatic export" not in body
+
+    def test_stop_clears_the_flag_and_flashes(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        """Stopping never builds a Google Sheets target: it must work when the sheet is broken."""
+
+        def factory(url: str) -> FakeGSheetExportTarget:
+            raise AssertionError("stop must not touch Google Sheets")
+
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = factory
+        _save_config(fake_store, existing_assembly.id, auto_export=True)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/auto/stop", follow_redirects=True
+        )
+
+        assert "Automatic export stopped" in response.get_data(as_text=True)
+        config = _saved_config(fake_store, existing_assembly.id)
+        assert config is not None
+        assert config.auto_export is False
+        assert config.url == _SHEET_URL
+
+    def test_stop_denied_for_regular_user(
+        self, logged_in_user: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _save_config(fake_store, existing_assembly.id, auto_export=True)
+
+        response = logged_in_user.post(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/auto/stop")
+
+        assert response.status_code == 302
+        config = _saved_config(fake_store, existing_assembly.id)
+        assert config is not None
+        assert config.auto_export is True

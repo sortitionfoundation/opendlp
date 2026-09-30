@@ -5,6 +5,7 @@ ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the exp
 {% from "backoffice/components/modal.html" import modal %}
 {% from "backoffice/components/button.html" import button %}
 {% from "backoffice/components/gsheet_export_fields.html" import gsheet_export_fields %}
+{% from "backoffice/components/input.html" import checkbox %}
 
 {# The shared modal() component supplies the isOpen/canClose/close/closeIfAllowed
    contract the modal() macro expects. Its methods must come from a registered
@@ -62,6 +63,12 @@ ABOUTME: Choose CSV download or Google Sheets, pick a status filter, run the exp
                 url_value=gsheet_config.url if gsheet_config else "",
                 worksheet_value=gsheet_config.worksheet_name if gsheet_config else _("Respondents"),
                 service_account_email=service_account_email) }}
+                {{ checkbox("auto_export",
+                label=_("Automatically export when respondents change"),
+                checked=gsheet_config.auto_export if gsheet_config else false,
+                hint=_("The tab is rewritten shortly after any respondent is added or changed, using the status chosen above. Anything typed into the tab is lost, so keep notes in another tab."),
+                id="export-auto-export",
+                value="1") }}
             </div>
 
             <div class="flex justify-end gap-2 pt-2">

@@ -53,6 +53,7 @@ from opendlp.service_layer.respondent_export_service import (
     EXPORT_KIND as RESPONDENT_EXPORT_KIND,
 )
 from opendlp.service_layer.respondent_export_service import (
+    disable_auto_export,
     export_respondents,
     export_respondents_to_gsheet,
     get_respondent_gsheet_config,
@@ -503,7 +504,13 @@ def run_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
 
     try:
         if destination == "gsheet":
-            return _run_gsheet_export(assembly_id, status_filter, respondents_url)
+            return _run_gsheet_export(
+                assembly_id,
+                status_filter,
+                respondents_url,
+                auto_export=bool(request.form.get("auto_export")),
+                auto_export_status_filter=request.form.get("status", ""),
+            )
         target = CsvExportTarget()
         uow = bootstrap.get_flask_uow()
         with uow:
@@ -527,6 +534,9 @@ def _run_gsheet_export(
     assembly_id: uuid.UUID,
     status_filter: list[RespondentStatus] | None,
     respondents_url: str,
+    *,
+    auto_export: bool,
+    auto_export_status_filter: str,
 ) -> ResponseReturnValue:
     """Export to Google Sheets via the shared flow, then flash the outcome.
 
@@ -545,15 +555,41 @@ def _run_gsheet_export(
                 spreadsheet_url=spreadsheet_url,
                 worksheet_name=worksheet_name,
                 target=target,
+                auto_export=auto_export,
+                auto_export_status_filter=auto_export_status_filter,
             )
 
+    if auto_export:
+        success_message = _("Respondents exported to Google Sheets. The sheet will now update automatically.")
+    else:
+        success_message = _("Respondents exported to Google Sheets")
     return run_gsheet_export_flow(
         redirect_url=respondents_url,
         export=export,
-        success_message=_("Respondents exported to Google Sheets"),
+        success_message=success_message,
         log_event="Google Sheets export failed",
         log_context={"assembly_id": str(assembly_id), "user_id": str(current_user.id)},
     )
+
+
+@respondents_bp.route("/assembly/<uuid:assembly_id>/respondents/export/auto/stop", methods=["POST"])
+@login_required
+def stop_auto_export(assembly_id: uuid.UUID) -> ResponseReturnValue:
+    """Switch off the automatic Google Sheets export without touching the sheet."""
+    respondents_url = url_for("respondents.view_assembly_respondents", assembly_id=assembly_id)
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            disable_auto_export(uow, current_user.id, assembly_id)
+    except InsufficientPermissions:
+        flash(_("You don't have permission to change the export settings"), "error")
+        return redirect(respondents_url)
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    flash(_("Automatic export stopped"), "success")
+    return redirect(respondents_url)
 
 
 @respondents_bp.route("/assembly/<uuid:assembly_id>/respondents")
