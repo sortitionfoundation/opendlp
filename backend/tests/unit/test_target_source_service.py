@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 
 from opendlp.domain.assembly import Assembly
-from opendlp.domain.respondent_derivation import AgeBracketRule, LargeMappingRule, SmallMappingRule
+from opendlp.domain.respondent_derivation import AgeBracket, AgeBracketRule, LargeMappingRule, SmallMappingRule
 from opendlp.domain.respondent_field_schema import (
     ChoiceOption,
     DerivationType,
@@ -44,7 +44,7 @@ from opendlp.service_layer.target_source_service import (
 )
 from tests.fakes import FakeUnitOfWork
 
-AGE_RULE = AgeBracketRule(as_of_date=date(2026, 5, 13), min_age=16, max_age=100, boundaries=(30, 55))
+AGE_RULE = AgeBracketRule(as_of_date=date(2026, 5, 13), brackets=(AgeBracket(16, "16-29"), AgeBracket(30, "30-99")))
 
 
 @pytest.fixture
@@ -215,9 +215,7 @@ class TestConfigureExactCopy:
 class TestConfigureAgeBracket:
     def test_creates_source_and_linked_derived_field(self, uow):
         user, assembly = _seed(uow)
-        category = _add_category(
-            uow, assembly, "Age bracket", ["under-16", "16-29", "30-54", "55-99", "100+", "UNKNOWN"]
-        )
+        category = _add_category(uow, assembly, "Age bracket", ["16-29", "30-99"])
 
         fields, report = configure_target_source(
             uow,
@@ -237,7 +235,7 @@ class TestConfigureAgeBracket:
         assert derived.group == RespondentFieldGroup.DERIVED
         assert derived.on_registration_page == FieldOnRegistrationPage.NO
         assert derived.target_category_id == category.id
-        assert "16-29" in [o.value for o in derived.options]
+        assert [o.value for o in derived.options] == ["16-29", "30-99", "UNKNOWN"]
 
     def test_reuses_an_existing_date_source(self, uow):
         user, assembly = _seed(uow)
@@ -288,7 +286,9 @@ class TestConfigureAgeBracket:
         )
         configure_target_source(uow, user.id, assembly.id, category.id, spec)
 
-        new_rule = AgeBracketRule(as_of_date=date(2027, 1, 1), min_age=18, max_age=90, boundaries=(40,))
+        new_rule = AgeBracketRule(
+            as_of_date=date(2027, 1, 1), brackets=(AgeBracket(18, "16-29"), AgeBracket(40, "30-99"))
+        )
         source = uow.respondent_field_definitions.get_by_assembly_and_key(assembly.id, "date_of_birth")
         fields, report = configure_target_source(
             uow,
@@ -300,8 +300,29 @@ class TestConfigureAgeBracket:
 
         assert report is not None
         derived = fields[-1]
-        assert derived.derivation_config["min_age"] == 18
+        assert derived.derivation_config["brackets"][0] == {"from_age": 18, "label": "16-29"}
         assert len([f for f in uow.respondent_field_definitions.list_by_assembly(assembly.id) if f.is_derived]) == 1
+
+    def test_a_target_value_without_an_age_range_is_refused(self, uow):
+        """An age rule only produces the values it has a range for; a value left out would never be counted."""
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Age bracket", ["16-29", "30-99", "Prefer not to say"])
+        spec = AgeBracketSpec(
+            rule=AGE_RULE, source=SourceFieldSpec(field_key="date_of_birth", field_type=FieldType.DATE)
+        )
+
+        with pytest.raises(FieldDefinitionConflictError, match="Enter the age where 'Prefer not to say' starts"):
+            configure_target_source(uow, user.id, assembly.id, category.id, spec)
+
+    def test_an_age_range_that_is_not_a_target_value_is_refused(self, uow):
+        user, assembly = _seed(uow)
+        category = _add_category(uow, assembly, "Age bracket", ["16-29"])
+        spec = AgeBracketSpec(
+            rule=AGE_RULE, source=SourceFieldSpec(field_key="date_of_birth", field_type=FieldType.DATE)
+        )
+
+        with pytest.raises(FieldDefinitionConflictError, match="'30-99' is not one of the target's values"):
+            configure_target_source(uow, user.id, assembly.id, category.id, spec)
 
     def test_a_plain_field_occupying_the_target_name_is_refused(self, uow):
         user, assembly = _seed(uow)

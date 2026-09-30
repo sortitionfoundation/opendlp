@@ -537,6 +537,18 @@ class TestBackofficeCsvUpload:
         assert response.status_code == 200
         assert b"success" in response.data.lower() or b"uploaded" in response.data.lower()
 
+    def test_data_tab_csv_settings_start_with_address_check_off(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly
+    ) -> None:
+        """A CSV assembly has no address columns yet, so the box must not be pre-ticked."""
+        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/data?source=csv&mode=edit")
+        assert response.status_code == 200
+        html = response.data.decode()
+
+        checkbox = re.search(r'<input[^>]*name="check_same_address"[^>]*>', html)
+        assert checkbox, "No check_same_address checkbox on the CSV data tab"
+        assert "checked" not in checkbox.group(0)
+
     def test_data_tab_targets_upload_form_field_name_matches_handler(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:

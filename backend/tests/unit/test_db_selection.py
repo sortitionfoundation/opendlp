@@ -220,6 +220,11 @@ class TestParseCommaList:
 class TestDbSelectionSettingsForm:
     """Tests for DbSelectionSettingsForm validation."""
 
+    def test_check_same_address_is_off_by_default(self, app):
+        with app.test_request_context():
+            form = DbSelectionSettingsForm(meta={"csrf": False})
+            assert form.check_same_address.data is False
+
     def test_form_validates_with_valid_data(self, app):
         with app.test_request_context():
             form = DbSelectionSettingsForm(

@@ -24,6 +24,17 @@ Feature: Target data sources
     Then I should see a warning toast saying "2 fell back to UNKNOWN"
     And the "age bracket" target row should say "Computed from"
 
+  Scenario: Age ranges are read from the target's own values
+    Given there is an assembly with respondents imported from CSV called "Age Match Demo"
+    And the assembly "Age Match Demo" has a "year_of_birth" number field
+    And the assembly "Age Match Demo" has a respondent aged 70 by year of birth
+    And the assembly "Age Match Demo" has an "Age" target with values "16-29, 30-44, 45-59, 60+"
+    And I am signed in as an admin user
+    When I open the target data sources for "Age Match Demo"
+    And I set up the "Age" target with age ranges from "year_of_birth"
+    Then the "Age" target row should say "Computed from"
+    And the respondent aged 70 in "Age Match Demo" should count towards "60+" of the "Age" target
+
   Scenario: Mapping from a question created with its answers in the set-up dialog
     Given there is an assembly with respondents imported from CSV called "Small Mapping Demo"
     And the assembly "Small Mapping Demo" has an "Age group" target with values "Younger, Older"
@@ -44,7 +55,7 @@ Feature: Target data sources
     Then I should be asked to confirm unlinking
     When I confirm the unlinking
     And I open the target data sources for "Force Unlink Demo"
-    Then the "Areas" target row should say "No data source"
+    Then the "Areas" target row should say "No question linked"
 
   Scenario: Removing the computed question a target was set up with
     Given there is an assembly with respondents imported from CSV called "Remove Computed Demo"
@@ -55,7 +66,7 @@ Feature: Target data sources
     And I set up the "age bracket" target with age ranges from "year_of_birth"
     And I open the more actions menu for the "age bracket" target
     And I choose "Delete computed question" from the menu and confirm
-    Then the "age bracket" target row should say "No data source"
+    Then the "age bracket" target row should say "No question linked"
     When I open the respondent field schema editor for "Remove Computed Demo"
     Then the schema editor should list the "year_of_birth" field
 
@@ -117,6 +128,7 @@ Feature: Target data sources
     And I focus the set-up button for the "Region" target and press "Enter"
     Then keyboard focus should be on the method chooser in the set-up dialog
     And the checklist behind the set-up dialog should be out of reach
+    And the checklist behind the set-up dialog should be dimmed
     When I choose the "exact" method from the keyboard
     Then keyboard focus should be on the method chooser in the set-up dialog
     When I press the "Save" button

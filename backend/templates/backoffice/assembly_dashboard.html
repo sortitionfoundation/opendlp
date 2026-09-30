@@ -97,7 +97,7 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
         {# Table view: one table per target category #}
         {% for tbl in dashboard_tables %}
             <section class="mb-10">
-                <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ tbl.name }}</h3>
+                <h3 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ tbl.name }}</h3>
                 {# table-fixed with a fixed-width first column: every category table
                    shares the same column offsets, instead of each table auto-sizing
                    its value column to its longest name. #}
@@ -137,13 +137,13 @@ ABOUTME: Indicators + per-category results, shown as pie charts (view=chart) or 
         {# Chart view: one section per target category, a titled row of pie cards #}
         {% for section in dashboard_sections %}
             <section class="mb-10">
-                <h3 class="text-heading-md mb-4" style="color: var(--color-headings);">{{ section.name }}</h3>
+                <h3 class="text-display-sm mb-4" style="color: var(--color-headings);">{{ section.name }}</h3>
                 {# minmax floor sized so five cards fit a row on a 13" MacBook
                    viewport (~1380px of content width inside the page padding). #}
                 <div class="grid gap-4"
                      style="grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));">
                     {% for card in section.cards %}
-                        {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4", legend=false) }}
+                        {{ pie_chart_card(card.title, segments=card.segments, message=card.message, title_tag="h4", gaps=true, legend=false) }}
                     {% endfor %}
                 </div>
                 {# One legend under the whole row: every card in the section shares the

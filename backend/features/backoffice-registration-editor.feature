@@ -109,6 +109,13 @@ Feature: Backoffice registration HTML editor
     When I open the first registration page from the list
     Then I should be on the read-only registration form view
 
+  Scenario: A registration page's Edit button opens its editor
+    Given I am logged in as an admin user
+    And there is an assembly called "List Edit Button Assembly" with a registration page
+    When I visit the registration tab for "List Edit Button Assembly"
+    And I choose to edit the first registration page from the list
+    Then I should be on the read-only registration form view
+
   Scenario: Deleting a registration page from the list asks for confirmation first
     Given I am logged in as an admin user
     And there is an assembly called "Delete Page Assembly" with a registration page

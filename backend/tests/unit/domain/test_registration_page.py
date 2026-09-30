@@ -1394,9 +1394,10 @@ class TestGenerateStarterFormHtml:
         html = generate_starter_form_html(fields)
 
         assert "<legend>Date of birth</legend>" in html
-        for part, size in (("day", "2"), ("month", "2"), ("year", "4")):
+        for part, size, placeholder in (("day", "2", "DD"), ("month", "2", "MM"), ("year", "4", "YYYY")):
             assert (
                 f'<input type="text" inputmode="numeric" name="date_of_birth-{part}" size="{size}" '
+                f'placeholder="{placeholder}" '
                 f"value=\"{{{{ value('date_of_birth-{part}') }}}}\">"
             ) in html
         # The parts sit in a flex row so they share a line even unstyled.
@@ -1421,9 +1422,9 @@ class TestGenerateStarterFormHtml:
             assert f"value=\"{{{{ value('date_of_birth-{part}') }}}}\" required>" in html
 
     @pytest.mark.parametrize("generate", [generate_starter_form_html, generate_starter_form_html_govuk])
-    def test_date_part_labels_are_translated_and_escaped(self, generate, monkeypatch):
+    def test_date_part_labels_and_placeholders_are_translated_and_escaped(self, generate, monkeypatch):
         """They are words on the organiser's form, so they come in the organiser's language."""
-        translated = {"Day": "Nap", "Month": "Hónap", "Year": "<Év>"}
+        translated = {"Day": "Nap", "Month": "Hónap", "Year": "<Év>", "DD": "NN", "MM": "HH", "YYYY": '"ÉÉÉÉ"'}
         monkeypatch.setattr(registration_page_module, "_", lambda message: translated[message])
         fields = [_field("date_of_birth", RespondentFieldGroup.ABOUT_YOU, 0, field_type=FieldType.DATE)]
 
@@ -1433,6 +1434,10 @@ class TestGenerateStarterFormHtml:
         assert "Hónap" in html
         assert "&lt;Év&gt;" in html
         assert ">Day" not in html
+        assert 'placeholder="NN"' in html
+        assert 'placeholder="HH"' in html
+        assert 'placeholder="&quot;ÉÉÉÉ&quot;"' in html
+        assert 'placeholder="DD"' not in html
 
     def test_date_field_hint_describes_the_fieldset(self):
         fields = [
@@ -1870,13 +1875,18 @@ class TestGenerateStarterFormHtmlGovuk:
         assert '<fieldset class="govuk-fieldset" role="group">' in html
         assert ('<legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Date of birth</legend>') in html
         assert '<div class="govuk-date-input" id="date_of_birth">' in html
-        for part, width, label in (("day", "2", "Day"), ("month", "2", "Month"), ("year", "4", "Year")):
+        for part, width, label, placeholder in (
+            ("day", "2", "Day", "DD"),
+            ("month", "2", "Month", "MM"),
+            ("year", "4", "Year", "YYYY"),
+        ):
             assert (
                 f'<label class="govuk-label govuk-date-input__label" for="date_of_birth-{part}">{label}</label>'
             ) in html
             assert (
                 f'<input class="govuk-input govuk-date-input__input govuk-input--width-{width}" '
                 f'type="text" inputmode="numeric" id="date_of_birth-{part}" name="date_of_birth-{part}" '
+                f'placeholder="{placeholder}" '
                 f"value=\"{{{{ value('date_of_birth-{part}') }}}}\">"
             ) in html
         assert "{{ field_errors('date_of_birth') }}" in html

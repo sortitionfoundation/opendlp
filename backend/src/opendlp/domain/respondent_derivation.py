@@ -14,7 +14,7 @@ attention. The house convention is the literal ``"UNKNOWN"``.
 """
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from itertools import pairwise
@@ -39,52 +39,56 @@ def normalise_lookup_key(value: str) -> str:
 
 
 @dataclass(frozen=True)
+class AgeBracket:
+    """One age range: a target value, and the age at which it starts.
+
+    It runs up to the next bracket's start; the top bracket is open-ended.
+    """
+
+    from_age: int
+    label: str
+
+
+def check_age_brackets(brackets: Sequence[AgeBracket]) -> None:
+    """Raise ValueError, with a message for the organiser, unless these brackets can make a rule."""
+    if not brackets:
+        raise ValueError(_("There must be at least one age range"))
+    if any(bracket.from_age < 0 for bracket in brackets):
+        raise ValueError(_("An age range cannot start below zero"))
+    if len({bracket.from_age for bracket in brackets}) != len(brackets):
+        raise ValueError(_("Two age ranges cannot start at the same age"))
+    labels = [bracket.label for bracket in brackets]
+    if any(not label.strip() for label in labels):
+        raise ValueError(_("Every age range needs a target value"))
+    if len(set(labels)) != len(labels):
+        raise ValueError(_("Each target value can only be one age range"))
+
+
+@dataclass(frozen=True)
 class AgeBracketRule:
-    """Buckets an age into labelled brackets, as of a fixed date.
+    """Buckets an age into the target's own values, as of a fixed date.
 
     ``as_of_date`` is required and never "today": a derived value must not
-    depend on when derivation happened to run, and the eligibility sentence
-    has to name a specific date.
+    depend on when derivation happened to run. Ages below the lowest bracket
+    take the fallback, so a target with no "under 16" value counts the too
+    young as unknown.
     """
 
     as_of_date: date
-    min_age: int = 16
-    max_age: int = 100
-    boundaries: tuple[int, ...] = ()
+    brackets: tuple[AgeBracket, ...]
     fallback: str = DEFAULT_FALLBACK
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "boundaries", tuple(self.boundaries))
-        if self.min_age <= 0:
-            raise ValueError(_("The minimum age must be greater than zero"))
-        if self.max_age <= self.min_age:
-            raise ValueError(_("The maximum age must be greater than the minimum age"))
-        if list(self.boundaries) != sorted(set(self.boundaries)):
-            raise ValueError(_("Bracket boundaries must be in ascending order with no repeats"))
-        if any(not (self.min_age < b < self.max_age) for b in self.boundaries):
-            raise ValueError(_("Each bracket boundary must be between the minimum and maximum age"))
+        object.__setattr__(self, "brackets", tuple(sorted(self.brackets, key=lambda bracket: bracket.from_age)))
+        check_age_brackets(self.brackets)
         if not self.fallback.strip():
             raise ValueError("fallback cannot be blank")
+        if self.fallback in self.labels():
+            raise ValueError(_("An age range cannot use the value '%(value)s'", value=self.fallback))
 
-    def bracket_labels(self) -> list[str]:
-        """All bracket labels in ascending order, e.g. under-16, 16-21, ..., 100+."""
-        edges = [self.min_age, *self.boundaries, self.max_age]
-        labels = [f"under-{self.min_age}"]
-        labels.extend(f"{lower}-{upper - 1}" for lower, upper in pairwise(edges))
-        labels.append(f"{self.max_age}+")
-        return labels
-
-    def eligibility_sentence(self) -> str:
-        """The self-declaration wording the registration form should carry.
-
-        Generated from the same numbers the derivation uses, so the form
-        wording and the bracket arithmetic cannot drift apart.
-        """
-        return _(
-            "I will be at least %(min_age)s years old on %(as_of_date)s.",
-            min_age=self.min_age,
-            as_of_date=self.as_of_date.isoformat(),
-        )
+    def labels(self) -> list[str]:
+        """The bracket labels, youngest first."""
+        return [bracket.label for bracket in self.brackets]
 
     def derive_from_date(self, born: date) -> str:
         """Bracket for an exact birth date."""
@@ -104,22 +108,17 @@ class AgeBracketRule:
     def _bracket_for_age(self, age: int) -> str:
         if age < 0 or age > MAX_SANE_AGE:
             return self.fallback
-        if age < self.min_age:
-            return f"under-{self.min_age}"
-        if age >= self.max_age:
-            return f"{self.max_age}+"
-        edges = [self.min_age, *self.boundaries, self.max_age]
-        for lower, upper in pairwise(edges):
-            if lower <= age < upper:
-                return f"{lower}-{upper - 1}"
-        raise AssertionError(f"age {age} escaped the bracket edges {edges}")  # pragma: no cover
+        label = self.fallback
+        for bracket in self.brackets:
+            if bracket.from_age > age:
+                break
+            label = bracket.label
+        return label
 
     def to_config(self) -> dict[str, Any]:
         return {
             "as_of_date": self.as_of_date.isoformat(),
-            "min_age": self.min_age,
-            "max_age": self.max_age,
-            "boundaries": list(self.boundaries),
+            "brackets": [{"from_age": bracket.from_age, "label": bracket.label} for bracket in self.brackets],
             "fallback": self.fallback,
         }
 
@@ -128,48 +127,89 @@ class AgeBracketRule:
         raw_date = config.get("as_of_date")
         if not raw_date:
             raise ValueError("as_of_date is required in an age bracket config")
+        raw_brackets = config.get("brackets")
+        if not raw_brackets:
+            raise ValueError("brackets are required in an age bracket config")
         return cls(
             as_of_date=date.fromisoformat(raw_date),
-            min_age=config.get("min_age", 16),
-            max_age=config.get("max_age", 100),
-            boundaries=tuple(config.get("boundaries", ())),
+            brackets=tuple(AgeBracket(from_age=int(b["from_age"]), label=str(b["label"])) for b in raw_brackets),
             fallback=config.get("fallback", DEFAULT_FALLBACK),
         )
 
 
-_UNDER_LABEL = re.compile(r"^under-(\d+)$")
-_PLUS_LABEL = re.compile(r"^(\d+)\+$")
-_RANGE_LABEL = re.compile(r"^(\d+)-(\d+)$")
+@dataclass(frozen=True)
+class AgeBracketMatch:
+    """What could be worked out about the age each target value starts at.
 
-
-def age_brackets_from_labels(labels: list[str]) -> tuple[int, int, tuple[int, ...]] | None:
-    """The (min_age, max_age, boundaries) that ``AgeBracketRule.bracket_labels`` would turn into these labels.
-
-    The inverse of ``bracket_labels``, kept beside it so the two cannot drift:
-    a target whose values are named like brackets tells us the rule that feeds
-    it. The "under-N" label may be missing, as it is from a target that has no
-    quota for the ineligible; the lowest range then supplies the minimum age.
-    Returns None when the labels are not a complete bracket set - any label of
-    another shape, no ranges at all, or no open-ended "N+" to close the top.
+    ``from_ages`` holds every value that could be placed. ``problem`` is empty
+    when every value was placed and the ranges fit together; otherwise it says
+    why they don't, in words an organiser can act on.
     """
-    min_age: int | None = None
-    max_age: int | None = None
-    lowers: list[int] = []
+
+    from_ages: dict[str, int]
+    problem: str = ""
+
+
+_WHOLE_NUMBER = re.compile(r"\d+")
+
+
+def match_age_brackets(labels: list[str]) -> AgeBracketMatch:
+    """Work out the age each target value starts at, from the numbers in it.
+
+    A value with two numbers is a range ("16-29", "16 to 29", "16-29 év").
+    A value with one number is an open end, and its position decides which:
+    at or below the lowest range's start it is the bottom ("under 16", "<16"),
+    and at the highest range's end or one above it is the top ("60+", ">59",
+    "over 59"). Without a top value, the highest range is open-ended. Reading
+    position rather than words means no keyword list, in any language.
+    """
+    ranges: list[tuple[str, int, int]] = []
+    singles: list[tuple[str, int]] = []
+    unplaced = False
     for label in labels:
-        if under := _UNDER_LABEL.match(label):
-            min_age = int(under.group(1))
-        elif plus := _PLUS_LABEL.match(label):
-            max_age = int(plus.group(1))
-        elif bracket := _RANGE_LABEL.match(label):
-            lowers.append(int(bracket.group(1)))
+        numbers = [int(number) for number in _WHOLE_NUMBER.findall(label)]
+        if len(numbers) == 2 and numbers[0] <= numbers[1]:
+            ranges.append((label, numbers[0], numbers[1]))
+        elif len(numbers) == 1:
+            singles.append((label, numbers[0]))
         else:
-            return None
-    if not lowers or max_age is None:
-        return None
-    lowers = sorted(set(lowers))
-    if min_age is None:
-        min_age = lowers[0]
-    return min_age, max_age, tuple(lower for lower in lowers if lower != min_age)
+            unplaced = True
+    if not ranges:
+        return AgeBracketMatch(from_ages={}, problem=_age_match_generic_problem())
+
+    ranges.sort(key=lambda entry: entry[1])
+    from_ages = {label: start for label, start, _end in ranges}
+    problem = _range_problem(ranges)
+
+    lowest_start = ranges[0][1]
+    highest_end = ranges[-1][2]
+    bottoms = [label for label, number in singles if lowest_start > 0 and number <= lowest_start]
+    tops = [label for label, number in singles if number in (highest_end, highest_end + 1)]
+    if len(bottoms) == 1:
+        from_ages[bottoms[0]] = 0
+    if len(tops) == 1 and tops[0] not in from_ages:
+        from_ages[tops[0]] = highest_end + 1
+    if unplaced or len(from_ages) < len(labels):
+        problem = problem or _age_match_generic_problem()
+    return AgeBracketMatch(from_ages=from_ages, problem=problem)
+
+
+def _range_problem(ranges: list[tuple[str, int, int]]) -> str:
+    for (_label, _start, previous_end), (_next_label, start, _end) in pairwise(ranges):
+        if start > previous_end + 1:
+            if start == previous_end + 2:
+                return _("The target values leave out age %(age)s", age=previous_end + 1)
+            return _("The target values leave out ages %(first)s to %(last)s", first=previous_end + 1, last=start - 1)
+        if start <= previous_end:
+            return _("Age %(age)s is in more than one target value", age=start)
+    return ""
+
+
+def _age_match_generic_problem() -> str:
+    return _(
+        "Could not work out age ranges from the target values. Enter the age each one starts at, "
+        "or change the target values to look like 16-29, 30-44, 45-59, 60+."
+    )
 
 
 @dataclass(frozen=True)
@@ -249,13 +289,13 @@ def rule_from_field(derivation_type: DerivationType, derivation_config: dict[str
 def output_options(rule: DerivationRule, declared_outputs: list[str] | None = None) -> list[ChoiceOption]:
     """The ChoiceOptions a derived field must carry for this rule.
 
-    Age brackets generate their own labels; mapping rules take the organiser's
+    Age brackets carry their own labels (the target's values); mapping rules take the organiser's
     declared output values (a small mapping can fall back to the distinct
     values in its table). The fallback is always appended so the value
     round-trips through the edit form, export and target counts.
     """
     if isinstance(rule, AgeBracketRule):
-        values = rule.bracket_labels()
+        values = rule.labels()
     elif isinstance(rule, SmallMappingRule):
         values = declared_outputs if declared_outputs is not None else list(dict.fromkeys(rule.mapping.values()))
     else:

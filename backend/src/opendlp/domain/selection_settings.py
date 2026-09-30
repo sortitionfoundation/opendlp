@@ -3,11 +3,14 @@ ABOUTME: Contains SelectionSettings shared by both CSV and GSheet assembly data 
 
 import uuid
 from dataclasses import asdict, dataclass, field
-from typing import Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 from sortition_algorithms import settings
 
 from opendlp import config
+
+if TYPE_CHECKING:
+    from opendlp.domain.assembly import Assembly
 
 Teams = Literal["aus", "eu", "uk", "other"]
 VALID_TEAMS = get_args(Teams)
@@ -82,6 +85,17 @@ class SelectionSettings:
     check_same_address_cols: list[str] = field(default_factory=list)
     columns_to_keep: list[str] = field(default_factory=list)
     selection_algorithm: str = "maximin"
+
+    @classmethod
+    def for_assembly(cls, assembly: "Assembly") -> "SelectionSettings":
+        """Build the default settings for an assembly that has none saved yet.
+
+        A Google Sheet assembly gets the team address columns applied when its
+        sheet is configured, so checking for shared addresses is on by default.
+        A CSV assembly has no address columns configured at this point, and the
+        check cannot run without them, so it starts switched off.
+        """
+        return cls(assembly_id=assembly.id, check_same_address=assembly.gsheet is not None)
 
     def to_settings(self, *, id_column: str = "") -> settings.Settings:
         """Convert to the sortition_algorithms Settings.

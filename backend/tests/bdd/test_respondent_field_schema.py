@@ -10,6 +10,7 @@ from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 from .config import PLAYWRIGHT_TIMEOUT, Urls
+from .helpers import assert_step_dialog_dimmed
 
 scenarios("../../features/respondent-field-schema.feature")
 
@@ -127,18 +128,10 @@ def choose_row_menu_item_and_confirm(admin_logged_in_page: Page, item: str, fiel
     page.wait_for_load_state("networkidle")
 
 
-@when(parsers.parse('I click the "{field_key}" row'))
-def click_field_row(admin_logged_in_page: Page, field_key: str) -> None:
-    """Click the row in its question type column - nowhere near its buttons - to exercise the whole-row link.
-
-    The click targets the row, not the cell: the stretched edit link covers the
-    cells, and Playwright refuses to click an element something else covers.
-    """
+@when(parsers.parse('I click the Edit button on the "{field_key}" row'))
+def click_field_row_edit(admin_logged_in_page: Page, field_key: str) -> None:
     row = admin_logged_in_page.locator(f"tr:has(code:text-is('{field_key}'))")
-    row_box = row.bounding_box()
-    type_cell_box = row.locator("td").nth(1).bounding_box()
-    assert row_box is not None and type_cell_box is not None
-    row.click(position={"x": type_cell_box["x"] - row_box["x"] + 10, "y": row_box["height"] / 2})
+    row.get_by_role("button", name="Edit").click()
 
 
 @when(parsers.parse('I save a new choice field labelled "{label}" with options "{first}" and "{second}"'))
@@ -162,6 +155,22 @@ def save_choice_field_via_modal(admin_logged_in_page: Page, label: str, first: s
     expect(_field_dialog(page)).not_to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@when(parsers.parse('I choose the "{question_type}" question type'))
+def choose_question_type(admin_logged_in_page: Page, question_type: str) -> None:
+    """Pick a type from the dropdown; the change re-renders the form fragment."""
+    dialog = _field_dialog(admin_logged_in_page)
+    dialog.locator('select[name="question_type"]').select_option(question_type)
+    expect(dialog.locator('select[name="question_type"]')).to_have_value(question_type, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@when("I turn the required switch off")
+def turn_required_switch_off(admin_logged_in_page: Page) -> None:
+    """Found by name, not accessible name: the label - and so the name - changes with the switch."""
+    switch = _field_dialog(admin_logged_in_page).locator('input[name="required"]')
+    switch.uncheck(force=True)
+    expect(switch).not_to_be_checked(timeout=PLAYWRIGHT_TIMEOUT)
+
+
 # ---------------------------------------------------------------------------
 # Then steps
 # ---------------------------------------------------------------------------
@@ -172,6 +181,11 @@ def edit_modal_open(admin_logged_in_page: Page, label: str) -> None:
     dialog = _field_dialog(admin_logged_in_page)
     expect(dialog).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     expect(dialog.locator('input[name="label"]')).to_have_value(label, timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the question list behind the edit modal should be dimmed")
+def question_list_is_dimmed(admin_logged_in_page: Page) -> None:
+    assert_step_dialog_dimmed(admin_logged_in_page, "#field-modal-container")
 
 
 @then(parsers.parse('the "{field_key}" row should summarise its options as "{summary}"'))
@@ -218,3 +232,10 @@ def field_order(admin_logged_in_page: Page, earlier_key: str, later_key: str) ->
         f"Expected {earlier_key!r} to appear before {later_key!r} on the page, "
         f"but earlier.y={earlier_box['y']} is not less than later.y={later_box['y']}"
     )
+
+
+@then(parsers.parse('the required switch should read "{text}"'))
+def required_switch_reads(admin_logged_in_page: Page, text: str) -> None:
+    """Only the label for the switch's current state is visible, so inner text is the one that shows."""
+    switch_label = _field_dialog(admin_logged_in_page).locator("label.switch-container")
+    expect(switch_label).to_have_text(text, use_inner_text=True, timeout=PLAYWRIGHT_TIMEOUT)

@@ -12,7 +12,9 @@ from opendlp.domain.validators import (
     InvalidSlug,
     MockField,
     UrlSlugValidator,
+    birth_year_range,
     parse_date_text,
+    validate_birth_year,
     validate_bool,
     validate_choice,
     validate_date_field,
@@ -360,7 +362,47 @@ class TestValidateDateField:
         assert cleaned is None
         assert "future" in error.lower()
 
-    def test_implausibly_old_date_returns_error(self):
+    def test_implausibly_old_date_names_the_earliest_year(self):
+        """GOV.UK asks for the limit to be named, rather than "check the year"."""
+        earliest, _latest = birth_year_range()
         cleaned, error = validate_date_field("1850-01-01")
         assert cleaned is None
-        assert "year" in error.lower()
+        assert error == f"The year must be {earliest} or later"
+
+    def test_the_earliest_year_is_accepted(self):
+        earliest, _latest = birth_year_range()
+        cleaned, error = validate_date_field(f"{earliest}-01-01")
+        assert cleaned == f"{earliest}-01-01"
+        assert error is None
+
+
+class TestBirthYearRange:
+    def test_runs_from_120_years_ago_to_this_year(self):
+        this_year = date.today().year
+        assert birth_year_range() == (this_year - 120, this_year)
+
+
+class TestValidateBirthYear:
+    def test_accepts_a_plausible_year(self):
+        assert validate_birth_year("1980") == (1980, None)
+
+    def test_accepts_both_ends_of_the_range(self):
+        earliest, latest = birth_year_range()
+        assert validate_birth_year(str(earliest)) == (earliest, None)
+        assert validate_birth_year(str(latest)) == (latest, None)
+
+    @pytest.mark.parametrize("offset", [-1, 1])
+    def test_refuses_a_year_just_outside_the_range(self, offset):
+        earliest, latest = birth_year_range()
+        year = earliest - 1 if offset < 0 else latest + 1
+        cleaned, error = validate_birth_year(str(year))
+        assert cleaned is None
+        assert error == f"The year must be between {earliest} and {latest}"
+
+    def test_a_typo_for_1980_is_refused(self):
+        cleaned, error = validate_birth_year("1880")
+        assert cleaned is None
+        assert "The year must be between" in error
+
+    def test_a_non_number_is_refused_as_before(self):
+        assert validate_birth_year("nineteen eighty") == (None, "Please enter a valid number")

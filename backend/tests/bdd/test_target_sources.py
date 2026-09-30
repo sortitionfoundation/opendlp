@@ -9,12 +9,14 @@ from playwright.sync_api import Locator, Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from opendlp.domain.respondent_field_schema import FieldType
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.service_layer.respondent_field_schema_service import add_field
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
 from .config import PLAYWRIGHT_TIMEOUT, Urls
+from .helpers import assert_step_dialog_dimmed
 
 scenarios("../../features/target-data-sources.feature")
 
@@ -83,6 +85,19 @@ def assembly_has_target(title: str, name: str, values: str, test_database) -> No
         )
 
 
+@given(parsers.parse('the assembly "{title}" has a respondent aged {age:d} by year of birth'))
+def assembly_has_respondent_of_age(title: str, age: int, test_database) -> None:
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        uow.respondents.add(
+            Respondent(
+                assembly_id=uuid.UUID(_assembly_ids[title]),
+                external_id=f"AGED-{age}",
+                attributes={"year_of_birth": str(datetime.now(UTC).year - age)},
+            )
+        )
+
+
 # ---------------------------------------------------------------------------
 # When steps
 # ---------------------------------------------------------------------------
@@ -101,10 +116,10 @@ def open_target_sources(admin_logged_in_page: Page, title: str) -> None:
 
 @when(parsers.parse('I set up the "{target_name}" target as an exact copy'))
 def set_up_exact_copy(admin_logged_in_page: Page, target_name: str) -> None:
-    """Open the set-up modal by clicking the row itself, choose Exact copy, and save."""
+    """Open the set-up modal from the row's set-up button, choose Exact copy, and save."""
     page = admin_logged_in_page
-    # The centre of the card is clear of its buttons, so this exercises the whole-row link.
-    _row_for(page, target_name).click()
+    # "Set up", or "Set up differently" when a question already shares the target's name.
+    _row_for(page, target_name).get_by_role("button", name=re.compile(r"^Set up")).click()
     expect(_setup_dialog(page)).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     # Choosing a method round-trips through the server and swaps the modal back in.
     with page.expect_response(lambda r: "setup-modal" in r.url):
@@ -139,8 +154,12 @@ def set_up_age_ranges(admin_logged_in_page: Page, target_name: str, source_key: 
     assert option_value, f"No source option offering {source_key!r}"
     with page.expect_response(lambda r: "setup-modal" in r.url):
         reuse_select.select_option(option_value)
-    # Choosing the target's row pre-filled the brackets from its "16-24"-style values.
-    expect(page.locator('input[name="boundaries"]')).to_have_value("25", timeout=PLAYWRIGHT_TIMEOUT)
+    # The target's own values were matched to ages, so they are summarised rather than asked for.
+    expect(_setup_dialog(page).get_by_test_id("ts-age-summary")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    # The first assembly date may already be filled in, behind a Change button.
+    change_date = page.get_by_role("button", name="Change the date respondent age is calculated on")
+    if change_date.is_visible():
+        change_date.click()
     page.fill('input[name="as_of_day"]', "1")
     page.fill('input[name="as_of_month"]', "6")
     # The as-of year must be within a year of today, so never hard-code it.
@@ -316,6 +335,15 @@ def open_schema_editor(admin_logged_in_page: Page, title: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+@then(parsers.parse('the respondent aged {age:d} in "{title}" should count towards "{value}" of the "{name}" target'))
+def respondent_counts_towards(age: int, title: str, value: str, name: str, test_database) -> None:
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        respondents = uow.respondents.get_by_assembly_id(uuid.UUID(_assembly_ids[title]))
+        respondent = next(r for r in respondents if r.external_id == f"AGED-{age}")
+        assert respondent.attributes[name] == value
+
+
 @then(parsers.parse('the "{target_name}" target row should say "{text}"'))
 def target_row_says(admin_logged_in_page: Page, target_name: str, text: str) -> None:
     expect(_row_for(admin_logged_in_page, target_name)).to_contain_text(text, timeout=PLAYWRIGHT_TIMEOUT)
@@ -373,6 +401,11 @@ def checklist_is_inert(admin_logged_in_page: Page) -> None:
     expect(step).to_have_attribute("inert", "", timeout=PLAYWRIGHT_TIMEOUT)
 
 
+@then("the checklist behind the set-up dialog should be dimmed")
+def checklist_is_dimmed(admin_logged_in_page: Page) -> None:
+    assert_step_dialog_dimmed(admin_logged_in_page, "#ts-modal-container")
+
+
 @then(parsers.parse('keyboard focus should be on the set-up button for the "{target_name}" target'))
 def focus_on_set_up_button(admin_logged_in_page: Page, target_name: str) -> None:
     expect(_row_opener(admin_logged_in_page, target_name)).to_be_focused(timeout=PLAYWRIGHT_TIMEOUT)
@@ -382,7 +415,7 @@ def focus_on_set_up_button(admin_logged_in_page: Page, target_name: str) -> None
 def target_sources_still_open(admin_logged_in_page: Page) -> None:
     """Escape in the menu must not also close the step dialog around it."""
     page = admin_logged_in_page
-    expect(page.get_by_role("dialog", name="Target data sources")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+    expect(page.get_by_role("dialog", name="Link targets to questions")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
     assert page.url.endswith("/target-sources")
 
 

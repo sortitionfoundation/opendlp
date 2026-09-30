@@ -1,5 +1,5 @@
-"""ABOUTME: Unit tests for the signup survey service (currently the in-memory mock)
-ABOUTME: Written against the service interface only, so they must keep passing once the real implementation lands"""
+"""ABOUTME: Unit tests for the signup survey service
+ABOUTME: Written against the service interface only, over fake repositories"""
 
 import pytest
 
@@ -7,14 +7,6 @@ from opendlp.adapters.tabular_export import CsvExportTarget
 from opendlp.domain.value_objects import GlobalRole
 from opendlp.service_layer import signup_survey_service, user_service
 from opendlp.service_layer.exceptions import InsufficientPermissions
-
-
-@pytest.fixture(autouse=True)
-def _fresh_survey_store():
-    """The mock's store is process-global; give every test an empty one."""
-    signup_survey_service.reset_mock_survey_store()
-    yield
-    signup_survey_service.reset_mock_survey_store()
 
 
 def _make_user(uow, email: str, role: GlobalRole = GlobalRole.USER):
