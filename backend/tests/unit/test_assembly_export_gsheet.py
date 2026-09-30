@@ -50,6 +50,12 @@ class TestPostInit:
         assert config.spreadsheet_title == ""
         assert config.worksheet_url == ""
 
+    def test_auto_export_defaults_off(self) -> None:
+        """A fresh config does not auto-export and has no saved status filter."""
+        config = AssemblyExportGSheet(assembly_id=uuid.uuid4(), export_kind=GSheetExportKind.RESPONDENTS)
+        assert config.auto_export is False
+        assert config.auto_export_status_filter == ""
+
 
 class TestUpdateValues:
     def test_updates_editable_fields(self) -> None:
@@ -66,6 +72,13 @@ class TestUpdateValues:
         )
         assert config.spreadsheet_title == "Assembly Data"
         assert config.worksheet_url == "https://docs.google.com/spreadsheets/d/abc#gid=1"
+
+    def test_updates_auto_export_fields(self) -> None:
+        """Both auto-export fields are editable through update_values."""
+        config = AssemblyExportGSheet(assembly_id=uuid.uuid4(), export_kind=GSheetExportKind.RESPONDENTS, url=VALID_URL)
+        config.update_values(auto_export=True, auto_export_status_filter="POOL")
+        assert config.auto_export is True
+        assert config.auto_export_status_filter == "POOL"
 
     def test_bumps_updated_at(self) -> None:
         past = datetime(2020, 1, 1, tzinfo=UTC)

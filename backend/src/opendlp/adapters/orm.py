@@ -475,6 +475,8 @@ assembly_export_gsheets = Table(
     Column("worksheet_name", String(100), nullable=False, default=""),
     Column("spreadsheet_title", String(500), nullable=False, default=""),
     Column("worksheet_url", String(500), nullable=False, default=""),
+    Column("auto_export", Boolean, nullable=False, default=False, server_default=text("false")),
+    Column("auto_export_status_filter", String(50), nullable=False, default="", server_default=""),
     Column("created_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     Column("updated_at", TZAwareDatetime(), nullable=False, default=aware_utcnow),
     # One export sheet per assembly per kind.
