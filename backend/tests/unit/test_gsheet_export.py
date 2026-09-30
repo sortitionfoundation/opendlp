@@ -9,17 +9,22 @@ from opendlp.adapters.tabular_export import TabularData
 
 
 class _FakeWorksheet:
-    def __init__(self, title: str) -> None:
+    def __init__(self, title: str, row_count: int = 1000, col_count: int = 26) -> None:
         self.title = title
+        self.row_count = row_count
+        self.col_count = col_count
         self.updated: list[list[str]] | None = None
-        self.cleared = False
+        self.batch_cleared: list[str] = []
+        self.calls: list[str] = []
         self.url = f"https://docs.google.com/spreadsheets/d/fake#{title}"
 
-    def clear(self) -> None:
-        self.cleared = True
-
     def update(self, values: list[list[str]]) -> None:
+        self.calls.append("update")
         self.updated = values
+
+    def batch_clear(self, ranges: list[str]) -> None:
+        self.calls.append("batch_clear")
+        self.batch_cleared.extend(ranges)
 
 
 class _FakeSpreadsheet:
@@ -69,18 +74,43 @@ class TestGSheetExportTarget:
         assert target.result_url == ws.url
         assert target.result_title == spreadsheet.title
 
-    def test_clears_existing_worksheet(self):
+    def test_writes_over_existing_worksheet_then_trims(self):
+        """An existing tab is written first and only the cells beyond the data are cleared."""
         spreadsheet = _FakeSpreadsheet()
-        existing = _FakeWorksheet("Respondents")
+        existing = _FakeWorksheet("Respondents", row_count=10, col_count=5)
+        spreadsheet.worksheets_by_title["Respondents"] = existing
+        client = _FakeClient(spreadsheet)
+        target = GSheetExportTarget(spreadsheet_url=_URL, client_factory=lambda: client)
+
+        target.write_sheet("Respondents", TabularData(headers=["id", "name"], rows=[["R1", "Alice"], ["R2", "Bob"]]))
+
+        assert existing.calls == ["update", "batch_clear"]
+        assert existing.updated == [["id", "name"], ["R1", "Alice"], ["R2", "Bob"]]
+        assert existing.batch_cleared == ["A4:E10", "C1:E3"]
+        assert spreadsheet.added == []
+
+    def test_nothing_to_trim_when_data_fills_the_grid(self):
+        """No clear call is made when the data reaches both edges of the worksheet."""
+        spreadsheet = _FakeSpreadsheet()
+        existing = _FakeWorksheet("Respondents", row_count=2, col_count=1)
         spreadsheet.worksheets_by_title["Respondents"] = existing
         client = _FakeClient(spreadsheet)
         target = GSheetExportTarget(spreadsheet_url=_URL, client_factory=lambda: client)
 
         target.write_sheet("Respondents", TabularData(headers=["id"], rows=[["R1"]]))
 
-        assert existing.cleared is True
-        assert existing.updated == [["id"], ["R1"]]
-        assert spreadsheet.added == []
+        assert existing.calls == ["update"]
+
+    def test_trims_only_the_rows_below_when_data_spans_every_column(self):
+        spreadsheet = _FakeSpreadsheet()
+        existing = _FakeWorksheet("Respondents", row_count=4, col_count=2)
+        spreadsheet.worksheets_by_title["Respondents"] = existing
+        client = _FakeClient(spreadsheet)
+        target = GSheetExportTarget(spreadsheet_url=_URL, client_factory=lambda: client)
+
+        target.write_sheet("Respondents", TabularData(headers=["id", "name"], rows=[["R1", "Alice"]]))
+
+        assert existing.batch_cleared == ["A3:B4"]
 
 
 class TestDefaultClientFactory:
@@ -93,3 +123,13 @@ class TestDefaultClientFactory:
 
         assert client is fake_client
         fake_client.set_timeout.assert_called_once_with(gsheet_export.GSPREAD_TIMEOUT_SECONDS)
+
+    def test_target_passes_its_timeout_to_the_client(self, monkeypatch) -> None:
+        """A target built with a longer timeout hands it to the gspread client it creates."""
+        fake_client = MagicMock()
+        monkeypatch.setattr(gsheet_export.gspread, "service_account", lambda filename: fake_client)
+        target = GSheetExportTarget(spreadsheet_url=_URL, timeout_seconds=120)
+
+        target._client_factory()
+
+        fake_client.set_timeout.assert_called_once_with(120)
