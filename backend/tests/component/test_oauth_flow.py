@@ -167,11 +167,20 @@ class TestOAuthRegistrationForms:
         google_pos = body.find(b'value="google"')
         email_pos = body.find(b'name="email"')
         password_pos = body.find(b'name="password"')
-        email_button_pos = body.find(b'value="email"')
+        # The visible email submit is the govuk-button; rfind skips the hidden default one.
+        email_button_pos = body.rfind(b'value="email"')
 
         assert -1 not in (invite_pos, google_pos, email_pos, password_pos, email_button_pos)
         # Shared invite field first, then the SSO buttons, then the email cluster.
         assert invite_pos < google_pos < email_pos < password_pos < email_button_pos
+
+    def test_register_enter_key_defaults_to_email_not_oauth(self, client: FlaskClient):
+        """The form's first submit button is the email path, so Enter never starts OAuth."""
+        body = client.get("/auth/register").data
+        first_submit = body.find(b'<button type="submit"')
+        # The implicit-submit default (first submit button) carries action=email.
+        assert body.find(b'value="email"') < body.find(b'value="google"')
+        assert b'name="action" value="email"' in body[first_submit : first_submit + 120]
 
     def test_register_google_with_invalid_invite_fails(self, client: FlaskClient):
         """Invalid invite re-renders the form without reaching OAuth."""

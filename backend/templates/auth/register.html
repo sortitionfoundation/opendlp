@@ -16,6 +16,13 @@
             {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
             <form method="POST" class="govuk-!-margin-top-6" novalidate>
                 {{ form.hidden_tag() }}
+                {# A form's implicit-submit default is its first submit button. The
+                   Google and Microsoft buttons below are submit buttons too, so
+                   without this, Enter in any field would start an OAuth redirect.
+                   This hidden email submit makes Enter default to the manual email
+                   path; it is out of the tab order and hidden from assistive tech,
+                   which use the visible "Create Account with email" button below. #}
+                <button type="submit" name="action" value="email" class="govuk-visually-hidden" tabindex="-1" aria-hidden="true">{{ _("Create Account with email") }}</button>
                 {# Shared fields — used whichever way the account is created. #}
                 <div class="govuk-form-group{% if form.invite_code.errors %} govuk-form-group--error{% endif %}">
                     {{ form.invite_code.label(class="govuk-label govuk-label--m") }}
