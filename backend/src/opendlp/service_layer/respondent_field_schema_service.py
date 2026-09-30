@@ -38,6 +38,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly, can_view_assembly
+from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_heuristics import classify_field_key
 from opendlp.translations import lazy_gettext as _l
 
@@ -195,6 +196,7 @@ def populate_schema_from_headers(
         )
 
     uow.respondent_field_definitions.bulk_add(rows)
+    request_auto_export(uow, assembly_id)
     return len(rows)
 
 
@@ -215,6 +217,7 @@ def initialise_empty_schema(
         return 0
     rows = _build_fixed_rows(assembly_id)
     uow.respondent_field_definitions.bulk_add(rows)
+    request_auto_export(uow, assembly_id)
     return len(rows)
 
 
@@ -287,6 +290,7 @@ def add_field(
         help_text=help_text,
     )
     uow.respondent_field_definitions.add(field)
+    request_auto_export(uow, assembly_id)
     return field.create_detached_copy()
 
 
@@ -393,6 +397,7 @@ def update_field(
         # Options replaced wholesale drop mapping keys the same way removing
         # them one at a time does; a key that can never match again is stale.
         _drop_small_mapping_keys(uow, assembly_id, field.field_key, removed_values)
+    request_auto_export(uow, assembly_id)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -513,6 +518,7 @@ def add_choice_option(
         raise FieldDefinitionConflictError(_l("Option '%(value)s' already exists", value=value))
     new_options.append(ChoiceOption(value=value, help_text=help_text))
     field.update(options=new_options)
+    request_auto_export(uow, assembly_id)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -552,6 +558,7 @@ def update_choice_option(
         # A small mapping keyed on the old option value would go silently stale,
         # producing wrong derived data with no visible symptom — rename in step.
         _rename_small_mapping_keys(uow, assembly_id, field.field_key, old_value, new_value)
+    request_auto_export(uow, assembly_id)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -649,6 +656,7 @@ def remove_choice_option(
     # A mapping entry keyed on the removed option can never match again; drop
     # it so the config mirrors the source's real option set.
     _drop_small_mapping_keys(uow, assembly_id, field.field_key, {value})
+    request_auto_export(uow, assembly_id)
     detached: RespondentFieldDefinition = field.create_detached_copy()
     return detached
 
@@ -679,6 +687,7 @@ def reorder_group(
         field = existing_by_id[field_id]
         field.sort_order = i * SORT_ORDER_STEP
         field.updated_at = now
+    request_auto_export(uow, assembly_id)
 
 
 def delete_derived_field(
@@ -700,6 +709,7 @@ def delete_derived_field(
     uow.respondent_field_mapping_entries.delete_all_for_field(field.id)
     uow.respondents.remove_attribute(assembly_id, field.field_key)
     uow.respondent_field_definitions.delete(field)
+    request_auto_export(uow, assembly_id)
 
 
 def rename_derived_field(
@@ -732,6 +742,7 @@ def rename_derived_field(
     field.field_key = new_field_key
     field.updated_at = datetime.now(UTC)
     uow.respondents.rename_attribute(assembly_id, old_field_key, new_field_key)
+    request_auto_export(uow, assembly_id)
 
 
 def delete_field(
@@ -764,6 +775,7 @@ def delete_field(
             )
         )
     uow.respondent_field_definitions.delete(field)
+    request_auto_export(uow, assembly_id)
 
 
 # ---------------------------------------------------------------------------
@@ -876,6 +888,7 @@ def apply_reconciliation(
             )
         )
     uow.respondent_field_definitions.bulk_add(new_rows)
+    request_auto_export(uow, assembly_id)
     return len(new_rows)
 
 

@@ -27,6 +27,7 @@ from opendlp.service_layer.registration_page_service import (
     find_registration_page_by_url_slug,
     resolve_visibility,
 )
+from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 
 
@@ -231,6 +232,7 @@ def _create_and_save_respondent(
 
     uow.respondents.add(respondent)
     uow.commit()
+    request_auto_export(uow, assembly_id)
 
     return respondent.create_detached_copy()
 

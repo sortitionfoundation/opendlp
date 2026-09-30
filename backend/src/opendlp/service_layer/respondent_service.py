@@ -33,6 +33,7 @@ from opendlp.service_layer.permissions import (
     can_manage_assembly,
     can_view_assembly,
 )
+from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.respondent_field_schema_service import (
     check_id_column_in_headers,
     update_schema_from_headers,
@@ -94,6 +95,7 @@ def create_respondent(
     apply_derivations(respondent, field_definitions, load_mapping_lookups(uow, field_definitions))
 
     uow.respondents.add(respondent)
+    request_auto_export(uow, assembly_id)
     return respondent.create_detached_copy()
 
 
@@ -247,6 +249,7 @@ def import_respondents_from_rows(  # noqa: C901
         id_column,
         target_category_names=target_category_names,
     )
+    request_auto_export(uow, assembly_id)
 
     return [r.create_detached_copy() for r in respondents], errors, id_column
 
@@ -337,7 +340,9 @@ def reset_selection_status(
             required_role="assembly-manager or admin",
         )
 
-    return uow.respondents.reset_all_to_pool(assembly_id)
+    count = uow.respondents.reset_all_to_pool(assembly_id)
+    request_auto_export(uow, assembly_id)
+    return count
 
 
 def get_respondents_for_assembly(
@@ -480,6 +485,7 @@ def delete_respondent(
     assert isinstance(respondent, Respondent)
 
     respondent.delete_personal_data(author_id=user_id, comment=comment)
+    request_auto_export(uow, assembly_id)
 
 
 def update_respondent(
@@ -541,6 +547,7 @@ def update_respondent(
         load_mapping_lookups(uow, field_definitions),
         keep_supplied_on_fallback=False,
     )
+    request_auto_export(uow, assembly_id)
 
 
 def add_respondent_comment(
@@ -703,3 +710,4 @@ def transition_respondent_status(
         author_id=user_id,
         comment=comment,
     )
+    request_auto_export(uow, assembly_id)

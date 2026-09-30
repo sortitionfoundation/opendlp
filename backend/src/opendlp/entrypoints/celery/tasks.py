@@ -704,6 +704,7 @@ def _internal_write_db_results(
                 raise SelectionRunRecordNotFoundError(f"Selection run {task_id} not found or has no user_id")
             uow.respondents.bulk_mark_as_selected(assembly_id, selected_ext_ids, task_id, run_record.user_id)
             uow.commit()
+            respondent_auto_export.request_auto_export(uow, assembly_id)
 
         _update_selection_record(
             task_id=task_id,

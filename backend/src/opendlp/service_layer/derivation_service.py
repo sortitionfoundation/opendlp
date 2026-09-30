@@ -49,6 +49,7 @@ from opendlp.service_layer.exceptions import (
     UserNotFoundError,
 )
 from opendlp.service_layer.permissions import can_manage_assembly
+from opendlp.service_layer.respondent_auto_export import request_auto_export
 from opendlp.service_layer.unit_of_work import AbstractUnitOfWork
 from opendlp.translations import lazy_gettext as _l
 
@@ -492,6 +493,8 @@ def _recompute(
             raw = outcome.fallback_sources.get(derived_field.field_key, "")
             if raw and raw not in unmatched and len(unmatched) < UNMATCHED_SAMPLE_SIZE:
                 unmatched.append(raw)
+
+    request_auto_export(uow, assembly_id)
 
     completed_runs = sum(
         1

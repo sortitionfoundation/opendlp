@@ -10,17 +10,25 @@ from sortition_algorithms.settings import Settings
 from opendlp import config
 from opendlp.bootstrap import bootstrap
 from opendlp.domain.assembly import Assembly, SelectionRunRecord
+from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
 from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import GlobalRole, RespondentStatus, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import (
+    GlobalRole,
+    GSheetExportKind,
+    RespondentStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
+)
 from opendlp.entrypoints.celery.tasks import (
     _internal_load_db,
     _internal_run_select,
     _internal_write_db_results,
     run_select_from_db,
 )
+from opendlp.service_layer import respondent_auto_export
 from opendlp.service_layer.sortition import check_db_selection_data, generate_selection_csvs
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -195,6 +203,49 @@ class TestInternalWriteDbResults:
             assert record.status == SelectionRunStatus.COMPLETED
             assert record.remaining_ids is not None
             assert len(record.remaining_ids) == 2
+
+    def test_writing_results_requests_an_auto_export(self, postgres_session_factory, assembly_with_data):
+        """Marking respondents selected is a change the auto-export must pick up."""
+        assembly_id = assembly_with_data
+        task_id = _make_run_record(assembly_id, postgres_session_factory)
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            uow.assembly_export_gsheets.add(
+                AssemblyExportGSheet(
+                    assembly_id=assembly_id,
+                    export_kind=GSheetExportKind.RESPONDENTS,
+                    url="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit",
+                    auto_export=True,
+                )
+            )
+            uow.commit()
+
+        with (
+            patch.object(respondent_auto_export, "_get_redis", return_value=_PendingKeyRedis()),
+            patch("opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async") as dispatch,
+        ):
+            _internal_write_db_results(
+                task_id=task_id,
+                assembly_id=assembly_id,
+                full_people={"NB001": None, "NB002": None, "NB003": None, "NB004": None},  # type: ignore[arg-type]
+                selected_panels=[frozenset({"NB001", "NB003"})],
+                session_factory=postgres_session_factory,
+            )
+
+        dispatch.assert_called_once()
+        assert dispatch.call_args.kwargs["kwargs"] == {"assembly_id": assembly_id}
+
+
+class _PendingKeyRedis:
+    """Enough of redis-py for request_auto_export's SET NX, without a server."""
+
+    def __init__(self) -> None:
+        self.keys: set[str] = set()
+
+    def set(self, key: str, value: str, nx: bool = False, ex: int | None = None) -> bool | None:
+        if nx and key in self.keys:
+            return None
+        self.keys.add(key)
+        return True
 
 
 class TestGenerateSelectionCsvs:
