@@ -214,6 +214,8 @@ def export_respondents_to_gsheet(
     spreadsheet_url: str,
     worksheet_name: str,
     target: AbstractGSheetExportTarget,
+    auto_export: bool = False,
+    auto_export_status_filter: str = "",
 ) -> None:
     """Export respondents to a Google Sheet and save/update the sheet config.
 
@@ -221,8 +223,13 @@ def export_respondents_to_gsheet(
     result URL afterwards. The spreadsheet URL and worksheet name are persisted
     to AssemblyExportGSheet so later exports can pre-fill the form, along
     with the spreadsheet's title and the direct worksheet link read off the
-    target after the write, so the respondents page can link to the export. The
-    caller is expected to manage the ``uow`` context (``with uow: ...``).
+    target after the write, so the respondents page can link to the export.
+
+    ``auto_export`` is saved as given on every Google Sheets export, so the
+    checkbox on the form is the truth each time. Because the write comes first,
+    a failed export cannot switch auto-export on. ``auto_export_status_filter``
+    is the UI token the background export should resolve with
+    ``resolve_status_filter``; it should describe ``status_filter``.
 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
@@ -245,4 +252,28 @@ def export_respondents_to_gsheet(
         spreadsheet_url=spreadsheet_url,
         worksheet_name=worksheet_name,
         target=target,
+        auto_export=auto_export,
+        auto_export_status_filter=auto_export_status_filter if auto_export else "",
     )
+
+
+@require_assembly_permission(can_manage_assembly)
+def disable_auto_export(
+    uow: AbstractUnitOfWork,
+    user_id: uuid.UUID,
+    assembly_id: uuid.UUID,
+) -> None:
+    """Switch off the automatic respondent export, touching nothing else.
+
+    The saved URL, tab and last-export link stay so the next manual export
+    pre-fills as before. No Google call is made: this must work when the sheet
+    is the thing that is broken. Does nothing when there is no config, or
+    auto-export is already off. Commits.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    config = uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, EXPORT_KIND)
+    if config is None or not config.auto_export:
+        return
+    config.update_values(auto_export=False)
+    uow.commit()
