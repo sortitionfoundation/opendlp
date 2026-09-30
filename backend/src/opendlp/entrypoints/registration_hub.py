@@ -9,7 +9,7 @@ from flask_login import current_user
 
 from opendlp.domain.registration_page import RegistrationPage, RegistrationPageStatus
 from opendlp.domain.respondent_field_schema import FieldOnRegistrationPage
-from opendlp.domain.value_objects import HEADLINE_RESPONDENT_STATUSES
+from opendlp.domain.value_objects import headline_registration_count
 from opendlp.entrypoints.blueprints.registration import registration_url, short_url
 from opendlp.service_layer.qr_codes import generate_qr_code_base64
 from opendlp.service_layer.registration_page_service import deletable_registration_page_ids, list_registration_pages
@@ -126,5 +126,4 @@ def _total_registration_count(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -
     is deliberately wider than the per-page counts, which tally rows against each
     page regardless of status.
     """
-    status_counts = uow.respondents.count_by_status(assembly_id)
-    return sum(status_counts.get(status, 0) for status in HEADLINE_RESPONDENT_STATUSES)
+    return headline_registration_count(uow.respondents.count_by_status(assembly_id))
