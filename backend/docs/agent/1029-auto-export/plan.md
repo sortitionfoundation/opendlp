@@ -311,6 +311,62 @@ Where the code differs from the design above:
   `gspread.utils.rowcol_to_a1`; nothing is cleared when the data reaches the
   grid's edge.
 
+## Future work: run the one-off export in Celery too
+
+Added 2026-10-01, after the 907 work on Google Sheet access errors.
+
+### Why
+
+The one-off export (respondents modal, and the dashboard export that shares
+`gsheet_export_flow.py`) still writes to Google inside the web request. Two
+things make that a worse fit than it was when this plan was written:
+
+- **The export adapter now authenticates through the library's
+  `make_gsheet_client()`** (907), which uses gspread's `BackOffHTTPClient`.
+  On a 429 or a 5xx that client sleeps and retries with doubling waits of up
+  to 128 seconds. The 20 second per-request timeout bounds each attempt, not
+  the sleeps between them, so a Google outage or a quota squeeze can hold a
+  gunicorn worker for minutes. That back-off is exactly right in a Celery
+  task, where `auto_export_respondents` already layers its own retries on
+  top, and exactly wrong in a request.
+- **The service account's write quota is shared** across every assembly and
+  every selection run on the install (see fact 3 above). A one-off export is
+  the one Google write that bypasses the per-assembly Redis lock and the
+  debounce, so it can interleave with an auto-export of the same sheet.
+
+### Shape
+
+- The modal's "Export to Google Sheets" submits as today, but the route
+  dispatches a task instead of writing. The natural candidate is the existing
+  `auto_export_respondents` task with the saved config as its input, which
+  gets the lock, the debounce key and the retries for free. The one-off case
+  differs only in that the config may not exist yet and the status filter
+  comes from the form rather than the saved row, so the task (or a thin
+  sibling) takes those as arguments.
+- The flash becomes "Export started" and the page shows the export's state.
+  The selection runs already have the pattern: a run record polled by an
+  HTMX partial (`components/selection_progress_modal.html` and the
+  `SelectionRunRecord` behind it). A small `ExportRunRecord` (assembly,
+  kind, status, error message, result URL, timestamps) or a Redis status key
+  with the same fields would do; a database row is easier to show in the
+  "Exported to Google Sheets" line and to keep for the last-failure case
+  noted under D4.
+- **Enabling auto-export** currently relies on the initial export succeeding
+  synchronously. In the async version either the flag is set only by the task
+  on its first success, or it is set immediately and the status line carries
+  the failure. The first keeps today's guarantee and is the recommendation.
+- The error classification from 907 carries over unchanged:
+  `ExportTargetError` keeps the library's `SelectionError` as `__cause__`, so
+  the record's error message can be the translated not-shared, not-found,
+  read-only or not-native text rather than a generic hint.
+
+### Out of scope here
+
+The dashboard export route shares the flow helper, so it moves at the same
+time or the helper grows a flag; either way the modal copy and the "Exported
+to" line need the same status treatment. None of this is needed for the
+auto-export feature to ship.
+
 ## Decisions
 
 Recorded from the first review round, 2026-09-30.
