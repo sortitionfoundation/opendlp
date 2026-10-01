@@ -2,6 +2,7 @@
 # ABOUTME: Drives the real export route + service against a seeded fake store, no PostgreSQL
 
 import csv
+from html.parser import HTMLParser
 from io import StringIO
 
 import pytest
@@ -336,25 +337,52 @@ def _saved_config(fake_store: FakeStore, assembly_id) -> AssemblyExportGSheet | 
         return uow.assembly_export_gsheets.get_by_assembly_and_kind(assembly_id, GSheetExportKind.RESPONDENTS)
 
 
+class _FormControls(HTMLParser):
+    """The attributes of every <input> by name, and the selected <option> value of every <select> by name."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.inputs: dict[str, dict[str, str | None]] = {}
+        self.selected: dict[str, str | None] = {}
+        self._select = ""
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if tag == "input" and attributes.get("name"):
+            self.inputs[str(attributes["name"])] = attributes
+        elif tag == "select":
+            self._select = attributes.get("name") or ""
+        elif tag == "option" and self._select and "selected" in attributes:
+            self.selected[self._select] = attributes.get("value")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "select":
+            self._select = ""
+
+
+def _modal_controls(client: FlaskClient, assembly_id) -> _FormControls:
+    response = client.get(f"/backoffice/assembly/{assembly_id}/respondents/export/modal")
+    controls = _FormControls()
+    controls.feed(response.get_data(as_text=True))
+    return controls
+
+
 class TestAutoExportInModal:
     def test_modal_offers_the_checkbox_unticked_by_default(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly
     ) -> None:
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal")
+        controls = _modal_controls(logged_in_admin, existing_assembly.id)
 
-        body = response.get_data(as_text=True)
-        assert 'name="auto_export"' in body
-        assert "checked" not in body.split('name="auto_export"')[1].split("/>")[0]
+        assert "checked" not in controls.inputs["auto_export"]
 
     def test_modal_preticks_the_checkbox_when_saved_on(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
     ) -> None:
         _save_config(fake_store, existing_assembly.id, auto_export=True, auto_export_status_filter="")
 
-        response = logged_in_admin.get(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal")
+        controls = _modal_controls(logged_in_admin, existing_assembly.id)
 
-        checkbox = response.get_data(as_text=True).split('name="auto_export"')[1].split("/>")[0]
-        assert "checked" in checkbox
+        assert "checked" in controls.inputs["auto_export"]
 
 
 class TestRunExportWithAutoExport:
