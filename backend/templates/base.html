@@ -2,9 +2,7 @@
 <html lang="{{ html_lang() }}" class="govuk-template">
     <head>
         <meta charset="utf-8">
-        <title>
-            {% block title %}OpenDLP - {{ _("Open Democratic Lottery Platform") }}{% endblock %}
-        </title>
+        <title>{% block title %}OpenDLP - {{ _("Open Democratic Lottery Platform") }}{% endblock %}</title>
         <meta name="viewport"
               content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="theme-color" content="#0b0c0c">
@@ -15,7 +13,7 @@
               type="image/x-icon">
         <!-- OpenDLP with GOV.UK Frontend CSS -->
         <link rel="stylesheet"
-              href="{{ url_for('static', filename='css/application.css', v=static_hashes('css/application.css') ) }}">
+              href="{{ url_for('static', filename='css/application.css', v=static_hashes('css/application.css')) }}">
         {% block extra_css %}{% endblock %}
     </head>
     <body class="govuk-template__body govuk-frontend-supported">
@@ -55,11 +53,13 @@
                             </button>
                             <ul class="govuk-header__navigation-list">
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('main.dashboard') }}">{{ _("Your Assemblies") }}</a>
+                                    <a class="govuk-header__link"
+                                       href="{{ url_for('main.dashboard') }}">{{ _("Your Assemblies") }}</a>
                                 </li>
                                 {% if perms.administer_site %}
                                     <li class="govuk-header__navigation-item">
-                                        <a class="govuk-header__link" href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
+                                        <a class="govuk-header__link"
+                                           href="{{ url_for('admin.index') }}">{{ _("Site Admin") }}</a>
                                     </li>
                                 {% endif %}
                                 <li class="govuk-header__navigation-item">
@@ -73,10 +73,12 @@
                                        target="_blank">{{ _("Help") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('profile.view') }}">{{ _("My Account") }}</a>
+                                    <a class="govuk-header__link"
+                                       href="{{ url_for('profile.view') }}">{{ _("My Account") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('auth.logout') }}">{{ _("Sign out") }}</a>
+                                    <a class="govuk-header__link"
+                                       href="{{ url_for('auth.logout') }}">{{ _("Sign out") }}</a>
                                 </li>
                             </ul>
                         </nav>
@@ -96,10 +98,12 @@
                             </button>
                             <ul class="govuk-header__navigation-list">
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('auth.login') }}">{{ _("Sign in") }}</a>
+                                    <a class="govuk-header__link"
+                                       href="{{ url_for('auth.login') }}">{{ _("Sign in") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
-                                    <a class="govuk-header__link" href="{{ url_for('auth.register') }}">{{ _("Create Account") }}</a>
+                                    <a class="govuk-header__link"
+                                       href="{{ url_for('auth.register') }}">{{ _("Create Account") }}</a>
                                 </li>
                                 <li class="govuk-header__navigation-item">
                                     <a class="govuk-header__link"
@@ -121,7 +125,7 @@
             {% if get_flashed_messages() %}
                 <p class="govuk-body govuk-!-margin-bottom-0">&nbsp;</p>
                 {% for category, message in get_flashed_messages(with_categories=true) %}
-                    {% if category == 'error' %}
+                    {% if category == "error" %}
                         <div class="govuk-error-summary" data-module="govuk-error-summary">
                             <div role="alert">
                                 <h2 class="govuk-error-summary__title">{{ _("There is a problem") }}</h2>
@@ -136,7 +140,7 @@
                             <div class="govuk-notification-banner__header">
                                 <h2 class="govuk-notification-banner__title"
                                     id="govuk-notification-banner-title">
-                                    {% if category == 'success' %}
+                                    {% if category == "success" %}
                                         {{ _("Success") }}
                                     {% else %}
                                         {{ _("Important") }}
@@ -162,11 +166,6 @@
                         <ul class="govuk-footer__inline-list">
                             <li class="govuk-footer__inline-list-item">
                                 <a class="govuk-footer__link"
-                                   href="https://github.com/sortition-foundation/opendlp"
-                                   target="_blank">GitHub</a>
-                            </li>
-                            <li class="govuk-footer__inline-list-item">
-                                <a class="govuk-footer__link"
                                    href="https://www.sortitionfoundation.org"
                                    target="_blank">Sortition Foundation</a>
                             </li>
@@ -180,12 +179,17 @@
                                    href="{{ help_site_cookies }}"
                                    target="_blank">{{ _("Cookies") }}</a>
                             </li>
-                            {% if feature('dashboard_switch_links') %}
+                            {% if feature("dashboard_switch_links") %}
                                 <li class="govuk-footer__inline-list-item">
                                     <a class="govuk-footer__link"
                                        href="{{ url_for('backoffice.dashboard') }}">{{ _("New Dashboard") }}</a>
                                 </li>
                             {% endif %}
+                            <li class="govuk-footer__inline-list-item">
+                                <a class="govuk-footer__link"
+                                   href="https://github.com/sortition-foundation/opendlp"
+                                   target="_blank">GitHub</a>
+                            </li>
                             <li class="govuk-footer__inline-list-item govuk-secondary-text-colour">
                                 {{ _("OpenDLP Version") }} {{ opendlp_version }}
                             </li>
@@ -219,7 +223,6 @@
                 }
             });
         </script>
-        {% block extra_js %}
-        {% endblock %}
+        {% block extra_js %}{% endblock %}
     </body>
 </html>

@@ -151,6 +151,13 @@
                         </div>
                     </fieldset>
                 </div>
+                {% if config.TURNSTILE_SITE_KEY %}
+                    <div class="govuk-form-group">
+                        <div class="cf-turnstile"
+                             data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"
+                             data-action="signup"></div>
+                    </div>
+                {% endif %}
                 <button type="submit" class="govuk-button" data-module="govuk-button">{{ _("Create Account") }}</button>
             </form>
             <p class="govuk-body govuk-!-margin-top-6">
@@ -158,4 +165,12 @@
             </p>
         </div>
     </div>
+{% endblock %}
+{% block extra_js %}
+    {% if config.TURNSTILE_SITE_KEY %}
+        <script nonce="{{ csp_nonce }}"
+                src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+                async
+                defer></script>
+    {% endif %}
 {% endblock %}

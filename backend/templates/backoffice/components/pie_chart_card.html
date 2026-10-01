@@ -154,7 +154,7 @@ ABOUTME: Renders a Chart.js pie (built-in legend + hover tooltips) from segment 
     height to its own (possibly wrapping) legend. Colours follow the same
     palette cycling as the cards, so chip N matches slice N everywhere.
     #}
-    <div class="flex flex-wrap gap-x-4 gap-y-2 items-center justify-center mt-3">
+    <div class="flex flex-wrap gap-x-4 gap-y-2 items-center justify-start mt-3">
         {% for seg in segments %}
             {% set color = seg.get("color") or _pie_palette[loop.index0 % (_pie_palette | length)] %}
             <span class="flex gap-1.5 items-center text-caption" style="color: var(--color-headings);">

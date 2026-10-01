@@ -217,6 +217,15 @@ HEADLINE_RESPONDENT_STATUSES: list["RespondentStatus"] = [
     RespondentStatus.WITHDRAWN,
 ]
 
+
+def headline_registration_count(status_counts: dict[RespondentStatus, int]) -> int:
+    """How many people registered, from a per-status count such as ``count_by_status``.
+
+    The one definition of the headline figure, so every place that shows it agrees.
+    """
+    return sum(status_counts.get(status, 0) for status in HEADLINE_RESPONDENT_STATUSES)
+
+
 # Confirmed is selected and then confirmed, so both count as selected.
 SELECTED_RESPONDENT_STATUSES: list["RespondentStatus"] = [
     RespondentStatus.SELECTED,

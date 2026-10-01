@@ -282,13 +282,14 @@ def view_registration_page(assembly_id: uuid.UUID, url_slug: str) -> ResponseRet
             # needed here too — they form the (inert) backdrop behind the dialog.
             all_pages = list_registration_pages(uow, current_user.id, assembly_id)
             deletable_ids = deletable_registration_page_ids(uow, current_user.id, assembly_id)
+            registration_counts = uow.respondents.count_by_registration_page(assembly_id)
 
             # The authored HTML doesn't follow the field schema automatically, so
             # warn when any field changed after this HTML was last saved.
             fields_changed_after_save = any(
                 f.updated_at > html.updated_at for f in uow.respondent_field_definitions.list_by_assembly(assembly_id)
             )
-        page_rows = registration_page_rows(all_pages, assembly_id, deletable_ids)
+        page_rows = registration_page_rows(all_pages, assembly_id, deletable_ids, registration_counts)
 
         # The HTML editor is read-only by default; ?edit=1 unlocks it. CLOSED pages
         # have no save path so we always keep them read-only regardless of the param.

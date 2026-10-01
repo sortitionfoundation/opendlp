@@ -7,12 +7,12 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-27 21:34+0000\n"
+"POT-Creation-Date: 2026-10-01 09:01+0100\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
 "Language-Team: hu <LL@li.org>\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -90,71 +90,71 @@ msgstr "Eredmények"
 #: templates/backoffice/assembly_edit_respondent.html:128
 #: templates/backoffice/target_sources/_setup_modal.html:263
 msgid "Day"
-msgstr ""
+msgstr "Nap"
 
 #: src/opendlp/domain/registration_page.py:512
 msgid "DD"
-msgstr ""
+msgstr "NN"
 
 #: src/opendlp/domain/registration_page.py:513
 #: templates/backoffice/assembly_edit_respondent.html:131
 #: templates/backoffice/target_sources/_setup_modal.html:266
 msgid "Month"
-msgstr ""
+msgstr "Hónap"
 
 #: src/opendlp/domain/registration_page.py:513
 msgid "MM"
-msgstr ""
+msgstr "HH"
 
 #: src/opendlp/domain/registration_page.py:514
 #: templates/backoffice/assembly_edit_respondent.html:134
 #: templates/backoffice/target_sources/_setup_modal.html:269
 msgid "Year"
-msgstr ""
+msgstr "Év"
 
 #: src/opendlp/domain/registration_page.py:514
 msgid "YYYY"
-msgstr ""
+msgstr "ÉÉÉÉ"
 
 #: src/opendlp/domain/respondent_derivation.py:55
 msgid "There must be at least one age range"
-msgstr ""
+msgstr "Legalább egy korcsoportnak lennie kell"
 
 #: src/opendlp/domain/respondent_derivation.py:57
 msgid "An age range cannot start below zero"
-msgstr ""
+msgstr "Korcsoport nem kezdődhet nulla alatt"
 
 #: src/opendlp/domain/respondent_derivation.py:59
 msgid "Two age ranges cannot start at the same age"
-msgstr ""
+msgstr "Két korcsoport nem kezdődhet ugyanannál az életkornál"
 
 #: src/opendlp/domain/respondent_derivation.py:62
 msgid "Every age range needs a target value"
-msgstr ""
+msgstr "Minden korcsoporthoz célérték szükséges"
 
 #: src/opendlp/domain/respondent_derivation.py:64
 msgid "Each target value can only be one age range"
-msgstr ""
+msgstr "Minden célérték csak egy korcsoport lehet"
 
 #: src/opendlp/domain/respondent_derivation.py:87
 #, python-format
 msgid "An age range cannot use the value '%(value)s'"
-msgstr ""
+msgstr "Korcsoport nem használhatja ezt az értéket: \"%(value)s\""
 
 #: src/opendlp/domain/respondent_derivation.py:201
 #, python-format
 msgid "The target values leave out age %(age)s"
-msgstr ""
+msgstr "A célértékek nem fedik le ezt az életkort: %(age)s"
 
 #: src/opendlp/domain/respondent_derivation.py:202
 #, python-format
 msgid "The target values leave out ages %(first)s to %(last)s"
-msgstr ""
+msgstr "A célértékek nem fedik le ezeket az életkorokat: %(first)s–%(last)s"
 
 #: src/opendlp/domain/respondent_derivation.py:204
 #, python-format
 msgid "Age %(age)s is in more than one target value"
-msgstr ""
+msgstr "%(age)s éves kor több célértékben is szerepel"
 
 #: src/opendlp/domain/respondent_derivation.py:210
 msgid ""
@@ -162,19 +162,22 @@ msgid ""
 "one starts at, or change the target values to look like 16-29, 30-44, "
 "45-59, 60+."
 msgstr ""
+"A célértékekből nem sikerült megállapítani a korcsoportokat. Add meg, "
+"hogy melyik hány éves kortól kezdődik, vagy módosítsd a célértékeket "
+"ilyen alakúra: 16-29, 30-44, 45-59, 60+."
 
 #: src/opendlp/domain/respondent_field_schema.py:74
 #: templates/backoffice/target_sources/_setup_modal.html:187
 msgid "Age ranges"
-msgstr ""
+msgstr "Korcsoportok"
 
 #: src/opendlp/domain/respondent_field_schema.py:75
 msgid "Map more options to fewer"
-msgstr ""
+msgstr "Több lehetőség összevonása kevesebbé"
 
 #: src/opendlp/domain/respondent_field_schema.py:76
 msgid "Map postcode to value"
-msgstr ""
+msgstr "Irányítószám hozzárendelése értékhez"
 
 #: src/opendlp/domain/respondent_field_schema.py:109
 msgid "Eligibility"
@@ -204,19 +207,21 @@ msgstr "Egyéb"
 
 #: src/opendlp/domain/respondent_field_schema.py:115
 msgid "Derived"
-msgstr "Származtatott"
+msgstr "Számított"
 
 #: src/opendlp/domain/respondent_field_schema.py:145
 msgid "Not on registration page"
-msgstr ""
+msgstr "Nem szerepel a regisztrációs oldalon"
 
 #: src/opendlp/domain/respondent_field_schema.py:146
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:247
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:257
 msgid "Optional"
 msgstr "Nem kötelező"
 
 #: src/opendlp/domain/respondent_field_schema.py:147
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:243
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:253
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:247
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:257
 msgid "Required"
 msgstr "Kötelező"
 
@@ -232,7 +237,7 @@ msgstr "Hosszú szöveg"
 #: src/opendlp/domain/respondent_field_schema.py:156
 #: src/opendlp/domain/respondent_field_schema.py:157
 msgid "Checkbox"
-msgstr ""
+msgstr "Jelölőnégyzet"
 
 #: src/opendlp/domain/respondent_field_schema.py:158
 msgid "Choice (radios)"
@@ -262,22 +267,22 @@ msgid "Date"
 msgstr "Dátum"
 
 #: src/opendlp/domain/respondent_field_schema.py:195
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:804
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:975
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:808
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:979
 msgid "A choice field needs at least one option"
-msgstr ""
+msgstr "Választásos mezőhöz legalább egy választható érték szükséges"
 
 #: src/opendlp/domain/respondent_field_schema.py:197
 msgid "Only a choice field can have options"
-msgstr ""
+msgstr "Csak választásos mezőnek lehetnek választható értékei"
 
 #: src/opendlp/domain/respondent_field_schema.py:207
 msgid "An option value cannot be blank"
-msgstr ""
+msgstr "Választható érték nem lehet üres"
 
 #: src/opendlp/domain/respondent_field_schema.py:310
 msgid "The label cannot be empty"
-msgstr ""
+msgstr "A címke nem lehet üres"
 
 #: src/opendlp/domain/respondents.py:357
 msgid "Name deleted"
@@ -285,79 +290,79 @@ msgstr "Név törölve"
 
 #: src/opendlp/domain/user_signup_surveys.py:50
 msgid "Where are you in the world?"
-msgstr ""
+msgstr "Hol élsz a világban?"
 
 #: src/opendlp/domain/user_signup_surveys.py:54
 msgid "Name of organisation"
-msgstr ""
+msgstr "Szervezet neve"
 
 #: src/opendlp/domain/user_signup_surveys.py:58
 msgid "Size of organisation"
-msgstr ""
+msgstr "Szervezet mérete"
 
 #: src/opendlp/domain/user_signup_surveys.py:61
 msgid "Just me"
-msgstr ""
+msgstr "Csak én"
 
 #: src/opendlp/domain/user_signup_surveys.py:62
 msgid "2 to 10 people"
-msgstr ""
+msgstr "2–10 fő"
 
 #: src/opendlp/domain/user_signup_surveys.py:63
 msgid "11 to 50 people"
-msgstr ""
+msgstr "11–50 fő"
 
 #: src/opendlp/domain/user_signup_surveys.py:64
 msgid "51 to 250 people"
-msgstr ""
+msgstr "51–250 fő"
 
 #: src/opendlp/domain/user_signup_surveys.py:65
 msgid "More than 250 people"
-msgstr ""
+msgstr "Több mint 250 fő"
 
 #: src/opendlp/domain/user_signup_surveys.py:70
 msgid "Experience of running deliberative processes"
-msgstr ""
+msgstr "Tapasztalat deliberatív folyamatok szervezésében"
 
 #: src/opendlp/domain/user_signup_surveys.py:73
 msgid "None yet"
-msgstr ""
+msgstr "Még nincs"
 
 #: src/opendlp/domain/user_signup_surveys.py:74
 msgid "I have taken part in one, but not organised one"
-msgstr ""
+msgstr "Részt vettem egyben, de még nem szerveztem"
 
 #: src/opendlp/domain/user_signup_surveys.py:75
 msgid "I have organised one or two"
-msgstr ""
+msgstr "Egyet-kettőt szerveztem"
 
 #: src/opendlp/domain/user_signup_surveys.py:76
 msgid "I have organised many"
-msgstr ""
+msgstr "Sokat szerveztem"
 
 #: src/opendlp/domain/user_signup_surveys.py:81
 msgid "Are you wanting to run a deliberative process soon?"
-msgstr ""
+msgstr "Tervezel a közeljövőben deliberatív folyamatot indítani?"
 
 #: src/opendlp/domain/user_signup_surveys.py:84
 msgid "Yes, within the next 3 months"
-msgstr ""
+msgstr "Igen, a következő 3 hónapban"
 
 #: src/opendlp/domain/user_signup_surveys.py:85
 msgid "Yes, within the next year"
-msgstr ""
+msgstr "Igen, a következő egy évben"
 
 #: src/opendlp/domain/user_signup_surveys.py:86
 msgid "No concrete plans yet"
-msgstr ""
+msgstr "Még nincs konkrét terv"
 
 #: src/opendlp/domain/user_signup_surveys.py:87
 msgid "Just exploring"
-msgstr ""
+msgstr "Csak érdeklődöm"
 
 #: src/opendlp/domain/user_signup_surveys.py:92
 msgid "Anything else you want to tell us?"
-msgstr ""
+msgstr "Van még valami, amit szeretnél elmondani nekünk?"
 
 #: src/opendlp/domain/validators.py:55
 msgid "URL slug cannot be empty"
@@ -396,12 +401,12 @@ msgstr "A dátum nem lehet jövőbeli"
 #: src/opendlp/domain/validators.py:245
 #, python-format
 msgid "The year must be %(year)s or later"
-msgstr ""
+msgstr "Az év nem lehet korábbi, mint %(year)s"
 
 #: src/opendlp/domain/validators.py:266
 #, python-format
 msgid "The year must be between %(earliest)s and %(latest)s"
-msgstr ""
+msgstr "Az évnek %(earliest)s és %(latest)s között kell lennie"
 
 #: src/opendlp/domain/value_objects.py:18
 msgid "User — Access to the assemblies they are added to"
@@ -533,6 +538,8 @@ msgstr "Az oldal eléréséhez kérjük, jelentkezz be"
 #: src/opendlp/entrypoints/derivation_form_parser.py:23
 msgid "Enter a valid date to calculate respondent age on (day, month and year)"
 msgstr ""
+"Adj meg egy érvényes dátumot, amelyre a jelentkezők életkorát számítani "
+"kell (nap, hónap és év)"
 
 #: src/opendlp/entrypoints/derivation_form_parser.py:31
 #, python-format
@@ -540,30 +547,32 @@ msgid ""
 "The year to calculate respondent age on must be between %(low)d and "
 "%(high)d"
 msgstr ""
+"A jelentkezők életkorának számításához megadott évnek %(low)d és %(high)d"
+" között kell lennie"
 
 #: src/opendlp/entrypoints/derivation_form_parser.py:48
 #: src/opendlp/service_layer/target_source_service.py:248
 #, python-format
 msgid "Enter the age where '%(value)s' starts"
-msgstr ""
+msgstr "Add meg az életkort, ahol \"%(value)s\" kezdődik"
 
 #: src/opendlp/entrypoints/derivation_form_parser.py:52
 #, python-format
 msgid "The age where '%(value)s' starts must be a whole number"
-msgstr ""
+msgstr "Az életkornak, ahol \"%(value)s\" kezdődik, egész számnak kell lennie"
 
 #: src/opendlp/entrypoints/derivation_form_parser.py:76
 msgid "Map at least one answer to a target value"
-msgstr ""
+msgstr "Rendelj legalább egy választ egy célértékhez"
 
 #: src/opendlp/entrypoints/derivation_form_parser.py:88
 msgid "Enter at least one answer"
-msgstr ""
+msgstr "Adj meg legalább egy választ"
 
 #: src/opendlp/entrypoints/derivation_form_parser.py:91
 #, python-format
 msgid "Answer values must be different: '%(value)s' appears more than once"
-msgstr ""
+msgstr "A válaszértékeknek különbözniük kell: \"%(value)s\" többször szerepel"
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:83
 #: src/opendlp/entrypoints/edit_respondent_form.py:87
@@ -573,7 +582,7 @@ msgstr ""
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:162
 #: templates/backoffice/components/input.html:356
-#: templates/backoffice/components/table.html:246
+#: templates/backoffice/components/table.html:247
 msgid "Yes"
 msgstr "Igen"
 
@@ -585,7 +594,7 @@ msgstr "Igen"
 #: templates/backoffice/assembly_view_respondent.html:66
 #: templates/backoffice/assembly_view_respondent.html:163
 #: templates/backoffice/components/input.html:356
-#: templates/backoffice/components/table.html:248
+#: templates/backoffice/components/table.html:249
 msgid "No"
 msgstr "Nem"
 
@@ -618,6 +627,8 @@ msgid ""
 "The current value for '%(label)s' is not a date: %(value)s. Enter a date,"
 " or it will be cleared when you save."
 msgstr ""
+"\"%(label)s\" jelenlegi értéke nem dátum: %(value)s. Adj meg egy dátumot,"
+" különben mentéskor törlődik."
 
 #: src/opendlp/entrypoints/edit_respondent_form.py:239
 #: templates/backoffice/assembly_edit_respondent.html:151
@@ -662,7 +673,7 @@ msgstr "Maradjak bejelentkezve 7 napig (sütit helyez el ezen az eszközön)"
 
 #: src/opendlp/entrypoints/forms.py:158
 msgid "An invite code is required to register."
-msgstr ""
+msgstr "A regisztrációhoz meghívókód szükséges."
 
 #: src/opendlp/entrypoints/forms.py:183
 msgid "Invalid or expired invite code."
@@ -670,7 +681,7 @@ msgstr "Érvénytelen vagy lejárt meghívó kód."
 
 #: src/opendlp/entrypoints/forms.py:195
 msgid "Please select"
-msgstr ""
+msgstr "Kérjük, válassz"
 
 #: src/opendlp/entrypoints/forms.py:243 src/opendlp/entrypoints/forms.py:633
 #: templates/admin/invite_view.html:23
@@ -1055,7 +1066,8 @@ msgid "e.g. Gender, Age, Ethnicity"
 msgstr "például: nem, életkor, etnikai hovatartozás"
 
 #: src/opendlp/entrypoints/forms.py:681 src/opendlp/entrypoints/forms.py:720
-#: templates/backoffice/components/db_replacement_modal.html:159
+#: templates/backoffice/components/db_replacement_modal.html:135
+#: templates/backoffice/respondent_field_schema/_editor.html:49
 msgid "Notes"
 msgstr "Megjegyzések"
 
@@ -1074,7 +1086,7 @@ msgstr "Nem kötelező – link arra, hogy honnan származnak a százalékos ar�
 
 #: src/opendlp/entrypoints/forms.py:697
 #: src/opendlp/service_layer/dashboard_stats.py:344
-#: templates/backoffice/components/db_replacement_modal.html:147
+#: templates/backoffice/components/db_replacement_modal.html:129
 #: templates/backoffice/targets/bulk_edit_form.html:252
 #: templates/backoffice/targets/category_block.html:120
 #: templates/targets/components/category_block.html:69
@@ -1239,7 +1251,7 @@ msgstr "Hiba történt a felhasználólista betöltése közben"
 
 #: src/opendlp/entrypoints/blueprints/admin.py:134
 msgid "You don't have permission to export users"
-msgstr ""
+msgstr "Nincs jogosultságod a felhasználók exportálásához"
 
 #: src/opendlp/entrypoints/blueprints/admin.py:167
 #: src/opendlp/entrypoints/blueprints/admin.py:221
@@ -1425,24 +1437,24 @@ msgstr "%(count)s lejárt meghívó törölve"
 msgid "An error occurred while cleaning up invites"
 msgstr "Hiba történt a meghívók törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:78
+#: src/opendlp/entrypoints/blueprints/auth.py:79
 msgid "This account has been disabled. Please contact an administrator."
 msgstr "Ezt a fiókot letiltották. Lépj kapcsolatba egy adminisztrátorral."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:135
-#: src/opendlp/entrypoints/blueprints/auth.py:253
-#: src/opendlp/entrypoints/blueprints/auth.py:674
-#: src/opendlp/entrypoints/blueprints/auth.py:784
+#: src/opendlp/entrypoints/blueprints/auth.py:136
+#: src/opendlp/entrypoints/blueprints/auth.py:254
+#: src/opendlp/entrypoints/blueprints/auth.py:697
+#: src/opendlp/entrypoints/blueprints/auth.py:807
 msgid "Signed in successfully"
 msgstr "Sikeres bejelentkezés"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:142
-#: src/opendlp/entrypoints/blueprints/auth.py:149
+#: src/opendlp/entrypoints/blueprints/auth.py:143
+#: src/opendlp/entrypoints/blueprints/auth.py:150
 #: src/opendlp/service_layer/exceptions.py:127
 msgid "Invalid email or password"
 msgstr "Érvénytelen e-mail cím vagy jelszó"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:152
+#: src/opendlp/entrypoints/blueprints/auth.py:153
 msgid ""
 "Please confirm your email address before logging in. Check your inbox for"
 " the confirmation link."
@@ -1450,23 +1462,23 @@ msgstr ""
 "Bejelentkezés előtt erősítsd meg az e-mail címedet. Keresd a megerősítő "
 "linket a postaládádban."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:161
+#: src/opendlp/entrypoints/blueprints/auth.py:162
 msgid "An error occurred while signing in. Please try again."
 msgstr "Hiba történt a bejelentkezés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:174
+#: src/opendlp/entrypoints/blueprints/auth.py:175
 msgid "No pending two-factor authentication. Please sign in first."
 msgstr "Nincs folyamatban lévő kétlépcsős azonosítás. Előbb jelentkezz be."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:187
+#: src/opendlp/entrypoints/blueprints/auth.py:188
 msgid "Two-factor authentication session expired. Please sign in again."
 msgstr "A kétlépcsős azonosítás munkamenete lejárt. Jelentkezz be újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:194
+#: src/opendlp/entrypoints/blueprints/auth.py:195
 msgid "Invalid session. Please sign in again."
 msgstr "Érvénytelen munkamenet. Jelentkezz be újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:247
+#: src/opendlp/entrypoints/blueprints/auth.py:248
 #, python-format
 msgid ""
 "Backup code used successfully. You have %(remaining)s backup codes "
@@ -1475,12 +1487,12 @@ msgstr ""
 "A tartalék kód sikeresen felhasználva. Még %(remaining)s tartalék kódod "
 "van."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:273
+#: src/opendlp/entrypoints/blueprints/auth.py:274
 msgid "Please enter a verification code"
 msgstr "Add meg az ellenőrző kódot"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:286
-#: src/opendlp/entrypoints/blueprints/auth.py:313
+#: src/opendlp/entrypoints/blueprints/auth.py:287
+#: src/opendlp/entrypoints/blueprints/auth.py:314
 msgid ""
 "Too many failed attempts. Please try again in 15 minutes or use a backup "
 "code."
@@ -1488,55 +1500,59 @@ msgstr ""
 "Túl sok sikertelen próbálkozás. Próbáld újra 15 perc múlva, vagy használj"
 " tartalék kódot."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:293
+#: src/opendlp/entrypoints/blueprints/auth.py:294
 msgid "Two-factor authentication is not enabled for this account"
 msgstr "Ehhez a fiókhoz nincs bekapcsolva a kétlépcsős azonosítás"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:306
+#: src/opendlp/entrypoints/blueprints/auth.py:307
 #, python-format
 msgid "Invalid verification code. %(attempts)s attempts remaining."
 msgstr "Érvénytelen ellenőrző kód. Még %(attempts)s próbálkozásod maradt."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:326
+#: src/opendlp/entrypoints/blueprints/auth.py:327
 msgid "An error occurred during verification. Please try again."
 msgstr "Hiba történt az ellenőrzés során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:338
+#: src/opendlp/entrypoints/blueprints/auth.py:339
 msgid "You have been signed out"
 msgstr "Kijelentkeztél"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:346
+#: src/opendlp/entrypoints/blueprints/auth.py:347
 msgid "Registration successful! Welcome to OpenDLP."
 msgstr "Sikeres regisztráció! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:354
+#: src/opendlp/entrypoints/blueprints/auth.py:355
 msgid "Registration successful! Please check your email to confirm your account."
 msgstr "Sikeres regisztráció! Nézd meg az e-mailjeidet a fiókod megerősítéséhez."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:431
-#: src/opendlp/entrypoints/blueprints/auth.py:599
+#: src/opendlp/entrypoints/blueprints/auth.py:412
+msgid "We could not verify that you are human. Please try again."
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/auth.py:454
+#: src/opendlp/entrypoints/blueprints/auth.py:622
 #: src/opendlp/entrypoints/blueprints/profile.py:326
 #, python-format
 msgid "Password is too weak: %(error)s"
 msgstr "A jelszó túl gyenge: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:434
+#: src/opendlp/entrypoints/blueprints/auth.py:457
 msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a regisztráció során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:459
-#: src/opendlp/entrypoints/blueprints/auth.py:474
-#: src/opendlp/entrypoints/blueprints/auth.py:506
-#: src/opendlp/entrypoints/blueprints/auth.py:560
-#: src/opendlp/entrypoints/blueprints/auth.py:602
+#: src/opendlp/entrypoints/blueprints/auth.py:482
+#: src/opendlp/entrypoints/blueprints/auth.py:497
+#: src/opendlp/entrypoints/blueprints/auth.py:529
+#: src/opendlp/entrypoints/blueprints/auth.py:583
+#: src/opendlp/entrypoints/blueprints/auth.py:625
 msgid "An error occurred. Please try again."
 msgstr "Hiba történt. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:467
+#: src/opendlp/entrypoints/blueprints/auth.py:490
 msgid "Email confirmed successfully! You can now sign in."
 msgstr "Az e-mail cím megerősítése sikerült! Most már bejelentkezhetsz."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:497
+#: src/opendlp/entrypoints/blueprints/auth.py:520
 msgid ""
 "If that email is registered and unconfirmed, a confirmation link has been"
 " sent"
@@ -1544,36 +1560,36 @@ msgstr ""
 "Ha ez az e-mail cím regisztrálva van és még nincs megerősítve, a "
 "megerősítő link elment"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:551
+#: src/opendlp/entrypoints/blueprints/auth.py:574
 msgid "If an account exists with this email, a password reset link has been sent"
 msgstr "Ha létezik fiók ezzel az e-mail címmel, a jelszó-visszaállító link elment"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:592
+#: src/opendlp/entrypoints/blueprints/auth.py:615
 msgid "Your password has been reset successfully. You can now sign in."
 msgstr "A jelszavad visszaállítása sikerült. Most már bejelentkezhetsz."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:645
+#: src/opendlp/entrypoints/blueprints/auth.py:668
 #: src/opendlp/entrypoints/blueprints/profile.py:158
 msgid "Failed to get user information from Google"
 msgstr "Nem sikerült lekérni a felhasználói adatokat a Google-tól"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:672
-#: src/opendlp/entrypoints/blueprints/auth.py:782
+#: src/opendlp/entrypoints/blueprints/auth.py:695
+#: src/opendlp/entrypoints/blueprints/auth.py:805
 msgid "Account created successfully! Welcome to OpenDLP."
 msgstr "A fiók sikeresen létrejött! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:686
+#: src/opendlp/entrypoints/blueprints/auth.py:709
 msgid "An error occurred during Google sign in. Please try again."
 msgstr ""
 "Hiba történt a Google-fiókkal való bejelentkezés során. Kérjük, próbáld "
 "újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:755
+#: src/opendlp/entrypoints/blueprints/auth.py:778
 #: src/opendlp/entrypoints/blueprints/profile.py:222
 msgid "Failed to get user information from Microsoft"
 msgstr "Nem sikerült lekérni a felhasználói adatokat a Microsofttól"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:796
+#: src/opendlp/entrypoints/blueprints/auth.py:819
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr ""
 "Hiba történt a Microsoft-fiókkal való bejelentkezés során. Kérjük, "
@@ -1602,16 +1618,16 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:756
 #: src/opendlp/entrypoints/blueprints/backoffice.py:817
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:222
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:344
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:345
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:90
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:94
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:129
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:164
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:361
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:434
-#: src/opendlp/entrypoints/blueprints/gsheets.py:388
-#: src/opendlp/entrypoints/blueprints/gsheets.py:796
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1079
+#: src/opendlp/entrypoints/blueprints/gsheets.py:391
+#: src/opendlp/entrypoints/blueprints/gsheets.py:799
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1082
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:187
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:273
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:337
@@ -1624,8 +1640,8 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/main.py:155
 #: src/opendlp/entrypoints/blueprints/main.py:200
 #: src/opendlp/entrypoints/blueprints/main.py:317
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:647
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:676
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:651
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:680
 #: src/opendlp/entrypoints/blueprints/respondents.py:656
 #: src/opendlp/entrypoints/blueprints/respondents.py:787
 #: src/opendlp/entrypoints/blueprints/respondents.py:945
@@ -1650,19 +1666,19 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:747
 #: src/opendlp/entrypoints/blueprints/backoffice.py:808
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:228
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:350
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:521
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:733
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:799
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:843
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:872
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:970
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1033
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1061
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1086
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1134
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1164
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1191
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:351
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:522
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:734
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:800
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:844
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:873
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:971
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1034
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1062
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1087
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1135
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1165
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1192
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:87
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:190
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:462
@@ -1674,9 +1690,9 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:410
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:431
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:449
-#: src/opendlp/entrypoints/blueprints/gsheets.py:384
-#: src/opendlp/entrypoints/blueprints/gsheets.py:792
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1073
+#: src/opendlp/entrypoints/blueprints/gsheets.py:387
+#: src/opendlp/entrypoints/blueprints/gsheets.py:795
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1076
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:178
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:264
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:328
@@ -1690,17 +1706,17 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/main.py:191
 #: src/opendlp/entrypoints/blueprints/main.py:308
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:90
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:643
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:673
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:695
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:836
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1041
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1063
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1092
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1133
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1161
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1210
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1234
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:647
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:677
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:699
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:840
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1045
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1067
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1096
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1137
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1165
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1214
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1238
 #: src/opendlp/entrypoints/blueprints/respondents.py:252
 #: src/opendlp/entrypoints/blueprints/respondents.py:387
 #: src/opendlp/entrypoints/blueprints/respondents.py:439
@@ -1755,7 +1771,7 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/backoffice.py:262
 #: src/opendlp/service_layer/dashboard_stats.py:343
 #: src/opendlp/service_layer/selection_report.py:206
-#: templates/backoffice/components/db_replacement_modal.html:149
+#: templates/backoffice/components/db_replacement_modal.html:130
 msgid "Target"
 msgstr "Kezdés dátuma"
 
@@ -1771,7 +1787,7 @@ msgstr "A regisztráció megkezdése után megjeleníti a jelentkezők adatait."
 #: templates/backoffice/assembly_dashboard.html:114
 #: templates/backoffice/assembly_respondents.html:94
 #: templates/backoffice/assembly_view_respondent.html:226
-#: templates/backoffice/components/table.html:206
+#: templates/backoffice/components/table.html:207
 #: templates/backoffice/targets/bulk_edit_form.html:268
 #: templates/backoffice/targets/category_block.html:136
 #: templates/respondents/view_respondents.html:132
@@ -1788,7 +1804,7 @@ msgstr "A kiválasztás megtörténte után megjeleníti a kiválasztottak adata
 #: templates/backoffice/assembly_dashboard.html:115
 #: templates/backoffice/assembly_dashboard.html:116
 #: templates/backoffice/assembly_respondents.html:95
-#: templates/backoffice/components/table.html:203
+#: templates/backoffice/components/table.html:204
 #: templates/respondents/view_respondents.html:133
 msgid "Confirmed"
 msgstr "Megerősítve"
@@ -1932,71 +1948,71 @@ msgid "Copy download link snippet for %(name)s"
 msgstr "%(name)s letöltési link kódrészletének másolása"
 
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:234
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:360
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:361
 msgid "An error occurred while loading registration settings"
 msgstr "Hiba történt a regisztrációs beállítások betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:335
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:506
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:727
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:829
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:336
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:507
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:728
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:830
 msgid "That registration page could not be found"
 msgstr "Ez a regisztrációs oldal nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:374
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:375
 msgid "Registration page published successfully"
 msgstr "A regisztrációs oldal sikeresen közzétéve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:375
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:376
 msgid "Registration page HTML updated successfully"
 msgstr "A regisztrációs oldal HTML-je sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:378
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:379
 msgid "Registration page unpublished"
 msgstr "A regisztrációs oldal közzététele visszavonva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:381
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:382
 msgid "Registration page closed"
 msgstr "A regisztrációs oldal lezárva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:384
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:385
 msgid "Registration page reopened"
 msgstr "A regisztrációs oldal újra megnyitva"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:386
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:387
 msgid "Registration page saved and republished"
 msgstr "A regisztrációs oldal mentve és újra közzétéve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:387
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:388
 msgid "Registration page saved"
 msgstr "A regisztrációs oldal mentve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:515
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:730
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:796
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:837
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1031
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1059
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1084
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1132
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1162
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1189
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:516
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:731
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:797
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:838
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1032
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1060
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1085
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1133
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1163
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1190
 msgid "You don't have permission to modify this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés módosításához"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:531
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:532
 msgid "An error occurred while saving registration settings"
 msgstr "Hiba történt a regisztrációs beállítások mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:602
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:603
 msgid "Registration auto-reply"
 msgstr "Regisztrációs automatikus válasz"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:603
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:604
 msgid "Thanks for registering for {{ assembly.title }}"
 msgstr "Köszönjük, hogy regisztráltál a következőre: {{ assembly.title }}"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:605
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:606
 msgid ""
 "<p>Hi {{ respondent.first_name_or_friend }},</p>\n"
 "<p>Thanks for registering for <strong>{{ assembly.title }}</strong>.</p>\n"
@@ -2011,39 +2027,39 @@ msgstr ""
 " kapcsolatban jelentkezünk.</p>\n"
 "<p>Üdvözlettel,<br>a csapat</p>"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:643
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:644
 msgid "Auto-reply email created. Edit it below and click Save."
 msgstr ""
 "Az automatikus válasz e-mail létrejött. Szerkeszd alább, majd kattints a "
 "Mentés gombra."
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:655
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:656
 msgid "There is no auto-reply email to save yet — set one up first"
 msgstr "Még nincs menthető automatikus válasz e-mail – előbb hozz létre egyet"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:669
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:670
 msgid "Auto-reply email saved"
 msgstr "Az automatikus válasz e-mail mentve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:688
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:689
 msgid "Unknown action — nothing was changed"
 msgstr "Ismeretlen művelet – semmi sem változott"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:724
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:725
 msgid "The auto-reply email could not be found"
 msgstr "Az automatikus válasz e-mail nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:742
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:743
 msgid "An error occurred while saving the auto-reply email"
 msgstr "Hiba történt az automatikus válasz e-mail mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:767
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:768
 #: templates/backoffice/assembly_registration.html:89
 #: templates/backoffice/components/registration_page_list.html:12
 msgid "Registration page"
 msgstr "Regisztrációs oldal"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:791
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:792
 msgid ""
 "Registration page created. URLs have been generated automatically and can"
 " be edited below."
@@ -2051,96 +2067,96 @@ msgstr ""
 "A regisztrációs oldal létrejött. Az URL-ek automatikusan létrejöttek, "
 "alább szerkesztheted őket."
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:807
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:808
 msgid "An error occurred while creating the registration page"
 msgstr "Hiba történt a regisztrációs oldal létrehozása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:827
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:828
 #, python-format
 msgid "Registration page '%(name)s' deleted"
 msgstr "'%(name)s' regisztrációs oldal törölve"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:856
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:857
 msgid "An error occurred while deleting the registration page"
 msgstr "Hiba történt a regisztrációs oldal törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:870
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:964
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:871
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:965
 msgid "You don't have permission to access this assembly"
 msgstr "Nincs jogosultságod hozzáférni ehhez a közösségi gyűléshez"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:875
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:876
 msgid "An error occurred while generating the form skeleton"
 msgstr "Hiba történt az űrlapváz létrehozása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:974
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:975
 msgid "An error occurred while generating QR code"
 msgstr "Hiba történt a QR-kód létrehozása közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1001
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1104
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1002
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1105
 msgid "No file was selected"
 msgstr "Nem választottál ki fájlt"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1007
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1110
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1008
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1111
 msgid "Failed to read the uploaded file"
 msgstr "A feltöltött fájl beolvasása sikertelen"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1011
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1048
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1012
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1049
 #: templates/backoffice/registration/_page_data.html:29
 msgid "Alt text is required for accessibility"
 msgstr "Az alternatív szöveg megadása kötelező az akadálymentesség miatt"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1029
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1130
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1030
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1131
 msgid "Please create a registration page first from the Details tab."
 msgstr "Előbb hozz létre egy regisztrációs oldalt a Részletek lapon."
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1036
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1037
 msgid "An error occurred while uploading the image"
 msgstr "Hiba történt a kép feltöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1055
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1080
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1056
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1081
 msgid "Image not found"
 msgstr "A kép nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1057
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1082
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1160
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1187
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1058
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1083
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1161
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1188
 msgid "Registration page not found"
 msgstr "A regisztrációs oldal nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1064
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1065
 msgid "An error occurred while updating the image"
 msgstr "Hiba történt a kép frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1089
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1090
 msgid "An error occurred while deleting the image"
 msgstr "Hiba történt a kép törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1137
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1138
 msgid "An error occurred while uploading the document"
 msgstr "Hiba történt a dokumentum feltöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1151
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1152
 #: templates/backoffice/registration/_page_data.html:39
 msgid "Label is required"
 msgstr "A címke megadása kötelező"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1158
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1185
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1159
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1186
 msgid "Document not found"
 msgstr "A dokumentum nem található"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1169
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1170
 msgid "An error occurred while updating the document"
 msgstr "Hiba történt a dokumentum frissítése közben"
 
-#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1194
+#: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1195
 msgid "An error occurred while deleting the document"
 msgstr "Hiba történt a dokumentum törlése közben"
 
@@ -2190,8 +2206,8 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:465
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:197
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:413
-#: src/opendlp/entrypoints/blueprints/gsheets.py:860
-#: src/opendlp/entrypoints/blueprints/gsheets.py:919
+#: src/opendlp/entrypoints/blueprints/gsheets.py:863
+#: src/opendlp/entrypoints/blueprints/gsheets.py:922
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:470
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:522
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:877
@@ -2217,23 +2233,23 @@ msgid "An unexpected error occurred while starting the replacement selection"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:258
-#: src/opendlp/entrypoints/blueprints/gsheets.py:584
-#: src/opendlp/entrypoints/blueprints/gsheets.py:729
+#: src/opendlp/entrypoints/blueprints/gsheets.py:587
+#: src/opendlp/entrypoints/blueprints/gsheets.py:732
 msgid "Task cancelled"
 msgstr "A feladat megszakítva"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:268
-#: src/opendlp/entrypoints/blueprints/gsheets.py:594
-#: src/opendlp/entrypoints/blueprints/gsheets.py:739
+#: src/opendlp/entrypoints/blueprints/gsheets.py:597
+#: src/opendlp/entrypoints/blueprints/gsheets.py:742
 #, python-format
 msgid "Cannot cancel task: %(error)s"
 msgstr "A feladat nem szakítható meg: %(error)s"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:272
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:257
-#: src/opendlp/entrypoints/blueprints/gsheets.py:598
-#: src/opendlp/entrypoints/blueprints/gsheets.py:743
-#: src/opendlp/entrypoints/blueprints/gsheets.py:944
+#: src/opendlp/entrypoints/blueprints/gsheets.py:601
+#: src/opendlp/entrypoints/blueprints/gsheets.py:746
+#: src/opendlp/entrypoints/blueprints/gsheets.py:947
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:557
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:980
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1330
@@ -2243,9 +2259,9 @@ msgstr "A feladat nem található"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:276
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:265
-#: src/opendlp/entrypoints/blueprints/gsheets.py:602
-#: src/opendlp/entrypoints/blueprints/gsheets.py:747
-#: src/opendlp/entrypoints/blueprints/gsheets.py:959
+#: src/opendlp/entrypoints/blueprints/gsheets.py:605
+#: src/opendlp/entrypoints/blueprints/gsheets.py:750
+#: src/opendlp/entrypoints/blueprints/gsheets.py:962
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:578
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1001
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1351
@@ -2253,9 +2269,9 @@ msgid "You don't have permission to cancel this task"
 msgstr "Nincs jogosultságod a feladat megszakításához"
 
 #: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:280
-#: src/opendlp/entrypoints/blueprints/gsheets.py:606
-#: src/opendlp/entrypoints/blueprints/gsheets.py:751
-#: src/opendlp/entrypoints/blueprints/gsheets.py:964
+#: src/opendlp/entrypoints/blueprints/gsheets.py:609
+#: src/opendlp/entrypoints/blueprints/gsheets.py:754
+#: src/opendlp/entrypoints/blueprints/gsheets.py:967
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:587
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1010
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1360
@@ -2324,7 +2340,7 @@ msgstr ""
 "beállításokat."
 
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:252
-#: src/opendlp/entrypoints/blueprints/gsheets.py:937
+#: src/opendlp/entrypoints/blueprints/gsheets.py:940
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:545
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:968
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1318
@@ -2342,111 +2358,111 @@ msgstr "A kiválasztási beállítások mentve"
 msgid "An unexpected error occurred"
 msgstr "Váratlan hiba történt"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:392
+#: src/opendlp/entrypoints/blueprints/gsheets.py:395
 msgid "An error occurred while loading the selection page"
 msgstr "Hiba történt a kiválasztási oldal betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:528
-#: src/opendlp/entrypoints/blueprints/gsheets.py:562
-#: src/opendlp/entrypoints/blueprints/gsheets.py:628
-#: src/opendlp/entrypoints/blueprints/gsheets.py:655
+#: src/opendlp/entrypoints/blueprints/gsheets.py:531
+#: src/opendlp/entrypoints/blueprints/gsheets.py:565
+#: src/opendlp/entrypoints/blueprints/gsheets.py:631
+#: src/opendlp/entrypoints/blueprints/gsheets.py:658
 msgid "Please configure Google Sheets first"
 msgstr "Előbb állítsd be a Google Táblázatot"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:532
-#: src/opendlp/entrypoints/blueprints/gsheets.py:566
+#: src/opendlp/entrypoints/blueprints/gsheets.py:535
+#: src/opendlp/entrypoints/blueprints/gsheets.py:569
 msgid "You don't have permission to run selection"
 msgstr "Nincs jogosultságod a kiválasztás futtatásához"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:536
+#: src/opendlp/entrypoints/blueprints/gsheets.py:539
 msgid "An error occurred while starting the validation task"
 msgstr "Hiba történt az ellenőrzési feladat indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:570
+#: src/opendlp/entrypoints/blueprints/gsheets.py:573
 msgid "An error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztási feladat indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:632
-#: src/opendlp/entrypoints/blueprints/gsheets.py:659
+#: src/opendlp/entrypoints/blueprints/gsheets.py:635
+#: src/opendlp/entrypoints/blueprints/gsheets.py:662
 msgid "You don't have permission to manage tabs"
 msgstr "Nincs jogosultságod a munkalapok kezeléséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:636
+#: src/opendlp/entrypoints/blueprints/gsheets.py:639
 msgid "An error occurred while starting the list tabs task"
 msgstr "Hiba történt a munkalapok listázási feladatának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:663
+#: src/opendlp/entrypoints/blueprints/gsheets.py:666
 msgid "An error occurred while starting the delete tabs task"
 msgstr "Hiba történt a munkalapok törlési feladatának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:775
+#: src/opendlp/entrypoints/blueprints/gsheets.py:778
 msgid "Selection run not found"
 msgstr "A kiválasztási futtatás nem található"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:780
+#: src/opendlp/entrypoints/blueprints/gsheets.py:783
 msgid "Selection run does not belong to this assembly"
 msgstr "A kiválasztási futtatás nem ehhez a közösségi gyűléshez tartozik"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:800
+#: src/opendlp/entrypoints/blueprints/gsheets.py:803
 msgid "An error occurred while loading the run details"
 msgstr "Hiba történt a futtatás részleteinek betöltése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:845
+#: src/opendlp/entrypoints/blueprints/gsheets.py:848
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:858
 #, python-format
 msgid "Could not start task to read the spreadsheet: %(error)s"
 msgstr "Nem sikerült elindítani a Google Táblázat beolvasási feladatát: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:850
+#: src/opendlp/entrypoints/blueprints/gsheets.py:853
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:512
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:867
 #, python-format
 msgid "Failed to start loading task: %(error)s"
 msgstr "A betöltés indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:865
+#: src/opendlp/entrypoints/blueprints/gsheets.py:868
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:531
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:886
 msgid "An unexpected error occurred while starting the loading task"
 msgstr "Hiba történt a betöltés indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:880
+#: src/opendlp/entrypoints/blueprints/gsheets.py:883
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:902
 msgid "Number of people to select is required"
 msgstr "A kiválasztandó emberek számát meg kell adni"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:886
+#: src/opendlp/entrypoints/blueprints/gsheets.py:889
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:908
 msgid "Number of people to select must be greater than zero"
 msgstr "A kiválasztandó emberek számának nullánál nagyobbnak kell lennie"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:889
+#: src/opendlp/entrypoints/blueprints/gsheets.py:892
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:911
 msgid "Number of people to select must be a valid integer"
 msgstr "A kiválasztandó emberek számának érvényes egész számnak kell lennie"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:909
+#: src/opendlp/entrypoints/blueprints/gsheets.py:912
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:935
 #, python-format
 msgid "Failed to start replacement task: %(error)s"
 msgstr "A pótlási feladat indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:924
+#: src/opendlp/entrypoints/blueprints/gsheets.py:927
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:954
 msgid "An unexpected error occurred while starting the replacement task"
 msgstr "Váratlan hiba történt a pótlási feladat indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1001
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1004
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:123
 msgid "Google Sheets configuration updated successfully"
 msgstr "Google Táblázat beállításai sikeresen frissítve"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1004
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1007
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:105
 msgid "Google Sheets configuration created successfully"
 msgstr "Google Táblázat beállításai sikeresen létrehozva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1014
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1017
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:133
 msgid ""
 "Warning: No columns to keep specified. This means the output will only "
@@ -2457,8 +2473,8 @@ msgstr ""
 "kimenet csak a célszámokhoz és a címellenőrzéshez használt jelentkezői "
 "adatoszlopokat fogja tartalmazni. Ez szándékos?"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1041
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1107
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1044
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1110
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:149
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:225
 msgid "You don't have permission to manage Google Sheets for this assembly"
@@ -2466,28 +2482,28 @@ msgstr ""
 "Nincs jogosultságod a közösségi gyűléshez tartozó Google Táblázat "
 "kezeléséhez"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1045
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1048
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:159
 msgid "Please check your input and try again"
 msgstr "Kérjük, ellenőrizd a beírt adatokat, és próbáld újra"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1048
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1083
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1051
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1086
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:168
 msgid "An error occurred while saving the Google Sheets configuration"
 msgstr "Hiba történt a Google Táblázat beállításainak mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1095
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1098
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:208
 msgid "Google Sheets configuration removed successfully"
 msgstr "Google Táblázat beállításai sikeresen eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1101
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1104
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:216
 msgid "Google Sheets configuration not found"
 msgstr "Google Táblázat beállításai nem találhatóak"
 
-#: src/opendlp/entrypoints/blueprints/gsheets.py:1111
+#: src/opendlp/entrypoints/blueprints/gsheets.py:1114
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:234
 msgid "An error occurred while removing the Google Sheets configuration"
 msgstr "Hiba történt a Google Táblázat beállításainak eltávolításakor"
@@ -2666,164 +2682,190 @@ msgid "Too many registrations from your location. Please try again later."
 msgstr "Túl sok regisztráció érkezett a helyedről. Kérjük, próbáld újra később."
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:87
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:834
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1039
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1061
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1090
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1131
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1159
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1232
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:838
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1043
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1065
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1094
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1135
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1163
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1236
 msgid "You don't have permission to edit the schema"
 msgstr "Nincs jogosultságod a séma szerkesztéséhez"
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:156
 msgid "Checkbox (can be left unanswered)"
-msgstr ""
+msgstr "Jelölőnégyzet (üresen hagyható)"
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:208
 msgid "Choice"
-msgstr ""
+msgstr "Választás"
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:210
 msgid "Radio"
-msgstr ""
+msgstr "Választógomb"
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:211
 msgid "Dropdown"
-msgstr ""
+msgstr "Legördülő lista"
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:232
 msgid ""
 "Use for a small number of options (typically fewer than 5) when users "
 "need to see and compare all choices."
 msgstr ""
+"Kevés (jellemzően 5-nél kevesebb) választható értékhez, amikor a "
+"kitöltőnek egyszerre kell látnia és összevetnie az összes lehetőséget."
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:235
 msgid ""
 "Use for longer lists (typically more than 10 options) when displaying all"
 " choices would be impractical."
 msgstr ""
+"Hosszabb listákhoz (jellemzően 10-nél több választható értékhez), amikor "
+"az összes lehetőség megjelenítése nem praktikus."
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:246
-msgid "Checkbox must be checked"
-msgstr ""
-
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:248
-msgid "An option must be chosen"
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:250
+msgid "Required: Checkbox must be checked"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:250
-msgid "Full date must be entered"
+msgid "Optional: Checkbox can be left unchecked"
 msgstr ""
 
 #: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:252
-msgid "Text must be entered"
+msgid "Required: An option must be chosen"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:471
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:252
+msgid "Optional: No option needs to be chosen"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:254
+msgid "Required: Full date must be entered"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:254
+msgid "Optional: Date can be left empty"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:256
+msgid "Required: Text must be entered"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:256
+msgid "Optional: Text box can be left empty"
+msgstr ""
+
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:475
 #, python-format
 msgid "Option values must be different: '%(value)s' appears more than once"
 msgstr ""
+"A választható értékeknek különbözniük kell: \"%(value)s\" többször "
+"szerepel"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:689
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:693
 #, python-format
 msgid "Schema initialised with %(count)d built-in questions"
-msgstr ""
+msgstr "Séma inicializálva %(count)d beépített kérdéssel"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:691
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:695
 msgid "Schema already exists"
 msgstr "A séma már létezik"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:693
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:697
 msgid "You don't have permission to initialise the schema"
 msgstr "Nincs jogosultságod a séma inicializálásához"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:737
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:942
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1033
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1088
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1188
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1230
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:741
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:946
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1037
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1092
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1192
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1234
 msgid "Field not found"
 msgstr "A mező nem található"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:750
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:754
 msgid "Computed questions are set up on the 'Link targets to questions' step"
 msgstr ""
+"A számított kérdések a „Kiválasztási szempontok és kérdések "
+"összekapcsolása” lépésben állíthatók be"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:789
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:793
 msgid "A label or field key is required (letters, numbers and underscores)"
-msgstr ""
+msgstr "Címke vagy mezőkulcs megadása kötelező (betűk, számok és aláhúzásjelek)"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:794
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:969
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:798
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:973
 msgid "Choose a question type"
-msgstr ""
+msgstr "Válassz kérdéstípust"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:879
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:883
 msgid "Question added"
-msgstr ""
+msgstr "Kérdés hozzáadva"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:935
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:939
 msgid "Question updated"
-msgstr ""
+msgstr "Kérdés frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:949
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:953
 msgid "No changes submitted"
 msgstr "Nem küldtél be módosítást"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1057
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1061
 #, python-format
 msgid "Guessed types for %(count)d questions"
-msgstr ""
+msgstr "%(count)d kérdés típusa megbecsülve"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1059
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1063
 msgid "No question types were guessed — no untouched text rows to update"
 msgstr ""
+"Egyetlen kérdéstípus sem lett megbecsülve – nincs frissíthető, érintetlen"
+" szöveges sor"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1078
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1147
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1082
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1151
 msgid "Option value is required"
 msgstr "A választható érték megadása kötelező"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1084
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1088
 msgid "Option added"
 msgstr "A választható érték hozzáadva"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1108
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1112
 msgid "Original option value is required"
 msgstr "Az eredeti választható érték megadása kötelező"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1111
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1115
 #: src/opendlp/service_layer/respondent_field_schema_service.py:510
 #: src/opendlp/service_layer/respondent_field_schema_service.py:541
 msgid "Option value cannot be blank"
 msgstr "A választható érték nem lehet üres"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1125
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1129
 msgid "Option updated"
 msgstr "A választható érték frissítve"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1129
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1157
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1133
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1161
 msgid "Option not found"
 msgstr "A választható érték nem található"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1153
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1157
 msgid "Option removed"
 msgstr "A választható érték eltávolítva"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1179
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1183
 msgid "Invalid move direction"
 msgstr "Érvénytelen mozgatási irány"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1208
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1212
 msgid "You don't have permission to reorder fields"
 msgstr "Nincs jogosultságod a mezők átrendezéséhez"
 
-#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1226
+#: src/opendlp/entrypoints/blueprints/respondent_field_schema.py:1230
 msgid "Question removed"
-msgstr ""
+msgstr "Kérdés eltávolítva"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:131
 #, python-format
@@ -2917,14 +2959,14 @@ msgstr "Kiválasztva vagy megerősítve"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:459
 #: templates/backoffice/assembly_respondents.html:93
-#: templates/backoffice/components/table.html:200
+#: templates/backoffice/components/table.html:201
 #: templates/respondents/view_respondents.html:131
 msgid "Pool"
 msgstr "Jelentkezők"
 
 #: src/opendlp/entrypoints/blueprints/respondents.py:462
 #: templates/backoffice/assembly_respondents.html:96
-#: templates/backoffice/components/table.html:209
+#: templates/backoffice/components/table.html:210
 #: templates/respondents/view_respondents.html:134
 msgid "Withdrawn"
 msgstr "Visszalépett"
@@ -3033,41 +3075,47 @@ msgstr "Váratlan hiba történt az importálás közben"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:93
 msgid "Exact copy"
-msgstr ""
+msgstr "Pontos másolat"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:100
 msgid "Ask the question with exactly the target's values as the answers"
 msgstr ""
+"Kérdés feltevése úgy, hogy a válaszok pontosan a kiválasztási szempont "
+"értékei"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:101
 msgid "Ask for a date or year of birth and compute the age range"
-msgstr ""
+msgstr "Születési dátum vagy születési év bekérése, és a korcsoport kiszámítása"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:102
 msgid "Ask with more detailed answers and map each one to a target value"
 msgstr ""
+"Kérdés feltevése részletesebb válaszokkal, minden választ egy célértékhez"
+" rendelve"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:103
 msgid "Ask for a value like a postcode and look each answer up in a table"
 msgstr ""
+"Irányítószám-szerű érték bekérése, és minden válasz kikeresése egy "
+"táblából"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:267
 #: templates/backoffice/target_sources/_setup_modal.html:182
 #, python-format
 msgid "%(age)s and over"
-msgstr ""
+msgstr "%(age)s éves és idősebb"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:270
 #: templates/backoffice/target_sources/_setup_modal.html:181
 #, python-format
 msgid "%(first)s to %(last)s"
-msgstr ""
+msgstr "%(first)s–%(last)s"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:307
 #: templates/backoffice/target_sources/_setup_modal.html:183
 #, python-format
 msgid "Anyone younger than %(age)s counts as %(fallback)s."
-msgstr ""
+msgstr "Aki fiatalabb %(age)s évesnél, %(fallback)s értéket kap."
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:495
 #, python-format
@@ -3075,11 +3123,13 @@ msgid ""
 "%(count)d fell back to %(fallback)s because their answer matched no "
 "target value."
 msgstr ""
+"%(count)d jelentkező %(fallback)s értéket kapott, mert a válasza egyetlen"
+" célértékhez sem illett."
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:501
 #, python-format
 msgid "Answers that matched nothing: %(values)s"
-msgstr ""
+msgstr "Semmihez sem illő válaszok: %(values)s"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:506
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:28
@@ -3093,44 +3143,55 @@ msgid_plural ""
 "the pool underneath them — the numbers those selections were made from no"
 " longer match what is stored."
 msgstr[0] ""
+"Ennek a közösségi gyűlésnek %(num)s befejezett kiválasztása van. Az "
+"újraszámítás megváltoztatja az alapjául szolgáló jelentkezői adatokat – a"
+" számok, amelyekből a kiválasztás készült, már nem egyeznek a tárolt "
+"adatokkal."
+msgstr[1] ""
+"Ennek a közösségi gyűlésnek %(num)s befejezett kiválasztása van. Az "
+"újraszámítás megváltoztatja az alapjukul szolgáló jelentkezői adatokat – "
+"a számok, amelyekből a kiválasztások készültek, már nem egyeznek a tárolt"
+" adatokkal."
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:563
 #: src/opendlp/entrypoints/blueprints/target_sources.py:568
 msgid "Choose the question to use"
-msgstr ""
+msgstr "Válaszd ki a használandó kérdést"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:574
 msgid "Enter a name for the new registration question"
-msgstr ""
+msgstr "Adj nevet az új regisztrációs kérdésnek"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:595
 msgid "Choose how the data should be collected"
-msgstr ""
+msgstr "Válaszd ki, hogyan gyűljenek az adatok"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:660
 #: src/opendlp/entrypoints/blueprints/target_sources.py:1005
 msgid "Target not found"
-msgstr ""
+msgstr "A kiválasztási szempont nem található"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:722
 msgid "The question for this target could not be saved"
-msgstr ""
+msgstr "A kiválasztási szemponthoz tartozó kérdést nem sikerült menteni"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:731
 #: src/opendlp/entrypoints/blueprints/target_sources.py:774
 #: src/opendlp/entrypoints/blueprints/target_sources.py:982
 msgid "Question not found"
-msgstr ""
+msgstr "A kérdés nem található"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:751
 #: src/opendlp/entrypoints/blueprints/target_sources.py:780
 msgid "Question linked to its target"
-msgstr ""
+msgstr "A kérdés összekapcsolva a kiválasztási szemponttal"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:753
 #, python-format
 msgid "Question linked to its target — %(key)s recomputed for every respondent"
 msgstr ""
+"A kérdés összekapcsolva a kiválasztási szemponttal – %(key)s minden "
+"jelentkezőnél újraszámítva"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:797
 #: src/opendlp/entrypoints/blueprints/target_sources.py:826
@@ -3138,36 +3199,38 @@ msgstr ""
 #: src/opendlp/entrypoints/blueprints/target_sources.py:926
 #: src/opendlp/entrypoints/blueprints/target_sources.py:965
 msgid "No question is linked to this target"
-msgstr ""
+msgstr "Ehhez a kiválasztási szemponthoz nincs kérdés kapcsolva"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:801
 msgid "This question could not be re-synced — set it up again"
-msgstr ""
+msgstr "Ezt a kérdést nem sikerült újraszinkronizálni – állítsd be újra"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:811
 msgid "Options re-synced from the target"
-msgstr ""
+msgstr "A választható értékek újraszinkronizálva a kiválasztási szempontból"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:812
 #, python-format
 msgid "Re-synced — %(key)s recomputed for every respondent"
-msgstr ""
+msgstr "Újraszinkronizálva – %(key)s minden jelentkezőnél újraszámítva"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:842
 msgid "There are no respondents to recompute yet"
-msgstr ""
+msgstr "Még nincsenek újraszámítható jelentkezők"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:843
 msgid "Recompute finished"
-msgstr ""
+msgstr "Az újraszámítás befejeződött"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:886
 msgid "No question with a lookup table is linked to this target"
 msgstr ""
+"Ehhez a kiválasztási szemponthoz nincs hozzárendelési táblával rendelkező"
+" kérdés kapcsolva"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:912
 msgid "Tick the box to upload the lookup table later"
-msgstr ""
+msgstr "Jelöld be a négyzetet, ha a hozzárendelési táblát később töltöd fel"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:930
 #, python-format
@@ -3175,26 +3238,28 @@ msgid ""
 "Question linked to its target. Until the lookup table is uploaded, "
 "everyone's %(key)s will be %(fallback)s."
 msgstr ""
+"A kérdés összekapcsolva a kiválasztási szemponttal. Amíg a hozzárendelési"
+" tábla nincs feltöltve, mindenki %(key)s értéke %(fallback)s lesz."
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:947
 msgid "Choose a CSV file to upload"
-msgstr ""
+msgstr "Válassz egy feltöltendő CSV-fájlt"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:955
 msgid "The file could not be read as UTF-8 text"
-msgstr ""
+msgstr "A fájl nem olvasható UTF-8 szövegként"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:988
 msgid "Lookup table uploaded"
-msgstr ""
+msgstr "Hozzárendelési tábla feltöltve"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:1008
 msgid "Computed question deleted"
-msgstr ""
+msgstr "Számított kérdés törölve"
 
 #: src/opendlp/entrypoints/blueprints/target_sources.py:1009
 msgid "Question unlinked from its target"
-msgstr ""
+msgstr "A kérdés leválasztva a kiválasztási szempontról"
 
 #: src/opendlp/entrypoints/blueprints/targets.py:160
 msgid "An error occurred while loading assembly targets"
@@ -3304,6 +3369,8 @@ msgid ""
 "This target is linked to a registration question, so it cannot be renamed"
 " here"
 msgstr ""
+"Ez a kiválasztási szempont regisztrációs kérdéshez van kapcsolva, ezért "
+"itt nem nevezhető át"
 
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:358
 msgid "Category deleted"
@@ -3314,6 +3381,8 @@ msgid ""
 "This target is linked to a registration question, so it cannot be deleted"
 " here"
 msgstr ""
+"Ez a kiválasztási szempont regisztrációs kérdéshez van kapcsolva, ezért "
+"itt nem törölhető"
 
 #: src/opendlp/entrypoints/blueprints/targets_legacy.py:434
 #, python-format
@@ -3516,6 +3585,7 @@ msgstr "%(count)s jelentkező betöltve."
 msgid "%(num)s person already holds a place."
 msgid_plural "%(num)s people already hold a place."
 msgstr[0] ""
+msgstr[1] ""
 
 #: src/opendlp/entrypoints/celery/tasks.py:650
 msgid "Database load completed successfully."
@@ -3973,6 +4043,7 @@ msgid_plural ""
 "Needs at least %(min)s but only %(num)s eligible people with this value "
 "remain in the pool"
 msgstr[0] ""
+msgstr[1] ""
 
 #: src/opendlp/service_layer/replacement_targets.py:560
 msgid ""
@@ -3989,6 +4060,7 @@ msgid_plural ""
 "Only %(num)s eligible people are in the pool, fewer than the %(number)s "
 "to select"
 msgstr[0] ""
+msgstr[1] ""
 
 #: src/opendlp/service_layer/respondent_export_service.py:50
 #, python-format
@@ -4002,7 +4074,7 @@ msgstr "\"%(key)s\" típusát nem módosíthatod – ebből származtatott mező
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:358
 msgid "A computed question always stays in the Derived section"
-msgstr ""
+msgstr "A számított kérdés mindig a Számított szakaszban marad"
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:377
 msgid "You can't change the type or options of a fixed field"
@@ -4021,6 +4093,9 @@ msgid ""
 "You can't change the type or answer values of a field that feeds a target"
 " — unlink it on the 'Link targets to questions' step first"
 msgstr ""
+"Kiválasztási szempontot tápláló mező típusát vagy válaszértékeit nem "
+"módosíthatod – előbb válaszd le a „Kiválasztási szempontok és kérdések "
+"összekapcsolása” lépésben"
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:507
 msgid "Options can only be set on choice fields"
@@ -4048,7 +4123,7 @@ msgstr "Egy választómezőnek legalább egy választható értéket meg kell ta
 #: src/opendlp/service_layer/respondent_field_schema_service.py:728
 #, python-format
 msgid "A question named '%(key)s' already exists — rename or delete it first"
-msgstr ""
+msgstr "Már létezik \"%(key)s\" nevű kérdés – előbb nevezd át vagy töröld"
 
 #: src/opendlp/service_layer/respondent_field_schema_service.py:756
 #, python-format
@@ -4084,6 +4159,8 @@ msgstr "Az ID oszlop mező az előző feltöltésed alapján előre ki van tölt
 #, python-format
 msgid "Row %(row)s: supplied '%(key)s' was replaced by its computed value"
 msgstr ""
+"%(row)s. sor: a megadott \"%(key)s\" értéket a számított érték váltotta "
+"fel"
 
 #: src/opendlp/service_layer/selection_report.py:194
 #: templates/main/view_assembly_base.html:11
@@ -4129,7 +4206,7 @@ msgstr "#"
 
 #: src/opendlp/service_layer/signup_rate_limit_service.py:57
 msgid "signup"
-msgstr ""
+msgstr "regisztráció"
 
 #: src/opendlp/service_layer/sortition.py:150
 #: src/opendlp/service_layer/sortition.py:498
@@ -4212,13 +4289,13 @@ msgid "Need minimum %(min)s but only %(count)s respondents match"
 msgstr "Legalább %(min)s szükséges, de csak %(count)s jelentkező felel meg"
 
 #: src/opendlp/service_layer/target_checking.py:208
-#: templates/backoffice/components/db_replacement_modal.html:219
+#: templates/backoffice/components/db_replacement_modal.html:197
 #, python-format
 msgid "Suggested minimum: %(value)s (currently %(current)s)"
 msgstr "Javasolt minimum: %(value)s (jelenleg %(current)s)"
 
 #: src/opendlp/service_layer/target_checking.py:224
-#: templates/backoffice/components/db_replacement_modal.html:221
+#: templates/backoffice/components/db_replacement_modal.html:199
 #, python-format
 msgid "Suggested maximum: %(value)s (currently %(current)s)"
 msgstr "Javasolt maximum: %(value)s (jelenleg %(current)s)"
@@ -4292,22 +4369,26 @@ msgid ""
 "Target '%(name)s' has no values yet — add its values before setting up a "
 "data source"
 msgstr ""
+"\"%(name)s\" kiválasztási szempontnak még nincsenek értékei – add meg az "
+"értékeit, mielőtt adatforrást állítasz be hozzá"
 
 #: src/opendlp/service_layer/target_source_service.py:227
 #, python-format
 msgid "Field '%(key)s' is missing options for these target values: %(values)s"
 msgstr ""
+"\"%(key)s\" mezőből hiányoznak a következő célértékekhez tartozó "
+"választható értékek: %(values)s"
 
 #: src/opendlp/service_layer/target_source_service.py:239
 #: src/opendlp/service_layer/target_source_service.py:251
 #, python-format
 msgid "'%(value)s' is not one of the target's values"
-msgstr ""
+msgstr "\"%(value)s\" nem szerepel a kiválasztási szempont értékei között"
 
 #: src/opendlp/service_layer/target_source_service.py:281
 #, python-format
 msgid "Field '%(key)s' cannot feed this kind of derivation"
-msgstr ""
+msgstr "\"%(key)s\" mező nem táplálhat ilyen típusú számítást"
 
 #: src/opendlp/service_layer/target_source_service.py:291
 #: src/opendlp/service_layer/target_source_service.py:346
@@ -4316,11 +4397,13 @@ msgid ""
 "Field '%(key)s' already exists in this assembly — choose it instead of "
 "creating a new one"
 msgstr ""
+"\"%(key)s\" mező már létezik ebben a közösségi gyűlésben – válaszd azt új"
+" létrehozása helyett"
 
 #: src/opendlp/service_layer/target_source_service.py:310
 #, python-format
 msgid "A '%(type)s' field cannot feed this kind of derivation"
-msgstr ""
+msgstr "\"%(type)s\" típusú mező nem táplálhat ilyen típusú számítást"
 
 #: src/opendlp/service_layer/target_source_service.py:330
 #, python-format
@@ -4328,6 +4411,8 @@ msgid ""
 "Field '%(key)s' is derived — an exact copy must be a directly collected "
 "field"
 msgstr ""
+"\"%(key)s\" mező számított – pontos másolat csak közvetlenül bekért mező "
+"lehet"
 
 #: src/opendlp/service_layer/target_source_service.py:335
 #, python-format
@@ -4335,6 +4420,8 @@ msgid ""
 "Field '%(key)s' is not a choice field, so it cannot be an exact copy of a"
 " target"
 msgstr ""
+"\"%(key)s\" mező nem választásos mező, ezért nem lehet kiválasztási "
+"szempont pontos másolata"
 
 #: src/opendlp/service_layer/target_source_service.py:391
 #, python-format
@@ -4342,6 +4429,8 @@ msgid ""
 "Field '%(key)s' already exists and is not derived — use the exact copy "
 "method, or rename it first"
 msgstr ""
+"\"%(key)s\" mező már létezik és nem számított – használd a pontos másolat"
+" módszert, vagy előbb nevezd át"
 
 #: src/opendlp/service_layer/target_source_service.py:629
 #, python-format
@@ -4349,12 +4438,16 @@ msgid ""
 "Field '%(key)s' does not share the target's name '%(name)s', so selection"
 " would not pair them"
 msgstr ""
+"\"%(key)s\" mező neve nem egyezik a kiválasztási szempont \"%(name)s\" "
+"nevével, ezért a kiválasztás nem párosítaná őket"
 
 #: src/opendlp/service_layer/target_source_service.py:670
 msgid ""
 "Age brackets come from the field's configuration — edit the age ranges or"
 " the target values instead"
 msgstr ""
+"A korcsoportok a mező beállításaiból származnak – ehelyett a "
+"korcsoportokat vagy a célértékeket szerkeszd"
 
 #: src/opendlp/service_layer/two_factor_service.py:51
 #: src/opendlp/service_layer/two_factor_service.py:98
@@ -4388,27 +4481,27 @@ msgstr ""
 "OAuth-felhasználóknál nem kapcsolható ki a kétlépcsős azonosítás (nem "
 "használnak ilyet)"
 
-#: templates/base.html:6
+#: templates/base.html:5
 msgid "Open Democratic Lottery Platform"
 msgstr "Open Democratic Lottery Platform"
 
-#: templates/base.html:25 templates/base_public.html:25
+#: templates/base.html:23 templates/base_public.html:25
 msgid "Skip to main content"
 msgstr "Ugrás a fő tartalomra"
 
-#: templates/base.html:39
+#: templates/base.html:37
 msgid "Sortition Foundation Logo"
 msgstr "Sortition Foundation Logo"
 
-#: templates/base.html:48 templates/base.html:89
+#: templates/base.html:46 templates/base.html:91
 msgid "Menu"
 msgstr "Menü"
 
-#: templates/base.html:54 templates/base.html:95
+#: templates/base.html:52 templates/base.html:97
 msgid "Close menu"
 msgstr "Menü bezárása"
 
-#: templates/backoffice/dashboard.html:18 templates/base.html:58
+#: templates/backoffice/dashboard.html:18 templates/base.html:57
 #: templates/errors/400.html:25 templates/errors/403.html:23
 #: templates/errors/404.html:24 templates/errors/413.html:20
 #: templates/errors/500.html:24 templates/main/create_assembly.html:11
@@ -4424,43 +4517,43 @@ msgstr "Közösségi gyűléseid"
 msgid "Site Admin"
 msgstr "Oldal adminisztráció"
 
-#: templates/base.html:68 templates/base.html:107
+#: templates/base.html:68 templates/base.html:111
 msgid "Sortition Lab"
 msgstr "Sortition Lab"
 
 #: templates/backoffice/components/navigation.html:54 templates/base.html:73
-#: templates/base.html:112
+#: templates/base.html:116
 msgid "Help"
 msgstr "Súgó"
 
-#: templates/base.html:76 templates/profile/view.html:3
+#: templates/base.html:77 templates/profile/view.html:3
 #: templates/profile/view.html:7
 msgid "My Account"
 msgstr "Fiókom"
 
-#: templates/backoffice/base_page.html:44 templates/base.html:79
+#: templates/backoffice/base_page.html:44 templates/base.html:81
 msgid "Sign out"
 msgstr "Kilépés"
 
 #: templates/auth/forgot_password.html:41 templates/auth/login.html:3
 #: templates/auth/login.html:7 templates/auth/login.html:31
-#: templates/auth/register.html:157 templates/auth/register_google.html:66
+#: templates/auth/register.html:164 templates/auth/register_google.html:66
 #: templates/auth/register_microsoft.html:66
-#: templates/auth/resend_confirmation.html:41 templates/base.html:99
+#: templates/auth/resend_confirmation.html:41 templates/base.html:102
 #: templates/errors/400.html:29 templates/errors/403.html:27
 #: templates/errors/404.html:28 templates/errors/413.html:24
 #: templates/errors/500.html:28 templates/main/index.html:17
 msgid "Sign in"
 msgstr "Bejelentkezés"
 
-#: templates/auth/register.html:154 templates/base.html:102
+#: templates/auth/register.html:161 templates/base.html:106
 #: templates/main/index.html:31
 msgid "Create Account"
 msgstr "Fiók létrehozása"
 
 #: templates/admin/invite_create.html:22 templates/admin/user_edit.html:26
 #: templates/backoffice/assembly_data.html:316
-#: templates/backoffice/assembly_form.html:21 templates/base.html:127
+#: templates/backoffice/assembly_form.html:21 templates/base.html:131
 #: templates/gsheets/create_config.html:14
 #: templates/gsheets/edit_config.html:14 templates/main/create_assembly.html:19
 #: templates/main/edit_assembly.html:8
@@ -4469,33 +4562,34 @@ msgstr "Fiók létrehozása"
 msgid "There is a problem"
 msgstr "Probléma merült fel"
 
-#: templates/base.html:140 templates/profile/2fa_backup_codes.html:9
+#: templates/base.html:144 templates/profile/2fa_backup_codes.html:9
 msgid "Success"
 msgstr "Sikerült"
 
-#: templates/base.html:142
+#: templates/base.html:146
 msgid "Important"
 msgstr "Fontos"
 
-#: templates/backoffice/base_page.html:42 templates/base.html:176
+#: templates/backoffice/base_page.html:42
+#: templates/backoffice/components/footer.html:18 templates/base.html:175
 #: templates/base_public.html:40
 msgid "User Data Agreement"
 msgstr "Felhasználói Adatkezelési Megállapodás"
 
-#: templates/backoffice/components/footer.html:16 templates/base.html:181
+#: templates/backoffice/components/footer.html:22 templates/base.html:180
 #: templates/base_public.html:45
 msgid "Cookies"
 msgstr "Sütik"
 
-#: templates/base.html:186
+#: templates/base.html:185
 msgid "New Dashboard"
 msgstr "Új felület"
 
-#: templates/base.html:190
+#: templates/base.html:194
 msgid "OpenDLP Version"
 msgstr "OpenDLP verzió"
 
-#: templates/backoffice/components/footer.html:30 templates/base.html:195
+#: templates/backoffice/components/footer.html:38 templates/base.html:199
 msgid ""
 "OpenDLP is an open source platform for Democratic Lottery and Citizens' "
 "Assembly management."
@@ -4577,7 +4671,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/assembly_edit_respondent.html:160
 #: templates/backoffice/assembly_form.html:96
 #: templates/backoffice/assembly_view_respondent.html:302
-#: templates/backoffice/components/db_replacement_modal.html:243
+#: templates/backoffice/components/db_replacement_modal.html:220
 #: templates/backoffice/components/edit_number_to_select_modal.html:40
 #: templates/backoffice/components/respondent_status_form.html:88
 #: templates/backoffice/dashboard_export_modal.html:62
@@ -4585,7 +4679,7 @@ msgstr "Új meghívókód generálása a felhasználói regisztrációhoz"
 #: templates/backoffice/registration/_assets.html:299
 #: templates/backoffice/registration/_step_email.html:92
 #: templates/backoffice/registration/_step_form.html:71
-#: templates/backoffice/respondent_field_schema/_field_modal.html:201
+#: templates/backoffice/respondent_field_schema/_field_modal.html:203
 #: templates/backoffice/respondents/confirm_upload_diff.html:99
 #: templates/backoffice/respondents/export_modal.html:68
 #: templates/backoffice/target_sources/_setup_modal.html:354
@@ -4773,7 +4867,7 @@ msgstr "Lejárat"
 #: templates/backoffice/assembly_respondents.html:120
 #: templates/backoffice/assembly_selection.html:196
 #: templates/backoffice/assembly_selection.html:369
-#: templates/backoffice/components/registration_page_list.html:31
+#: templates/backoffice/components/registration_page_list.html:32
 #: templates/backoffice/respondent_field_schema/_editor.html:51
 #: templates/backoffice/targets/bulk_edit_form.html:280
 #: templates/main/view_assembly_data.html:60
@@ -4905,7 +4999,7 @@ msgstr "Felhasználó szerkesztése"
 #: templates/backoffice/assembly_view_respondent.html:20
 #: templates/backoffice/assembly_view_respondent.html:224
 #: templates/backoffice/assembly_view_respondent.html:310
-#: templates/backoffice/components/registration_page_list.html:123
+#: templates/backoffice/components/registration_page_list.html:130
 #: templates/backoffice/registration/_step_email.html:95
 #: templates/backoffice/registration/_step_form.html:74
 #: templates/backoffice/respondent_field_schema/_editor.html:92
@@ -5017,15 +5111,15 @@ msgstr "Fiók létrehozva"
 
 #: templates/admin/user_view.html:115
 msgid "Signup Survey"
-msgstr ""
+msgstr "Regisztrációs kérdőív"
 
 #: templates/admin/user_view.html:126
 msgid "Not answered"
-msgstr ""
+msgstr "Nincs válasz"
 
 #: templates/admin/user_view.html:140
 msgid "No signup survey answers for this user."
-msgstr ""
+msgstr "A felhasználó nem töltötte ki a regisztrációs kérdőívet."
 
 #: templates/admin/user_view.html:150
 msgid ""
@@ -5201,7 +5295,7 @@ msgstr "hozz létre és küldj neki egy meghívókódot"
 
 #: templates/admin/users.html:242
 msgid "Export users as CSV"
-msgstr ""
+msgstr "Felhasználók exportálása CSV-be"
 
 #: templates/auth/confirm_email.html:5 templates/auth/confirm_email.html:10
 msgid "Confirm your email"
@@ -5317,7 +5411,7 @@ msgstr "Vagy létrehozhatsz fiókot e-mail címmel és jelszóval"
 
 #: templates/auth/register.html:66
 msgid "Optional — if you were given an invite code, enter it here."
-msgstr ""
+msgstr "Nem kötelező – ha kaptál meghívókódot, add meg itt."
 
 #: templates/auth/register.html:133 templates/auth/register_google.html:33
 #: templates/auth/register_microsoft.html:33
@@ -5341,7 +5435,7 @@ msgstr "Adatkezelési megállapodás megtekintése"
 msgid "Error"
 msgstr "Hiba történt"
 
-#: templates/auth/register.html:157 templates/auth/register_google.html:66
+#: templates/auth/register.html:164 templates/auth/register_google.html:66
 #: templates/auth/register_microsoft.html:66
 msgid "Already have an account?"
 msgstr "Már van fiókod?"
@@ -5445,6 +5539,7 @@ msgid "Number to select:"
 msgstr "Kiválasztandók száma:"
 
 #: templates/backoffice/assembly_dashboard.html:49
+#: templates/backoffice/registration/_hub.html:13
 msgid "Number of registrations:"
 msgstr "Regisztrációk száma:"
 
@@ -5894,7 +5989,7 @@ msgid "The URL for this registration page"
 msgstr "Ennek a regisztrációs oldalnak az URL címe"
 
 #: templates/backoffice/assembly_details.html:129
-#: templates/backoffice/components/registration_page_list.html:61
+#: templates/backoffice/components/registration_page_list.html:62
 #: templates/backoffice/registration/_step_preview.html:54
 msgid "Short URL"
 msgstr "Rövid URL"
@@ -5952,15 +6047,15 @@ msgstr "Vissza"
 #: templates/backoffice/assembly_edit_respondent.html:59
 #, python-format
 msgid "Computed from %(source)s"
-msgstr ""
+msgstr "Számítva ebből: %(source)s"
 
 #: templates/backoffice/assembly_edit_respondent.html:60
 msgid "Will be recalculated when saved."
-msgstr ""
+msgstr "Mentéskor újraszámítva."
 
 #: templates/backoffice/assembly_edit_respondent.html:125
 msgid "For example, 27 3 1985"
-msgstr ""
+msgstr "Például: 27 3 1985"
 
 #: templates/backoffice/assembly_edit_respondent.html:152
 msgid "Why are you making this change?"
@@ -6070,7 +6165,7 @@ msgid "Visitors who follow the form URL are redirected to the closed page."
 msgstr "Az űrlap URL címét megnyitó látogatók a lezárt oldalra kerülnek át."
 
 #: templates/backoffice/assembly_registration.html:126
-#: templates/backoffice/components/registration_page_list.html:92
+#: templates/backoffice/components/registration_page_list.html:93
 msgid "Published"
 msgstr "Közzétéve"
 
@@ -6129,7 +6224,7 @@ msgstr "Állapot:"
 
 #: templates/backoffice/assembly_respondents.html:97
 #: templates/backoffice/assembly_view_respondent.html:227
-#: templates/backoffice/components/table.html:212
+#: templates/backoffice/components/table.html:213
 msgid "Deleted"
 msgstr "Törölve"
 
@@ -6189,6 +6284,7 @@ msgstr ""
 msgid "%(num)s respondent is currently selected"
 msgid_plural "%(num)s respondents are currently selected"
 msgstr[0] ""
+msgstr[1] ""
 
 #: templates/backoffice/assembly_selection.html:96
 msgid ""
@@ -6242,7 +6338,7 @@ msgstr "Rétegzett kiválasztás"
 
 #: templates/backoffice/assembly_selection.html:151
 #: templates/backoffice/assembly_selection.html:332
-#: templates/backoffice/components/db_replacement_modal.html:17
+#: templates/backoffice/components/db_replacement_modal.html:19
 #: templates/backoffice/components/replacement_modal.html:28
 #: templates/db_selection/replace.html:11
 msgid "Replacement Selection"
@@ -6483,7 +6579,7 @@ msgstr "Módosítások elvetése"
 #: templates/backoffice/components/edit_number_to_select_modal.html:41
 #: templates/backoffice/registration/_step_email.html:93
 #: templates/backoffice/registration/_step_form.html:23
-#: templates/backoffice/respondent_field_schema/_field_modal.html:202
+#: templates/backoffice/respondent_field_schema/_field_modal.html:204
 #: templates/backoffice/target_sources/_setup_modal.html:355
 #: templates/targets/components/category_block.html:42
 #: templates/targets/components/category_block.html:168
@@ -6705,19 +6801,21 @@ msgstr "Frissítsd a közösségi gyűlés adatait."
 
 #: templates/backoffice/targets_force_unlink_confirm.html:8
 msgid "Confirm target changes"
-msgstr ""
+msgstr "Kiválasztási szempontok módosításának megerősítése"
 
 #: templates/backoffice/targets_force_unlink_confirm.html:14
 msgid "Back to Data"
-msgstr ""
+msgstr "Vissza az adatokhoz"
 
 #: templates/backoffice/targets_force_unlink_confirm.html:14
 msgid "Back to Targets"
-msgstr ""
+msgstr "Vissza a célszámokhoz"
 
 #: templates/backoffice/targets_force_unlink_confirm.html:20
 msgid "These targets have registration questions linked to them"
 msgstr ""
+"Ezekhez a kiválasztási szempontokhoz regisztrációs kérdések vannak "
+"kapcsolva"
 
 #: templates/backoffice/targets_force_unlink_confirm.html:23
 msgid ""
@@ -6727,6 +6825,12 @@ msgid ""
 "becomes freely editable; a computed question exists only to feed its "
 "target, so it goes when the target does."
 msgstr ""
+"A kapcsolt kérdés a nevét és a válaszait a kiválasztási szempontjától "
+"kapja, és a kiválasztás név alapján párosítja a kettőt. Az összes "
+"szempont törlése megszakítja ezeket a párosításokat. A jelentkezők által "
+"megválaszolt kérdés a regisztrációs oldalon marad, és szabadon "
+"szerkeszthetővé válik; a számított kérdés csak azért létezik, hogy a "
+"szempontját táplálja, ezért a szemponttal együtt törlődik."
 
 #: templates/backoffice/targets_force_unlink_confirm.html:25
 msgid ""
@@ -6736,16 +6840,22 @@ msgid ""
 "becomes freely editable; a computed question exists only to feed its "
 "target, so it goes when the target does."
 msgstr ""
+"A kapcsolt kérdés a nevét és a válaszait a kiválasztási szempontjától "
+"kapja, és a kiválasztás név alapján párosítja a kettőt. A módosítások "
+"mentése megszakítja ezeket a párosításokat. A jelentkezők által "
+"megválaszolt kérdés a regisztrációs oldalon marad, és szabadon "
+"szerkeszthetővé válik; a számított kérdés csak azért létezik, hogy a "
+"szempontját táplálja, ezért a szemponttal együtt törlődik."
 
 #: templates/backoffice/targets_force_unlink_confirm.html:33
 #, python-format
 msgid "Deleting the target \"%(name)s\" unlinks: %(fields)s"
-msgstr ""
+msgstr "\"%(name)s\" kiválasztási szempont törlése leválasztja: %(fields)s"
 
 #: templates/backoffice/targets_force_unlink_confirm.html:35
 #, python-format
 msgid "Renaming the target \"%(name)s\" unlinks: %(fields)s"
-msgstr ""
+msgstr "\"%(name)s\" kiválasztási szempont átnevezése leválasztja: %(fields)s"
 
 #: templates/backoffice/targets_force_unlink_confirm.html:43
 #, python-format
@@ -6753,14 +6863,17 @@ msgid ""
 "Deleting the target \"%(name)s\" also deletes the computed question "
 "\"%(field)s\", its answers and any lookup table it uses"
 msgstr ""
+"\"%(name)s\" kiválasztási szempont törlése a \"%(field)s\" számított "
+"kérdést, annak válaszait és az általa használt hozzárendelési táblát is "
+"törli"
 
 #: templates/backoffice/targets_force_unlink_confirm.html:54
 msgid "Break the links and delete all targets"
-msgstr ""
+msgstr "Kapcsolatok megszakítása és az összes kiválasztási szempont törlése"
 
 #: templates/backoffice/targets_force_unlink_confirm.html:56
 msgid "Break the links and save"
-msgstr ""
+msgstr "Kapcsolatok megszakítása és mentés"
 
 #: templates/backoffice/components/account_menu.html:53
 msgid "Account menu"
@@ -6779,15 +6892,16 @@ msgstr "A közösségi gyűlés szakaszai"
 msgid "Breadcrumb"
 msgstr "Morzsamenü"
 
-#: templates/backoffice/components/db_replacement_modal.html:20
-#: templates/backoffice/components/db_replacement_modal.html:30
+#: templates/backoffice/components/db_replacement_modal.html:22
+#: templates/backoffice/components/db_replacement_modal.html:32
 #, python-format
 msgid "%(num)s person is selected or confirmed."
 msgid_plural "%(num)s people are selected or confirmed."
 msgstr[0] ""
+msgstr[1] ""
 
-#: templates/backoffice/components/db_replacement_modal.html:21
-#: templates/backoffice/components/db_replacement_modal.html:31
+#: templates/backoffice/components/db_replacement_modal.html:23
+#: templates/backoffice/components/db_replacement_modal.html:33
 #, python-format
 msgid ""
 "The assembly needs %(total)s, so %(strong_open)s%(num)s place is to be "
@@ -6796,22 +6910,23 @@ msgid_plural ""
 "The assembly needs %(total)s, so %(strong_open)s%(num)s places are to be "
 "filled%(strong_close)s."
 msgstr[0] ""
+msgstr[1] ""
 
-#: templates/backoffice/components/db_replacement_modal.html:23
+#: templates/backoffice/components/db_replacement_modal.html:25
 msgid ""
 "Every place is filled. Replacements are only needed once someone selected"
 " or confirmed has withdrawn."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:38
+#: templates/backoffice/components/db_replacement_modal.html:40
 msgid "Change the number of replacements"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:50
+#: templates/backoffice/components/db_replacement_modal.html:52
 msgid "These targets can be met from the pool."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:53
+#: templates/backoffice/components/db_replacement_modal.html:55
 #, python-format
 msgid ""
 "The calculated replacement targets cannot all be met at once: one target "
@@ -6819,7 +6934,7 @@ msgid ""
 " Edit the targets below until the two agree."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:55
+#: templates/backoffice/components/db_replacement_modal.html:57
 #, python-format
 msgid ""
 "%(num)s place is to be filled, but the replacement targets only allow "
@@ -6830,119 +6945,120 @@ msgid_plural ""
 "between %(min)s and %(max)s. Edit the targets below so that %(num)s is "
 "within the range, or the assembly will not be the size it needs."
 msgstr[0] ""
+msgstr[1] ""
 
 #: templates/backoffice/components/db_replacement_modal.html:64
 msgid "Number of replacements to select"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:68
+#: templates/backoffice/components/db_replacement_modal.html:64
 #, python-format
 msgid "The replacement targets allow between %(min)s and %(max)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:82
+#: templates/backoffice/components/db_replacement_modal.html:66
 msgid "Replacement targets"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:84
+#: templates/backoffice/components/db_replacement_modal.html:68
 msgid ""
 "The places still to fill are calculated from the targets and who already "
 "holds a place. Edit the minimum and maximum if you need to. Targets with "
 "a value the pool cannot fill are shown open."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:90
+#: templates/backoffice/components/db_replacement_modal.html:74
 msgid "Suggested changes"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:95
+#: templates/backoffice/components/db_replacement_modal.html:79
 msgid ""
 "The targets cannot all be met from the pool at once. The algorithm "
 "suggests these changes:"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:102
+#: templates/backoffice/components/db_replacement_modal.html:86
 #, python-format
 msgid "%(target)s: %(value)s, minimum %(current)s to %(suggested)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:104
+#: templates/backoffice/components/db_replacement_modal.html:88
 #, python-format
 msgid "%(target)s: %(value)s, maximum %(current)s to %(suggested)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:106
-#: templates/backoffice/components/db_replacement_modal.html:223
+#: templates/backoffice/components/db_replacement_modal.html:90
+#: templates/backoffice/components/db_replacement_modal.html:201
 msgid "Accept"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:110
+#: templates/backoffice/components/db_replacement_modal.html:94
 msgid "Accept all"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:114
+#: templates/backoffice/components/db_replacement_modal.html:98
 msgid ""
 "Every suggestion has been applied. Recheck feasibility to confirm, or run"
 " the selection."
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:133
+#: templates/backoffice/components/db_replacement_modal.html:117
 msgid "no matching respondent field, so nobody counts as currently selected"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:136
+#: templates/backoffice/components/db_replacement_modal.html:120
 msgid "a value cannot be filled from the pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:139
+#: templates/backoffice/components/db_replacement_modal.html:123
 msgid "every value can be filled"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:151
+#: templates/backoffice/components/db_replacement_modal.html:131
 msgid "Currently selected"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:153
+#: templates/backoffice/components/db_replacement_modal.html:132
 msgid "Still needed (min)"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:155
+#: templates/backoffice/components/db_replacement_modal.html:133
 msgid "Still needed (max)"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:157
+#: templates/backoffice/components/db_replacement_modal.html:134
 msgid "In pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:173
+#: templates/backoffice/components/db_replacement_modal.html:147
 #, python-format
 msgid "Minimum still needed for %(target)s: %(value)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:187
+#: templates/backoffice/components/db_replacement_modal.html:161
 #, python-format
 msgid "Maximum still needed for %(target)s: %(value)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:207
+#: templates/backoffice/components/db_replacement_modal.html:184
 #, python-format
 msgid "short by %(count)s"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:209
+#: templates/backoffice/components/db_replacement_modal.html:186
 msgid "more places held than the target allows"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:211
+#: templates/backoffice/components/db_replacement_modal.html:188
 msgid "no spare people in the pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:211
+#: templates/backoffice/components/db_replacement_modal.html:188
 #, python-format
 msgid "%(count)s spare in the pool"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:241
+#: templates/backoffice/components/db_replacement_modal.html:218
 #: templates/backoffice/components/db_selection_progress_modal.html:117
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
 #: templates/backoffice/components/modal.html:115
@@ -6957,11 +7073,11 @@ msgstr ""
 msgid "Close"
 msgstr "Bezárás"
 
-#: templates/backoffice/components/db_replacement_modal.html:244
+#: templates/backoffice/components/db_replacement_modal.html:221
 msgid "Recheck feasibility"
 msgstr ""
 
-#: templates/backoffice/components/db_replacement_modal.html:245
+#: templates/backoffice/components/db_replacement_modal.html:222
 #: templates/backoffice/components/replacement_modal.html:88
 #: templates/gsheets/replace.html:58 templates/gsheets/replace.html:80
 msgid "Run Replacement Selection"
@@ -7086,11 +7202,11 @@ msgstr "Kiválasztandó emberek száma"
 msgid "Enter a positive number"
 msgstr "Adj meg egy pozitív számot"
 
-#: templates/backoffice/components/footer.html:20
+#: templates/backoffice/components/footer.html:26
 msgid "Old Dashboard"
 msgstr "Régi felület"
 
-#: templates/backoffice/components/footer.html:24
+#: templates/backoffice/components/footer.html:33
 msgid "Version"
 msgstr "Verzió"
 
@@ -7111,11 +7227,11 @@ msgstr "Munkalap neve"
 msgid "Share the spreadsheet with %(email)s so it can be written to."
 msgstr "Oszd meg a táblázatot a következővel, hogy írni lehessen bele: %(email)s."
 
-#: templates/backoffice/components/input.html:580
+#: templates/backoffice/components/input.html:584
 msgid "On"
 msgstr "Be"
 
-#: templates/backoffice/components/input.html:580
+#: templates/backoffice/components/input.html:584
 msgid "Off"
 msgstr "Ki"
 
@@ -7187,70 +7303,74 @@ msgid "QR code"
 msgstr "QR-kód"
 
 #: templates/backoffice/components/registration_page_list.html:29
+msgid "Registrations"
+msgstr ""
+
+#: templates/backoffice/components/registration_page_list.html:30
 msgid "Date of publish"
 msgstr "Közzététel dátuma"
 
-#: templates/backoffice/components/registration_page_list.html:57
+#: templates/backoffice/components/registration_page_list.html:58
 msgid "Full URL"
 msgstr "Teljes URL"
 
-#: templates/backoffice/components/registration_page_list.html:59
+#: templates/backoffice/components/registration_page_list.html:60
 #, python-format
 msgid "Copy the full URL for %(name)s"
 msgstr "%(name)s teljes URL címének másolása"
 
-#: templates/backoffice/components/registration_page_list.html:63
+#: templates/backoffice/components/registration_page_list.html:64
 #, python-format
 msgid "Copy the short URL for %(name)s"
 msgstr "%(name)s rövid URL címének másolása"
 
-#: templates/backoffice/components/registration_page_list.html:67
+#: templates/backoffice/components/registration_page_list.html:68
 msgid "No URL yet"
 msgstr "Még nincs URL"
 
-#: templates/backoffice/components/registration_page_list.html:78
+#: templates/backoffice/components/registration_page_list.html:79
 #, python-format
 msgid "Download the QR code for %(name)s"
 msgstr "%(name)s QR-kódjának letöltése"
 
-#: templates/backoffice/components/registration_page_list.html:80
+#: templates/backoffice/components/registration_page_list.html:81
 #, python-format
 msgid "QR code for %(name)s"
 msgstr "%(name)s QR-kódja"
 
-#: templates/backoffice/components/registration_page_list.html:98
+#: templates/backoffice/components/registration_page_list.html:99
 msgid "Closed"
 msgstr "Menü bezárása"
 
-#: templates/backoffice/components/registration_page_list.html:104
+#: templates/backoffice/components/registration_page_list.html:105
 msgid "Test"
 msgstr "Kezdés dátuma"
 
-#: templates/backoffice/components/registration_page_list.html:127
+#: templates/backoffice/components/registration_page_list.html:134
 #, python-format
 msgid "Edit %(name)s"
-msgstr ""
+msgstr "%(name)s szerkesztése"
 
-#: templates/backoffice/components/registration_page_list.html:148
+#: templates/backoffice/components/registration_page_list.html:155
 #, python-format
 msgid "Actions for %(name)s"
 msgstr "%(name)s műveletei"
 
-#: templates/backoffice/components/registration_page_list.html:166
+#: templates/backoffice/components/registration_page_list.html:173
 #: templates/backoffice/registration/_modals.html:231
 #: templates/backoffice/registration/_step_preview.html:122
 msgid "Close registration"
 msgstr "Regisztráció lezárása"
 
-#: templates/backoffice/components/registration_page_list.html:177
+#: templates/backoffice/components/registration_page_list.html:184
 msgid "Delete registration page"
 msgstr "Regisztrációs oldal törlése"
 
-#: templates/backoffice/components/registration_page_list.html:201
+#: templates/backoffice/components/registration_page_list.html:208
 msgid "Delete this registration page?"
 msgstr "Törlöd ezt a regisztrációs oldalt?"
 
-#: templates/backoffice/components/registration_page_list.html:203
+#: templates/backoffice/components/registration_page_list.html:210
 #, python-format
 msgid ""
 "'%(name)s' and the form you built on it will be deleted for good. There "
@@ -7259,21 +7379,21 @@ msgstr ""
 "'%(name)s' és a rá épített űrlap véglegesen törlődik. A művelet nem "
 "vonható vissza, és a fenti URL-ek megszűnnek működni."
 
-#: templates/backoffice/components/registration_page_list.html:208
+#: templates/backoffice/components/registration_page_list.html:215
 msgid "Delete page"
 msgstr "Oldal törlése"
 
-#: templates/backoffice/components/registration_page_list.html:210
+#: templates/backoffice/components/registration_page_list.html:217
 msgid "Keep it"
 msgstr "Maradjon meg"
 
-#: templates/backoffice/components/registration_page_list.html:233
+#: templates/backoffice/components/registration_page_list.html:240
 msgid "No registration page created yet"
-msgstr ""
+msgstr "Még nincs regisztrációs oldal létrehozva"
 
-#: templates/backoffice/components/registration_page_list.html:234
+#: templates/backoffice/components/registration_page_list.html:241
 msgid "Use the button above to create one."
-msgstr ""
+msgstr "A fenti gombbal hozhatsz létre egyet."
 
 #: templates/backoffice/components/replacement_modal.html:39
 msgid "First check the spreadsheet to see how many replacements can be selected."
@@ -7391,56 +7511,59 @@ msgstr "Fájlméret"
 msgid "Original filename"
 msgstr "Eredeti fájlnév"
 
-#: templates/backoffice/registration/_hub.html:10
+#: templates/backoffice/registration/_hub.html:20
 #: templates/backoffice/target_sources/view.html:38
 msgid "Fields are defined by your Google Sheets spreadsheet — manage them there."
-msgstr ""
+msgstr "A mezőket a Google Táblázatod határozza meg – ott kezelheted őket."
 
-#: templates/backoffice/registration/_hub.html:15
+#: templates/backoffice/registration/_hub.html:25
 msgid "General settings"
-msgstr ""
+msgstr "Általános beállítások"
 
-#: templates/backoffice/registration/_hub.html:23
+#: templates/backoffice/registration/_hub.html:33
 #: templates/backoffice/target_sources/view.html:10
 #: templates/backoffice/target_sources/view.html:34
 msgid "Link targets to questions"
-msgstr ""
+msgstr "Kiválasztási szempontok és kérdések összekapcsolása"
 
-#: templates/backoffice/registration/_hub.html:24
+#: templates/backoffice/registration/_hub.html:34
 msgid ""
 "Choose the registration question that answers each target: asked "
 "directly, or computed from something like a date of birth or postcode."
 msgstr ""
 
-#: templates/backoffice/registration/_hub.html:27
+#: templates/backoffice/registration/_hub.html:37
 msgid "No targets yet — add them on the Targets tab first."
 msgstr ""
+"Még nincsenek kiválasztási szempontok – előbb add meg őket a Célszámok "
+"fülön."
 
-#: templates/backoffice/registration/_hub.html:29
+#: templates/backoffice/registration/_hub.html:39
 #, python-format
 msgid "%(covered)s of %(total)s targets have a question"
-msgstr ""
+msgstr "%(total)s kiválasztási szempontból %(covered)s rendelkezik kérdéssel"
 
-#: templates/backoffice/registration/_hub.html:31
+#: templates/backoffice/registration/_hub.html:41
 #, python-format
 msgid "%(count)s out of step with the target values"
-msgstr ""
+msgstr "%(count)s nincs összhangban a célértékekkel"
 
-#: templates/backoffice/registration/_hub.html:44
+#: templates/backoffice/registration/_hub.html:54
 #: templates/backoffice/respondent_field_schema/view.html:11
 #: templates/backoffice/respondent_field_schema/view.html:35
 msgid "Registration questions"
-msgstr ""
+msgstr "Regisztrációs kérdések"
 
-#: templates/backoffice/registration/_hub.html:45
+#: templates/backoffice/registration/_hub.html:55
 msgid "Configure the questions for the registration page."
-msgstr ""
+msgstr "A regisztrációs oldal kérdéseinek beállítása."
 
-#: templates/backoffice/registration/_hub.html:47
+#: templates/backoffice/registration/_hub.html:57
 #, python-format
 msgid "%(num)s question on the registration page"
 msgid_plural "%(num)s questions on the registration page"
-msgstr[0] ""
+msgstr[0] "%(num)s kérdés a regisztrációs oldalon"
+msgstr[1] "%(num)s kérdés a regisztrációs oldalon"
 
 #: templates/backoffice/registration/_modals.html:10
 msgid "Form Skeleton"
@@ -7572,7 +7695,6 @@ msgstr "PDF fájl"
 
 #: templates/backoffice/registration/_modals.html:177
 #: templates/backoffice/registration/_modals.html:197
-#: templates/backoffice/respondent_field_schema/_field_modal.html:79
 msgid "Label"
 msgstr "Címke"
 
@@ -7724,7 +7846,7 @@ msgstr "Hálózati hiba a dokumentum frissítése közben"
 
 #: templates/backoffice/registration/_step_dialog.html:33
 msgid "Close and return to registration"
-msgstr ""
+msgstr "Bezárás és vissza a regisztrációhoz"
 
 #: templates/backoffice/registration/_step_email.html:27
 msgid "Auto-reply cannot be sent"
@@ -7855,6 +7977,9 @@ msgid ""
 "saved — check the form still asks for the right things. The Form Skeleton"
 " reflects the current questions."
 msgstr ""
+"A regisztrációs kérdések megváltoztak az űrlap HTML utolsó mentése óta – "
+"ellenőrizd, hogy az űrlap még a megfelelő dolgokat kéri-e. Az Űrlapváz a "
+"jelenlegi kérdéseket tükrözi."
 
 #: templates/backoffice/registration/_step_form.html:44
 msgid "Registration page name"
@@ -7976,15 +8101,15 @@ msgstr "Közzététel visszavonása"
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:36
 msgid "Rows stored:"
-msgstr ""
+msgstr "Tárolt sorok:"
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:41
 msgid "Duplicate keys (last row wins):"
-msgstr ""
+msgstr "Ismétlődő kulcsok (az utolsó sor érvényes):"
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:47
 msgid "New output values added:"
-msgstr ""
+msgstr "Új kimeneti értékek hozzáadva:"
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:53
 msgid ""
@@ -7993,24 +8118,28 @@ msgid ""
 "and the second as the output. If your file has no heading row, add one "
 "and upload it again."
 msgstr ""
+"Az első sor oszlopfejlécként lett kezelve, és nem lett tárolva. A "
+"fejlécei nem egyeztek a mezőnevekkel, ezért az első oszlop bemenetként, a"
+" második kimenetként lett beolvasva. Ha a fájlban nincs fejlécsor, adj "
+"hozzá egyet, és töltsd fel újra."
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:60
 msgid "Respondents recomputed:"
-msgstr ""
+msgstr "Újraszámított jelentkezők:"
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:64
 msgid "Values changed:"
-msgstr ""
+msgstr "Megváltozott értékek:"
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:68
 #, python-format
 msgid "Fell back to %(fallback)s:"
-msgstr ""
+msgstr "Tartalék értéket (%(fallback)s) kapott:"
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:73
 #, python-format
 msgid "Source values that didn't match anything (up to %(limit)d shown):"
-msgstr ""
+msgstr "Semmihez sem illő bemeneti értékek (legfeljebb %(limit)d látható):"
 
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:79
 #: templates/profile/2fa_backup_codes.html:45
@@ -8019,52 +8148,51 @@ msgstr "Kész"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:19
 msgid "Guess question types from data"
-msgstr ""
+msgstr "Kérdéstípusok becslése az adatokból"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:21
 msgid ""
 "Only questions still set to Text will be updated; explicitly-typed "
 "questions are left alone."
 msgstr ""
+"Csak a még Szöveg típusú kérdések frissülnek; a kifejezetten beállított "
+"típusú kérdések változatlanok maradnak."
 
 #: templates/backoffice/respondent_field_schema/_editor.html:32
 #: templates/backoffice/respondent_field_schema/_field_modal.html:44
 msgid "Add a question"
-msgstr ""
+msgstr "Kérdés hozzáadása"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:35
 #, python-format
 msgid "Add a question to %(section)s"
-msgstr ""
+msgstr "Kérdés hozzáadása ide: %(section)s"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:47
+#: templates/backoffice/respondent_field_schema/_field_modal.html:79
 msgid "Question"
-msgstr ""
+msgstr "Kérdés"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:48
 #: templates/backoffice/respondent_field_schema/_field_modal.html:19
 msgid "Question type"
-msgstr ""
-
-#: templates/backoffice/respondent_field_schema/_editor.html:49
-msgid "Tags"
-msgstr ""
+msgstr "Kérdéstípus"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:72
 #, python-format
 msgid "… and %(count)d more"
-msgstr ""
+msgstr "… és még %(count)d"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:84
 #: templates/backoffice/respondent_field_schema/_field_modal.html:102
 #, python-format
 msgid "Feeds target: %(name)s"
-msgstr ""
+msgstr "Kiválasztási szempontot táplál: %(name)s"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:96
 #, python-format
 msgid "Edit %(question)s"
-msgstr ""
+msgstr "%(question)s szerkesztése"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:100
 #: templates/backoffice/targets/bulk_edit_form.html:243
@@ -8080,51 +8208,56 @@ msgstr "Mozgatás lefelé"
 #: templates/backoffice/target_sources/_checklist.html:105
 #, python-format
 msgid "More actions for %(name)s"
-msgstr ""
+msgstr "További műveletek: %(name)s"
 
 #: templates/backoffice/respondent_field_schema/_editor.html:147
 msgid ""
 "Remove this question? Respondent data keeps its values; they just stop "
 "being rendered."
 msgstr ""
+"Eltávolítod ezt a kérdést? A jelentkezők adatai megőrzik az értékeiket; "
+"csak nem jelennek meg többé."
 
 #: templates/backoffice/respondent_field_schema/_editor.html:161
 msgid "No questions in this section yet."
-msgstr ""
+msgstr "Ebben a szakaszban még nincsenek kérdések."
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:17
 #: templates/backoffice/target_sources/_setup_modal.html:63
 #: templates/backoffice/target_sources/_setup_modal.html:141
 msgid "Choose one"
-msgstr ""
+msgstr "Válassz egyet"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:44
 #, python-format
 msgid "Edit %(label)s"
-msgstr ""
+msgstr "%(label)s szerkesztése"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:83
 msgid "Help text (optional)"
-msgstr ""
+msgstr "Súgószöveg (nem kötelező)"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:84
 msgid "Shown beneath the question on the registration page."
-msgstr ""
+msgstr "A regisztrációs oldalon a kérdés alatt jelenik meg."
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:91
 #: templates/backoffice/respondent_field_schema/_field_modal.html:97
 msgid "Type"
-msgstr ""
+msgstr "Típus"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:93
 msgid "This is a built-in question, so its type can't be changed."
-msgstr ""
+msgstr "Ez beépített kérdés, ezért a típusa nem módosítható."
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:106
 msgid ""
 "Its answer values mirror the target's values — change those on the 'Link "
 "targets to questions' step, or unlink the question there."
 msgstr ""
+"A válaszértékei a kiválasztási szempont értékeit tükrözik – azokat a "
+"„Kiválasztási szempontok és kérdések összekapcsolása” lépésben "
+"módosíthatod, vagy ott választhatod le a kérdést."
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:119
 #: templates/backoffice/respondent_field_schema/_field_modal.html:151
@@ -8134,11 +8267,11 @@ msgstr "súgószöveg (nem kötelező)"
 #: templates/backoffice/respondent_field_schema/_field_modal.html:120
 #, python-format
 msgid "Help text for %(value)s"
-msgstr ""
+msgstr "Súgószöveg ehhez: %(value)s"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:130
 msgid "Update the form for this type"
-msgstr ""
+msgstr "Űrlap frissítése ehhez a típushoz"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:144
 msgid "value"
@@ -8147,39 +8280,39 @@ msgstr "érték"
 #: templates/backoffice/respondent_field_schema/_field_modal.html:145
 #, python-format
 msgid "Option %(n)d value"
-msgstr ""
+msgstr "%(n)d. választható érték"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:152
 #, python-format
 msgid "Option %(n)d help text"
-msgstr ""
+msgstr "%(n)d. választható érték súgószövege"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:157
 #, python-format
 msgid "Remove option %(n)d"
-msgstr ""
+msgstr "%(n)d. választható érték eltávolítása"
 
 #: templates/backoffice/respondent_field_schema/_field_modal.html:160
 msgid "Add another option"
-msgstr ""
+msgstr "Újabb választható érték hozzáadása"
 
-#: templates/backoffice/respondent_field_schema/_field_modal.html:177
+#: templates/backoffice/respondent_field_schema/_field_modal.html:180
 msgid "Section"
 msgstr "Szakasz"
 
-#: templates/backoffice/respondent_field_schema/_field_modal.html:184
-msgid "Change the field key"
+#: templates/backoffice/respondent_field_schema/_field_modal.html:187
+msgid "Advanced"
 msgstr ""
 
-#: templates/backoffice/respondent_field_schema/_field_modal.html:187
-#: templates/backoffice/respondent_field_schema/_field_modal.html:195
+#: templates/backoffice/respondent_field_schema/_field_modal.html:191
+#: templates/backoffice/respondent_field_schema/_field_modal.html:196
 msgid "Field key"
 msgstr "Mezőkulcs"
 
-#: templates/backoffice/respondent_field_schema/_field_modal.html:188
+#: templates/backoffice/respondent_field_schema/_field_modal.html:192
 msgid ""
-"Left blank, it is generated from the label — lowercase letters, numbers "
-"and underscores."
+"Left blank, it is generated from the question — lowercase letters, "
+"numbers and underscores."
 msgstr ""
 
 #: templates/backoffice/respondent_field_schema/view.html:38
@@ -8203,6 +8336,10 @@ msgid ""
 "Initialise below to start from the built-in questions only (email, "
 "consent, eligibility, etc)."
 msgstr ""
+"Ehhez a közösségi gyűléshez még nincs séma beállítva. Tölts fel egy "
+"jelentkezőket tartalmazó CSV-fájlt, hogy a CSV fejléceiből automatikusan "
+"létrejöjjön, vagy kattints alább az Inicializálás gombra, hogy csak a "
+"beépített kérdésekből indulj (e-mail, hozzájárulás, jogosultság stb.)."
 
 #: templates/backoffice/respondent_field_schema/view.html:70
 msgid "Initialise empty schema"
@@ -8316,26 +8453,30 @@ msgid ""
 "No targets have been set up for this assembly yet. Add your targets first"
 " — each one then gets a row here to say where its data comes from."
 msgstr ""
+"Ehhez a közösségi gyűléshez még nincsenek kiválasztási szempontok "
+"beállítva. Előbb add meg a szempontokat – ezután mindegyik kap itt egy "
+"sort, amely megmondja, honnan származnak az adatai."
 
 #: templates/backoffice/target_sources/_checklist.html:16
 msgid "Go to Targets"
-msgstr ""
+msgstr "Ugrás a célszámokhoz"
 
 #: templates/backoffice/target_sources/_checklist.html:41
 #, python-format
 msgid "Asked on the registration page as '%(label)s'"
-msgstr ""
+msgstr "A regisztrációs oldalon feltett kérdés: \"%(label)s\""
 
 #: templates/backoffice/target_sources/_checklist.html:43
 #, python-format
 msgid "Computed from '%(source)s'"
-msgstr ""
+msgstr "Számítva ebből: \"%(source)s\""
 
 #: templates/backoffice/target_sources/_checklist.html:46
 #, python-format
 msgid "%(count)s lookup row"
 msgid_plural "%(count)s lookup rows"
-msgstr[0] ""
+msgstr[0] "%(count)s hozzárendelési sor"
+msgstr[1] "%(count)s hozzárendelési sor"
 
 #: templates/backoffice/target_sources/_checklist.html:49
 #, python-format
@@ -8343,41 +8484,47 @@ msgid ""
 "The existing question \"%(label)s\" shares this target's name but isn't "
 "linked to it yet."
 msgstr ""
+"A meglévő \"%(label)s\" kérdés neve megegyezik a kiválasztási "
+"szempontéval, de még nincs hozzákapcsolva."
 
 #: templates/backoffice/target_sources/_checklist.html:51
 msgid "Data comes from your imported respondents."
-msgstr ""
+msgstr "Az adatok az importált jelentkezőktől származnak."
 
 #: templates/backoffice/target_sources/_checklist.html:53
 msgid "No question linked yet."
-msgstr ""
+msgstr "Még nincs kérdés kapcsolva."
 
 #: templates/backoffice/target_sources/_checklist.html:58
 #, python-format
 msgid "Until the lookup table is uploaded, everyone's %(key)s is %(fallback)s."
 msgstr ""
+"Amíg a hozzárendelési tábla nincs feltöltve, mindenki %(key)s értéke "
+"%(fallback)s."
 
 #: templates/backoffice/target_sources/_checklist.html:63
 msgid ""
 "The target's values have changed since this question was set up — its "
 "answers no longer match."
 msgstr ""
+"A kiválasztási szempont értékei megváltoztak a kérdés beállítása óta – a "
+"válaszai már nem egyeznek."
 
 #: templates/backoffice/target_sources/_checklist.html:78
 msgid "Upload table"
-msgstr ""
+msgstr "Tábla feltöltése"
 
 #: templates/backoffice/target_sources/_checklist.html:87
 msgid "Re-sync from target"
-msgstr ""
+msgstr "Újraszinkronizálás a szempontból"
 
 #: templates/backoffice/target_sources/_checklist.html:122
 msgid "Re-upload table"
-msgstr ""
+msgstr "Tábla újbóli feltöltése"
 
 #: templates/backoffice/target_sources/_checklist.html:134
 msgid "Recompute"
-msgstr ""
+msgstr "Újraszámítás"
 
 #: templates/backoffice/target_sources/_checklist.html:142
 #, python-format
@@ -8386,6 +8533,9 @@ msgid ""
 " of %(count)s rows are deleted — you would have to upload the table "
 "again. The question it is computed from stays."
 msgstr ""
+"Számított kérdés törlése: \"%(name)s\"? A válaszai és a %(count)s soros "
+"hozzárendelési táblája törlődik – a táblát újra fel kellene töltened. A "
+"kérdés, amelyből számítva van, megmarad."
 
 #: templates/backoffice/target_sources/_checklist.html:144
 #, python-format
@@ -8394,6 +8544,9 @@ msgid ""
 "question it is computed from stays, so you can set this target up again "
 "from it."
 msgstr ""
+"Számított kérdés törlése: \"%(name)s\"? A válaszai törlődnek. A kérdés, "
+"amelyből számítva van, megmarad, így ebből a kiválasztási szempontot újra"
+" beállíthatod."
 
 #: templates/backoffice/target_sources/_checklist.html:147
 msgid ""
@@ -8401,10 +8554,13 @@ msgid ""
 "registration page, but edits to it will no longer be checked against the "
 "target."
 msgstr ""
+"Leválasztod ezt a kérdést a kiválasztási szempontjáról? A kérdés a "
+"regisztrációs oldalon marad, de a módosításai többé nem lesznek "
+"egyeztetve a szemponttal."
 
 #: templates/backoffice/target_sources/_checklist.html:161
 msgid "Delete computed question"
-msgstr ""
+msgstr "Számított kérdés törlése"
 
 #: templates/backoffice/target_sources/_checklist.html:161
 #: templates/profile/view.html:95 templates/profile/view.html:146
@@ -8413,60 +8569,60 @@ msgstr "Leválasztás"
 
 #: templates/backoffice/target_sources/_checklist.html:174
 msgid "Link it"
-msgstr ""
+msgstr "Összekapcsolás"
 
 #: templates/backoffice/target_sources/_checklist.html:176
 msgid "Set up differently"
-msgstr ""
+msgstr "Beállítás másképp"
 
 #: templates/backoffice/target_sources/_checklist.html:179
 #: templates/backoffice/target_sources/_checklist.html:182
 msgid "Set up"
-msgstr ""
+msgstr "Beállítás"
 
 #: templates/backoffice/target_sources/_setup_modal.html:30
 #, python-format
 msgid "Edit the question for %(name)s"
-msgstr ""
+msgstr "%(name)s kérdésének szerkesztése"
 
 #: templates/backoffice/target_sources/_setup_modal.html:30
 #, python-format
 msgid "Set up the question for %(name)s"
-msgstr ""
+msgstr "%(name)s kérdésének beállítása"
 
 #: templates/backoffice/target_sources/_setup_modal.html:65
 msgid "How is the data collected?"
-msgstr ""
+msgstr "Hogyan gyűlnek az adatok?"
 
 #: templates/backoffice/target_sources/_setup_modal.html:75
 msgid "Target values:"
-msgstr ""
+msgstr "Célértékek:"
 
 #: templates/backoffice/target_sources/_setup_modal.html:83
 msgid "New question name"
-msgstr ""
+msgstr "Új kérdés neve"
 
 #: templates/backoffice/target_sources/_setup_modal.html:89
 msgid "Label on the registration page (optional)"
-msgstr ""
+msgstr "Címke a regisztrációs oldalon (nem kötelező)"
 
 #: templates/backoffice/target_sources/_setup_modal.html:98
 msgid "What is asked for?"
-msgstr ""
+msgstr "Mit kér be a kérdés?"
 
 #: templates/backoffice/target_sources/_setup_modal.html:100
 msgid "Date of birth"
-msgstr ""
+msgstr "Születési dátum"
 
 #: templates/backoffice/target_sources/_setup_modal.html:101
 msgid "Year of birth"
-msgstr ""
+msgstr "Születési év"
 
 #: templates/backoffice/target_sources/_setup_modal.html:115
 #: templates/backoffice/target_sources/_setup_modal.html:163
 #, python-format
 msgid "This will add '%(name)s' to your registration page."
-msgstr ""
+msgstr "Ez hozzáadja a regisztrációs oldaladhoz: \"%(name)s\"."
 
 #: templates/backoffice/target_sources/_setup_modal.html:122
 #, python-format
@@ -8474,26 +8630,28 @@ msgid ""
 "A new question named '%(name)s' will be created — you can edit parts of "
 "it in the registration questions step."
 msgstr ""
+"Új kérdés jön létre \"%(name)s\" néven – egyes részeit a regisztrációs "
+"kérdések lépésben szerkesztheted."
 
 #: templates/backoffice/target_sources/_setup_modal.html:128
 msgid "Which question collects the data?"
-msgstr ""
+msgstr "Melyik kérdés gyűjti az adatokat?"
 
 #: templates/backoffice/target_sources/_setup_modal.html:130
 msgid "Which question collects the source value?"
-msgstr ""
+msgstr "Melyik kérdés gyűjti a bemeneti értéket?"
 
 #: templates/backoffice/target_sources/_setup_modal.html:134
 msgid "Use an existing question"
-msgstr ""
+msgstr "Meglévő kérdés használata"
 
 #: templates/backoffice/target_sources/_setup_modal.html:134
 msgid "Create a new question"
-msgstr ""
+msgstr "Új kérdés létrehozása"
 
 #: templates/backoffice/target_sources/_setup_modal.html:148
 msgid "Existing question"
-msgstr ""
+msgstr "Meglévő kérdés"
 
 #: templates/backoffice/target_sources/_setup_modal.html:156
 #, python-format
@@ -8501,6 +8659,8 @@ msgid ""
 "This will add '%(name)s' to your registration page, with the target's "
 "values as the answers."
 msgstr ""
+"Ez hozzáadja a regisztrációs oldaladhoz: \"%(name)s\", a kiválasztási "
+"szempont értékeivel mint válaszokkal."
 
 #: templates/backoffice/target_sources/_setup_modal.html:170
 msgid ""
@@ -8508,103 +8668,111 @@ msgid ""
 "one bracket up from their true age. Year of birth is still the "
 "recommended, data-minimising source."
 msgstr ""
+"A születési éven alapuló források január 1-jei születésnapot "
+"feltételeznek, így egyesek egy korcsoporttal feljebb kerülnek a valós "
+"életkoruknál. Ennek ellenére a születési év az ajánlott, adattakarékos "
+"forrás."
 
 #: templates/backoffice/target_sources/_setup_modal.html:177
 msgid ""
 "Usually the first assembly date. Ages are worked out on this one date, so"
 " they don't change while registration is open."
 msgstr ""
+"Általában a közösségi gyűlés első napja. Az életkorok erre az egy dátumra"
+" számítódnak, így nem változnak, amíg a regisztráció nyitva van."
 
 #: templates/backoffice/target_sources/_setup_modal.html:191
 msgid "Each target value is matched to these ages:"
-msgstr ""
+msgstr "Az egyes célértékekhez ezek az életkorok tartoznak:"
 
 #: templates/backoffice/target_sources/_setup_modal.html:192
 msgid "Edit the age ranges"
-msgstr ""
+msgstr "Korcsoportok szerkesztése"
 
 #: templates/backoffice/target_sources/_setup_modal.html:213
 msgid "Target value"
-msgstr ""
+msgstr "Célérték"
 
 #: templates/backoffice/target_sources/_setup_modal.html:214
 msgid "From age"
-msgstr ""
+msgstr "Kezdő életkor"
 
 #: templates/backoffice/target_sources/_setup_modal.html:215
 msgid "Ages"
-msgstr ""
+msgstr "Életkorok"
 
 #: templates/backoffice/target_sources/_setup_modal.html:228
 #, python-format
 msgid "Age where %(value)s starts"
-msgstr ""
+msgstr "%(value)s kezdő életkora"
 
 #: templates/backoffice/target_sources/_setup_modal.html:250
 #, python-format
 msgid "Respondent age calculated on %(date)s"
-msgstr ""
+msgstr "A jelentkezők életkora erre a dátumra számítva: %(date)s"
 
 #: templates/backoffice/target_sources/_setup_modal.html:252
 msgid "Change"
-msgstr ""
+msgstr "Módosítás"
 
 #: templates/backoffice/target_sources/_setup_modal.html:252
 msgid "Change the date respondent age is calculated on"
-msgstr ""
+msgstr "A jelentkezők életkorát meghatározó dátum módosítása"
 
 #: templates/backoffice/target_sources/_setup_modal.html:259
 msgid "Respondent age calculated on"
-msgstr ""
+msgstr "A jelentkezők életkorának számítási dátuma"
 
 #: templates/backoffice/target_sources/_setup_modal.html:280
 #, python-format
 msgid "(fall back to %(fallback)s)"
-msgstr ""
+msgstr "(tartalék: %(fallback)s)"
 
 #: templates/backoffice/target_sources/_setup_modal.html:288
 msgid "Answers, and the target value each one counts as"
-msgstr ""
+msgstr "Válaszok, és hogy melyik célértéknek számítanak"
 
 #: templates/backoffice/target_sources/_setup_modal.html:290
 msgid "Map each answer to a target value"
-msgstr ""
+msgstr "Minden válasz hozzárendelése egy célértékhez"
 
 #: templates/backoffice/target_sources/_setup_modal.html:296
 msgid "Answer"
-msgstr ""
+msgstr "Válasz"
 
 #: templates/backoffice/target_sources/_setup_modal.html:297
 msgid "Counts as"
-msgstr ""
+msgstr "Ennek számít"
 
 #: templates/backoffice/target_sources/_setup_modal.html:308
 #, python-format
 msgid "Answer %(n)d"
-msgstr ""
+msgstr "%(n)d. válasz"
 
 #: templates/backoffice/target_sources/_setup_modal.html:320
 #, python-format
 msgid "Target value for answer %(n)d"
-msgstr ""
+msgstr "%(n)d. válasz célértéke"
 
 #: templates/backoffice/target_sources/_setup_modal.html:320
 #, python-format
 msgid "Target value for %(value)s"
-msgstr ""
+msgstr "%(value)s célértéke"
 
 #: templates/backoffice/target_sources/_setup_modal.html:326
 #, python-format
 msgid "Remove answer %(n)d"
-msgstr ""
+msgstr "%(n)d. válasz eltávolítása"
 
 #: templates/backoffice/target_sources/_setup_modal.html:334
 msgid "Add another answer"
-msgstr ""
+msgstr "Újabb válasz hozzáadása"
 
 #: templates/backoffice/target_sources/_setup_modal.html:337
 msgid "Answers left as 'fall back' don't count towards any target value."
 msgstr ""
+"A „tartalék” értéken hagyott válaszok egyik célértékbe sem számítanak "
+"bele."
 
 #: templates/backoffice/target_sources/_setup_modal.html:345
 #, python-format
@@ -8612,6 +8780,8 @@ msgid ""
 "Saving keeps the existing lookup table of %(count)s rows — replace it "
 "from this target's row if it needs to change."
 msgstr ""
+"A mentés megtartja a meglévő, %(count)s soros hozzárendelési táblát – ha "
+"módosítani kell, cseréld le a szempont sorából."
 
 #: templates/backoffice/target_sources/_setup_modal.html:347
 #, python-format
@@ -8620,19 +8790,24 @@ msgid ""
 "with a target value. Answers with no table entry fall back to "
 "%(fallback)s."
 msgstr ""
+"Mentés után töltöd fel a hozzárendelési táblát: egy CSV-t, amely minden "
+"válaszhoz egy célértéket rendel. A táblában nem szereplő válaszok "
+"%(fallback)s értéket kapnak."
 
 #: templates/backoffice/target_sources/_upload_modal.html:25
 msgid "Step 2 of 2"
-msgstr ""
+msgstr "2/2. lépés"
 
 #: templates/backoffice/target_sources/_upload_modal.html:27
 #, python-format
 msgid "Upload lookup table for %(label)s"
-msgstr ""
+msgstr "Hozzárendelési tábla feltöltése ehhez: %(label)s"
 
 #: templates/backoffice/target_sources/_upload_modal.html:46
 msgid "The question is linked. Now upload the lookup table it reads from."
 msgstr ""
+"A kérdés összekapcsolva. Most töltsd fel a hozzárendelési táblát, "
+"amelyből olvas."
 
 #: templates/backoffice/target_sources/_upload_modal.html:49
 #, python-format
@@ -8641,14 +8816,19 @@ msgid ""
 " Uploading replaces the whole table. The file itself is not stored — only"
 " the rows."
 msgstr ""
+"Kétoszlopos CSV: először %(source)s értéke, majd %(derived)s értéke. A "
+"feltöltés a teljes táblát lecseréli. Maga a fájl nem kerül tárolásra – "
+"csak a sorok."
 
 #: templates/backoffice/target_sources/_upload_modal.html:53
 msgid "Mapping CSV"
-msgstr ""
+msgstr "Hozzárendelési CSV"
 
 #: templates/backoffice/target_sources/_upload_modal.html:60
 msgid "Allow new output values (they are added to the question's options)"
 msgstr ""
+"Új kimeneti értékek engedélyezése (a kérdés választható értékeihez "
+"adódnak)"
 
 #: templates/backoffice/target_sources/_upload_modal.html:68
 #, python-format
@@ -8657,14 +8837,17 @@ msgid ""
 "uploaded, everyone's answers fall back to %(fallback)s and the targets "
 "can't be met."
 msgstr ""
+"Még nincs meg a hozzárendelési tábla, később töltöm fel. Amíg nincs "
+"feltöltve, minden válasz %(fallback)s értéket kap, és a célszámok nem "
+"teljesíthetők."
 
 #: templates/backoffice/target_sources/_upload_modal.html:81
 msgid "Upload later"
-msgstr ""
+msgstr "Feltöltés később"
 
 #: templates/backoffice/target_sources/view.html:43
 msgid "Which question answers each target?"
-msgstr ""
+msgstr "Melyik kérdés adja meg az egyes kiválasztási szempontok adatait?"
 
 #: templates/backoffice/target_sources/view.html:45
 msgid ""
@@ -8673,6 +8856,11 @@ msgid ""
 "page, or computed from something simpler to ask — a date of birth, a "
 "postcode, or a more detailed question."
 msgstr ""
+"A kiválasztáshoz minden kiválasztási szemponthoz egy adatoszlop "
+"szükséges. Az alábbi szempontok mindegyikénél válaszd ki, hogyan gyűlnek "
+"az adatok: közvetlenül a regisztrációs oldalon feltéve, vagy valami "
+"egyszerűbben bekérhetőből számítva – születési dátumból, irányítószámból "
+"vagy egy részletesebb kérdésből."
 
 #: templates/backoffice/targets/add_target_modal.html:20
 msgid ""
@@ -8765,7 +8953,7 @@ msgstr "\"%(name)s\" és az összes értéke törlődik, amikor mentesz."
 
 #: templates/backoffice/targets/bulk_edit_form.html:220
 msgid "Source of population figures"
-msgstr ""
+msgstr "Népességi adatok forrása"
 
 #: templates/backoffice/targets/bulk_edit_form.html:221
 #: templates/backoffice/targets/category_block.html:60
@@ -8773,6 +8961,8 @@ msgid ""
 "A link to the report the percentages come from, such as census tables or "
 "a poll."
 msgstr ""
+"Link ahhoz a jelentéshez, amelyből a százalékos arányok származnak, "
+"például népszámlálási táblák vagy közvélemény-kutatás."
 
 #: templates/backoffice/targets/bulk_edit_form.html:231
 msgid "Move this target down"
@@ -8843,7 +9033,7 @@ msgstr "Automatikusan számolva"
 
 #: templates/backoffice/targets/category_block.html:59
 msgid "Source of population figures:"
-msgstr ""
+msgstr "Népességi adatok forrása:"
 
 #: templates/backoffice/targets/category_block.html:95
 #: templates/backoffice/targets/category_block.html:186
@@ -8928,14 +9118,17 @@ msgstr "Kijelölt kiválasztási szempontok hozzáadása"
 msgid "and %(num)s other"
 msgid_plural "and %(num)s others"
 msgstr[0] "és még %(num)s"
+msgstr[1] "és még %(num)s"
 
 #: templates/components/signup_survey_fields.html:5
 msgid "Tell us a little about yourself"
-msgstr ""
+msgstr "Mesélj egy kicsit magadról"
 
 #: templates/components/signup_survey_fields.html:6
 msgid "These questions are optional, but your answers help us help you."
 msgstr ""
+"Ezek a kérdések nem kötelezőek, de a válaszaid segítenek, hogy jobban "
+"segíthessünk neked."
 
 #: templates/db_selection/replace.html:2
 msgid "Replacements (DB)"
@@ -10410,19 +10603,22 @@ msgstr "%(username)s felhasználónévvel már létezik felhasználó"
 #, python-format
 msgid "%(num)s row"
 msgid_plural "%(num)s rows"
-msgstr[0] ""
+msgstr[0] "%(num)s sor"
+msgstr[1] "%(num)s sor"
 
 #: tests/unit/test_translations.py:51
 #, python-format
 msgid "%(count)s row in %(name)s"
 msgid_plural "%(count)s rows in %(name)s"
-msgstr[0] ""
+msgstr[0] "%(name)s: %(count)s sor"
+msgstr[1] "%(name)s: %(count)s sor"
 
 #: tests/unit/test_translations.py:61
 #, python-format
 msgid "%(count)s row"
 msgid_plural "%(count)s rows"
-msgstr[0] ""
+msgstr[0] "%(count)s sor"
+msgstr[1] "%(count)s sor"
 
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:33
 #, python-format

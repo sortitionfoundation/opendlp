@@ -231,9 +231,15 @@ A third construct is worse, because it produces no msgid at all:
 After adding or changing translatable strings, regenerate and check:
 
 ```bash
-just translate-regen   # extract + update every catalogue
-just translate-check   # msgfmt --check and pybabel compile; also run by `just check`
+just translate-regen         # extract + update every catalogue
+just translate-check         # msgfmt --check and pybabel compile; also run by `just check`
+just translate-accept-fuzzy  # clear every fuzzy flag once a reviewer has been through them
 ```
+
+Never rewrite a catalogue with `msgattrib` or `msgcat` by hand: they wrap lines
+differently from pybabel, and the whole file rewraps. A pre-commit hook
+normalises staged catalogues to pybabel's wrapping - see
+[docs/translations.md](docs/translations.md#one-wrapping-for-the-catalogues).
 
 `translate-check` is not optional politeness. `pybabel compile` accepts a
 catalogue with duplicate msgids without a murmur and emits a `.mo` missing
@@ -349,6 +355,7 @@ Before doing any of those, read [docs/personal-data.md](docs/personal-data.md) -
 - [Background Tasks](docs/background_tasks.md) - Task system architecture and monitoring
 - [Monitoring](docs/monitoring.md) - Health endpoints and end-to-end monitor selection feature
 - [Respondent Field Spec](docs/respondent_field_spec.md) - Hidden JSON endpoint describing an assembly's respondent columns and their valid values
+- [Targets and Registration Questions](docs/targets-and-registration-questions.md) - How targets get their data from registration questions, and the invariants that keep selection pairing them
 - [Docker Setup](docs/docker.md) - Docker Compose configurations and deployment
 - [Deployment Guide](docs/deploy.md) - Production deployment and reverse proxy setup
 - [Language](docs/language.md) - The words the interface uses for things, and the conventions for writing its English text

@@ -17,10 +17,10 @@ from opendlp.domain.targets import percentage_of
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import (
     COUNTED_RESPONDENT_STATUSES,
-    HEADLINE_RESPONDENT_STATUSES,
     SELECTED_RESPONDENT_STATUSES,
     GSheetExportKind,
     RespondentStatus,
+    headline_registration_count,
 )
 from opendlp.service_layer.exceptions import AssemblyNotFoundError
 from opendlp.service_layer.export_gsheet_config import save_export_gsheet_config
@@ -182,7 +182,7 @@ def get_assembly_dashboard_summary(
         assembly_title=context.assembly.title,
         number_to_select=context.assembly.number_to_select,
         target_category_count=len(context.categories),
-        total_respondents=sum(counts.get(status, 0) for status in HEADLINE_RESPONDENT_STATUSES),
+        total_respondents=headline_registration_count(counts),
         status_counts=[StatusCount(status=status.value, count=counts.get(status, 0)) for status in RespondentStatus],
     )
 

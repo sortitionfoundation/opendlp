@@ -119,6 +119,7 @@ LEAKY_ENV_PREFIXES = (
     "SIGNUP_RATE_LIMIT_",
     "SITE_BANNER_",
     "SMTP_",
+    "TURNSTILE_",
 )
 LEAKY_ENV_KEYS = (
     "ALLOW_RESET_DB",
@@ -411,6 +412,7 @@ def _delete_all_test_data(session_factory):
         session.execute(orm.assembly_csv.delete())
         session.execute(orm.selection_settings.delete())
         session.execute(orm.user_invites.delete())
+        session.execute(orm.user_signup_surveys.delete())
         session.execute(orm.user_assembly_roles.delete())
         # Parent tables (referenced by child tables above)
         session.execute(orm.assemblies.delete())
