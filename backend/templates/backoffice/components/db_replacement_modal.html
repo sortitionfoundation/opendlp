@@ -1,0 +1,226 @@
+{# ABOUTME: Review dialog for a replacement selection over the database #}
+{# ABOUTME: Shows the calculated replacement targets, lets the organiser edit them, and starts the run #}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/modal.html" import modal, modal_footer_start, modal_footer_end %}
+{% from "backoffice/components/alert.html" import alert %}
+{% from "backoffice/components/input.html" import input %}
+{% from "backoffice/components/table.html" import table, table_head, table_body, table_row, table_cell, table_cell_custom %}
+{% set close_url = url_for('gsheets.view_assembly_selection', assembly_id=assembly.id) %}
+{% set plan = replacement_plan %}
+{% set form = replacement_form|default({}) %}
+{% set validation = replacement_validation|default(none) %}
+{% set value_errors = validation.value_errors if validation else {} %}
+{% set feasibility = validation.feasibility if validation and validation.feasibility and validation.feasibility.checked else none %}
+{% set number_value = form.get('number_to_select', plan.default_number) %}
+{# Modal state comes from the registered modal() Alpine component: closing
+   navigates back to the selection view, which clears the ?replacement_modal=open
+   that opens this dialog. #}
+<div x-data="modal({ initialOpen: true, closeUrl: '{{ close_url }}' })">
+    {% call modal(id="db-replacement-modal", title=_("Replacement Selection"), classes="max-w-4xl") %}
+        {% if plan.nothing_to_fill %}
+            <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                {{ ngettext("%(num)s person is selected or confirmed.", "%(num)s people are selected or confirmed.", plan.held_total) }}
+                {{ ngettext("The assembly needs %(total)s, so %(strong_open)s%(num)s place is to be filled%(strong_close)s.", "The assembly needs %(total)s, so %(strong_open)s%(num)s places are to be filled%(strong_close)s.", plan.calculated_number, total=plan.number_to_select, strong_open="", strong_close="") }}
+            </p>
+            {{ alert(_("Every place is filled. Replacements are only needed once someone selected or confirmed has withdrawn."), variant="info") }}
+        {% else %}
+            {% set number_editing = (number_value|string != plan.default_number|string) or not plan.number_in_range %}
+            <div x-data="replacementSuggestions"
+                 @input="refresh()"
+                 data-number-editing="{{ 'true' if number_editing else 'false' }}">
+                <p class="text-body-md mb-4" style="color: var(--color-body-text);">
+                    {{ ngettext("%(num)s person is selected or confirmed.", "%(num)s people are selected or confirmed.", plan.held_total) }}
+                    {{ ngettext("The assembly needs %(total)s, so %(strong_open)s%(num)s place is to be filled%(strong_close)s.", "The assembly needs %(total)s, so %(strong_open)s%(num)s places are to be filled%(strong_close)s.", plan.calculated_number, total=plan.number_to_select, strong_open='<strong>'|safe, strong_close='</strong>'|safe) }}
+                    <button type="button"
+                            class="text-label-md hover:underline ml-1"
+                            style="color: var(--color-primary-action)"
+                            x-show="!numberEditing"
+                            @click="editNumber()"
+                            aria-controls="number_to_select-section"
+                            :aria-expanded="numberEditing">{{ _("Change the number of replacements") }}</button>
+                </p>
+                {% if validation and validation.errors %}
+                    {% call alert(variant="error", use_caller=true) %}
+                        <ul class="list-disc pl-5">
+                            {% for message in validation.errors %}<li>{{ message }}</li>{% endfor %}
+                        </ul>
+                    {% endcall %}
+                {% endif %}
+                {% if feasibility and not feasibility.feasible and not feasibility.suggestions %}
+                    {{ alert(feasibility.message, variant="error", id="feasibility-message") }}
+                {% elif feasibility and feasibility.feasible %}
+                    {{ alert(_("These targets can be met from the pool."), variant="success", id="feasibility-ok") }}
+                {% endif %}
+                {% if plan.targets_conflict %}
+                    {{ alert(_("The calculated replacement targets cannot all be met at once: one target needs at least %(min)s replacements while another allows at most %(max)s. Edit the targets below until the two agree.", min=plan.min_select, max=plan.max_select), variant="error") }}
+                {% elif not plan.number_in_range %}
+                    {{ alert(ngettext("%(num)s place is to be filled, but the replacement targets only allow between %(min)s and %(max)s. Edit the targets below so that %(num)s is within the range, or the assembly will not be the size it needs.", "%(num)s places are to be filled, but the replacement targets only allow between %(min)s and %(max)s. Edit the targets below so that %(num)s is within the range, or the assembly will not be the size it needs.", plan.calculated_number, min=plan.min_select, max=plan.max_select), variant="warning") }}
+                {% endif %}
+                <form method="post"
+                      action="{{ url_for('db_selection_backoffice.start_db_replacement', assembly_id=assembly.id) }}"
+                      id="db-replacement-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-6" id="number_to_select-section" x-show="numberEditing" x-cloak>
+                        {{ input("number_to_select", label=_("Number of replacements to select"), type="number", value=number_value, hint=_("The replacement targets allow between %(min)s and %(max)s", min=plan.min_select, max=plan.max_select), required=true, classes="md:w-1/3", attrs='min="1"') }}
+                    </div>
+                    <h3 class="text-heading-md mb-1" style="color: var(--color-headings);">{{ _("Replacement targets") }}</h3>
+                    <p class="text-body-sm mb-4" style="color: var(--color-secondary-text);">
+                        {{ _("The places still to fill are calculated from the targets and who already holds a place. Edit the minimum and maximum if you need to. Targets with a value the pool cannot fill are shown open.") }}
+                    </p>
+                    {% if feasibility and feasibility.suggestions %}
+                        <div class="rounded-lg p-3 mb-4 text-body-sm"
+                             id="feasibility-suggestions"
+                             role="region"
+                             aria-label="{{ _("Suggested changes") }}"
+                             style="background-color: var(--color-error-background);
+                                    border: 1px solid var(--color-error-text);
+                                    color: var(--color-body-text);">
+                            <div data-suggestions-list="true">
+                                <p class="mb-2">{{ _("The targets cannot all be met from the pool at once. The algorithm suggests these changes:") }}</p>
+                                <ul class="list-disc pl-5 mb-2">
+                                    {% for suggestion in feasibility.suggestions %}
+                                        <li class="mb-1"
+                                            data-suggestion-for="{{ suggestion.input_id }}"
+                                            data-suggestion-value="{{ suggestion.suggested }}">
+                                            {% if suggestion.field == "min" %}
+                                                {{ _("%(target)s: %(value)s, minimum %(current)s to %(suggested)s", target=suggestion.category, value=suggestion.value, current=suggestion.current, suggested=suggestion.suggested) }}
+                                            {% else %}
+                                                {{ _("%(target)s: %(value)s, maximum %(current)s to %(suggested)s", target=suggestion.category, value=suggestion.value, current=suggestion.current, suggested=suggestion.suggested) }}
+                                            {% endif %}
+                                            {{ button(_("Accept"), variant="tertiary", classes="ml-2", attrs='@click="accept($el)" data-suggestion-for="' ~ suggestion.input_id ~ '" data-suggestion-value="' ~ suggestion.suggested ~ '"') }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                {{ button(_("Accept all"), variant="secondary", attrs='@click="acceptAll()"') }}
+                            </div>
+                            <div role="status">
+                                <p data-suggestions-accepted="true" tabindex="-1" hidden>
+                                    {{ _("Every suggestion has been applied. Recheck feasibility to confirm, or run the selection.") }}
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% for category in plan.categories %}
+                        {% set category_has_errors = [] %}
+                        {% for row in category.rows %}
+                            {% if row.value_id in value_errors and category_has_errors.append(1) %}{% endif %}
+                            {% if feasibility and feasibility.suggestions_for(row.value_id) and category_has_errors.append(1) %}{% endif %}
+                        {% endfor %}
+                        <details class="mb-4 rounded-lg"
+                                 style="border: 1px solid var(--color-borders-dividers);"
+                                 {% if category.has_problem or category_has_errors %}open{% endif %}>
+                            <summary class="cursor-pointer px-4 py-3 text-label-lg"
+                                     style="color: var(--color-headings);">
+                                {{ category.name }}
+                                {% if not category.attribute_matched %}
+                                    <span class="text-body-sm ml-2"
+                                          style="color: var(--color-warning-text);">{{ _("no matching respondent field, so nobody counts as currently selected") }}</span>
+                                {% elif category.has_problem %}
+                                    <span class="text-body-sm ml-2"
+                                          style="color: var(--color-error-text);">{{ _("a value cannot be filled from the pool") }}</span>
+                                {% else %}
+                                    <span class="text-body-sm ml-2"
+                                          style="color: var(--color-secondary-text);">{{ _("every value can be filled") }}</span>
+                                {% endif %}
+                            </summary>
+                            <div class="px-4 pb-4">
+                                {% call table() %}
+                                    {{ table_head([
+                                    {"label": _("Value")},
+                                    {"label": _("Target"), "align": "right"},
+                                    {"label": _("Currently selected"), "align": "right"},
+                                    {"label": _("Still needed (min)"), "align": "right"},
+                                    {"label": _("Still needed (max)"), "align": "right"},
+                                    {"label": _("In pool"), "align": "right"},
+                                    {"label": '<span class="sr-only">'|safe ~ _("Notes") ~ '</span>'|safe},
+                                    ]) }}
+                                    {% call table_body() %}
+                                        {% for row in category.rows %}
+                                            {% set row_errors = value_errors.get(row.value_id, []) %}
+                                            {% set row_suggestions = feasibility.suggestions_for(row.value_id) if feasibility else [] %}
+                                            {% set row_colour = 'var(--color-error-text)' if row.is_short or row_errors else ('var(--color-warning-text)' if row.is_tight or row.over_held else 'var(--color-body-text)') %}
+                                            {% call table_row() %}
+                                                {{ table_cell(row.value) }}
+                                                {{ table_cell(row.overall_min ~ "–" ~ row.overall_max, align="right") }}
+                                                {{ table_cell(row.held, align="right") }}
+                                                {% call table_cell_custom(align="right") %}
+                                                    <label class="sr-only" for="{{ row.min_field }}">{{ _("Minimum still needed for %(target)s: %(value)s", target=category.name, value=row.value) }}</label>
+                                                    <input class="px-2 py-1 rounded-lg w-20 text-right"
+                                                           style="border: 1px solid {{ 'var(--color-error-text)' if row_errors else 'var(--color-borders-dividers)' }};
+                                                                  background-color: var(--color-page-background);
+                                                                  color: var(--color-body-text)"
+                                                           id="{{ row.min_field }}"
+                                                           name="{{ row.min_field }}"
+                                                           type="number"
+                                                           min="0"
+                                                           value="{{ form.get(row.min_field, row.calculated.min) }}"
+                                                           {% if row_errors %}aria-invalid="true" aria-describedby="{{ row.min_field }}-error"{% endif %}
+                                                           required>
+                                                {% endcall %}
+                                                {% call table_cell_custom(align="right") %}
+                                                    <label class="sr-only" for="{{ row.max_field }}">{{ _("Maximum still needed for %(target)s: %(value)s", target=category.name, value=row.value) }}</label>
+                                                    <input class="px-2 py-1 rounded-lg w-20 text-right"
+                                                           style="border: 1px solid {{ 'var(--color-error-text)' if row_errors else 'var(--color-borders-dividers)' }};
+                                                                  background-color: var(--color-page-background);
+                                                                  color: var(--color-body-text)"
+                                                           id="{{ row.max_field }}"
+                                                           name="{{ row.max_field }}"
+                                                           type="number"
+                                                           min="0"
+                                                           value="{{ form.get(row.max_field, row.calculated.max) }}"
+                                                           {% if row_errors %}aria-invalid="true" aria-describedby="{{ row.min_field }}-error"{% endif %}
+                                                           required>
+                                                {% endcall %}
+                                                {% call table_cell_custom(align="right") %}
+                                                    <span style="color: {{ row_colour }}">{{ row.available }}</span>
+                                                {% endcall %}
+                                                {% call table_cell_custom(nowrap=false) %}
+                                                    <span style="color: {{ row_colour }}">
+                                                        {% if row_errors %}
+                                                            <span id="{{ row.min_field }}-error">
+                                                                {% for message in row_errors %}{{ message }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+                                                            </span>
+                                                        {% elif row.is_short %}
+                                                            {{ _("short by %(count)s", count=row.shortfall) }}
+                                                        {% elif row.over_held %}
+                                                            {{ _("more places held than the target allows") }}
+                                                        {% elif row.is_tight %}
+                                                            {{ _("no spare people in the pool") if row.spare == 0 else _("%(count)s spare in the pool", count=row.spare) }}
+                                                        {% endif %}
+                                                    </span>
+                                                    {% for suggestion in row_suggestions %}
+                                                        {% if not loop.first or row_errors or row.is_short or row.over_held or row.is_tight %}<br>{% endif %}
+                                                        <span style="color: var(--color-info-600);"
+                                                              data-suggestion-for="{{ suggestion.input_id }}"
+                                                              data-suggestion-value="{{ suggestion.suggested }}">
+                                                            {% if suggestion.field == "min" %}
+                                                                {{ _("Suggested minimum: %(value)s (currently %(current)s)", value=suggestion.suggested, current=suggestion.current) }}
+                                                            {% else %}
+                                                                {{ _("Suggested maximum: %(value)s (currently %(current)s)", value=suggestion.suggested, current=suggestion.current) }}
+                                                            {% endif %}
+                                                            {{ button(_("Accept"), variant="tertiary", classes="ml-2", attrs='@click="accept($el)" data-suggestion-for="' ~ suggestion.input_id ~ '" data-suggestion-value="' ~ suggestion.suggested ~ '"') }}
+                                                        </span>
+                                                    {% endfor %}
+                                                {% endcall %}
+                                            {% endcall %}
+                                        {% endfor %}
+                                    {% endcall %}
+                                {% endcall %}
+                            </div>
+                        </details>
+                    {% endfor %}
+                </form>
+            </div>
+        {% endif %}
+        {# Footer with action buttons #}
+        {{ modal_footer_start() }}
+        {% if plan.nothing_to_fill %}
+            {{ button(_("Close"), href=close_url, variant="primary") }}
+        {% else %}
+            {{ button(_("Cancel"), href=close_url, variant="outline") }}
+            {{ button(_("Recheck feasibility"), type="submit", variant="secondary", attrs='form="db-replacement-form" name="action" value="recheck"') }}
+            {{ button(_("Run Replacement Selection"), type="submit", variant="primary", attrs='form="db-replacement-form" name="action" value="run"') }}
+        {% endif %}
+        {{ modal_footer_end() }}
+    {% endcall %}
+</div>

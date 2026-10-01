@@ -279,7 +279,7 @@ class TestCeleryTasksInstantiateReporter:
             patch.object(tasks, "_internal_write_db_results") as mock_write,
         ):
             mock_reporter_cls.return_value = MagicMock(name="reporter_instance")
-            mock_load.return_value = (True, MagicMock(), MagicMock(), RunReport())
+            mock_load.return_value = (True, MagicMock(), MagicMock(), MagicMock(), RunReport())
             mock_select.return_value = (True, [frozenset({"id1"})], RunReport())
             mock_write.return_value = RunReport()
 

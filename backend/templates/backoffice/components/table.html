@@ -71,7 +71,8 @@ Usage:
     <tr>
       {% for col in columns %}
         {% set align = col.align | default("left") %}
-        <th class="px-5 py-3 text-body-sm font-semibold text-{{ align }} {{ col.classes | default('') }}"
+        <th scope="col"
+            class="px-5 py-3 text-body-sm font-semibold text-{{ align }} {{ col.classes | default('') }}"
             style="color: var(--color-headings); border-bottom: 1px solid var(--color-borders-dividers);">
           {{ col.label }}
         </th>

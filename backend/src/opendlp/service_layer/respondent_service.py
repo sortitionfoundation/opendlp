@@ -11,6 +11,7 @@ from opendlp.domain.respondents import Respondent, normalise_field_name, pop_nor
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import (
     ALLOWED_SELECTION_STATUS_TRANSITIONS,
+    SELECTED_RESPONDENT_STATUSES,
     RespondentAction,
     RespondentSourceType,
     RespondentStatus,
@@ -412,6 +413,15 @@ def count_non_pool_respondents(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) 
     The caller is expected to manage the `uow` context (`with uow: ...`).
     """
     return uow.respondents.count_non_pool(assembly_id)
+
+
+def count_held_respondents(uow: AbstractUnitOfWork, assembly_id: uuid.UUID) -> int:
+    """Count respondents for an assembly who currently hold a place: selected or confirmed.
+
+    The caller is expected to manage the `uow` context (`with uow: ...`).
+    """
+    status_counts = uow.respondents.count_by_status(assembly_id)
+    return sum(status_counts.get(status, 0) for status in SELECTED_RESPONDENT_STATUSES)
 
 
 def get_respondent_attribute_columns(

@@ -106,6 +106,39 @@ def user_clicks_replacements(admin_logged_in_page: Page):
     page.wait_for_load_state()
 
 
+@given("a replacement load task is still running")
+def replacement_load_task_running(test_assembly, test_database, admin_user, request):
+    """Seed a RUNNING load record rather than start a real one.
+
+    A real load over the test spreadsheet finishes in well under a second, so
+    a page rendered after the redirect may already show the finished form; a
+    seeded record makes the running state the only state the page can show.
+    """
+    run_id = uuid.uuid4()
+    uow = SqlAlchemyUnitOfWork(test_database)
+    with uow:
+        uow.selection_run_records.add(
+            SelectionRunRecord(
+                assembly_id=test_assembly.id,
+                task_id=run_id,
+                status=SelectionRunStatus.RUNNING,
+                task_type=SelectionTaskType.LOAD_REPLACEMENT_GSHEET,
+                user_id=admin_user.id,
+                log_messages=["Loading replacement data"],
+            )
+        )
+        uow.commit()
+    request.node.run_id = run_id
+
+
+@when("the user opens the replacement modal with the running task")
+def user_opens_running_task(admin_logged_in_page: Page, test_assembly, request):
+    """Open the replacement modal on the seeded running load task."""
+    page = admin_logged_in_page
+    page.goto(Urls.assembly_replacement_with_run(test_assembly.id, request.node.run_id))
+    page.wait_for_load_state()
+
+
 @when("the user opens the replacement modal")
 def user_opens_replacement_modal(admin_logged_in_page: Page, test_assembly):
     """Open the replacement modal via URL."""

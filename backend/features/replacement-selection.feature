@@ -19,8 +19,8 @@ Feature: Replacement Selection
 
   Scenario: Replacement modal shows loading state
     Given an assembly with gsheet configured
-    When the user opens the replacement modal
-    And the user clicks Check Spreadsheet
+    And a replacement load task is still running
+    When the user opens the replacement modal with the running task
     Then the modal shows a loading spinner
     And the status shows Running or Pending
 

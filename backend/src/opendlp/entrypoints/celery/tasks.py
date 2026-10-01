@@ -35,6 +35,7 @@ from opendlp.service_layer import password_reset_service
 from opendlp.service_layer.error_translation import translate_sortition_error, translate_sortition_error_to_html
 from opendlp.service_layer.exceptions import SelectionRunRecordNotFoundError
 from opendlp.translations import gettext as _
+from opendlp.translations import ngettext
 
 logger = logging.getLogger()
 
@@ -575,7 +576,19 @@ def _internal_load_db(
     settings: settings.Settings,
     final_task: bool = True,
     session_factory: sessionmaker | None = None,
-) -> tuple[bool, FeatureCollection | None, people.People | None, RunReport]:
+    targets_snapshot: list[dict[str, Any]] | None = None,
+) -> tuple[bool, FeatureCollection | None, people.People | None, people.People | None, RunReport]:
+    """Load features, the pool, and the people already holding a place.
+
+    With ``targets_snapshot`` the features come from that snapshot rather than
+    the assembly's stored targets - a replacement selection runs on targets
+    derived from them. Only then are the people already holding a place
+    loaded, for the algorithm to keep their households out of the pool: an
+    initial or test selection starts with nobody holding a place, so its
+    already_selected is None.
+
+    Returns (success, features, pool, already_selected, report).
+    """
     report = RunReport()
     _update_selection_record(
         task_id=task_id,
@@ -585,7 +598,7 @@ def _internal_load_db(
     )
     try:
         with bootstrap(session_factory=session_factory) as uow:
-            data_source = OpenDLPDataAdapter(uow, assembly_id)
+            data_source = OpenDLPDataAdapter(uow, assembly_id, targets_snapshot=targets_snapshot)
             select_data = adapters.SelectionData(data_source)
 
             features, f_report = select_data.load_features()
@@ -615,11 +628,21 @@ def _internal_load_db(
             loaded_people, p_report = select_data.load_people(settings, features)
             report.add_report(p_report)
 
-            _append_run_log(
-                task_id,
-                [_("Loaded %(count)s respondents.", count=loaded_people.count)],
-                session_factory=session_factory,
-            )
+            load_log = [_("Loaded %(count)s respondents.", count=loaded_people.count)]
+
+            already_selected: people.People | None = None
+            if targets_snapshot is not None:
+                already_selected, a_report = select_data.load_already_selected(settings)
+                report.add_report(a_report)
+                load_log.append(
+                    ngettext(
+                        "%(num)s person already holds a place.",
+                        "%(num)s people already hold a place.",
+                        already_selected.count,
+                    )
+                )
+
+            _append_run_log(task_id, load_log, session_factory=session_factory)
 
         _update_selection_record(
             task_id=task_id,
@@ -629,7 +652,7 @@ def _internal_load_db(
             run_report=report,
             session_factory=session_factory,
         )
-        return True, features, loaded_people, report
+        return True, features, loaded_people, already_selected, report
 
     except errors.SortitionBaseError as error:
         translated_msg = translate_sortition_error(error)
@@ -644,7 +667,7 @@ def _internal_load_db(
             run_report=report,
             session_factory=session_factory,
         )
-        return False, None, None, report
+        return False, None, None, None, report
 
     except Exception as err:
         error_msg = _("Failed to load data from database: %(error)s", error=str(err))
@@ -660,7 +683,7 @@ def _internal_load_db(
             run_report=report,
             session_factory=session_factory,
         )
-        return False, None, None, report
+        return False, None, None, None, report
 
 
 def _internal_write_db_results(
@@ -731,17 +754,19 @@ def run_select_from_db(
     settings: settings.Settings,
     test_selection: bool = False,
     session_factory: sessionmaker | None = None,
+    targets_snapshot: list[dict[str, Any]] | None = None,
 ) -> tuple[bool, list[frozenset[str]], RunReport]:
     _set_up_celery_logging(task_id, session_factory=session_factory)
     reporter = DatabaseProgressReporter(task_id=task_id, session_factory=session_factory)
     report = RunReport()
 
-    success, features, loaded_people, load_report = _internal_load_db(
+    success, features, loaded_people, already_selected, load_report = _internal_load_db(
         task_id=task_id,
         assembly_id=assembly_id,
         settings=settings,
         final_task=False,
         session_factory=session_factory,
+        targets_snapshot=targets_snapshot,
     )
     report.add_report(load_report)
     if not success:
@@ -756,7 +781,7 @@ def run_select_from_db(
         settings=settings,
         number_people_wanted=number_people_wanted,
         test_selection=test_selection,
-        already_selected=None,
+        already_selected=already_selected,
         final_task=False,
         session_factory=session_factory,
         progress_reporter=reporter,
