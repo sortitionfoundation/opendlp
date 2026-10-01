@@ -90,6 +90,15 @@ queued before the organiser pressed "Stop automatic export" does nothing),
 and writes every respondent matching the saved status filter to the saved
 tab. There is no `SelectionRunRecord` and no acting user.
 
+Deleting the pending key before the read means a change that asks for an
+export after the delete gets a fresh run. One small gap remains: a change
+that asked just *before* the delete (so was folded into this run) but whose
+transaction commits *after* the read is missed until the next change. The
+window is the few milliseconds between a service calling
+`request_auto_export` and its entrypoint committing, and it heals itself on
+the next change. The proper fix is to request the export after commit, which
+is the domain-events work noted in `docs/architecture.md`.
+
 **Failures:** an `ExportTargetError` (sheet unshared, deleted, API error or
 rate limit) is retried up to 3 times with exponential backoff and jitter.
 Each attempt logs a warning with the `assembly_id`; the last one logs an
