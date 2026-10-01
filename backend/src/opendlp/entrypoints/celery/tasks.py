@@ -7,6 +7,7 @@ from typing import Any
 import gspread
 from celery import Task
 from celery.signals import setup_logging
+from markupsafe import escape
 from sortition_algorithms import (
     RunReport,
     adapters,
@@ -179,6 +180,32 @@ def _append_run_log(task_id: uuid.UUID, log_messages: list[str], session_factory
     )
 
 
+def _gsheet_api_error_message(err: gspread.exceptions.APIError) -> str:
+    """
+    Turn a raw gspread APIError into a message a user can act on.
+
+    The Drive API answers 404 both for a spreadsheet that does not exist and for
+    one that exists but is not shared with the service account, so a 404 names
+    both possibilities. Anything else carries Google's own status and message.
+    Returns plain text; callers escape it before storing it as error_message,
+    which templates render with ``| safe``.
+    """
+    service_account_email = get_service_account_email()
+    if err.code == 404:
+        return _(
+            "Google reported the spreadsheet as not found. Either the URL is wrong or "
+            "the spreadsheet is not shared with %(email)s.",
+            email=service_account_email,
+        )
+    return _(
+        "Google returned an error reading the spreadsheet (%(code)s: %(detail)s). "
+        "Check the URL is correct and that the spreadsheet is shared with %(email)s.",
+        code=err.code,
+        detail=str(err.error.get("message", "")),
+        email=service_account_email,
+    )
+
+
 def _internal_load_gsheet(
     task_obj: Task,
     task_id: uuid.UUID,
@@ -200,21 +227,12 @@ def _internal_load_gsheet(
         log_message=_("Starting Google Sheets load task"),
         session_factory=session_factory,
     )
-    # check if we can even get the title
+    # check if we can even get the title. Opening the spreadsheet is where every
+    # access problem surfaces: wrong URL, not shared, uploaded .xlsx, Google
+    # outage. Nothing may escape here, or the user sees only the Celery
+    # failure callback's "Task failed with exception" message.
     try:
-        # TODO: use data_source.get_title() once we have sortition_algorithms>0.10.21
-        spreadsheet_title = data_source.spreadsheet.title
-    except gspread.exceptions.SpreadsheetNotFound:
-        msg = f"Spreadsheet not found, check URL: {data_source._g_sheet_name}"
-        _update_selection_record(
-            task_id,
-            status=SelectionRunStatus.FAILED,
-            log_message=msg,
-            error_message=msg,
-            completed_at=datetime.now(UTC),
-            session_factory=session_factory,
-        )
-        return False, None, None, None, report
+        spreadsheet_title = data_source.get_title()
     except errors.NotNativeGoogleSheetError as error:
         user_msg = _(
             "The file '%(file_name)s' has the format '%(common_name)s', "
@@ -228,6 +246,47 @@ def _internal_load_gsheet(
             status=SelectionRunStatus.FAILED,
             log_message=error.message,
             error_message=user_msg,
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+        return False, None, None, None, report
+    except errors.SortitionBaseError as error:
+        # get_title() wraps gspread's SpreadsheetNotFound as a SelectionError
+        # with error_code "spreadsheet_not_found"
+        translated_msg = translate_sortition_error(error)
+        _update_selection_record(
+            task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=translated_msg,
+            error_message=translate_sortition_error_to_html(error),
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+        return False, None, None, None, report
+    except PermissionError:
+        # the PermissionError raised by gspread has no text, so appears to be blank, leading to
+        # no hint to the user as to what happened, so we deal with it differently here.
+        error_msg = _(
+            "Failed to load the spreadsheet due to permissions issues. Check the spreadsheet is shared with %(email)s",
+            email=get_service_account_email(),
+        )
+        _update_selection_record(
+            task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=error_msg,
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+        return False, None, None, None, report
+    except gspread.exceptions.APIError as error:
+        error_msg = _gsheet_api_error_message(error)
+        logger.warning(f"Google API error opening spreadsheet for task_id={task_id}: {error}")
+        _update_selection_record(
+            task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=str(escape(error_msg)),
             completed_at=datetime.now(UTC),
             session_factory=session_factory,
         )
@@ -962,6 +1021,31 @@ def manage_old_tabs(
         )
 
         return True, tab_names, report
+
+    except errors.SortitionBaseError as error:
+        translated_msg = translate_sortition_error(error)
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=translated_msg,
+            error_message=translate_sortition_error_to_html(error),
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+        return False, [], report
+
+    except gspread.exceptions.APIError as error:
+        error_msg = _gsheet_api_error_message(error)
+        logger.warning(f"Google API error managing old tabs for task_id={task_id}: {error}")
+        _update_selection_record(
+            task_id=task_id,
+            status=SelectionRunStatus.FAILED,
+            log_message=error_msg,
+            error_message=str(escape(error_msg)),
+            completed_at=datetime.now(UTC),
+            session_factory=session_factory,
+        )
+        return False, [], report
 
     except PermissionError:
         # the PermissionError raised by gspread has no text, so appears to be blank, leading to

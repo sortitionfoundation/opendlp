@@ -3,9 +3,12 @@ ABOUTME: Uses a fake gspread client so no real Google Sheets access is needed"""
 
 from unittest.mock import MagicMock
 
+import gspread
+import pytest
+
 from opendlp.adapters import gsheet_export
 from opendlp.adapters.gsheet_export import GSheetExportTarget, WorksheetNotFound
-from opendlp.adapters.tabular_export import TabularData
+from opendlp.adapters.tabular_export import ExportTargetError, TabularData
 
 
 class _FakeWorksheet:
@@ -81,6 +84,24 @@ class TestGSheetExportTarget:
         assert existing.cleared is True
         assert existing.updated == [["id"], ["R1"]]
         assert spreadsheet.added == []
+
+    def test_not_shared_spreadsheet_becomes_export_target_error(self):
+        """gspread raises a bare PermissionError, with no message, for a sheet not shared with the account."""
+
+        class _NotSharedClient:
+            def open_by_url(self, url: str) -> _FakeSpreadsheet:
+                try:
+                    raise gspread.exceptions.GSpreadException("APIError: [403]: The caller does not have permission")
+                except gspread.exceptions.GSpreadException as exc:
+                    raise PermissionError from exc
+
+        target = GSheetExportTarget(spreadsheet_url=_URL, client_factory=_NotSharedClient)
+
+        with pytest.raises(ExportTargetError) as excinfo:
+            target.write_sheet("Respondents", TabularData(headers=["a"], rows=[["1"]]))
+
+        assert "does not have permission" in str(excinfo.value)
+        assert isinstance(excinfo.value.__cause__, PermissionError)
 
 
 class TestDefaultClientFactory:

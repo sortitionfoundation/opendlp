@@ -79,6 +79,9 @@ class CSVGSheetDataSource(AbstractDataSource):
     def _g_sheet_name(self) -> str:
         return self.gsheet_data_source._g_sheet_name
 
+    def get_title(self) -> str:
+        return self.spreadsheet.title
+
     def delete_old_output_tabs(self, dry_run: bool = False) -> list[str]:
         """
         Simulate deleting old output tabs for testing.
