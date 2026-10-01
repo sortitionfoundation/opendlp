@@ -534,8 +534,12 @@ same Drive mimetype check.
   `open_gsheet()` and the export flow flashes the classified reason when the
   cause is a library error. The BDD shim gained `can_edit`,
   `require_writable()` and `simulate_read_only()`.
-- Not done: the optional preflight check on the Assembly Data page (step 4),
-  and switching the export adapter to `make_gsheet_client()`.
+- The export adapter builds its client with the library's
+  `make_gsheet_client()`, so both callers share one credential stack. Note
+  that client retries 429 and 5xx responses with doubling sleeps, so inside
+  a web request a Google outage can hold a worker beyond the 20 second
+  per-request timeout.
+- Not done: the optional preflight check on the Assembly Data page (step 4).
 
 ## Decisions (Chewie, 2026-10-01)
 
