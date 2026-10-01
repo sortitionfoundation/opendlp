@@ -123,6 +123,24 @@ def test_admin_walks_form_email_preview_and_publishes(logged_in_admin, admin_use
     assert "Thanks" in template.subject
     assert "assembly.title" in template.body_html
 
+    # Step 2b: send a test of the saved auto-reply. The console email adapter is
+    # active in tests, so the send itself succeeds and the success flash shows.
+    response = logged_in_admin.post(
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/send-test",
+        data={"test_email_to": "manager@example.com"},
+        follow_redirects=True,
+    )
+    assert response.status_code == 200
+    assert "Test email sent to manager@example.com" in response.get_data(as_text=True)
+
+    # An invalid recipient is rejected with a flash, not a send.
+    response = logged_in_admin.post(
+        f"/backoffice/assembly/{assembly_id}/registration/{slug}/email/send-test",
+        data={"test_email_to": "not-an-email"},
+        follow_redirects=True,
+    )
+    assert "Enter a valid email address" in response.get_data(as_text=True)
+
     # Step 3: publish. Same save endpoint, no html_content payload (guard skips update).
     response = logged_in_admin.post(
         f"/backoffice/assembly/{assembly_id}/registration/{slug}/save",
