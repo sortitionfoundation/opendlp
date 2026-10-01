@@ -19,7 +19,9 @@ from opendlp.domain.respondent_field_schema import (
     RespondentFieldDefinition,
     RespondentFieldGroup,
 )
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.targets import TargetCategory, TargetValue
+from opendlp.domain.value_objects import RespondentStatus
 from tests.fakes import FakeUnitOfWork
 
 
@@ -507,6 +509,67 @@ class TestRegistrationListView:
         row = body.split("Live", 1)[1].split("</tr>", 1)[0]
         date_cell = row.split('data-cell="published-at"', 1)[1].split("</td>", 1)[0]
         assert "\u2014" not in date_cell
+
+    def test_each_page_shows_its_registration_count(self, logged_in_admin, fake_store, assembly_id):
+        busy = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="busy-slug", name="Busy")
+        _seed_page(fake_store, assembly_id, RegistrationPageStatus.TEST, url_slug="quiet-slug", name="Quiet")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            for i in range(2):
+                uow.respondents.add(
+                    Respondent(assembly_id=assembly_id, external_id=f"r-{i}", registration_page_id=busy.id)
+                )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+
+        def count_cell(page_name: str) -> str:
+            row = body.split(page_name, 1)[1].split("</tr>", 1)[0]
+            return row.split('data-cell="registration-count"', 1)[1].split("</td>", 1)[0]
+
+        assert count_cell("Busy").endswith(">2")
+        assert count_cell("Quiet").endswith(">0")
+
+    def test_shows_the_total_registration_count_near_the_top(self, logged_in_admin, fake_store, assembly_id):
+        page = _seed_page(fake_store, assembly_id, RegistrationPageStatus.PUBLISHED, url_slug="live-slug", name="Live")
+        with FakeUnitOfWork(store=fake_store) as uow:
+            for i, status in enumerate([RespondentStatus.POOL, RespondentStatus.SELECTED, RespondentStatus.WITHDRAWN]):
+                uow.respondents.add(
+                    Respondent(
+                        assembly_id=assembly_id,
+                        external_id=f"real-{i}",
+                        selection_status=status,
+                        registration_page_id=page.id,
+                    )
+                )
+            # Test submissions and deleted respondents are not real registrations,
+            # so the headline total leaves them out (matching the dashboard).
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=assembly_id,
+                    external_id="tester",
+                    selection_status=RespondentStatus.TEST_SUBMISSION,
+                    registration_page_id=page.id,
+                )
+            )
+            uow.respondents.add(
+                Respondent(
+                    assembly_id=assembly_id,
+                    external_id="gone",
+                    selection_status=RespondentStatus.DELETED,
+                    registration_page_id=page.id,
+                )
+            )
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        total_block = body.split("Number of registrations:", 1)[1].split("</div>", 1)[0]
+        assert ">3<" in total_block
 
     def test_empty_assembly_offers_page_creation(self, logged_in_admin, fake_store, assembly_id):
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly_id}/registration")

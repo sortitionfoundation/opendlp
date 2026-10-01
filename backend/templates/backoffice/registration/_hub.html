@@ -4,6 +4,16 @@ ABOUTME: The Registration tab's landing page, and the dimmed backdrop behind eac
 #}
 {% from "backoffice/components/icons.html" import icon_arrow_forward %}
 {% from "backoffice/components/registration_page_list.html" import registration_page_list %}
+{# The headline number for this tab: how many people have registered so far. Shown
+   only once a page exists — before that the empty state below carries the message.
+   Same figure and wording as the dashboard's "Number of registrations". #}
+{% if page_rows %}
+    <div class="mb-8 inline-flex items-baseline gap-3 rounded-lg px-5 py-4"
+         style="background-color: var(--color-subtle-background-panels); border: 1px solid var(--color-borders-dividers);">
+        <span class="text-label-md" style="color: var(--color-secondary-text);">{{ _("Number of registrations:") }}</span>
+        <span class="text-heading-lg" style="color: var(--color-headings);">{{ total_registration_count }}</span>
+    </div>
+{% endif %}
 {% if setup_summary is none %}
     <section class="mb-6">
         <p class="text-body-md" style="color: var(--color-secondary-text);">

@@ -125,14 +125,19 @@ class TestFlaskApp:
             assert response.headers["X-Content-Type-Options"] == "nosniff"
             assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
 
-    def test_csp_allows_youtube_nocookie_frames_only(self) -> None:
-        """The CSP must allow YouTube privacy-enhanced embeds but not plain youtube.com."""
+    def test_csp_allows_only_sanctioned_third_party_frames(self) -> None:
+        """The CSP frame-src carries exactly the two sanctioned third-party hosts.
+
+        YouTube privacy-enhanced embeds (issue #769) and the Turnstile challenge
+        iframe (issue #890) - both cookieless, per docs/personal-data.md. Plain
+        youtube.com sets tracking cookies on load and must stay blocked.
+        """
         app = create_app("testing")
 
         with app.test_client() as client:
             response = client.get("/")
             csp = response.headers["Content-Security-Policy"]
-            assert "frame-src 'self' https://www.youtube-nocookie.com" in csp
+            assert "frame-src 'self' https://www.youtube-nocookie.com https://challenges.cloudflare.com" in csp
             assert "https://www.youtube.com" not in csp
 
 
