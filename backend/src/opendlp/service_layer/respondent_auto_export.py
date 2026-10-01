@@ -87,7 +87,7 @@ def request_auto_export(
     except Exception as exc:
         # A failed export must never fail the change that asked for it; the next
         # change will ask again, and the pending key expires on its own.
-        logger.warning("Could not schedule automatic export", assembly_id=str(assembly_id), error=str(exc))
+        logger.exception("Could not schedule automatic export", assembly_id=str(assembly_id), error=str(exc))
         return False
     return True
 
