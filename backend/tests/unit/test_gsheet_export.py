@@ -207,12 +207,19 @@ class TestGSheetExportTarget:
 
 
 class TestDefaultClientFactory:
-    def test_sets_timeout_on_gspread_client(self, monkeypatch) -> None:
-        """The real client must carry a timeout so an export cannot hang a worker."""
+    def test_uses_library_client_with_timeout(self, monkeypatch) -> None:
+        """The real client comes from the library factory and must carry a timeout so an export cannot hang a worker."""
         fake_client = MagicMock()
-        monkeypatch.setattr(gsheet_export.gspread, "service_account", lambda filename: fake_client)
+        calls: list[tuple[object, object]] = []
+
+        def fake_make(auth_json_path, request_timeout):
+            calls.append((auth_json_path, request_timeout))
+            return fake_client
+
+        monkeypatch.setattr(gsheet_export, "make_gsheet_client", fake_make)
+        monkeypatch.setattr(gsheet_export.config, "get_google_auth_json_path", lambda: "/creds.json")
 
         client = gsheet_export._default_client_factory()
 
         assert client is fake_client
-        fake_client.set_timeout.assert_called_once_with(gsheet_export.GSPREAD_TIMEOUT_SECONDS)
+        assert calls == [("/creds.json", gsheet_export.GSPREAD_TIMEOUT_SECONDS)]

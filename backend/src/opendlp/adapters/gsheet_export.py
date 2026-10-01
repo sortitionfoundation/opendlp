@@ -4,9 +4,8 @@ ABOUTME: Authenticates with the shared service account and writes one worksheet"
 from collections.abc import Callable
 from typing import Any
 
-import gspread
 from gspread.exceptions import GSpreadException, WorksheetNotFound
-from sortition_algorithms import open_gsheet
+from sortition_algorithms import make_gsheet_client, open_gsheet
 from sortition_algorithms.errors import SelectionError
 
 from opendlp import config
@@ -20,14 +19,14 @@ _DEFAULT_COLS = 26
 
 # Exports run inside web requests, so a stalled Google API must fail before
 # the gunicorn worker timeout. gspread's default is no timeout at all.
+# Note the library's client retries rate-limit and server errors with
+# increasing sleeps, so a Google outage can hold a request longer than this.
 GSPREAD_TIMEOUT_SECONDS = 20
 
 
 def _default_client_factory() -> Any:
-    """Build a gspread client from the shared service-account credentials."""
-    client = gspread.service_account(filename=str(config.get_google_auth_json_path()))
-    client.set_timeout(GSPREAD_TIMEOUT_SECONDS)
-    return client
+    """Build a gspread client from the shared service-account credentials, as the selection tasks do."""
+    return make_gsheet_client(config.get_google_auth_json_path(), request_timeout=GSPREAD_TIMEOUT_SECONDS)
 
 
 class GSheetExportTarget(AbstractGSheetExportTarget):
