@@ -207,19 +207,49 @@ class TestGSheetExportTarget:
 
 
 class TestDefaultClientFactory:
-    def test_uses_library_client_with_timeout(self, monkeypatch) -> None:
-        """The real client comes from the library factory and must carry a timeout so an export cannot hang a worker."""
+    def _capture(self, monkeypatch) -> tuple[MagicMock, list[dict]]:
         fake_client = MagicMock()
-        calls: list[tuple[object, object]] = []
+        calls: list[dict] = []
 
-        def fake_make(auth_json_path, request_timeout):
-            calls.append((auth_json_path, request_timeout))
+        def fake_make(auth_json_path, request_timeout, http_client=gspread.BackOffHTTPClient):
+            calls.append({"path": auth_json_path, "timeout": request_timeout, "http_client": http_client})
             return fake_client
 
         monkeypatch.setattr(gsheet_export, "make_gsheet_client", fake_make)
         monkeypatch.setattr(gsheet_export.config, "get_google_auth_json_path", lambda: "/creds.json")
+        return fake_client, calls
+
+    def test_web_request_client_fails_fast_with_short_timeout(self, monkeypatch) -> None:
+        """In a web request a stalled Google API must not hold a worker: no retries, short timeout."""
+        fake_client, calls = self._capture(monkeypatch)
 
         client = gsheet_export._default_client_factory()
 
         assert client is fake_client
-        assert calls == [("/creds.json", gsheet_export.GSPREAD_TIMEOUT_SECONDS)]
+        assert calls == [
+            {"path": "/creds.json", "timeout": gsheet_export.GSPREAD_TIMEOUT_SECONDS, "http_client": gspread.HTTPClient}
+        ]
+
+    def test_background_client_retries_with_long_timeout(self, monkeypatch) -> None:
+        """A Celery export can afford the library's retrying client and a longer timeout."""
+        fake_client, calls = self._capture(monkeypatch)
+
+        client = gsheet_export._default_client_factory(background=True)
+
+        assert client is fake_client
+        assert calls == [
+            {
+                "path": "/creds.json",
+                "timeout": gsheet_export.GSPREAD_BACKGROUND_TIMEOUT_SECONDS,
+                "http_client": gspread.BackOffHTTPClient,
+            }
+        ]
+
+    def test_target_background_flag_selects_the_background_client(self, monkeypatch) -> None:
+        seen: list[bool] = []
+        monkeypatch.setattr(gsheet_export, "_default_client_factory", lambda background=False: seen.append(background))
+
+        GSheetExportTarget(spreadsheet_url=_URL)._client_factory()
+        GSheetExportTarget(spreadsheet_url=_URL, background=True)._client_factory()
+
+        assert seen == [False, True]

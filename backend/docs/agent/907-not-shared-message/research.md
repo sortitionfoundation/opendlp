@@ -535,10 +535,12 @@ same Drive mimetype check.
   cause is a library error. The BDD shim gained `can_edit`,
   `require_writable()` and `simulate_read_only()`.
 - The export adapter builds its client with the library's
-  `make_gsheet_client()`, so both callers share one credential stack. Note
-  that client retries 429 and 5xx responses with doubling sleeps, so inside
-  a web request a Google outage can hold a worker beyond the 20 second
-  per-request timeout.
+  `make_gsheet_client()`, so both callers share one credential stack. From
+  sortition-algorithms 0.12.14 the factory takes an `http_client`, and the
+  adapter uses gspread's plain `HTTPClient` with the 20 second timeout by
+  default so a web request fails fast. `GSheetExportTarget(background=True)`
+  is for a Celery task: the retrying back-off client and a 120 second
+  timeout. The 1029 auto-export branch's task should pass that flag.
 - Not done: the optional preflight check on the Assembly Data page (step 4).
 
 ## Decisions (Chewie, 2026-10-01)
