@@ -62,6 +62,20 @@ def normalise_field_name(key: str) -> str:
     return re.sub(r"[^a-z0-9]", "", key.lower())
 
 
+def matching_attribute_column(category_name: str, attribute_columns: list[str]) -> str:
+    """The respondent attribute a target category is about, or "" if there is none.
+
+    Matched loosely, so a "Age Range" category finds an ``age_range`` column. The
+    targets page matches the same names case-insensitively but not loosely, so a
+    category can have counts here and none there.
+    """
+    wanted = normalise_field_name(category_name)
+    for column in attribute_columns:
+        if normalise_field_name(column) == wanted:
+            return column
+    return ""
+
+
 def pop_normalised(attrs: dict[str, Any], key: str, default: Any = None) -> Any:
     """Pop a key from dict using normalised matching.
 

@@ -534,9 +534,29 @@ class TestCsvSelectionSelectedCount:
         response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
 
         assert response.status_code == 200
-        assert b"5 respondents have been selected" in response.data
+        assert b"5 respondents are currently selected" in response.data
         assert b"Reset Selected People" in response.data
         assert b"Run Selection" not in response.data
+
+    def test_selected_count_excludes_withdrawn_and_includes_confirmed(
+        self, logged_in_admin, assembly_with_csv_config, fake_store
+    ):
+        """The selected count is those holding a place now, so withdrawals drop off and confirmations stay."""
+        assembly = assembly_with_csv_config
+
+        with FakeUnitOfWork(store=fake_store) as uow:
+            respondents = uow.respondents.get_by_assembly_id(assembly.id)
+            for respondent in respondents[:3]:
+                respondent.selection_status = RespondentStatus.SELECTED
+            respondents[3].selection_status = RespondentStatus.CONFIRMED
+            respondents[4].selection_status = RespondentStatus.WITHDRAWN
+            uow.commit()
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection")
+
+        assert response.status_code == 200
+        assert b"4 respondents are currently selected" in response.data
+        assert b"Reset Selected People" in response.data
 
     def test_selection_page_shows_normal_ui_when_no_selection(self, logged_in_admin, assembly_with_csv_config):
         """Selection page shows normal UI when no selection has been run."""

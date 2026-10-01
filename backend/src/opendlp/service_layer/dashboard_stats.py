@@ -12,7 +12,7 @@ from opendlp.adapters.tabular_export import (
     TabularData,
 )
 from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet, default_worksheet_name
-from opendlp.domain.respondents import normalise_field_name
+from opendlp.domain.respondents import matching_attribute_column
 from opendlp.domain.targets import percentage_of
 from opendlp.domain.validators import GoogleSpreadsheetURLValidator
 from opendlp.domain.value_objects import (
@@ -187,20 +187,6 @@ def get_assembly_dashboard_summary(
     )
 
 
-def _matching_attribute(category_name: str, attribute_columns: list[str]) -> str:
-    """The respondent attribute a target category is about, or "" if there is none.
-
-    Matched loosely, so a "Age Range" category finds an ``age_range`` column. The
-    targets page matches the same names case-insensitively but not loosely, so a
-    category can have counts here and none there.
-    """
-    wanted = normalise_field_name(category_name)
-    for column in attribute_columns:
-        if normalise_field_name(column) == wanted:
-            return column
-    return ""
-
-
 def _value_row(
     target: TargetValue,
     target_pct: float,
@@ -236,7 +222,7 @@ def _build_category(
     values with zero counts rather than disappearing: the targets are still set,
     there is just nothing to measure them against yet.
     """
-    attribute_name = _matching_attribute(category.name, attribute_columns)
+    attribute_name = matching_attribute_column(category.name, attribute_columns)
     counts_by_value: dict[str, dict[RespondentStatus, int]] = {}
     available_by_value: dict[str, int] = {}
     if attribute_name:

@@ -8,10 +8,11 @@ from unittest.mock import patch
 import pytest
 
 from opendlp.domain.assembly import SelectionRunRecord
-from opendlp.domain.value_objects import SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import RespondentStatus, SelectionRunStatus, SelectionTaskType
 from opendlp.service_layer import respondent_service, target_csv_import
 from opendlp.service_layer.assembly_service import create_assembly, update_csv_config, update_selection_settings
 from opendlp.service_layer.exceptions import InvalidSelection
+from opendlp.service_layer.replacement_targets import build_replacement_plan
 from opendlp.service_layer.sortition import CheckDataResult
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.e2e.helpers import get_csrf_token
@@ -433,3 +434,79 @@ class TestSaveCsvSettings:
 
         assert response.status_code == 200
         assert b"Selection settings saved successfully" in response.data
+
+
+class TestCsvReplacementSelection:
+    """PG smokes for the database replacement dialog: the review page and the dispatch seam."""
+
+    @pytest.fixture
+    def assembly_after_withdrawal(self, postgres_session_factory, assembly_with_csv_config):
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            for respondent in uow.respondents.get_by_assembly_id(assembly_with_csv_config.id):
+                if respondent.external_id in {"1", "3", "4", "5"}:
+                    respondent.selection_status = RespondentStatus.SELECTED
+                elif respondent.external_id == "2":
+                    respondent.selection_status = RespondentStatus.WITHDRAWN
+            uow.commit()
+        return assembly_with_csv_config
+
+    def test_review_dialog_renders_from_postgres(self, logged_in_admin, assembly_after_withdrawal):
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+        )
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "db-replacement-modal" in html
+        assert "4 people are selected or confirmed" in html
+        assert "6 places are to be filled" in html
+
+    @patch("opendlp.service_layer.sortition.tasks.run_select_from_db.delay")
+    def test_start_replacement_records_the_run_and_dispatches(
+        self, mock_delay, logged_in_admin, assembly_after_withdrawal, postgres_session_factory, admin_user
+    ):
+        """Only the Celery dispatch is patched, so the run record makes the round trip through Postgres."""
+        mock_delay.return_value.id = "celery-task-id"
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            plan = build_replacement_plan(uow, admin_user.id, assembly_after_withdrawal.id)
+        form = {"number_to_select": str(plan.default_number)}
+        for category in plan.categories:
+            for row in category.rows:
+                form[row.min_field] = str(row.calculated.min)
+                form[row.max_field] = str(row.calculated.max)
+                if category.name == "Age" and row.value == "31-50":
+                    form[row.min_field] = "1"
+        form["csrf_token"] = get_csrf_token(
+            logged_in_admin, f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection"
+        )
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection/db/replacement/run", data=form
+        )
+
+        assert response.status_code == 302
+        mock_delay.assert_called_once()
+        dispatched = mock_delay.call_args.kwargs
+        task_id = dispatched["task_id"]
+        assert f"current_selection={task_id}" in response.headers["Location"]
+        assert dispatched["number_people_wanted"] == 6
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.task_type == SelectionTaskType.SELECT_REPLACEMENT_FROM_DB
+            assert record.status == SelectionRunStatus.PENDING
+            assert record.celery_task_id == "celery-task-id"
+            assert record.user_id == admin_user.id
+            assert record.settings_used["replacement"] == {
+                "number_to_select_overall": 10,
+                "held_total": 4,
+                "calculated_number": 6,
+                "number_to_select_used": 6,
+                "edited": True,
+            }
+            assert record.targets_used == dispatched["targets_snapshot"]
+            age = next(c for c in record.targets_used if c["name"] == "Age")
+            edited_value = next(v for v in age["values"] if v["value"] == "31-50")
+            assert edited_value["min"] == 1
+            assert edited_value["calculated_min"] == 2
+            assert {"overall_min", "overall_max", "held"} <= edited_value.keys()

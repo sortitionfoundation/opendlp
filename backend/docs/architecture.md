@@ -108,7 +108,7 @@ The `*_legacy` blueprints will be retired: first their links are removed from th
 | `admin`                   | `/admin`                     | User and invite management, admin 2FA controls                                                 | Admin                | 11     |
 | `backoffice`              | `/backoffice`                | Assembly dashboard/CRUD, data upload, members, showcase; currently also hosts respondent pages | Login                | 16     |
 | `gsheets`                 | `/backoffice`                | Google Sheets config, selection, replacement, tab management (Tailwind UI)                       | Login + assembly mgr | 19     |
-| `db_selection_backoffice` | `/backoffice`                | Database-driven selection (Tailwind UI)                                                          | Login + assembly mgr | 8      |
+| `db_selection_backoffice` | `/backoffice`                | Database-driven selection (Tailwind UI)                                                          | Login + assembly mgr | 10     |
 | `targets`                 | `/backoffice`                | Target categories/values, CSV upload, target checking (Tailwind UI)                              | Login + assembly mgr | 14     |
 | `gsheets_legacy`          | —                            | Legacy Google Sheets workflow                                                                  | Login + assembly mgr | 21     |
 | `db_selection_legacy`     | —                            | Legacy database selection + settings                                                           | Login + assembly mgr | 12     |
@@ -228,6 +228,7 @@ All services live in `src/opendlp/service_layer/`. Services depend on repositori
 | `respondent_service`         | Respondent CRUD, CSV/row import, attribute analysis                                                | CSV parsing, permissions                                                    |
 | `respondent_export_service`  | Build tabular respondent data and export it to CSV or Google Sheets, with status filtering         | `tabular_export`, `gsheet_export`, permissions                              |
 | `sortition`                  | Celery task dispatch for GSheet + DB selection workflows; run status/cancellation/health           | `celery`, `sortition-algorithms`, `error_translation`, `report_translation` |
+| `replacement_targets`        | Replacement selection over the database: the places still to fill, validation, feasibility check  | `sortition-algorithms`, `sortition_data_adapter`, `error_translation`       |
 | `user_service`               | User lifecycle, authentication, OAuth linking, assembly role management, profile updates           | email adapter, template renderer, URL generator, `security`                 |
 | `invite_service`             | Invite generation (single/batch), validation, revocation, cleanup                                  | user domain, permissions                                                    |
 | `permissions`                | Role checks (`can_manage_assembly`, `has_global_admin`, …) and decorators                          | domain value objects                                                        |
@@ -276,7 +277,8 @@ Target management used to live here too. It now has its own module.
 `sortition.py` orchestrates Celery work for two workflows.
 
 - **Google Sheets:** `start_gsheet_load_task`, `start_gsheet_select_task`, `start_gsheet_replace_load_task`, `start_gsheet_replace_task`, `start_gsheet_manage_tabs_task`
-- **Database selection:** `start_db_select_task`, `check_db_selection_data`, `generate_selection_csvs`
+- **Database selection:** `start_db_select_task`, `start_db_replace_task`, `check_db_selection_data`, `generate_selection_csvs`
+- **Replacement targets** (in `replacement_targets.py`): `build_replacement_plan` derives the seats still to fill from the stored targets and who already holds a place; `validate_replacement_form` checks the organiser's edits through the library's own rules before a run starts. With `check_feasibility` it also loads what the solver needs, and `run_feasibility_check` then asks the solver whether the targets can be met together from the pool, with the households of people already selected removed, and collects the relaxations it suggests. The solver is slow, so `run_feasibility_check` takes no `uow` and the route calls it after its `with uow:` block has closed. `check_replacement_plan` validates the calculated targets for the dialog as it opens. The verdict informs rather than blocks: the dialog's "Recheck feasibility" button re-runs it over the edited numbers, and "Run Replacement Selection" starts the task regardless
 - **Status / control:** `get_selection_run_status`, `get_manage_old_tabs_status`, `cancel_task`, `check_and_update_task_health`, `get_latest_run_for_assembly`
 
 Each start function creates a `SelectionRunRecord` and dispatches a Celery task; see [Background Tasks](#background-tasks).
@@ -343,7 +345,7 @@ Task functions registered on the Celery app:
 
 - `load_gsheet` — fetches respondent data from a Google Sheet into the run record.
 - `run_select` — runs stratified selection against gsheet-sourced data (used for both selection and replacement).
-- `run_select_from_db` — runs stratified selection directly against database respondents.
+- `run_select_from_db` — runs stratified selection directly against database respondents. With a `targets_snapshot` it is a replacement selection: the features come from the snapshot rather than the stored targets, and the people already holding a place are handed to the algorithm so it keeps away from their households.
 - `manage_old_tabs` — bulk tab management on a Google Sheet after a selection.
 - `cleanup_old_password_reset_tokens` — periodic housekeeping.
 - `cleanup_orphaned_tasks` — periodic safety net that marks PENDING/RUNNING rows whose Celery task has died as FAILED.
@@ -471,7 +473,7 @@ Internal handlers cover a subset of service calls used for manual testing (respo
 | `profile`                 | 15     | 2        | Well-focused.                                                                           |
 | `backoffice`              | 16     | 4        | Currently hosts respondent pages; dedicated `respondents` backoffice blueprint planned. |
 | `gsheets`                 | 19     | 4        | New backoffice UI; paired with legacy.                                                  |
-| `db_selection_backoffice` | 8      | 4        | New backoffice UI; paired with legacy.                                                  |
+| `db_selection_backoffice` | 10     | 6        | New backoffice UI; paired with legacy.                                                  |
 | `targets`                 | 14     | 2        | New backoffice UI; paired with legacy.                                                  |
 | `gsheets_legacy`          | 21     | 3        | To be retired once New backoffice version is trusted.                                   |
 | `db_selection_legacy`     | 12     | 3        | To be retired.                                                                          |

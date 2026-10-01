@@ -199,6 +199,83 @@ class TestMultiCategory:
         assert {r.value: r.selected_count for r in age.rows} == {"18-29": 1, "30+": 1}
 
 
+class TestReplacementRun:
+    """A replacement run's snapshot holds the replacement targets, with the arithmetic behind them alongside."""
+
+    def _replacement_snapshot(self) -> list[dict[str, Any]]:
+        def value(name: str, low: int, high: int, held: int) -> dict[str, Any]:
+            return {
+                "value": name,
+                "min": low,
+                "max": high,
+                "min_flex": 0,
+                "max_flex": -1,
+                "percentage_target": 50.0,
+                "comment": "",
+                "minmax_manual": False,
+                "overall_min": 2,
+                "overall_max": 2,
+                "held": held,
+                "calculated_min": 2 - held,
+                "calculated_max": 2 - held,
+                "calculated_min_flex": 0,
+                "calculated_max_flex": -1,
+            }
+
+        return [
+            {
+                "name": "Gender",
+                "sort_order": 0,
+                "comment": "",
+                "source_url": "",
+                "values": [value("Man", 0, 0, held=2), value("Woman", 1, 1, held=1)],
+            }
+        ]
+
+    def _seed_run(self, uow) -> tuple[Assembly, SelectionRunRecord]:
+        assembly = _make_assembly(uow, number_to_select=4)
+        _make_respondent(uow, assembly.id, "m1", {"Gender": "Man"}, status=RespondentStatus.SELECTED)
+        _make_respondent(uow, assembly.id, "m2", {"Gender": "Man"}, status=RespondentStatus.CONFIRMED)
+        _make_respondent(uow, assembly.id, "w1", {"Gender": "Woman"}, status=RespondentStatus.SELECTED)
+        _make_respondent(uow, assembly.id, "w2", {"Gender": "Woman"}, status=RespondentStatus.WITHDRAWN)
+        _make_respondent(uow, assembly.id, "w3", {"Gender": "Woman"}, status=RespondentStatus.SELECTED)
+        _make_respondent(uow, assembly.id, "w4", {"Gender": "Woman"})
+        _make_respondent(uow, assembly.id, "m3", {"Gender": "Man"})
+        record = SelectionRunRecord(
+            assembly_id=assembly.id,
+            task_id=uuid.uuid4(),
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_REPLACEMENT_FROM_DB,
+            selected_ids=[["w3"]],
+            remaining_ids=["w4", "m3"],
+            targets_used=self._replacement_snapshot(),
+        )
+        uow.selection_run_records.add(record)
+        return assembly, record
+
+    def test_report_covers_the_replacements_and_their_pool_only(self, uow):
+        assembly, record = self._seed_run(uow)
+
+        report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
+
+        assert report.number_selected == 1
+        assert report.pool_size == 3
+        man, woman = report.categories[0].rows
+        assert (man.target_min, man.target_max, man.pool_count, man.selected_count) == (0, 0, 1, 0)
+        assert (woman.target_min, woman.target_max, woman.pool_count, woman.selected_count) == (1, 1, 2, 1)
+        assert woman.selected_pct == pytest.approx(100.0)
+
+    def test_report_serialises_to_csv(self, uow):
+        assembly, record = self._seed_run(uow)
+        report = build_selection_report(uow, assembly.id, record.task_id, _StubURLGenerator())
+
+        csv_text = selection_report_to_csv(report)
+
+        assert "Gender" in csv_text
+        assert "Woman" in csv_text
+        assert "overall_min" not in csv_text
+
+
 class TestDeletedRespondents:
     def test_deleted_counted_at_top_level_when_in_selected(self, uow):
         assembly = _make_assembly(uow, number_to_select=2)
