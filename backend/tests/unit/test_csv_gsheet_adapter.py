@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-from sortition_algorithms import CSVFileDataSource, GSheetDataSource, RunReport
+from sortition_algorithms import CSVFileDataSource, GSheetDataSource, RunReport, errors
 
 from opendlp.adapters.sortition_algorithms import CSVGSheetDataSource, FakeSpreadsheet
 
@@ -57,6 +57,22 @@ class TestCSVGSheetDataSource:
         assert adapter.gsheet_data_source == gsheet_data_source
         assert isinstance(adapter.spreadsheet, FakeSpreadsheet)
         assert adapter.spreadsheet.title == "spreadsheet title"
+
+    def test_get_title_returns_fake_spreadsheet_title(self, adapter):
+        """tasks.py opens the spreadsheet through get_title(), so the shim must answer it."""
+        assert adapter.get_title() == "spreadsheet title"
+
+    def test_writable_by_default(self, adapter):
+        assert adapter.can_edit is True
+        adapter.require_writable()  # does not raise
+
+    def test_simulate_read_only_makes_require_writable_raise(self, adapter):
+        adapter.simulate_read_only()
+        assert adapter.can_edit is False
+        with pytest.raises(errors.SpreadsheetReadOnlyError) as excinfo:
+            adapter.require_writable()
+        assert excinfo.value.error_code == "spreadsheet_read_only"
+        assert excinfo.value.error_params["title"] == "spreadsheet title"
 
     def test_feature_tab_name_property(self, adapter, gsheet_data_source):
         """Test that feature_tab_name delegates to gsheet_data_source."""

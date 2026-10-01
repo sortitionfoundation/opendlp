@@ -7,6 +7,8 @@ from typing import Any
 import gspread
 from gspread.exceptions import GSpreadException, WorksheetNotFound
 from gspread.utils import rowcol_to_a1
+from sortition_algorithms import make_gsheet_client, open_gsheet
+from sortition_algorithms.errors import SelectionError
 
 from opendlp import config
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, ExportTargetError, TabularData
@@ -25,11 +27,23 @@ GSPREAD_TIMEOUT_SECONDS = 20
 GSPREAD_BACKGROUND_TIMEOUT_SECONDS = 120
 
 
-def _default_client_factory(timeout_seconds: int = GSPREAD_TIMEOUT_SECONDS) -> Any:
-    """Build a gspread client from the shared service-account credentials."""
-    client = gspread.service_account(filename=str(config.get_google_auth_json_path()))
-    client.set_timeout(timeout_seconds)
-    return client
+def _default_client_factory(background: bool = False) -> Any:
+    """Build a gspread client from the shared service-account credentials.
+
+    A background (Celery) export gets the library's default client, which
+    sleeps and retries on rate limits and server errors, plus a long timeout.
+    A web request gets a fail-fast client and a short timeout, so a Google
+    outage cannot hold a gunicorn worker.
+    """
+    if background:
+        return make_gsheet_client(
+            config.get_google_auth_json_path(), request_timeout=GSPREAD_BACKGROUND_TIMEOUT_SECONDS
+        )
+    return make_gsheet_client(
+        config.get_google_auth_json_path(),
+        request_timeout=GSPREAD_TIMEOUT_SECONDS,
+        http_client=gspread.HTTPClient,
+    )
 
 
 def _stale_ranges(worksheet: Any, n_rows: int, n_cols: int) -> list[str]:
@@ -53,17 +67,19 @@ class GSheetExportTarget(AbstractGSheetExportTarget):
 
     The service account must have edit access to the target spreadsheet
     (organisers share it with the service-account email). A ``client_factory``
-    can be injected in tests so no real Google access is needed.
+    can be injected in tests so no real Google access is needed. ``background``
+    is for callers outside a web request, such as a Celery task: it trades the
+    fail-fast client for one that retries, with a longer timeout.
     """
 
     def __init__(
         self,
         spreadsheet_url: str,
         client_factory: Callable[[], Any] | None = None,
-        timeout_seconds: int = GSPREAD_TIMEOUT_SECONDS,
+        background: bool = False,
     ) -> None:
         self.spreadsheet_url = spreadsheet_url
-        self._client_factory = client_factory or (lambda: _default_client_factory(timeout_seconds))
+        self._client_factory = client_factory or (lambda: _default_client_factory(background))
         self.result_url: str = ""
         self.result_title: str = ""
 
@@ -76,7 +92,11 @@ class GSheetExportTarget(AbstractGSheetExportTarget):
         values = [table.headers, *table.rows]
         try:
             client = self._client_factory()
-            spreadsheet = client.open_by_url(self.spreadsheet_url)
+            # open_gsheet classifies the access failures (not found, not shared,
+            # uploaded .xlsx) into SelectionErrors with user-facing messages
+            info = open_gsheet(client, self.spreadsheet_url)
+            info.require_writable()
+            spreadsheet = info.spreadsheet
             try:
                 worksheet = spreadsheet.worksheet(title)
             except WorksheetNotFound:
@@ -87,7 +107,11 @@ class GSheetExportTarget(AbstractGSheetExportTarget):
                 worksheet.batch_clear(stale)
             self.result_url = worksheet.url
             self.result_title = spreadsheet.title
-        except GSpreadException as exc:
+        except (SelectionError, GSpreadException, PermissionError) as exc:
             # Wrap any Google Sheets failure (missing sheet, no access, API error)
             # so callers handle one export-layer exception, not gspread internals.
-            raise ExportTargetError(str(exc)) from exc
+            # The cause is kept: entrypoints translate a SelectionError cause
+            # into a specific message. gspread raises the builtin
+            # PermissionError, with an empty message, for a worksheet write the
+            # account is not allowed; the readable text is on its cause.
+            raise ExportTargetError(str(exc) or str(exc.__cause__)) from exc

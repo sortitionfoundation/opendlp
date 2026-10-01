@@ -3,9 +3,18 @@ ABOUTME: Uses a fake gspread client so no real Google Sheets access is needed"""
 
 from unittest.mock import MagicMock
 
+import gspread
+import pytest
+from sortition_algorithms.errors import (
+    NotNativeGoogleSheetError,
+    SpreadsheetNotFoundError,
+    SpreadsheetNotSharedError,
+    SpreadsheetReadOnlyError,
+)
+
 from opendlp.adapters import gsheet_export
 from opendlp.adapters.gsheet_export import GSheetExportTarget, WorksheetNotFound
-from opendlp.adapters.tabular_export import TabularData
+from opendlp.adapters.tabular_export import ExportTargetError, TabularData
 
 
 class _FakeWorksheet:
@@ -30,6 +39,7 @@ class _FakeWorksheet:
 class _FakeSpreadsheet:
     def __init__(self, title: str = "Assembly Data") -> None:
         self.title = title
+        self.url = "https://docs.google.com/spreadsheets/d/abc"
         self.worksheets_by_title: dict[str, _FakeWorksheet] = {}
         self.added: list[str] = []
 
@@ -45,13 +55,63 @@ class _FakeSpreadsheet:
         return ws
 
 
-class _FakeClient:
-    def __init__(self, spreadsheet: _FakeSpreadsheet) -> None:
-        self._spreadsheet = spreadsheet
-        self.opened_url: str | None = None
+_NATIVE = "application/vnd.google-apps.spreadsheet"
+_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+# Recorded Drive response: the same body comes back for a missing file and for
+# one that exists but is not shared with the service account.
+_DRIVE_NOT_FOUND = {
+    "error": {
+        "code": 404,
+        "message": "File not found: abc.",
+        "errors": [{"message": "File not found: abc.", "domain": "global", "reason": "notFound"}],
+    }
+}
 
-    def open_by_url(self, url: str) -> _FakeSpreadsheet:
-        self.opened_url = url
+
+def _api_error(status_code: int, body: dict) -> gspread.exceptions.APIError:
+    response = MagicMock()
+    response.status_code = status_code
+    response.json.return_value = body
+    return gspread.exceptions.APIError(response)
+
+
+class _FakeHTTPClient:
+    """Answers open_gsheet's Drive files.get, with a fixed metadata body or an APIError."""
+
+    def __init__(self, drive_body: dict, drive_error: Exception | None = None) -> None:
+        self._drive_body = drive_body
+        self._drive_error = drive_error
+        self.auth = MagicMock(service_account_email="robot@example.com")
+
+    def request(self, method: str, url: str, params: dict | None = None) -> MagicMock:
+        if self._drive_error is not None:
+            raise self._drive_error
+        response = MagicMock()
+        response.json.return_value = self._drive_body
+        return response
+
+
+class _FakeClient:
+    def __init__(
+        self,
+        spreadsheet: _FakeSpreadsheet,
+        mimetype: str = _NATIVE,
+        can_edit: bool = True,
+        drive_error: Exception | None = None,
+        open_error: Exception | None = None,
+    ) -> None:
+        self._spreadsheet = spreadsheet
+        self._open_error = open_error
+        self.opened_key: str | None = None
+        self.http_client = _FakeHTTPClient(
+            {"name": spreadsheet.title, "mimeType": mimetype, "capabilities": {"canEdit": can_edit}},
+            drive_error=drive_error,
+        )
+
+    def open_by_key(self, key: str) -> _FakeSpreadsheet:
+        self.opened_key = key
+        if self._open_error is not None:
+            raise self._open_error
         return self._spreadsheet
 
 
@@ -67,7 +127,7 @@ class TestGSheetExportTarget:
         table = TabularData(headers=["id", "name"], rows=[["R1", "Alice"]])
         target.write_sheet("Respondents", table)
 
-        assert client.opened_url == _URL
+        assert client.opened_key == "abc"
         assert "Respondents" in spreadsheet.added
         ws = spreadsheet.worksheets_by_title["Respondents"]
         assert ws.updated == [["id", "name"], ["R1", "Alice"]]
@@ -112,24 +172,114 @@ class TestGSheetExportTarget:
 
         assert existing.batch_cleared == ["A3:B4"]
 
+    def _write(self, client: _FakeClient) -> ExportTargetError:
+        target = GSheetExportTarget(spreadsheet_url=_URL, client_factory=lambda: client)
+        with pytest.raises(ExportTargetError) as excinfo:
+            target.write_sheet("Respondents", TabularData(headers=["a"], rows=[["1"]]))
+        return excinfo.value
+
+    def test_not_shared_spreadsheet_is_classified(self):
+        """Drive says 404, the Sheets API says 403: the library turns that into SpreadsheetNotSharedError."""
+        client = _FakeClient(
+            _FakeSpreadsheet(),
+            drive_error=_api_error(404, _DRIVE_NOT_FOUND),
+            open_error=PermissionError(),
+        )
+
+        error = self._write(client)
+
+        assert isinstance(error.__cause__, SpreadsheetNotSharedError)
+        assert error.__cause__.error_params["service_account_email"] == "robot@example.com"
+        assert "not shared" in str(error)
+
+    def test_missing_spreadsheet_is_classified(self):
+        client = _FakeClient(
+            _FakeSpreadsheet(),
+            drive_error=_api_error(404, _DRIVE_NOT_FOUND),
+            open_error=gspread.exceptions.SpreadsheetNotFound(MagicMock()),
+        )
+
+        error = self._write(client)
+
+        assert isinstance(error.__cause__, SpreadsheetNotFoundError)
+
+    def test_read_only_spreadsheet_is_refused_before_writing(self):
+        spreadsheet = _FakeSpreadsheet()
+        client = _FakeClient(spreadsheet, can_edit=False)
+
+        error = self._write(client)
+
+        assert isinstance(error.__cause__, SpreadsheetReadOnlyError)
+        assert spreadsheet.added == []
+
+    def test_uploaded_xlsx_is_refused(self):
+        error = self._write(_FakeClient(_FakeSpreadsheet("Upload.xlsx"), mimetype=_XLSX))
+
+        assert isinstance(error.__cause__, NotNativeGoogleSheetError)
+        assert "Upload.xlsx" in str(error)
+
+    def test_worksheet_write_permission_error_is_wrapped(self):
+        """gspread raises a bare PermissionError, with no message, if a later call is forbidden."""
+        spreadsheet = _FakeSpreadsheet()
+
+        def forbidden(title: str, rows: int, cols: int) -> _FakeWorksheet:
+            try:
+                raise gspread.exceptions.GSpreadException("APIError: [403]: The caller does not have permission")
+            except gspread.exceptions.GSpreadException as exc:
+                raise PermissionError from exc
+
+        spreadsheet.add_worksheet = forbidden  # type: ignore[method-assign]
+
+        error = self._write(_FakeClient(spreadsheet))
+
+        assert "does not have permission" in str(error)
+        assert isinstance(error.__cause__, PermissionError)
+
 
 class TestDefaultClientFactory:
-    def test_sets_timeout_on_gspread_client(self, monkeypatch) -> None:
-        """The real client must carry a timeout so an export cannot hang a worker."""
+    def _capture(self, monkeypatch) -> tuple[MagicMock, list[dict]]:
         fake_client = MagicMock()
-        monkeypatch.setattr(gsheet_export.gspread, "service_account", lambda filename: fake_client)
+        calls: list[dict] = []
+
+        def fake_make(auth_json_path, request_timeout, http_client=gspread.BackOffHTTPClient):
+            calls.append({"path": auth_json_path, "timeout": request_timeout, "http_client": http_client})
+            return fake_client
+
+        monkeypatch.setattr(gsheet_export, "make_gsheet_client", fake_make)
+        monkeypatch.setattr(gsheet_export.config, "get_google_auth_json_path", lambda: "/creds.json")
+        return fake_client, calls
+
+    def test_web_request_client_fails_fast_with_short_timeout(self, monkeypatch) -> None:
+        """In a web request a stalled Google API must not hold a worker: no retries, short timeout."""
+        fake_client, calls = self._capture(monkeypatch)
 
         client = gsheet_export._default_client_factory()
 
         assert client is fake_client
-        fake_client.set_timeout.assert_called_once_with(gsheet_export.GSPREAD_TIMEOUT_SECONDS)
+        assert calls == [
+            {"path": "/creds.json", "timeout": gsheet_export.GSPREAD_TIMEOUT_SECONDS, "http_client": gspread.HTTPClient}
+        ]
 
-    def test_target_passes_its_timeout_to_the_client(self, monkeypatch) -> None:
-        """A target built with a longer timeout hands it to the gspread client it creates."""
-        fake_client = MagicMock()
-        monkeypatch.setattr(gsheet_export.gspread, "service_account", lambda filename: fake_client)
-        target = GSheetExportTarget(spreadsheet_url=_URL, timeout_seconds=120)
+    def test_background_client_retries_with_long_timeout(self, monkeypatch) -> None:
+        """A Celery export can afford the library's retrying client and a longer timeout."""
+        fake_client, calls = self._capture(monkeypatch)
 
-        target._client_factory()
+        client = gsheet_export._default_client_factory(background=True)
 
-        fake_client.set_timeout.assert_called_once_with(120)
+        assert client is fake_client
+        assert calls == [
+            {
+                "path": "/creds.json",
+                "timeout": gsheet_export.GSPREAD_BACKGROUND_TIMEOUT_SECONDS,
+                "http_client": gspread.BackOffHTTPClient,
+            }
+        ]
+
+    def test_target_background_flag_selects_the_background_client(self, monkeypatch) -> None:
+        seen: list[bool] = []
+        monkeypatch.setattr(gsheet_export, "_default_client_factory", lambda background=False: seen.append(background))
+
+        GSheetExportTarget(spreadsheet_url=_URL)._client_factory()
+        GSheetExportTarget(spreadsheet_url=_URL, background=True)._client_factory()
+
+        assert seen == [False, True]

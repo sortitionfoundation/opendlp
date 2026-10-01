@@ -321,14 +321,13 @@ The one-off export (respondents modal, and the dashboard export that shares
 `gsheet_export_flow.py`) still writes to Google inside the web request. Two
 things make that a worse fit than it was when this plan was written:
 
-- **The export adapter now authenticates through the library's
-  `make_gsheet_client()`** (907), which uses gspread's `BackOffHTTPClient`.
-  On a 429 or a 5xx that client sleeps and retries with doubling waits of up
-  to 128 seconds. The 20 second per-request timeout bounds each attempt, not
-  the sleeps between them, so a Google outage or a quota squeeze can hold a
-  gunicorn worker for minutes. That back-off is exactly right in a Celery
-  task, where `auto_export_respondents` already layers its own retries on
-  top, and exactly wrong in a request.
+- **The web request gets no retries.** The adapter authenticates through
+  the library's `make_gsheet_client()` (907), and only the Celery task asks
+  for the retrying `BackOffHTTPClient` via `background=True`. A one-off export
+  in a request uses the plain client with a 20 second timeout, so a 429 or a
+  transient 5xx fails the export outright rather than holding a gunicorn
+  worker. Moving it into Celery would let it share the task's back-off and
+  retries instead of failing fast.
 - **The service account's write quota is shared** across every assembly and
   every selection run on the install (see fact 3 above). A one-off export is
   the one Google write that bypasses the per-assembly Redis lock and the
