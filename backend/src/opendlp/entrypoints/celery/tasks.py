@@ -184,25 +184,18 @@ def _gsheet_api_error_message(err: gspread.exceptions.APIError) -> str:
     """
     Turn a raw gspread APIError into a message a user can act on.
 
-    The Drive API answers 404 both for a spreadsheet that does not exist and for
-    one that exists but is not shared with the service account, so a 404 names
-    both possibilities. Anything else carries Google's own status and message.
+    The library classifies the common access failures (wrong URL, not shared,
+    read-only, uploaded .xlsx) into SelectionErrors before this is reached, so
+    what arrives here is Google's own status and message for anything else.
     Returns plain text; callers escape it before storing it as error_message,
     which templates render with ``| safe``.
     """
-    service_account_email = get_service_account_email()
-    if err.code == 404:
-        return _(
-            "Google reported the spreadsheet as not found. Either the URL is wrong or "
-            "the spreadsheet is not shared with %(email)s.",
-            email=service_account_email,
-        )
     return _(
         "Google returned an error reading the spreadsheet (%(code)s: %(detail)s). "
         "Check the URL is correct and that the spreadsheet is shared with %(email)s.",
         code=err.code,
         detail=str(err.error.get("message", "")),
-        email=service_account_email,
+        email=get_service_account_email(),
     )
 
 
@@ -233,6 +226,9 @@ def _internal_load_gsheet(
     # failure callback's "Task failed with exception" message.
     try:
         spreadsheet_title = data_source.get_title()
+        # a selection always writes output tabs, so refuse a read-only share
+        # now rather than after the selection has run
+        data_source.require_writable()
     except errors.NotNativeGoogleSheetError as error:
         user_msg = _(
             "The file '%(file_name)s' has the format '%(common_name)s', "
@@ -1001,6 +997,8 @@ def manage_old_tabs(
     )
 
     try:
+        if not dry_run:
+            data_source.require_writable()
         # Call delete_old_output_tabs method
         tab_names = data_source.delete_old_output_tabs(dry_run=dry_run)
 

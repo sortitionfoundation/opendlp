@@ -6,6 +6,7 @@ from io import StringIO
 
 import pytest
 from flask.testing import FlaskClient
+from sortition_algorithms.errors import SpreadsheetNotSharedError
 
 from opendlp.adapters.tabular_export import ExportTargetError
 from opendlp.domain.assembly import Assembly
@@ -282,6 +283,38 @@ class TestRunExport:
         )
 
         assert response.status_code == 302
+
+    def test_run_gsheet_not_shared_flashes_the_specific_reason(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        # The real adapter chains the library's classification as the cause, and
+        # the flow translates that into the flash instead of the generic hint.
+        error = ExportTargetError("not shared")
+        error.__cause__ = SpreadsheetNotSharedError(
+            spreadsheet_name=_SHEET_URL, service_account_email="robot@example.com"
+        )
+
+        def factory(url: str) -> FakeGSheetExportTarget:
+            return FakeGSheetExportTarget(error=error)
+
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = factory
+        _add_respondent(fake_store, existing_assembly.id, "R1", RespondentStatus.POOL)
+
+        response = logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            data={
+                "destination": "gsheet",
+                "status": "",
+                "spreadsheet_url": _SHEET_URL,
+                "worksheet_name": "Export tab",
+            },
+            follow_redirects=True,
+        )
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert "not shared with the service account robot@example.com" in body
+        assert "Could not write to the spreadsheet" not in body
 
     def test_run_gsheet_write_failure_flashes_error_and_saves_nothing(
         self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore

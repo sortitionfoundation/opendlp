@@ -522,6 +522,21 @@ same Drive mimetype check.
    or not shared" wording for two precise messages.
 4. Optional: preflight access check on the Assembly Data page.
 
+## Status (2026-10-01)
+
+- Step 1 landed on `907-not-shared-message` (commit `3c65581f`).
+- Step 2 shipped as sortition-algorithms 0.12.12 and OpenDLP's pin was bumped.
+- Step 3 done on the same branch: `load_gsheet` and the delete path of
+  `manage_old_tabs` call `require_writable()` up front; the interim 404
+  wording is gone (the library's `spreadsheet_not_found`,
+  `spreadsheet_not_shared` and `spreadsheet_read_only` codes flow through
+  `translate_sortition_error()`); the export adapter opens sheets through
+  `open_gsheet()` and the export flow flashes the classified reason when the
+  cause is a library error. The BDD shim gained `can_edit`,
+  `require_writable()` and `simulate_read_only()`.
+- Not done: the optional preflight check on the Assembly Data page (step 4),
+  and switching the export adapter to `make_gsheet_client()`.
+
 ## Decisions (Chewie, 2026-10-01)
 
 - **Two messages.** "Does not exist" and "not shared with <email>" are

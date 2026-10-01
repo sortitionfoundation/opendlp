@@ -6,6 +6,8 @@ from typing import Any
 
 import gspread
 from gspread.exceptions import GSpreadException, WorksheetNotFound
+from sortition_algorithms import open_gsheet
+from sortition_algorithms.errors import SelectionError
 
 from opendlp import config
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, ExportTargetError, TabularData
@@ -49,7 +51,11 @@ class GSheetExportTarget(AbstractGSheetExportTarget):
     def write_sheet(self, title: str, table: TabularData) -> None:
         try:
             client = self._client_factory()
-            spreadsheet = client.open_by_url(self.spreadsheet_url)
+            # open_gsheet classifies the access failures (not found, not shared,
+            # uploaded .xlsx) into SelectionErrors with user-facing messages
+            info = open_gsheet(client, self.spreadsheet_url)
+            info.require_writable()
+            spreadsheet = info.spreadsheet
             try:
                 worksheet = spreadsheet.worksheet(title)
                 worksheet.clear()
@@ -58,10 +64,11 @@ class GSheetExportTarget(AbstractGSheetExportTarget):
             worksheet.update([table.headers, *table.rows])
             self.result_url = worksheet.url
             self.result_title = spreadsheet.title
-        except (GSpreadException, PermissionError) as exc:
+        except (SelectionError, GSpreadException, PermissionError) as exc:
             # Wrap any Google Sheets failure (missing sheet, no access, API error)
             # so callers handle one export-layer exception, not gspread internals.
-            # gspread raises the builtin PermissionError, with an empty message,
-            # for a spreadsheet that is not shared with the service account; the
-            # readable text is on its cause.
+            # The cause is kept: entrypoints translate a SelectionError cause
+            # into a specific message. gspread raises the builtin
+            # PermissionError, with an empty message, for a worksheet write the
+            # account is not allowed; the readable text is on its cause.
             raise ExportTargetError(str(exc) or str(exc.__cause__)) from exc

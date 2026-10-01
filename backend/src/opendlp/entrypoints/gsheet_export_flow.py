@@ -6,9 +6,11 @@ from collections.abc import Callable
 import structlog
 from flask import current_app, flash, redirect, request
 from flask.typing import ResponseReturnValue
+from sortition_algorithms.errors import SortitionBaseError
 
 from opendlp.adapters.tabular_export import AbstractGSheetExportTarget, ExportTargetError
 from opendlp.entrypoints.context_processors import get_service_account_email
+from opendlp.service_layer.error_translation import translate_sortition_error
 from opendlp.translations import gettext as _
 
 logger = structlog.get_logger(__name__)
@@ -63,14 +65,19 @@ def run_gsheet_export_flow(
         # The sheet could not be written — typically it is not shared with the
         # service account, or the URL points at a sheet that does not exist.
         logger.warning(log_event, error=str(e), **log_context)
-        flash(
-            _(
-                "Could not write to the spreadsheet. Check the URL is correct and that "
-                "the spreadsheet is shared with %(email)s.",
-                email=service_account_email,
-            ),
-            "error",
-        )
+        if isinstance(e.__cause__, SortitionBaseError):
+            # the adapter classified the failure (not found, not shared,
+            # read-only, not a native Google Sheet), so say exactly which
+            flash(translate_sortition_error(e.__cause__), "error")
+        else:
+            flash(
+                _(
+                    "Could not write to the spreadsheet. Check the URL is correct and that "
+                    "the spreadsheet is shared with %(email)s.",
+                    email=service_account_email,
+                ),
+                "error",
+            )
         return redirect(redirect_url)
 
     flash(success_message, "success")

@@ -16,6 +16,7 @@ from sortition_algorithms.errors import (
     NotNativeGoogleSheetError,
     SelectionError,
     SelectionMultilineError,
+    SpreadsheetNotSharedError,
 )
 from sortition_algorithms.features import FeatureValueMinMax
 
@@ -550,18 +551,52 @@ class TestLoadGsheetOpenFailures:
             assert record.status == SelectionRunStatus.FAILED
             return record.error_message
 
-    def test_drive_404_names_both_wrong_url_and_not_shared(
+    def test_unclassified_api_error_shows_google_status_and_sharing_hint(
         self, postgres_session_factory, csv_gsheet_data_source, test_settings
     ):
+        """An APIError the library could not classify still reaches the record with Google's text."""
         error_message = self._run_with_open_error(
             postgres_session_factory,
             csv_gsheet_data_source,
             test_settings,
             _api_error(404, DRIVE_NOT_FOUND_BODY),
         )
-        assert "not found" in error_message
-        assert "not shared with" in error_message
+        assert "404" in error_message
+        assert "File not found" in error_message
+        assert "shared with" in error_message
         assert "Task failed with exception" not in error_message
+
+    def test_not_shared_error_is_translated(self, postgres_session_factory, csv_gsheet_data_source, test_settings):
+        error = SpreadsheetNotSharedError(
+            spreadsheet_name="https://example.com/sheet", service_account_email="robot@example.com"
+        )
+        error_message = self._run_with_open_error(
+            postgres_session_factory, csv_gsheet_data_source, test_settings, error
+        )
+        assert "not shared with the service account robot@example.com" in error_message
+
+    def test_read_only_share_fails_before_loading(
+        self, postgres_session_factory, csv_gsheet_data_source, test_settings
+    ):
+        """A sheet shared as Viewer is refused up front, since the selection writes output tabs."""
+        task_id = uuid.uuid4()
+        self._create_record(postgres_session_factory, task_id)
+        csv_gsheet_data_source.simulate_read_only()
+        with patch.object(load_gsheet, "update_state"):
+            success, features, _people, _already, _ = load_gsheet(
+                task_id=task_id,
+                data_source=csv_gsheet_data_source,
+                settings=test_settings,
+                session_factory=postgres_session_factory,
+            )
+        assert success is False
+        assert features is None
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.status == SelectionRunStatus.FAILED
+            assert "read-only" in record.error_message
+            assert not any("Loading targets" in msg for msg in record.log_messages)
 
     def test_other_api_error_shows_google_status_and_escapes_it(
         self, postgres_session_factory, csv_gsheet_data_source, test_settings
@@ -612,12 +647,7 @@ class TestLoadGsheetOpenFailures:
 
 
 class TestGsheetApiErrorMessage:
-    def test_404_is_not_found_or_not_shared(self):
-        message = _gsheet_api_error_message(_api_error(404, DRIVE_NOT_FOUND_BODY))
-        assert "not found" in message
-        assert "not shared with" in message
-
-    def test_other_codes_include_google_message(self):
+    def test_includes_google_code_and_message(self):
         message = _gsheet_api_error_message(_api_error(429, {"error": {"code": 429, "message": "Quota exceeded"}}))
         assert "429" in message
         assert "Quota exceeded" in message
@@ -912,8 +942,65 @@ class TestManageOldTabsTask:
             record = uow.selection_run_records.get_by_task_id(task_id)
             assert record is not None
             assert record.status == SelectionRunStatus.FAILED
-            assert "not shared with" in record.error_message
+            assert "404" in record.error_message
+            assert "shared with" in record.error_message
             assert "Task failed with exception" not in record.error_message
+
+    def _create_delete_tabs_record(self, session_factory, task_id):
+        with bootstrap(session_factory=session_factory) as uow:
+            assembly_id = uuid.uuid4()
+            uow.assemblies.add(Assembly(assembly_id=assembly_id, title="Test Assembly"))
+            uow.selection_run_records.add(
+                SelectionRunRecord(
+                    assembly_id=assembly_id,
+                    task_id=task_id,
+                    task_type=SelectionTaskType.DELETE_OLD_TABS,
+                    status=SelectionRunStatus.PENDING,
+                    log_messages=[],
+                )
+            )
+            uow.commit()
+
+    def test_manage_old_tabs_delete_refuses_read_only_share(self, postgres_session_factory, csv_gsheet_data_source):
+        task_id = uuid.uuid4()
+        self._create_delete_tabs_record(postgres_session_factory, task_id)
+        csv_gsheet_data_source.add_simulated_old_tab("Remaining - output - 2024-01-01")
+        csv_gsheet_data_source.simulate_read_only()
+
+        with patch.object(manage_old_tabs, "update_state"):
+            success, tab_names, _ = manage_old_tabs(
+                task_id=task_id,
+                data_source=csv_gsheet_data_source,
+                dry_run=False,
+                session_factory=postgres_session_factory,
+            )
+
+        assert success is False
+        assert tab_names == []
+        assert csv_gsheet_data_source._simulated_old_tabs == ["Remaining - output - 2024-01-01"]
+        with bootstrap(session_factory=postgres_session_factory) as uow:
+            record = uow.selection_run_records.get_by_task_id(task_id)
+            assert record is not None
+            assert record.status == SelectionRunStatus.FAILED
+            assert "read-only" in record.error_message
+
+    def test_manage_old_tabs_list_allowed_on_read_only_share(self, postgres_session_factory, csv_gsheet_data_source):
+        """Listing does not write, so a Viewer share is enough."""
+        task_id = uuid.uuid4()
+        self._create_delete_tabs_record(postgres_session_factory, task_id)
+        csv_gsheet_data_source.add_simulated_old_tab("Remaining - output - 2024-01-01")
+        csv_gsheet_data_source.simulate_read_only()
+
+        with patch.object(manage_old_tabs, "update_state"):
+            success, tab_names, _ = manage_old_tabs(
+                task_id=task_id,
+                data_source=csv_gsheet_data_source,
+                dry_run=True,
+                session_factory=postgres_session_factory,
+            )
+
+        assert success is True
+        assert tab_names == ["Remaining - output - 2024-01-01"]
 
     def test_manage_old_tabs_empty_list(self, postgres_session_factory, csv_gsheet_data_source):
         """Test managing old tabs when there are none."""
