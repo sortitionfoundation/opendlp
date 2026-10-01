@@ -16,6 +16,9 @@ from opendlp.service_layer.respondent_auto_export import lock_key, pending_key
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
 from tests.fakes import FakeGSheetExportTarget
 
+# The integration directory is auto-marked requires_db only; this file also needs the test Redis.
+pytestmark = pytest.mark.requires_redis
+
 _SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
 _DISPATCH = "opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async"
 
