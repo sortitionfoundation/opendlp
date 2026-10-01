@@ -205,6 +205,14 @@ also removes the reliance on the countdown for ordering. When a second
 after-commit side effect arrives, build that, and replace the direct calls with
 one handler.
 
+The task itself is the one place that knowingly breaks the "external I/O
+outside the block" rule: `run_auto_export` reads the config and respondents,
+writes to Google, then records the result and commits, all in one block, with
+a 120-second gspread timeout. Today the block only reads before the write, so
+it could close before the write and reopen after; it stays as one block
+because the next round will record each export's outcome in the database,
+and the event work should settle the read → write → commit split for both.
+
 ---
 
 ## Service Layer Overview
