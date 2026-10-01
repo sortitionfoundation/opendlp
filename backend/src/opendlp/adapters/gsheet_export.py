@@ -4,6 +4,7 @@ ABOUTME: Authenticates with the shared service account and writes one worksheet"
 from collections.abc import Callable
 from typing import Any
 
+import gspread
 from gspread.exceptions import GSpreadException, WorksheetNotFound
 from sortition_algorithms import make_gsheet_client, open_gsheet
 from sortition_algorithms.errors import SelectionError
@@ -19,14 +20,29 @@ _DEFAULT_COLS = 26
 
 # Exports run inside web requests, so a stalled Google API must fail before
 # the gunicorn worker timeout. gspread's default is no timeout at all.
-# Note the library's client retries rate-limit and server errors with
-# increasing sleeps, so a Google outage can hold a request longer than this.
 GSPREAD_TIMEOUT_SECONDS = 20
+# Background exports have no worker timeout to beat, so give a slow Google API
+# more room before declaring the export failed.
+GSPREAD_BACKGROUND_TIMEOUT_SECONDS = 120
 
 
-def _default_client_factory() -> Any:
-    """Build a gspread client from the shared service-account credentials, as the selection tasks do."""
-    return make_gsheet_client(config.get_google_auth_json_path(), request_timeout=GSPREAD_TIMEOUT_SECONDS)
+def _default_client_factory(background: bool = False) -> Any:
+    """Build a gspread client from the shared service-account credentials.
+
+    A background (Celery) export gets the library's default client, which
+    sleeps and retries on rate limits and server errors, plus a long timeout.
+    A web request gets a fail-fast client and a short timeout, so a Google
+    outage cannot hold a gunicorn worker.
+    """
+    if background:
+        return make_gsheet_client(
+            config.get_google_auth_json_path(), request_timeout=GSPREAD_BACKGROUND_TIMEOUT_SECONDS
+        )
+    return make_gsheet_client(
+        config.get_google_auth_json_path(),
+        request_timeout=GSPREAD_TIMEOUT_SECONDS,
+        http_client=gspread.HTTPClient,
+    )
 
 
 class GSheetExportTarget(AbstractGSheetExportTarget):
@@ -34,16 +50,19 @@ class GSheetExportTarget(AbstractGSheetExportTarget):
 
     The service account must have edit access to the target spreadsheet
     (organisers share it with the service-account email). A ``client_factory``
-    can be injected in tests so no real Google access is needed.
+    can be injected in tests so no real Google access is needed. ``background``
+    is for callers outside a web request, such as a Celery task: it trades the
+    fail-fast client for one that retries, with a longer timeout.
     """
 
     def __init__(
         self,
         spreadsheet_url: str,
-        client_factory: Callable[[], Any] = _default_client_factory,
+        client_factory: Callable[[], Any] | None = None,
+        background: bool = False,
     ) -> None:
         self.spreadsheet_url = spreadsheet_url
-        self._client_factory = client_factory
+        self._client_factory = client_factory or (lambda: _default_client_factory(background))
         self.result_url: str = ""
         self.result_title: str = ""
 
