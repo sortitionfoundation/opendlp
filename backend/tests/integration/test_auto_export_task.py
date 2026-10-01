@@ -46,6 +46,16 @@ def auto_export_assembly(postgres_session_factory) -> uuid.UUID:
         return assembly.id
 
 
+def _task_kwargs(assembly_id, session_factory, target_factory, redis_client) -> dict:
+    """The task's keyword arguments for an eager ``apply()``, which takes them as one dict."""
+    return {
+        "assembly_id": assembly_id,
+        "session_factory": session_factory,
+        "target_factory": target_factory,
+        "redis_client": redis_client,
+    }
+
+
 @pytest.fixture
 def redis(test_redis_client):
     test_redis_client.flushdb()
@@ -174,6 +184,48 @@ class TestAutoExportRespondentsTask:
         assert "Automatic export failed; will retry" in caplog.text
         assert "quota exceeded" in caplog.text
         assert redis.get(lock_key(auto_export_assembly)) is None
+
+    def test_celery_retries_until_the_write_succeeds(
+        self, auto_export_assembly, postgres_session_factory, redis, caplog
+    ):
+        """Run eagerly, so Celery's own autoretry drives the attempts: two transient failures, then a write."""
+        targets: list[FakeGSheetExportTarget] = []
+
+        def factory(url: str) -> FakeGSheetExportTarget:
+            error = ExportTargetError("flaky") if len(targets) < 2 else None
+            targets.append(FakeGSheetExportTarget(error=error))
+            return targets[-1]
+
+        with caplog.at_level("WARNING"):
+            result = auto_export_respondents.apply(
+                kwargs=_task_kwargs(auto_export_assembly, postgres_session_factory, factory, redis)
+            )
+
+        assert result.state == "SUCCESS"
+        assert result.result is True
+        assert len(targets) == 3
+        assert len(targets[-1].writes) == 1
+        assert caplog.text.count("Automatic export failed; will retry") == 2
+
+    def test_celery_gives_up_after_the_configured_retries(
+        self, auto_export_assembly, postgres_session_factory, redis, caplog
+    ):
+        targets: list[FakeGSheetExportTarget] = []
+
+        def factory(url: str) -> FakeGSheetExportTarget:
+            targets.append(FakeGSheetExportTarget(error=ExportTargetError("still not shared")))
+            return targets[-1]
+
+        with caplog.at_level("WARNING"):
+            result = auto_export_respondents.apply(
+                kwargs=_task_kwargs(auto_export_assembly, postgres_session_factory, factory, redis)
+            )
+
+        assert result.state == "SUCCESS"
+        assert result.result is False
+        assert len(targets) == AUTO_EXPORT_MAX_RETRIES + 1
+        assert caplog.text.count("Automatic export failed; will retry") == AUTO_EXPORT_MAX_RETRIES
+        assert "Automatic export failed and will not be retried" in caplog.text
 
     def test_final_attempt_failure_is_logged_as_an_error_and_not_raised(
         self, auto_export_assembly, postgres_session_factory, redis, caplog
