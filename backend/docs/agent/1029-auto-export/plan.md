@@ -81,7 +81,7 @@ untouched.
   the "initial export must succeed" rule, and it falls out of the existing
   ordering.
 - Success flash differs when enabled: "Respondents exported to Google Sheets.
-  The sheet will now update automatically."
+  The tab will now update automatically."
 - Respondents page: the existing link line reads "Automatically exported to
   Google Sheets <link>" when `auto_export` is on.
 - A CSV download from the same modal does not touch the saved config, so it

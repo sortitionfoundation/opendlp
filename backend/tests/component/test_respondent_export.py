@@ -434,7 +434,7 @@ class TestRunExportWithAutoExport:
             follow_redirects=True,
         )
 
-        assert "The sheet will now update automatically" in response.get_data(as_text=True)
+        assert "The tab will now update automatically" in response.get_data(as_text=True)
         config = _saved_config(fake_store, existing_assembly.id)
         assert config is not None
         assert config.auto_export is True

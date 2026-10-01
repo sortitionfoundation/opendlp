@@ -567,7 +567,7 @@ def _run_gsheet_export(
             )
 
     if auto_export:
-        success_message = _("Respondents exported to Google Sheets. The sheet will now update automatically.")
+        success_message = _("Respondents exported to Google Sheets. The tab will now update automatically.")
     else:
         success_message = _("Respondents exported to Google Sheets")
     return run_gsheet_export_flow(
