@@ -24,6 +24,8 @@ class CSVGSheetDataSource(AbstractDataSource):
         self.spreadsheet = FakeSpreadsheet("spreadsheet title")
         # For testing delete_old_output_tabs functionality
         self._simulated_old_tabs: list[str] = []
+        # For testing the read-only spreadsheet failure path
+        self._simulated_read_only = False
 
     @property
     def people_data_container(self) -> str:
@@ -81,6 +83,22 @@ class CSVGSheetDataSource(AbstractDataSource):
 
     def get_title(self) -> str:
         return self.spreadsheet.title
+
+    @property
+    def can_edit(self) -> bool:
+        return not self._simulated_read_only
+
+    def require_writable(self) -> None:
+        if self._simulated_read_only:
+            raise errors.SpreadsheetReadOnlyError(
+                spreadsheet_name=self.spreadsheet.title,
+                title=self.spreadsheet.title,
+                service_account_email="test-service-account@example.com",
+            )
+
+    def simulate_read_only(self) -> None:
+        """Make require_writable() fail, as it does for a sheet shared as Viewer."""
+        self._simulated_read_only = True
 
     def delete_old_output_tabs(self, dry_run: bool = False) -> list[str]:
         """

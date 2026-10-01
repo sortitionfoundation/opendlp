@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-01 14:02+0000\n"
+"POT-Creation-Date: 2026-10-01 14:53+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -1197,7 +1197,7 @@ msgstr ""
 msgid "Unrecognised attribute names: %(names)s"
 msgstr "Ismeretlen attribútumnevek: %(names)s"
 
-#: src/opendlp/entrypoints/gsheet_export_flow.py:42
+#: src/opendlp/entrypoints/gsheet_export_flow.py:44
 msgid ""
 "Google Sheets export is unavailable: no Google service account is "
 "configured."
@@ -1205,16 +1205,16 @@ msgstr ""
 "A Google Táblázatba exportálás nem érhető el: nincs beállítva Google "
 "szolgáltatásfiók."
 
-#: src/opendlp/entrypoints/gsheet_export_flow.py:48
+#: src/opendlp/entrypoints/gsheet_export_flow.py:50
 msgid "A spreadsheet URL is required to export to Google Sheets"
 msgstr "A Google Táblázatba exportáláshoz meg kell adni egy Google Táblázat URL-t"
 
-#: src/opendlp/entrypoints/gsheet_export_flow.py:60
+#: src/opendlp/entrypoints/gsheet_export_flow.py:62
 #, python-format
 msgid "Could not export to Google Sheets: %(error)s"
 msgstr "Nem sikerült exportálni a Google Táblázatba: %(error)s"
 
-#: src/opendlp/entrypoints/gsheet_export_flow.py:68
+#: src/opendlp/entrypoints/gsheet_export_flow.py:75
 #, python-format
 msgid ""
 "Could not write to the spreadsheet. Check the URL is correct and that the"
@@ -3413,14 +3413,7 @@ msgstr ""
 "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba az "
 "adminisztrátorokkal."
 
-#: src/opendlp/entrypoints/celery/tasks.py:196
-#, python-format
-msgid ""
-"Google reported the spreadsheet as not found. Either the URL is wrong or "
-"the spreadsheet is not shared with %(email)s."
-msgstr ""
-
-#: src/opendlp/entrypoints/celery/tasks.py:201
+#: src/opendlp/entrypoints/celery/tasks.py:194
 #, python-format
 msgid ""
 "Google returned an error reading the spreadsheet (%(code)s: %(detail)s). "
@@ -3428,11 +3421,11 @@ msgid ""
 "%(email)s."
 msgstr ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:227
+#: src/opendlp/entrypoints/celery/tasks.py:220
 msgid "Starting Google Sheets load task"
 msgstr "A Google Táblázat betöltési feladatának indítása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:238
+#: src/opendlp/entrypoints/celery/tasks.py:234
 #, python-format
 msgid ""
 "The file '%(file_name)s' has the format '%(common_name)s', rather than "
@@ -3443,9 +3436,9 @@ msgstr ""
 "Táblázat. Nyisd meg a Google Táblázatokban, válaszd a Fájl → Mentés "
 "Google-táblázatként lehetőséget, majd használd az így létrejött új fájlt."
 
-#: src/opendlp/entrypoints/celery/tasks.py:270
-#: src/opendlp/entrypoints/celery/tasks.py:410
-#: src/opendlp/entrypoints/celery/tasks.py:1055
+#: src/opendlp/entrypoints/celery/tasks.py:266
+#: src/opendlp/entrypoints/celery/tasks.py:406
+#: src/opendlp/entrypoints/celery/tasks.py:1053
 #, python-format
 msgid ""
 "Failed to load the spreadsheet due to permissions issues. Check the "
@@ -3454,25 +3447,25 @@ msgstr ""
 "A Google Táblázat betöltése jogosultsági hiba miatt sikertelen. "
 "Ellenőrizd, hogy a táblázat meg van-e osztva a következővel: %(email)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:299
+#: src/opendlp/entrypoints/celery/tasks.py:295
 #, python-format
 msgid "Loading spreadsheet with title: %(title)s"
 msgstr "Táblázat betöltése, cím: %(title)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:300
+#: src/opendlp/entrypoints/celery/tasks.py:296
 #, python-format
 msgid "Loading targets from tab: %(tab_name)s"
 msgstr "Célszámok betöltése a következő munkalapról: %(tab_name)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:321
+#: src/opendlp/entrypoints/celery/tasks.py:317
 #, python-format
 msgid "Found %(num_features)s targets with a total of %(num_values)s values."
 msgstr ""
 "%(num_features)s kiválasztási szempont található, összesen %(num_values)s"
 " értékkel."
 
-#: src/opendlp/entrypoints/celery/tasks.py:326
-#: src/opendlp/entrypoints/celery/tasks.py:678
+#: src/opendlp/entrypoints/celery/tasks.py:322
+#: src/opendlp/entrypoints/celery/tasks.py:674
 #, python-format
 msgid ""
 "Minimum selection for targets is %(min_select)s, maximum is "
@@ -3481,45 +3474,45 @@ msgstr ""
 "A célszámok szerinti minimális kiválasztás %(min_select)s, a maximális "
 "%(max_select)s."
 
-#: src/opendlp/entrypoints/celery/tasks.py:330
+#: src/opendlp/entrypoints/celery/tasks.py:326
 #, python-format
 msgid "Loading people from tab: %(tab_name)s"
 msgstr "Emberek betöltése a következő munkalapról: %(tab_name)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:345
+#: src/opendlp/entrypoints/celery/tasks.py:341
 #, python-format
 msgid "Loaded %(count)s people."
 msgstr "%(count)s ember betöltve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:355
+#: src/opendlp/entrypoints/celery/tasks.py:351
 #, python-format
 msgid "Loading already selected from tab: %(tab_name)s"
 msgstr "A már kiválasztottak betöltése a következő munkalapról: %(tab_name)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:372
+#: src/opendlp/entrypoints/celery/tasks.py:368
 #, python-format
 msgid "Loaded %(count)s already selected people."
 msgstr "%(count)s már kiválasztott ember betöltve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:381
+#: src/opendlp/entrypoints/celery/tasks.py:377
 msgid "Google Sheets load completed successfully."
 msgstr "A Google Táblázat betöltése sikeresen befejeződött."
 
-#: src/opendlp/entrypoints/celery/tasks.py:424
+#: src/opendlp/entrypoints/celery/tasks.py:420
 #, python-format
 msgid "Failed to load the spreadsheet: %(error)s"
 msgstr "A Google Táblázat betöltése sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:458
+#: src/opendlp/entrypoints/celery/tasks.py:454
 msgid ": TEST only, do not use for real selection"
 msgstr ": CSAK TESZT, ne használd valódi kiválasztáshoz"
 
-#: src/opendlp/entrypoints/celery/tasks.py:463
+#: src/opendlp/entrypoints/celery/tasks.py:459
 #, python-format
 msgid "Starting selection algorithm for %(number)s people%(suffix)s"
 msgstr "A kiválasztási algoritmus indítása %(number)s emberre%(suffix)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:476
+#: src/opendlp/entrypoints/celery/tasks.py:472
 #, python-format
 msgid ""
 "Running stratified selection with %(people_count)s people and "
@@ -3528,33 +3521,33 @@ msgstr ""
 "Rétegzett kiválasztás futtatása %(people_count)s emberrel és "
 "%(features_count)s kiválasztási szemponttal%(suffix)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:502
+#: src/opendlp/entrypoints/celery/tasks.py:498
 #, python-format
 msgid "Selection completed successfully. Selected %(count)s panel(s).%(suffix)s"
 msgstr ""
 "A kiválasztás sikeresen befejeződött. %(count)s csoport-összeállítás "
 "kiválasztva.%(suffix)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:519
+#: src/opendlp/entrypoints/celery/tasks.py:515
 msgid "Selection algorithm could not find panels meeting the specified criteria"
 msgstr ""
 "A kiválasztási algoritmus nem talált a megadott feltételeknek megfelelő "
 "csoport-összeállítást"
 
-#: src/opendlp/entrypoints/celery/tasks.py:523
+#: src/opendlp/entrypoints/celery/tasks.py:519
 msgid "Selection algorithm failed to find suitable panels"
 msgstr "A kiválasztási algoritmus nem talált megfelelő csoport-összeállítást"
 
-#: src/opendlp/entrypoints/celery/tasks.py:532
+#: src/opendlp/entrypoints/celery/tasks.py:528
 #, python-format
 msgid "Selection task failed: %(error)s"
 msgstr "A kiválasztási feladat sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:565
+#: src/opendlp/entrypoints/celery/tasks.py:561
 msgid "About to write selected and remaining tabs"
 msgstr "A kiválasztottak és a fennmaradók munkalapjának írása következik"
 
-#: src/opendlp/entrypoints/celery/tasks.py:590
+#: src/opendlp/entrypoints/celery/tasks.py:586
 #, python-format
 msgid ""
 "In the remaining tab there are %(count)s people who share an address with"
@@ -3564,7 +3557,7 @@ msgstr ""
 "lakik valaki mással a kiválasztottak vagy a fennmaradók közül. Ők "
 "narancssárgával vannak kiemelve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:602
+#: src/opendlp/entrypoints/celery/tasks.py:598
 #, python-format
 msgid ""
 "Successfully written %(selected_count)s selected and %(remaining_count)s "
@@ -3573,50 +3566,50 @@ msgstr ""
 "%(selected_count)s kiválasztott és %(remaining_count)s fennmaradó "
 "sikeresen kiírva a táblázatba."
 
-#: src/opendlp/entrypoints/celery/tasks.py:613
+#: src/opendlp/entrypoints/celery/tasks.py:609
 #, python-format
 msgid "Writing results failed: %(error)s"
 msgstr "Az eredmények kiírása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:655
+#: src/opendlp/entrypoints/celery/tasks.py:651
 msgid "Starting database data load"
 msgstr "Az adatbázisból való adatbetöltés indítása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:673
+#: src/opendlp/entrypoints/celery/tasks.py:669
 #, python-format
 msgid "Found %(num_features)s targets with %(num_values)s values."
 msgstr "%(num_features)s kiválasztási szempont található, %(num_values)s értékkel."
 
-#: src/opendlp/entrypoints/celery/tasks.py:682
+#: src/opendlp/entrypoints/celery/tasks.py:678
 msgid "Loading respondents from database"
 msgstr "Jelentkezők betöltése az adatbázisból"
 
-#: src/opendlp/entrypoints/celery/tasks.py:690
+#: src/opendlp/entrypoints/celery/tasks.py:686
 #, python-format
 msgid "Loaded %(count)s respondents."
 msgstr "%(count)s jelentkező betöltve."
 
-#: src/opendlp/entrypoints/celery/tasks.py:698
+#: src/opendlp/entrypoints/celery/tasks.py:694
 #, python-format
 msgid "%(num)s person already holds a place."
 msgid_plural "%(num)s people already hold a place."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/opendlp/entrypoints/celery/tasks.py:709
+#: src/opendlp/entrypoints/celery/tasks.py:705
 msgid "Database load completed successfully."
 msgstr "Az adatbázisból való betöltés sikeresen befejeződött."
 
-#: src/opendlp/entrypoints/celery/tasks.py:732
+#: src/opendlp/entrypoints/celery/tasks.py:728
 #, python-format
 msgid "Failed to load data from database: %(error)s"
 msgstr "Az adatok betöltése az adatbázisból sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:758
+#: src/opendlp/entrypoints/celery/tasks.py:754
 msgid "Writing selection results to database"
 msgstr "A kiválasztás eredményeinek írása az adatbázisba"
 
-#: src/opendlp/entrypoints/celery/tasks.py:779
+#: src/opendlp/entrypoints/celery/tasks.py:775
 #, python-format
 msgid ""
 "Successfully selected %(selected_count)s people. %(remaining_count)s "
@@ -3625,39 +3618,39 @@ msgstr ""
 "%(selected_count)s fő kiválasztva. %(remaining_count)s fő marad a "
 "jelentkezők között."
 
-#: src/opendlp/entrypoints/celery/tasks.py:791
+#: src/opendlp/entrypoints/celery/tasks.py:787
 #, python-format
 msgid "Writing results to database failed: %(error)s"
 msgstr "Az eredmények adatbázisba írása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/celery/tasks.py:995
+#: src/opendlp/entrypoints/celery/tasks.py:991
 msgid "listing"
 msgstr "listázása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:995
+#: src/opendlp/entrypoints/celery/tasks.py:991
 msgid "deleting"
 msgstr "törlése"
 
-#: src/opendlp/entrypoints/celery/tasks.py:999
+#: src/opendlp/entrypoints/celery/tasks.py:995
 #, python-format
 msgid "Starting task to %(action)s old output tabs"
 msgstr "A régi kimeneti munkalapok %(action)s – a feladat indítása"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1009
+#: src/opendlp/entrypoints/celery/tasks.py:1007
 msgid "No old output tabs found"
 msgstr "Nem található régi kimeneti munkalap"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1011
+#: src/opendlp/entrypoints/celery/tasks.py:1009
 #, python-format
 msgid "Found %(count)s old output tab(s) that can be deleted"
 msgstr "%(count)s törölhető régi kimeneti munkalap található"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1013
+#: src/opendlp/entrypoints/celery/tasks.py:1011
 #, python-format
 msgid "Successfully deleted %(count)s old output tab(s)"
 msgstr "%(count)s régi kimeneti munkalap sikeresen törölve"
 
-#: src/opendlp/entrypoints/celery/tasks.py:1070
+#: src/opendlp/entrypoints/celery/tasks.py:1068
 #, python-format
 msgid "Failed to %(action)s old tabs: %(error)s"
 msgstr "A régi munkalapok %(action)s sikertelen: %(error)s"
@@ -10673,13 +10666,29 @@ msgstr "A Google Táblázat nem található: %(spreadsheet_name)s."
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:40
 #, python-format
 msgid ""
+"Google spreadsheet %(spreadsheet_name)s exists but is not shared with the"
+" service account %(service_account_email)s. Share it with that email "
+"address and try again."
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:44
+#, python-format
+msgid ""
+"Google spreadsheet '%(title)s' is shared read-only with "
+"%(service_account_email)s. Give it edit access so output tabs can be "
+"written."
+msgstr ""
+
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:48
+#, python-format
+msgid ""
 "Error in Google sheet: no tab called '%(tab_name)s' found in spreadsheet "
 "'%(spreadsheet_title)s'."
 msgstr ""
 "Hiba a Google Táblázatban: nem található '%(tab_name)s' nevű munkalap "
 "'%(spreadsheet_title)s' táblázatban."
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:43
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:51
 #, python-format
 msgid ""
 "The file '%(file_name)s' is a %(common_name)s (mimetype %(mimetype)s), "
@@ -10691,19 +10700,19 @@ msgstr ""
 " Mentés Google-táblázatként lehetőséget, majd használd az így létrejött "
 "új fájlt."
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:47
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:55
 #, python-format
 msgid ""
 "It seems like some variables do not have a value. Original exception: "
 "%(error)s."
 msgstr "Úgy tűnik, néhány változónak nincs értéke. Eredeti kivétel: %(error)s."
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:49
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:57
 #, python-format
 msgid "the header row in the %(tab_name)s tab contains duplicates: %(duplicates)s"
 msgstr "%(tab_name)s munkalap fejlécsora ismétlődéseket tartalmaz: %(duplicates)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:53
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:61
 msgid ""
 "Running the test selection does not support generating a transparent "
 "lottery, so, if `test_selection` is true, `number_selections` must be 1."
@@ -10712,7 +10721,7 @@ msgstr ""
 "előállítását, ezért ha a `test_selection` értéke igaz, a "
 "`number_selections` értékének 1-nek kell lennie."
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:57
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:65
 msgid ""
 "Currently, the legacy algorithm does not support generating a transparent"
 " lottery, so `number_selections` must be set to 1."
@@ -10720,7 +10729,7 @@ msgstr ""
 "A régi algoritmus jelenleg nem támogatja az átlátható sorsolás "
 "előállítását, ezért a `number_selections` értékét 1-re kell állítani."
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:61
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:69
 msgid ""
 "The diversimax algorithm does not support generating multiple committees,"
 " so `number_selections` must be set to 1."
@@ -10728,7 +10737,7 @@ msgstr ""
 "A diversimax algoritmus nem támogatja több csoport-összeállítás "
 "előállítását, ezért a `number_selections` értékét 1-re kell állítani."
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:65
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:73
 #, python-format
 msgid ""
 "Unknown selection algorithm %(algorithm)r, must be either 'legacy', "
@@ -10737,24 +10746,24 @@ msgstr ""
 "Ismeretlen kiválasztási algoritmus: %(algorithm)r, a következők egyike "
 "kell legyen: 'legacy', 'leximin', 'maximin', 'diversimax' vagy 'nash'."
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:67
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:75
 #, python-format
 msgid "solver_backend %(backend)s is not one of: %(valid_backends)s"
 msgstr "a solver_backend %(backend)s nem szerepel ezek között: %(valid_backends)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:68
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:76
 #, python-format
 msgid "Unknown solver backend: %(backend)s"
 msgstr "Ismeretlen megoldó backend: %(backend)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:69
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:77
 #, python-format
 msgid "Could not find feature column, looked for column headers: %(column_names)s"
 msgstr ""
 "Nem található a kiválasztási szempont oszlopa, a keresett oszlopfejlécek:"
 " %(column_names)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:71
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:79
 #, python-format
 msgid ""
 "Could not find feature value column, looked for column headers: "
@@ -10763,12 +10772,12 @@ msgstr ""
 "Nem található a szempontérték oszlopa, a keresett oszlopfejlécek: "
 "%(column_names)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:73
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:81
 #, python-format
 msgid "Did not find required column name '%(field_name)s' in the input"
 msgstr "A kötelező '%(field_name)s' oszlopnév nem található a bemenetben"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:74
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:82
 #, python-format
 msgid ""
 "Found MORE THAN 1 column named '%(field_name)s' in the input (found "
@@ -10777,41 +10786,41 @@ msgstr ""
 "TÖBB MINT 1 '%(field_name)s' nevű oszlop található a bemenetben (talált: "
 "%(count)s)"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:75
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:83
 #, python-format
 msgid "Unexpected error in set of column names: %(headers)s"
 msgstr "Váratlan hiba az oszlopnevek halmazában: %(headers)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:77
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:85
 msgid "check_same_address_columns must be a LIST of strings"
 msgstr "a check_same_address_columns értékének szövegek LISTÁJÁNAK kell lennie"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:78
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:86
 msgid "check_same_address_columns must be a list of STRINGS"
 msgstr "a check_same_address_columns értékének SZÖVEGEK listájának kell lennie"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:79
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:87
 msgid "check_same_address is TRUE but there are no columns listed to check."
 msgstr ""
 "a check_same_address értéke IGAZ, de nincs ellenőrizendő oszlop "
 "felsorolva."
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:80
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:88
 msgid "columns_to_keep must be a LIST of strings"
 msgstr "a columns_to_keep értékének szövegek LISTÁJÁNAK kell lennie"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:81
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:89
 msgid "columns_to_keep must be a list of STRINGS"
 msgstr "a columns_to_keep értékének SZÖVEGEK listájának kell lennie"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:82
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:90
 #, python-format
 msgid "selection_algorithm %(algorithm)s is not one of: %(valid_algorithms)s"
 msgstr ""
 "a selection_algorithm %(algorithm)s nem szerepel ezek között: "
 "%(valid_algorithms)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:85
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:93
 msgid ""
 "Diversimax algorithm requires the optional 'diversimax' dependencies, "
 "which are not available"
@@ -10819,86 +10828,86 @@ msgstr ""
 "A diversimax algoritmushoz szükség van az opcionális 'diversimax' "
 "függőségekre, amelyek nem érhetők el"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:87
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:95
 msgid "Leximin algorithm requires Gurobi solver which is not available"
 msgstr "A leximin algoritmushoz a Gurobi megoldó szükséges, amely nem érhető el"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:92
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:100
 #, python-format
 msgid "There is no %(field)s value set"
 msgstr "Nincs beállítva %(field)s érték"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:93
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:101
 #, python-format
 msgid "'%(value)s' is not a number"
 msgstr "'%(value)s' nem szám"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:94
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:102
 #, python-format
 msgid "Empty %(value_column_name)s in %(feature_column_name)s %(feature_name)s"
 msgstr "Üres %(value_column_name)s ebben: %(feature_column_name)s %(feature_name)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:95
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:103
 #, python-format
 msgid "Minimum (%(min)s) should not be greater than maximum (%(max)s)"
 msgstr "A minimum (%(min)s) nem lehet nagyobb a maximumnál (%(max)s)"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:96
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:104
 #, python-format
 msgid "min_flex (%(min_flex)s) should not be greater than min (%(min)s)"
 msgstr "a min_flex (%(min_flex)s) nem lehet nagyobb a min értéknél (%(min)s)"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:97
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:105
 #, python-format
 msgid "max_flex (%(max_flex)s) should not be less than max (%(max)s)"
 msgstr "a max_flex (%(max_flex)s) nem lehet kisebb a max értéknél (%(max)s)"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:99
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:107
 #, python-format
 msgid "Value '%(value)s' not in %(feature_column_name)s %(feature_name)s"
 msgstr ""
 "'%(value)s' érték nem szerepel itt: %(feature_column_name)s "
 "%(feature_name)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:100
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:108
 #, python-format
 msgid "Empty value in %(feature_column_name)s %(feature_name)s"
 msgstr "Üres érték itt: %(feature_column_name)s %(feature_name)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:104
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:112
 #, python-format
 msgid "%(msg)s: for row %(row)s, column header %(key)s"
 msgstr "%(msg)s: %(row)s. sorban, %(key)s oszlopfejlécnél"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:105
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:113
 #, python-format
 msgid "%(msg)s: for row %(row)s, column headers %(keys)s"
 msgstr "%(msg)s: %(row)s. sorban, %(keys)s oszlopfejléceknél"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:109
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:117
 #, python-format
 msgid "Parser error(s) while reading features from '%(tab_name)s' worksheet"
 msgstr ""
 "Feldolgozási hiba a kiválasztási szempontok beolvasása közben "
 "'%(tab_name)s' munkalapról"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:110
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:111
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:118
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:119
 #, python-format
 msgid "Parser error(s) while reading people from '%(tab_name)s' worksheet"
 msgstr "Feldolgozási hiba az emberek beolvasása közben '%(tab_name)s' munkalapról"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:112
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:120
 #, python-format
 msgid "%(msg)s - see cell %(cell_name)s"
 msgstr "%(msg)s – lásd %(cell_name)s cellát"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:113
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:121
 #, python-format
 msgid "%(msg)s - see cells %(cell_names)s"
 msgstr "%(msg)s – lásd %(cell_names)s cellákat"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:117
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:125
 #: .venv/lib/python3.12/site-packages/sortition_algorithms/report_messages.py:109
 #, python-format
 msgid "Found %(count)s IDs that have more than one row with different data"
@@ -10906,12 +10915,12 @@ msgstr ""
 "%(count)s olyan azonosító található, amelyhez több, eltérő adatú sor "
 "tartozik"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:118
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:126
 #, python-format
 msgid "For ID '%(person_id)s' one row of data is: %(row_data)s"
 msgstr "'%(person_id)s' azonosítóhoz tartozó egyik adatsor: %(row_data)s"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:120
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:128
 #, python-format
 msgid ""
 "Not enough people with the value '%(feature_value)s' in category "
@@ -10920,7 +10929,7 @@ msgstr ""
 "Nincs elég ember '%(feature_name)s' kiválasztási szempont "
 "'%(feature_value)s' értékével – a minimum %(min)s, de csak %(count)s van"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:124
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:132
 #, python-format
 msgid ""
 "The number of people to select (%(desired)s) is out of the range of the "
@@ -10931,7 +10940,7 @@ msgstr ""
 "szempontnál szereplő létszámok tartományán. A [%(min)s, %(max)s] "
 "tartományba kell esnie."
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:130
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:138
 msgid ""
 "It is not possible to hit all the targets with the current set of people."
 " I suggest the following steps:"
@@ -10939,12 +10948,12 @@ msgstr ""
 "A jelenlegi emberekkel nem lehet minden célszámot elérni. A következő "
 "lépéseket javaslom:"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:133
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:141
 #, python-format
 msgid "Inconsistent numbers in min and max in the %(feature_column_name)s input:"
 msgstr "Ellentmondásos min. és max. számok %(feature_column_name)s bemenetben:"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:134
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:142
 #, python-format
 msgid ""
 "The smallest maximum is %(max_val)s for %(feature_column_name)s "
@@ -10953,7 +10962,7 @@ msgstr ""
 "A legkisebb maximum %(max_val)s '%(max_feature)s' %(feature_column_name)s"
 " értéknél"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:135
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:143
 #, python-format
 msgid ""
 "The largest minimum is %(min_val)s for %(feature_column_name)s "
@@ -10962,7 +10971,7 @@ msgstr ""
 "A legnagyobb minimum %(min_val)s '%(min_feature)s' "
 "%(feature_column_name)s értéknél"
 
-#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:137
+#: .venv/lib/python3.12/site-packages/sortition_algorithms/error_messages.py:145
 #, python-format
 msgid ""
 "You need to reduce the minimums for %(min_feature)s or increase the "
