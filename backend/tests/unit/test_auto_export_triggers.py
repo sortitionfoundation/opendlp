@@ -133,7 +133,8 @@ class TestRespondentChangesTriggerAnExport:
     def test_csv_import(self, uow, dispatch):
         user, assembly = _seed(uow)
         import_respondents_from_csv(uow=uow, user_id=user.id, assembly_id=assembly.id, csv_content="id,colour\n1,Red\n")
-        assert dispatch.call_count >= 1
+        # The schema update and the import both ask; the pending key folds them into one dispatch.
+        dispatch.assert_called_once()
 
     def test_reset_selection_status(self, uow, dispatch):
         user, assembly = _seed(uow)
