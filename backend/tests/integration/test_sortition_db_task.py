@@ -31,6 +31,7 @@ from opendlp.entrypoints.celery.tasks import (
 from opendlp.service_layer import respondent_auto_export
 from opendlp.service_layer.sortition import check_db_selection_data, generate_selection_csvs
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
+from tests.fakes import FakeRedis
 
 
 @pytest.fixture
@@ -220,7 +221,7 @@ class TestInternalWriteDbResults:
             uow.commit()
 
         with (
-            patch.object(respondent_auto_export, "_get_redis", return_value=_PendingKeyRedis()),
+            patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()),
             patch("opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async") as dispatch,
         ):
             _internal_write_db_results(
@@ -233,19 +234,6 @@ class TestInternalWriteDbResults:
 
         dispatch.assert_called_once()
         assert dispatch.call_args.kwargs["kwargs"] == {"assembly_id": assembly_id}
-
-
-class _PendingKeyRedis:
-    """Enough of redis-py for request_auto_export's SET NX, without a server."""
-
-    def __init__(self) -> None:
-        self.keys: set[str] = set()
-
-    def set(self, key: str, value: str, nx: bool = False, ex: int | None = None) -> bool | None:
-        if nx and key in self.keys:
-            return None
-        self.keys.add(key)
-        return True
 
 
 class TestGenerateSelectionCsvs:

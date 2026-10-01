@@ -39,28 +39,17 @@ from opendlp.service_layer.respondent_service import (
     transition_respondent_status,
     update_respondent,
 )
-from tests.fakes import FakeUnitOfWork
+from tests.fakes import FakeRedis, FakeUnitOfWork
 
 _SHEET_URL = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
 _DISPATCH = "opendlp.service_layer.respondent_auto_export.tasks.auto_export_respondents.apply_async"
-
-
-class _FakeRedis:
-    def __init__(self) -> None:
-        self.keys: dict[str, str] = {}
-
-    def set(self, key: str, value: str, nx: bool = False, ex: int | None = None) -> bool | None:
-        if nx and key in self.keys:
-            return None
-        self.keys[key] = value
-        return True
 
 
 @pytest.fixture
 def dispatch() -> Iterator[MagicMock]:
     """The Celery dispatch, patched out, with Redis replaced by a fresh in-memory fake."""
     with (
-        patch.object(respondent_auto_export, "_get_redis", return_value=_FakeRedis()),
+        patch.object(respondent_auto_export, "_get_redis", return_value=FakeRedis()),
         patch(_DISPATCH) as mock,
     ):
         yield mock
