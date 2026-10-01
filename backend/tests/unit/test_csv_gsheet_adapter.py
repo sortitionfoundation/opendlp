@@ -58,6 +58,10 @@ class TestCSVGSheetDataSource:
         assert isinstance(adapter.spreadsheet, FakeSpreadsheet)
         assert adapter.spreadsheet.title == "spreadsheet title"
 
+    def test_get_title_returns_fake_spreadsheet_title(self, adapter):
+        """tasks.py opens the spreadsheet through get_title(), so the shim must answer it."""
+        assert adapter.get_title() == "spreadsheet title"
+
     def test_feature_tab_name_property(self, adapter, gsheet_data_source):
         """Test that feature_tab_name delegates to gsheet_data_source."""
         assert adapter.feature_tab_name == gsheet_data_source.feature_tab_name

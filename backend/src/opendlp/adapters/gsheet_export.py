@@ -58,7 +58,10 @@ class GSheetExportTarget(AbstractGSheetExportTarget):
             worksheet.update([table.headers, *table.rows])
             self.result_url = worksheet.url
             self.result_title = spreadsheet.title
-        except GSpreadException as exc:
+        except (GSpreadException, PermissionError) as exc:
             # Wrap any Google Sheets failure (missing sheet, no access, API error)
             # so callers handle one export-layer exception, not gspread internals.
-            raise ExportTargetError(str(exc)) from exc
+            # gspread raises the builtin PermissionError, with an empty message,
+            # for a spreadsheet that is not shared with the service account; the
+            # readable text is on its cause.
+            raise ExportTargetError(str(exc) or str(exc.__cause__)) from exc

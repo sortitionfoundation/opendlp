@@ -529,7 +529,8 @@ After testing, clean up:
 **Expected Results:**
 - [ ] Task starts and shows progress
 - [ ] Task fails with error message
-- [ ] Error displayed: "Spreadsheet not found, check URL: [url]"
+- [ ] Error displayed: "Google reported the spreadsheet as not found. Either the URL is wrong or the spreadsheet is not shared with [service account email]."
+  (Google answers the same way for a wrong URL and for a sheet that exists but is not shared, so one message covers both)
 - [ ] User can retry after fixing configuration
 
 ---
