@@ -480,12 +480,19 @@ def export_modal(assembly_id: uuid.UUID) -> ResponseReturnValue:
         flash(_("Assembly not found"), "error")
         return redirect(url_for("backoffice.dashboard"))
 
+    # While auto-export is on, its saved filter is what the next export would
+    # overwrite, so show that rather than the page's current table filter.
+    if gsheet_config is not None and gsheet_config.auto_export:
+        selected_status = gsheet_config.auto_export_status_filter
+    else:
+        selected_status = request.args.get("status", "")
+
     return render_template(
         "backoffice/respondents/export_modal.html",
         assembly_id=assembly_id,
         gsheet_config=gsheet_config,
         status_options=_export_status_options(),
-        selected_status=request.args.get("status", ""),
+        selected_status=selected_status,
         service_account_email=get_service_account_email(),
     ), 200
 

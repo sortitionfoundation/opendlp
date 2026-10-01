@@ -384,6 +384,35 @@ class TestAutoExportInModal:
 
         assert "checked" in controls.inputs["auto_export"]
 
+    def test_modal_preselects_the_saved_filter_when_auto_export_is_on(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        """The saved filter is what the next export would overwrite, so it wins over the page's filter."""
+        _save_config(
+            fake_store, existing_assembly.id, auto_export=True, auto_export_status_filter="selected_or_confirmed"
+        )
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal?status=WITHDRAWN"
+        )
+        controls = _FormControls()
+        controls.feed(response.get_data(as_text=True))
+
+        assert controls.selected["status"] == "selected_or_confirmed"
+
+    def test_modal_follows_the_page_filter_when_auto_export_is_off(
+        self, logged_in_admin: FlaskClient, existing_assembly: Assembly, fake_store: FakeStore
+    ) -> None:
+        _save_config(fake_store, existing_assembly.id, auto_export=False, auto_export_status_filter="POOL")
+
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/modal?status=WITHDRAWN"
+        )
+        controls = _FormControls()
+        controls.feed(response.get_data(as_text=True))
+
+        assert controls.selected["status"] == "WITHDRAWN"
+
 
 class TestRunExportWithAutoExport:
     def test_ticked_box_saves_the_flag_and_filter(
