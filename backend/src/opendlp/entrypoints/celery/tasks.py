@@ -1,4 +1,3 @@
-import contextlib
 import logging
 import traceback
 import uuid
@@ -939,10 +938,13 @@ def auto_export_respondents(
         )
         raise
     finally:
-        # The lock may already have expired if the write took longer than its
-        # timeout; releasing it then is not an error worth failing the task over.
-        with contextlib.suppress(LockError):
+        try:
             lock.release()
+        except LockError:
+            # The lock expired before the write finished, so another run may
+            # have interleaved with this one. Not worth failing the task over,
+            # but worth a trace: it means LOCK_TIMEOUT_SECONDS is too short.
+            struct_logger.warning("Automatic export lock expired before release", assembly_id=str(assembly_id))
 
 
 @app.task

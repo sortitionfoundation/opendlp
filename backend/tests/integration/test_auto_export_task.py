@@ -110,6 +110,27 @@ class TestAutoExportRespondentsTask:
         # The lock belongs to the other run and is left alone.
         assert redis.get(lock_key(auto_export_assembly)) == "held"
 
+    def test_lock_expiring_mid_write_is_logged_not_raised(
+        self, auto_export_assembly, postgres_session_factory, redis, caplog
+    ):
+        """A lock that expired during the write means runs may have interleaved: worth a warning, not a failure."""
+
+        class _TargetThatOutlivesTheLock(FakeGSheetExportTarget):
+            def write_sheet(self, title, table):
+                redis.delete(lock_key(auto_export_assembly))
+                super().write_sheet(title, table)
+
+        with caplog.at_level("WARNING"):
+            result = auto_export_respondents(
+                assembly_id=auto_export_assembly,
+                session_factory=postgres_session_factory,
+                target_factory=lambda url: _TargetThatOutlivesTheLock(),
+                redis_client=redis,
+            )
+
+        assert result is True
+        assert "Automatic export lock expired before release" in caplog.text
+
     def test_switched_off_since_queued_writes_nothing(self, auto_export_assembly, postgres_session_factory, redis):
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             config = uow.assembly_export_gsheets.get_by_assembly_and_kind(
