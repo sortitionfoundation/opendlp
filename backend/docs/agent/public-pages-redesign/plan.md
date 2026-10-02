@@ -206,9 +206,40 @@ phase 3; not used on the redesigned page.
 
 1. ~~Build `templates/public/base.html`~~ — **done 2026-10-02** (see shared
    infrastructure above).
-2. Migrate `auth/register.html` → `templates/public/register.html` (Tailwind scan
-   boundary, see above; the `auth.register` route's `render_template` updates),
-   arranged per the Figma frame:
+2. ~~Migrate `auth/register.html` → `templates/public/register.html`~~ — **done
+   2026-10-02**. Decisions made during the migration:
+   - **SSO buttons moved to the top of the form** (Figma order), above the shared
+     invite field; `test_register_page_orders_sso_before_shared_and_email_fields`
+     (renamed) asserts the new order. The hidden email default-submit stays first
+     in the form, so Enter still never starts OAuth.
+   - The SSO buttons are `button(variant="secondary", leading_icon=brand_*())` with
+     visible labels "Google"/"Microsoft" and aria-labels "Create an Account with
+     Google/Microsoft" (kept for BDD/component-test selectors and accessibility).
+   - **First/Last name moved under "Tell us a little about yourself"** (per Figma;
+     they are optional in the form). They render always; the survey questions stay
+     gated by `show_questions`. Existing section msgids kept to avoid
+     retranslation.
+   - Survey fields render via `templates/public/_survey_fields.html` (design-system
+     twin of the deleted GOV.UK macro), full-width in spec order — the Figma's
+     org-name/org-size two-column pairing was skipped to keep the macro generic
+     over `SIGNUP_SURVEY_QUESTIONS`.
+   - `process_plan` renders as a **radio group** (the form's field type); the Figma
+     shows a select — follow-up only if product wants the field type changed.
+   - **No beta-notice checkbox**: the form has no such field; needs a product
+     decision + backend field first (resolved open question).
+   - No `0/200` char counter on the textarea yet (field allows 2000 chars; Figma
+     shows 200) — polish follow-up.
+   - Dot-arch illustration vendored as `static/img/join-arch.svg` from
+     sortitionfoundation.org (the Figma node is literally named
+     `img_join-home.svg`; Figma asset export was unavailable without edit access).
+   - Old `templates/auth/register.html` and
+     `templates/components/signup_survey_fields.html` deleted;
+     `govuk_password_input.html` stays (other auth pages still use it).
+   - New msgids: "Create an account to OpenDLP", "Open Democratic Lottery",
+     "Create an account with", "OR" (catalogues regenerated). The h1 copy is taken
+     verbatim from the Figma — the "to OpenDLP" grammar is a design-copy question.
+
+   The original section-by-section intent, for reference:
    1. Dot-arch illustration (asset to export from Figma → `static/img/`), title
       "Create an account to OpenDLP" + subtitle, "Already have an account? —
       Sign in" row (Figma puts it above the form; current page has it below —
@@ -246,17 +277,26 @@ phase 3; not used on the redesigned page.
   render what exists; service-layer additions are Hamish's side
   (cf. `docs/agent/919-registration-form/backend_plan.md`).
 
-### Open questions
+### Open questions (remaining)
 
-- Layout/folder naming: `templates/public/base.html` proposed — confirm.
-- Dot-arch illustration: export from Figma, or does an asset already exist?
-- Char counter on the "anything else" textarea (Figma shows `0/200`)? Needs a tiny
-  Alpine component if so.
-- Beta-notice checkbox in the Figma: does the 919 form have the field? If not, a
-  product decision is needed before rendering it.
+- h1 copy "Create an account to OpenDLP" — taken verbatim from Figma; grammar
+  ("to" vs "on"/"for") is a design-copy call.
+- Beta-notice checkbox: needs a product decision + a form/backend field before it
+  can render.
+- Textarea char counter and org-name/org-size two-column pairing — visual polish
+  follow-ups if wanted.
+- `process_plan` field type: radio (current form) vs select (Figma).
 
 ## Session log
 
+- **2026-10-02 (step 2)** — Register page migrated to
+  `templates/public/register.html` on the public layout; route updated; GOV.UK
+  register template + survey macro deleted; ordering test updated to SSO-first;
+  catalogues regenerated. Verified: register-related component/e2e suites pass
+  (83 tests), visual check against the Figma on a local run (invite-required
+  variant; SSO buttons verified by tests — local env has no OAuth client IDs).
+  Remaining verification debt: BDD registration scenarios not yet run this
+  session; accessibility pass pending.
 - **2026-10-02 (later)** — Phase 1 step 1 done: `templates/public/base.html` created
   (extends the design-system shell, reuses `navigation()`/`floating_alerts()`/
   `footer()`); `tailwind.config.js` now also scans `templates/public/`; footer macro

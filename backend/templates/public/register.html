@@ -1,0 +1,183 @@
+{#
+ABOUTME: Public create-account page on the OpenDLP design system (ticket 1053)
+ABOUTME: Unified SSO + email registration - Figma node 5570-7007 in the OpenDLP UI file
+#}
+{% extends "public/base.html" %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, checkbox, first_error %}
+{% from "components/brand_marks.html" import brand_google, brand_microsoft %}
+{% from "public/_survey_fields.html" import signup_survey_fields %}
+{% block title %}{{ _("Create an Account") }}{% endblock %}
+{% block content %}
+    {% set google_enabled = config.OAUTH_GOOGLE_CLIENT_ID %}
+    {% set microsoft_enabled = config.OAUTH_MICROSOFT_CLIENT_ID %}
+    {% set required_mark %}<span style="color: var(--color-primary-action);">*</span>{% endset %}
+    <div class="flex flex-col gap-8">
+        <div class="flex flex-col items-center gap-6 text-center">
+            <img src="{{ url_for('static', filename='img/join-arch.svg') }}"
+                 alt=""
+                 width="322"
+                 height="161">
+            <div class="flex flex-col gap-1">
+                <h1 class="text-display-lg" style="color: var(--color-primary-action);">{{ _("Create an account to OpenDLP") }}</h1>
+                <p class="text-heading-lg" style="color: var(--color-headings);">{{ _("Open Democratic Lottery") }}</p>
+            </div>
+            <p class="text-body-md" style="color: var(--color-body-text);">
+                {{ _("Already have an account?") }}
+                <a href="{{ url_for('auth.login') }}"
+                   class="underline font-semibold"
+                   style="color: var(--color-links);">{{ _("Sign in") }}</a>
+            </p>
+        </div>
+        {% if not feature('open_signup') %}
+            <p class="text-body-md px-4 py-3 rounded-lg"
+               style="background-color: var(--color-subtle-background-panels);
+                      border: 1px solid var(--color-borders-dividers);
+                      color: var(--color-body-text)">
+                {{ _("You need an invite code to create an account. If you do not have one, please contact <a href=\"mailto:%(email)s\">OpenDLP Support</a>.", email=support_email_address) }}
+            </p>
+        {% endif %}
+        <form method="POST" class="flex flex-col gap-6" novalidate>
+            {{ form.hidden_tag() }}
+            {# A form's implicit-submit default is its first submit button. The
+               Google and Microsoft buttons below are submit buttons too, so
+               without this, Enter in any field would start an OAuth redirect.
+               This hidden email submit makes Enter default to the manual email
+               path; it is out of the tab order and hidden from assistive tech,
+               which use the visible "Create Account" button below. #}
+            <button type="submit" name="action" value="email" class="sr-only" tabindex="-1" aria-hidden="true">{{ _("Create Account with email") }}</button>
+            {# Sign up with an external account. These buttons submit the shared
+               fields (invite code, survey, data agreement); the provider
+               supplies the email and name. #}
+            {% if google_enabled or microsoft_enabled %}
+                <div class="flex flex-col gap-4">
+                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Create an account with") }}</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        {% if google_enabled %}
+                            {{ button("Google",
+                            variant="secondary",
+                            type="submit",
+                            full_width=true,
+                            leading_icon=brand_google(),
+                            aria_label=_("Create an Account with Google"),
+                            attrs='name="action" value="google"')
+                            }}
+                        {% endif %}
+                        {% if microsoft_enabled %}
+                            {{ button("Microsoft",
+                            variant="secondary",
+                            type="submit",
+                            full_width=true,
+                            leading_icon=brand_microsoft(),
+                            aria_label=_("Create an Account with Microsoft"),
+                            attrs='name="action" value="microsoft"')
+                            }}
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-4" aria-hidden="true">
+                        <span class="flex-1" style="border-top: 1px solid var(--color-borders-dividers);"></span>
+                        <span class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("OR") }}</span>
+                        <span class="flex-1" style="border-top: 1px solid var(--color-borders-dividers);"></span>
+                    </div>
+                </div>
+            {% endif %}
+            {# Shared field - used whichever way the account is created. #}
+            {{ input(form.invite_code.name,
+            label=form.invite_code.label.text,
+            value=form.invite_code.data or "",
+            hint=_("Optional — if you were given an invite code, enter it here.") if feature('open_signup') else (form.invite_code.description or ""),
+            required=not feature('open_signup'),
+            error=first_error(form.invite_code.errors))
+            }}
+            {# Email sign up - email and password apply only to this path. #}
+            {{ input(form.email.name,
+            label=form.email.label.text,
+            type="email",
+            value=form.email.data or "",
+            required=true,
+            error=first_error(form.email.errors),
+            attrs='autocomplete="email"')
+            }}
+            <div class="flex flex-col gap-1.5">
+                {{ input(form.password.name,
+                label=form.password.label.text,
+                type="password",
+                required=true,
+                error=first_error(form.password.errors),
+                attrs='autocomplete="new-password"')
+                }}
+                {% if password_help %}
+                    <div class="text-body-sm [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:flex [&_ul]:flex-col [&_ul]:gap-0.5"
+                         style="color: var(--color-secondary-text);">{{ password_help|safe }}</div>
+                {% endif %}
+            </div>
+            {{ input(form.password_confirm.name,
+            label=form.password_confirm.label.text,
+            type="password",
+            required=true,
+            error=first_error(form.password_confirm.errors),
+            attrs='autocomplete="new-password"')
+            }}
+            {# Optional extras - names always; the survey questions when enabled. #}
+            <div class="flex flex-col gap-4">
+                <div class="flex flex-col gap-1.5">
+                    <h2 class="text-heading-lg" style="color: var(--color-headings);">{{ _("Tell us a little about yourself") }}</h2>
+                    <p class="text-body-sm" style="color: var(--color-secondary-text);">{{ _("These questions are optional, but your answers help us help you.") }}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    {{ input(form.first_name.name,
+                    label=form.first_name.label.text,
+                    value=form.first_name.data or "",
+                    error=first_error(form.first_name.errors),
+                    attrs='autocomplete="given-name"')
+                    }}
+                    {{ input(form.last_name.name,
+                    label=form.last_name.label.text,
+                    value=form.last_name.data or "",
+                    error=first_error(form.last_name.errors),
+                    attrs='autocomplete="family-name"')
+                    }}
+                </div>
+                {% if show_questions %}{{ signup_survey_fields(form) }}{% endif %}
+            </div>
+            <fieldset class="flex flex-col gap-3">
+                <legend class="text-heading-lg" style="color: var(--color-headings);">
+                    {{ _("Data Agreement") }}{{ required_mark }}
+                </legend>
+                <p class="text-body-sm" style="color: var(--color-secondary-text);">
+                    {{ _("Please read and accept our data agreement to proceed.") }}
+                    <a href="{{ help_site_data_agreement }}"
+                       class="underline"
+                       style="color: var(--color-links);"
+                       target="_blank"
+                       rel="noopener noreferrer">{{ _("View data agreement") }}</a>
+                </p>
+                {{ checkbox(form.accept_data_agreement.name,
+                label=form.accept_data_agreement.label.text,
+                checked=form.accept_data_agreement.data,
+                error=first_error(form.accept_data_agreement.errors))
+                }}
+            </fieldset>
+            {% if config.TURNSTILE_SITE_KEY %}
+                <div class="cf-turnstile"
+                     data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"
+                     data-action="signup"></div>
+            {% endif %}
+            {{ button(_("Create Account"),
+            variant="primary",
+            type="submit",
+            full_width=true,
+            aria_label=_("Create Account with email"),
+            attrs='name="action" value="email"')
+            }}
+        </form>
+    </div>
+{% endblock %}
+{% block head %}
+    {% if config.TURNSTILE_SITE_KEY %}
+        <script nonce="{{ csp_nonce }}"
+                src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+                async
+                defer></script>
+    {% endif %}
+{% endblock %}
