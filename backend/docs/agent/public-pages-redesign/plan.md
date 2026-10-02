@@ -107,25 +107,35 @@ updated inventory as pages move over.
 
 ## Shared infrastructure (built in phase 1, reused by every phase)
 
-### `templates/public/base.html`
+### `templates/public/base.html` (built, 2026-10-02)
 
 The `templates/public/` folder marks the post-GOV.UK public design; migrated pages
-extend `public/base.html`. Modelled on `templates/backoffice/base.html`:
+extend `public/base.html` **and must live in this folder**: `tailwind.config.js`
+scans only `templates/backoffice/` and `templates/public/`, so a migrated page kept
+under e.g. `templates/auth/` would have its utility classes purged from the CSS
+build. Migrating a page therefore also moves its template (e.g.
+`auth/register.html` → `public/register.html`) and updates the route's
+`render_template` call.
 
-- Head: favicon, viewport, title block, `backoffice/dist/main.css`,
-  `backoffice/tokens/primitive.css`, `backoffice/tokens/semantic.css`,
-  `backoffice/js/alpine-components.js`, `js/vendor/alpine-csp.js` (deferred),
-  `js/utilities.js` (password toggle lives there). htmx only if a page needs it —
-  plain form posts don't. No `application.css`, no `govuk-frontend.js`.
-- Minimal public header per Figma: Sortition Foundation logo (left → `main.index`),
-  help icon (right → help site), white background, bottom border.
-- Centered content column (signup frame is ~480px wide), page background via
-  semantic token (`--color-bg-secondary`, same as backoffice — matches the Figma).
-- Flash-message rendering (design-system alert component).
-- Slim footer carrying the legally required links from `base_public.html`
-  (User Data Agreement, Cookies).
-- Skip-link and `site_banner_text` banner parity with the existing bases.
-- Blocks: `title`, `content`, `extra_head`, `extra_js` (Turnstile needs `extra_js`).
+The layout `extends "backoffice/base.html"` — despite its name that template is the
+design-system shell (token CSS, compiled Tailwind, CSP Alpine, shared JS incl.
+`utilities.js`), and extending it keeps the asset list in one place; giving it a
+neutral name is teardown-phase work. On top of the shell the public layout adds:
+
+- Minimal public header via the existing `navigation()` macro (Sortition logo →
+  `main.index`, help icon → `help_site_home`, no account menu) — exactly the Figma
+  public chrome.
+- Centered content column (`max-w-xl`), page background `--color-bg-secondary`
+  (inherited from the shell, matches the Figma).
+- Flash messages via `floating_alerts()` (design-system alerts, aria-live).
+- `footer(show_data_agreement=true)` — the footer macro gained an optional User
+  Data Agreement link (public pages show it; backoffice keeps it in the account
+  menu).
+- Skip-link (`sr-only focus:not-sr-only`) and `site_banner_text` banner parity
+  (banner comes from the shell).
+- Blocks: `title`, `content`; per-page scripts (e.g. Turnstile) go in the inherited
+  `head` block. htmx comes along from the shell — unused by plain form posts,
+  accepted for the single-source asset list.
 - CSP-compliant throughout (`csp_nonce` on scripts, CSP Alpine build, no inline
   handlers) — see `docs/frontend_security.md`.
 
@@ -194,8 +204,11 @@ phase 3; not used on the redesigned page.
 
 ### Steps
 
-1. Build `templates/public/base.html` (see shared infrastructure above).
-2. Migrate `auth/register.html`, arranged per the Figma frame:
+1. ~~Build `templates/public/base.html`~~ — **done 2026-10-02** (see shared
+   infrastructure above).
+2. Migrate `auth/register.html` → `templates/public/register.html` (Tailwind scan
+   boundary, see above; the `auth.register` route's `render_template` updates),
+   arranged per the Figma frame:
    1. Dot-arch illustration (asset to export from Figma → `static/img/`), title
       "Create an account to OpenDLP" + subtitle, "Already have an account? —
       Sign in" row (Figma puts it above the form; current page has it below —
@@ -244,6 +257,13 @@ phase 3; not used on the redesigned page.
 
 ## Session log
 
+- **2026-10-02 (later)** — Phase 1 step 1 done: `templates/public/base.html` created
+  (extends the design-system shell, reuses `navigation()`/`floating_alerts()`/
+  `footer()`); `tailwind.config.js` now also scans `templates/public/`; footer macro
+  gained `show_data_agreement`. Smoke-tested: renders with zero `govuk` strings and
+  all design-system assets present; `sr-only`/`max-w-xl` utilities confirmed in the
+  rebuilt CSS. Next: step 2, migrate the register page to
+  `templates/public/register.html`.
 - **2026-10-02** — Branch + worktree created from `919-google-login` (`dd783dbd`);
   `npm ci` + `generated_version.txt` done. Evaluated the Figma signup frame vs
   `/backoffice/showcase`: same design system, differences are page chrome only.
