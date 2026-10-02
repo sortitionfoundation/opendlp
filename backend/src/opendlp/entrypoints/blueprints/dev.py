@@ -1679,6 +1679,28 @@ def patterns() -> ResponseReturnValue:
     return render_template("backoffice/patterns.html", assemblies=assemblies, active_tab=active_tab), 200
 
 
+@dev_bp.route("/dev/public-layout")
+@login_required
+def public_layout_preview() -> ResponseReturnValue:
+    """Preview of the public base layout (templates/public/base.html).
+
+    Admin-only page showing sample content on the design-system public layout,
+    so the layout can be eyeballed before any public page has migrated to it.
+    See docs/agent/public-pages-redesign/plan.md. Pass ?demo_flash=1 to also
+    exercise the floating flash alerts.
+    This blueprint is only registered in non-production environments.
+    """
+    if not has_global_admin(current_user):
+        flash(_("You don't have permission to access developer tools"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+
+    if request.args.get("demo_flash"):
+        flash(_("Success! Your changes have been saved."), "success")
+        flash(_("Error: Something went wrong. Please try again."), "error")
+
+    return render_template("public/dev_layout_preview.html"), 200
+
+
 @dev_bp.route("/dev/flash-test", methods=["POST"])
 @login_required
 def flash_test() -> ResponseReturnValue:
