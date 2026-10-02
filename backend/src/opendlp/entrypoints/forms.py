@@ -285,6 +285,17 @@ class RegistrationForm(SignupSurveyFormMixin, FlaskForm):  # type: ignore[no-any
         """Validate that invite code is present when needed, and valid when given."""
         _validate_invite_code_field(invite_code)
 
+    def relax_for_oauth(self) -> None:
+        """Drop email/password validation when a Google or Microsoft button is pressed.
+
+        The same form serves all three signup buttons. An OAuth provider supplies
+        the email, name and identity on the way back, so its fields are neither
+        needed nor shown for that path — only the shared invite code, survey and
+        data agreement are collected here and carried across the redirect.
+        """
+        for field in (self.email, self.password, self.password_confirm):
+            field.validators = [Optional()]
+
 
 class PasswordResetRequestForm(FlaskForm):  # type: ignore[no-any-unimported]
     """Password reset request form."""
@@ -624,26 +635,6 @@ class SetPasswordForm(FlaskForm):  # type: ignore[no-any-unimported]
         validators=[DataRequired(), EqualTo("new_password", message=_l("Passwords must match"))],
         render_kw={"autocomplete": "new-password"},
     )
-
-
-class OAuthRegistrationForm(FlaskForm):  # type: ignore[no-any-unimported]
-    """OAuth registration form with invite code (no password needed)."""
-
-    invite_code = StringField(
-        _l("Invite Code"),
-        validators=[DataRequired(), Length(min=5, max=50)],
-        description=_l("Enter your invite code to register"),
-    )
-
-    accept_data_agreement = BooleanField(
-        _l("Accept Data Agreement"),
-        validators=[DataRequired(message=_l("You must accept the data agreement to register"))],
-        description=_l("I agree to the data agreement"),
-    )
-
-    def validate_invite_code(self, invite_code: StringField) -> None:
-        """Validate that invite code exists and is valid."""
-        _validate_invite_code_field(invite_code)
 
 
 class UploadTargetsCsvForm(FlaskForm):  # type: ignore[no-any-unimported]

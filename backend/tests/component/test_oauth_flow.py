@@ -142,29 +142,52 @@ class TestOAuthLoginForDisabledAccounts:
 
 
 class TestOAuthRegistrationForms:
-    """OAuth registration GET forms and invalid-invite validation."""
+    """The unified registration page's OAuth buttons and invalid-invite validation."""
 
-    def test_register_google_requires_invite_code(self, client: FlaskClient):
-        """OAuth registration form requires invite code."""
-        response = client.get("/auth/register/google")
+    def test_register_page_offers_google_and_invite_code(self, client: FlaskClient):
+        """The registration page offers a Google button and needs an invite code."""
+        response = client.get("/auth/register")
         assert response.status_code == 200
         assert b"Create an Account with Google" in response.data
         assert b"Invite Code" in response.data
         assert b"invite code to create an account" in response.data
 
-    def test_register_microsoft_requires_invite_code(self, client: FlaskClient):
-        """Microsoft OAuth registration form requires invite code."""
-        response = client.get("/auth/register/microsoft")
+    def test_register_page_offers_microsoft(self, client: FlaskClient):
+        """The registration page offers a Microsoft button."""
+        response = client.get("/auth/register")
         assert response.status_code == 200
         assert b"Create an Account with Microsoft" in response.data
         assert b"Invite Code" in response.data
         assert b"invite code to create an account" in response.data
 
+    def test_register_page_orders_chooser_shared_then_email_then_submits(self, client: FlaskClient):
+        """The method chooser is first, then the shared fields, the email fields, then the submits."""
+        body = client.get("/auth/register").data
+        chooser_pos = body.find(b"registration-method-chooser")
+        invite_pos = body.find(b'name="invite_code"')
+        email_pos = body.find(b'name="email"')
+        google_submit_pos = body.find(b'value="google"')
+
+        assert -1 not in (chooser_pos, invite_pos, email_pos, google_submit_pos)
+        # Chooser at the top, shared invite next, the email-only fields in the middle,
+        # and the Google (SSO) submit button down at the foot of the form.
+        assert chooser_pos < invite_pos < email_pos < google_submit_pos
+
+    def test_register_enter_key_defaults_to_email_not_oauth(self, client: FlaskClient):
+        """The form's first submit button is the email path, so Enter never starts OAuth."""
+        body = client.get("/auth/register").data
+        first_submit = body.find(b'<button type="submit"')
+        first_tag = body[first_submit : body.find(b">", first_submit)]
+        # The implicit-submit default (first submit button) carries action=email.
+        assert b'name="action"' in first_tag
+        assert b'value="email"' in first_tag
+        assert body.find(b'value="email"') < body.find(b'value="google"')
+
     def test_register_google_with_invalid_invite_fails(self, client: FlaskClient):
         """Invalid invite re-renders the form without reaching OAuth."""
         response = client.post(
-            "/auth/register/google",
-            data={"invite_code": "INVALID_CODE", "accept_data_agreement": "y"},
+            "/auth/register",
+            data={"action": "google", "invite_code": "INVALID_CODE", "accept_data_agreement": "y"},
             follow_redirects=False,
         )
 
