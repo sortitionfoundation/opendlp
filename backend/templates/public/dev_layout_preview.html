@@ -1,0 +1,33 @@
+{#
+ABOUTME: Dev-only preview of the public base layout, served at /backoffice/dev/public-layout
+ABOUTME: Sample content approximating the signup page's ingredients - not a production page
+#}
+{% extends "public/base.html" %}
+{% from "backoffice/components/button.html" import button %}
+{% from "backoffice/components/input.html" import input, select, checkbox %}
+{% block title %}Public layout preview{% endblock %}
+{% block content %}
+    <div class="flex flex-col gap-6">
+        <div class="text-center">
+            <h1 class="text-display-lg" style="color: var(--color-headings);">Public layout preview</h1>
+            <p class="text-body-md" style="color: var(--color-secondary-text);">
+                Sample content on templates/public/base.html - no GOV.UK assets on this page.
+                Add ?demo_flash=1 to exercise the floating alerts.
+            </p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            {{ button("Google", variant="secondary", full_width=true) }}
+            {{ button("Microsoft", variant="secondary", full_width=true) }}
+        </div>
+        {{ input("preview_email", label="Email address", type="email", required=true, placeholder="you@example.com") }}
+        {{ input("preview_password", label="Password", type="password", required=true) }}
+        {{ input("preview_errored", label="Errored field", value="bad value", error="This is what an error state looks like") }}
+        {{ select("preview_select",
+        label="A select",
+        options=[{"value": "", "label": "Choose..."}, {"value": "x", "label": "Option X"}],
+        hint="With a hint underneath the label")
+        }}
+        {{ checkbox("preview_agree", label="Accept Data Agreement") }}
+        {{ button("Create Account", variant="primary", full_width=true) }}
+    </div>
+{% endblock %}
