@@ -1,8 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    // Only scan backoffice templates - keep GOV.UK templates separate
+    // Only scan design-system templates (backoffice + migrated public pages) -
+    // keep GOV.UK templates separate
     "./templates/backoffice/**/*.html",
+    "./templates/public/**/*.html",
   ],
   // Class names built by string concat in Jinja macros never appear as
   // literals in scanned templates, so Tailwind's content-scanner purges
