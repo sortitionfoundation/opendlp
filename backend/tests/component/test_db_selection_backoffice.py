@@ -503,6 +503,36 @@ class TestCsvSelectionPageIntegration:
         assert response.status_code == 200
         assert b"db-selection-progress-modal" in response.data
 
+    def test_selection_page_lists_the_selected_respondents_for_a_completed_run(
+        self, logged_in_admin, assembly_with_csv_config, fake_store
+    ):
+        """Opening a completed run from the page, not the poll, still lists who it selected."""
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=run_id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            selected_ids=[["3", "1"]],
+            remaining_ids=["2"],
+            log_messages=["Successfully selected 2 people. 8 remain in pool."],
+            completed_at=datetime.now(UTC),
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            ids = {r.external_id: r.id for r in uow.respondents.get_by_assembly_id(assembly.id)}
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection?current_selection={run_id}")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        selected = html[html.index("<span>Selected</span>") :]
+        assert f"/respondents/{ids['1']}" in selected
+        assert f"/respondents/{ids['3']}" in selected
+        assert f"/respondents/{ids['2']}" not in selected
+        assert "None of the people this run selected" not in selected
+
 
 class TestCsvSelectionReset:
     """Tests for the CSV selection reset endpoint, asserting FakeStore state."""

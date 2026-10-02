@@ -12,6 +12,7 @@ from flask_login import current_user, login_required
 from sortition_algorithms.features import maximum_selection, minimum_selection
 
 from opendlp import bootstrap
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.value_objects import SelectionTaskType
 from opendlp.entrypoints.context_processors import get_service_account_email
 from opendlp.entrypoints.decorators import require_assembly_management
@@ -47,6 +48,7 @@ from opendlp.service_layer.sortition import (
     check_and_update_task_health,
     get_active_initial_selection_run_id,
     get_manage_old_tabs_status,
+    get_selected_respondents,
     get_selection_run_status,
     start_gsheet_load_task,
     start_gsheet_manage_tabs_task,
@@ -87,13 +89,15 @@ def _get_manage_tabs_context(
 
 def _get_selection_modal_context(
     uow: AbstractUnitOfWork, assembly_id: uuid.UUID, selection_param: str | None
-) -> tuple[uuid.UUID | None, object | None, list, str]:
+) -> tuple[uuid.UUID | None, object | None, list, str, list[Respondent]]:
     """Get context for displaying the initial selection progress modal.
 
-    Returns (current_selection, run_record, log_messages, translated_report_html).
+    Returns (current_selection, run_record, log_messages, translated_report_html,
+    selected_respondents). The respondents are only loaded for a completed run;
+    the modal lists them.
     """
     if not selection_param:
-        return None, None, [], ""
+        return None, None, [], "", []
 
     try:
         current_selection = uuid.UUID(selection_param)
@@ -101,16 +105,20 @@ def _get_selection_modal_context(
         result = get_selection_run_status(uow, current_selection)
 
         if result.run_record and result.run_record.assembly_id == assembly_id:
+            selected_respondents = (
+                get_selected_respondents(uow, result.run_record) if result.run_record.is_completed else []
+            )
             return (
                 current_selection,
                 result.run_record,
                 result.log_messages,
                 translate_run_report_to_html(result.run_report) if result.run_report else "",
+                selected_respondents,
             )
     except (ValueError, TypeError):
         logger.debug("Invalid selection_param for _get_selection_modal_context: %r", selection_param)
 
-    return None, None, [], ""
+    return None, None, [], "", []
 
 
 def _load_features_pending(run_record: object, result: object) -> bool:
@@ -223,6 +231,7 @@ def render_selection_page(
     run_record = None
     log_messages: list = []
     translated_report_html = ""
+    selected_respondents: list[Respondent] = []
 
     # Manage tabs variables (extracted to helper for complexity)
     current_manage_tabs_param = request.args.get("current_manage_tabs")
@@ -232,8 +241,8 @@ def render_selection_page(
         assembly = get_assembly_with_permissions(uow, assembly_id, current_user.id)
 
         # Get selection modal context
-        current_selection, run_record, log_messages, translated_report_html = _get_selection_modal_context(
-            uow, assembly_id, request.args.get("current_selection")
+        current_selection, run_record, log_messages, translated_report_html, selected_respondents = (
+            _get_selection_modal_context(uow, assembly_id, request.args.get("current_selection"))
         )
 
         # Get replacement modal context
@@ -348,6 +357,7 @@ def render_selection_page(
         run_record=run_record,
         log_messages=log_messages,
         translated_report_html=translated_report_html,
+        selected_respondents=selected_respondents,
         current_manage_tabs=current_manage_tabs,
         manage_tabs_run_record=manage_tabs_run_record,
         manage_tabs_tab_names=manage_tabs_tab_names,

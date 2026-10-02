@@ -10,7 +10,6 @@
 {% set is_test_selection = run_record.task_type.value == 'test_select_from_db' %}
 {% set is_real_selection = run_record.task_type.value in ('select_from_db', 'select_replacement_from_db') %}
 {% set has_results = run_record.is_completed and run_record.selected_ids %}
-{% set selected_respondents = selected_respondents|default([]) %}
 {% call progress_modal(
 id="db-selection-progress-modal",
 title=_("Task progress"),
