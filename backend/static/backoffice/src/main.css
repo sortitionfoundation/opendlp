@@ -429,7 +429,10 @@
         cursor: pointer;
     }
 
-    /* Custom checkbox box */
+    /* Custom checkbox box. pointer-events: none keeps this purely decorative
+       layer from swallowing clicks aimed at the native input underneath -
+       the wrapping label toggles it for humans, and Playwright's check()
+       targets the input directly. */
     .checkbox-box {
         display: inline-flex;
         align-items: center;
@@ -441,6 +444,7 @@
         background-color: var(--color-page-background);
         transition: background-color 150ms ease, border-color 150ms ease;
         flex-shrink: 0;
+        pointer-events: none;
     }
 
     /* Checkmark - hidden by default */
@@ -534,7 +538,8 @@
         cursor: pointer;
     }
 
-    /* Custom radio circle */
+    /* Custom radio circle. pointer-events: none for the same reason as
+       .checkbox-box - clicks must reach the native input underneath. */
     .radio-circle {
         display: inline-flex;
         align-items: center;
@@ -546,6 +551,7 @@
         background-color: var(--color-page-background);
         transition: border-color 150ms ease;
         flex-shrink: 0;
+        pointer-events: none;
     }
 
     /* Inner dot - hidden by default */
@@ -616,7 +622,8 @@
         cursor: pointer;
     }
 
-    /* Track (pill-shaped background) */
+    /* Track (pill-shaped background). pointer-events: none for the same
+       reason as .checkbox-box - clicks must reach the native input. */
     .switch-track {
         display: flex;
         align-items: center;
@@ -627,6 +634,7 @@
         background-color: var(--color-borders-dividers);
         transition: background-color 200ms ease;
         flex-shrink: 0;
+        pointer-events: none;
     }
 
     /* Thumb (sliding knob) */
