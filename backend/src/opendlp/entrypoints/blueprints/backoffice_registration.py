@@ -32,6 +32,7 @@ from opendlp.domain.registration_page import (
     RegistrationPageStatus,
 )
 from opendlp.domain.uploads import human_size
+from opendlp.domain.validators import validate_email_field
 from opendlp.entrypoints.blueprints.registration import (
     registration_url,
     registration_url_prefix,
@@ -41,6 +42,7 @@ from opendlp.entrypoints.blueprints.registration import (
 from opendlp.entrypoints.registration_hub import editor_url, registration_hub_context, registration_page_rows
 from opendlp.entrypoints.scroll_utils import redirect_preserving_scroll
 from opendlp.service_layer.assembly_service import get_assembly_nav_context
+from opendlp.service_layer.email_send_service import send_test_auto_reply
 from opendlp.service_layer.email_template_service import (
     assign_auto_reply_template,
     auto_reply_readiness_problems,
@@ -741,6 +743,68 @@ def save_assembly_registration_email(assembly_id: uuid.UUID, url_slug: str) -> R
             error=str(e),
         )
         flash(_("An error occurred while saving the auto-reply email"), "error")
+        return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
+
+
+@backoffice_registration_bp.route(
+    "/assembly/<uuid:assembly_id>/registration/<url_slug>/email/send-test", methods=["POST"]
+)
+@login_required
+def send_assembly_registration_test_email(assembly_id: uuid.UUID, url_slug: str) -> ResponseReturnValue:
+    """Send the page's auto-reply to a chosen address, filled with sample respondent data.
+
+    No registration (and no respondent) is involved: the service synthesises a
+    test respondent from the assembly's field schema, so a manager can check the
+    email in a real inbox straight after editing the template.
+    """
+    to_email, email_error = validate_email_field(request.form.get("test_email_to", "").strip())
+    if email_error or to_email is None:
+        flash(_("Enter a valid email address to send the test email to"), "error")
+        return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
+    try:
+        uow = bootstrap.get_flask_uow()
+        with uow:
+            page = _page_by_slug(uow, assembly_id, url_slug)
+            result = send_test_auto_reply(
+                uow,
+                bootstrap.get_email_adapter(),
+                user_id=current_user.id,
+                page_id=page.id,
+                to_email=to_email,
+            )
+        if result.sent:
+            flash(_("Test email sent to %(email)s", email=to_email), "success")
+            if result.missing_variables:
+                flash(
+                    _(
+                        "Some template variables had no value and rendered blank: %(names)s",
+                        names=", ".join(result.missing_variables),
+                    ),
+                    "warning",
+                )
+        else:
+            flash(_("The test email could not be sent — check the email configuration and try again"), "error")
+        return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
+    except EmailTemplateNotFoundError:
+        flash(_("There is no auto-reply email to test yet — set one up first"), "warning")
+        return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
+    except RegistrationPageNotFoundError:
+        flash(_("That registration page could not be found"), "warning")
+        return redirect(_list_url(assembly_id))
+    except InsufficientPermissions:
+        flash(_("You don't have permission to modify this assembly"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except NotFoundError:
+        flash(_("Assembly not found"), "error")
+        return redirect(url_for("backoffice.dashboard"))
+    except Exception as e:
+        logger.exception(
+            "Send registration test email error",
+            assembly_id=str(assembly_id),
+            user_id=str(current_user.id),
+            error=str(e),
+        )
+        flash(_("An error occurred while sending the test email"), "error")
         return redirect_preserving_scroll(_email_section_url(assembly_id, url_slug))
 
 

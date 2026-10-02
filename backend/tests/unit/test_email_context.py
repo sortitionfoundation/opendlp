@@ -8,6 +8,15 @@ from opendlp.domain.email_context import (
     AssemblyContext,
     RespondentContext,
     build_context,
+    sample_respondent_context,
+)
+from opendlp.domain.respondent_field_schema import (
+    ChoiceOption,
+    DerivationType,
+    FieldOnRegistrationPage,
+    FieldType,
+    RespondentFieldDefinition,
+    RespondentFieldGroup,
 )
 from opendlp.domain.respondents import Respondent
 
@@ -74,3 +83,69 @@ def test_build_context_shape() -> None:
     context = build_context(assembly, respondent)
     assert context["assembly"] is assembly
     assert context["respondent"] is respondent
+
+
+_ASSEMBLY_ID = uuid.uuid4()
+
+
+def _field(key: str, ftype: FieldType = FieldType.TEXT, **kwargs) -> RespondentFieldDefinition:
+    kwargs.setdefault("label", key.replace("_", " ").capitalize())
+    kwargs.setdefault("group", RespondentFieldGroup.OTHER)
+    kwargs.setdefault("sort_order", 10)
+    return RespondentFieldDefinition(assembly_id=_ASSEMBLY_ID, field_key=key, field_type=ftype, **kwargs)
+
+
+def test_sample_respondent_derives_a_recognisable_name() -> None:
+    ctx = sample_respondent_context([_field("first_name"), _field("last_name")], "me@example.com")
+    assert ctx.first_name == "Alex"
+    assert ctx.last_name == "Example"
+    assert ctx.full_name == "Alex Example"
+    assert ctx.first_name_or_friend == "Alex"
+
+
+def test_sample_respondent_supports_full_name_fields() -> None:
+    ctx = sample_respondent_context([_field("full_name")], "me@example.com")
+    assert ctx.attributes["full_name"] == "Alex Example"
+    assert ctx.full_name == "Alex Example"
+
+
+def test_sample_respondent_email_is_the_recipient() -> None:
+    ctx = sample_respondent_context([_field("contact_email", FieldType.EMAIL)], "me@example.com")
+    assert ctx.email == "me@example.com"
+    assert ctx.attributes["contact_email"] == "me@example.com"
+
+
+def test_sample_values_by_field_type() -> None:
+    fields = [
+        _field("newsletter", FieldType.BOOL),
+        _field("gender", FieldType.CHOICE_RADIO, options=[ChoiceOption("Female"), ChoiceOption("Male")]),
+        _field("year_of_birth", FieldType.INTEGER),
+        _field("available_from", FieldType.DATE),
+        _field("postcode", FieldType.TEXT),
+        _field("access_needs", FieldType.LONGTEXT),
+    ]
+    ctx = sample_respondent_context(fields, "me@example.com")
+    assert ctx.attributes["newsletter"] is True
+    assert ctx.attributes["gender"] == "Female"
+    assert ctx.attributes["year_of_birth"] == 1985
+    assert ctx.attributes["available_from"] == "1985-06-15"
+    assert ctx.attributes["postcode"] == "[Postcode]"
+    assert ctx.attributes["access_needs"] == "[Access needs]"
+
+
+def test_sample_skips_fixed_and_off_page_fields_but_placeholders_derived() -> None:
+    fields = [
+        _field("email", FieldType.EMAIL, is_fixed=True),
+        _field("internal_note", on_registration_page=FieldOnRegistrationPage.NO),
+        _field(
+            "age_bracket",
+            is_derived=True,
+            derived_from=["year_of_birth"],
+            derivation_type=DerivationType.AGE_BRACKET,
+            derivation_config={},
+        ),
+    ]
+    ctx = sample_respondent_context(fields, "me@example.com")
+    assert "email" not in ctx.attributes
+    assert "internal_note" not in ctx.attributes
+    assert ctx.attributes["age_bracket"] == "[Age bracket]"
