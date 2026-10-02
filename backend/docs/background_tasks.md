@@ -92,6 +92,51 @@ Archives or deletes old Google Sheets tabs.
 
 **Status tracking:** Creates `SelectionRunRecord` with progress updates
 
+#### auto_export_respondents
+
+Rewrites an assembly's respondent export tab in Google Sheets after its
+respondents, or their schema, changed. Only runs for assemblies where an
+organiser has ticked "Automatically export" on a successful Google Sheets
+export.
+
+**How it is queued:** every service that changes what the export would
+contain calls `respondent_auto_export.request_auto_export(uow, assembly_id)`.
+That sets a per-assembly `auto_export_pending:<id>` key in Redis (`SET NX`)
+and queues the task with a 30-second countdown; while the key is set, further
+requests are folded into the queued run. The countdown also lets the caller's
+transaction commit before the task reads. Under continuous change an assembly
+exports at most about once every 30 seconds. `request_auto_export` never
+raises - a failure to schedule is logged and the change that asked for it
+goes ahead.
+
+**What it does:** takes a per-assembly Redis lock (re-queues itself if another
+run holds it), deletes the pending key, re-reads the saved config (so a run
+queued before the organiser pressed "Stop automatic export" does nothing),
+and writes every respondent matching the saved status filter to the saved
+tab. There is no `SelectionRunRecord` and no acting user.
+
+Deleting the pending key before the read means a change that asks for an
+export after the delete gets a fresh run. One small gap remains: a change
+that asked just *before* the delete (so was folded into this run) but whose
+transaction commits *after* the read is missed until the next change. The
+window is the few milliseconds between a service calling
+`request_auto_export` and its entrypoint committing, and it heals itself on
+the next change. The proper fix is to request the export after commit, which
+is the domain-events work noted in `docs/architecture.md`.
+
+**Failures:** an `ExportTargetError` (sheet unshared, deleted, API error or
+rate limit) is retried up to 3 times with exponential backoff and jitter.
+Each attempt logs a warning with the `assembly_id`; the last one logs an
+error. Nothing is shown to the organiser yet - recording failures in the
+database so they can be seen in the UI, and switching auto-export off after
+repeated permanent failures, are follow-up work.
+
+**Parameters:**
+- `assembly_id` - The assembly whose respondents to export
+- `session_factory` - Optional, for tests
+- `target_factory` - Builds the Google Sheets target from a URL; tests pass a fake
+- `redis_client` - Optional, for tests
+
 #### cleanup_orphaned_tasks (Periodic)
 
 Automatically detects and marks failed tasks as FAILED.

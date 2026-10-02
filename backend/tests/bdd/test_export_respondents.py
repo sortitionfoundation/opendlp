@@ -2,10 +2,13 @@
 ABOUTME: Drives the full UI stack with Playwright, capturing the CSV download"""
 
 import pathlib
+import uuid
 
 from playwright.sync_api import Page, expect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from opendlp.domain.assembly_export_gsheet import AssemblyExportGSheet
+from opendlp.domain.value_objects import GSheetExportKind
 from opendlp.service_layer.assembly_service import update_csv_config
 from opendlp.service_layer.respondent_service import import_respondents_from_csv
 from opendlp.service_layer.unit_of_work import SqlAlchemyUnitOfWork
@@ -29,6 +32,23 @@ def assembly_ready_to_export(title: str, assembly_creator, admin_user, test_data
         # Set the CSV config so the respondents page shows the CSV data source (and the Export button).
         update_csv_config(uow, admin_user.id, assembly.id, csv_id_column="external_id")
     return str(assembly.id)
+
+
+@given(parsers.parse('the respondents of "{title}" are automatically exported to Google Sheets'))
+def auto_export_enabled(title: str, export_assembly_id: str, test_database) -> None:
+    """Seed the saved export config directly: the BDD server cannot reach a real Google Sheet."""
+    with SqlAlchemyUnitOfWork(test_database) as uow:
+        uow.assembly_export_gsheets.add(
+            AssemblyExportGSheet(
+                assembly_id=uuid.UUID(export_assembly_id),
+                export_kind=GSheetExportKind.RESPONDENTS,
+                url="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit",
+                worksheet_name="Respondents",
+                spreadsheet_title="Auto Export Demo Data",
+                worksheet_url="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit#gid=1",
+                auto_export=True,
+            )
+        )
 
 
 @given("I am signed in as an admin user")
@@ -108,3 +128,27 @@ def page_behind_is_inert(admin_logged_in_page: Page) -> None:
 @then("the page behind the export modal should be back in reach")
 def page_behind_is_back(admin_logged_in_page: Page) -> None:
     assert _inert_siblings(admin_logged_in_page) == 0
+
+
+@then("the page says the respondents are automatically exported")
+def page_says_auto_exported(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.get_by_text("Automatically exported to Google Sheets")).to_be_visible(
+        timeout=PLAYWRIGHT_TIMEOUT
+    )
+
+
+@when("I press the button to stop the automatic export")
+def press_stop_auto_export(admin_logged_in_page: Page) -> None:
+    admin_logged_in_page.get_by_role("button", name="Stop automatic export").click()
+
+
+@then("the page says the automatic export has stopped")
+def page_says_stopped(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.get_by_text("Automatic export stopped")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)
+
+
+@then("the page no longer offers to stop the automatic export")
+def stop_button_gone(admin_logged_in_page: Page) -> None:
+    expect(admin_logged_in_page.get_by_role("button", name="Stop automatic export")).to_have_count(0)
+    expect(admin_logged_in_page.get_by_text("Automatically exported")).to_have_count(0)
+    expect(admin_logged_in_page.get_by_text("Exported to Google Sheets")).to_be_visible(timeout=PLAYWRIGHT_TIMEOUT)

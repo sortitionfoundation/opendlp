@@ -60,6 +60,30 @@ class TestAddAndGet:
         assert retrieved.spreadsheet_title == "Assembly Data"
         assert retrieved.worksheet_url == "https://docs.google.com/spreadsheets/d/abc#gid=1"
 
+    def test_auto_export_fields_round_trip(self, assembly_export_gsheet_backend: ContractBackend):
+        """The auto-export flag and its status filter token survive a save and reload."""
+        assembly = assembly_export_gsheet_backend.make_assembly()
+        config = _add(
+            assembly_export_gsheet_backend,
+            assembly_id=assembly.id,
+            auto_export=True,
+            auto_export_status_filter="selected_or_confirmed",
+        )
+
+        retrieved = assembly_export_gsheet_backend.repo.get(config.assembly_export_gsheet_id)
+        assert retrieved is not None
+        assert retrieved.auto_export is True
+        assert retrieved.auto_export_status_filter == "selected_or_confirmed"
+
+    def test_auto_export_defaults_off(self, assembly_export_gsheet_backend: ContractBackend):
+        """A config saved without mentioning auto-export reloads with it off."""
+        config = _add(assembly_export_gsheet_backend)
+
+        retrieved = assembly_export_gsheet_backend.repo.get(config.assembly_export_gsheet_id)
+        assert retrieved is not None
+        assert retrieved.auto_export is False
+        assert retrieved.auto_export_status_filter == ""
+
     def test_all_returns_added(self, assembly_export_gsheet_backend: ContractBackend):
         c1 = _add(assembly_export_gsheet_backend)
         c2 = _add(assembly_export_gsheet_backend)

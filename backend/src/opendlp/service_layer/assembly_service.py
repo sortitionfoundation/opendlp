@@ -27,6 +27,7 @@ from .exceptions import (
     UserNotFoundError,
 )
 from .permissions import can_create_assembly, can_manage_assembly, can_view_assembly
+from .respondent_auto_export import request_auto_export
 from .unit_of_work import AbstractUnitOfWork
 from .user_service import assign_assembly_role, get_user_assemblies
 
@@ -816,4 +817,6 @@ def delete_respondents_for_assembly(
             required_role="assembly-manager or admin",
         )
 
-    return uow.respondents.delete_all_for_assembly(assembly_id)
+    count = uow.respondents.delete_all_for_assembly(assembly_id)
+    request_auto_export(uow, assembly_id)
+    return count

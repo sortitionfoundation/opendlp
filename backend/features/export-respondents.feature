@@ -30,3 +30,13 @@ Feature: Export respondents
     Then the export modal is no longer visible
     And keyboard focus should be on the Export button
     And the page behind the export modal should be back in reach
+
+  Scenario: Organiser stops the automatic export
+    Given there is an assembly with respondents ready to export called "Auto Export Demo"
+    And the respondents of "Auto Export Demo" are automatically exported to Google Sheets
+    And I am signed in as an admin user
+    When I open the respondents page for "Auto Export Demo"
+    Then the page says the respondents are automatically exported
+    When I press the button to stop the automatic export
+    Then the page says the automatic export has stopped
+    And the page no longer offers to stop the automatic export

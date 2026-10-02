@@ -100,3 +100,40 @@ class TestGSheetExportSmoke:
             assert config.worksheet_url == (
                 "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit#gid=3"
             )
+
+    def test_enable_then_stop_auto_export_round_trips_through_postgres(
+        self, logged_in_admin, existing_assembly, admin_user, postgres_session_factory
+    ):
+        """Ticking the box persists the flag and filter; the stop route clears the flag only."""
+        logged_in_admin.application.extensions["gsheet_export_target_factory"] = lambda url: FakeGSheetExportTarget()
+        sheet_url = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
+
+        logged_in_admin.post(
+            f"/backoffice/assembly/{existing_assembly.id}/respondents/export/run",
+            data={
+                "destination": "gsheet",
+                "status": "selected_or_confirmed",
+                "spreadsheet_url": sheet_url,
+                "worksheet_name": "Respondents",
+                "auto_export": "1",
+            },
+        )
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            config = uow.assembly_export_gsheets.get_by_assembly_and_kind(
+                existing_assembly.id, GSheetExportKind.RESPONDENTS
+            )
+            assert config is not None
+            assert config.auto_export is True
+            assert config.auto_export_status_filter == "selected_or_confirmed"
+
+        response = logged_in_admin.post(f"/backoffice/assembly/{existing_assembly.id}/respondents/export/auto/stop")
+        assert response.status_code == 302
+
+        with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
+            config = uow.assembly_export_gsheets.get_by_assembly_and_kind(
+                existing_assembly.id, GSheetExportKind.RESPONDENTS
+            )
+            assert config is not None
+            assert config.auto_export is False
+            assert config.url == sheet_url

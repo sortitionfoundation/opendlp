@@ -6,6 +6,7 @@ from typing import Any
 
 import gspread
 from gspread.exceptions import GSpreadException, WorksheetNotFound
+from gspread.utils import rowcol_to_a1
 from sortition_algorithms import make_gsheet_client, open_gsheet
 from sortition_algorithms.errors import SelectionError
 
@@ -45,6 +46,22 @@ def _default_client_factory(background: bool = False) -> Any:
     )
 
 
+def _stale_ranges(worksheet: Any, n_rows: int, n_cols: int) -> list[str]:
+    """A1 ranges of the worksheet's grid that lie beyond the freshly written block.
+
+    Two ranges at most: the rows below the data (full width) and the columns to
+    the right of it (only as tall as the data, since the rows below are already
+    covered). Either is omitted when the data reaches that edge of the grid.
+    """
+    ranges: list[str] = []
+    row_count, col_count = worksheet.row_count, worksheet.col_count
+    if row_count > n_rows:
+        ranges.append(f"{rowcol_to_a1(n_rows + 1, 1)}:{rowcol_to_a1(row_count, col_count)}")
+    if col_count > n_cols:
+        ranges.append(f"{rowcol_to_a1(1, n_cols + 1)}:{rowcol_to_a1(n_rows, col_count)}")
+    return ranges
+
+
 class GSheetExportTarget(AbstractGSheetExportTarget):
     """Write a table into a worksheet of an existing Google Spreadsheet.
 
@@ -67,6 +84,12 @@ class GSheetExportTarget(AbstractGSheetExportTarget):
         self.result_title: str = ""
 
     def write_sheet(self, title: str, table: TabularData) -> None:
+        """Write the table over whatever the worksheet holds, then clear what lies beyond it.
+
+        Writing first means the tab is never empty: a failure between the two
+        calls leaves stale rows below fresh data rather than a blank sheet.
+        """
+        values = [table.headers, *table.rows]
         try:
             client = self._client_factory()
             # open_gsheet classifies the access failures (not found, not shared,
@@ -76,10 +99,12 @@ class GSheetExportTarget(AbstractGSheetExportTarget):
             spreadsheet = info.spreadsheet
             try:
                 worksheet = spreadsheet.worksheet(title)
-                worksheet.clear()
             except WorksheetNotFound:
                 worksheet = spreadsheet.add_worksheet(title=title, rows=_DEFAULT_ROWS, cols=_DEFAULT_COLS)
-            worksheet.update([table.headers, *table.rows])
+            worksheet.update(values)
+            stale = _stale_ranges(worksheet, len(values), len(table.headers))
+            if stale:
+                worksheet.batch_clear(stale)
             self.result_url = worksheet.url
             self.result_title = spreadsheet.title
         except (SelectionError, GSpreadException, PermissionError) as exc:

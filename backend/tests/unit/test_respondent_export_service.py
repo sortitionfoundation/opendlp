@@ -8,7 +8,7 @@ from io import StringIO
 
 import pytest
 
-from opendlp.adapters.tabular_export import CsvExportTarget
+from opendlp.adapters.tabular_export import CsvExportTarget, ExportTargetError
 from opendlp.domain.assembly import Assembly
 from opendlp.domain.assembly_csv import AssemblyCSV
 from opendlp.domain.respondent_field_schema import DerivationType, RespondentFieldDefinition, RespondentFieldGroup
@@ -25,6 +25,7 @@ from opendlp.service_layer.respondent_export_service import (
     STATUS_FILTER_ALL,
     STATUS_FILTER_SELECTED_OR_CONFIRMED,
     build_respondent_table,
+    disable_auto_export,
     export_respondents,
     export_respondents_to_gsheet,
     get_respondent_gsheet_config,
@@ -407,3 +408,99 @@ class TestExportRespondentsToGSheet:
     def test_get_config_returns_none_when_unset(self, uow):
         user, assembly = _seed(uow)
         assert get_respondent_gsheet_config(uow, user.id, assembly.id) is None
+
+    def test_auto_export_is_off_by_default(self, uow):
+        """A plain export saves the config with auto-export off."""
+        user, assembly = _seed(uow)
+        _export(uow, user, assembly)
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.auto_export is False
+        assert saved.auto_export_status_filter == ""
+
+    def test_enables_auto_export_with_the_status_filter_token(self, uow):
+        """Ticking the box saves the flag and the filter token the background export will use."""
+        user, assembly = _seed(uow)
+        _export(uow, user, assembly, auto_export=True, auto_export_status_filter="selected_or_confirmed")
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.auto_export is True
+        assert saved.auto_export_status_filter == "selected_or_confirmed"
+
+    def test_unticked_export_switches_auto_export_off(self, uow):
+        """The checkbox is the truth on every Google Sheets export."""
+        user, assembly = _seed(uow)
+        _export(uow, user, assembly, auto_export=True, auto_export_status_filter="POOL")
+        _export(uow, user, assembly)
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.auto_export is False
+        assert saved.auto_export_status_filter == ""
+
+    def test_failed_write_does_not_enable_auto_export(self, uow):
+        """The initial export must succeed: a target that raises leaves auto-export off."""
+        user, assembly = _seed(uow)
+        _add_respondent(uow, assembly, "R1", RespondentStatus.POOL)
+
+        with pytest.raises(ExportTargetError):
+            export_respondents_to_gsheet(
+                uow,
+                user.id,
+                assembly.id,
+                status_filter=None,
+                spreadsheet_url=_SHEET_URL,
+                worksheet_name="Tab",
+                target=FakeGSheetExportTarget(error=ExportTargetError("not shared")),
+                auto_export=True,
+            )
+
+        assert get_respondent_gsheet_config(uow, user.id, assembly.id) is None
+
+
+def _export(
+    uow: FakeUnitOfWork,
+    user: User,
+    assembly: Assembly,
+    *,
+    auto_export: bool = False,
+    auto_export_status_filter: str = "",
+) -> None:
+    export_respondents_to_gsheet(
+        uow,
+        user.id,
+        assembly.id,
+        status_filter=None,
+        spreadsheet_url=_SHEET_URL,
+        worksheet_name="Tab",
+        target=FakeGSheetExportTarget(),
+        auto_export=auto_export,
+        auto_export_status_filter=auto_export_status_filter,
+    )
+
+
+class TestDisableAutoExport:
+    def test_clears_the_flag_and_nothing_else(self, uow):
+        """Stopping auto-export keeps the URL, tab and last-export link for the next manual export."""
+        user, assembly = _seed(uow)
+        _export(uow, user, assembly, auto_export=True, auto_export_status_filter="POOL")
+
+        disable_auto_export(uow, user.id, assembly.id)
+
+        saved = get_respondent_gsheet_config(uow, user.id, assembly.id)
+        assert saved is not None
+        assert saved.auto_export is False
+        assert saved.url == _SHEET_URL
+        assert saved.worksheet_name == "Tab"
+
+    def test_no_config_is_a_no_op(self, uow):
+        user, assembly = _seed(uow)
+        disable_auto_export(uow, user.id, assembly.id)
+        assert get_respondent_gsheet_config(uow, user.id, assembly.id) is None
+
+    def test_requires_manage_permission(self, uow):
+        user, assembly = _seed(uow, global_role=GlobalRole.USER)
+        with pytest.raises(InsufficientPermissions):
+            disable_auto_export(uow, user.id, assembly.id)
