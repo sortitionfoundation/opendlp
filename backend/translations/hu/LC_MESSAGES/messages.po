@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-02 15:34+0200\n"
+"POT-Creation-Date: 2026-10-02 15:35+0200\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -657,7 +657,7 @@ msgstr "Adj meg egy teljes http:// vagy https:// című webcímet"
 
 #: src/opendlp/entrypoints/forms.py:132 src/opendlp/entrypoints/forms.py:263
 #: src/opendlp/entrypoints/forms.py:304 src/opendlp/entrypoints/forms.py:315
-#: templates/profile/view.html:11
+#: templates/auth/register.html:62 templates/profile/view.html:11
 msgid "Email address"
 msgstr "E-mail cím"
 
@@ -1442,8 +1442,8 @@ msgstr "Ezt a fiókot letiltották. Lépj kapcsolatba egy adminisztrátorral."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:136
 #: src/opendlp/entrypoints/blueprints/auth.py:254
-#: src/opendlp/entrypoints/blueprints/auth.py:754
-#: src/opendlp/entrypoints/blueprints/auth.py:843
+#: src/opendlp/entrypoints/blueprints/auth.py:763
+#: src/opendlp/entrypoints/blueprints/auth.py:856
 msgid "Signed in successfully"
 msgstr "Sikeres bejelentkezés"
 
@@ -1525,7 +1525,7 @@ msgid "Registration successful! Please check your email to confirm your account.
 msgstr "Sikeres regisztráció! Nézd meg az e-mailjeidet a fiókod megerősítéséhez."
 
 #: src/opendlp/entrypoints/blueprints/auth.py:454
-#: src/opendlp/entrypoints/blueprints/auth.py:672
+#: src/opendlp/entrypoints/blueprints/auth.py:677
 #: src/opendlp/entrypoints/blueprints/profile.py:326
 #, python-format
 msgid "Password is too weak: %(error)s"
@@ -1535,23 +1535,23 @@ msgstr "A jelszó túl gyenge: %(error)s"
 msgid "An error occurred during registration. Please try again."
 msgstr "Hiba történt a regisztráció során. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:496
+#: src/opendlp/entrypoints/blueprints/auth.py:499
 msgid "We could not verify that you are human. Please try again."
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/auth.py:532
-#: src/opendlp/entrypoints/blueprints/auth.py:547
-#: src/opendlp/entrypoints/blueprints/auth.py:579
-#: src/opendlp/entrypoints/blueprints/auth.py:633
-#: src/opendlp/entrypoints/blueprints/auth.py:675
+#: src/opendlp/entrypoints/blueprints/auth.py:537
+#: src/opendlp/entrypoints/blueprints/auth.py:552
+#: src/opendlp/entrypoints/blueprints/auth.py:584
+#: src/opendlp/entrypoints/blueprints/auth.py:638
+#: src/opendlp/entrypoints/blueprints/auth.py:680
 msgid "An error occurred. Please try again."
 msgstr "Hiba történt. Kérjük, próbáld újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:540
+#: src/opendlp/entrypoints/blueprints/auth.py:545
 msgid "Email confirmed successfully! You can now sign in."
 msgstr "Az e-mail cím megerősítése sikerült! Most már bejelentkezhetsz."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:570
+#: src/opendlp/entrypoints/blueprints/auth.py:575
 msgid ""
 "If that email is registered and unconfirmed, a confirmation link has been"
 " sent"
@@ -1559,36 +1559,36 @@ msgstr ""
 "Ha ez az e-mail cím regisztrálva van és még nincs megerősítve, a "
 "megerősítő link elment"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:624
+#: src/opendlp/entrypoints/blueprints/auth.py:629
 msgid "If an account exists with this email, a password reset link has been sent"
 msgstr "Ha létezik fiók ezzel az e-mail címmel, a jelszó-visszaállító link elment"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:665
+#: src/opendlp/entrypoints/blueprints/auth.py:670
 msgid "Your password has been reset successfully. You can now sign in."
 msgstr "A jelszavad visszaállítása sikerült. Most már bejelentkezhetsz."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:718
+#: src/opendlp/entrypoints/blueprints/auth.py:723
 #: src/opendlp/entrypoints/blueprints/profile.py:158
 msgid "Failed to get user information from Google"
 msgstr "Nem sikerült lekérni a felhasználói adatokat a Google-tól"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:752
-#: src/opendlp/entrypoints/blueprints/auth.py:841
+#: src/opendlp/entrypoints/blueprints/auth.py:761
+#: src/opendlp/entrypoints/blueprints/auth.py:854
 msgid "Account created successfully! Welcome to OpenDLP."
 msgstr "A fiók sikeresen létrejött! Üdvözlünk az OpenDLP-ben."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:766
+#: src/opendlp/entrypoints/blueprints/auth.py:775
 msgid "An error occurred during Google sign in. Please try again."
 msgstr ""
 "Hiba történt a Google-fiókkal való bejelentkezés során. Kérjük, próbáld "
 "újra."
 
-#: src/opendlp/entrypoints/blueprints/auth.py:807
+#: src/opendlp/entrypoints/blueprints/auth.py:816
 #: src/opendlp/entrypoints/blueprints/profile.py:222
 msgid "Failed to get user information from Microsoft"
 msgstr "Nem sikerült lekérni a felhasználói adatokat a Microsofttól"
 
-#: src/opendlp/entrypoints/blueprints/auth.py:855
+#: src/opendlp/entrypoints/blueprints/auth.py:868
 msgid "An error occurred during Microsoft sign in. Please try again."
 msgstr ""
 "Hiba történt a Microsoft-fiókkal való bejelentkezés során. Kérjük, "
@@ -4560,7 +4560,7 @@ msgstr "Kilépés"
 
 #: templates/auth/forgot_password.html:41 templates/auth/login.html:3
 #: templates/auth/login.html:7 templates/auth/login.html:31
-#: templates/auth/register.html:160 templates/auth/resend_confirmation.html:41
+#: templates/auth/register.html:204 templates/auth/resend_confirmation.html:41
 #: templates/base.html:102 templates/errors/400.html:29
 #: templates/errors/403.html:27 templates/errors/404.html:28
 #: templates/errors/413.html:24 templates/errors/500.html:28
@@ -5112,7 +5112,7 @@ msgstr "Bekapcsolva ekkor"
 msgid "View 2FA audit log"
 msgstr "Kétlépcsős azonosítás eseménynaplójának megtekintése"
 
-#: templates/admin/user_view.html:99 templates/auth/register.html:43
+#: templates/admin/user_view.html:99 templates/auth/register.html:91
 msgid "Data Agreement"
 msgstr "Adatkezelési Megállapodás"
 
@@ -5402,48 +5402,56 @@ msgstr ""
 "kapcsolatba az <a href=\"mailto:%(email)s\">OpenDLP "
 "ügyfélszolgálatával</a>."
 
-#: templates/auth/register.html:24
+#: templates/auth/register.html:33 templates/auth/register.html:177
+msgid "Create Account with email"
+msgstr ""
+
+#: templates/auth/register.html:37
+msgid "Choose how to sign up"
+msgstr ""
+
+#: templates/auth/register.html:38
+msgid "How would you like to sign up?"
+msgstr ""
+
+#: templates/auth/register.html:46
+msgid "Google"
+msgstr ""
+
+#: templates/auth/register.html:55
+msgid "Microsoft"
+msgstr ""
+
+#: templates/auth/register.html:72
 msgid "Optional — if you were given an invite code, enter it here."
 msgstr "Nem kötelező – ha kaptál meghívókódot, add meg itt."
 
-#: templates/auth/register.html:45
+#: templates/auth/register.html:93
 msgid "Please read and accept our data agreement to proceed."
 msgstr ""
 "A folytatáshoz kérjük, olvasd el és fogadd el az adatkezelési "
 "megállapodásunkat."
 
-#: templates/auth/register.html:49
+#: templates/auth/register.html:97
 msgid "View data agreement"
 msgstr "Adatkezelési megállapodás megtekintése"
 
-#: templates/auth/register.html:54
+#: templates/auth/register.html:102
 #: templates/components/signup_survey_fields.html:18
 #: templates/components/signup_survey_fields.html:37
 #: templates/profile/edit.html:17 templates/profile/edit.html:32
 msgid "Error"
 msgstr "Hiba történt"
 
-#: templates/auth/register.html:70
-msgid "Create your account with an external account"
-msgstr ""
-
-#: templates/auth/register.html:80 templates/auth/register.html:81
+#: templates/auth/register.html:185 templates/auth/register.html:186
 msgid "Create an Account with Google"
 msgstr "Fiók létrehozása Google-fiókkal"
 
-#: templates/auth/register.html:94 templates/auth/register.html:95
+#: templates/auth/register.html:197 templates/auth/register.html:198
 msgid "Create an Account with Microsoft"
 msgstr "Fiók létrehozása Microsoft-fiókkal"
 
-#: templates/auth/register.html:101
-msgid "Or create an account with an email and password"
-msgstr ""
-
-#: templates/auth/register.html:157
-msgid "Create Account with email"
-msgstr ""
-
-#: templates/auth/register.html:160
+#: templates/auth/register.html:204
 msgid "Already have an account?"
 msgstr "Már van fiókod?"
 

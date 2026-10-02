@@ -488,6 +488,9 @@ def register(invite_code: str = "") -> ResponseReturnValue:
     oauth_provider = action if action in ("google", "microsoft") else ""
     if oauth_provider:
         form.relax_for_oauth()
+    # The chooser reopens on the method that was submitted, so a re-render after a
+    # validation error does not bounce the user back to the email fields.
+    selected_method = action if action in ("email", "google", "microsoft") else "email"
 
     if form.validate_on_submit():
         # Every signup path - Google, Microsoft or email - creates an account, so
@@ -499,6 +502,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
                 form=form,
                 password_help=password_validators_help_text_html(),
                 show_questions=show_questions,
+                selected_method=selected_method,
             )
         if oauth_provider:
             return _start_oauth_registration(form, oauth_provider, show_questions=show_questions)
@@ -511,6 +515,7 @@ def register(invite_code: str = "") -> ResponseReturnValue:
         form=form,
         password_help=password_validators_help_text_html(),
         show_questions=show_questions,
+        selected_method=selected_method,
     )
 
 
