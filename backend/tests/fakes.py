@@ -848,6 +848,11 @@ class FakeRespondentRepository(FakeRepository, RespondentRepository):
                 return r
         return None
 
+    def get_by_external_ids(self, assembly_id: uuid.UUID, external_ids: list[str]) -> list[Respondent]:
+        wanted = set(external_ids)
+        found = [r for r in self._items if r.assembly_id == assembly_id and r.external_id in wanted]
+        return sorted(found, key=lambda r: r.external_id)
+
     def count_by_assembly_id(self, assembly_id: uuid.UUID, include_deleted: bool = False) -> int:
         return sum(
             1

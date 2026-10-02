@@ -1275,6 +1275,22 @@ class SqlAlchemyRespondentRepository(SqlAlchemyRepository, RespondentRepository)
             .first()
         )
 
+    def get_by_external_ids(self, assembly_id: uuid.UUID, external_ids: list[str]) -> list[Respondent]:
+        if not external_ids:
+            return []
+        return (
+            self.session
+            .query(Respondent)
+            .filter(
+                and_(
+                    orm.respondents.c.assembly_id == assembly_id,
+                    orm.respondents.c.external_id.in_(external_ids),
+                )
+            )
+            .order_by(orm.respondents.c.external_id)
+            .all()
+        )
+
     def count_available_for_selection(self, assembly_id: uuid.UUID) -> int:
         return (
             self.session

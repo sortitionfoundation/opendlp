@@ -270,6 +270,42 @@ class TestCsvSelectionProgressModal:
         assert response.status_code == 200
         assert b"hx-get" not in response.data
 
+    def test_progress_modal_lists_the_selected_respondents(
+        self, logged_in_admin, admin_user, assembly_with_csv_config, fake_store
+    ):
+        """A completed run shows the people it selected, deleted ones included, each with a view link."""
+        assembly = assembly_with_csv_config
+        run_id = uuid.uuid4()
+        _add_run_record(
+            fake_store,
+            assembly_id=assembly.id,
+            task_id=run_id,
+            status=SelectionRunStatus.COMPLETED,
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            selected_ids=[["3", "1"]],
+            remaining_ids=["2"],
+            log_messages=["Successfully selected 2 people. 8 remain in pool."],
+            completed_at=datetime.now(UTC),
+        )
+        with FakeUnitOfWork(store=fake_store) as uow:
+            by_ext = {r.external_id: r for r in uow.respondents.get_by_assembly_id(assembly.id)}
+            respondent_service.delete_respondent(uow, admin_user.id, assembly.id, by_ext["3"].id, "test")
+            uow.commit()
+            ids = {ext: by_ext[ext].id for ext in ("1", "2", "3")}
+
+        response = logged_in_admin.get(f"/backoffice/assembly/{assembly.id}/selection/db/modal-progress/{run_id}")
+
+        assert response.status_code == 200
+        html = response.data.decode()
+        assert "Task completed successfully. Successfully selected 2 people. 8 remain in pool." in html
+        selected = html[html.index("<span>Selected</span>") :]
+        assert f"/respondents/{ids['3']}" in selected
+        assert f"/respondents/{ids['1']}" in selected
+        assert f"/respondents/{ids['2']}" not in selected
+        assert selected.index(f"/respondents/{ids['1']}") < selected.index(f"/respondents/{ids['3']}")
+        assert "Name deleted" in selected
+        assert "Download selected" in selected
+
     def test_progress_modal_returns_404_when_not_found(self, logged_in_admin, assembly_with_csv_config):
         """Progress modal returns 404 for non-existent task."""
         assembly = assembly_with_csv_config

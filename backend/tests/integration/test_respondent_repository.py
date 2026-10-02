@@ -112,6 +112,27 @@ class TestRespondentRepository:
         with pytest.raises(IntegrityError):  # IntegrityError from database
             postgres_session.commit()
 
+    def test_get_by_external_ids_returns_matches_in_this_assembly_only(
+        self, respondent_repo: SqlAlchemyRespondentRepository, test_assembly: Assembly, postgres_session: Session
+    ):
+        """One query fetches the named respondents, deleted ones included, from this assembly alone."""
+        other_assembly = Assembly(title="Other", question="Q?")
+        postgres_session.add(other_assembly)
+        postgres_session.commit()
+        for ext_id in ("A", "B", "C"):
+            respondent_repo.add(Respondent(assembly_id=test_assembly.id, external_id=ext_id))
+        respondent_repo.add(
+            Respondent(assembly_id=test_assembly.id, external_id="D", selection_status=RespondentStatus.DELETED)
+        )
+        respondent_repo.add(Respondent(assembly_id=other_assembly.id, external_id="A"))
+        postgres_session.commit()
+
+        found = respondent_repo.get_by_external_ids(test_assembly.id, ["D", "A", "missing"])
+
+        assert [r.external_id for r in found] == ["A", "D"]
+        assert all(r.assembly_id == test_assembly.id for r in found)
+        assert respondent_repo.get_by_external_ids(test_assembly.id, []) == []
+
 
 class TestRewritingOneAttribute:
     """remove_attribute and rename_attribute rewrite every respondent in one statement."""

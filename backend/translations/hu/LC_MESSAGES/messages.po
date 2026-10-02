@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-01 15:57+0000\n"
+"POT-Creation-Date: 2026-10-02 19:49+0000\n"
 "PO-Revision-Date: 2026-09-16 14:15+0000\n"
 "Last-Translator: Hamish Downer <hamish@sortitionfoundation.org>\n"
 "Language: hu\n"
@@ -59,7 +59,7 @@ msgstr "Diversimax optimalizálás futtatása"
 
 #: src/opendlp/domain/assembly.py:338
 #: templates/backoffice/components/manage_tabs_progress_modal.html:21
-#: templates/backoffice/components/modal.html:400
+#: templates/backoffice/components/modal.html:427
 #: templates/backoffice/components/replacement_modal.html:50
 msgid "Processing…"
 msgstr "Feldolgozás…"
@@ -257,6 +257,7 @@ msgstr "Egész szám"
 #: templates/backoffice/assembly_members.html:48
 #: templates/backoffice/assembly_respondents.html:129
 #: templates/backoffice/assembly_view_respondent.html:160
+#: templates/backoffice/components/db_selection_progress_modal.html:81
 #: templates/main/view_assembly_members.html:11
 #: templates/respondents/view_respondents.html:163
 msgid "Email"
@@ -1619,7 +1620,7 @@ msgstr "Hiba történt a közösségi gyűlés létrehozásakor"
 #: src/opendlp/entrypoints/blueprints/backoffice.py:817
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:222
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:345
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:90
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:91
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:94
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:129
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:164
@@ -1679,10 +1680,10 @@ msgstr "Nincs jogosultságod a közösségi gyűlés megtekintéséhez"
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1135
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1165
 #: src/opendlp/entrypoints/blueprints/backoffice_registration.py:1192
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:87
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:190
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:462
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:489
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:88
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:191
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:468
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:495
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:91
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:126
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:161
@@ -1788,6 +1789,7 @@ msgstr "A regisztráció megkezdése után megjeleníti a jelentkezők adatait."
 #: templates/backoffice/assembly_dashboard.html:114
 #: templates/backoffice/assembly_respondents.html:104
 #: templates/backoffice/assembly_view_respondent.html:226
+#: templates/backoffice/components/db_selection_progress_modal.html:74
 #: templates/backoffice/components/table.html:207
 #: templates/backoffice/targets/bulk_edit_form.html:268
 #: templates/backoffice/targets/category_block.html:136
@@ -2161,13 +2163,13 @@ msgstr "Hiba történt a dokumentum frissítése közben"
 msgid "An error occurred while deleting the document"
 msgstr "Hiba történt a dokumentum törlése közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:65
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:66
 msgid "Please review and save the selection settings before checking data"
 msgstr ""
 "Az adatok ellenőrzése előtt nézd át és mentsd el a kiválasztási "
 "beállításokat"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:74
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:75
 #, python-format
 msgid ""
 "Data validation passed: %(features)s targets, %(people)s respondents "
@@ -2176,35 +2178,35 @@ msgstr ""
 "Az adatok ellenőrzése sikeres: %(features)s kiválasztási szempont, "
 "%(people)s jelentkező áll készen a kiválasztásra"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:94
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:95
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:168
 msgid "An unexpected error occurred while checking data"
 msgstr "Váratlan hiba történt az adatok ellenőrzése közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:111
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:156
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:112
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:157
 msgid "Please review and save the selection settings before running selection"
 msgstr ""
 "A kiválasztás futtatása előtt nézd át és mentsd el a kiválasztási "
 "beállításokat"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:125
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:126
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:191
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:452
 #, python-format
 msgid "Could not start selection task: %(error)s"
 msgstr "Nem sikerült elindítani a kiválasztási feladatot: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:128
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:129
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:194
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:460
 #, python-format
 msgid "Failed to start selection task: %(error)s"
 msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:131
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:193
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:465
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:132
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:194
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:471
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:197
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:413
 #: src/opendlp/entrypoints/blueprints/gsheets.py:863
@@ -2218,35 +2220,35 @@ msgstr "A kiválasztás futtatásának indítása sikertelen: %(error)s"
 msgid "You don't have permission to manage this assembly"
 msgstr "Nincs jogosultságod a közösségi gyűlés kezeléséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:135
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:136
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:201
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:479
 msgid "An unexpected error occurred while starting the selection task"
 msgstr "Hiba történt a kiválasztás futtatásának indítása közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:187
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:188
 #, python-format
 msgid "Could not start replacement selection: %(error)s"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:197
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:198
 msgid "An unexpected error occurred while starting the replacement selection"
 msgstr ""
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:258
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:264
 #: src/opendlp/entrypoints/blueprints/gsheets.py:587
 #: src/opendlp/entrypoints/blueprints/gsheets.py:732
 msgid "Task cancelled"
 msgstr "A feladat megszakítva"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:268
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:274
 #: src/opendlp/entrypoints/blueprints/gsheets.py:597
 #: src/opendlp/entrypoints/blueprints/gsheets.py:742
 #, python-format
 msgid "Cannot cancel task: %(error)s"
 msgstr "A feladat nem szakítható meg: %(error)s"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:272
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:278
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:257
 #: src/opendlp/entrypoints/blueprints/gsheets.py:601
 #: src/opendlp/entrypoints/blueprints/gsheets.py:746
@@ -2254,11 +2256,11 @@ msgstr "A feladat nem szakítható meg: %(error)s"
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:557
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:980
 #: src/opendlp/entrypoints/blueprints/gsheets_legacy.py:1330
-#: src/opendlp/service_layer/sortition.py:831
+#: src/opendlp/service_layer/sortition.py:850
 msgid "Task not found"
 msgstr "A feladat nem található"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:276
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:282
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:265
 #: src/opendlp/entrypoints/blueprints/gsheets.py:605
 #: src/opendlp/entrypoints/blueprints/gsheets.py:750
@@ -2269,7 +2271,7 @@ msgstr "A feladat nem található"
 msgid "You don't have permission to cancel this task"
 msgstr "Nincs jogosultságod a feladat megszakításához"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:280
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:286
 #: src/opendlp/entrypoints/blueprints/gsheets.py:609
 #: src/opendlp/entrypoints/blueprints/gsheets.py:754
 #: src/opendlp/entrypoints/blueprints/gsheets.py:967
@@ -2279,42 +2281,42 @@ msgstr "Nincs jogosultságod a feladat megszakításához"
 msgid "An error occurred while cancelling the task"
 msgstr "Hiba történt a feladat megszakítása közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:309
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:342
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:378
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:315
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:348
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:384
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:295
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:325
 msgid "You don't have permission to download this data"
 msgstr "Nincs jogosultságod az adatok letöltéséhez"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:313
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:346
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:382
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:319
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:352
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:388
 msgid "An error occurred while generating the download"
 msgstr "Hiba történt a letöltés előállítása közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:456
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:462
 msgid "Selection settings saved successfully"
 msgstr "A kiválasztási beállítások sikeresen mentve"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:469
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:475
 msgid "An error occurred while saving settings"
 msgstr "Hiba történt a beállítások mentése közben"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:485
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:491
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:446
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:191
 #, python-format
 msgid "Reset %(count)s respondents to the pool"
 msgstr "%(count)s fő visszaállítva Jelentkező állapotba"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:492
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:498
 #: src/opendlp/entrypoints/blueprints/db_selection_legacy.py:452
 #: src/opendlp/entrypoints/blueprints/respondents_legacy.py:197
 msgid "You don't have permission to reset selection status"
 msgstr "Nincs jogosultságod a kiválasztási állapot visszaállításához"
 
-#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:496
+#: src/opendlp/entrypoints/blueprints/db_selection_backoffice.py:502
 msgid "An error occurred while resetting respondent status"
 msgstr "Hiba történt a jelentkezői állapot visszaállítása közben"
 
@@ -3422,7 +3424,7 @@ msgid "Added %(count)s values"
 msgstr "%(count)s érték hozzáadva"
 
 #: src/opendlp/entrypoints/celery/tasks.py:125
-#: src/opendlp/service_layer/sortition.py:971
+#: src/opendlp/service_layer/sortition.py:990
 msgid "Please contact the administrators if this problem persists."
 msgstr ""
 "Ha ez a probléma továbbra is fennáll, lépj kapcsolatba az "
@@ -4021,44 +4023,44 @@ msgstr "köszönőoldal HTML"
 msgid "form HTML"
 msgstr "űrlap HTML"
 
-#: src/opendlp/service_layer/replacement_targets.py:353
+#: src/opendlp/service_layer/replacement_targets.py:348
 msgid "The targets have changed since this dialog opened. Review them again."
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:358
+#: src/opendlp/service_layer/replacement_targets.py:353
 msgid "Enter whole numbers of zero or more"
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:361
+#: src/opendlp/service_layer/replacement_targets.py:356
 msgid "Maximum must be at least the minimum"
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:408
+#: src/opendlp/service_layer/replacement_targets.py:403
 #, python-format
 msgid ""
 "The targets cannot all be met at once: %(target_needing)s needs at least "
 "%(min)s but %(target_allowing)s allows at most %(max)s"
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:419
+#: src/opendlp/service_layer/replacement_targets.py:414
 #, python-format
 msgid ""
 "%(target)s needs at least %(sum)s replacements, more than the %(number)s "
 "to select"
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:428
+#: src/opendlp/service_layer/replacement_targets.py:423
 #, python-format
 msgid ""
 "%(target)s allows at most %(sum)s replacements, fewer than the %(number)s"
 " to select"
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:478
+#: src/opendlp/service_layer/replacement_targets.py:473
 msgid "Enter a whole number of replacements to select, one or more"
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:522
+#: src/opendlp/service_layer/replacement_targets.py:517
 #, python-format
 msgid ""
 "Needs at least %(min)s but only %(num)s eligible person with this value "
@@ -4069,13 +4071,13 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/opendlp/service_layer/replacement_targets.py:560
+#: src/opendlp/service_layer/replacement_targets.py:555
 msgid ""
 "The feasibility check could not be completed. The selection can still be "
 "run."
 msgstr ""
 
-#: src/opendlp/service_layer/replacement_targets.py:592
+#: src/opendlp/service_layer/replacement_targets.py:587
 #, python-format
 msgid ""
 "Only %(num)s eligible person is in the pool, fewer than the %(number)s to"
@@ -4232,8 +4234,8 @@ msgstr "#"
 msgid "signup"
 msgstr "regisztráció"
 
-#: src/opendlp/service_layer/sortition.py:150
-#: src/opendlp/service_layer/sortition.py:498
+#: src/opendlp/service_layer/sortition.py:151
+#: src/opendlp/service_layer/sortition.py:499
 msgid ""
 "The assembly needs to have a non-zero number to select before a selection"
 " can run"
@@ -4241,37 +4243,37 @@ msgstr ""
 "A kiválasztáshoz a közösségi gyűlésnél a kiválasztandók számának nullától"
 " eltérőnek kell lennie"
 
-#: src/opendlp/service_layer/sortition.py:570
+#: src/opendlp/service_layer/sortition.py:571
 msgid "The number of replacements to select must be at least one"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:573
+#: src/opendlp/service_layer/sortition.py:574
 msgid "A selection is already running for this assembly"
 msgstr ""
 
-#: src/opendlp/service_layer/sortition.py:652
+#: src/opendlp/service_layer/sortition.py:671
 msgid "Selection has not completed — no results to download"
 msgstr "A kiválasztás nem fejeződött be – nincs letölthető eredmény"
 
-#: src/opendlp/service_layer/sortition.py:835
+#: src/opendlp/service_layer/sortition.py:854
 msgid "Cannot cancel task — it has already finished"
 msgstr "A feladat nem szakítható meg – már befejeződött"
 
-#: src/opendlp/service_layer/sortition.py:852
+#: src/opendlp/service_layer/sortition.py:871
 #, python-format
 msgid "Task cancelled by %(user_name)s"
 msgstr "A feladatot %(user_name)s szakította meg"
 
-#: src/opendlp/service_layer/sortition.py:1042
+#: src/opendlp/service_layer/sortition.py:1061
 msgid "Task exceeded timeout"
 msgstr "A feladat túllépte az időkorlátot"
 
-#: src/opendlp/service_layer/sortition.py:1069
+#: src/opendlp/service_layer/sortition.py:1088
 msgid "Task failed to start"
 msgstr "A feladat indítása sikertelen"
 
-#: src/opendlp/service_layer/sortition.py:1081
-#: src/opendlp/service_layer/sortition.py:1092
+#: src/opendlp/service_layer/sortition.py:1100
+#: src/opendlp/service_layer/sortition.py:1111
 msgid "Task stopped unexpectedly"
 msgstr "A feladat váratlanul leállt"
 
@@ -4765,7 +4767,10 @@ msgstr "Szerepkör"
 #: templates/backoffice/assembly_respondents.html:126
 #: templates/backoffice/assembly_selection.html:184
 #: templates/backoffice/assembly_selection.html:357
+#: templates/backoffice/components/db_selection_progress_modal.html:49
+#: templates/backoffice/components/db_selection_progress_modal.html:78
 #: templates/backoffice/components/registration_page_list.html:28
+#: templates/backoffice/components/selection_progress_modal.html:49
 #: templates/backoffice/respondents/export_modal.html:49
 #: templates/main/view_assembly_data.html:54
 #: templates/main/view_assembly_details.html:13
@@ -4891,6 +4896,7 @@ msgstr "Lejárat"
 #: templates/backoffice/assembly_respondents.html:130
 #: templates/backoffice/assembly_selection.html:196
 #: templates/backoffice/assembly_selection.html:369
+#: templates/backoffice/components/db_selection_progress_modal.html:82
 #: templates/backoffice/components/registration_page_list.html:32
 #: templates/backoffice/respondent_field_schema/_editor.html:51
 #: templates/backoffice/targets/bulk_edit_form.html:280
@@ -4906,6 +4912,7 @@ msgstr "Műveletek"
 #: templates/backoffice/assembly_respondents.html:140
 #: templates/backoffice/assembly_selection.html:232
 #: templates/backoffice/assembly_selection.html:404
+#: templates/backoffice/components/db_selection_progress_modal.html:92
 #: templates/main/view_assembly_data.html:110
 msgid "View"
 msgstr "Megtekintés"
@@ -5277,6 +5284,7 @@ msgstr "%(total)s felhasználóból %(start)s–%(end)s látható"
 
 #: templates/admin/users.html:115
 #: templates/backoffice/assembly_respondents.html:127
+#: templates/backoffice/components/db_selection_progress_modal.html:80
 #: templates/backoffice/components/registration_page_list.html:25
 msgid "Name"
 msgstr "Név"
@@ -6237,7 +6245,7 @@ msgstr "Exportálva a Google Táblázatba"
 #: templates/backoffice/assembly_respondents.html:79
 #: templates/backoffice/components/manage_tabs_progress_modal.html:79
 #: templates/backoffice/components/replacement_modal.html:116
-#: templates/backoffice/components/selection_progress_modal.html:36
+#: templates/backoffice/components/selection_progress_modal.html:26
 msgid "View spreadsheet"
 msgstr "Táblázat megtekintése"
 
@@ -6246,11 +6254,9 @@ msgid "Stop automatic export"
 msgstr ""
 
 #: templates/backoffice/assembly_respondents.html:95
-#: templates/backoffice/components/db_selection_progress_modal.html:20
 #: templates/backoffice/components/manage_tabs_progress_modal.html:18
 #: templates/backoffice/components/replacement_modal.html:49
 #: templates/backoffice/components/replacement_modal.html:100
-#: templates/backoffice/components/selection_progress_modal.html:18
 msgid "Status:"
 msgstr "Állapot:"
 
@@ -6261,6 +6267,7 @@ msgid "Deleted"
 msgstr "Törölve"
 
 #: templates/backoffice/assembly_respondents.html:128
+#: templates/backoffice/components/db_selection_progress_modal.html:79
 msgid "ID"
 msgstr "ID"
 
@@ -6427,9 +6434,9 @@ msgstr "Elindította"
 
 #: templates/backoffice/assembly_selection.html:190
 #: templates/backoffice/assembly_selection.html:363
-#: templates/backoffice/components/db_selection_progress_modal.html:91
-#: templates/backoffice/components/replacement_modal.html:143
-#: templates/backoffice/components/selection_progress_modal.html:63
+#: templates/backoffice/components/db_selection_progress_modal.html:64
+#: templates/backoffice/components/replacement_modal.html:141
+#: templates/backoffice/components/selection_progress_modal.html:64
 #: templates/db_selection/components/progress.html:20
 #: templates/gsheets/components/progress.html:20
 #: templates/main/view_assembly_data.html:57
@@ -6438,9 +6445,9 @@ msgstr "Elkezdve"
 
 #: templates/backoffice/assembly_selection.html:192
 #: templates/backoffice/assembly_selection.html:365
-#: templates/backoffice/components/db_selection_progress_modal.html:94
-#: templates/backoffice/components/replacement_modal.html:146
-#: templates/backoffice/components/selection_progress_modal.html:66
+#: templates/backoffice/components/db_selection_progress_modal.html:67
+#: templates/backoffice/components/replacement_modal.html:144
+#: templates/backoffice/components/selection_progress_modal.html:67
 #: templates/db_selection/components/progress.html:23
 #: templates/gsheets/components/progress.html:23
 #: templates/main/view_assembly_data.html:58
@@ -7091,13 +7098,14 @@ msgid "%(count)s spare in the pool"
 msgstr ""
 
 #: templates/backoffice/components/db_replacement_modal.html:218
-#: templates/backoffice/components/db_selection_progress_modal.html:117
+#: templates/backoffice/components/db_selection_progress_modal.html:123
+#: templates/backoffice/components/db_selection_progress_modal.html:140
 #: templates/backoffice/components/manage_tabs_progress_modal.html:111
 #: templates/backoffice/components/modal.html:115
 #: templates/backoffice/components/modal.html:176
 #: templates/backoffice/components/modal.html:269
-#: templates/backoffice/components/replacement_modal.html:170
-#: templates/backoffice/components/selection_progress_modal.html:89
+#: templates/backoffice/components/replacement_modal.html:168
+#: templates/backoffice/components/selection_progress_modal.html:90
 #: templates/backoffice/respondent_field_schema/_derivation_report_modal.html:20
 #: templates/backoffice/respondent_field_schema/_field_modal.html:49
 #: templates/backoffice/target_sources/_setup_modal.html:35
@@ -7115,40 +7123,18 @@ msgstr ""
 msgid "Run Replacement Selection"
 msgstr "Résztvevők pótlásának futtatása"
 
-#: templates/backoffice/components/db_selection_progress_modal.html:12
-#: templates/backoffice/components/selection_progress_modal.html:10
-msgid "Task Progress"
-msgstr "A feladat előrehaladása"
+#: templates/backoffice/components/db_selection_progress_modal.html:16
+#: templates/backoffice/components/selection_progress_modal.html:11
+msgid "Task progress"
+msgstr ""
 
-#: templates/backoffice/components/db_selection_progress_modal.html:18
-#: templates/backoffice/components/manage_tabs_progress_modal.html:16
-#: templates/backoffice/components/replacement_modal.html:48
-#: templates/backoffice/components/replacement_modal.html:99
-#: templates/backoffice/components/selection_progress_modal.html:16
-msgid "Task:"
-msgstr "Feladat:"
-
-#: templates/backoffice/components/db_selection_progress_modal.html:26
-#: templates/backoffice/components/manage_tabs_progress_modal.html:26
-#: templates/backoffice/components/replacement_modal.html:104
-#: templates/backoffice/components/selection_progress_modal.html:24
-msgid "Error:"
-msgstr "Hiba:"
-
-#: templates/backoffice/components/db_selection_progress_modal.html:32
-#: templates/backoffice/components/manage_tabs_progress_modal.html:71
-#: templates/backoffice/components/replacement_modal.html:110
-#: templates/backoffice/components/selection_progress_modal.html:30
-msgid "Result:"
-msgstr "Eredmény:"
-
-#: templates/backoffice/components/db_selection_progress_modal.html:33
+#: templates/backoffice/components/db_selection_progress_modal.html:25
 #: templates/backoffice/components/replacement_modal.html:111
-#: templates/backoffice/components/selection_progress_modal.html:31
+#: templates/backoffice/components/selection_progress_modal.html:21
 msgid "Task completed successfully."
 msgstr "A feladat sikeresen befejeződött."
 
-#: templates/backoffice/components/db_selection_progress_modal.html:42
+#: templates/backoffice/components/db_selection_progress_modal.html:27
 msgid ""
 "This was a test selection. The full fair algorithm was not used, so only "
 "use the results for checking feasibility."
@@ -7156,45 +7142,49 @@ msgstr ""
 "Ez tesztkiválasztás volt. A teljes, méltányos algoritmus nem futott le, "
 "ezért az eredményeket csak a megvalósíthatóság ellenőrzésére használd."
 
-#: templates/backoffice/components/db_selection_progress_modal.html:50
-msgid "Download Results"
-msgstr "Eredmények letöltése"
+#: templates/backoffice/components/db_selection_progress_modal.html:33
+#: templates/backoffice/components/manage_tabs_progress_modal.html:26
+#: templates/backoffice/components/replacement_modal.html:104
+#: templates/backoffice/components/selection_progress_modal.html:33
+msgid "Error:"
+msgstr "Hiba:"
 
-#: templates/backoffice/components/db_selection_progress_modal.html:52
-#: templates/db_selection/select.html:180
-msgid "Download Selected"
-msgstr "Kiválasztottak letöltése"
-
-#: templates/backoffice/components/db_selection_progress_modal.html:56
-#: templates/db_selection/select.html:186
-msgid "Download Remaining"
-msgstr "Fennmaradók letöltése"
-
-#: templates/backoffice/components/db_selection_progress_modal.html:60
-msgid "Download Summary Report"
-msgstr "Összefoglaló jelentés letöltése"
-
-#: templates/backoffice/components/db_selection_progress_modal.html:72
+#: templates/backoffice/components/db_selection_progress_modal.html:39
 #: templates/backoffice/components/manage_tabs_progress_modal.html:32
 #: templates/backoffice/components/replacement_modal.html:124
-#: templates/backoffice/components/selection_progress_modal.html:44
+#: templates/backoffice/components/selection_progress_modal.html:39
 #: templates/db_selection/components/progress.html:92
 #: templates/gsheets/components/progress.html:102
 msgid "Task Cancelled"
 msgstr "A feladat megszakítva"
 
-#: templates/backoffice/components/db_selection_progress_modal.html:85
-#: templates/backoffice/components/replacement_modal.html:137
-#: templates/backoffice/components/selection_progress_modal.html:57
-#: templates/db_selection/components/progress.html:11
-#: templates/gsheets/components/progress.html:11
-msgid "Full Run Report"
-msgstr "Teljes futási jelentés"
+#: templates/backoffice/components/db_selection_progress_modal.html:47
+#: templates/backoffice/components/manage_tabs_progress_modal.html:16
+#: templates/backoffice/components/replacement_modal.html:48
+#: templates/backoffice/components/replacement_modal.html:99
+#: templates/backoffice/components/selection_progress_modal.html:47
+msgid "Task:"
+msgstr "Feladat:"
 
-#: templates/backoffice/components/db_selection_progress_modal.html:104
+#: templates/backoffice/components/db_selection_progress_modal.html:53
+#: templates/backoffice/components/selection_progress_modal.html:53
+msgid "Messages"
+msgstr ""
+
+#: templates/backoffice/components/db_selection_progress_modal.html:58
+#: templates/backoffice/components/replacement_modal.html:135
+#: templates/backoffice/components/selection_progress_modal.html:58
+msgid "Full run report"
+msgstr ""
+
+#: templates/backoffice/components/db_selection_progress_modal.html:99
+msgid "None of the people this run selected are in the respondent list any more."
+msgstr ""
+
+#: templates/backoffice/components/db_selection_progress_modal.html:108
 #: templates/backoffice/components/manage_tabs_progress_modal.html:89
-#: templates/backoffice/components/replacement_modal.html:157
-#: templates/backoffice/components/selection_progress_modal.html:76
+#: templates/backoffice/components/replacement_modal.html:155
+#: templates/backoffice/components/selection_progress_modal.html:77
 msgid ""
 "If you put the task in the background, you can find it later in the "
 "Selection History section below."
@@ -7202,19 +7192,31 @@ msgstr ""
 "Ha a háttérbe helyezed a feladatot, később megtalálod az alábbi "
 "Kiválasztások előzményei szakaszban."
 
-#: templates/backoffice/components/db_selection_progress_modal.html:111
+#: templates/backoffice/components/db_selection_progress_modal.html:115
 #: templates/backoffice/components/manage_tabs_progress_modal.html:96
-#: templates/backoffice/components/replacement_modal.html:164
-#: templates/backoffice/components/selection_progress_modal.html:83
+#: templates/backoffice/components/replacement_modal.html:162
+#: templates/backoffice/components/selection_progress_modal.html:84
 msgid "Cancel Task"
 msgstr "Feladat megszakítása"
 
-#: templates/backoffice/components/db_selection_progress_modal.html:113
+#: templates/backoffice/components/db_selection_progress_modal.html:117
 #: templates/backoffice/components/manage_tabs_progress_modal.html:98
-#: templates/backoffice/components/replacement_modal.html:166
-#: templates/backoffice/components/selection_progress_modal.html:85
+#: templates/backoffice/components/replacement_modal.html:164
+#: templates/backoffice/components/selection_progress_modal.html:86
 msgid "Put Task in Background"
 msgstr "Feladat háttérbe helyezése"
+
+#: templates/backoffice/components/db_selection_progress_modal.html:124
+msgid "Download summary report"
+msgstr ""
+
+#: templates/backoffice/components/db_selection_progress_modal.html:129
+msgid "Download remaining"
+msgstr ""
+
+#: templates/backoffice/components/db_selection_progress_modal.html:134
+msgid "Download selected"
+msgstr ""
 
 #: templates/backoffice/components/edit_number_to_select_modal.html:11
 msgid "Edit Number to Select"
@@ -7300,6 +7302,11 @@ msgstr "%(count)s munkalap törlésre kerül."
 msgid "No old tabs found. Your spreadsheet is clean."
 msgstr "Nem található régi munkalap. A táblázatod rendben van."
 
+#: templates/backoffice/components/manage_tabs_progress_modal.html:71
+#: templates/backoffice/components/replacement_modal.html:110
+msgid "Result:"
+msgstr "Eredmény:"
+
 #: templates/backoffice/components/manage_tabs_progress_modal.html:73
 msgid "Old tabs have been deleted successfully."
 msgstr "A régi munkalapok sikeresen törölve."
@@ -7309,11 +7316,11 @@ msgstr "A régi munkalapok sikeresen törölve."
 msgid "Delete These Tabs"
 msgstr "Ezeknek a munkalapoknak a törlése"
 
-#: templates/backoffice/components/modal.html:368
+#: templates/backoffice/components/modal.html:395
 msgid "Waiting for task to start…"
 msgstr "Várakozás a feladat indulására…"
 
-#: templates/backoffice/components/modal.html:370
+#: templates/backoffice/components/modal.html:397
 msgid "Messages:"
 msgstr "Üzenetek:"
 
@@ -9329,6 +9336,14 @@ msgstr "A kiválasztás kész"
 msgid "Download the results as CSV files:"
 msgstr "Töltsd le az eredményeket CSV fájlként:"
 
+#: templates/db_selection/select.html:180
+msgid "Download Selected"
+msgstr "Kiválasztottak letöltése"
+
+#: templates/db_selection/select.html:186
+msgid "Download Remaining"
+msgstr "Fennmaradók letöltése"
+
 #: templates/db_selection/settings.html:8
 msgid "Settings"
 msgstr "Beállítások"
@@ -9336,6 +9351,11 @@ msgstr "Beállítások"
 #: templates/db_selection/settings.html:13
 msgid "Configure how the selection runs for this assembly."
 msgstr "Állítsd be, hogyan fusson a kiválasztás ennél a közösségi gyűlésnél."
+
+#: templates/db_selection/components/progress.html:11
+#: templates/gsheets/components/progress.html:11
+msgid "Full Run Report"
+msgstr "Teljes futási jelentés"
 
 #: templates/db_selection/components/progress.html:30
 #: templates/gsheets/components/progress.html:30

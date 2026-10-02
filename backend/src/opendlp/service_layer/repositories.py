@@ -507,6 +507,15 @@ class RespondentRepository(AbstractRepository):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_by_external_ids(self, assembly_id: uuid.UUID, external_ids: list[str]) -> list[Respondent]:
+        """Get an assembly's respondents with any of the given external IDs, in one query.
+
+        DELETED respondents are included. The result is ordered by external ID;
+        IDs with no respondent are simply absent.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def count_by_assembly_id(self, assembly_id: uuid.UUID, include_deleted: bool = False) -> int:
         """Count all respondents for an assembly. DELETED excluded unless include_deleted=True."""
         raise NotImplementedError

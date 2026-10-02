@@ -11,10 +11,17 @@ from sortition_algorithms import GSheetDataSource, RunReport
 from opendlp.adapters.sortition_data_adapter import DB_ID_COLUMN
 from opendlp.domain.assembly import Assembly, AssemblyGSheet, SelectionRunRecord
 from opendlp.domain.assembly_csv import AssemblyCSV
+from opendlp.domain.respondents import Respondent
 from opendlp.domain.selection_settings import SelectionSettings
 from opendlp.domain.targets import TargetCategory, TargetValue
 from opendlp.domain.users import User
-from opendlp.domain.value_objects import GlobalRole, ManageOldTabsState, SelectionRunStatus, SelectionTaskType
+from opendlp.domain.value_objects import (
+    GlobalRole,
+    ManageOldTabsState,
+    RespondentStatus,
+    SelectionRunStatus,
+    SelectionTaskType,
+)
 from opendlp.service_layer import sortition
 from opendlp.service_layer.exceptions import (
     AssemblyNotFoundError,
@@ -224,6 +231,56 @@ class TestGetSelectionRunStatus:
             result = sortition.get_selection_run_status(uow, task_id)
 
         assert result.log_messages == ["Task submitted"]
+
+
+class TestGetSelectedRespondents:
+    """The respondents a finished run selected, looked up from its stored IDs."""
+
+    def _record(self, assembly_id: uuid.UUID, selected_ids: list[list[str]] | None) -> SelectionRunRecord:
+        return SelectionRunRecord(
+            assembly_id=assembly_id,
+            task_id=uuid.uuid4(),
+            task_type=SelectionTaskType.SELECT_FROM_DB,
+            status=SelectionRunStatus.COMPLETED,
+            selected_ids=selected_ids,
+        )
+
+    def test_returns_the_selected_respondents_ordered_by_external_id(self, uow):
+        assembly_id = uuid.uuid4()
+        for ext_id in ("1", "2", "3"):
+            uow.respondents.add(Respondent(assembly_id=assembly_id, external_id=ext_id))
+        uow.respondents.add(Respondent(assembly_id=uuid.uuid4(), external_id="2"))
+
+        selected = sortition.get_selected_respondents(uow, self._record(assembly_id, [["3", "1"]]))
+
+        assert [r.external_id for r in selected] == ["1", "3"]
+        assert all(r.assembly_id == assembly_id for r in selected)
+
+    def test_includes_a_respondent_deleted_since_the_run(self, uow):
+        assembly_id = uuid.uuid4()
+        uow.respondents.add(Respondent(assembly_id=assembly_id, external_id="1"))
+        uow.respondents.add(
+            Respondent(assembly_id=assembly_id, external_id="2", selection_status=RespondentStatus.DELETED)
+        )
+
+        selected = sortition.get_selected_respondents(uow, self._record(assembly_id, [["1", "2"]]))
+
+        assert [r.external_id for r in selected] == ["1", "2"]
+
+    def test_skips_ids_with_no_respondent_row(self, uow):
+        assembly_id = uuid.uuid4()
+        uow.respondents.add(Respondent(assembly_id=assembly_id, external_id="1"))
+
+        selected = sortition.get_selected_respondents(uow, self._record(assembly_id, [["1", "gone"]]))
+
+        assert [r.external_id for r in selected] == ["1"]
+
+    def test_run_without_a_panel_gives_nothing(self, uow):
+        assembly_id = uuid.uuid4()
+        uow.respondents.add(Respondent(assembly_id=assembly_id, external_id="1"))
+
+        assert sortition.get_selected_respondents(uow, self._record(assembly_id, None)) == []
+        assert sortition.get_selected_respondents(uow, self._record(assembly_id, [])) == []
 
 
 class TestGetManageOldTabsStatus:

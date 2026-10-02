@@ -40,6 +40,7 @@ from opendlp.service_layer.sortition import (
     check_and_update_task_health,
     check_db_selection_data,
     generate_selection_csvs,
+    get_selected_respondents,
     get_selection_run_status,
     start_db_replace_task,
     start_db_select_task,
@@ -214,17 +215,21 @@ def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
             # Get run status
             result = get_selection_run_status(uow, run_id)
 
-        if result.run_record is None:
-            return "", 404
+            if result.run_record is None:
+                return "", 404
 
-        if result.run_record.assembly_id != assembly_id:
-            logger.warning(
-                "Run does not belong to assembly",
-                run_id=str(run_id),
-                assembly_id=str(assembly_id),
-                user_id=str(current_user.id),
+            if result.run_record.assembly_id != assembly_id:
+                logger.warning(
+                    "Run does not belong to assembly",
+                    run_id=str(run_id),
+                    assembly_id=str(assembly_id),
+                    user_id=str(current_user.id),
+                )
+                return "", 404
+
+            selected_respondents = (
+                get_selected_respondents(uow, result.run_record) if result.run_record.is_completed else []
             )
-            return "", 404
 
         return render_template(
             "backoffice/components/db_selection_progress_modal.html",
@@ -235,6 +240,7 @@ def db_selection_progress_modal(assembly_id: uuid.UUID, run_id: uuid.UUID) -> Re
             run_report=result.run_report,
             translated_report_html=translate_run_report_to_html(result.run_report) if result.run_report else "",
             current_selection=run_id,
+            selected_respondents=selected_respondents,
         ), 200
     except NotFoundError:
         return "", 404
