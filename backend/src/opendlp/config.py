@@ -101,6 +101,16 @@ def get_api_url() -> str:
     return f"http://{host}:{port}"
 
 
+def get_application_url() -> str:
+    """The public base URL of this OpenDLP instance, e.g. "https://app.example.org".
+
+    For building links to OpenDLP pages where there is no request to take the
+    host from, such as a background task. Empty when unset; any trailing slash
+    is removed so a path can be appended directly.
+    """
+    return os.environ.get("APPLICATION_URL", "").strip().rstrip("/")
+
+
 def get_google_auth_json_path() -> Path:
     return Path(os.environ.get("GOOGLE_AUTH_JSON_PATH", "/no-such-file"))
 
