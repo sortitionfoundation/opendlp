@@ -103,6 +103,12 @@ def test_sample_respondent_derives_a_recognisable_name() -> None:
     assert ctx.first_name_or_friend == "Alex"
 
 
+def test_sample_respondent_supports_full_name_fields() -> None:
+    ctx = sample_respondent_context([_field("full_name")], "me@example.com")
+    assert ctx.attributes["full_name"] == "Alex Example"
+    assert ctx.full_name == "Alex Example"
+
+
 def test_sample_respondent_email_is_the_recipient() -> None:
     ctx = sample_respondent_context([_field("contact_email", FieldType.EMAIL)], "me@example.com")
     assert ctx.email == "me@example.com"

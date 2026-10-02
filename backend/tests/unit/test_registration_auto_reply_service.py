@@ -20,7 +20,13 @@ from opendlp.domain.respondent_field_schema import (
 from opendlp.domain.users import User
 from opendlp.domain.value_objects import AssemblyStatus, GlobalRole
 from opendlp.service_layer.email_send_service import send_registration_auto_reply, send_test_auto_reply
-from opendlp.service_layer.exceptions import EmailTemplateNotFoundError, InsufficientPermissions
+from opendlp.service_layer.exceptions import (
+    AssemblyNotFoundError,
+    EmailTemplateNotFoundError,
+    InsufficientPermissions,
+    RegistrationPageNotFoundError,
+    UserNotFoundError,
+)
 from opendlp.service_layer.registration_submission_service import submit_registration
 from tests.fakes import FakeUnitOfWork
 
@@ -194,6 +200,48 @@ def test_test_send_requires_manage_permission(uow) -> None:
     with pytest.raises(InsufficientPermissions):
         send_test_auto_reply(uow, adapter, user_id=user.id, page_id=_page(uow).id, to_email="manager@example.com")
     adapter.send_email.assert_not_called()
+
+
+def test_test_send_with_unknown_user_or_page_raises(uow) -> None:
+    _build(uow, RegistrationPageStatus.TEST)
+    admin = _admin(uow)
+    adapter = MagicMock()
+
+    with pytest.raises(UserNotFoundError):
+        send_test_auto_reply(uow, adapter, user_id=uuid.uuid4(), page_id=_page(uow).id, to_email="m@example.com")
+    with pytest.raises(RegistrationPageNotFoundError):
+        send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=uuid.uuid4(), to_email="m@example.com")
+    adapter.send_email.assert_not_called()
+
+
+def test_test_send_with_missing_assembly_raises(uow) -> None:
+    admin = _admin(uow)
+    orphan = RegistrationPage(assembly_id=uuid.uuid4(), url_slug="orphan-page")
+    uow.registration_pages.add(orphan)
+
+    with pytest.raises(AssemblyNotFoundError):
+        send_test_auto_reply(uow, MagicMock(), user_id=admin.id, page_id=orphan.id, to_email="m@example.com")
+
+
+def test_test_send_with_dangling_template_id_raises(uow) -> None:
+    _build(uow, RegistrationPageStatus.TEST)
+    admin = _admin(uow)
+    page = _page(uow)
+    page.auto_reply_email_template_id = uuid.uuid4()
+
+    with pytest.raises(EmailTemplateNotFoundError):
+        send_test_auto_reply(uow, MagicMock(), user_id=admin.id, page_id=page.id, to_email="m@example.com")
+
+
+def test_test_send_survives_adapter_exception(uow) -> None:
+    _build(uow, RegistrationPageStatus.TEST)
+    admin = _admin(uow)
+    adapter = MagicMock()
+    adapter.send_email.side_effect = RuntimeError("smtp down")
+
+    result = send_test_auto_reply(uow, adapter, user_id=admin.id, page_id=_page(uow).id, to_email="m@example.com")
+
+    assert result.sent is False
 
 
 def test_test_send_without_template_raises(uow) -> None:
