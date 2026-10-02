@@ -468,7 +468,7 @@ class TestCsvReplacementSelection:
         mock_delay.return_value.id = "celery-task-id"
         with SqlAlchemyUnitOfWork(postgres_session_factory) as uow:
             plan = build_replacement_plan(uow, admin_user.id, assembly_after_withdrawal.id)
-        form = {"number_to_select": str(plan.default_number)}
+        form = {"number_to_select": str(plan.calculated_number)}
         for category in plan.categories:
             for row in category.rows:
                 form[row.min_field] = str(row.calculated.min)

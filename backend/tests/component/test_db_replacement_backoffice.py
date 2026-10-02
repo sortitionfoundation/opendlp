@@ -118,7 +118,7 @@ def _plan_form(fake_store, admin_user, assembly_id, **overrides: str) -> dict[st
     """A form carrying the calculated numbers, with named (category, value, field) cells overridden."""
     with FakeUnitOfWork(store=fake_store) as uow:
         plan = build_replacement_plan(uow, admin_user.id, assembly_id)
-    form = {"number_to_select": str(plan.default_number)}
+    form = {"number_to_select": str(plan.calculated_number)}
     for category in plan.categories:
         for row in category.rows:
             form[row.min_field] = str(row.calculated.min)
@@ -242,7 +242,24 @@ class TestReplacementDialog:
         )
         html = response.data.decode()
         assert "16 places are to be filled, but the replacement targets only allow" in html
-        assert 'value="8"' in html
+        assert 'value="16"' in html
+        assert 'value="8"' not in html
+        assert "fewer than the 16 to select" in html
+
+    def test_dialog_keeps_the_places_to_fill_when_below_the_minimum(
+        self, logged_in_admin, assembly_after_withdrawal, fake_store
+    ):
+        """Seven to select leaves three to fill, but the targets still need four: the number stays at three."""
+        with FakeUnitOfWork(store=fake_store) as uow:
+            uow.assemblies.get(assembly_after_withdrawal.id).number_to_select = 7
+            uow.commit()
+        response = logged_in_admin.get(
+            f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open"
+        )
+        html = response.data.decode()
+        assert "3 places are to be filled, but the replacement targets only allow between 4 and" in html
+        assert 'value="3"' in html
+        assert "more than the 3 to select" in html
 
     def test_dialog_requires_login(self, client, assembly_after_withdrawal):
         response = client.get(f"/backoffice/assembly/{assembly_after_withdrawal.id}/selection?replacement_modal=open")
