@@ -295,8 +295,13 @@ phase 3; not used on the redesigned page.
   catalogues regenerated. Verified: register-related component/e2e suites pass
   (83 tests), visual check against the Figma on a local run (invite-required
   variant; SSO buttons verified by tests — local env has no OAuth client IDs).
-  Remaining verification debt: BDD registration scenarios not yet run this
-  session; accessibility pass pending.
+  BDD: all 15 scenarios in `test_login.py` + `test_email_confirmation.py` pass —
+  after fixing a latent bug the migration surfaced: the decorative
+  `.checkbox-box`/`.radio-circle`/`.switch-track` spans swallowed pointer events,
+  so Playwright's `check()` on the native input timed out; fixed with
+  `pointer-events: none` on the decorative layers in
+  `static/backoffice/src/main.css`. Remaining verification debt: accessibility
+  pass pending.
 - **2026-10-02 (later)** — Phase 1 step 1 done: `templates/public/base.html` created
   (extends the design-system shell, reuses `navigation()`/`floating_alerts()`/
   `footer()`); `tailwind.config.js` now also scans `templates/public/`; footer macro
