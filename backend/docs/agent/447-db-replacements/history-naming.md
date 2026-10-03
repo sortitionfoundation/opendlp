@@ -1,6 +1,6 @@
 # Plan: friendlier names in the Selection History list
 
-**Status:** decided, implementation in progress. The questions below are kept
+**Status:** implemented on `447-db-replacements-2`, 2026-10-03. The questions below are kept
 with their answers so the reasoning survives; the steps at the end track the
 work.
 
@@ -266,7 +266,7 @@ view shows everything and no toggle.
    "Selection", reset rows have no View link. The modal "Task:" line uses the
    name on both the page and the HTMX fragment routes. Component tests on
    the page; update `tests/bdd/test_selection_history.py` for the header.
-4. [ ] Language doc and translations: glossary entry, `just translate-regen`.
+4. [x] Language doc and translations: glossary entry, `just translate-regen`.
 
 ## Out of scope, noted
 

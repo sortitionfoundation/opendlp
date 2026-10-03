@@ -56,6 +56,7 @@ in, and don't add a third variant.
 | selection             | Choosing people from the pool by stratified random lottery                    | draw, lottery, sortition           |
 | selection run         | One run of the selection, recorded in the run history                         |                                    |
 | panel                 | One possible line-up of the whole assembly; a selection picks one             | committee, line-up                 |
+| initial selection     | The selection run that picks the assembly, before any replacements            | first selection, main selection    |
 | test selection        | A selection run that is not for real                                          |                                    |
 | replacement selection | A selection run to fill places left by people who withdrew                    | replacements, substitute, reserve  |
 | replacements          | The people a replacement selection selects                                    | replacement participants, members  |
